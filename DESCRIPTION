@@ -1,11 +1,10 @@
 Package: actuarialpricing
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Analytic insurance rating techniques
 Version: 0.1.0
 Author: Martin Haringa
 Maintainer: Martin Haringa <mtharinga@gmail.com>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: Methods for insurance rating
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true

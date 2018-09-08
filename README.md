@@ -3,7 +3,9 @@
 
 # actuarialpricing
 
-The goal of actuarialpricing is to …
+The goal of actuarialpricing is to give analytic techniques that can be
+used in insurance rating, in particular in actuarial pricing models in
+P\&C insurance.
 
 ## Installation
 
