@@ -34,20 +34,12 @@ clusters <- clustering_frequency(MTPL, nclaims, age_policyholder, exposure)
 
 # Show plot with predicted number of claims from the frequency model, binned by decision trees.
 clusters[[2]]
-```
-
-![](man/figures/example-1.png)<!-- -->
-
-``` r
 
 # Show splits
 clusters[[3]]
-#> [1] 18 31 38 53 60 67 80 95
 
 # Show corresponding splits for each element in age_policyholder
 head(clusters[[1]])
-#> [1] (38,53] [18,31] (53,60] (38,53] [18,31] (31,38]
-#> Levels: [18,31] (31,38] (38,53] (53,60] (60,67] (67,80] (80,95]
 ```
 
 ### Claim severity
@@ -62,18 +54,10 @@ clusters <- clustering_severity(MTPL, amount, age_policyholder, nclaims, color_s
 
 # Show plot with predicted average cost of a claim from the severity model, binned by decision trees.
 clusters[[2]]
-```
-
-![](man/figures/example2-1.png)<!-- -->
-
-``` r
 
 # Show splits
 clusters[[3]]
-#> [1] 18 24 38 52 61 68 88
 
 # Show corresponding splits for each element in age_policyholder
 head(clusters[[1]])
-#> [1] (38,52] [18,24] (38,52] (24,38] (38,52] (52,61]
-#> Levels: [18,24] (24,38] (38,52] (52,61] (61,68] (68,88]
 ```
