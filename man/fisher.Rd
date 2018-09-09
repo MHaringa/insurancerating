@@ -21,7 +21,7 @@ The function provides an interface to finding class intervals for continuous num
 The "fisher" style uses the algorithm proposed by W. D. Fisher (1958) and discussed by Slocum et al. (2005) as the Fisher-Jenks algorithm. This function is adopted from the classInt package.
 }
 \references{
-Fisher, W. D. 1958 "On grouping for maximum homogeneity", Journal of the American Statistical Association, 53, pp. 789–798 (http://lib.stat.cmu.edu/cmlib/src/cluster/fish.f)
+Fisher, W. D. 1958 "On grouping for maximum homogeneity", Journal of the American Statistical Association, 53, pp. 789–798 \url{http://lib.stat.cmu.edu/cmlib/src/cluster/fish.f}
 }
 \author{
 Martin Haringa

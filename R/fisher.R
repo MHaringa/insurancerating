@@ -13,10 +13,10 @@
 #'
 #' @details The "fisher" style uses the algorithm proposed by W. D. Fisher (1958) and discussed by Slocum et al. (2005) as the Fisher-Jenks algorithm. This function is adopted from the classInt package.
 #'
-#' @references Fisher, W. D. 1958 "On grouping for maximum homogeneity", Journal of the American Statistical Association, 53, pp. 789–798 (http://lib.stat.cmu.edu/cmlib/src/cluster/fish.f)
+#' @references Fisher, W. D. 1958 "On grouping for maximum homogeneity", Journal of the American Statistical Association, 53, pp. 789–798 \url{http://lib.stat.cmu.edu/cmlib/src/cluster/fish.f}
 #'
 #'
-#' @export
+#' @export fisher
 fisher <- function(vec, n = 7){
   cluster <- classIntervals(vec, n = n, style = 'fisher', intervalClosure = 'right')[[2]]
   vec_cut <- cut(vec, breaks = cluster, include.lowest = TRUE, dig.lab = 2)
