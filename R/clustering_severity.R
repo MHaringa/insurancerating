@@ -20,7 +20,7 @@
 #' @details A Gamma distribution is assumed for the claim severity. The claim severity is the amount of loss associated with an average
 #' insurance claim. The number of claims is included as prior weights on the contribution of the data to the log likelihood.
 #' Note that a weight of 2, for example, is equivalent to having made exactly the same observation twice. Bins
-#' are created where consecutive values of a continuous risk factor are grouped together. Therefore, regression trees
+#' are created where consecutive values of a continuous risk factor are grouped together. Regression trees
 #' are used as a technique to perform the binning. Here regression trees from the \code{rpart} package are used.
 #'
 #' @return A list with components:
@@ -68,15 +68,15 @@ clustering_severity <- function(data, amount, x, nclaims, cp = 0, color_splits =
   pred <- as.numeric(mgcv::predict.gam(gam_x, counting2, type = 'response'))
   new <- data.frame(counting2, pred, n = counting[[1]])
 
-  tree.ageph <- rpart::rpart(pred ~ x, data = new, weights = n, control = rpart::rpart.control(cp = cp))
-  split.ageph <- sort(as.numeric(tree.ageph$splits[,4]))
+  tree_x <- rpart::rpart(pred ~ x, data = new, weights = n, control = rpart::rpart.control(cp = cp))
+  split_x <- sort(as.numeric(tree_x$splits[,4]))
   gam_plot <- ggplot(data = df1, aes(x = x, y = y)) +
     geom_line(color = color_gam) +
     theme_bw(base_size = 12) +
-    {if(show_splits) geom_vline(xintercept = split.ageph, color = color_splits, linetype = 2)} +
+    {if(show_splits) geom_vline(xintercept = split_x, color = color_splits, linetype = 2)} +
     labs(y = "Average cost of a claim", x = x)
 
-  clusters <- c(min(counting[[2]]), floor(split.ageph), max(counting[[2]]))
+  clusters <- c(min(counting[[2]]), unique(floor(split_x)), max(counting[[2]]))
   x_clusters <- cut(df$x, breaks = clusters, include.lowest = TRUE)
 
   return(list(x_clusters,

@@ -4,8 +4,9 @@
 # insurancerating
 
 The goal of insurancerating is to give analytic techniques that can be
-used in insurance rating, in particular in actuarial pricing models in
-P\&C insurance.
+used in insurance rating. In particular, the methods can be used to
+determine class intervals for continuous numerical variables in P\&C
+insurance.
 
 ## Installation
 
@@ -21,5 +22,6 @@ devtools::install_github("MHaringa/insurancerating")
 This is a basic example which shows you how to solve a common problem:
 
 ``` r
-## basic example code
+# Find class intervals for continuous numerical variables
+clustering_frequency(MTPL, nclaims, age_policyholder, exposure)
 ```

@@ -45,7 +45,7 @@ while being easy to use in a generalized linear model (GLM).
 \details{
 A Poisson distribution is assumed for the number of claims. The logarithm of the exposure is
 included in the model as an offset, such that the expected number of claims is proportional to exposure. Bins
-are created where consecutive values of a continuous risk factor are grouped together. Therefore, regression trees
+are created where consecutive values of a continuous risk factor are grouped together. Regression trees
 are used as a technique to perform the binning. Here regression trees from the \code{rpart} package are used.
 }
 \examples{

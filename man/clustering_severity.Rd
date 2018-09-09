@@ -46,7 +46,7 @@ while being easy to use in a generalized linear model (GLM).
 A Gamma distribution is assumed for the claim severity. The claim severity is the amount of loss associated with an average
 insurance claim. The number of claims is included as prior weights on the contribution of the data to the log likelihood.
 Note that a weight of 2, for example, is equivalent to having made exactly the same observation twice. Bins
-are created where consecutive values of a continuous risk factor are grouped together. Therefore, regression trees
+are created where consecutive values of a continuous risk factor are grouped together. Regression trees
 are used as a technique to perform the binning. Here regression trees from the \code{rpart} package are used.
 }
 \examples{
