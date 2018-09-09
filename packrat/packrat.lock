@@ -33,6 +33,11 @@ Source: CRAN
 Version: 0.1-3
 Hash: c590d29e555926af053055e23ee79efb
 
+Package: bitops
+Source: CRAN
+Version: 1.0-6
+Hash: 67d0775189fd0041d95abca618c5c07e
+
 Package: brew
 Source: CRAN
 Version: 1.0-6
@@ -117,6 +122,12 @@ Source: CRAN
 Version: 1.7-0
 Hash: 54c6b974d385e3c0961eb4cefc9ea0c5
 
+Package: evaluate
+Source: CRAN
+Version: 0.11
+Hash: 2d90e734f5c12a3473f4be8ef3c15ebb
+Requires: stringr
+
 Package: fansi
 Source: CRAN
 Version: 0.3.0
@@ -156,11 +167,28 @@ Source: CRAN
 Version: 0.2.0
 Hash: cd78381a9d3fea966ac39bd0daaf5554
 
+Package: highr
+Source: CRAN
+Version: 0.7
+Hash: 20757f5c393ed0ecf96c9e8e6d8d514c
+
+Package: htmltools
+Source: CRAN
+Version: 0.3.6
+Hash: 87bd72cdfc46f686bbd46b180cb5f0b5
+Requires: Rcpp, digest
+
 Package: httr
 Source: CRAN
 Version: 1.3.1
 Hash: 2d32e01e53d532c812052e27a1021441
 Requires: R6, curl, jsonlite, mime, openssl
+
+Package: hunspell
+Source: CRAN
+Version: 2.9
+Hash: 81a71268e04eb04d4453b1117465dce9
+Requires: Rcpp, digest
 
 Package: ini
 Source: CRAN
@@ -171,6 +199,12 @@ Package: jsonlite
 Source: CRAN
 Version: 1.5
 Hash: 9c51936d8dd00b2f1d4fe9d10499694c
+
+Package: knitr
+Source: CRAN
+Version: 1.20
+Hash: 9c6b215d1d02b97586c8232e94533e6a
+Requires: evaluate, highr, markdown, stringr, yaml
 
 Package: labeling
 Source: CRAN
@@ -186,6 +220,12 @@ Package: magrittr
 Source: CRAN
 Version: 1.5
 Hash: bdc4d48c3135e8f3b399536ddf160df4
+
+Package: markdown
+Source: CRAN
+Version: 0.8
+Hash: 045d7c594d503b41f1c28946d076c8aa
+Requires: mime
 
 Package: memoise
 Source: CRAN
@@ -218,6 +258,11 @@ Package: packrat
 Source: CRAN
 Version: 0.4.9-3
 Hash: 03fb817297975f1da0d1b774b47620b3
+
+Package: parsedate
+Source: CRAN
+Version: 1.1.3
+Hash: 85902ad85833c2e722af340d486ef256
 
 Package: pillar
 Source: CRAN
@@ -266,6 +311,11 @@ Version: 0.2.5
 Hash: 8b0c16db10c7e20b70cd37779a673a8b
 Requires: magrittr, rlang, tibble
 
+Package: rappdirs
+Source: CRAN
+Version: 0.3.1
+Hash: 7340cfebc77ad7b107a549a8635e64dd
+
 Package: rcmdcheck
 Source: github
 Version: 1.2.1.9005
@@ -281,16 +331,36 @@ RemoteRepo: rcmdcheck
 RemoteUsername: r-lib
 RemoteSha: d5d6262d5db4c700b0f17a25890a66403831f583
 
+Package: rematch
+Source: CRAN
+Version: 1.0.1
+Hash: ad4faf59e7611117ff165817074c50c7
+
 Package: reshape2
 Source: CRAN
 Version: 1.4.3
 Hash: a08472524968be4e233b4c8d0ae5aef1
 Requires: Rcpp, plyr, stringr
 
+Package: rhub
+Source: CRAN
+Version: 1.0.2
+Hash: d9979f7dd6e9b5b85f6527943b4648ee
+Requires: R6, assertthat, callr, clisymbols, crayon, desc, httr,
+    jsonlite, parsedate, prettyunits, rappdirs, rcmdcheck, rematch,
+    whoami, withr
+
 Package: rlang
 Source: CRAN
 Version: 0.2.2
 Hash: 49b735b7b1d14f561d21cce12c6703df
+
+Package: rmarkdown
+Source: CRAN
+Version: 1.10
+Hash: 02f1aac33000c63986c6b5585e36e7ae
+Requires: base64enc, evaluate, htmltools, jsonlite, knitr, mime,
+    rprojroot, stringr, tinytex, yaml
 
 Package: roxygen2
 Source: CRAN
@@ -315,6 +385,12 @@ Source: CRAN
 Version: 0.7
 Hash: e2ebaff8160aff3e6b32e6e78a693c2d
 
+Package: rversions
+Source: CRAN
+Version: 1.0.3
+Hash: 44837671df6bf1d0b863dc6f83f42a16
+Requires: curl, xml2
+
 Package: scales
 Source: CRAN
 Version: 1.0.0
@@ -325,6 +401,12 @@ Package: spData
 Source: CRAN
 Version: 0.2.9.3
 Hash: 8e2338f880e4695af0f65362dd0d4c77
+
+Package: spelling
+Source: CRAN
+Version: 1.2
+Hash: 084f65bd10a7253f957b616a3a257194
+Requires: commonmark, hunspell, knitr, xml2
 
 Package: stringi
 Source: CRAN
@@ -342,6 +424,12 @@ Source: CRAN
 Version: 1.4.2
 Hash: 83895360ce4f8d2ce92eee00526b5b0b
 Requires: cli, crayon, pillar, rlang
+
+Package: tinytex
+Source: CRAN
+Version: 0.8
+Hash: bf76759350cd2bfec401d8861a61ad66
+Requires: xfun
 
 Package: usethis
 Source: CRAN
@@ -365,13 +453,29 @@ Source: CRAN
 Version: 0.3-2
 Hash: 803d662762e532705c2c066a82d066e7
 
+Package: whoami
+Source: CRAN
+Version: 1.1.2
+Hash: 2133dd074905c45657fc95925e1d9d07
+Requires: httr, jsonlite
+
 Package: withr
 Source: CRAN
 Version: 2.1.2
 Hash: d534108bcd5f34ec73e9eb523751ba20
+
+Package: xfun
+Source: CRAN
+Version: 0.3
+Hash: 3b1cb5fdcfb96c88e3f9ab0239fbd048
 
 Package: xml2
 Source: CRAN
 Version: 1.2.0
 Hash: 1ee43aa8f57efa79384f290459c138b6
 Requires: Rcpp
+
+Package: yaml
+Source: CRAN
+Version: 2.2.0
+Hash: a5ad5616d83d89f8d84cbf3cf4034e13
