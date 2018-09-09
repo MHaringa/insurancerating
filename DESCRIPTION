@@ -1,11 +1,18 @@
 Package: insurancerating
 Type: Package
-Title: Analytic insurance rating techniques
+Title: Analytic Insurance Rating Techniques
 Version: 0.1.0
 Author: Martin Haringa
 Maintainer: Martin Haringa <mtharinga@gmail.com>
-Description: Methods for insurance rating
+Description: Methods for insurance rating. In particular, it can be used to determine class intervals for continuous numerical variables.
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.0
+Imports: 
+    classInt,
+    ggplot2,
+    mgcv,
+    rpart
+Depends: R (>= 3.3)
+

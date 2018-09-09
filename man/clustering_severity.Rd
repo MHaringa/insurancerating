@@ -5,31 +5,35 @@
 \title{Breaks for continuous variables in insurance rating (severity)}
 \usage{
 clustering_severity(data, amount, x, nclaims, cp = 0,
-  color_splits = "red", color_gam = "steelblue", show_splits = TRUE)
+  color_splits = "grey", color_gam = "steelblue", show_splits = TRUE)
 }
 \arguments{
-\item{data}{dfd}
+\item{data}{data.frame of an insurance portfolio.}
 
-\item{x}{ad}
+\item{amount}{column in \code{data} with claim amount.}
 
-\item{nclaims}{ada}
+\item{x}{column in \code{data} with continuous risk factor.}
 
-\item{cp}{ddf}
+\item{nclaims}{column in \code{data} with number of claims.}
 
-\item{color_splits}{df}
+\item{cp}{complexity parameter. Any split that does not decrease the overall lack of fit by a factor of cp is not attempted.
+For instance, with anova splitting, this means that the overall R-squared must increase by cp at each step.
+The main role of this parameter is to save computing time by pruning off splits that are obviously not worthwhile.
+Essentially,the user informs the program that any split which does not improve the fit by cp will likely be pruned off
+by cross-validation, and that hence the program need not pursue it (cp = 0 is default).}
 
-\item{color_gam}{dfd}
+\item{color_splits}{change the color of the splits in the graph (\code{grey} is default).}
 
-\item{show_splits}{dfdf}
+\item{color_gam}{change the color of the line in the graph (\code{steelblue} is default).}
 
-\item{exposure}{adf}
+\item{show_splits}{show splits (TRUE/FALSE).}
 }
 \value{
 A list with components:
 
-\item{x_clusters}{df}
+\item{x_clusters}{Vector with corresponding cluster for each element in x.}
 
-\item{gam_plot}{}
+\item{gam_plot}{Plot with predicted number of claims from the frequency model, binned by decision trees.}
 
 \item{clusters}{Numerical vector with splits.}
 }
@@ -38,8 +42,15 @@ The function provides an interface to finding class intervals for continuous num
 such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way,
 while being easy to use in a generalized linear model (GLM).
 }
+\details{
+A Gamma distribution is assumed for the claim severity. The claim severity is the amount of loss associated with an average
+insurance claim. The number of claims is included as prior weights on the contribution of the data to the log likelihood.
+Note that a weight of 2, for example, is equivalent to having made exactly the same observation twice. Bins
+are created where consecutive values of a continuous risk factor are grouped together. Therefore, regression trees
+are used as a technique to perform the binning. Here regression trees from the \code{rpart} package are used.
+}
 \examples{
-clustering_severity(MTPL, amount, age_policyholder)
+clustering_severity(MTPL, amount, age_policyholder, nclaims)
 }
 \author{
 Martin Haringa
