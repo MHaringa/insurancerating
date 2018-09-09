@@ -4,6 +4,12 @@
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 0 note
 
-* This is a new release.
+There were no ERRORs, WARNINGs or NOTEs
+
+* This is a new submission
+
+## Downstream dependencies
+I have also run R CMD check on downstream dependencies of insurancerating.
+All packages that I could install passed.

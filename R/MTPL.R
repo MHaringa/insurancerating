@@ -1,10 +1,10 @@
-#' Ages of 82,000 policyholders in a Motor Third Party Liability (MTPL) portfolio.
+#' Ages of 32,731 policyholders in a Motor Third Party Liability (MTPL) portfolio.
 #'
-#' A dataset containing the age, number of claims, and exposure of almost 82,000 policyholders
+#' A dataset containing the age, number of claims, and exposure of almost 33,000 policyholders
 #'
 #' @usage MTPL
 #'
-#' @format A data frame with 81,828 rows and 3 variables:
+#' @format A data frame with 32,731 rows and 4 variables:
 #' \describe{
 #'   \item{age_policyholder}{age of policyholder, in years.}
 #'   \item{nclaims}{number of claims.}
