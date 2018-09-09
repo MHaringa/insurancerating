@@ -10,6 +10,7 @@ knitr::opts_chunk$set(
   comment = "#>",
   fig.path = "README-"
 )
+
 ```
 
 # insurancerating
@@ -27,9 +28,37 @@ devtools::install_github("MHaringa/insurancerating")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+This is a basic example which shows you how to find class intervals for the continuous variable *age_policyholder*. This first block does this for the claim frequency and the second block for the claim severity. 
+
+### Claim frequency 
+Categories added to the predicted number of claims for the continuous variable *age_policyholder*.
 
 ```{r example}
-# Find class intervals for continuous numerical variables
-clustering_frequency(MTPL, nclaims, age_policyholder, exposure)
+library(insurancerating)
+clusters <- clustering_frequency(MTPL, nclaims, age_policyholder, exposure)
+
+# Show plot with predicted number of claims from the frequency model, binned by decision trees.
+clusters[[2]]
+
+# Show splits
+clusters[[3]]
+
+# Show corresponding splits for each element in age_policyholder
+head(clusters[[1]])
+```
+
+### Claim severity
+Categories added to the predicted average cost of a claim for the continuous variable *age_policyholder*. The claim severity is the amount of loss associated with an average insurance claim.
+
+```{r example2}
+clusters <- clustering_severity(MTPL, amount, age_policyholder, nclaims, color_splits = "deepskyblue")
+
+# Show plot with predicted average cost of a claim from the severity model, binned by decision trees.
+clusters[[2]]
+
+# Show splits
+clusters[[3]]
+
+# Show corresponding splits for each element in age_policyholder
+head(clusters[[1]])
 ```

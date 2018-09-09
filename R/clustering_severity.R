@@ -74,7 +74,7 @@ clustering_severity <- function(data, amount, x, nclaims, cp = 0, color_splits =
     geom_line(color = color_gam) +
     theme_bw(base_size = 12) +
     {if(show_splits) geom_vline(xintercept = split_x, color = color_splits, linetype = 2)} +
-    labs(y = "Average cost of a claim", x = x)
+    labs(y = "Predicted average cost of a claim", x = x)
 
   clusters <- c(min(counting[[2]]), unique(floor(split_x)), max(counting[[2]]))
   x_clusters <- cut(df$x, breaks = clusters, include.lowest = TRUE)
