@@ -1,4 +1,4 @@
-Package: actuarialpricing
+Package: insurancerating
 Type: Package
 Title: Analytic insurance rating techniques
 Version: 0.1.0

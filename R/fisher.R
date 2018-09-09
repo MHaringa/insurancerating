@@ -1,6 +1,6 @@
 #' Fisher's natural breaks classification
 #'
-#' @description The functions provides an interface to finding class intervals for continuous numerical variables, for example for choosing colours for plotting.
+#' @description The function provides an interface to finding class intervals for continuous numerical variables, for example for choosing colours for plotting maps.
 #'
 #' @param vec
 #' @param n
