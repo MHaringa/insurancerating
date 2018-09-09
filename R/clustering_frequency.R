@@ -1,11 +1,23 @@
-#' Breaks for continuous variables in insurance rating
+#' Breaks for continuous variables in insurance rating (frequency)
 #'
-#' @param data
-#' @param nclaims
-#' @param x
-#' @param exposure
+#' @description The function provides an interface to finding class intervals for continuous numerical variables, for example to bin the continuous factors
+#' such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way,
+#' while being easy to use in a generalized linear model (GLM).
 #'
-#' @return
+#' @param data dfd
+#' @param nclaims ada
+#' @param x ad
+#' @param exposure adf
+#' @param cp ddf
+#' @param color_splits df
+#' @param color_gam dfd
+#' @param show_splits dfdf
+#'
+#' @return A list with components:
+#' @return \item{x_clusters}{df}
+#' @return \item{gam_plot}{}
+#' @return \item{clusters}{Numerical vector with splits.}
+#'
 #' @export gam_cut
 #'
 #' @author Martin Haringa
@@ -14,8 +26,8 @@
 #' @import rpart
 #' @import ggplot2
 #'
-#' @examples
-gam_cut <- function(data, nclaims, x, exposure, cp = 0, color_splits = "red", color_gam = "steelblue", show_splits = TRUE){
+#' @examples clustering_frequency(MTPL, nclaims, age_policyholder, exposure)
+clustering_frequency <- function(data, nclaims, x, exposure, cp = 0, color_splits = "red", color_gam = "steelblue", show_splits = TRUE){
 
   # Turn into character vector
   nclaims <- deparse(substitute(nclaims))
@@ -23,6 +35,8 @@ gam_cut <- function(data, nclaims, x, exposure, cp = 0, color_splits = "red", co
   exposure <- deparse(substitute(exposure))
 
   df <- data.frame("nclaims" = data[[nclaims]], "x" = data[[x]], "exposure" = data[[exposure]])
+
+  if( sum(df$exposure == 0) > 0 ) stop('exposures are equal to zero')
 
   # Fit GAM
   gam_x <- mgcv::gam(nclaims ~ s(x), data = df, family = poisson(), offset = log(exposure))
@@ -46,16 +60,16 @@ gam_cut <- function(data, nclaims, x, exposure, cp = 0, color_splits = "red", co
   tree.ageph <- rpart::rpart(pred ~ x, data = new, weights = n, control = rpart::rpart.control(cp = cp))
   split.ageph <- sort(as.numeric(tree.ageph$splits[,4]))
 
-  pred_plot <- ggplot(data = df1, aes(x = x, y = y)) +
+  gam_plot <- ggplot(data = df1, aes(x = x, y = y)) +
     geom_line(color = color_gam) +
     theme_bw(base_size = 12) +
     {if(show_splits) geom_vline(xintercept = split.ageph, color = color_splits, linetype = 2)} +
     labs(y = "Predicted # of claims", x = x)
 
-  clusters <- c(min(counting[[2]]), floor(xf), max(counting[[2]]))
+  clusters <- c(min(counting[[2]]), floor(split.ageph), max(counting[[2]]))
   x_clusters <- cut(df$x, breaks = clusters, include.lowest = TRUE)
 
   return(list(x_clusters,
-              pred_plot,
-              split.ageph))
+              gam_plot,
+              clusters))
 }

@@ -7,13 +7,15 @@
 fisher(vec, n = 7)
 }
 \arguments{
-\item{n}{}
+\item{vec}{a continuous numerical variable}
+
+\item{n}{number of classes required (n = 7 is default)}
 }
 \value{
 Vector with clustering
 }
 \description{
-The functions provides an interface to finding class intervals for continuous numerical variables, for example for choosing colours for plotting.
+The function provides an interface to finding class intervals for continuous numerical variables, for example for choosing colours for plotting maps.
 }
 \details{
 The "fisher" style uses the algorithm proposed by W. D. Fisher (1958) and discussed by Slocum et al. (2005) as the Fisher-Jenks algorithm. This function is adopted from the classInt package.

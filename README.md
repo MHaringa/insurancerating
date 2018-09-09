@@ -1,19 +1,19 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# actuarialpricing
+# insurancerating
 
-The goal of actuarialpricing is to give analytic techniques that can be
+The goal of insurancerating is to give analytic techniques that can be
 used in insurance rating, in particular in actuarial pricing models in
 P\&C insurance.
 
 ## Installation
 
-You can install actuarialpricing from github with:
+You can install insurancerating from github with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("MHaringa/actuarialpricing")
+devtools::install_github("MHaringa/insurancerating")
 ```
 
 ## Example

@@ -2,8 +2,8 @@
 #'
 #' @description The function provides an interface to finding class intervals for continuous numerical variables, for example for choosing colours for plotting maps.
 #'
-#' @param vec
-#' @param n
+#' @param vec a continuous numerical variable
+#' @param n number of classes required (n = 7 is default)
 #'
 #' @return Vector with clustering
 #'
