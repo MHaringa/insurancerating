@@ -36,7 +36,7 @@ clusters <- clustering_frequency(MTPL, nclaims, age_policyholder, exposure)
 clusters[[2]]
 ```
 
-![](README-example-1.png)<!-- -->
+![](man/figures/example-1.png)<!-- -->
 
 ``` r
 
@@ -54,17 +54,17 @@ head(clusters[[1]])
 
 Categories added to the predicted average cost of a claim for the
 continuous variable *age\_policyholder*. The claim severity is the
-amount of loss associated with an average insurance
-claim.
+amount of loss associated with an average insurance claim.
 
 ``` r
+library(insurancerating)
 clusters <- clustering_severity(MTPL, amount, age_policyholder, nclaims, color_splits = "deepskyblue")
 
 # Show plot with predicted average cost of a claim from the severity model, binned by decision trees.
 clusters[[2]]
 ```
 
-![](README-example2-1.png)<!-- -->
+![](man/figures/example2-1.png)<!-- -->
 
 ``` r
 
