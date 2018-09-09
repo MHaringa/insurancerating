@@ -153,9 +153,17 @@ Hash: 0fafa863f1a86a1f1966e5d5b46a48b5
 Requires: httr, ini, jsonlite
 
 Package: git2r
-Source: CRAN
-Version: 0.23.0
-Hash: f7190a7a4b5c5f0983b4b6ee29ed7bc3
+Source: github
+Version: 0.23.0.9000
+Hash: b244a8a3ed9b9d39c1e19120212c9099
+GithubRepo: git2r
+GithubUsername: ropensci
+GithubRef: master
+GithubSha1: e18e8f7b568724bccba29b26f32894776884b104
+RemoteHost: https://api.github.com
+RemoteRepo: git2r
+RemoteUsername: ropensci
+RemoteSha: e18e8f7b568724bccba29b26f32894776884b104
 
 Package: glue
 Source: CRAN
