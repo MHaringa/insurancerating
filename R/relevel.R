@@ -4,15 +4,15 @@
 #' using an alphabetic ordering. If the factor is used in a regression context, then the first level will be the reference. For insurance
 #' applications it is common to specify the reference level to the level with the largest exposure.
 #'
-#' @param x Factor.
-#' @param weight Vector with weights (e.g. exposure). Should be numeric.
+#' @param x An unordered factor.
+#' @param weight A vector containing weights (e.g. exposure). Should be numeric.
 #'
 #' @author Martin Haringa
 #'
 #' @references Kaas, Rob & Goovaerts, Marc & Dhaene, Jan & Denuit, Michel. (2008). Modern Actuarial Risk Theory: Using R.
 #' doi:10.1007/978-3-540-70998-5.
 #'
-#' @return Factor.
+#' @return A factor of the same length as x.
 #' @export biggest_reference
 #'
 #' @examples

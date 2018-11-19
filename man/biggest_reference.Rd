@@ -7,12 +7,12 @@
 biggest_reference(x, weight)
 }
 \arguments{
-\item{x}{Factor.}
+\item{x}{An unordered factor.}
 
-\item{weight}{Vector with weights (e.g. exposure). Should be numeric.}
+\item{weight}{A vector containing weights (e.g. exposure). Should be numeric.}
 }
 \value{
-Factor.
+A factor of the same length as x.
 }
 \description{
 This function specifies the first level of a factor to the level with the largest exposure. Levels of factors are sorted
