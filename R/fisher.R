@@ -19,8 +19,7 @@
 #' @export fisher
 fisher <- function(vec, n = 7){
   cluster <- classIntervals(vec, n = n, style = 'fisher', intervalClosure = 'right')[[2]]
-  vec_cut <- cut(vec, breaks = cluster, include.lowest = TRUE, dig.lab = 2)
-  return(vec_cut)
+  cut(vec, breaks = cluster, include.lowest = TRUE, dig.lab = 2)
 }
 
 
