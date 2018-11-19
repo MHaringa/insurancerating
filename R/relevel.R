@@ -1,17 +1,29 @@
-#' Relevel factor to biggest group
+#' Specify first level of a factor to the level with the largest exposure.
 #'
-#' @description Argument for setting the reference group to the biggest group in linear regression.
+#' @description This function specifies the first level of a factor to the level with the largest exposure. Levels of factors are sorted
+#' using an alphabetic ordering. If the factor is used in a regression context, then the first level will be the reference. For insurance
+#' applications it is common to specify the reference level to the level with the largest exposure.
 #'
-#' @param x A vector
-#' @param exposure A vector with exposures
+#' @param x A factor.
+#' @param weight Vector with weights (e.g. exposure). Should be numeric.
 #'
-#' @return A factor with releveled levels
-#' @export big.ref
+#' @author Martin Haringa
 #'
-#' @examples mtcars2 <- mtcars1 %>%
-#' mutate_if(is.factor, funs(big.ref(., qsec)))
-big.ref <- function(x, exposure) {
-  counts <- sort(tapply(exposure, x, FUN = sum), decreasing = TRUE)
+#' @references Kaas, Rob & Goovaerts, Marc & Dhaene, Jan & Denuit, Michel. (2008). Modern Actuarial Risk Theory: Using R.
+#' doi:10.1007/978-3-540-70998-5.
+#'
+#' @return A factor
+#' @export biggest_reference
+#'
+#' @examples
+#' \dontrun{
+#' df <- chickwts %>%
+#' mutate_if(is.factor, funs(big.ref(., weight)))
+#' }
+biggest_reference <- function(x, weight) {
+  if(!is.numeric(weight)) weight <- is.numeric(weight)
+  counts <- sort(tapply(weight, x, FUN = sum), decreasing = TRUE)
   relevel(x, ref = names(counts)[1])
 }
+
 
