@@ -2,17 +2,17 @@
 % Please edit documentation in R/relevel.R
 \name{biggest_reference}
 \alias{biggest_reference}
-\title{Specify first level of a factor to the level with the largest exposure.}
+\title{Specify first level of a factor to the level with the largest exposure}
 \usage{
 biggest_reference(x, weight)
 }
 \arguments{
-\item{x}{A factor.}
+\item{x}{Factor.}
 
 \item{weight}{Vector with weights (e.g. exposure). Should be numeric.}
 }
 \value{
-A factor
+Factor.
 }
 \description{
 This function specifies the first level of a factor to the level with the largest exposure. Levels of factors are sorted
@@ -22,7 +22,8 @@ applications it is common to specify the reference level to the level with the l
 \examples{
 \dontrun{
 df <- chickwts \%>\%
-mutate_if(is.factor, funs(big.ref(., weight)))
+mutate_if(is.character, as.factor) \%>\%
+mutate_if(is.factor, funs(biggest_reference(., weight)))
 }
 }
 \references{
