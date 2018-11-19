@@ -1,4 +1,4 @@
-#' Specify first level of a factor to the level with the largest exposure
+#' Set reference group to the group with largest exposure
 #'
 #' @description This function specifies the first level of a factor to the level with the largest exposure. Levels of factors are sorted
 #' using an alphabetic ordering. If the factor is used in a regression context, then the first level will be the reference. For insurance

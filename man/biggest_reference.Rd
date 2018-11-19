@@ -2,7 +2,7 @@
 % Please edit documentation in R/relevel.R
 \name{biggest_reference}
 \alias{biggest_reference}
-\title{Specify first level of a factor to the level with the largest exposure}
+\title{Set reference group to the group with largest exposure}
 \usage{
 biggest_reference(x, weight)
 }
