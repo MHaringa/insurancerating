@@ -26,6 +26,7 @@
 #'
 #' @import mgcv
 #' @importFrom stats poisson
+#' @importFrom stats aggregate
 #'
 #' @examples gam_frequency(MTPL, nclaims, age_policyholder, exposure)
 gam_frequency <- function(data, nclaims, x, exposure, accuracy_x = 1){
@@ -48,5 +49,5 @@ gam_frequency <- function(data, nclaims, x, exposure, accuracy_x = 1){
   # Fit GAM
   gam_x <- mgcv::gam(nclaims ~ s(x), data = df, family = poisson(), offset = log(exposure))
 
-  return(df)
+  return(gam_x)
 }

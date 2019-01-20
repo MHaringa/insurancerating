@@ -12,6 +12,8 @@
 #' @references Kaas, Rob & Goovaerts, Marc & Dhaene, Jan & Denuit, Michel. (2008). Modern Actuarial Risk Theory: Using R.
 #' doi:10.1007/978-3-540-70998-5.
 #'
+#' @importFrom stats relevel
+#'
 #' @return A factor of the same length as x.
 #' @export biggest_reference
 #'

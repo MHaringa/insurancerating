@@ -30,34 +30,21 @@ variable *age\_policyholder*.
 
 ``` r
 library(insurancerating)
-clusters <- clustering_frequency(MTPL, nclaims, age_policyholder, exposure)
+gam_x <- gam_frequency(MTPL, nclaims, age_policyholder, exposure)
 
-# Show plot with predicted number of claims from the frequency model, binned by decision trees.
-clusters[[2]]
-
-# Show splits
-clusters[[3]]
-
-# Show corresponding splits for each element in age_policyholder
-head(clusters[[1]])
+# Show plot with predicted number of claims from the frequency model.
+gam_frequency_plot(gam_x)
 ```
 
-### Claim severity
-
-Categories added to the predicted average cost of a claim for the
-continuous variable *age\_policyholder*. The claim severity is the
-amount of loss associated with an average insurance claim.
+![](man/figures/example-1.png)<!-- -->
 
 ``` r
-library(insurancerating)
-clusters <- clustering_severity(MTPL, amount, age_policyholder, nclaims, color_splits = "deepskyblue")
 
-# Show plot with predicted average cost of a claim from the severity model, binned by decision trees.
-clusters[[2]]
-
-# Show splits
-clusters[[3]]
+# Determine splits
+clusters <- gam_frequency_clusters(gam_x)
 
 # Show corresponding splits for each element in age_policyholder
-head(clusters[[1]])
+gam_frequency_clusters_plot(gam_x, clusters)
 ```
+
+![](man/figures/example-2.png)<!-- -->

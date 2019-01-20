@@ -33,7 +33,7 @@ This is a basic example which shows you how to find class intervals for the cont
 ### Claim frequency 
 Categories added to the predicted number of claims for the continuous variable *age_policyholder*.
 
-```{r example, eval = FALSE, fig.path = "man/figures/"}
+```{r example, eval = TRUE, fig.path = "man/figures/"}
 library(insurancerating)
 gam_x <- gam_frequency(MTPL, nclaims, age_policyholder, exposure)
 

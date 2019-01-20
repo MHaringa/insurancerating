@@ -1,1 +1,1 @@
-globalVariables(c("n", "y"))
+globalVariables(c("n", "y", "x"))
