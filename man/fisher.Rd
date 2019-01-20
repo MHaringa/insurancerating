@@ -23,7 +23,7 @@ The "fisher" style uses the algorithm proposed by W. D. Fisher (1958) and discus
 \references{
 Bivand, R. (2018). classInt: Choose Univariate Class Intervals. R package version 0.2-3. \url{https://CRAN.R-project.org/package=classInt}
 
-Fisher, W. D. 1958 "On grouping for maximum homogeneity", Journal of the American Statistical Association, 53, pp. 789–798 \url{http://lib.stat.cmu.edu/cmlib/src/cluster/fish.f}
+Fisher, W. D. 1958 "On grouping for maximum homogeneity", Journal of the American Statistical Association, 53, pp. 789–798.
 }
 \author{
 Martin Haringa
