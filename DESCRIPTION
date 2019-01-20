@@ -8,11 +8,10 @@ Description: Methods for insurance rating. In particular, it can be used to dete
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
 Imports: 
     classInt,
     ggplot2,
     mgcv,
     rpart
 Depends: R (>= 3.3)
-
