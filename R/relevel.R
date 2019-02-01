@@ -19,7 +19,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' library(tidyverse)
+#' library(dplyr)
 #' df <- chickwts %>%
 #' mutate_if(is.character, as.factor) %>%
 #' mutate_if(is.factor, funs(biggest_reference(., weight)))
