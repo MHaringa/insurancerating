@@ -15,7 +15,11 @@ knitr::opts_chunk$set(
 
 # insurancerating
 
-The goal of insurancerating is to give analytic techniques that can be used in insurance rating. In particular, the methods can be used to construct tariff classes in P&C insurance. 
+The goal of insurancerating is to give analytic techniques that can be used in insurance rating. It provides a data driven strategy for the construction of 
+tariff classes in P&C insurance. The goal is to bin the continuous factors such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way, while being easy to use in a generalized linear model (GLM).
+
+It also adds functionality showing additional lines for the reference categories in the levels of the coefficients in the output of a generalized linear regression analysis. In addition it implements a procedure determining the level of a factor with the largest exposure, 
+and thereafter changing the base level of the factor to this level. 
 
 ## Installation
 
@@ -27,19 +31,42 @@ devtools::install_github("MHaringa/insurancerating")
 ```
 
 ## Example
+This is a basic example which shows the techniques provided in insurancerating. 
 
-This is a basic example which shows you how to construct tariff classes for the variable *age_policyholder* in the MTPL dataseet. 
+The first part shows how to construct tariff classes for the variable *age_policyholder* in the MTPL dataset: 
 
-
-```{r example, eval = TRUE, fig.path = "man/figures/"}
+```{r example, eval = TRUE, fig.path = "man/figures/", message = FALSE, warning = FALSE}
 library(insurancerating)
 library(ggplot2)
+library(dplyr)
 
 x <- construct_tariff_classes(data = MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure)
+```
 
-# Show tariff classes
+Show tariff classes: 
+
+```{r plaatje, eval = TRUE, fig.path = "man/figures/"}
 autoplot(x)
+```
 
+The second part adds the constructed tariff classes for the variable *age_policyholder* to the dataset, and sets the base level of the factor *age_policyholder* to the level with the largest exposure. In this example the class for ages (35,52], which contains the largest exposure. 
+
+```{r example2, eval = TRUE, message = FALSE, warning = FALSE}
+
+dat <- MTPL %>%
+  mutate(age_policyholder_class = x$tariff_classes) %>%
+  mutate_if(is.character, as.factor) %>%
+  mutate_if(is.factor, funs(biggest_reference(., exposure)))
+
+str(dat)
+
+```
+
+The last part is to fit a *generalized linear model*. The function rating_factors prints the output including the reference group.
+
+```{r example3, eval = TRUE}
+model <- glm(nclaims ~ age_policyholder_class, offset = log(exposure), family = "poisson", data = dat)
+rating_factors(model)
 ```
 
 

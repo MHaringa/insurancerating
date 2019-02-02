@@ -7,7 +7,8 @@
 #' @param exponentiate Logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.
 #'
 #' @return data.frame
-#' @export rating_factors
+#'
+#' @importFrom stats dummy.coef
 #'
 #' @details This function is adopted from the dummy.coef{stats} function. Our adoption prints a data.frame as output.
 #'
@@ -15,11 +16,7 @@
 #'
 #' @examples g1 <- glm(nclaims ~ age_policyholder, family = "poisson", data = MTPL)
 #' rating_factors(g1)
-remove_duplicates <- function(x){
-  d <- unlist(strsplit(x, split = "\\."))
-  paste(unique(d), collapse = ' ')
-}
-
+#' @export rating_factors
 rating_factors <- function(model, colname = "estimate", exponentiate = TRUE){
 
   coefs <- dummy.coef(model)
@@ -32,7 +29,7 @@ rating_factors <- function(model, colname = "estimate", exponentiate = TRUE){
     coefs_df[,1] <- exp(coefs_df[,1])
   }
 
-  term_list <- lapply(coefs_df$term, remove_duplicates)
+  term_list <- lapply(coefs_df$term, function(x) paste(unique(unlist(strsplit(x, split = "\\."))), collapse = ' '))
   coefs_df$term <- as.vector(do.call(rbind, term_list))
 
   return(coefs_df[,2:1])

@@ -11,8 +11,11 @@ There were no ERRORs, WARNINGs or NOTEs
 ## Resubmission
 This is a resubmission. In this version I have:
 
-* Added references to the literature
-* Included examples 
+* Updated description in DESCRIPTION file
+* Created new function rating_factors
+* Rewritten functions and documentation for construction of tariff classes
+* Added references to literature in details section
+* Added dois to references
 
 ## Downstream dependencies
 I have also run R CMD check on downstream dependencies of insurancerating.

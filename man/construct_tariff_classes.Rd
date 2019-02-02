@@ -37,7 +37,7 @@ while being easy to use in a generalized linear model (GLM).
 \details{
 Poisson GAMs are used for fitting the number of claims. The logarithm of the exposure is included as an offset,
 such that the expected number of claims is proportional to the exposure. Subsequently, regression trees are used as a
-technique to bin the resulting GAM estimates into risk homogeneous categories.
+technique to bin the resulting GAM estimates into risk homogeneous categories. This method is based on the work by Antonio and Valdez (2012).
 }
 \examples{
 construct_tariff_classes(MTPL, nclaims, age_policyholder, exposure)
