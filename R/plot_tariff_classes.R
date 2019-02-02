@@ -1,16 +1,16 @@
 #' Automatically create a ggplot for objects obtained from construct_tariff_classes()
 #'
-#' @description Takes a fitted gam object produced by \code{construct_tariff_classes()} and plots the component smooth functions that make it up,
-#' on the scale of the predicted number of claims.
+#' @description Takes an object produced by \code{construct_tariff_classes()}, and plots the predicted claim frequency.
+#' In addition the constructed tariff classes are shown.
 #'
-#' @param gam_x A fitted gam object as produced by \code{construct_tariff_classes()}.
-#' @param conf.int Determines whether 95\% confidence intervals will be plotted. The default is \code{conf.int = FALSE}.
-#' @param clusters Numerical vector with splits as produced by \code{construct_tariff_classes()}.
-#' @param color_gam A color can be specified either by name (e.g.: "red") or by hexadecimal code (e.g. : "#FF1234") (default is "steelblue").
-#' @param color_splits change the color of the splits in the graph ("grey50" is default).
-#' @param xstep Set step size for horizontal axis (default is \code{10}).
+#' @param x an object as produced by \code{construct_tariff_classes()}
+#' @param conf.int determines whether 95\% confidence intervals will be plotted. The default is \code{conf.int = FALSE}
+#' @param clusters numerical vector with splits as produced by \code{construct_tariff_classes()}
+#' @param color_gam a color can be specified either by name (e.g.: "red") or by hexadecimal code (e.g. : "#FF1234") (default is "steelblue")
+#' @param color_splits change the color of the splits in the graph ("grey50" is default)
+#' @param xstep set step size for horizontal axis (default is \code{10})
 #'
-#' @return Produces plot showing the smooth components of a fitted GAM.
+#' @return a ggplot object
 #'
 #' @import ggplot2
 #'
@@ -22,10 +22,10 @@
 #' @author Martin Haringa
 #'
 #' @export
-autoplot.insurancerating <- function(gam_x, conf.int = FALSE, clusters = TRUE, color_gam = "steelblue", color_splits = "grey50", xstep = 10){
-  gamcluster <- gam_x[[1]]
-  df <- gam_x[[2]]
-  xlab <- gam_x[[3]]
+autoplot.insurancerating <- function(x, conf.int = FALSE, clusters = TRUE, color_gam = "steelblue", color_splits = "grey50", xstep = 10){
+  gamcluster <- x[[1]]
+  df <- x[[2]]
+  xlab <- x[[3]]
 
   gam_plot <- ggplot(data = df, aes(x = x, y = predicted)) +
     geom_line(color = color_gam) +

@@ -4,10 +4,11 @@ Title: Analytic Insurance Rating Techniques
 Version: 0.3.0
 Author: Martin Haringa
 Maintainer: Martin Haringa <mtharinga@gmail.com>
-Description: Methods for insurance rating. It provides a data driven strategy for the construction of insurance tariff classes. 
-    It also adds functionality showing additional lines for the reference categories in the results of a generalized linear regression 
-    analysis. In addition it implements a procedure determining the level of a factor with the largest exposure, and thereafter changing 
-    the base level of the factor to this level. 
+Description: Methods for insurance rating. It provides a data driven strategy for the construction of 
+    insurance tariff classes. It also adds functionality showing additional lines for the reference 
+    categories in the levels of the coefficients in the output of a generalized linear regression analysis. 
+    In addition it implements a procedure determining the level of a factor with the largest exposure, 
+    and thereafter changing the base level of the factor to this level. 
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true

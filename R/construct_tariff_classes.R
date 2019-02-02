@@ -1,21 +1,21 @@
 #' Construct insurance tariff classes
 #'
-#' @description The function provides an interface to finding class intervals for continuous numerical variables, for example to bin the continuous factors
+#' @description The function provides an interface to finding class intervals for continuous numerical variables. The goal is to bin the continuous factors
 #' such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way,
 #' while being easy to use in a generalized linear model (GLM).
 #'
-#' @param data data.frame of an insurance portfolio.
-#' @param nclaims column in \code{data} with number of claims.
-#' @param x column in \code{data} with continuous risk factor.
-#' @param exposure column in \code{data} with exposure.
+#' @param data data.frame of an insurance portfolio
+#' @param nclaims column in \code{data} with number of claims
+#' @param x column in \code{data} with continuous risk factor
+#' @param exposure column in \code{data} with exposure
 #' @param approximation if TRUE, elements in \code{nclaims} and \code{exposure} are aggregated to the level of unique elements in \code{x}.
 #' Approximation should be used for large insurance portfolios to avoid excessive computation times (default is TRUE).
 #' @param cp 	complexity parameter. The complexity parameter (cp) is used to control the number of tariff classes. Higher values for \code{cp}
 #' render less tariff classes. (\code{cp} = 0 is default).
 #'
-#' @details Eerst iets over gams. Regression trees are used as a technique to perform the binning. Here regression trees from the \code{rpart} package are used.
-#' A Poisson distribution is assumed for the number of claims. The logarithm of the exposure is included in the model as an offset,
-#' such that the expected number of claims is proportional to exposure.
+#' @details Poisson GAMs are used for fitting the number of claims. The logarithm of the exposure is included as an offset,
+#' such that the expected number of claims is proportional to the exposure. Subsequently, regression trees are used as a
+#' technique to bin the resulting GAM estimates into risk homogeneous categories.
 #'
 #' @import mgcv
 #' @import rpart
@@ -28,16 +28,18 @@
 #' @importFrom stats predict
 #' @importFrom stats setNames
 #'
-#' @references Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a priori and a posteriori risk classification in insurance. Advances in Statistical Analysis, 96(2):187–224.
-#' @references Therneau, T. and Atkinson, B. (2018). rpart: Recursive Partitioning and Regression Trees. R package version 4.1-13. \url{https://CRAN.R-project.org/package=rpart}
-#' @references Wood, S.N. (2011) Fast stable restricted maximum likelihood and marginal likelihood estimation of semiparametric generalized linear models. Journal of the Royal Statistical Society (B) 73(1):3-36
+#' @references Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a priori and a posteriori risk classification in insurance.
+#' Advances in Statistical Analysis, 96(2):187–224. doi:10.1007/s10182-011-0152-7.
+#' @references Therneau, T. and Atkinson, B. (2018). rpart: Recursive Partitioning and Regression Trees.
+#' R package version 4.1-13. \url{https://CRAN.R-project.org/package=rpart}
+#' @references Wood, S.N. (2011). Fast stable restricted maximum likelihood and marginal likelihood estimation of semiparametric
+#' generalized linear models. Journal of the Royal Statistical Society (B) 73(1):3-36. doi:10.1111/j.1467-9868.2010.00749.x.
 #'
 #' @return A list with components
-#' \item{splits}{Vector with boundaries of the constructed tariff classes.}
-#' \item{prediction}{Data frame with the predicted claim frequency for each element of vector \code{x}.}
-#' \item{x}{Name of variable for which tariff classes are constructed.}
-#' \item{tariff_classes}{Values in vector \code{x} coded according to which constructed tariff class they fall.}
-#'
+#' \item{splits}{vector with boundaries of the constructed tariff classes}
+#' \item{prediction}{data frame with the predicted claim frequency for each element of vector \code{x}}
+#' \item{x}{name of variable for which tariff classes are constructed}
+#' \item{tariff_classes}{values in vector \code{x} coded according to which constructed tariff class they fall}
 #'
 #' @export construct_tariff_classes
 #' @exportClass insurancerating

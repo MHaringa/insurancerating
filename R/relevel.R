@@ -4,8 +4,8 @@
 #' using an alphabetic ordering. If the factor is used in a regression context, then the first level will be the reference. For insurance
 #' applications it is common to specify the reference level to the level with the largest exposure.
 #'
-#' @param x An unordered factor.
-#' @param weight A vector containing weights (e.g. exposure). Should be numeric.
+#' @param x an unordered factor
+#' @param weight a vector containing weights (e.g. exposure). Should be numeric.
 #'
 #' @author Martin Haringa
 #'
@@ -14,7 +14,7 @@
 #'
 #' @importFrom stats relevel
 #'
-#' @return A factor of the same length as x.
+#' @return a factor of the same length as x
 #' @export biggest_reference
 #'
 #' @examples
