@@ -16,6 +16,7 @@ This is a resubmission. In this version I have:
 * Rewritten functions and documentation for construction of tariff classes
 * Added references to literature in details section
 * Added dois to references
+* Added reference in DESCRIPTION file
 
 ## Downstream dependencies
 I have also run R CMD check on downstream dependencies of insurancerating.
