@@ -19,9 +19,9 @@
 #' doi: 10.1080/01621459.1958.10501479.
 #'
 #' @export fisher
-fisher <- function(vec, n = 7){
+fisher <- function(vec, n = 7, diglab = 2){
   cluster <- classIntervals(vec, n = n, style = 'fisher', intervalClosure = 'right')[[2]]
-  cut(vec, breaks = cluster, include.lowest = TRUE, dig.lab = 2)
+  cut(vec, breaks = cluster, include.lowest = TRUE, dig.lab = diglab)
 }
 
 
