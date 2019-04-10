@@ -1,5 +1,10 @@
+## Resubmission
+In this version I have added:
+
+* Bug fixes in rating_factors(). The names are now printed correctly in case the names contain punctuation marks. 
+
 ## Test environments
-* local OS X install, R 3.5.2
+* local OS X install, R 3.5.3
 * win-builder (devel and release)
 
 ## R CMD check results

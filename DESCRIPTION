@@ -18,7 +18,8 @@ Imports:
     classInt,
     ggplot2,
     mgcv,
-    rpart
+    rpart, 
+    stringr
 Depends: R (>= 3.3)
 Suggests: 
     testthat

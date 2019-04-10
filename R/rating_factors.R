@@ -9,6 +9,7 @@
 #' @return data.frame
 #'
 #' @importFrom stats dummy.coef
+#' @import stringr
 #'
 #' @details This function is adopted from the dummy.coef{stats} function. Our adoption prints a data.frame as output.
 #'
@@ -29,8 +30,14 @@ rating_factors <- function(model, colname = "estimate", exponentiate = TRUE){
     coefs_df[,1] <- exp(coefs_df[,1])
   }
 
-  term_list <- lapply(coefs_df$term, function(x) paste(unique(unlist(strsplit(x, split = "\\."))), collapse = ' '))
-  coefs_df$term <- as.vector(do.call(rbind, term_list))
+  names_coef <- paste(names(coefs), collapse = "|")
+  clusters <- stringr::str_remove(coefs_df$term, names_coef)
+  coefs_df$cluster <- gsub('^\\.|\\.$|\\(\\)\\.', '', clusters)
+  coefs_df$term <- stringr::str_extract(coefs_df$term, names_coef)
 
-  return(coefs_df[,2:1])
+  return(coefs_df[,c(2,3,1)])
 }
+
+
+
+
