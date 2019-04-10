@@ -4,6 +4,7 @@
 #'
 #' @param vec a continuous numerical variable
 #' @param n number of classes required (n = 7 is default)
+#' @param diglab number of digits (n = 2 is default)
 #'
 #' @return Vector with clustering
 #'
