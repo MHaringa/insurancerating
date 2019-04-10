@@ -11,7 +11,8 @@
 #' @importFrom stats dummy.coef
 #' @import stringr
 #'
-#' @details This function is adopted from the dummy.coef{stats} function. Our adoption prints a data.frame as output.
+#' @details This function is adopted from the dummy.coef{stats} function. Our adoption prints a data.frame as output. Categorical variables
+#'     should be changed to factors in the data.frame used to fit the (generalized) linear model.
 #'
 #' @author Martin Haringa
 #'
