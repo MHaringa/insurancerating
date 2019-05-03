@@ -90,7 +90,7 @@ construct_tariff_classes <- function(data, nclaims, x, exposure, approximation =
   tree_x <- rpart::rpart(pred ~ x, data = new, weights = n, control = rpart::rpart.control(cp = cp))
   split_x <- sort(as.numeric(tree_x$splits[,4]))
   splits <- c(min(counting[[2]]), unique(floor(split_x)), max(counting[[2]]))
-  cuts <- cut(data[[x]], breaks = splits, include.lowest = TRUE)
+  cuts <- cut(data[[x]], breaks = splits, include.lowest = TRUE, dig.lab = 6)
 
   return(structure(list(splits = splits, prediction = out, x = x, tariff_classes = cuts), class = "insurancerating"))
 }

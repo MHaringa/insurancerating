@@ -78,13 +78,13 @@ group.
 ``` r
 model <- glm(nclaims ~ age_policyholder_class, offset = log(exposure), family = "poisson", data = dat)
 rating_factors(model)
-#>                             term  estimate
-#> 1                    (Intercept) 0.1377646
-#> 2 age_policyholder_class (35,52] 1.0000000
-#> 3 age_policyholder_class [18,28] 1.6929529
-#> 4 age_policyholder_class (28,35] 1.1454731
-#> 5 age_policyholder_class (52,59] 0.8315476
-#> 6 age_policyholder_class (59,66] 0.7361614
-#> 7 age_policyholder_class (66,82] 0.6918582
-#> 8 age_policyholder_class (82,95] 0.8843903
+#>                     term     cluster  estimate
+#> 1              Intercept (Intercept) 0.1377646
+#> 2 age_policyholder_class     (35,52] 1.0000000
+#> 3 age_policyholder_class     [18,28] 1.6929529
+#> 4 age_policyholder_class     (28,35] 1.1454731
+#> 5 age_policyholder_class     (52,59] 0.8315476
+#> 6 age_policyholder_class     (59,66] 0.7361614
+#> 7 age_policyholder_class     (66,82] 0.6918582
+#> 8 age_policyholder_class     (82,95] 0.8843903
 ```
