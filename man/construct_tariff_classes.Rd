@@ -4,8 +4,9 @@
 \alias{construct_tariff_classes}
 \title{Construct insurance tariff classes}
 \usage{
-construct_tariff_classes(data, nclaims, x, exposure,
-  approximation = TRUE, cp = 0)
+construct_tariff_classes(data, nclaims, x, exposure, amount = NULL,
+  model = "frequency", approximation = TRUE, alpha = 0,
+  niterations = 10000, ntrees = 200, seed = 1)
 }
 \arguments{
 \item{data}{data.frame of an insurance portfolio}
@@ -16,11 +17,21 @@ construct_tariff_classes(data, nclaims, x, exposure,
 
 \item{exposure}{column in \code{data} with exposure}
 
+\item{amount}{column in \code{data} with claim amount}
+
+\item{model}{choose either 'frequency' (using Poisson GAM) or 'severity' (using lognormal GAM). (model = 'frequency' is default).}
+
 \item{approximation}{if TRUE, elements in \code{nclaims} and \code{exposure} are aggregated to the level of unique elements in \code{x}.
 Approximation should be used for large insurance portfolios to avoid excessive computation times (default is TRUE).}
 
-\item{cp}{complexity parameter. The complexity parameter (cp) is used to control the number of tariff classes. Higher values for \code{cp}
-render less tariff classes. (\code{cp} = 0 is default).}
+\item{alpha}{complexity parameter. The complexity parameter (alpha) is used to control the number of tariff classes. Higher values for \code{alpha}
+render less tariff classes. (\code{alpha} = 0 is default).}
+
+\item{niterations}{in case the run does not converge, it terminates after a specified number of iterations defined by niterations.}
+
+\item{ntrees}{the number of trees in the population.}
+
+\item{seed}{an numeric seed to initialize the random number generator (for reproducibility).}
 }
 \value{
 A list with components
@@ -28,6 +39,7 @@ A list with components
 \item{prediction}{data frame with the predicted claim frequency for each element of vector \code{x}}
 \item{x}{name of variable for which tariff classes are constructed}
 \item{tariff_classes}{values in vector \code{x} coded according to which constructed tariff class they fall}
+\item{model}{either 'frequency' or 'severity'}
 }
 \description{
 The function provides an interface to finding class intervals for continuous numerical variables. The goal is to bin the continuous factors
@@ -35,14 +47,18 @@ such that categorical risk factors result which capture the effect of the covari
 while being easy to use in a generalized linear model (GLM).
 }
 \details{
-Poisson GAMs are used for fitting the number of claims. The logarithm of the exposure is included as an offset,
-such that the expected number of claims is proportional to the exposure. Subsequently, regression trees are used as a
+In the frequency model a Poisson GAM is used for fitting the number of claims. The logarithm of the exposure is included as an offset,
+such that the expected number of claims is proportional to the exposure. In the severity model a lognormal GAM is used for fitting the average cost of a claim.
+The average cost of a claim is defined as the ratio of the claim amount and the number of claims.  Subsequently, evolutionary trees are used as a
 technique to bin the resulting GAM estimates into risk homogeneous categories. This method is based on the work by Antonio and Valdez (2012).
 }
 \examples{
 construct_tariff_classes(MTPL, nclaims, age_policyholder, exposure)
 }
 \references{
+Henckaerts, R., Antonio, K., Clijsters, M. and Verbelen, R. (2018). A data driven binning strategy for the construction of insurance tariff classes.
+Scandinavian Actuarial Journal, 2018:8, 681-705. doi:10.1080/03461238.2018.1429300.
+
 Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a priori and a posteriori risk classification in insurance.
 Advances in Statistical Analysis, 96(2):187–224. doi:10.1007/s10182-011-0152-7.
 

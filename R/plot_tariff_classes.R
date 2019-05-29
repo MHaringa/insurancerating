@@ -26,6 +26,7 @@ autoplot.insurancerating <- function(x, conf.int = FALSE, clusters = TRUE, color
   gamcluster <- x[[1]]
   df <- x[[2]]
   xlab <- x[[3]]
+  ylab <- x[[5]]
 
   gam_plot <- ggplot(data = df, aes(x = x, y = predicted)) +
     geom_line(color = color_gam) +
@@ -34,6 +35,6 @@ autoplot.insurancerating <- function(x, conf.int = FALSE, clusters = TRUE, color
     {if(isTRUE(conf.int)) geom_ribbon(aes(ymin = lwr_95, ymax = upr_95), alpha = 0.12)} +
     {if(!isTRUE(clusters)) scale_x_continuous(breaks = seq(floor(min(df$x)), ceiling(max(df$x)), by = xstep))} +
     {if(isTRUE(clusters)) scale_x_continuous(breaks = gamcluster)} +
-    labs(y = "Predicted claim frequency", x = xlab)
+    labs(y = paste0("Predicted ", ylab), x = xlab)
   return(gam_plot)
 }
