@@ -6,7 +6,8 @@
 \usage{
 \method{autoplot}{insurancerating}(x, conf.int = FALSE,
   clusters = TRUE, color_gam = "steelblue", color_splits = "grey50",
-  xstep = 10)
+  xstep = 10, add_points = FALSE, size_points = 1,
+  color_points = "black")
 }
 \arguments{
 \item{x}{an object as produced by \code{construct_tariff_classes()}}
@@ -20,6 +21,12 @@
 \item{color_splits}{change the color of the splits in the graph ("grey50" is default)}
 
 \item{xstep}{set step size for horizontal axis (default is \code{10})}
+
+\item{add_points}{add observed frequency/severity points for each level of the variable for which tariff classes are constructed}
+
+\item{size_points}{size for points (1 is default)}
+
+\item{color_points}{change the color of the points in the graph ("black" is default)}
 }
 \value{
 a ggplot object

@@ -1,3 +1,4 @@
-# insurancerating 0.4.1
+# insurancerating 0.4.2
 
-* Bug fixes in rating_factors(). The names are now printed correctly in case the names contain punctuation marks. 
+* It is now possible to also construct tariff classes for claim severity models. This can be done by choosing 'severity' as specification for the model argument in the construct_tariff_classes function. 
+

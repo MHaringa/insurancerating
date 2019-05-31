@@ -5,7 +5,7 @@
 \title{Construct insurance tariff classes}
 \usage{
 construct_tariff_classes(data, nclaims, x, exposure, amount = NULL,
-  model = "frequency", approximation = TRUE, alpha = 0,
+  pure_premium = NULL, model = "frequency", alpha = 0,
   niterations = 10000, ntrees = 200, seed = 1)
 }
 \arguments{
@@ -19,10 +19,9 @@ construct_tariff_classes(data, nclaims, x, exposure, amount = NULL,
 
 \item{amount}{column in \code{data} with claim amount}
 
-\item{model}{choose either 'frequency' (using Poisson GAM) or 'severity' (using lognormal GAM). (model = 'frequency' is default).}
+\item{pure_premium}{column in \code{data} with pure premium}
 
-\item{approximation}{if TRUE, elements in \code{nclaims} and \code{exposure} are aggregated to the level of unique elements in \code{x}.
-Approximation should be used for large insurance portfolios to avoid excessive computation times (default is TRUE).}
+\item{model}{choose either 'frequency', 'severity' or 'burning' (model = 'frequency' is default). See details section.}
 
 \item{alpha}{complexity parameter. The complexity parameter (alpha) is used to control the number of tariff classes. Higher values for \code{alpha}
 render less tariff classes. (\code{alpha} = 0 is default).}
@@ -40,6 +39,7 @@ A list with components
 \item{x}{name of variable for which tariff classes are constructed}
 \item{tariff_classes}{values in vector \code{x} coded according to which constructed tariff class they fall}
 \item{model}{either 'frequency' or 'severity'}
+\item{data}{data frame with original data aggregated on the level of the variable for which tariff classes are constructed}
 }
 \description{
 The function provides an interface to finding class intervals for continuous numerical variables. The goal is to bin the continuous factors
@@ -47,10 +47,15 @@ such that categorical risk factors result which capture the effect of the covari
 while being easy to use in a generalized linear model (GLM).
 }
 \details{
-In the frequency model a Poisson GAM is used for fitting the number of claims. The logarithm of the exposure is included as an offset,
-such that the expected number of claims is proportional to the exposure. In the severity model a lognormal GAM is used for fitting the average cost of a claim.
-The average cost of a claim is defined as the ratio of the claim amount and the number of claims.  Subsequently, evolutionary trees are used as a
-technique to bin the resulting GAM estimates into risk homogeneous categories. This method is based on the work by Antonio and Valdez (2012).
+The function provides an interface to finding class intervals for continuous numerical variables in the following three types of models: claim frequency,
+claim severity or burning cost model. The 'frequency' specification uses a Poisson GAM for fitting the number of claims. The logarithm of the exposure is included
+as an offset, sucht that the expected number of claims is proportional to the exposure. The 'severity' specification uses a lognormal GAM for fitting the average
+cost of a claim. The average cost of a claim is defined as the ratio of the claim amount and the number of claims. The number of claims is included as a weight.
+The 'burning' specification uses a lognormal GAM for fitting the pure premium of a claim. The pure premium is obtained by multiplying the estimated frequency and
+the estimated severity of claims. The word burning cost is used here as equivalent of risk premium and pure premium.
+
+Subsequently, evolutionary trees are used as a technique to bin the resulting GAM estimates into risk homogeneous categories. This method is based on the work
+by Henckaerts et al. (2018). See Grubinger et al. (2014) for more details on the various parameters that control aspects of the evtree fit.
 }
 \examples{
 construct_tariff_classes(MTPL, nclaims, age_policyholder, exposure)

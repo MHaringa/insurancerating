@@ -1,10 +1,10 @@
 ## Resubmission
 In this version I have added:
 
-* Bug fixes in rating_factors(). The names are now printed correctly in case the names contain punctuation marks. 
+* Added argument in construct_tariff_classes function to construct classes for a severity model. In the previous version of this package only tariff classes for frequency models could be constructed. 
 
 ## Test environments
-* local OS X install, R 3.5.3
+* local OS X install, R 3.6.0
 * win-builder (devel and release)
 
 ## R CMD check results

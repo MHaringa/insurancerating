@@ -1,7 +1,7 @@
 Package: insurancerating
 Type: Package
 Title: Analytic Insurance Rating Techniques
-Version: 0.4.1.9000
+Version: 0.4.2
 Author: Martin Haringa
 Maintainer: Martin Haringa <mtharinga@gmail.com>
 Description: Methods for insurance rating. It provides a data driven strategy for the construction of 
@@ -22,4 +22,5 @@ Imports:
     stringr
 Depends: R (>= 3.3)
 Suggests: 
-    testthat
+    testthat, 
+    scales

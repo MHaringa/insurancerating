@@ -9,6 +9,9 @@
 #' @param color_gam a color can be specified either by name (e.g.: "red") or by hexadecimal code (e.g. : "#FF1234") (default is "steelblue")
 #' @param color_splits change the color of the splits in the graph ("grey50" is default)
 #' @param xstep set step size for horizontal axis (default is \code{10})
+#' @param add_points add observed frequency/severity points for each level of the variable for which tariff classes are constructed
+#' @param size_points size for points (1 is default)
+#' @param color_points change the color of the points in the graph ("black" is default)
 #'
 #' @return a ggplot object
 #'
@@ -22,11 +25,13 @@
 #' @author Martin Haringa
 #'
 #' @export
-autoplot.insurancerating <- function(x, conf.int = FALSE, clusters = TRUE, color_gam = "steelblue", color_splits = "grey50", xstep = 10){
+autoplot.insurancerating <- function(x, conf.int = FALSE, clusters = TRUE, color_gam = "steelblue", color_splits = "grey50",
+                                     xstep = 10, add_points = FALSE, size_points = 1, color_points = "black"){
   gamcluster <- x[[1]]
   df <- x[[2]]
   xlab <- x[[3]]
   ylab <- x[[5]]
+  points <- x[[6]]
 
   gam_plot <- ggplot(data = df, aes(x = x, y = predicted)) +
     geom_line(color = color_gam) +
@@ -35,6 +40,9 @@ autoplot.insurancerating <- function(x, conf.int = FALSE, clusters = TRUE, color
     {if(isTRUE(conf.int)) geom_ribbon(aes(ymin = lwr_95, ymax = upr_95), alpha = 0.12)} +
     {if(!isTRUE(clusters)) scale_x_continuous(breaks = seq(floor(min(df$x)), ceiling(max(df$x)), by = xstep))} +
     {if(isTRUE(clusters)) scale_x_continuous(breaks = gamcluster)} +
+    {if(isTRUE(add_points) & ylab == "frequency") geom_point(data = points, aes(x = x, y = frequency))} +
+    {if(isTRUE(add_points) & ylab == "severity") geom_point(data = points, aes(x = x, y = avg_claimsize), size = size_points, color = color_points)} +
+    {if(ylab == "severity") scale_y_continuous(labels = scales::comma)} +
     labs(y = paste0("Predicted ", ylab), x = xlab)
   return(gam_plot)
 }
