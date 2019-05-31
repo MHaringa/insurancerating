@@ -62,8 +62,8 @@ Scandinavian Actuarial Journal, 2018:8, 681-705. doi:10.1080/03461238.2018.14293
 Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a priori and a posteriori risk classification in insurance.
 Advances in Statistical Analysis, 96(2):187–224. doi:10.1007/s10182-011-0152-7.
 
-Therneau, T. and Atkinson, B. (2018). rpart: Recursive Partitioning and Regression Trees.
-R package version 4.1-13. \url{https://CRAN.R-project.org/package=rpart}
+Grubinger, T., Zeileis, A., and Pfeiffer, K.-P. (2014). evtree: Evolutionary learning of globally
+optimal classification and regression trees in R. Journal of Statistical Software, 61(1):1–29. doi:10.18637/jss.v061.i01.
 
 Wood, S.N. (2011). Fast stable restricted maximum likelihood and marginal likelihood estimation of semiparametric
 generalized linear models. Journal of the Royal Statistical Society (B) 73(1):3-36. doi:10.1111/j.1467-9868.2010.00749.x.

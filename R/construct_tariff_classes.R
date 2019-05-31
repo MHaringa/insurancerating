@@ -1,3 +1,19 @@
+#' Get splits from partykit object
+#' @param x A party object.
+#'
+get_splits <- function(x) {
+
+  lrp <- utils::getFromNamespace(".list.rules.party", "partykit")
+  splits_list <- lrp(x)
+  last_line <- unname(splits_list[length(splits_list)])
+
+  # Remove punctuation marks
+  splits_vector <- regmatches(last_line, gregexpr("[[:digit:]]+", last_line))
+
+  splits <- as.numeric(unlist(splits_vector))
+  return(splits)
+}
+
 #' Construct insurance tariff classes
 #'
 #' @description The function provides an interface to finding class intervals for continuous numerical variables. The goal is to bin the continuous factors
@@ -39,8 +55,8 @@
 #' Scandinavian Actuarial Journal, 2018:8, 681-705. doi:10.1080/03461238.2018.1429300.
 #' @references Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a priori and a posteriori risk classification in insurance.
 #' Advances in Statistical Analysis, 96(2):187–224. doi:10.1007/s10182-011-0152-7.
-#' @references Therneau, T. and Atkinson, B. (2018). rpart: Recursive Partitioning and Regression Trees.
-#' R package version 4.1-13. \url{https://CRAN.R-project.org/package=rpart}
+#' @references Grubinger, T., Zeileis, A., and Pfeiffer, K.-P. (2014). evtree: Evolutionary learning of globally
+#' optimal classification and regression trees in R. Journal of Statistical Software, 61(1):1–29. doi:10.18637/jss.v061.i01.
 #' @references Wood, S.N. (2011). Fast stable restricted maximum likelihood and marginal likelihood estimation of semiparametric
 #' generalized linear models. Journal of the Royal Statistical Society (B) 73(1):3-36. doi:10.1111/j.1467-9868.2010.00749.x.
 #'
@@ -84,8 +100,54 @@ construct_tariff_classes <- function (data, nclaims, x, exposure, amount = NULL,
     }
     if( sum(df$exposure == 0) > 0 )
       stop("Exposures should be greater than zero.")
-    gam_x <- mgcv::gam(nclaims ~ s(x), data = df, family = poisson(),
+
+    # Poisson GAM
+    gam_x <- mgcv::gam(nclaims ~ s(x),
+                       data = df,
+                       family = poisson(),
                        offset = log(exposure))
+
+    # Create invisible plot; only interested in output
+    png("temp.xyz")
+    gam0 <- plot(gam_x,
+                 se = TRUE,
+                 rug = FALSE,
+                 shift = mean(predict(gam_x)),
+                 trans = exp)
+    dev.off()
+    file.remove("temp.xyz")
+    invisible(gam0)
+
+    out <- data.frame(x = gam0[[1]]$x,
+                      predicted = exp(gam0[[1]]$fit + mean(predict(gam_x))),
+                      lwr_95 = exp(gam0[[1]]$fit - 1.96 * gam0[[1]]$se + mean(predict(gam_x))),
+                      upr_95 = exp(gam0[[1]]$fit + 1.96 * gam0[[1]]$se + mean(predict(gam_x))))
+
+    name <- gam0[[1]]$xlab
+    counting <- sort(gam0[[1]]$raw)
+    counting_name <- setNames(data.frame(counting), name)
+    pred <- as.numeric(mgcv::predict.gam(gam_x,
+                                         counting_name,
+                                         type = "response"))
+    df_new <- data.frame(counting_name, pred)
+    new <- merge(df_new, df, by = "x")
+
+    split_x <- tryCatch(
+      {
+        tree_x <- evtree::evtree(pred ~ x,
+                                 data = new,
+                                 weights = exposure,
+                                 control = evtree::evtree.control(alpha = alpha,
+                                                                  ntrees = ntrees,
+                                                                  niterations = niterations,
+                                                                  seed = seed))
+
+        get_splits(tree_x)
+
+      },
+      error = function(e) {
+        NULL
+      })
   }
 
   if(model == "severity"){
@@ -94,66 +156,68 @@ construct_tariff_classes <- function (data, nclaims, x, exposure, amount = NULL,
                      x = data[[x]],
                      exposure = data[[exposure]],
                      amount = data[[amount]])
-    if (isTRUE(approximation)) {
-      df <- aggregate(list(nclaims = df$nclaims,
-                           exposure = df$exposure,
-                           amount = df$amount),
-                      by = list(x = df$x),
-                      FUN = sum,
-                      na.rm = TRUE,
-                      na.action = NULL)
-      df$avg_claimsize <- df$amount / df$nclaims
-    }
-    gam_x <- mgcv::gam(log(avg_claimsize) ~ s(x), data = df, family = gaussian,
+
+    df <- aggregate(list(nclaims = df$nclaims,
+                         exposure = df$exposure,
+                         amount = df$amount),
+                    by = list(x = df$x),
+                    FUN = sum,
+                    na.rm = TRUE,
+                    na.action = NULL)
+
+    df <- subset(df, nclaims > 0 & amount > 0)
+
+    df$avg_claimsize <- df$amount / df$nclaims
+
+    # lognormal
+    gam_x <- mgcv::gam(log(avg_claimsize) ~ s(x),
+                       data = df,
+                       family = gaussian,
                        weights = nclaims)
+
+    png("temp.xyz")
+    gam0 <- plot(gam_x,
+                 se = TRUE,
+                 rug = FALSE,
+                 shift = mean(predict(gam_x)),
+                 trans = exp)
+    dev.off()
+    file.remove("temp.xyz")
+    invisible(gam0)
+
+    out <- data.frame(x = gam0[[1]]$x,
+                      predicted = exp(gam0[[1]]$fit + mean(predict(gam_x))),
+                      lwr_95 = exp(gam0[[1]]$fit - 1.96 * gam0[[1]]$se + mean(predict(gam_x))),
+                      upr_95 = exp(gam0[[1]]$fit + 1.96 * gam0[[1]]$se + mean(predict(gam_x))))
+
+    name <- gam0[[1]]$xlab
+    # counting <- rle(sort(gam0[[1]]$raw))
+    counting <- sort(gam0[[1]]$raw)
+    #counting_name <- setNames(data.frame(counting[[2]]), name)
+    counting_name <- setNames(data.frame(counting), name)
+    pred <- as.numeric(mgcv::predict.gam(gam_x,
+                                         counting_name,
+                                         type = "response"))
+    df_new <- data.frame(counting_name, pred)
+    new <- merge(df_new, df, by = "x")
+
+    split_x <- tryCatch(
+      {
+        tree_x <- evtree::evtree(pred ~ x,
+                                 data = new,
+                                 weights = exposure,
+                                 control = evtree::evtree.control(alpha = alpha,
+                                                                  ntrees = ntrees,
+                                                                  niterations = niterations,
+                                                                  seed = seed))
+
+        get_splits(tree_x)
+
+      },
+      error = function(e) {
+        NULL
+      })
   }
-
-  png("temp.xyz")
-  gam0 <- plot(gam_x,
-               se = TRUE,
-               rug = FALSE,
-               shift = mean(predict(gam_x)),
-               trans = exp)
-  dev.off()
-  file.remove("temp.xyz")
-  invisible(gam0)
-
-  out <- data.frame(x = gam0[[1]]$x,
-                    predicted = exp(gam0[[1]]$fit + mean(predict(gam_x))),
-                    lwr_95 = exp(gam0[[1]]$fit - 1.96 * gam0[[1]]$se + mean(predict(gam_x))),
-                    upr_95 = exp(gam0[[1]]$fit + 1.96 * gam0[[1]]$se + mean(predict(gam_x))))
-
-  name <- gam0[[1]]$xlab
-
-  counting <- rle(sort(gam0[[1]]$raw))
-
-  counting_name <- setNames(data.frame(counting[[2]]), name)
-
-  pred <- as.numeric(mgcv::predict.gam(gam_x,
-                                       counting_name,
-                                       type = "response"))
-
-  new <- data.frame(counting_name, pred, n = counting[[1]])
-
-  lrp <- utils::getFromNamespace(".list.rules.party", "partykit")
-
-  split_x <- tryCatch(
-    {
-      tree_x <- evtree::evtree(pred ~ x,
-                               data = new,
-                               weights = n,
-                               control = evtree::evtree.control(alpha = alpha,
-                                                                ntrees = ntrees,
-                                                                niterations = niterations,
-                                                                seed = seed))
-      list_splits <- lrp(tree_x)
-      all_splits <- unname(list_splits[length(list_splits)])
-      splits_vector <- regmatches(all_splits, gregexpr("[[:digit:]]+", all_splits))
-      as.numeric(unlist(splits_vector))
-    },
-    error = function(e) {
-      NULL
-    })
 
   splits <- c(min(counting[[2]]), unique(floor(split_x)), max(counting[[2]]))
   cuts <- cut(data[[x]], breaks = splits, include.lowest = TRUE)
