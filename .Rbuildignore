@@ -8,3 +8,4 @@
 ^README-.*\.png$
 ^temp.xyz
 ^README\.md$
+^revdep$
