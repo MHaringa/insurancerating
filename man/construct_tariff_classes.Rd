@@ -49,7 +49,7 @@ while being easy to use in a generalized linear model (GLM).
 \details{
 The function provides an interface to finding class intervals for continuous numerical variables in the following three types of models: claim frequency,
 claim severity or burning cost model. The 'frequency' specification uses a Poisson GAM for fitting the number of claims. The logarithm of the exposure is included
-as an offset, sucht that the expected number of claims is proportional to the exposure. The 'severity' specification uses a lognormal GAM for fitting the average
+as an offset, such that the expected number of claims is proportional to the exposure. The 'severity' specification uses a lognormal GAM for fitting the average
 cost of a claim. The average cost of a claim is defined as the ratio of the claim amount and the number of claims. The number of claims is included as a weight.
 The 'burning' specification uses a lognormal GAM for fitting the pure premium of a claim. The pure premium is obtained by multiplying the estimated frequency and
 the estimated severity of claims. The word burning cost is used here as equivalent of risk premium and pure premium.
