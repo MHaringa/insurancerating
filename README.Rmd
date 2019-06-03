@@ -35,28 +35,49 @@ This is a basic example which shows the techniques provided in insurancerating.
 
 The first part shows how to construct tariff classes for the variable *age_policyholder* in the MTPL dataset: 
 
-```{r example, eval = TRUE, fig.path = "man/figures/", message = FALSE, warning = FALSE}
+```{r example, eval = TRUE, message = FALSE, warning = FALSE}
 library(insurancerating)
 library(ggplot2)
 library(dplyr)
 
-x <- construct_tariff_classes(data = MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure)
+# Claim frequency classes
+age_policyholder_frequency <- construct_tariff_classes(data = MTPL, 
+                                                       nclaims = nclaims, 
+                                                       x = age_policyholder, 
+                                                       exposure = exposure)
+
+# Claim severity classes
+age_policyholder_severity <- construct_tariff_classes(data = MTPL, 
+                                                      nclaims = nclaims, 
+                                                      x = age_policyholder, 
+                                                      exposure = exposure, 
+                                                      amount = amount, 
+                                                      model = "severity")
 ```
 
-Show tariff classes: 
+Show classes for the claim frequency (the points show the ratio between the observed number of claims and exposure for each age): 
 
-```{r plaatje, eval = TRUE, fig.path = "man/figures/"}
-autoplot(x)
+```{r figfreq, eval = TRUE}
+autoplot(age_policyholder_frequency, add_points = TRUE)
 ```
 
-The second part adds the constructed tariff classes for the variable *age_policyholder* to the dataset, and sets the base level of the factor *age_policyholder* to the level with the largest exposure. In this example the class for ages (35,52], which contains the largest exposure. 
+The figure shows that younger policyholders have a higer risk profile. The fitted GAM is lower than might be expected from the observed claim frequency for policyholders of age 19. This is because there are very few young policyholders of age 19 present in the portfolio. 
+
+Show classes for the claim severity: 
+
+```{r figsev, eval = TRUE}
+autoplot(age_policyholder_severity, add_points = TRUE)
+```
+
+The second part adds the constructed tariff classes for the variable *age_policyholder* to the dataset, and sets the base level of the factor *age_policyholder* to the level with the largest exposure. In this example the class for ages (39,50], which contains the largest exposure. 
 
 ```{r example2, eval = TRUE, message = FALSE, warning = FALSE}
 
 dat <- MTPL %>%
-  mutate(age_policyholder_class = x$tariff_classes) %>%
+  mutate(age_policyholder_freq_cat = age_policyholder_frequency$tariff_classes) %>%
+  mutate(age_policyholder_sev_cat = age_policyholder_severity$tariff_classes) %>%
   mutate_if(is.character, as.factor) %>%
-  mutate_if(is.factor, funs(biggest_reference(., exposure)))
+  mutate_if(is.factor, list(~biggest_reference(., exposure)))
 
 str(dat)
 
@@ -65,7 +86,7 @@ str(dat)
 The last part is to fit a *generalized linear model*. The function rating_factors prints the output including the reference group.
 
 ```{r example3, eval = TRUE}
-model <- glm(nclaims ~ age_policyholder_class, offset = log(exposure), family = "poisson", data = dat)
+model <- glm(nclaims ~ age_policyholder_freq_cat, offset = log(exposure), family = "poisson", data = dat)
 rating_factors(model)
 ```
 
