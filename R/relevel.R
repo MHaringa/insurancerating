@@ -22,7 +22,7 @@
 #' library(dplyr)
 #' df <- chickwts %>%
 #' mutate_if(is.character, as.factor) %>%
-#' mutate_if(is.factor, funs(biggest_reference(., weight)))
+#' mutate_if(is.factor, list(~biggest_reference(., weight)))
 #' }
 biggest_reference <- function(x, weight) {
   if(!is.numeric(weight)) weight <- is.numeric(weight)

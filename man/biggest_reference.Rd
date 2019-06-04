@@ -24,7 +24,7 @@ applications it is common to specify the reference level to the level with the l
 library(dplyr)
 df <- chickwts \%>\%
 mutate_if(is.character, as.factor) \%>\%
-mutate_if(is.factor, funs(biggest_reference(., weight)))
+mutate_if(is.factor, list(~biggest_reference(., weight)))
 }
 }
 \references{

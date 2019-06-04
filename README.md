@@ -18,7 +18,13 @@ and thereafter changing the base level of the factor to this level.
 
 ## Installation
 
-You can install insurancerating from github with:
+Install insurancerating from CRAN:
+
+``` r
+install.packages("insurancerating")
+```
+
+Or the development version from GitHub:
 
 ``` r
 # install.packages("devtools")
@@ -62,7 +68,7 @@ autoplot(age_policyholder_frequency, add_points = TRUE)
 
 ![](README-figfreq-1.png)<!-- -->
 
-The figure shows that younger policyholders have a higer risk profile.
+The figure shows that younger policyholders have a higher risk profile.
 The fitted GAM is lower than might be expected from the observed claim
 frequency for policyholders of age 19. This is because there are very
 few young policyholders of age 19 present in the portfolio.
@@ -78,8 +84,8 @@ autoplot(age_policyholder_severity, add_points = TRUE)
 The second part adds the constructed tariff classes for the variable
 *age\_policyholder* to the dataset, and sets the base level of the
 factor *age\_policyholder* to the level with the largest exposure. In
-this example the class for ages (39,50\], which contains the largest
-exposure.
+this example for claim frequency the class for ages (39,50\], which
+contains the largest exposure.
 
 ``` r
 
