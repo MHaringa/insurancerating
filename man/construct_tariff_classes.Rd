@@ -6,7 +6,7 @@
 \usage{
 construct_tariff_classes(data, nclaims, x, exposure, amount = NULL,
   pure_premium = NULL, model = "frequency", alpha = 0,
-  niterations = 10000, ntrees = 200, seed = 1)
+  niterations = 10000, ntrees = 200, seed = 1, round_x = NULL)
 }
 \arguments{
 \item{data}{data.frame of an insurance portfolio}
@@ -31,6 +31,8 @@ render less tariff classes. (\code{alpha} = 0 is default).}
 \item{ntrees}{the number of trees in the population.}
 
 \item{seed}{an numeric seed to initialize the random number generator (for reproducibility).}
+
+\item{round_x}{round elements in column \code{x} to multiple of \code{round_x}. This gives a speed enhancement for data containing many levels for \code{x}.}
 }
 \value{
 A list with components

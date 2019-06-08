@@ -32,6 +32,7 @@ get_splits <- function(x) {
 #' @param niterations in case the run does not converge, it terminates after a specified number of iterations defined by niterations.
 #' @param ntrees the number of trees in the population.
 #' @param seed an numeric seed to initialize the random number generator (for reproducibility).
+#' @param round_x round elements in column \code{x} to multiple of \code{round_x}. This gives a speed enhancement for data containing many levels for \code{x}.
 #'
 #' @details The function provides an interface to finding class intervals for continuous numerical variables in the following three types of models: claim frequency,
 #' claim severity or burning cost model. The 'frequency' specification uses a Poisson GAM for fitting the number of claims. The logarithm of the exposure is included
@@ -79,7 +80,7 @@ get_splits <- function(x) {
 #'
 #' @examples construct_tariff_classes(MTPL, nclaims, age_policyholder, exposure)
 construct_tariff_classes <- function (data, nclaims, x, exposure, amount = NULL, pure_premium = NULL, model = "frequency",
-                                                  alpha = 0, niterations = 10000, ntrees = 200, seed = 1) {
+                                                  alpha = 0, niterations = 10000, ntrees = 200, seed = 1, round_x = NULL) {
   if (nrow(data) < 10)
     stop("At least 10 datapoints are required. The spline smoothers assume a default of 10 degrees of freedom.")
 
@@ -92,15 +93,15 @@ construct_tariff_classes <- function (data, nclaims, x, exposure, amount = NULL,
   amount <- deparse(substitute(amount))
   pure_premium <- deparse(substitute(pure_premium))
 
-  if ( is.character(data[[nclaims]]) ) {
+  if ( !is.numeric(data[[nclaims]]) ) {
     stop( "nclaims should be numeric" )
   }
 
-  if ( is.character(data[[x]]) ) {
+  if ( !is.numeric(data[[x]]) ) {
     stop( "x should be numeric" )
   }
 
-  if ( is.character(data[[exposure]]) ) {
+  if ( !is.numeric(data[[exposure]]) ) {
     stop( "exposure should be numeric" )
   }
 
@@ -112,6 +113,8 @@ construct_tariff_classes <- function (data, nclaims, x, exposure, amount = NULL,
         df <- data.frame(nclaims = data[[nclaims]],
                          x = data[[x]],
                          exposure = data[[exposure]])
+
+        if ( is.numeric(round_x) ) { df$x <- round(df$x / round_x) * round_x }
 
         df <- aggregate(list(nclaims = df$nclaims,
                              exposure = df$exposure),
@@ -150,6 +153,8 @@ construct_tariff_classes <- function (data, nclaims, x, exposure, amount = NULL,
                          x = data[[x]],
                          exposure = data[[exposure]],
                          amount = data[[amount]])
+
+        if ( is.numeric(round_x) ) { df$x <- round(df$x / round_x) * round_x }
 
         df <- aggregate(list(nclaims = df$nclaims,
                              exposure = df$exposure,
@@ -243,13 +248,13 @@ construct_tariff_classes <- function (data, nclaims, x, exposure, amount = NULL,
     {
       tree_x <- evtree::evtree(pred ~ x,
                                data = new,
-                               # weights = weights,
                                control = evtree::evtree.control(alpha = alpha,
                                                                 ntrees = ntrees,
                                                                 niterations = niterations,
                                                                 seed = seed))
 
-      get_splits(tree_x)
+      split_obtained <- get_splits(tree_x)
+      unique(floor(split_obtained))
 
     },
     error = function(e) {
@@ -257,7 +262,7 @@ construct_tariff_classes <- function (data, nclaims, x, exposure, amount = NULL,
     })
 
   # Add min and max to binning
-  splits <- c(min(counting), unique(floor(split_x)), max(counting))
+  splits <- c(min(counting), split_x, max(counting))
   cuts <- cut(data[[x]], breaks = splits, include.lowest = TRUE)
   return(structure(list(splits = splits,
                         prediction = out,
