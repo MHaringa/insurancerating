@@ -13,7 +13,7 @@
 #' @param size_points size for points (1 is default)
 #' @param color_points change the color of the points in the graph ("black" is default)
 #' @param rotate_labels rotate x-labels 45 degrees (this might be helpful for overlapping x-labels)
-#' @param remove_outliers remove observations above this number. This might be helpful for outliers.
+#' @param remove_outliers do not show observations above this number in the plot. This might be helpful for outliers.
 #'
 #' @return a ggplot object
 #'

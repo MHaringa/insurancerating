@@ -72,7 +72,7 @@ The figure shows that younger policyholders have a higher risk profile. The fitt
 Show classes for the claim severity: 
 
 ```{r figsev, eval = TRUE}
-autoplot(age_policyholder_severity, add_points = TRUE)
+autoplot(age_policyholder_severity, add_points = TRUE, remove_outliers = 100000)
 ```
 
 The second part adds the constructed tariff classes for the variable *age_policyholder* to the dataset, and sets the base level of the factor *age_policyholder* to the level with the largest exposure. In this example for claim frequency the class for ages (39,50], which contains the largest exposure. 

@@ -31,7 +31,7 @@
 
 \item{rotate_labels}{rotate x-labels 45 degrees (this might be helpful for overlapping x-labels)}
 
-\item{remove_outliers}{remove observations above this number. This might be helpful for outliers.}
+\item{remove_outliers}{do not show observations above this number in the plot. This might be helpful for outliers.}
 }
 \value{
 a ggplot object

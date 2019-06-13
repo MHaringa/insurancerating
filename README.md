@@ -73,10 +73,11 @@ The fitted GAM is lower than might be expected from the observed claim
 frequency for policyholders of age 19. This is because there are very
 few young policyholders of age 19 present in the portfolio.
 
-Show classes for the claim severity:
+Show classes for the claim
+severity:
 
 ``` r
-autoplot(age_policyholder_severity, add_points = TRUE)
+autoplot(age_policyholder_severity, add_points = TRUE, remove_outliers = 100000)
 ```
 
 ![](README-figsev-1.png)<!-- -->
