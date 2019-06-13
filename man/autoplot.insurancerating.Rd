@@ -7,7 +7,8 @@
 \method{autoplot}{insurancerating}(x, conf_int = FALSE,
   clusters = TRUE, color_gam = "steelblue", color_splits = "grey50",
   xstep = NULL, add_points = FALSE, size_points = 1,
-  color_points = "black", rotate_labels = FALSE)
+  color_points = "black", rotate_labels = FALSE,
+  remove_outliers = NULL)
 }
 \arguments{
 \item{x}{an object as produced by \code{construct_tariff_classes()}}
@@ -29,6 +30,8 @@
 \item{color_points}{change the color of the points in the graph ("black" is default)}
 
 \item{rotate_labels}{rotate x-labels 45 degrees (this might be helpful for overlapping x-labels)}
+
+\item{remove_outliers}{remove observations above this number. This might be helpful for outliers.}
 }
 \value{
 a ggplot object

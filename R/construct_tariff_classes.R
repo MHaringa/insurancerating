@@ -93,10 +93,6 @@ construct_tariff_classes <- function (data, nclaims, x, exposure, amount = NULL,
   amount <- deparse(substitute(amount))
   pure_premium <- deparse(substitute(pure_premium))
 
-  if ( !is.numeric(data[[nclaims]]) ) {
-    stop( "nclaims should be numeric" )
-  }
-
   if ( !is.numeric(data[[x]]) ) {
     stop( "x should be numeric" )
   }

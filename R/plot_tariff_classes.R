@@ -13,6 +13,7 @@
 #' @param size_points size for points (1 is default)
 #' @param color_points change the color of the points in the graph ("black" is default)
 #' @param rotate_labels rotate x-labels 45 degrees (this might be helpful for overlapping x-labels)
+#' @param remove_outliers remove observations above this number. This might be helpful for outliers.
 #'
 #' @return a ggplot object
 #'
@@ -27,7 +28,8 @@
 #'
 #' @export
 autoplot.insurancerating <- function(x, conf_int = FALSE, clusters = TRUE, color_gam = "steelblue", color_splits = "grey50",
-                                     xstep = NULL, add_points = FALSE, size_points = 1, color_points = "black", rotate_labels = FALSE){
+                                     xstep = NULL, add_points = FALSE, size_points = 1, color_points = "black", rotate_labels = FALSE,
+                                     remove_outliers = NULL){
   gamcluster <- x[[1]]
   df <- x[[2]]
   xlab <- x[[3]]
@@ -36,6 +38,12 @@ autoplot.insurancerating <- function(x, conf_int = FALSE, clusters = TRUE, color
 
   if(isTRUE(conf_int) & sum(df$upr_95 > 1e9) > 0){
     message("The confidence bounds are too large to show.")
+  }
+
+  if(is.numeric(remove_outliers) & isTRUE(add_points)) {
+    if (ylab == "frequency") points <- points[points$frequency < remove_outliers, ]
+    if (ylab == "severity") points <- points[points$avg_claimsize < remove_outliers, ]
+    if (ylab == "burning") points <- points[points$avg_premium < remove_outliers, ]
   }
 
   gam_plot <- ggplot(data = df, aes(x = x, y = predicted)) +
@@ -47,6 +55,7 @@ autoplot.insurancerating <- function(x, conf_int = FALSE, clusters = TRUE, color
     {if(isTRUE(clusters)) scale_x_continuous(breaks = gamcluster)} +
     {if(isTRUE(add_points) & ylab == "frequency") geom_point(data = points, aes(x = x, y = frequency), size = size_points, color = color_points)} +
     {if(isTRUE(add_points) & ylab == "severity") geom_point(data = points, aes(x = x, y = avg_claimsize), size = size_points, color = color_points)} +
+    {if(isTRUE(add_points) & ylab == "burning") geom_point(data = points, aes(x = x, y = avg_premium), size = size_points, color = color_points)} +
     {if(ylab == "severity") scale_y_continuous(labels = scales::comma)} +
     {if(isTRUE(rotate_labels)) theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) } +
     labs(y = paste0("Predicted ", ylab), x = xlab)
