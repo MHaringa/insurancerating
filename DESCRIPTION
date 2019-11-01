@@ -16,8 +16,10 @@ LazyData: true
 RoxygenNote: 6.1.1
 Imports: 
     classInt,
+    data.table, 
     evtree,
     ggplot2,
+    lubridate,
     mgcv,
     stringr
 Depends: R (>= 3.3)
