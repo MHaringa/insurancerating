@@ -1,10 +1,10 @@
 ## Resubmission
 This is a resubmission. In this version I have added:
 
-* Added argument in construct_tariff_classes function to construct classes for a severity model. In the previous version of this package only tariff classes for frequency models could be constructed. 
+* Function added to split rows with a time period longer than one month to multiple rows with a time period of exactly one month each.
 
 ## Test environments
-* local OS X install, R 3.6.0
+* local OS X install, R 3.6.1
 * win-builder (devel and release)
 
 ## R CMD check results
