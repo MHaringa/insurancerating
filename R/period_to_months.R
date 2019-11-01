@@ -70,7 +70,7 @@ period_to_months <- function(df, begin, end, ...){
   ans$maanden <- lubridate::interval(ans[[begin00]], ans[[end00]] + 1) %/% months(1)
   ans[, difference := ifelse(get(end00) == max(get(end00)), maanden - (sum(maanden) - maanden_tot), maanden), by = id]
 
-  for (i in 1:2){
+  for (i in 1:length(cols)){
     ans[, cols[i] := get(cols[i]) / sum(difference) * difference, by = id]
   }
 
