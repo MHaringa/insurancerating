@@ -4,10 +4,17 @@
 \alias{autoplot.fitgam}
 \title{Automatically create a ggplot for objects obtained from fit_gam()}
 \usage{
-\method{autoplot}{fitgam}(x, conf_int = FALSE, color_gam = "steelblue",
-  show_observations = FALSE, color_splits = "grey50",
-  x_stepsize = NULL, size_points = 1, color_points = "black",
-  rotate_labels = FALSE, remove_outliers = NULL)
+\method{autoplot}{fitgam}(
+  x,
+  conf_int = FALSE,
+  color_gam = "steelblue",
+  show_observations = FALSE,
+  x_stepsize = NULL,
+  size_points = 1,
+  color_points = "black",
+  rotate_labels = FALSE,
+  remove_outliers = NULL
+)
 }
 \arguments{
 \item{x}{an object as produced by \code{fit_gam()}}

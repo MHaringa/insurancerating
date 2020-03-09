@@ -55,6 +55,7 @@ get_splits <- function(x) {
 #'
 #' @author Martin Haringa
 #'
+#' @examples
 #' \dontrun{
 #' library(dplyr)
 #' fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure) %>%
@@ -84,12 +85,13 @@ construct_tariff_classes <- function (object, alpha = 0, niterations = 10000, nt
 
   # Add min and max to binning
   splits <- c(min(counting), split_x, max(counting))
-  cuts <- cut(counting, breaks = splits, include.lowest = TRUE)
+  cuts <- cut(object[[5]], breaks = splits, include.lowest = TRUE)
 
   return(structure(list(prediction = object[[1]],
                         x = object[[2]],
                         model = object[[3]],
                         data = object[[4]],
+                        x_obs = object[[5]],
                         splits = splits,
                         tariff_classes = cuts),
                    class = "constructtariffclasses"))

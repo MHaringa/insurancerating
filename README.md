@@ -36,7 +36,7 @@ devtools::install_github("MHaringa/insurancerating")
 This is a basic example which shows the techniques provided in
 insurancerating.
 
-The first part shows how to construct tariff classes for the variable
+The first part shows how to fit a GAM for the variable
 *age\_policyholder* in the MTPL dataset:
 
 ``` r
@@ -44,26 +44,39 @@ library(insurancerating)
 library(ggplot2)
 library(dplyr)
 
-# Claim frequency classes
-age_policyholder_frequency <- construct_tariff_classes(data = MTPL, 
-                                                       nclaims = nclaims, 
-                                                       x = age_policyholder, 
-                                                       exposure = exposure)
+# Claim frequency 
+age_policyholder_frequency <- fit_gam(data = MTPL, 
+                                      nclaims = nclaims, 
+                                      x = age_policyholder, 
+                                      exposure = exposure)
 
-# Claim severity classes
-age_policyholder_severity <- construct_tariff_classes(data = MTPL, 
-                                                      nclaims = nclaims, 
-                                                      x = age_policyholder, 
-                                                      exposure = exposure, 
-                                                      amount = amount, 
-                                                      model = "severity")
+# Claim severity 
+age_policyholder_severity <- fit_gam(data = MTPL, 
+                                     nclaims = nclaims, 
+                                     x = age_policyholder, 
+                                     exposure = exposure, 
+                                     amount = amount, 
+                                     model = "severity")
 ```
 
-Show classes for the claim frequency (the points show the ratio between
-the observed number of claims and exposure for each age):
+Create plot:
 
 ``` r
-autoplot(age_policyholder_frequency, add_points = TRUE)
+
+autoplot(age_policyholder_frequency, show_observations = TRUE)
+```
+
+![](README-plotgam-1.png)<!-- -->
+
+Determine classes for the claim frequency (the points show the ratio
+between the observed number of claims and exposure for each age):
+
+``` r
+
+clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
+clusters_sev <- construct_tariff_classes(age_policyholder_severity)
+
+autoplot(clusters_freq, show_observations = TRUE)
 ```
 
 ![](README-figfreq-1.png)<!-- -->
@@ -73,11 +86,13 @@ The fitted GAM is lower than might be expected from the observed claim
 frequency for policyholders of age 19. This is because there are very
 few young policyholders of age 19 present in the portfolio.
 
-Show classes for the claim
-severity:
+Show classes for the claim severity:
 
 ``` r
-autoplot(age_policyholder_severity, add_points = TRUE, remove_outliers = 100000)
+
+age_policyholder_severity %>%
+  construct_tariff_classes() %>%
+  autoplot(., show_observations = TRUE, remove_outliers = 100000)
 ```
 
 ![](README-figsev-1.png)<!-- -->
@@ -90,20 +105,22 @@ contains the largest exposure.
 
 ``` r
 
+
 dat <- MTPL %>%
-  mutate(age_policyholder_freq_cat = age_policyholder_frequency$tariff_classes) %>%
-  mutate(age_policyholder_sev_cat = age_policyholder_severity$tariff_classes) %>%
+  mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) %>%
+  mutate(age_policyholder_sev_cat = clusters_sev$tariff_classes) %>%
   mutate_if(is.character, as.factor) %>%
   mutate_if(is.factor, list(~biggest_reference(., exposure)))
 
-str(dat)
-#> 'data.frame':    32731 obs. of  6 variables:
-#>  $ age_policyholder         : int  43 21 54 44 20 38 68 45 76 30 ...
-#>  $ nclaims                  : int  0 0 0 1 1 0 0 1 0 0 ...
-#>  $ exposure                 : num  1 1 1 1 0.852 ...
-#>  $ amount                   : num  0 0 0 57540 2057 ...
-#>  $ age_policyholder_freq_cat: Factor w/ 9 levels "(39,50]","[18,25]",..: 1 2 5 1 2 4 7 1 8 3 ...
-#>  $ age_policyholder_sev_cat : Factor w/ 6 levels "(46,81]","[18,25]",..: 5 2 1 5 2 4 1 5 1 3 ...
+glimpse(dat)
+#> Observations: 32,731
+#> Variables: 6
+#> $ age_policyholder          <int> 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…
+#> $ nclaims                   <int> 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…
+#> $ exposure                  <dbl> 1.0000000, 1.0000000, 1.0000000, 1.0000000,…
+#> $ amount                    <dbl> 0, 0, 0, 57540, 2057, 0, 0, 6510, 0, 0, 0, …
+#> $ age_policyholder_freq_cat <fct> "(39,50]", "[18,25]", "(50,57]", "(39,50]",…
+#> $ age_policyholder_sev_cat  <fct> "(39,46]", "[18,25]", "(46,81]", "(39,46]",…
 ```
 
 The last part is to fit a *generalized linear model*. The function

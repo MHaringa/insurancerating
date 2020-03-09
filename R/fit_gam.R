@@ -216,6 +216,7 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL, pure_premium = NU
   return(structure(list(prediction = out,
                         x = x,
                         model = model,
-                        data = new),
+                        data = new,
+                        x_obs = data[[x]]),
                    class = "fitgam"))
 }

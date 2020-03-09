@@ -4,8 +4,13 @@
 \alias{construct_tariff_classes}
 \title{Construct insurance tariff classes}
 \usage{
-construct_tariff_classes(object, alpha = 0, niterations = 10000,
-  ntrees = 200, seed = 1)
+construct_tariff_classes(
+  object,
+  alpha = 0,
+  niterations = 10000,
+  ntrees = 200,
+  seed = 1
+)
 }
 \arguments{
 \item{object}{fitgam object produced by fit_gam}
@@ -38,6 +43,13 @@ The function provides an interface to finding class intervals for continuous num
 claim severity or burning cost model. Evolutionary trees are used as a technique to bin the resulting GAM estimates into risk homogeneous categories. This method is based on the work
 by Henckaerts et al. (2018). See Grubinger et al. (2014) for more details on the various parameters that control aspects of the evtree fit.
 }
+\examples{
+\dontrun{
+library(dplyr)
+fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure) \%>\%
+   construct_tariff_classes(.)
+}
+}
 \references{
 Henckaerts, R., Antonio, K., Clijsters, M. and Verbelen, R. (2018). A data driven binning strategy for the construction of insurance tariff classes.
 Scandinavian Actuarial Journal, 2018:8, 681-705. doi:10.1080/03461238.2018.1429300.
@@ -53,10 +65,4 @@ generalized linear models. Journal of the Royal Statistical Society (B) 73(1):3-
 }
 \author{
 Martin Haringa
-
-\dontrun{
-library(dplyr)
-fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure) %>%
-   construct_tariff_classes(.)
-}
 }

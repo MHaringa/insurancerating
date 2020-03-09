@@ -27,7 +27,7 @@
 #' @author Martin Haringa
 #'
 #' @export
-autoplot.fitgam <- function(x, conf_int = FALSE, color_gam = "steelblue", show_observations = FALSE, color_splits = "grey50",
+autoplot.fitgam <- function(x, conf_int = FALSE, color_gam = "steelblue", show_observations = FALSE,
                             x_stepsize = NULL, size_points = 1, color_points = "black", rotate_labels = FALSE,
                             remove_outliers = NULL){
   prediction <- x[[1]]

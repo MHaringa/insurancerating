@@ -39,32 +39,44 @@ devtools::install_github("MHaringa/insurancerating")
 ## Example
 This is a basic example which shows the techniques provided in insurancerating. 
 
-The first part shows how to construct tariff classes for the variable *age_policyholder* in the MTPL dataset: 
+The first part shows how to fit a GAM for the variable *age_policyholder* in the MTPL dataset: 
 
 ```{r example, eval = TRUE, message = FALSE, warning = FALSE}
 library(insurancerating)
 library(ggplot2)
 library(dplyr)
 
-# Claim frequency classes
-age_policyholder_frequency <- construct_tariff_classes(data = MTPL, 
-                                                       nclaims = nclaims, 
-                                                       x = age_policyholder, 
-                                                       exposure = exposure)
+# Claim frequency 
+age_policyholder_frequency <- fit_gam(data = MTPL, 
+                                      nclaims = nclaims, 
+                                      x = age_policyholder, 
+                                      exposure = exposure)
 
-# Claim severity classes
-age_policyholder_severity <- construct_tariff_classes(data = MTPL, 
-                                                      nclaims = nclaims, 
-                                                      x = age_policyholder, 
-                                                      exposure = exposure, 
-                                                      amount = amount, 
-                                                      model = "severity")
+# Claim severity 
+age_policyholder_severity <- fit_gam(data = MTPL, 
+                                     nclaims = nclaims, 
+                                     x = age_policyholder, 
+                                     exposure = exposure, 
+                                     amount = amount, 
+                                     model = "severity")
 ```
 
-Show classes for the claim frequency (the points show the ratio between the observed number of claims and exposure for each age): 
+Create plot:
+
+```{r plotgam, eval = TRUE}
+
+autoplot(age_policyholder_frequency, show_observations = TRUE)
+
+```
+
+Determine classes for the claim frequency (the points show the ratio between the observed number of claims and exposure for each age): 
 
 ```{r figfreq, eval = TRUE}
-autoplot(age_policyholder_frequency, add_points = TRUE)
+
+clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
+clusters_sev <- construct_tariff_classes(age_policyholder_severity)
+
+autoplot(clusters_freq, show_observations = TRUE)
 ```
 
 The figure shows that younger policyholders have a higher risk profile. The fitted GAM is lower than might be expected from the observed claim frequency for policyholders of age 19. This is because there are very few young policyholders of age 19 present in the portfolio. 
@@ -72,20 +84,26 @@ The figure shows that younger policyholders have a higher risk profile. The fitt
 Show classes for the claim severity: 
 
 ```{r figsev, eval = TRUE}
-autoplot(age_policyholder_severity, add_points = TRUE, remove_outliers = 100000)
+
+age_policyholder_severity %>%
+  construct_tariff_classes() %>%
+  autoplot(., show_observations = TRUE, remove_outliers = 100000)
+
 ```
 
 The second part adds the constructed tariff classes for the variable *age_policyholder* to the dataset, and sets the base level of the factor *age_policyholder* to the level with the largest exposure. In this example for claim frequency the class for ages (39,50], which contains the largest exposure. 
 
 ```{r example2, eval = TRUE, message = FALSE, warning = FALSE}
 
+
 dat <- MTPL %>%
-  mutate(age_policyholder_freq_cat = age_policyholder_frequency$tariff_classes) %>%
-  mutate(age_policyholder_sev_cat = age_policyholder_severity$tariff_classes) %>%
+  mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) %>%
+  mutate(age_policyholder_sev_cat = clusters_sev$tariff_classes) %>%
   mutate_if(is.character, as.factor) %>%
   mutate_if(is.factor, list(~biggest_reference(., exposure)))
 
-str(dat)
+glimpse(dat)
+
 
 ```
 

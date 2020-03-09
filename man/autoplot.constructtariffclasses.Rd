@@ -4,10 +4,17 @@
 \alias{autoplot.constructtariffclasses}
 \title{Automatically create a ggplot for objects obtained from construct_tariff_classes()}
 \usage{
-\method{autoplot}{constructtariffclasses}(x, conf_int = FALSE,
-  color_gam = "steelblue", show_observations = FALSE,
-  color_splits = "grey50", size_points = 1, color_points = "black",
-  rotate_labels = FALSE, remove_outliers = NULL)
+\method{autoplot}{constructtariffclasses}(
+  x,
+  conf_int = FALSE,
+  color_gam = "steelblue",
+  show_observations = FALSE,
+  color_splits = "grey50",
+  size_points = 1,
+  color_points = "black",
+  rotate_labels = FALSE,
+  remove_outliers = NULL
+)
 }
 \arguments{
 \item{x}{an object as produced by \code{construct_tariff_classes()}}
@@ -15,6 +22,8 @@
 \item{conf_int}{determines whether 95\% confidence intervals will be plotted. The default is \code{conf_int = FALSE}}
 
 \item{color_gam}{a color can be specified either by name (e.g.: "red") or by hexadecimal code (e.g. : "#FF1234") (default is "steelblue")}
+
+\item{show_observations}{add observed frequency/severity points for each level of the variable for which tariff classes are constructed}
 
 \item{color_splits}{change the color of the splits in the graph ("grey50" is default)}
 
@@ -25,8 +34,6 @@
 \item{rotate_labels}{rotate x-labels 45 degrees (this might be helpful for overlapping x-labels)}
 
 \item{remove_outliers}{do not show observations above this number in the plot. This might be helpful for outliers.}
-
-\item{add_points}{add observed frequency/severity points for each level of the variable for which tariff classes are constructed}
 }
 \value{
 a ggplot object

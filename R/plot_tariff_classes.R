@@ -7,7 +7,7 @@
 #' @param conf_int determines whether 95\% confidence intervals will be plotted. The default is \code{conf_int = FALSE}
 #' @param color_gam a color can be specified either by name (e.g.: "red") or by hexadecimal code (e.g. : "#FF1234") (default is "steelblue")
 #' @param color_splits change the color of the splits in the graph ("grey50" is default)
-#' @param add_points add observed frequency/severity points for each level of the variable for which tariff classes are constructed
+#' @param show_observations add observed frequency/severity points for each level of the variable for which tariff classes are constructed
 #' @param size_points size for points (1 is default)
 #' @param color_points change the color of the points in the graph ("black" is default)
 #' @param rotate_labels rotate x-labels 45 degrees (this might be helpful for overlapping x-labels)
@@ -36,7 +36,7 @@ autoplot.constructtariffclasses <- function(x, conf_int = FALSE, color_gam = "st
   xlab <- x[[2]]
   ylab <- x[[3]]
   points <- x[[4]]
-  gamcluster <- x[[5]]
+  gamcluster <- x[[6]]
 
   if(isTRUE(conf_int) & sum(prediction$upr_95 > 1e9) > 0){
     message("The confidence bounds are too large to show.")

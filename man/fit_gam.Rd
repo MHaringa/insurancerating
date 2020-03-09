@@ -4,8 +4,16 @@
 \alias{fit_gam}
 \title{Construct insurance tariff classes}
 \usage{
-fit_gam(data, nclaims, x, exposure, amount = NULL, pure_premium = NULL,
-  model = "frequency", round_x = NULL)
+fit_gam(
+  data,
+  nclaims,
+  x,
+  exposure,
+  amount = NULL,
+  pure_premium = NULL,
+  model = "frequency",
+  round_x = NULL
+)
 }
 \arguments{
 \item{data}{data.frame of an insurance portfolio}
