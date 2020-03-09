@@ -4,24 +4,11 @@
 \alias{construct_tariff_classes}
 \title{Construct insurance tariff classes}
 \usage{
-construct_tariff_classes(data, nclaims, x, exposure, amount = NULL,
-  pure_premium = NULL, model = "frequency", alpha = 0,
-  niterations = 10000, ntrees = 200, seed = 1, round_x = NULL)
+construct_tariff_classes(object, alpha = 0, niterations = 10000,
+  ntrees = 200, seed = 1)
 }
 \arguments{
-\item{data}{data.frame of an insurance portfolio}
-
-\item{nclaims}{column in \code{data} with number of claims}
-
-\item{x}{column in \code{data} with continuous risk factor}
-
-\item{exposure}{column in \code{data} with exposure}
-
-\item{amount}{column in \code{data} with claim amount}
-
-\item{pure_premium}{column in \code{data} with pure premium}
-
-\item{model}{choose either 'frequency', 'severity' or 'burning' (model = 'frequency' is default). See details section.}
+\item{object}{fitgam object produced by fit_gam}
 
 \item{alpha}{complexity parameter. The complexity parameter (alpha) is used to control the number of tariff classes. Higher values for \code{alpha}
 render less tariff classes. (\code{alpha} = 0 is default).}
@@ -31,17 +18,15 @@ render less tariff classes. (\code{alpha} = 0 is default).}
 \item{ntrees}{the number of trees in the population.}
 
 \item{seed}{an numeric seed to initialize the random number generator (for reproducibility).}
-
-\item{round_x}{round elements in column \code{x} to multiple of \code{round_x}. This gives a speed enhancement for data containing many levels for \code{x}.}
 }
 \value{
 A list with components
-\item{splits}{vector with boundaries of the constructed tariff classes}
 \item{prediction}{data frame with the predicted claim frequency for each element of vector \code{x}}
 \item{x}{name of variable for which tariff classes are constructed}
-\item{tariff_classes}{values in vector \code{x} coded according to which constructed tariff class they fall}
 \item{model}{either 'frequency' or 'severity'}
 \item{data}{data frame with original data aggregated on the level of the variable for which tariff classes are constructed}
+\item{splits}{vector with boundaries of the constructed tariff classes}
+\item{tariff_classes}{values in vector \code{x} coded according to which constructed tariff class they fall}
 }
 \description{
 The function provides an interface to finding class intervals for continuous numerical variables. The goal is to bin the continuous factors
@@ -50,17 +35,8 @@ while being easy to use in a generalized linear model (GLM).
 }
 \details{
 The function provides an interface to finding class intervals for continuous numerical variables in the following three types of models: claim frequency,
-claim severity or burning cost model. The 'frequency' specification uses a Poisson GAM for fitting the number of claims. The logarithm of the exposure is included
-as an offset, such that the expected number of claims is proportional to the exposure. The 'severity' specification uses a lognormal GAM for fitting the average
-cost of a claim. The average cost of a claim is defined as the ratio of the claim amount and the number of claims. The number of claims is included as a weight.
-The 'burning' specification uses a lognormal GAM for fitting the pure premium of a claim. The pure premium is obtained by multiplying the estimated frequency and
-the estimated severity of claims. The word burning cost is used here as equivalent of risk premium and pure premium.
-
-Subsequently, evolutionary trees are used as a technique to bin the resulting GAM estimates into risk homogeneous categories. This method is based on the work
+claim severity or burning cost model. Evolutionary trees are used as a technique to bin the resulting GAM estimates into risk homogeneous categories. This method is based on the work
 by Henckaerts et al. (2018). See Grubinger et al. (2014) for more details on the various parameters that control aspects of the evtree fit.
-}
-\examples{
-construct_tariff_classes(MTPL, nclaims, age_policyholder, exposure)
 }
 \references{
 Henckaerts, R., Antonio, K., Clijsters, M. and Verbelen, R. (2018). A data driven binning strategy for the construction of insurance tariff classes.
@@ -77,4 +53,10 @@ generalized linear models. Journal of the Royal Statistical Society (B) 73(1):3-
 }
 \author{
 Martin Haringa
+
+\dontrun{
+library(dplyr)
+fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure) %>%
+   construct_tariff_classes(.)
+}
 }
