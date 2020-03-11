@@ -1,6 +1,6 @@
 #' Automatically create a ggplot for objects obtained from fit_gam()
 #'
-#' @description Takes an object produced by \code{fit_gam()}, and plots the predicted claim frequency.
+#' @description Takes an object produced by \code{fit_gam()}, and plots the predicted value.
 #'
 #' @param x an object as produced by \code{fit_gam()}
 #' @param conf_int determines whether 95\% confidence intervals will be plotted. The default is \code{conf_int = FALSE}
@@ -30,6 +30,8 @@
 autoplot.fitgam <- function(x, conf_int = FALSE, color_gam = "steelblue", show_observations = FALSE,
                             x_stepsize = NULL, size_points = 1, color_points = "black", rotate_labels = FALSE,
                             remove_outliers = NULL){
+
+
   prediction <- x[[1]]
   xlab <- x[[2]]
   ylab <- x[[3]]

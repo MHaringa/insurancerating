@@ -1,8 +1,9 @@
 Package: insurancerating
 Type: Package
 Title: Analytic Insurance Rating Techniques
-Version: 0.4.3.9000
+Version: 0.5.0
 Author: Martin Haringa
+VignetteBuilder: knitr
 Maintainer: Martin Haringa <mtharinga@gmail.com>
 Description: Methods for insurance rating. It provides a data driven strategy for the construction of 
     insurance tariff classes. This strategy is based on the work by Antonio and Valdez (2012) <doi:10.1007/s10182-011-0152-7>.
@@ -17,6 +18,7 @@ RoxygenNote: 7.0.2
 Imports: 
     classInt,
     data.table, 
+    dplyr,
     evtree,
     ggplot2,
     lubridate,
@@ -24,5 +26,7 @@ Imports:
     stringr
 Depends: R (>= 3.3)
 Suggests: 
-    testthat, 
-    scales
+    knitr, 
+    rmarkdown,
+    scales,
+    testthat

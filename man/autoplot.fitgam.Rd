@@ -39,7 +39,7 @@
 a ggplot object
 }
 \description{
-Takes an object produced by \code{fit_gam()}, and plots the predicted claim frequency.
+Takes an object produced by \code{fit_gam()}, and plots the predicted value.
 }
 \examples{
 \dontrun{

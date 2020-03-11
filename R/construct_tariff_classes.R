@@ -14,6 +14,8 @@ get_splits <- function(x) {
   return(splits)
 }
 
+
+
 #' Construct insurance tariff classes
 #'
 #' @description The function provides an interface to finding class intervals for continuous numerical variables. The goal is to bin the continuous factors
@@ -32,6 +34,7 @@ get_splits <- function(x) {
 #' by Henckaerts et al. (2018). See Grubinger et al. (2014) for more details on the various parameters that control aspects of the evtree fit.
 #'
 #' @import evtree
+#' @importFrom utils packageVersion
 #'
 #' @references Henckaerts, R., Antonio, K., Clijsters, M. and Verbelen, R. (2018). A data driven binning strategy for the construction of insurance tariff classes.
 #' Scandinavian Actuarial Journal, 2018:8, 681-705. doi:10.1080/03461238.2018.1429300.

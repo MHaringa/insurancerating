@@ -1,10 +1,10 @@
 ## Resubmission
-This is a resubmission. In this version I have added:
+This is a resubmission. In this version:
 
-* Function added to split rows with a time period longer than one month to multiple rows with a time period of exactly one month each.
+* Function construct_tariff_classes is now split in functions fit_gam and construct_tariff_classes.
 
 ## Test environments
-* local OS X install, R 3.6.1
+* local OS X install, R 3.6.2
 * win-builder (devel and release)
 
 ## R CMD check results
