@@ -2,6 +2,7 @@
 This is a resubmission. In this version:
 
 * Function construct_tariff_classes is now split in functions fit_gam and construct_tariff_classes.
+* A vignette is added on how to use the package
 
 ## Test environments
 * local OS X install, R 3.6.2

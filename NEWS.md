@@ -1,6 +1,7 @@
 # insurancerating 0.5.0
 
 * Function construct_tariff_classes is now split in functions fit_gam and construct_tariff_classes.
+* A vignette is added on how to use the package
 
 # insurancerating 0.4.3
  
