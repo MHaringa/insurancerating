@@ -9,3 +9,5 @@
 ^temp.xyz
 ^README\.md$
 ^revdep$
+^doc$
+^Meta$

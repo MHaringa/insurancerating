@@ -2,7 +2,7 @@
 % Please edit documentation in R/fit_gam.R
 \name{fit_gam}
 \alias{fit_gam}
-\title{Construct insurance tariff classes}
+\title{Generalized additive model}
 \usage{
 fit_gam(
   data,
@@ -34,21 +34,23 @@ fit_gam(
 }
 \value{
 A list with components
-\item{prediction}{data frame with the predicted claim frequency for each element of vector \code{x}}
-\item{x}{name of variable for which tariff classes are constructed}
-\item{model}{either 'frequency' or 'severity'}
-\item{data}{data frame with original data aggregated on the level of the variable for which tariff classes are constructed}
+\item{prediction}{data frame with predicted values}
+\item{x}{name of continuous risk factor}
+\item{model}{either 'frequency', 'severity' or 'burning'}
+\item{data}{data frame with predicted values and observed values}
+\item{x_obs}{observations for continuous risk factor}
 }
 \description{
-The function provides an interface to finding class intervals for continuous numerical variables. The goal is to bin the continuous factors
-such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way,
-while being easy to use in a generalized linear model (GLM).
+Fits a generalized additive model (GAM) to continuous risk factors in one of the following three types of models: the number of reported claims
+(claim frequency), the severity of reported claims (claim severity) or the burning cost (i.e. risk premium or pure premium).
 }
 \details{
-The function provides an interface to finding class intervals for continuous numerical variables in the following three types of models: claim frequency,
-claim severity or burning cost model. The 'frequency' specification uses a Poisson GAM for fitting the number of claims. The logarithm of the exposure is included
-as an offset, such that the expected number of claims is proportional to the exposure. The 'severity' specification uses a lognormal GAM for fitting the average
-cost of a claim. The average cost of a claim is defined as the ratio of the claim amount and the number of claims. The number of claims is included as a weight.
+The 'frequency' specification uses a Poisson GAM for fitting the number of claims. The logarithm of the exposure is included
+as an offset, such that the expected number of claims is proportional to the exposure.
+
+The 'severity' specification uses a lognormal GAM for fitting the average cost of a claim. The average cost of a claim is defined as the
+ratio of the claim amount and the number of claims. The number of claims is included as a weight.
+
 The 'burning' specification uses a lognormal GAM for fitting the pure premium of a claim. The pure premium is obtained by multiplying the estimated frequency and
 the estimated severity of claims. The word burning cost is used here as equivalent of risk premium and pure premium.
 }
@@ -56,14 +58,14 @@ the estimated severity of claims. The word burning cost is used here as equivale
 fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure)
 }
 \references{
-Henckaerts, R., Antonio, K., Clijsters, M. and Verbelen, R. (2018). A data driven binning strategy for the construction of insurance tariff classes.
-Scandinavian Actuarial Journal, 2018:8, 681-705. doi:10.1080/03461238.2018.1429300.
-
 Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a priori and a posteriori risk classification in insurance.
 Advances in Statistical Analysis, 96(2):187–224. doi:10.1007/s10182-011-0152-7.
 
 Grubinger, T., Zeileis, A., and Pfeiffer, K.-P. (2014). evtree: Evolutionary learning of globally
 optimal classification and regression trees in R. Journal of Statistical Software, 61(1):1–29. doi:10.18637/jss.v061.i01.
+
+Henckaerts, R., Antonio, K., Clijsters, M. and Verbelen, R. (2018). A data driven binning strategy for the construction of insurance tariff classes.
+Scandinavian Actuarial Journal, 2018:8, 681-705. doi:10.1080/03461238.2018.1429300.
 
 Wood, S.N. (2011). Fast stable restricted maximum likelihood and marginal likelihood estimation of semiparametric
 generalized linear models. Journal of the Royal Statistical Society (B) 73(1):3-36. doi:10.1111/j.1467-9868.2010.00749.x.

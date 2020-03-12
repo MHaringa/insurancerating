@@ -17,7 +17,7 @@
 )
 }
 \arguments{
-\item{x}{an object as produced by \code{fit_gam()}}
+\item{x}{fitgam object produced by \code{fit_gam}}
 
 \item{conf_int}{determines whether 95\% confidence intervals will be plotted. The default is \code{conf_int = FALSE}}
 
@@ -39,7 +39,7 @@
 a ggplot object
 }
 \description{
-Takes an object produced by \code{fit_gam()}, and plots the predicted value.
+Takes an object produced by \code{fit_gam()}, and plots the fitted GAM.
 }
 \examples{
 \dontrun{

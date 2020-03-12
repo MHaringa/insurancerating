@@ -1,9 +1,9 @@
 #' Automatically create a ggplot for objects obtained from construct_tariff_classes()
 #'
-#' @description Takes an object produced by \code{construct_tariff_classes()}, and plots the predicted claim frequency.
+#' @description Takes an object produced by \code{construct_tariff_classes()}, and plots the fitted GAM.
 #' In addition the constructed tariff classes are shown.
 #'
-#' @param x an object as produced by \code{construct_tariff_classes()}
+#' @param x constructtariffclasses object produced by \code{construct_tariff_classes}
 #' @param conf_int determines whether 95\% confidence intervals will be plotted. The default is \code{conf_int = FALSE}
 #' @param color_gam a color can be specified either by name (e.g.: "red") or by hexadecimal code (e.g. : "#FF1234") (default is "steelblue")
 #' @param color_splits change the color of the splits in the graph ("grey50" is default)

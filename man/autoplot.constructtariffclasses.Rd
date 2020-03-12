@@ -17,7 +17,7 @@
 )
 }
 \arguments{
-\item{x}{an object as produced by \code{construct_tariff_classes()}}
+\item{x}{constructtariffclasses object produced by \code{construct_tariff_classes}}
 
 \item{conf_int}{determines whether 95\% confidence intervals will be plotted. The default is \code{conf_int = FALSE}}
 
@@ -39,7 +39,7 @@
 a ggplot object
 }
 \description{
-Takes an object produced by \code{construct_tariff_classes()}, and plots the predicted claim frequency.
+Takes an object produced by \code{construct_tariff_classes()}, and plots the fitted GAM.
 In addition the constructed tariff classes are shown.
 }
 \examples{
