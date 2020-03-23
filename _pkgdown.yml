@@ -1,0 +1,26 @@
+url: https://insurancerating.r-lib.org
+destination: docs
+navbar:
+  structure:
+    left:  [home, reference, articles, news]
+    right: [github]
+reference:
+  - title: "Construct tariff classes"
+    contents:
+      - fit_gam
+      - construct_tariff_classes
+      - matches("autoplot")
+  - title: "Data sets"
+    contents:
+      - MTPL
+  - title: "Additional"
+    desc: >
+      Often used in insurance ratings
+    contents:
+      - biggest_reference
+      - fisher
+      - period_to_months
+      - rating_factors
+  - title: "Helpers"
+    contents:
+      - get_splits

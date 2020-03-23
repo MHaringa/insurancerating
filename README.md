@@ -3,6 +3,13 @@
 
 # insurancerating
 
+<!-- badges: start -->
+
+[![CRAN
+Status](https://www.r-pkg.org/badges/version/insurancerating)](https://cran.r-project.org/package=insurancerating)
+[![Downloads](https://cranlogs.r-pkg.org/badges/insurancerating?color=blue)](https://cran.rstudio.com/package=insurancerating)
+<!-- badges: end -->
+
 The goal of insurancerating is to give analytic techniques that can be
 used in insurance rating. It provides a data driven strategy for the
 construction of tariff classes in P\&C insurance. The goal is to bin the
@@ -62,24 +69,22 @@ age_policyholder_severity <- fit_gam(data = MTPL,
 Create plot:
 
 ``` r
-
 autoplot(age_policyholder_frequency, show_observations = TRUE)
 ```
 
-![](README-plotgam-1.png)<!-- -->
+![](man/figures/plotgam-1.png)<!-- -->
 
 Determine classes for the claim frequency (the points show the ratio
 between the observed number of claims and exposure for each age):
 
 ``` r
-
 clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
 clusters_sev <- construct_tariff_classes(age_policyholder_severity)
 
 autoplot(clusters_freq, show_observations = TRUE)
 ```
 
-![](README-figfreq-1.png)<!-- -->
+![](man/figures/figfreq-1.png)<!-- -->
 
 The figure shows that younger policyholders have a higher risk profile.
 The fitted GAM is lower than might be expected from the observed claim
@@ -89,13 +94,12 @@ few young policyholders of age 19 present in the portfolio.
 Show classes for the claim severity:
 
 ``` r
-
 age_policyholder_severity %>%
   construct_tariff_classes() %>%
   autoplot(., show_observations = TRUE, remove_outliers = 100000)
 ```
 
-![](README-figsev-1.png)<!-- -->
+![](man/figures/figsev-1.png)<!-- -->
 
 The second part adds the constructed tariff classes for the variable
 *age\_policyholder* to the dataset, and sets the base level of the
@@ -104,8 +108,6 @@ this example for claim frequency the class for ages (39,50\], which
 contains the largest exposure.
 
 ``` r
-
-
 dat <- MTPL %>%
   mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) %>%
   mutate(age_policyholder_sev_cat = clusters_sev$tariff_classes) %>%
@@ -113,15 +115,16 @@ dat <- MTPL %>%
   mutate_if(is.factor, list(~biggest_reference(., exposure)))
 
 glimpse(dat)
-#> Observations: 32,731
-#> Variables: 6
-#> $ age_policyholder          <int> 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…
-#> $ nclaims                   <int> 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…
-#> $ exposure                  <dbl> 1.0000000, 1.0000000, 1.0000000, 1.0000000,…
-#> $ amount                    <dbl> 0, 0, 0, 57540, 2057, 0, 0, 6510, 0, 0, 0, …
-#> $ age_policyholder_freq_cat <fct> "(39,50]", "[18,25]", "(50,57]", "(39,50]",…
-#> $ age_policyholder_sev_cat  <fct> "(39,46]", "[18,25]", "(46,81]", "(39,46]",…
 ```
+
+    ## Observations: 32,731
+    ## Variables: 6
+    ## $ age_policyholder          <int> 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…
+    ## $ nclaims                   <int> 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…
+    ## $ exposure                  <dbl> 1.0000000, 1.0000000, 1.0000000, 1.0000000,…
+    ## $ amount                    <dbl> 0, 0, 0, 57540, 2057, 0, 0, 6510, 0, 0, 0, …
+    ## $ age_policyholder_freq_cat <fct> "(39,50]", "[18,25]", "(50,57]", "(39,50]",…
+    ## $ age_policyholder_sev_cat  <fct> "(39,46]", "[18,25]", "(46,81]", "(39,46]",…
 
 The last part is to fit a *generalized linear model*. The function
 rating\_factors prints the output including the reference
@@ -130,15 +133,16 @@ group.
 ``` r
 model <- glm(nclaims ~ age_policyholder_freq_cat, offset = log(exposure), family = "poisson", data = dat)
 rating_factors(model)
-#>                         term     cluster  estimate
-#> 1                  Intercept (Intercept) 0.1368181
-#> 2  age_policyholder_freq_cat     (39,50] 1.0000000
-#> 3  age_policyholder_freq_cat     [18,25] 1.9438228
-#> 4  age_policyholder_freq_cat     (25,32] 1.3234995
-#> 5  age_policyholder_freq_cat     (32,39] 1.0568538
-#> 6  age_policyholder_freq_cat     (50,57] 0.8919696
-#> 7  age_policyholder_freq_cat     (57,64] 0.7423998
-#> 8  age_policyholder_freq_cat     (64,71] 0.7379362
-#> 9  age_policyholder_freq_cat     (71,83] 0.7021348
-#> 10 age_policyholder_freq_cat     (83,95] 0.6933378
 ```
+
+    ##                         term     cluster  estimate
+    ## 1                  Intercept (Intercept) 0.1368181
+    ## 2  age_policyholder_freq_cat     (39,50] 1.0000000
+    ## 3  age_policyholder_freq_cat     [18,25] 1.9438228
+    ## 4  age_policyholder_freq_cat     (25,32] 1.3234995
+    ## 5  age_policyholder_freq_cat     (32,39] 1.0568538
+    ## 6  age_policyholder_freq_cat     (50,57] 0.8919696
+    ## 7  age_policyholder_freq_cat     (57,64] 0.7423998
+    ## 8  age_policyholder_freq_cat     (64,71] 0.7379362
+    ## 9  age_policyholder_freq_cat     (71,83] 0.7021348
+    ## 10 age_policyholder_freq_cat     (83,95] 0.6933378
