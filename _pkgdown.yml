@@ -1,4 +1,3 @@
-destination: docs
 navbar:
   structure:
     left:  [home, reference, articles, news]
