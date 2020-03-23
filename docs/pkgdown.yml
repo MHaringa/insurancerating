@@ -4,6 +4,6 @@ pkgdown_sha: ~
 articles:
   vignette: vignette.html
 urls:
-  reference: http://insurancerating.r-lib.org/reference
-  article: http://insurancerating.r-lib.org/articles
+  reference: https://insurancerating.r-lib.org/reference
+  article: https://insurancerating.r-lib.org/articles
 
