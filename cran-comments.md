@@ -1,6 +1,6 @@
 ## Resubmission
 
-* Fixed NOTE in DESCRIPTION meta-information: author field differs from that derived from Authors@R
+* Fixed NOTE in DESCRIPTION meta-information: Changed field Author to Authors@R.
 
 This is a resubmission. In this version:
 
