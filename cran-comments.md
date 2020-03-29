@@ -1,4 +1,7 @@
 ## Resubmission
+
+* Fixed NOTE in DESCRIPTION meta-information: author field differs from that derived from Authors@R
+
 This is a resubmission. In this version:
 
 * A package website is added using pkgdown.
