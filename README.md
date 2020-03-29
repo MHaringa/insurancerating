@@ -38,7 +38,7 @@ Or the development version from GitHub:
 devtools::install_github("MHaringa/insurancerating")
 ```
 
-## Example
+## Example 1
 
 This is a basic example which shows the techniques provided in
 insurancerating.
@@ -146,3 +146,100 @@ rating_factors(model)
     ## 8  age_policyholder_freq_cat     (64,71] 0.7379362
     ## 9  age_policyholder_freq_cat     (71,83] 0.7021348
     ## 10 age_policyholder_freq_cat     (83,95] 0.6933378
+
+## Example 2
+
+This is a basic example which shows how to easily perform an univariate
+analysis on a MTPL portfolio using `insurancerating`.
+
+The first part shows how to create a frequency plot for the variable
+`area` in the `MTPL2`
+dataset:
+
+``` r
+x <- univariate_frequency(MTPL2, x = area, nclaims = nclaims, exposure = exposure)
+
+# Print output
+x
+```
+
+    ##   area nclaims   exposure  frequency
+    ## 1    2      98  818.53973 0.11972540
+    ## 2    3     113  764.99178 0.14771401
+    ## 3    1     146 1065.74795 0.13699299
+    ## 4    0       1   13.30685 0.07514927
+
+``` r
+# Print plot
+autoplot(x)
+```
+
+![](man/figures/example4-1.png)<!-- -->
+
+Or sort risk factor into descending order by exposure:
+
+``` r
+autoplot(x, sort = TRUE, dec.mark = ".", color_bg = "mediumseagreen")
+```
+
+![](man/figures/example5-1.png)<!-- -->
+
+`univariate_average_severity()` calculates the average severity:
+
+``` r
+univariate_average_severity(MTPL2, x = area, severity = amount, 
+                            nclaims = nclaims, premium = premium) %>%
+  autoplot(.)
+```
+
+![](man/figures/example6-1.png)<!-- -->
+
+Similar plots can be created for the risk premium, loss ratio, average
+premium, and exposure, using `univariate_risk_premium()`,
+`univariate_loss_ratio()`, `univariate_average_premium()`, and
+`univariate_exposure()`, respectively.
+
+`univariate_all()` combines these
+plots:
+
+``` r
+y <- univariate_all(MTPL2, x = area, severity = amount, nclaims = nclaims, exposure = exposure)
+
+# Print output
+y
+```
+
+    ##   area  amount nclaims   exposure  frequency average_severity risk_premium
+    ## 1    2 4063270      98  818.53973 0.11972540         41461.94    4964.0474
+    ## 2    3 7945311     113  764.99178 0.14771401         70312.49   10386.1390
+    ## 3    1 6896187     146 1065.74795 0.13699299         47234.16    6470.7486
+    ## 4    0    6922       1   13.30685 0.07514927          6922.00     520.1832
+
+In the above output the loss ratio is not shown because the premium is
+not specified here.
+
+``` r
+autoplot(y)
+```
+
+    ## Ignoring plots 4: input is unknown
+
+![](man/figures/example8-1.png)<!-- -->
+
+`show_plots` can be used to specify the desired plots. The following
+plots are available:
+
+1.  frequency (i.e. number of claims / expsore)
+2.  average severity (i.e. severity / number of claims)
+3.  risk premium (i.e. severity / exposure)
+4.  loss ratio (i.e. severity / premium)
+5.  average premium (i.e. premium / exposure)
+6.  exposure
+
+Show the exposure and claim frequency:
+
+``` r
+autoplot(y, show_plots = c(6,1), background = FALSE, sort = TRUE)
+```
+
+![](man/figures/example9-1.png)<!-- -->

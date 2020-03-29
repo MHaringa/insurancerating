@@ -102,9 +102,9 @@
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co"># install.packages("devtools")</span></a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">devtools<span class="op">::</span><span class="kw"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span>(<span class="st">"MHaringa/insurancerating"</span>)</a></code></pre></div>
 </div>
-<div id="example" class="section level2">
+<div id="example-1" class="section level2">
 <h2 class="hasAnchor">
-<a href="#example" class="anchor"></a>Example</h2>
+<a href="#example-1" class="anchor"></a>Example 1</h2>
 <p>This is a basic example which shows the techniques provided in insurancerating.</p>
 <p>The first part shows how to fit a GAM for the variable <em>age_policyholder</em> in the MTPL dataset:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(insurancerating)</a>
@@ -169,6 +169,59 @@
 <a class="sourceLine" id="cb10-9" data-line-number="9"><span class="co">## 8  age_policyholder_freq_cat     (64,71] 0.7379362</span></a>
 <a class="sourceLine" id="cb10-10" data-line-number="10"><span class="co">## 9  age_policyholder_freq_cat     (71,83] 0.7021348</span></a>
 <a class="sourceLine" id="cb10-11" data-line-number="11"><span class="co">## 10 age_policyholder_freq_cat     (83,95] 0.6933378</span></a></code></pre></div>
+</div>
+<div id="example-2" class="section level2">
+<h2 class="hasAnchor">
+<a href="#example-2" class="anchor"></a>Example 2</h2>
+<p>This is a basic example which shows how to easily perform an univariate analysis on a MTPL portfolio using <code>insurancerating</code>.</p>
+<p>The first part shows how to create a frequency plot for the variable <code>area</code> in the <code>MTPL2</code> dataset:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" data-line-number="1">x &lt;-<span class="st"> </span><span class="kw"><a href="reference/univariate_frequency.html">univariate_frequency</a></span>(MTPL2, <span class="dt">x =</span> area, <span class="dt">nclaims =</span> nclaims, <span class="dt">exposure =</span> exposure)</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3"><span class="co"># Print output</span></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">x</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">##   area nclaims   exposure  frequency</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="co">## 1    2      98  818.53973 0.11972540</span></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="co">## 2    3     113  764.99178 0.14771401</span></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4"><span class="co">## 3    1     146 1065.74795 0.13699299</span></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5"><span class="co">## 4    0       1   13.30685 0.07514927</span></a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co"># Print plot</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2"><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(x)</a></code></pre></div>
+<p><img src="reference/figures/example4-1.png"><!-- --></p>
+<p>Or sort risk factor into descending order by exposure:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(x, <span class="dt">sort =</span> <span class="ot">TRUE</span>, <span class="dt">dec.mark =</span> <span class="st">"."</span>, <span class="dt">color_bg =</span> <span class="st">"mediumseagreen"</span>)</a></code></pre></div>
+<p><img src="reference/figures/example5-1.png"><!-- --></p>
+<p><code><a href="reference/univariate_average_severity.html">univariate_average_severity()</a></code> calculates the average severity:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="kw"><a href="reference/univariate_average_severity.html">univariate_average_severity</a></span>(MTPL2, <span class="dt">x =</span> area, <span class="dt">severity =</span> amount, </a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">                            <span class="dt">nclaims =</span> nclaims, <span class="dt">premium =</span> premium) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb15-3" data-line-number="3"><span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(.)</a></code></pre></div>
+<p><img src="reference/figures/example6-1.png"><!-- --></p>
+<p>Similar plots can be created for the risk premium, loss ratio, average premium, and exposure, using <code><a href="reference/univariate_risk_premium.html">univariate_risk_premium()</a></code>, <code><a href="reference/univariate_loss_ratio.html">univariate_loss_ratio()</a></code>, <code><a href="reference/univariate_average_premium.html">univariate_average_premium()</a></code>, and <code><a href="reference/univariate_exposure.html">univariate_exposure()</a></code>, respectively.</p>
+<p><code><a href="reference/univariate_all.html">univariate_all()</a></code> combines these plots:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1">y &lt;-<span class="st"> </span><span class="kw"><a href="reference/univariate_all.html">univariate_all</a></span>(MTPL2, <span class="dt">x =</span> area, <span class="dt">severity =</span> amount, <span class="dt">nclaims =</span> nclaims, <span class="dt">exposure =</span> exposure)</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb16-3" data-line-number="3"><span class="co"># Print output</span></a>
+<a class="sourceLine" id="cb16-4" data-line-number="4">y</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">##   area  amount nclaims   exposure  frequency average_severity risk_premium</span></a>
+<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="co">## 1    2 4063270      98  818.53973 0.11972540         41461.94    4964.0474</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3"><span class="co">## 2    3 7945311     113  764.99178 0.14771401         70312.49   10386.1390</span></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4"><span class="co">## 3    1 6896187     146 1065.74795 0.13699299         47234.16    6470.7486</span></a>
+<a class="sourceLine" id="cb17-5" data-line-number="5"><span class="co">## 4    0    6922       1   13.30685 0.07514927          6922.00     520.1832</span></a></code></pre></div>
+<p>In the above output the loss ratio is not shown because the premium is not specified here.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(y)</a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co">## Ignoring plots 4: input is unknown</span></a></code></pre></div>
+<p><img src="reference/figures/example8-1.png"><!-- --></p>
+<p><code>show_plots</code> can be used to specify the desired plots. The following plots are available:</p>
+<ol>
+<li>frequency (i.e. number of claims / expsore)</li>
+<li>average severity (i.e. severity / number of claims)</li>
+<li>risk premium (i.e. severity / exposure)</li>
+<li>loss ratio (i.e. severity / premium)</li>
+<li>average premium (i.e. premium / exposure)</li>
+<li>exposure</li>
+</ol>
+<p>Show the exposure and claim frequency:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(y, <span class="dt">show_plots =</span> <span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">6</span>,<span class="dv">1</span>), <span class="dt">background =</span> <span class="ot">FALSE</span>, <span class="dt">sort =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
+<p><img src="reference/figures/example9-1.png"><!-- --></p>
 </div>
 </div>
   </div>

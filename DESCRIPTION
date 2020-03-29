@@ -1,7 +1,7 @@
 Package: insurancerating
 Type: Package
 Title: Analytic Insurance Rating Techniques
-Version: 0.5.0.9000
+Version: 0.5.1
 Author: Martin Haringa
 Authors@R: c(person("Martin", "Haringa", role = c("aut", "cre"), email = "mtharinga@gmail.com"))
 VignetteBuilder: knitr
@@ -25,6 +25,7 @@ Imports:
     ggplot2,
     lubridate,
     mgcv,
+    patchwork,
     stringr
 Depends: R (>= 3.3)
 Suggests: 

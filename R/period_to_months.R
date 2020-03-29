@@ -15,7 +15,12 @@
 #' @importFrom data.table data.table
 #' @importFrom data.table setnames
 #' @importFrom data.table setkeyv
-#' @import lubridate
+#' @importFrom lubridate is.Date
+#' @importFrom lubridate ceiling_date
+#' @importFrom lubridate interval
+#' @importFrom lubridate floor_date
+#' @importFrom lubridate days
+#' @importFrom lubridate interval
 #'
 #' @details In insurance portfolios it is common that rows relate to periods longer than one month.
 #' This is for example problematic in case exposures per month are desired.
@@ -47,7 +52,7 @@ period_to_months <- function(df, begin, end, ...){
   # Vector column names
   column_names <- names(df)
 
-  if (!is.Date(df[[begin00]]) | !is.Date(df[[end00]])) {
+  if (!lubridate::is.Date(df[[begin00]]) | !lubridate::is.Date(df[[end00]])) {
     stop("Columns begin and end should be Date objects. Use e.g. lubridate::ymd() to create Date object.")
   }
 

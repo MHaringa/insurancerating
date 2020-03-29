@@ -7,10 +7,34 @@ reference:
     contents:
       - fit_gam
       - construct_tariff_classes
-      - matches("autoplot")
+      - autoplot.fitgam
+      - autoplot.constructtariffclasses
+  - title: "Univariate analysis: summary"
+    desc: >
+      Create summary of an insurance portfolio
+    contents:
+      - univariate_all
+      - univariate_frequency
+      - univariate_average_severity
+      - univariate_risk_premium
+      - univariate_loss_ratio
+      - univariate_average_premium
+      - univariate_exposure
+  - title: "Univariate analysis: plot"
+    desc: >
+      Create plots of the summary statistics obtained by univariate_*
+    contents:
+      - autoplot.univ_all
+      - autoplot.univ_freq
+      - autoplot.univ_avgsev
+      - autoplot.univ_premium
+      - autoplot.univ_lossratio
+      - autoplot.univ_avgpremium
+      - autoplot.univ_exposure
   - title: "Data sets"
     contents:
       - MTPL
+      - MTPL2
   - title: "Additional"
     desc: >
       Often used in insurance ratings
@@ -19,6 +43,3 @@ reference:
       - fisher
       - period_to_months
       - rating_factors
-  - title: "Helpers"
-    contents:
-      - get_splits

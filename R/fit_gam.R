@@ -222,3 +222,14 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL, pure_premium = NU
                         x_obs = data[[x]]),
                    class = "fitgam"))
 }
+
+#' @export
+print.fitgam <- function(x, ...) {
+  print(x$prediction)
+}
+
+#' @export
+as.data.frame.fitgam <- function(x, ...) {
+  prediction <- x$prediction
+  return(as.data.frame(prediction))
+}

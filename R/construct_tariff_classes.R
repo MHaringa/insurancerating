@@ -99,3 +99,14 @@ construct_tariff_classes <- function (object, alpha = 0, niterations = 10000, nt
                         tariff_classes = cuts),
                    class = "constructtariffclasses"))
 }
+
+#' @export
+print.constructtariffclasses <- function(x, ...) {
+  print(x$splits)
+}
+
+#' @export
+as.vector.constructtariffclasses <- function(x, ...) {
+  splits <- x$splits
+  return(as.vector(splits))
+}
