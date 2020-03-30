@@ -1,6 +1,6 @@
 # insurancerating 0.5.2
 
-* `autoplot.univ_all()` now gives correct labels on the x-axis when `ncol` is not equal to 1. 
+* `autoplot.univ_all()` now gives correct labels on the x-axis when `ncol` > 1. 
 
 # insurancerating 0.5.1
 
