@@ -90,7 +90,6 @@ autoplot.univ_all <- function(x, show_plots = c(1, 2, 3, 4), ncol = 1, backgroun
     x4 <- x
     class(x4) <- "univ_lossratio"
     p4 <- autoplot.univ_lossratio(x4, background, labels = FALSE, sort, dec.mark, color, color_bg)
-    plot_n <- c(plot_n, 4)
   } else( not_allowed <- c(not_allowed, 4))
 
   if ( "average_premium" %in% names(df) & 5 %in% show_plots ){
@@ -120,6 +119,7 @@ autoplot.univ_all <- function(x, show_plots = c(1, 2, 3, 4), ncol = 1, backgroun
     message("Ignoring sort: exposure is unknown")
   }
 
+  if ( ncol == 1 ){
    remove_axis <- list( theme(axis.title.x = element_blank(),
                               axis.text.x = element_blank(),
                               axis.ticks.x = element_blank()) )
@@ -133,12 +133,15 @@ autoplot.univ_all <- function(x, show_plots = c(1, 2, 3, 4), ncol = 1, backgroun
    if ( length(plots_possible) > 1 ){
      plot_nrs <- paste0("p", plots_possible[-length(plots_possible)], " + remove_axis", collapse = " + ")
      plot_all <- paste0(plot_nrs, " + ", plot_last)
-     plot_out <- eval(parse( text = plot_all )) + plot_layout(ncol = ncol)
+     plot_out <- eval(parse( text = plot_all )) + plot_layout(ncol = 1)
    }
+  } else {
+    plot_all <- paste0("p", plots_possible, collapse = " + ")
+    plot_out <- eval(parse( text = plot_all )) + plot_layout(ncol = ncol)
+  }
 
    return(plot_out)
 }
-
 
 
 
