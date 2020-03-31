@@ -28,6 +28,10 @@ autoplot.univ_lossratio <- function(x, background = TRUE, labels = TRUE, sort = 
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
   }
 
+  if (!inherits(x, "univ_lossratio")) {
+    stop("autoplot.univ_lossratio requires a univ_lossratio object, use x = object")
+  }
+
   df <- x$df
   xvar <- x$xvar
   severity <- x$severity
@@ -83,13 +87,13 @@ autoplot.univ_lossratio <- function(x, background = TRUE, labels = TRUE, sort = 
     )}
 
   p1 <- ggplot2::ggplot(data = df) +
-    {if( isTRUE( background )) hist_bg} +
+    { if( isTRUE( background )) hist_bg } +
     ggplot2::geom_point(aes(x = .data[[xvar]], y = .data[["loss_ratio"]]), color = color) +
     ggplot2::geom_line(aes(x = .data[[xvar]], y = .data[["loss_ratio"]], group = 1), color = color) +
-    {if( isTRUE( background ) & isTRUE( labels )) labels_bg} +
+    { if( isTRUE( background ) & isTRUE( labels )) labels_bg } +
     ggplot2::theme_minimal() +
     ggplot2::labs(y = "Loss ratio", x = xvar) +
-    {if( !isTRUE ( background )) ggplot2::scale_y_continuous(labels = sep_fn)}  +
+    { if( !isTRUE ( background )) ggplot2::scale_y_continuous(labels = sep_fn) }  +
     { if( !is.null( sort_manual )) hist_sort }
 
   return(p1)

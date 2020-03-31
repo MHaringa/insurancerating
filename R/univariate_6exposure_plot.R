@@ -28,6 +28,10 @@ autoplot.univ_exposure<- function(x, labels = TRUE, sort = FALSE, sort_manual = 
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
   }
 
+  if (!inherits(x, "univ_exposure")) {
+    stop("autoplot.univ_exposure requires a univ_exposure object, use x = object")
+  }
+
   df <- x$df
   xvar <- x$xvar
   exposure <- x$exposure

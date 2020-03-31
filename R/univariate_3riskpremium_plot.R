@@ -35,6 +35,10 @@ autoplot.univ_premium <- function(x, background = TRUE, labels = TRUE, sort = FA
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
   }
 
+  if (!inherits(x, "univ_premium")) {
+    stop("autoplot.univ_premium requires a univ_premium object, use x = object")
+  }
+
   if ( !is.factor(df[[xvar]]) ){
     df[[xvar]] <- as.factor(df[[xvar]])
   }

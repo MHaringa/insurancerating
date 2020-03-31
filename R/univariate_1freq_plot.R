@@ -34,6 +34,10 @@ autoplot.univ_freq <- function(x, background = TRUE, labels = TRUE, sort = FALSE
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
   }
 
+  if (!inherits(x, "univ_freq")) {
+    stop("autoplot.univ_freq requires a univ_freq object, use x = object")
+  }
+
   df <- x$df
   xvar <- x$xvar
   nclaims <- x$nclaims

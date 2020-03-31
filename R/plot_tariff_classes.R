@@ -37,6 +37,10 @@ autoplot.constructtariffclasses <- function(x, conf_int = FALSE, color_gam = "st
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
   }
 
+  if (!inherits(x, "constructtariffclasses")) {
+    stop("autoplot.constructtariffclasses requires a constructtariffclasses object, use x = object")
+  }
+
   prediction <- x[[1]]
   xlab <- x[[2]]
   ylab <- x[[3]]

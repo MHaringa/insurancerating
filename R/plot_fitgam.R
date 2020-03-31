@@ -35,6 +35,10 @@ autoplot.fitgam <- function(x, conf_int = FALSE, color_gam = "steelblue", show_o
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
   }
 
+  if (!inherits(x, "fitgam")) {
+    stop("autoplot.fitgam requires a fitgam object, use x = object")
+  }
+
   prediction <- x[[1]]
   xlab <- x[[2]]
   ylab <- x[[3]]

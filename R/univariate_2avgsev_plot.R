@@ -29,6 +29,10 @@ autoplot.univ_avgsev <- function(x, background = TRUE, labels = TRUE, sort = FAL
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
   }
 
+  if (!inherits(x, "univ_avgsev")) {
+    stop("autoplot.univ_avgsev requires a univ_avgsev object, use x = object")
+  }
+
   df <- x$df
   xvar <- x$xvar
   severity <- x$severity
