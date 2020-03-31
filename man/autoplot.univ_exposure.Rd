@@ -8,9 +8,11 @@
   x,
   labels = TRUE,
   sort = FALSE,
+  sort_manual = NULL,
   coord_flip = TRUE,
   dec.mark = ",",
-  color_bg = "#E7B800"
+  color_bg = "#E7B800",
+  label_width = 30
 )
 }
 \arguments{
@@ -20,11 +22,15 @@
 
 \item{sort}{sort (or order) risk factor into descending order by exposure (default is FALSE)}
 
+\item{sort_manual}{sort (or order) risk factor into own ordering; should be a character vector (default is NULL)}
+
 \item{coord_flip}{flip cartesian coordinates so that horizontal becomes vertical, and vertical, horizontal (default is TRUE)}
 
 \item{dec.mark}{control the format of the decimal point, as well as the mark between intervals before the decimal point, choose either "," (default) or "."}
 
 \item{color_bg}{change the color of the histogram ("#E7B800" is default)}
+
+\item{label_width}{width of labels on the x-axis (30 is default)}
 }
 \value{
 a ggplot2 object
