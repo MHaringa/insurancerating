@@ -33,6 +33,10 @@ autoplot.constructtariffclasses <- function(x, conf_int = FALSE, color_gam = "st
                                             size_points = 1, color_points = "black", rotate_labels = FALSE,
                                             remove_outliers = NULL){
 
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
+  }
+
   prediction <- x[[1]]
   xlab <- x[[2]]
   ylab <- x[[3]]

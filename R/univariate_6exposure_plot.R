@@ -24,6 +24,10 @@
 #' @export
 autoplot.univ_exposure<- function(x, labels = TRUE, sort = FALSE, sort_manual = NULL, coord_flip = TRUE, dec.mark = ",", color_bg = "#E7B800", label_width = 30){
 
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
+  }
+
   df <- x$df
   xvar <- x$xvar
   exposure <- x$exposure

@@ -38,6 +38,10 @@ autoplot.univ_all <- function(x, show_plots = c(1, 2, 3, 4), ncol = 1, backgroun
                               sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue",
                               color_bg = "#E7B800", label_width = 10){
 
+  if (!requireNamespace("patchwork", quietly = TRUE)) {
+    stop("patchwork is needed for this function to work. Install it via install.packages(\"patchwork\")", call. = FALSE)
+  }
+
   df <- x$df
   xvar <- x$xvar
   nclaims <- x$nclaims

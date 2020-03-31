@@ -25,6 +25,10 @@
 #' @export
 autoplot.univ_avgsev <- function(x, background = TRUE, labels = TRUE, sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue", color_bg = "#E7B800", label_width = 10){
 
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
+  }
+
   df <- x$df
   xvar <- x$xvar
   severity <- x$severity

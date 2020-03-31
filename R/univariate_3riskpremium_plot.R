@@ -31,6 +31,10 @@ autoplot.univ_premium <- function(x, background = TRUE, labels = TRUE, sort = FA
   exposure <- x$exposure
   premium <- x$premium
 
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
+  }
+
   if ( !is.factor(df[[xvar]]) ){
     df[[xvar]] <- as.factor(df[[xvar]])
   }

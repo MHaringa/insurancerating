@@ -2,7 +2,7 @@
 
 * `label_width` in `autoplot()` is added to wrap long labels in multiple lines
 * `sort_manual` in `autoplot()` is added to sort risk factors into an own ordering
-* `autoplot()` now works without loading package `ggplot2` first
+* `autoplot()` now works without manually loading package `ggplot2` and `patchwork` first
 
 # insurancerating 0.5.2
 
