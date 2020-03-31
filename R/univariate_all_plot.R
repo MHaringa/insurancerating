@@ -16,9 +16,11 @@
 #' @param background show exposure as a background histogram (default is TRUE)
 #' @param labels show labels with the exposure (default is TRUE)
 #' @param sort sort (or order) risk factor into descending order by exposure (default is FALSE)
+#' @param sort_manual sort (or order) risk factor into own ordering; should be a character vector (default is NULL)
 #' @param dec.mark control the format of the decimal point, as well as the mark between intervals before the decimal point, choose either "," (default) or "."
 #' @param color change the color of the points and line ("dodgerblue" is default)
 #' @param color_bg change the color of the histogram ("#E7B800" is default)
+#' @param label_width width of labels on the x-axis (10 is default)
 #'
 #' @import patchwork
 #' @import ggplot2
@@ -33,7 +35,8 @@
 #'
 #' @export
 autoplot.univ_all <- function(x, show_plots = c(1, 2, 3, 4), ncol = 1, background = TRUE, labels = TRUE,
-                              sort = FALSE, dec.mark = ",", color = "dodgerblue", color_bg = "#E7B800"){
+                              sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue",
+                              color_bg = "#E7B800", label_width = 10){
 
   df <- x$df
   xvar <- x$xvar
@@ -71,37 +74,38 @@ autoplot.univ_all <- function(x, show_plots = c(1, 2, 3, 4), ncol = 1, backgroun
   if ( "frequency" %in% names(df) & 1 %in% show_plots ){
     x1 <- x
     class(x1) <- "univ_freq"
-    p1 <- autoplot.univ_freq(x1, background, labels, sort, dec.mark, color, color_bg)
+    p1 <- autoplot.univ_freq(x1, background, labels, sort, sort_manual, dec.mark, color, color_bg, label_width)
   } else( not_allowed <- c(not_allowed, 1))
 
   if ( "average_severity" %in% names(df) & 2 %in% show_plots ){
     x2 <- x
     class(x2) <- "univ_avgsev"
-    p2 <- autoplot.univ_avgsev(x2, background, labels, sort, dec.mark, color, color_bg)
+    p2 <- autoplot.univ_avgsev(x2, background, labels, sort, sort_manual, dec.mark, color, color_bg, label_width)
   } else( not_allowed <- c(not_allowed, 2))
 
   if ( "risk_premium" %in% names(df) & 3 %in% show_plots ){
     x3 <- x
     class(x3) <- "univ_premium"
-    p3 <- autoplot.univ_premium(x3, background, labels, sort, dec.mark, color, color_bg)
+    p3 <- autoplot.univ_premium(x3, background, labels, sort, sort_manual, dec.mark, color, color_bg, label_width)
   } else( not_allowed <- c(not_allowed, 3))
 
   if ( "loss_ratio" %in% names(df) & 4 %in% show_plots ){
     x4 <- x
     class(x4) <- "univ_lossratio"
-    p4 <- autoplot.univ_lossratio(x4, background, labels = FALSE, sort, dec.mark, color, color_bg)
+    p4 <- autoplot.univ_lossratio(x4, background, labels = FALSE, sort, sort_manual, dec.mark, color, color_bg, label_width)
   } else( not_allowed <- c(not_allowed, 4))
 
   if ( "average_premium" %in% names(df) & 5 %in% show_plots ){
     x5 <- x
     class(x5) <- "univ_avgpremium"
-    p5 <- autoplot.univ_avgpremium(x5, background, labels, sort, dec.mark, color, color_bg)
+    p5 <- autoplot.univ_avgpremium(x5, background, labels, sort, sort_manual, dec.mark, color, color_bg, label_width)
   } else( not_allowed <- c(not_allowed, 5))
 
   if ( exposure %in% names(df) & 6 %in% show_plots ){
     x6 <- x
     class(x6) <- "univ_exposure"
-    p6 <- autoplot.univ_exposure(x6, labels = labels, sort = sort, coord_flip = FALSE, dec.mark = dec.mark, color_bg = color_bg)
+    p6 <- autoplot.univ_exposure(x6, labels = labels, sort = sort, sort_manual, coord_flip = FALSE,
+                                 dec.mark = dec.mark, color_bg = color_bg, label_width)
   } else( not_allowed <- c(not_allowed, 6))
 
   plots_possible <- setdiff(plots_allowed, not_allowed)
@@ -124,7 +128,7 @@ autoplot.univ_all <- function(x, show_plots = c(1, 2, 3, 4), ncol = 1, backgroun
                               axis.text.x = element_blank(),
                               axis.ticks.x = element_blank()) )
 
-   plot_last <- paste0("p", plots_possible[length(plots_possible)], collapse = " + ")
+   plot_last <- paste0("p", plots_possible[length( plots_possible )], collapse = " + ")
 
    if ( length(plots_possible) == 1 ){
      plot_out <- eval(parse( text = plot_last ))
@@ -133,16 +137,13 @@ autoplot.univ_all <- function(x, show_plots = c(1, 2, 3, 4), ncol = 1, backgroun
    if ( length(plots_possible) > 1 ){
      plot_nrs <- paste0("p", plots_possible[-length(plots_possible)], " + remove_axis", collapse = " + ")
      plot_all <- paste0(plot_nrs, " + ", plot_last)
-     plot_out <- eval(parse( text = plot_all )) + plot_layout(ncol = 1)
+     plot_out <- eval(parse( text = plot_all )) + patchwork::plot_layout(ncol = 1)
    }
   } else {
     plot_all <- paste0("p", plots_possible, collapse = " + ")
-    plot_out <- eval(parse( text = plot_all )) + plot_layout(ncol = ncol)
+    plot_out <- eval(parse( text = plot_all )) + patchwork::plot_layout(ncol = ncol)
   }
 
    return(plot_out)
 }
-
-
-
 

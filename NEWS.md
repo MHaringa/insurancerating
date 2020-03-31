@@ -1,3 +1,9 @@
+# insurancerating 0.5.3
+
+* `label_width` in `autoplot()` is added to wrap long labels in multiple lines
+* `sort_manual` in `autoplot()` is added to sort risk factors into an own ordering
+* `autoplot()` now works without loading package `ggplot2` first
+
 # insurancerating 0.5.2
 
 * `autoplot.univ_all()` now gives correct labels on the x-axis when `ncol` > 1. 
