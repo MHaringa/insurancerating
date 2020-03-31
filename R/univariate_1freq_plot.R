@@ -2,6 +2,10 @@
 #' @export
 ggplot2::autoplot
 
+#' @importFrom magrittr %>%
+#' @export
+magrittr::`%>%`
+
 #' Automatically create a ggplot for objects obtained from univariate_frequency()
 #'
 #' @description Takes an object produced by \code{univariate_frequency()}, and plots the claim frequency.
