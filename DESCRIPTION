@@ -7,10 +7,9 @@ VignetteBuilder: knitr
 Maintainer: Martin Haringa <mtharinga@gmail.com>
 Description: Methods for insurance rating. It provides a data driven strategy for the construction of 
     insurance tariff classes. This strategy is based on the work by Antonio and Valdez (2012) <doi:10.1007/s10182-011-0152-7>.
-    The package also adds functionality showing additional lines for the reference 
-    categories in the levels of the coefficients in the output of a generalized linear regression analysis. 
-    In addition it implements a procedure determining the level of a factor with the largest exposure, 
-    and thereafter changing the base level of the factor to this level. 
+    insurancerating also provides recipes on how to easily perform univariate analyses on an insurance portfolio. In addition it 
+    adds functionality to include reference categories in the levels of the coefficients in the output of a generalized linear 
+    regression analysis. 
 License: GPL (>= 2)
 URL: https://github.com/mharinga/insurancerating, https://mharinga.github.io/insurancerating/
 Encoding: UTF-8

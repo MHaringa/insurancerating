@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Automatically create a ggplot for objects obtained from univariate_average_severity() — autoplot.univ_avgsev • insurancerating</title>
+<title>Objects exported from other packages — reexports • insurancerating</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,15 @@
 
 
 
-<meta property="og:title" content="Automatically create a ggplot for objects obtained from univariate_average_severity() — autoplot.univ_avgsev" />
-<meta property="og:description" content="Takes an object produced by univariate_average_severity(), and plots the claim frequency." />
+<meta property="og:title" content="Objects exported from other packages — reexports" />
+<meta property="og:description" content="These objects are imported from other packages. Follow the links
+below to see their documentation.
+
+  ggplot2autoplot
+
+  magrittr%&amp;gt;%
+
+" />
 
 
 
@@ -123,79 +130,25 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Automatically create a ggplot for objects obtained from univariate_average_severity()</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/univariate_2avgsev_plot.R'><code>R/univariate_2avgsev_plot.R</code></a></small>
-    <div class="hidden name"><code>autoplot.univ_avgsev.Rd</code></div>
+    <h1>Objects exported from other packages</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/univariate_1freq_plot.R'><code>R/univariate_1freq_plot.R</code></a></small>
+    <div class="hidden name"><code>reexports.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Takes an object produced by <code><a href='univariate_average_severity.html'>univariate_average_severity()</a></code>, and plots the claim frequency.</p>
+    <p>These objects are imported from other packages. Follow the links
+below to see their documentation.</p>
+<dl'>
+  <dt>ggplot2</dt><dd><p><code><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></code></p></dd>
+
+  <dt>magrittr</dt><dd><p><code>%&gt;%</code></p></dd>
+
+</dl>
     </div>
 
-    <pre class="usage"><span class='co'># S3 method for univ_avgsev</span>
-<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(
-  <span class='no'>x</span>,
-  <span class='kw'>background</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>labels</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>sort</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>sort_manual</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>dec.mark</span> <span class='kw'>=</span> <span class='st'>","</span>,
-  <span class='kw'>color</span> <span class='kw'>=</span> <span class='st'>"dodgerblue"</span>,
-  <span class='kw'>color_bg</span> <span class='kw'>=</span> <span class='st'>"#E7B800"</span>,
-  <span class='kw'>label_width</span> <span class='kw'>=</span> <span class='fl'>10</span>
-)</pre>
 
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
-    <table class="ref-arguments">
-    <colgroup><col class="name" /><col class="desc" /></colgroup>
-    <tr>
-      <th>x</th>
-      <td><p>univ_avgsev object produced by <code><a href='univariate_average_severity.html'>univariate_average_severity()</a></code></p></td>
-    </tr>
-    <tr>
-      <th>background</th>
-      <td><p>show exposure as a histogram (default is TRUE)</p></td>
-    </tr>
-    <tr>
-      <th>labels</th>
-      <td><p>show labels with the exposure (default is TRUE)</p></td>
-    </tr>
-    <tr>
-      <th>sort</th>
-      <td><p>sort (or order) risk factor into descending order by exposure (default is FALSE)</p></td>
-    </tr>
-    <tr>
-      <th>sort_manual</th>
-      <td><p>sort (or order) risk factor into own ordering; should be a character vector (default is NULL)</p></td>
-    </tr>
-    <tr>
-      <th>dec.mark</th>
-      <td><p>control the format of the decimal point, as well as the mark between intervals before the decimal point, choose either "," (default) or "."</p></td>
-    </tr>
-    <tr>
-      <th>color</th>
-      <td><p>change the color of the points and line ("dodgerblue" is default)</p></td>
-    </tr>
-    <tr>
-      <th>color_bg</th>
-      <td><p>change the color of the histogram ("#E7B800" is default)</p></td>
-    </tr>
-    <tr>
-      <th>label_width</th>
-      <td><p>width of labels on the x-axis (10 is default)</p></td>
-    </tr>
-    </table>
 
-    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a ggplot2 object</p>
-
-    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='no'>ggplot2</span>)
-<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='univariate_average_severity.html'>univariate_average_severity</a></span>(<span class='no'>MTPL2</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>area</span>, <span class='kw'>severity</span> <span class='kw'>=</span> <span class='no'>amount</span>,
-                                   <span class='kw'>nclaims</span> <span class='kw'>=</span> <span class='no'>nclaims</span>, <span class='kw'>premium</span> <span class='kw'>=</span> <span class='no'>premium</span>)
-<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>x</span>)</div><div class='img'><img src='autoplot.univ_avgsev-1.png' alt='' width='700' height='433' /></div><div class='input'>
-</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

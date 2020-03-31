@@ -10,18 +10,17 @@ Status](https://www.r-pkg.org/badges/version/insurancerating)](https://cran.r-pr
 [![Downloads](https://cranlogs.r-pkg.org/badges/insurancerating?color=blue)](https://cran.rstudio.com/package=insurancerating)
 <!-- badges: end -->
 
-The goal of insurancerating is to give analytic techniques that can be
+The goal of `insurancerating` is to give analytic techniques that can be
 used in insurance rating. It provides a data driven strategy for the
 construction of tariff classes in P\&C insurance. The goal is to bin the
 continuous factors such that categorical risk factors result which
 capture the effect of the covariate on the response in an accurate way,
 while being easy to use in a generalized linear model (GLM).
 
-It also adds functionality showing additional lines for the reference
-categories in the levels of the coefficients in the output of a
-generalized linear regression analysis. In addition it implements a
-procedure determining the level of a factor with the largest exposure,
-and thereafter changing the base level of the factor to this level.
+`insurancerating` also provides recipes on how to easily perform
+univariate analyses on an insurance portfolio. In addition it adds
+functionality to include reference categories in the levels of the
+coefficients in the output of a generalized linear regression analysis.
 
 ## Installation
 
@@ -48,8 +47,6 @@ The first part shows how to fit a GAM for the variable
 
 ``` r
 library(insurancerating)
-library(ggplot2)
-library(dplyr)
 
 # Claim frequency 
 age_policyholder_frequency <- fit_gam(data = MTPL, 
@@ -108,6 +105,8 @@ this example for claim frequency the class for ages (39,50\], which
 contains the largest exposure.
 
 ``` r
+library(dplyr)
+
 dat <- MTPL %>%
   mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) %>%
   mutate(age_policyholder_sev_cat = clusters_sev$tariff_classes) %>%
@@ -216,7 +215,7 @@ y
     ## 4    0    6922       1   13.30685 0.07514927          6922.00     520.1832
 
 In the above output the loss ratio is not shown because the premium is
-not specified here.
+not specified as input.
 
 ``` r
 autoplot(y)
@@ -225,6 +224,17 @@ autoplot(y)
     ## Ignoring plots 4: input is unknown
 
 ![](man/figures/example8-1.png)<!-- -->
+
+`background` can be used to remove the bar graph, `sort` orders the
+levels of the risk factor into descending order by exposure.
+
+``` r
+univariate_all(MTPL2, x = area, severity = amount, nclaims = nclaims, 
+               exposure = exposure, premium = premium) %>%
+  autoplot(., show_plots = 1:6, background = FALSE, sort = TRUE)
+```
+
+![](man/figures/example8a-1.png)<!-- -->
 
 `show_plots` can be used to specify the desired plots. The following
 plots are available:
@@ -243,3 +253,15 @@ autoplot(y, show_plots = c(6,1), background = FALSE, sort = TRUE)
 ```
 
 ![](man/figures/example9-1.png)<!-- -->
+
+`sort_manual` in `autoplot()` can be used to sort the risk factor into
+own ordering. This makes sense when the levels of the risk factor has a
+natural order, or when not all levels of the risk factor are desired in
+the
+output.
+
+``` r
+autoplot(y, show_plots = c(6,1), background = FALSE, sort_manual = c("3", "1", "2"))
+```
+
+![](man/figures/example10-1.png)<!-- -->
