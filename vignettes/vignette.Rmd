@@ -38,8 +38,8 @@ install.packages("insurancerating")
 Or the development version from GitHub:
 
 ```{r gh-installation, eval = FALSE}
-# install.packages("devtools")
-devtools::install_github("MHaringa/insurancerating")
+# install.packages("remotes")
+remotes::install_github("MHaringa/insurancerating")
 ```
 
 # Construct tariff classes

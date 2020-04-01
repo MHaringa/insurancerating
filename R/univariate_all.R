@@ -37,67 +37,11 @@
 #' @export
 univariate_all <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, premium = NULL){
 
-    x00 <- deparse(substitute(x))
-    severity00 <- deparse(substitute(severity))
-    nclaims00 <- deparse(substitute(nclaims))
-    exposure00 <- deparse(substitute(exposure))
-    premium00 <- deparse(substitute(premium))
-
-    cols <- c(severity00, nclaims00, exposure00, premium00)
-    cols <- cols[cols != "NULL"]
-
-    if ( length( cols ) == 0 ) {
-      stop("Define column names.")
-    }
-
-    dt <- data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE), by = x00, .SDcols = cols]
-
-    frequency = average_severity = risk_premium = loss_ratio = average_premium = NULL # due to NSE notes in R CMD check
-
-    # Frequency
-     if ( all(c(nclaims00, exposure00) %in% cols)  ){
-        dt <- dt[, frequency := get(nclaims00) / get(exposure00)]
-     }
-
-     # Average severity
-     if ( all(c(severity00, nclaims00) %in% cols) ){
-       dt <- dt[, average_severity := get(severity00) / get(nclaims00)]
-     }
-
-     # Risk premium
-     if ( all(c(severity00, exposure00) %in% cols) ){
-       dt <- dt[, risk_premium := get(severity00) / get(exposure00)]
-     }
-
-     # Loss ratio
-     if ( all(c(severity00, premium00) %in% cols) ){
-       dt <- dt[, loss_ratio := get(severity00) / get(premium00)]
-     }
-
-     # Average premium
-     if ( all(c(premium00, exposure00) %in% cols) ){
-       dt <- dt[, average_premium := get(premium00) / get(exposure00)]
-     }
-
-    return(structure(list(df = as.data.frame(dt),
-                          xvar = x00,
-                          severity = severity00,
-                          nclaims = nclaims00,
-                          exposure = exposure00,
-                          premium = premium00),
-                     class = "univ_all"))
+  .Defunct("univariate")
+  univariate(df = df, x = x, severity = severity, nclaims = nclaims, exposure = exposure, premium = premium)
 }
 
-#' @export
-print.univ_all <- function(x, ...) {
-  print(x$df)
-}
 
-#' @export
-as.data.frame.univ_all <- function(x, ...) {
-  df <- x$df
-  return(as.data.frame(df))
-}
 
 
 

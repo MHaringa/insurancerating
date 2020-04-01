@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Univariate analysis for discrete risk factors — univariate_all • insurancerating</title>
+<title>Univariate analysis for discrete risk factors — univariate • insurancerating</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,7 @@
 
 
 
-<meta property="og:title" content="Univariate analysis for discrete risk factors — univariate_all" />
+<meta property="og:title" content="Univariate analysis for discrete risk factors — univariate" />
 <meta property="og:description" content="Univariate analysis for discrete risk factors in an insurance portfolio. The following summary statistics are calculated:
 frequency (i.e. number of claims / expsore)
 average severity (i.e. severity / number of claims)
@@ -130,8 +130,8 @@ If input arguments are not specified, the summary statistics related to these ar
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Univariate analysis for discrete risk factors</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/univariate_all.R'><code>R/univariate_all.R</code></a></small>
-    <div class="hidden name"><code>univariate_all.Rd</code></div>
+    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/univariate.R'><code>R/univariate.R</code></a></small>
+    <div class="hidden name"><code>univariate.Rd</code></div>
     </div>
 
     <div class="ref-description">
@@ -144,7 +144,7 @@ If input arguments are not specified, the summary statistics related to these ar
 </ul><p>If input arguments are not specified, the summary statistics related to these arguments are ignored.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>univariate_all</span>(
+    <pre class="usage"><span class='fu'>univariate</span>(
   <span class='no'>df</span>,
   <span class='no'>x</span>,
   <span class='kw'>severity</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
@@ -194,14 +194,23 @@ If input arguments are not specified, the summary statistics related to these ar
 
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'>univariate_all</span>(<span class='no'>MTPL2</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>area</span>, <span class='kw'>severity</span> <span class='kw'>=</span> <span class='no'>amount</span>, <span class='kw'>nclaims</span> <span class='kw'>=</span> <span class='no'>nclaims</span>,
-                 <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='no'>exposure</span>, <span class='kw'>premium</span> <span class='kw'>=</span> <span class='no'>premium</span>)</div><div class='output co'>#&gt; <span class='error'>Error: 'univariate_all' is defunct.</span>
-#&gt; <span class='error'>Use 'univariate' instead.</span>
-#&gt; <span class='error'>See help("Defunct")</span></div><div class='input'>
+    <pre class="examples"><div class='input'><span class='fu'>univariate</span>(<span class='no'>MTPL2</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>area</span>, <span class='kw'>severity</span> <span class='kw'>=</span> <span class='no'>amount</span>, <span class='kw'>nclaims</span> <span class='kw'>=</span> <span class='no'>nclaims</span>,
+                 <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='no'>exposure</span>, <span class='kw'>premium</span> <span class='kw'>=</span> <span class='no'>premium</span>)</div><div class='output co'>#&gt;   area  amount nclaims   exposure premium  frequency average_severity
+#&gt; 1    2 4063270      98  818.53973   51896 0.11972540         41461.94
+#&gt; 2    3 7945311     113  764.99178   49337 0.14771401         70312.49
+#&gt; 3    1 6896187     146 1065.74795   65753 0.13699299         47234.16
+#&gt; 4    0    6922       1   13.30685     902 0.07514927          6922.00
+#&gt;   risk_premium loss_ratio average_premium
+#&gt; 1    4964.0474  78.296400        63.40071
+#&gt; 2   10386.1390 161.041632        64.49350
+#&gt; 3    6470.7486 104.880188        61.69658
+#&gt; 4     520.1832   7.674058        67.78464</div><div class='input'>
 <span class='co'># The summary statistics related to premium are not calculated</span>
-<span class='fu'>univariate_all</span>(<span class='no'>MTPL2</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>area</span>, <span class='kw'>severity</span> <span class='kw'>=</span> <span class='no'>amount</span>, <span class='kw'>nclaims</span> <span class='kw'>=</span> <span class='no'>nclaims</span>, <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='no'>exposure</span>)</div><div class='output co'>#&gt; <span class='error'>Error: 'univariate_all' is defunct.</span>
-#&gt; <span class='error'>Use 'univariate' instead.</span>
-#&gt; <span class='error'>See help("Defunct")</span></div><div class='input'>
+<span class='fu'>univariate</span>(<span class='no'>MTPL2</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>area</span>, <span class='kw'>severity</span> <span class='kw'>=</span> <span class='no'>amount</span>, <span class='kw'>nclaims</span> <span class='kw'>=</span> <span class='no'>nclaims</span>, <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='no'>exposure</span>)</div><div class='output co'>#&gt;   area  amount nclaims   exposure  frequency average_severity risk_premium
+#&gt; 1    2 4063270      98  818.53973 0.11972540         41461.94    4964.0474
+#&gt; 2    3 7945311     113  764.99178 0.14771401         70312.49   10386.1390
+#&gt; 3    1 6896187     146 1065.74795 0.13699299         47234.16    6470.7486
+#&gt; 4    0    6922       1   13.30685 0.07514927          6922.00     520.1832</div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

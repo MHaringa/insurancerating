@@ -9,28 +9,12 @@ reference:
       - construct_tariff_classes
       - autoplot.fitgam
       - autoplot.constructtariffclasses
-  - title: "Univariate analysis: summary"
+  - title: "Univariate analysis"
     desc: >
-      Create summary of an insurance portfolio
+      Calculate and plot basic risk indicators split by the levels of a discrete risk factor in an insurance portfolio
     contents:
-      - univariate_all
-      - univariate_frequency
-      - univariate_average_severity
-      - univariate_risk_premium
-      - univariate_loss_ratio
-      - univariate_average_premium
-      - univariate_exposure
-  - title: "Univariate analysis: plot"
-    desc: >
-      Create plots of the summary statistics obtained by univariate_*
-    contents:
-      - autoplot.univ_all
-      - autoplot.univ_freq
-      - autoplot.univ_avgsev
-      - autoplot.univ_premium
-      - autoplot.univ_lossratio
-      - autoplot.univ_avgpremium
-      - autoplot.univ_exposure
+      - univariate
+      - autoplot.univariate
   - title: "Data sets"
     contents:
       - MTPL

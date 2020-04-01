@@ -33,8 +33,8 @@ install.packages("insurancerating")
 Or the development version from GitHub:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("MHaringa/insurancerating")
+# install.packages("remotes")
+remotes::install_github("MHaringa/insurancerating")
 ```
 
 ## Example 1
@@ -151,15 +151,53 @@ rating_factors(model)
 This is a basic example which shows how to easily perform an univariate
 analysis on a MTPL portfolio using `insurancerating`.
 
-The first part shows how to create a frequency plot for the variable
-`area` in the `MTPL2`
-dataset:
+An univariate analysis consists in the evaluation of overall claim
+frequency, severity and risk premium. Its main purpose lies in verifying
+the experience data reasonableness using previous experience comparison
+and professional judgement.
+
+`univariate()` shows the basic risk indicators split by the levels of
+the discrete risk factor:
 
 ``` r
-x <- univariate_frequency(MTPL2, x = area, nclaims = nclaims, exposure = exposure)
+library(insurancerating)
+univariate(MTPL2, 
+           x = area, # discrete risk factor
+           nclaims = nclaims, # number of claims
+           exposure = exposure, 
+           premium = premium, 
+           severity = amount) # loss
+```
 
-# Print output
-x
+    ##   area  amount nclaims   exposure premium  frequency average_severity
+    ## 1    2 4063270      98  818.53973   51896 0.11972540         41461.94
+    ## 2    3 7945311     113  764.99178   49337 0.14771401         70312.49
+    ## 3    1 6896187     146 1065.74795   65753 0.13699299         47234.16
+    ## 4    0    6922       1   13.30685     902 0.07514927          6922.00
+    ##   risk_premium loss_ratio average_premium
+    ## 1    4964.0474  78.296400        63.40071
+    ## 2   10386.1390 161.041632        64.49350
+    ## 3    6470.7486 104.880188        61.69658
+    ## 4     520.1832   7.674058        67.78464
+
+The following indicators are calculated:
+
+1.  frequency (i.e. frequency = number of claims / expsore)
+2.  average\_severity (i.e. average severity = severity / number of
+    claims)
+3.  risk\_premium (i.e. risk premium = severity / exposure = frequency x
+    average severity)
+4.  loss\_ratio (i.e. loss ratio = severity / premium)
+5.  average\_premium (i.e. average premium = premium / exposure)
+
+The term risk premium is used here as an equivalent of pure premium and
+burning cost.
+
+`univariate()` ignores missing input arguments, for instance only the
+claim frequency is calculated when `premium` and `severity` are unknown:
+
+``` r
+univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) 
 ```
 
     ##   area nclaims   exposure  frequency
@@ -168,100 +206,86 @@ x
     ## 3    1     146 1065.74795 0.13699299
     ## 4    0       1   13.30685 0.07514927
 
-``` r
-# Print plot
-autoplot(x)
-```
-
-![](man/figures/example4-1.png)<!-- -->
-
-Or sort risk factor into descending order by exposure:
+However, the above table is small and easy to understand, the same
+information might be presented more effectively with a graph, as shown
+below.
 
 ``` r
-autoplot(x, sort = TRUE, dec.mark = ".", color_bg = "mediumseagreen")
-```
-
-![](man/figures/example5-1.png)<!-- -->
-
-`univariate_average_severity()` calculates the average severity:
-
-``` r
-univariate_average_severity(MTPL2, x = area, severity = amount, 
-                            nclaims = nclaims, premium = premium) %>%
+univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) %>%
   autoplot(.)
 ```
 
 ![](man/figures/example6-1.png)<!-- -->
 
-Similar plots can be created for the risk premium, loss ratio, average
-premium, and exposure, using `univariate_risk_premium()`,
-`univariate_loss_ratio()`, `univariate_average_premium()`, and
-`univariate_exposure()`, respectively.
+In `autoplot.univariate()`, `show_plots` defines the plots to show and
+also the order of the plots. The following plots are available:
 
-`univariate_all()` combines these
-plots:
+1.  frequency
+2.  average\_severity
+3.  risk\_premium
+4.  loss\_ratio
+5.  average\_premium
+6.  exposure
+7.  severity
+8.  nclaims
+9.  premium
 
-``` r
-y <- univariate_all(MTPL2, x = area, severity = amount, nclaims = nclaims, exposure = exposure)
-
-# Print output
-y
-```
-
-    ##   area  amount nclaims   exposure  frequency average_severity risk_premium
-    ## 1    2 4063270      98  818.53973 0.11972540         41461.94    4964.0474
-    ## 2    3 7945311     113  764.99178 0.14771401         70312.49   10386.1390
-    ## 3    1 6896187     146 1065.74795 0.13699299         47234.16    6470.7486
-    ## 4    0    6922       1   13.30685 0.07514927          6922.00     520.1832
-
-In the above output the loss ratio is not shown because the premium is
-not specified as input.
+For example, to show the exposure and claim frequency plots:
 
 ``` r
-autoplot(y)
+univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) %>%
+  autoplot(., show_plots = c(6,1))
 ```
 
-    ## Ignoring plots 4: input is unknown
+![](man/figures/example7-1.png)<!-- -->
+
+To remove the bars from the plot with the line graph, add `background =
+FALSE`:
+
+``` r
+univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) %>%
+  autoplot(., show_plots = c(6,1), background = FALSE)
+```
 
 ![](man/figures/example8-1.png)<!-- -->
 
-`background` can be used to remove the bar graph, `sort` orders the
-levels of the risk factor into descending order by exposure.
+`sort` orders the levels of the risk factor into descending order by
+exposure:
 
 ``` r
-univariate_all(MTPL2, x = area, severity = amount, nclaims = nclaims, 
-               exposure = exposure, premium = premium) %>%
-  autoplot(., show_plots = 1:6, background = FALSE, sort = TRUE)
-```
-
-![](man/figures/example8a-1.png)<!-- -->
-
-`show_plots` can be used to specify the desired plots. The following
-plots are available:
-
-1.  frequency (i.e. number of claims / expsore)
-2.  average severity (i.e. severity / number of claims)
-3.  risk premium (i.e. severity / exposure)
-4.  loss ratio (i.e. severity / premium)
-5.  average premium (i.e. premium / exposure)
-6.  exposure
-
-Show the exposure and claim frequency:
-
-``` r
-autoplot(y, show_plots = c(6,1), background = FALSE, sort = TRUE)
+univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) %>%
+  autoplot(., show_plots = c(6,1), background = FALSE, sort = TRUE)
 ```
 
 ![](man/figures/example9-1.png)<!-- -->
 
-`sort_manual` in `autoplot()` can be used to sort the risk factor into
-own ordering. This makes sense when the levels of the risk factor has a
-natural order, or when not all levels of the risk factor are desired in
-the
-output.
+`sort_manual` in `autoplot.univariate()` can be used to sort the levels
+of the discrete risk factor into your own ordering. This makes sense
+when the levels of the risk factor has a natural order, or when not all
+levels of the risk factor are desired in the output.
 
 ``` r
-autoplot(y, show_plots = c(6,1), background = FALSE, sort_manual = c("3", "1", "2"))
+univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) %>%
+  autoplot(., show_plots = c(6,1), background = FALSE, sort_manual = c("2", "3", "1", "0"))
 ```
 
 ![](man/figures/example10-1.png)<!-- -->
+
+The following graph shows some more options:
+
+``` r
+univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) %>%
+  autoplot(., show_plots = c(6,1), background = FALSE, sort = TRUE, ncol = 2, 
+           color_bg = "dodgerblue", color = "blue")
+```
+
+![](man/figures/example11-1.png)<!-- -->
+
+Or create a bar graph for the number of claims:
+
+``` r
+univariate(MTPL2, x = area, nclaims = nclaims) %>%
+  autoplot(., coord_flip = TRUE, sort = TRUE)
+```
+
+![](man/figures/example12-1.png)<!-- -->
