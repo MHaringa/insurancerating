@@ -1,4 +1,5 @@
 #' Univariate average claim severity
+#' @noRd
 #'
 #' @description Average claim frequency for discrete risk factors in an insurance portfolio. For each level of the risk factor the average claim severity is equal to the ratio between the severity and the number of claims.
 #'
@@ -25,7 +26,6 @@
 #'
 #' @author Martin Haringa
 #'
-#' @export
 univariate_average_severity <- function(df, x, severity, nclaims, exposure = NULL, premium = NULL){
 
   x00 <- deparse(substitute(x))

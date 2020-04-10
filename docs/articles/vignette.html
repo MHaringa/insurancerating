@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.2.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.0</span>
       </span>
     </div>
 
@@ -86,7 +86,7 @@
 </h1>
                         <h4 class="author">Martin Haringa</h4>
             
-            <h4 class="date">2020-04-01</h4>
+            <h4 class="date">2020-04-10</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/mharinga/insurancerating/blob/master/vignettes/vignette.Rmd"><code>vignettes/vignette.Rmd</code></a></small>
       <div class="hidden name"><code>vignette.Rmd</code></div>
@@ -174,20 +174,6 @@
 <span class="co">#&gt; $ age_policyholder_freq_cat &lt;fct&gt; "(39,50]", "[18,25]", "(50,57]", "(39,50]",…</span>
 <span class="co">#&gt; $ age_policyholder_sev_cat  &lt;fct&gt; "(39,46]", "[18,25]", "(46,81]", "(39,46]",…</span></pre></body></html></div>
 <p>The function rating_factors prints the output including the reference group for a GLM (Generalized Linear Model).</p>
-<div class="sourceCode" id="cb9"><html><body><pre class="r"><span class="no">model</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html">glm</a></span>(<span class="no">nclaims</span> ~ <span class="no">age_policyholder_freq_cat</span>, <span class="kw">offset</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span>(<span class="no">exposure</span>),
-             <span class="kw">family</span> <span class="kw">=</span> <span class="st">"poisson"</span>, <span class="kw">data</span> <span class="kw">=</span> <span class="no">dat</span>)
-<span class="fu"><a href="../reference/rating_factors.html">rating_factors</a></span>(<span class="no">model</span>)
-<span class="co">#&gt;                         term     cluster  estimate</span>
-<span class="co">#&gt; 1                  Intercept (Intercept) 0.1368181</span>
-<span class="co">#&gt; 2  age_policyholder_freq_cat     (39,50] 1.0000000</span>
-<span class="co">#&gt; 3  age_policyholder_freq_cat     [18,25] 1.9438228</span>
-<span class="co">#&gt; 4  age_policyholder_freq_cat     (25,32] 1.3234995</span>
-<span class="co">#&gt; 5  age_policyholder_freq_cat     (32,39] 1.0568538</span>
-<span class="co">#&gt; 6  age_policyholder_freq_cat     (50,57] 0.8919696</span>
-<span class="co">#&gt; 7  age_policyholder_freq_cat     (57,64] 0.7423998</span>
-<span class="co">#&gt; 8  age_policyholder_freq_cat     (64,71] 0.7379362</span>
-<span class="co">#&gt; 9  age_policyholder_freq_cat     (71,83] 0.7021348</span>
-<span class="co">#&gt; 10 age_policyholder_freq_cat     (83,95] 0.6933378</span></pre></body></html></div>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1 class="hasAnchor">

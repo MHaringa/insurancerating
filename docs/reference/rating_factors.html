@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.2.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.0</span>
       </span>
     </div>
 
@@ -132,18 +132,22 @@
     <p>This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>rating_factors</span>(<span class='no'>model</span>, <span class='kw'>colname</span> <span class='kw'>=</span> <span class='st'>"estimate"</span>, <span class='kw'>exponentiate</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
+    <pre class="usage"><span class='fu'>rating_factors</span>(<span class='no'>...</span>, <span class='kw'>model_data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>exponentiate</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>model</th>
-      <td><p>a (generalized) linear model fit</p></td>
+      <th>...</th>
+      <td><p>glm object(s) produced by <code><a href='https://rdrr.io/r/stats/glm.html'>glm()</a></code></p></td>
     </tr>
     <tr>
-      <th>colname</th>
-      <td><p>name of column with estimates. Defaults to "estimate".</p></td>
+      <th>model_data</th>
+      <td><p>data.frame used to create glm object(s)</p></td>
+    </tr>
+    <tr>
+      <th>exposure</th>
+      <td><p>column in <code>model_data</code> with exposure</p></td>
     </tr>
     <tr>
       <th>exponentiate</th>
@@ -154,16 +158,24 @@
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>data.frame</p>
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
-
-    <p>This function is adopted from the dummy.coefstats function. Our adoption prints a data.frame as output. Categorical variables
-    should be changed to factors in the data.frame used to fit the (generalized) linear model.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='no'>g1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>age_policyholder</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"poisson"</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>MTPL</span>)
-<span class='fu'>rating_factors</span>(<span class='no'>g1</span>)</div><div class='output co'>#&gt;               term cluster  estimate
-#&gt; 1        Intercept      () 0.2470992
-#&gt; 2 age_policyholder         0.9847863</div></pre>
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='no'>dplyr</span>)
+<span class='no'>df</span> <span class='kw'>&lt;-</span> <span class='no'>MTPL2</span> <span class='kw'>%&gt;%</span>
+    <span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate_all.html'>mutate_at</a></span>(<span class='fu'><a href='https://dplyr.tidyverse.org/reference/vars.html'>vars</a></span>(<span class='no'>area</span>), <span class='no'>as.factor</span>) <span class='kw'>%&gt;%</span>
+    <span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate_all.html'>mutate_at</a></span>(<span class='fu'><a href='https://dplyr.tidyverse.org/reference/vars.html'>vars</a></span>(<span class='no'>area</span>), ~<span class='fu'><a href='biggest_reference.html'>biggest_reference</a></span>(<span class='no'>.</span>, <span class='no'>exposure</span>))
+
+<span class='no'>mod1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>area</span> + <span class='no'>premium</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>df</span>)
+<span class='no'>mod2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>area</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>df</span>)
+
+<span class='fu'>rating_factors</span>(<span class='no'>mod1</span>, <span class='no'>mod2</span>, <span class='kw'>model_data</span> <span class='kw'>=</span> <span class='no'>df</span>, <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='no'>exposure</span>)</div><div class='output co'>#&gt;   risk_factor       level  est_mod1  est_mod2   exposure
+#&gt; 1 (Intercept) (Intercept) 0.1279538 0.1369930         NA
+#&gt; 2        area           0 0.5465581 0.5485629   13.30685
+#&gt; 3        area           1 1.0000000 1.0000000 1065.74795
+#&gt; 4        area           2 0.8728835 0.8739528  818.53973
+#&gt; 5        area           3 1.0762334 1.0782596  764.99178
+#&gt; 6     premium     premium 1.0012348        NA         NA</div><div class='input'>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

@@ -81,12 +81,11 @@ autoplot(clusters_freq, show_observations = TRUE)
 
 The figure shows that younger policyholders have a higher risk profile. The fitted GAM is lower than might be expected from the observed claim frequency for policyholders of age 19. This is because there are very few young policyholders of age 19 present in the portfolio. 
 
-Show classes for the claim severity: 
+The GAM for the claim severity : 
 
 ```{r figsev, eval = TRUE}
 
 age_policyholder_severity %>%
-  construct_tariff_classes() %>%
   autoplot(., show_observations = TRUE, remove_outliers = 100000)
 
 ```
@@ -99,7 +98,6 @@ library(dplyr)
 
 dat <- MTPL %>%
   mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) %>%
-  mutate(age_policyholder_sev_cat = clusters_sev$tariff_classes) %>%
   mutate_if(is.character, as.factor) %>%
   mutate_if(is.factor, list(~biggest_reference(., exposure)))
 
@@ -107,14 +105,29 @@ glimpse(dat)
 
 ```
 
-The last part is to fit a *generalized linear model*. The function rating_factors prints the output including the reference group.
+The last part is to fit a *generalized linear model*. `rating_factors()` prints the output including the reference group.
 
 ```{r example3, eval = TRUE}
 
-model <- glm(nclaims ~ age_policyholder_freq_cat, offset = log(exposure), family = "poisson", data = dat)
-rating_factors(model)
+model_freq1 <- glm(nclaims ~ age_policyholder_freq_cat, offset = log(exposure), 
+                  family = "poisson", data = dat)
+
+model_freq2 <- glm(nclaims ~ age_policyholder_freq_cat + age_policyholder, offset = log(exposure), 
+                  family = "poisson", data = dat)
+
+rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) 
 
 ```
+
+`autoplot.riskfactor()` creates a figure:
+
+```{r example3a, eval = TRUE}
+
+rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) %>%
+  autoplot()
+
+```
+
 
 ## Example 2
 This is a basic example which shows how to easily perform an univariate analysis on a MTPL portfolio using `insurancerating`.

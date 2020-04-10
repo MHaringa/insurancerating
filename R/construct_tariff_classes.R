@@ -1,4 +1,6 @@
 #' Get splits from partykit object
+#' @noRd
+#'
 #' @param x A party object.
 #'
 get_splits <- function(x) {

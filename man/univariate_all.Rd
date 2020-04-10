@@ -46,11 +46,3 @@ Univariate analysis for discrete risk factors in an insurance portfolio. The fol
 }
 If input arguments are not specified, the summary statistics related to these arguments are ignored.
 }
-\examples{
-univariate_all(MTPL2, x = area, severity = amount, nclaims = nclaims,
-                 exposure = exposure, premium = premium)
-
-# The summary statistics related to premium are not calculated
-univariate_all(MTPL2, x = area, severity = amount, nclaims = nclaims, exposure = exposure)
-
-}

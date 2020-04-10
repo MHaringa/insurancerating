@@ -4,12 +4,14 @@
 \alias{rating_factors}
 \title{Include reference group in regression output}
 \usage{
-rating_factors(model, colname = "estimate", exponentiate = TRUE)
+rating_factors(..., model_data = NULL, exposure = NULL, exponentiate = TRUE)
 }
 \arguments{
-\item{model}{a (generalized) linear model fit}
+\item{...}{glm object(s) produced by \code{glm()}}
 
-\item{colname}{name of column with estimates. Defaults to "estimate".}
+\item{model_data}{data.frame used to create glm object(s)}
+
+\item{exposure}{column in \code{model_data} with exposure}
 
 \item{exponentiate}{Logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.}
 }
@@ -20,12 +22,20 @@ data.frame
 This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables.
 }
 \details{
-This function is adopted from the dummy.coef{stats} function. Our adoption prints a data.frame as output. Categorical variables
-    should be changed to factors in the data.frame used to fit the (generalized) linear model.
+A fitted linear model has coefficients for the contrasts of the factor terms, usually one less in number than the number of levels.
+This function re-expresses the coefficients in the original coding. This function is adopted from dummy.coef(). Our adoption prints a data.frame as output.
 }
 \examples{
-g1 <- glm(nclaims ~ age_policyholder, family = "poisson", data = MTPL)
-rating_factors(g1)
+library(dplyr)
+df <- MTPL2 \%>\%
+    mutate_at(vars(area), as.factor) \%>\%
+    mutate_at(vars(area), ~biggest_reference(., exposure))
+
+mod1 <- glm(nclaims ~ area + premium, offset = log(exposure), family = poisson(), data = df)
+mod2 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = df)
+
+rating_factors(mod1, mod2, model_data = df, exposure = exposure)
+
 }
 \author{
 Martin Haringa

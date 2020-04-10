@@ -5,7 +5,7 @@
 \title{Automatically create a ggplot for objects obtained from univariate()}
 \usage{
 \method{autoplot}{univariate}(
-  x,
+  object,
   show_plots = 1:9,
   ncol = 1,
   background = TRUE,
@@ -16,11 +16,12 @@
   color = "dodgerblue",
   color_bg = "#E7B800",
   label_width = 10,
-  coord_flip = FALSE
+  coord_flip = FALSE,
+  ...
 )
 }
 \arguments{
-\item{x}{univariate object produced by \code{univariate()}}
+\item{object}{univariate object produced by \code{univariate()}}
 
 \item{show_plots}{numeric vector of plots to be shown (default is c(1,2,3,4,5,6,7,8,9)), there are nine available plots:
  \itemize{
@@ -52,6 +53,10 @@
 \item{color_bg}{change the color of the histogram ("#E7B800" is default)}
 
 \item{label_width}{width of labels on the x-axis (10 is default)}
+
+\item{coord_flip}{flip cartesian coordinates so that horizontal becomes vertical, and vertical, horizontal (default is FALSE)}
+
+\item{...}{other plotting parameters to affect the plot}
 }
 \value{
 a ggplot2 object

@@ -88,11 +88,10 @@ The fitted GAM is lower than might be expected from the observed claim
 frequency for policyholders of age 19. This is because there are very
 few young policyholders of age 19 present in the portfolio.
 
-Show classes for the claim severity:
+The GAM for the claim severity :
 
 ``` r
 age_policyholder_severity %>%
-  construct_tariff_classes() %>%
   autoplot(., show_observations = TRUE, remove_outliers = 100000)
 ```
 
@@ -109,7 +108,6 @@ library(dplyr)
 
 dat <- MTPL %>%
   mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) %>%
-  mutate(age_policyholder_sev_cat = clusters_sev$tariff_classes) %>%
   mutate_if(is.character, as.factor) %>%
   mutate_if(is.factor, list(~biggest_reference(., exposure)))
 
@@ -117,34 +115,61 @@ glimpse(dat)
 ```
 
     ## Observations: 32,731
-    ## Variables: 6
+    ## Variables: 5
     ## $ age_policyholder          <int> 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…
     ## $ nclaims                   <int> 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…
     ## $ exposure                  <dbl> 1.0000000, 1.0000000, 1.0000000, 1.0000000,…
     ## $ amount                    <dbl> 0, 0, 0, 57540, 2057, 0, 0, 6510, 0, 0, 0, …
     ## $ age_policyholder_freq_cat <fct> "(39,50]", "[18,25]", "(50,57]", "(39,50]",…
-    ## $ age_policyholder_sev_cat  <fct> "(39,46]", "[18,25]", "(46,81]", "(39,46]",…
 
-The last part is to fit a *generalized linear model*. The function
-rating\_factors prints the output including the reference
+The last part is to fit a *generalized linear model*. `rating_factors()`
+prints the output including the reference
 group.
 
 ``` r
-model <- glm(nclaims ~ age_policyholder_freq_cat, offset = log(exposure), family = "poisson", data = dat)
-rating_factors(model)
+model_freq1 <- glm(nclaims ~ age_policyholder_freq_cat, offset = log(exposure), 
+                  family = "poisson", data = dat)
+
+model_freq2 <- glm(nclaims ~ age_policyholder_freq_cat + age_policyholder, offset = log(exposure), 
+                  family = "poisson", data = dat)
+
+rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) 
 ```
 
-    ##                         term     cluster  estimate
-    ## 1                  Intercept (Intercept) 0.1368181
-    ## 2  age_policyholder_freq_cat     (39,50] 1.0000000
-    ## 3  age_policyholder_freq_cat     [18,25] 1.9438228
-    ## 4  age_policyholder_freq_cat     (25,32] 1.3234995
-    ## 5  age_policyholder_freq_cat     (32,39] 1.0568538
-    ## 6  age_policyholder_freq_cat     (50,57] 0.8919696
-    ## 7  age_policyholder_freq_cat     (57,64] 0.7423998
-    ## 8  age_policyholder_freq_cat     (64,71] 0.7379362
-    ## 9  age_policyholder_freq_cat     (71,83] 0.7021348
-    ## 10 age_policyholder_freq_cat     (83,95] 0.6933378
+    ##                  risk_factor            level est_model_freq1 est_model_freq2
+    ## 1                (Intercept)      (Intercept)       0.1368181       0.3210287
+    ## 2  age_policyholder_freq_cat          [18,25]       1.9438228       1.2909603
+    ## 3  age_policyholder_freq_cat          (25,32]       1.3234995       0.9802830
+    ## 4  age_policyholder_freq_cat          (32,39]       1.0568538       0.8923472
+    ## 5  age_policyholder_freq_cat          (39,50]       1.0000000       1.0000000
+    ## 6  age_policyholder_freq_cat          (50,57]       0.8919696       1.0535866
+    ## 7  age_policyholder_freq_cat          (57,64]       0.7423998       1.0056607
+    ## 8  age_policyholder_freq_cat          (64,71]       0.7379362       1.1383509
+    ## 9  age_policyholder_freq_cat          (71,83]       0.7021348       1.2486752
+    ## 10 age_policyholder_freq_cat          (83,95]       0.6933378       1.5100830
+    ## 11          age_policyholder age_policyholder              NA       0.9811935
+    ##     exposure
+    ## 1         NA
+    ## 2  1436.3589
+    ## 3  3981.6932
+    ## 4  4640.4904
+    ## 5  7462.4603
+    ## 6  3711.9699
+    ## 7  3101.1945
+    ## 8  2753.4822
+    ## 9  1884.1452
+    ## 10  115.9589
+    ## 11        NA
+
+`autoplot.riskfactor()` creates a
+figure:
+
+``` r
+rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) %>%
+  autoplot()
+```
+
+![](man/figures/example3a-1.png)<!-- -->
 
 ## Example 2
 

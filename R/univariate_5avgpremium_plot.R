@@ -1,4 +1,5 @@
 #' Automatically create a ggplot for objects obtained from univariate_average_premium()
+#' @noRd
 #'
 #' @description Takes an object produced by \code{univariate_average_premium()}, and plots the average premium.
 #'
@@ -21,8 +22,7 @@
 #' x <- univariate_average_premium(MTPL2, x = area, premium = premium, exposure = exposure)
 #' autoplot(x)
 #'
-#' @export
-autoplot.univ_avgpremium<- function(x, background = TRUE, labels = TRUE, sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue", color_bg = "#E7B800", label_width = 10){
+autoplot.univ_avgpremium <- function(x, background = TRUE, labels = TRUE, sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue", color_bg = "#E7B800", label_width = 10){
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)

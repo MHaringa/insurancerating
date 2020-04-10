@@ -122,10 +122,15 @@ glimpse(dat)
 
 The function rating_factors prints the output including the reference group for a GLM (Generalized Linear Model).
 
-```{r example3, eval = TRUE}
-model <- glm(nclaims ~ age_policyholder_freq_cat, offset = log(exposure), 
-             family = "poisson", data = dat)
-rating_factors(model)
+```{r example3, eval = FALSE, echo = FALSE}
+model_freq <- glm(nclaims ~ age_policyholder_freq_cat, offset = log(exposure), 
+                  family = "poisson", data = dat)
+
+model_sev <- glm(amount ~ age_policyholder_freq_cat, weights = nclaims, 
+                  family = Gamma(link = "log"), data = dat[dat$amount > 0, ])
+
+rating_factors(model_freq, model_sev, model_data = dat, exposure = exposure) %>%
+  autoplot()
 ```
 
 # References

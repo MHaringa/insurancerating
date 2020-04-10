@@ -1,4 +1,5 @@
 #' Univariate average premium
+#' @noRd
 #'
 #' @description Average premium for discrete risk factors in an insurance portfolio. For each level of the risk factor the average premium is equal to the ratio between the premium and the exposure.
 #'
@@ -24,7 +25,6 @@
 #'
 #' @author Martin Haringa
 #'
-#' @export
 univariate_average_premium <- function(df, x, premium, exposure, nclaims = NULL, severity = NULL){
 
   x00 <- deparse(substitute(x))

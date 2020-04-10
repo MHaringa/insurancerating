@@ -5,7 +5,7 @@
 \title{Automatically create a ggplot for objects obtained from construct_tariff_classes()}
 \usage{
 \method{autoplot}{constructtariffclasses}(
-  x,
+  object,
   conf_int = FALSE,
   color_gam = "steelblue",
   show_observations = FALSE,
@@ -13,11 +13,12 @@
   size_points = 1,
   color_points = "black",
   rotate_labels = FALSE,
-  remove_outliers = NULL
+  remove_outliers = NULL,
+  ...
 )
 }
 \arguments{
-\item{x}{constructtariffclasses object produced by \code{construct_tariff_classes}}
+\item{object}{constructtariffclasses object produced by \code{construct_tariff_classes}}
 
 \item{conf_int}{determines whether 95\% confidence intervals will be plotted. The default is \code{conf_int = FALSE}}
 
@@ -34,6 +35,8 @@
 \item{rotate_labels}{rotate x-labels 45 degrees (this might be helpful for overlapping x-labels)}
 
 \item{remove_outliers}{do not show observations above this number in the plot. This might be helpful for outliers.}
+
+\item{...}{other plotting parameters to affect the plot}
 }
 \value{
 a ggplot object

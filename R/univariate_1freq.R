@@ -1,4 +1,5 @@
 #' Univariate claim frequency
+#' @noRd
 #'
 #' @description Claim frequency for discrete risk factors in an insurance portfolio. For each level of the risk factor the claim frequency is equal to the ratio between the number of claims and the exposure.
 #'
@@ -24,7 +25,6 @@
 #'
 #' @author Martin Haringa
 #'
-#' @export
 univariate_frequency <- function(df, x, nclaims, exposure, severity = NULL, premium = NULL){
 
   x00 <- deparse(substitute(x))

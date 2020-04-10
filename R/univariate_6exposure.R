@@ -1,4 +1,5 @@
 #' Univariate exposure
+#' @noRd
 #'
 #' @description Exposure for discrete risk factors in an insurance portfolio.
 #'
@@ -18,7 +19,6 @@
 #'
 #' @author Martin Haringa
 #'
-#' @export
 univariate_exposure <- function(df, x, exposure = exposure){
 
   x00 <- deparse(substitute(x))

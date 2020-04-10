@@ -1,4 +1,5 @@
 #' Univariate loss ratio
+#' @noRd
 #'
 #' @description Average loss ratio for discrete risk factors in an insurance portfolio. For each level of the risk factor the loss ratio is equal to the ratio between the severity and the earned premium.
 #'
@@ -24,7 +25,6 @@
 #'
 #' @author Martin Haringa
 #'
-#' @export
 univariate_loss_ratio <- function(df, x, severity, premium, exposure = NULL, nclaims = NULL){
 
   x00 <- deparse(substitute(x))

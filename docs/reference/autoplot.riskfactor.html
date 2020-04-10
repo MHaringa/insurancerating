@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Automatically create a ggplot for objects obtained from univariate() — autoplot.univariate • insurancerating</title>
+<title>Automatically create a ggplot for objects obtained from rating_factors() — autoplot.riskfactor • insurancerating</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Automatically create a ggplot for objects obtained from univariate() — autoplot.univariate" />
-<meta property="og:description" content="Takes an object produced by univariate(), and plots the available input." />
+<meta property="og:title" content="Automatically create a ggplot for objects obtained from rating_factors() — autoplot.riskfactor" />
+<meta property="og:description" content="Automatically create a ggplot for objects obtained from rating_factors()" />
 
 
 
@@ -123,29 +123,26 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Automatically create a ggplot for objects obtained from univariate()</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/autoplot.univariate.R'><code>R/autoplot.univariate.R</code></a></small>
-    <div class="hidden name"><code>autoplot.univariate.Rd</code></div>
+    <h1>Automatically create a ggplot for objects obtained from rating_factors()</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/autoplot.riskfactor.R'><code>R/autoplot.riskfactor.R</code></a></small>
+    <div class="hidden name"><code>autoplot.riskfactor.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Takes an object produced by <code><a href='univariate.html'>univariate()</a></code>, and plots the available input.</p>
+    <p>Automatically create a ggplot for objects obtained from rating_factors()</p>
     </div>
 
-    <pre class="usage"><span class='co'># S3 method for univariate</span>
+    <pre class="usage"><span class='co'># S3 method for riskfactor</span>
 <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(
   <span class='no'>object</span>,
-  <span class='kw'>show_plots</span> <span class='kw'>=</span> <span class='fl'>1</span>:<span class='fl'>9</span>,
+  <span class='kw'>risk_factors</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>ncol</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>background</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>labels</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>sort</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>sort_manual</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>dec.mark</span> <span class='kw'>=</span> <span class='st'>","</span>,
+  <span class='kw'>ylab</span> <span class='kw'>=</span> <span class='st'>"rate"</span>,
   <span class='kw'>color</span> <span class='kw'>=</span> <span class='st'>"dodgerblue"</span>,
   <span class='kw'>color_bg</span> <span class='kw'>=</span> <span class='st'>"#E7B800"</span>,
-  <span class='kw'>label_width</span> <span class='kw'>=</span> <span class='fl'>10</span>,
-  <span class='kw'>coord_flip</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>linetype</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='no'>...</span>
 )</pre>
 
@@ -154,45 +151,27 @@
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>object</th>
-      <td><p>univariate object produced by <code><a href='univariate.html'>univariate()</a></code></p></td>
+      <td><p>riskfactor object produced by <code><a href='rating_factors.html'>rating_factors()</a></code></p></td>
     </tr>
     <tr>
-      <th>show_plots</th>
-      <td><p>numeric vector of plots to be shown (default is c(1,2,3,4,5,6,7,8,9)), there are nine available plots:</p><ul>
-<li><p>1. frequency (i.e. number of claims / expsore)</p></li>
-<li><p>2. average severity (i.e. severity / number of claims)</p></li>
-<li><p>3. risk premium (i.e. severity / exposure)</p></li>
-<li><p>4. loss ratio (i.e. severity / premium)</p></li>
-<li><p>5. average premium (i.e. premium / exposure)</p></li>
-<li><p>6. exposure</p></li>
-<li><p>7. severity</p></li>
-<li><p>8. nclaims</p></li>
-<li><p>9. premium</p></li>
-</ul></td>
+      <th>risk_factors</th>
+      <td><p>character vector to define which factors are included. Defaults to all risk factors.</p></td>
     </tr>
     <tr>
       <th>ncol</th>
       <td><p>number of columns in output (default is 1)</p></td>
     </tr>
     <tr>
-      <th>background</th>
-      <td><p>show exposure as a background histogram (default is TRUE)</p></td>
-    </tr>
-    <tr>
       <th>labels</th>
       <td><p>show labels with the exposure (default is TRUE)</p></td>
     </tr>
     <tr>
-      <th>sort</th>
-      <td><p>sort (or order) risk factor into descending order by exposure (default is FALSE)</p></td>
-    </tr>
-    <tr>
-      <th>sort_manual</th>
-      <td><p>sort (or order) risk factor into own ordering; should be a character vector (default is NULL)</p></td>
-    </tr>
-    <tr>
       <th>dec.mark</th>
       <td><p>control the format of the decimal point, as well as the mark between intervals before the decimal point, choose either "," (default) or "."</p></td>
+    </tr>
+    <tr>
+      <th>ylab</th>
+      <td><p>modify label for the y-axis</p></td>
     </tr>
     <tr>
       <th>color</th>
@@ -203,12 +182,8 @@
       <td><p>change the color of the histogram ("#E7B800" is default)</p></td>
     </tr>
     <tr>
-      <th>label_width</th>
-      <td><p>width of labels on the x-axis (10 is default)</p></td>
-    </tr>
-    <tr>
-      <th>coord_flip</th>
-      <td><p>flip cartesian coordinates so that horizontal becomes vertical, and vertical, horizontal (default is FALSE)</p></td>
+      <th>linetype</th>
+      <td><p>use different linetypes (default is FALSE)</p></td>
     </tr>
     <tr>
       <th>...</th>
@@ -221,9 +196,20 @@
     <p>a ggplot2 object</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='no'>ggplot2</span>)
-<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='univariate.html'>univariate</a></span>(<span class='no'>MTPL2</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>area</span>, <span class='kw'>severity</span> <span class='kw'>=</span> <span class='no'>amount</span>, <span class='kw'>nclaims</span> <span class='kw'>=</span> <span class='no'>nclaims</span>, <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='no'>exposure</span>)
-<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>x</span>)</div><div class='output co'>#&gt; <span class='message'>Ignoring plots 4, 5, 9: input is unknown</span></div><div class='img'><img src='autoplot.univariate-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>x</span>, <span class='kw'>show_plots</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>6</span>,<span class='fl'>1</span>), <span class='kw'>background</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sort</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</div><div class='img'><img src='autoplot.univariate-2.png' alt='' width='700' height='433' /></div><div class='input'>
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='no'>dplyr</span>)</div><div class='output co'>#&gt; <span class='message'></span>
+#&gt; <span class='message'>Attaching package: ‘dplyr’</span></div><div class='output co'>#&gt; <span class='message'>The following objects are masked from ‘package:stats’:</span>
+#&gt; <span class='message'></span>
+#&gt; <span class='message'>    filter, lag</span></div><div class='output co'>#&gt; <span class='message'>The following objects are masked from ‘package:base’:</span>
+#&gt; <span class='message'></span>
+#&gt; <span class='message'>    intersect, setdiff, setequal, union</span></div><div class='input'><span class='no'>df</span> <span class='kw'>&lt;-</span> <span class='no'>MTPL2</span> <span class='kw'>%&gt;%</span>
+    <span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate_all.html'>mutate_at</a></span>(<span class='fu'><a href='https://dplyr.tidyverse.org/reference/vars.html'>vars</a></span>(<span class='no'>area</span>), <span class='no'>as.factor</span>) <span class='kw'>%&gt;%</span>
+    <span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate_all.html'>mutate_at</a></span>(<span class='fu'><a href='https://dplyr.tidyverse.org/reference/vars.html'>vars</a></span>(<span class='no'>area</span>), ~<span class='fu'><a href='biggest_reference.html'>biggest_reference</a></span>(<span class='no'>.</span>, <span class='no'>exposure</span>))
+
+<span class='no'>mod1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>area</span> + <span class='no'>premium</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>df</span>)
+<span class='no'>mod2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>area</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>df</span>)
+
+<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='rating_factors.html'>rating_factors</a></span>(<span class='no'>mod1</span>, <span class='no'>mod2</span>, <span class='kw'>model_data</span> <span class='kw'>=</span> <span class='no'>df</span>, <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='no'>exposure</span>)
+<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>x</span>)</div><div class='img'><img src='autoplot.riskfactor-1.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

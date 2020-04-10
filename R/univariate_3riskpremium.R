@@ -1,4 +1,5 @@
 #' Univariate risk premium
+#' @noRd
 #'
 #' @description Risk premium for discrete risk factors in an insurance portfolio. For each level of the risk factor the risk premium is equal to the ratio between the severity and the exposure.
 #'
@@ -24,7 +25,6 @@
 #'
 #' @author Martin Haringa
 #'
-#' @export
 univariate_risk_premium <- function(df, x, severity, exposure, nclaims = NULL, premium = NULL){
 
   x00 <- deparse(substitute(x))

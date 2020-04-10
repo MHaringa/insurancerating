@@ -1,4 +1,5 @@
 #' Automatically create a ggplot for objects obtained from univariate_risk_premium()
+#' @noRd
 #'
 #' @description Takes an object produced by \code{univariate_risk_premium()}, and plots the average risk premium.
 #'
@@ -21,7 +22,6 @@
 #' x <- univariate_risk_premium(MTPL2, x = area, severity = amount, exposure = exposure)
 #' autoplot(x)
 #'
-#' @export
 autoplot.univ_premium <- function(x, background = TRUE, labels = TRUE, sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue", color_bg = "#E7B800", label_width = 10){
 
   df <- x$df

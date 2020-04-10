@@ -1,4 +1,5 @@
 #' Automatically create a ggplot for objects obtained from univariate_all()
+#' @noRd
 #'
 #' @description Takes an object produced by \code{univariate_all()}, and plots the available input.
 #'
@@ -33,7 +34,6 @@
 #' autoplot(x)
 #' autoplot(x, show_plots = c(6,1), background = FALSE, sort = TRUE)
 #'
-#' @export
 autoplot.univ_all <- function(x, show_plots = c(1, 2, 3, 4), ncol = 1, background = TRUE, labels = TRUE,
                               sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue",
                               color_bg = "#E7B800", label_width = 10){

@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.2.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.0</span>
       </span>
     </div>
 
@@ -134,7 +134,7 @@
 
     <pre class="usage"><span class='co'># S3 method for fitgam</span>
 <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(
-  <span class='no'>x</span>,
+  <span class='no'>object</span>,
   <span class='kw'>conf_int</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>color_gam</span> <span class='kw'>=</span> <span class='st'>"steelblue"</span>,
   <span class='kw'>show_observations</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
@@ -142,14 +142,15 @@
   <span class='kw'>size_points</span> <span class='kw'>=</span> <span class='fl'>1</span>,
   <span class='kw'>color_points</span> <span class='kw'>=</span> <span class='st'>"black"</span>,
   <span class='kw'>rotate_labels</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>remove_outliers</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+  <span class='kw'>remove_outliers</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='no'>...</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>x</th>
+      <th>object</th>
       <td><p>fitgam object produced by <code>fit_gam</code></p></td>
     </tr>
     <tr>
@@ -183,6 +184,10 @@
     <tr>
       <th>remove_outliers</th>
       <td><p>do not show observations above this number in the plot. This might be helpful for outliers.</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>other plotting parameters to affect the plot</p></td>
     </tr>
     </table>
 

@@ -3,7 +3,7 @@
 #' @description Takes an object produced by \code{construct_tariff_classes()}, and plots the fitted GAM.
 #' In addition the constructed tariff classes are shown.
 #'
-#' @param x constructtariffclasses object produced by \code{construct_tariff_classes}
+#' @param object constructtariffclasses object produced by \code{construct_tariff_classes}
 #' @param conf_int determines whether 95\% confidence intervals will be plotted. The default is \code{conf_int = FALSE}
 #' @param color_gam a color can be specified either by name (e.g.: "red") or by hexadecimal code (e.g. : "#FF1234") (default is "steelblue")
 #' @param color_splits change the color of the splits in the graph ("grey50" is default)
@@ -12,6 +12,7 @@
 #' @param color_points change the color of the points in the graph ("black" is default)
 #' @param rotate_labels rotate x-labels 45 degrees (this might be helpful for overlapping x-labels)
 #' @param remove_outliers do not show observations above this number in the plot. This might be helpful for outliers.
+#' @param ... other plotting parameters to affect the plot
 #'
 #' @return a ggplot object
 #'
@@ -29,23 +30,23 @@
 #' @author Martin Haringa
 #'
 #' @export
-autoplot.constructtariffclasses <- function(x, conf_int = FALSE, color_gam = "steelblue", show_observations = FALSE, color_splits = "grey50",
+autoplot.constructtariffclasses <- function(object, conf_int = FALSE, color_gam = "steelblue", show_observations = FALSE, color_splits = "grey50",
                                             size_points = 1, color_points = "black", rotate_labels = FALSE,
-                                            remove_outliers = NULL){
+                                            remove_outliers = NULL, ...){
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
   }
 
-  if (!inherits(x, "constructtariffclasses")) {
-    stop("autoplot.constructtariffclasses requires a constructtariffclasses object, use x = object")
+  if (!inherits(object, "constructtariffclasses")) {
+    stop("autoplot.constructtariffclasses requires a constructtariffclasses object, use object = object")
   }
 
-  prediction <- x[[1]]
-  xlab <- x[[2]]
-  ylab <- x[[3]]
-  points <- x[[4]]
-  gamcluster <- x[[6]]
+  prediction <- object[[1]]
+  xlab <- object[[2]]
+  ylab <- object[[3]]
+  points <- object[[4]]
+  gamcluster <- object[[6]]
 
   if(isTRUE(conf_int) & sum(prediction$upr_95 > 1e9) > 0){
     message("The confidence bounds are too large to show.")

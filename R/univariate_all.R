@@ -1,5 +1,6 @@
 #' Univariate analysis for discrete risk factors
 #'
+#'
 #' @description Univariate analysis for discrete risk factors in an insurance portfolio. The following summary statistics are calculated:
 #' \itemize{
 #'  \item{frequency (i.e. number of claims / expsore)}
@@ -27,12 +28,6 @@
 #'
 #' @importFrom data.table data.table
 #'
-#' @examples
-#' univariate_all(MTPL2, x = area, severity = amount, nclaims = nclaims,
-#'                  exposure = exposure, premium = premium)
-#'
-#' # The summary statistics related to premium are not calculated
-#' univariate_all(MTPL2, x = area, severity = amount, nclaims = nclaims, exposure = exposure)
 #'
 #' @export
 univariate_all <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, premium = NULL){

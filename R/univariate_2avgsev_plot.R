@@ -1,4 +1,5 @@
 #' Automatically create a ggplot for objects obtained from univariate_average_severity()
+#' @noRd
 #'
 #' @description Takes an object produced by \code{univariate_average_severity()}, and plots the claim frequency.
 #'
@@ -22,7 +23,6 @@
 #'                                    nclaims = nclaims, premium = premium)
 #' autoplot(x)
 #'
-#' @export
 autoplot.univ_avgsev <- function(x, background = TRUE, labels = TRUE, sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue", color_bg = "#E7B800", label_width = 10){
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {

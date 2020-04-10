@@ -1,4 +1,5 @@
 #' Automatically create a ggplot for objects obtained from univariate_exposure()
+#' @noRd
 #'
 #' @description Takes an object produced by \code{univariate_exposure()}, and plots the exposure.
 #'
@@ -11,6 +12,7 @@
 #' @param color_bg change the color of the histogram ("#E7B800" is default)
 #' @param label_width width of labels on the x-axis (30 is default)
 #'
+#'
 #' @import ggplot2
 #' @importFrom stringr str_wrap
 #'
@@ -21,7 +23,6 @@
 #' autoplot(x, sort = TRUE)
 #' autoplot(x, coord_flip = FALSE)
 #'
-#' @export
 autoplot.univ_exposure<- function(x, labels = TRUE, sort = FALSE, sort_manual = NULL, coord_flip = TRUE, dec.mark = ",", color_bg = "#E7B800", label_width = 30){
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {

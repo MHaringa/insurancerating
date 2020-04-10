@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Articles • insurancerating</title>
+<title>Rating factors (one) — rating_factors1 • insurancerating</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,8 @@
 
 
 
-<meta property="og:title" content="Articles" />
+<meta property="og:title" content="Rating factors (one) — rating_factors1" />
+<meta property="og:description" content="Rating factors (one)" />
 
 
 
@@ -58,7 +59,7 @@
   </head>
 
   <body data-spy="scroll" data-target="#toc">
-    <div class="container template-article-index">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -122,18 +123,54 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Articles</h1>
+    <h1>Rating factors (one)</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/rating_factors.R'><code>R/rating_factors.R</code></a></small>
+    <div class="hidden name"><code>rating_factors1.Rd</code></div>
     </div>
 
-    <div class="section ">
-      <h3>All vignettes</h3>
-      <p class="section-desc"></p>
-
-      <dl>
-        <dt><a href="vignette.html">Introduction to `insurancerating`</a></dt>
-        <dd></dt>
-      </dl>
+    <div class="ref-description">
+    <p>Rating factors (one)</p>
     </div>
+
+    <pre class="usage"><span class='fu'>rating_factors1</span>(
+  <span class='no'>model</span>,
+  <span class='kw'>model_data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>colname</span> <span class='kw'>=</span> <span class='st'>"estimate"</span>,
+  <span class='kw'>exponentiate</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>
+)</pre>
+
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>model</th>
+      <td><p>glm object produced by <code><a href='https://rdrr.io/r/stats/glm.html'>glm()</a></code></p></td>
+    </tr>
+    <tr>
+      <th>model_data</th>
+      <td><p>data.frame used to create glm object</p></td>
+    </tr>
+    <tr>
+      <th>exposure</th>
+      <td><p>column in <code>model_data</code> with exposure</p></td>
+    </tr>
+    <tr>
+      <th>colname</th>
+      <td><p>name of column with estimates. Defaults to "estimate".</p></td>
+    </tr>
+    <tr>
+      <th>exponentiate</th>
+      <td><p>Logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.</p></td>
+    </tr>
+    </table>
+
+
+  </div>
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 

@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.5.2.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.0</span>
       </span>
     </div>
 
@@ -126,9 +126,9 @@
       <small>Source: <a href='https://github.com/mharinga/insurancerating/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
-    <div id="insurancerating-0-5-3" class="section level1">
-<h1 class="page-header" data-toc-text="0.5.3">
-<a href="#insurancerating-0-5-3" class="anchor"></a>insurancerating 0.5.3<small> Unreleased </small>
+    <div id="insurancerating-0-6-0" class="section level1">
+<h1 class="page-header" data-toc-text="0.6.0">
+<a href="#insurancerating-0-6-0" class="anchor"></a>insurancerating 0.6.0<small> Unreleased </small>
 </h1>
 <ul>
 <li>
@@ -137,6 +137,12 @@
 <code>sort_manual</code> in <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot()</a></code> is added to sort risk factors into an own ordering</li>
 <li>
 <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot()</a></code> now works without manually loading package <code>ggplot2</code> and <code>patchwork</code> first</li>
+<li>
+<code><a href="../reference/rating_factors.html">rating_factors()</a></code> now returns an object of class <code>riskfactor</code>
+</li>
+<li>
+<code><a href="../reference/autoplot.riskfactor.html">autoplot.riskfactor()</a></code> is added to create the corresponding plots to the output given by <code><a href="../reference/rating_factors.html">rating_factors()</a></code>
+</li>
 </ul>
 </div>
     <div id="insurancerating-0-5-2" class="section level1">
@@ -145,7 +151,7 @@
 </h1>
 <ul>
 <li>
-<code><a href="../reference/autoplot.univ_all.html">autoplot.univ_all()</a></code> now gives correct labels on the x-axis when <code>ncol</code> &gt; 1.</li>
+<code>autoplot.univ_all()</code> now gives correct labels on the x-axis when <code>ncol</code> &gt; 1.</li>
 </ul>
 </div>
     <div id="insurancerating-0-5-1" class="section level1">
@@ -157,7 +163,7 @@
 <li>
 <code><a href="../reference/construct_tariff_classes.html">construct_tariff_classes()</a></code> and <code><a href="../reference/fit_gam.html">fit_gam()</a></code> now only returns tariff classes and fitted gam respectively; other items are stored as attributes.</li>
 <li>
-<code><a href="../reference/univariate_frequency.html">univariate_frequency()</a></code>, <code><a href="../reference/univariate_average_severity.html">univariate_average_severity()</a></code>, <code><a href="../reference/univariate_risk_premium.html">univariate_risk_premium()</a></code>, <code><a href="../reference/univariate_loss_ratio.html">univariate_loss_ratio()</a></code>, <code><a href="../reference/univariate_average_premium.html">univariate_average_premium()</a></code>, <code><a href="../reference/univariate_exposure.html">univariate_exposure()</a></code>, and <code><a href="../reference/univariate_all.html">univariate_all()</a></code> are added to perform an univariate analysis on an insurance portfolio.</li>
+<code>univariate_frequency()</code>, <code>univariate_average_severity()</code>, <code>univariate_risk_premium()</code>, <code>univariate_loss_ratio()</code>, <code>univariate_average_premium()</code>, <code>univariate_exposure()</code>, and <code><a href="../reference/univariate_all.html">univariate_all()</a></code> are added to perform an univariate analysis on an insurance portfolio.</li>
 <li>
 <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot()</a></code> creates the corresponding plots to the summary statistics calculated by <code>univariate_*</code>.</li>
 </ul>

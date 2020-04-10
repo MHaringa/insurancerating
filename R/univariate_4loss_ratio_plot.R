@@ -1,4 +1,5 @@
 #' Automatically create a ggplot for objects obtained from univariate_loss_ratio()
+#' @noRd
 #'
 #' @description Takes an object produced by \code{univariate_loss_ratio()}, and plots the loss ratio.
 #'
@@ -21,7 +22,6 @@
 #' x <- univariate_loss_ratio(MTPL2, x = area, severity = amount, premium = premium)
 #' autoplot(x)
 #'
-#' @export
 autoplot.univ_lossratio <- function(x, background = TRUE, labels = TRUE, sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue", color_bg = "#E7B800", label_width = 10){
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {

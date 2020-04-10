@@ -27,7 +27,9 @@
 biggest_reference <- function(x, weight) {
   if(!is.numeric(weight)) weight <- is.numeric(weight)
   counts <- sort(tapply(weight, x, FUN = sum), decreasing = TRUE)
-  relevel(x, ref = names(counts)[1])
+  xrelevel <- relevel(x, ref = names(counts)[1])
+  attr(xrelevel, "xoriginal") <- levels(x)
+  return(xrelevel)
 }
 
 

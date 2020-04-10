@@ -1,12 +1,5 @@
-#' @importFrom ggplot2 autoplot
-#' @export
-ggplot2::autoplot
-
-#' @importFrom magrittr %>%
-#' @export
-magrittr::`%>%`
-
 #' Automatically create a ggplot for objects obtained from univariate_frequency()
+#' @noRd
 #'
 #' @description Takes an object produced by \code{univariate_frequency()}, and plots the claim frequency.
 #'
@@ -30,7 +23,6 @@ magrittr::`%>%`
 #' autoplot(x)
 #' autoplot(x, sort = TRUE, dec.mark = ".", color_bg = "mediumseagreen")
 #'
-#' @export
 autoplot.univ_freq <- function(x, background = TRUE, labels = TRUE, sort = FALSE, sort_manual = NULL, dec.mark = ",",
                                color = "dodgerblue", color_bg = "#E7B800", label_width = 10){
 

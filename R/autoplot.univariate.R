@@ -2,7 +2,7 @@
 #'
 #' @description Takes an object produced by \code{univariate()}, and plots the available input.
 #'
-#' @param x univariate object produced by \code{univariate()}
+#' @param object univariate object produced by \code{univariate()}
 #' @param show_plots numeric vector of plots to be shown (default is c(1,2,3,4,5,6,7,8,9)), there are nine available plots:
 #'  \itemize{
 #'   \item{1. frequency (i.e. number of claims / expsore)}
@@ -24,6 +24,8 @@
 #' @param color change the color of the points and line ("dodgerblue" is default)
 #' @param color_bg change the color of the histogram ("#E7B800" is default)
 #' @param label_width width of labels on the x-axis (10 is default)
+#' @param coord_flip flip cartesian coordinates so that horizontal becomes vertical, and vertical, horizontal (default is FALSE)
+#' @param ... other plotting parameters to affect the plot
 #'
 #' @import patchwork
 #' @import ggplot2
@@ -37,9 +39,9 @@
 #' autoplot(x, show_plots = c(6,1), background = FALSE, sort = TRUE)
 #'
 #' @export
-autoplot.univariate <- function(x, show_plots = 1:9, ncol = 1, background = TRUE, labels = TRUE,
-                              sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue",
-                              color_bg = "#E7B800", label_width = 10, coord_flip = FALSE){
+autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background = TRUE, labels = TRUE,
+                                sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue",
+                                color_bg = "#E7B800", label_width = 10, coord_flip = FALSE, ...){
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
@@ -49,16 +51,16 @@ autoplot.univariate <- function(x, show_plots = 1:9, ncol = 1, background = TRUE
     stop("patchwork is needed for this function to work. Install it via install.packages(\"patchwork\")", call. = FALSE)
   }
 
-  if (!inherits(x, "univariate")) {
-    stop("autoplot.univariate requires a univariate object, use x = object")
+  if (!inherits(object, "univariate")) {
+    stop("autoplot.univariate requires a univariate object, use object = object")
   }
 
-  df <- x$df
-  xvar <- x$xvar
-  nclaims <- x$nclaims
-  exposure <- x$exposure
-  severity <- x$severity
-  premium <- x$premium
+  df <- object$df
+  xvar <- object$xvar
+  nclaims <- object$nclaims
+  exposure <- object$exposure
+  severity <- object$severity
+  premium <- object$premium
 
   if ( !is.numeric(show_plots) ){
     stop("show_plots should be numeric")
