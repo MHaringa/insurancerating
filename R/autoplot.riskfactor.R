@@ -17,7 +17,6 @@ magrittr::`%>%`
 #' @param labels show labels with the exposure (default is TRUE)
 #' @param dec.mark control the format of the decimal point, as well as the mark between intervals before the decimal point, choose either "," (default) or "."
 #' @param ylab modify label for the y-axis
-#' @param color change the color of the points and line ("dodgerblue" is default)
 #' @param color_bg change the color of the histogram ("#E7B800" is default)
 #' @param linetype use different linetypes (default is FALSE)
 #' @param ... other plotting parameters to affect the plot
@@ -42,10 +41,18 @@ magrittr::`%>%`
 #' autoplot(x)
 #'
 autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1, labels = TRUE, dec.mark = ",",
-                                ylab = "rate", color = "dodgerblue", color_bg = "#E7B800", linetype = FALSE, ...){
+                                ylab = "rate", color_bg = "#E7B800", linetype = FALSE, ...){
 
   if ( !inherits(object, "riskfactor")){
     stop("autoplot.riskfactor requires a riskfactor object, use object = object")
+  }
+
+  if (!requireNamespace("patchwork", quietly = TRUE)) {
+    stop("patchwork is needed for this function to work. Install it via install.packages(\"patchwork\")", call. = FALSE)
+  }
+
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
   }
 
   df <- object$df

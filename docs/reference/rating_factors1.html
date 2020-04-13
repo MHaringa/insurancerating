@@ -40,7 +40,8 @@
 
 
 <meta property="og:title" content="Include reference group in regression output — rating_factors1" />
-<meta property="og:description" content="This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables." />
+<meta property="og:description" content="This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables.
+Use rating_factors() to compare the output obtained from two or more glm objects." />
 
 
 
@@ -72,7 +73,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.0.9000</span>
       </span>
     </div>
 
@@ -129,7 +130,8 @@
     </div>
 
     <div class="ref-description">
-    <p>This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables.</p>
+    <p>This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables.
+Use rating_factors() to compare the output obtained from two or more glm objects.</p>
     </div>
 
     <pre class="usage"><span class='fu'>rating_factors1</span>(
@@ -145,27 +147,32 @@
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>model</th>
-      <td><p>glm object produced by <code><a href='https://rdrr.io/r/stats/glm.html'>glm()</a></code></p></td>
+      <td><p>a single glm object produced by <code><a href='https://rdrr.io/r/stats/glm.html'>glm()</a></code></p></td>
     </tr>
     <tr>
       <th>model_data</th>
-      <td><p>data.frame used to create glm object</p></td>
+      <td><p>data.frame used to create glm object, this should only be specified in case the exposure is desired in the output, default value is NULL</p></td>
     </tr>
     <tr>
       <th>exposure</th>
-      <td><p>column in <code>model_data</code> with exposure</p></td>
+      <td><p>the name of the exposure column in <code>model_data</code>, default value is NULL</p></td>
     </tr>
     <tr>
       <th>colname</th>
-      <td><p>name of column with estimates. Defaults to "estimate".</p></td>
+      <td><p>the name of the output column, default value is "estimate"</p></td>
     </tr>
     <tr>
       <th>exponentiate</th>
-      <td><p>Logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.</p></td>
+      <td><p>logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.</p></td>
     </tr>
     </table>
 
 
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><div class='input'><span class='no'>MTPL2a</span> <span class='kw'>&lt;-</span> <span class='no'>MTPL2</span>
+<span class='no'>MTPL2a</span>$<span class='no'>area</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>as.factor</a></span>(<span class='no'>MTPL2a</span>)</div><div class='output co'>#&gt; <span class='error'>Error: Must use a vector in `[`, not an object of class matrix.</span></div><div class='input'><span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>area</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>MTPL2a</span>)
+<span class='fu'>rating_factors1</span>(<span class='no'>x</span>)</div><div class='output co'>#&gt; <span class='error'>Error in rating_factors1(x): no factors in model</span></div><div class='input'>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

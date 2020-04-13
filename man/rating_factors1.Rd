@@ -13,16 +13,24 @@ rating_factors1(
 )
 }
 \arguments{
-\item{model}{glm object produced by \code{glm()}}
+\item{model}{a single glm object produced by \code{glm()}}
 
-\item{model_data}{data.frame used to create glm object}
+\item{model_data}{data.frame used to create glm object, this should only be specified in case the exposure is desired in the output, default value is NULL}
 
-\item{exposure}{column in \code{model_data} with exposure}
+\item{exposure}{the name of the exposure column in \code{model_data}, default value is NULL}
 
-\item{colname}{name of column with estimates. Defaults to "estimate".}
+\item{colname}{the name of the output column, default value is "estimate"}
 
-\item{exponentiate}{Logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.}
+\item{exponentiate}{logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.}
 }
 \description{
 This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables.
+Use rating_factors() to compare the output obtained from two or more glm objects.
+}
+\examples{
+MTPL2a <- MTPL2
+MTPL2a$area <- as.factor(MTPL2a)
+x <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = MTPL2a)
+rating_factors1(x)
+
 }

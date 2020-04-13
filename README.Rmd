@@ -89,7 +89,7 @@ age_policyholder_severity %>%
 
 ```
 
-The second part adds the constructed tariff classes for the variable *age_policyholder* to the dataset, and sets the base level of the factor *age_policyholder* to the level with the largest exposure. In this example for claim frequency the class for ages (39,50], which contains the largest exposure. 
+The second part adds the constructed tariff classes for the variable `age_policyholder` to the dataset, and sets the base level of the factor `age_policyholder` to the level with the largest exposure. In this example for claim frequency the class for ages (39,50], which contains the largest exposure. 
 
 ```{r example2, eval = TRUE, message = FALSE, warning = FALSE}
 
@@ -114,18 +114,37 @@ model_freq1 <- glm(nclaims ~ age_policyholder_freq_cat, offset = log(exposure),
 model_freq2 <- glm(nclaims ~ age_policyholder_freq_cat + age_policyholder, offset = log(exposure), 
                   family = "poisson", data = dat)
 
-rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) 
+x <- rating_factors(model_freq1, model_freq2) 
+x
 
 ```
 
-`autoplot.riskfactor()` creates a figure:
+`autoplot.riskfactor()` creates a figure. The base level of the factor `age_policyholder_freq_cat` is the group with the largest exposure and is shown first. 
 
 ```{r example3a, eval = TRUE}
 
-rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) %>%
+autoplot(x)
+
+```
+
+Include `model_data` to sort the clustering in the original order. Ordering the factor `age_policyholder` only works when `biggest_reference()` is used to set the base level of the factor to the level with the largest exposure. 
+
+```{r example3b, eval = TRUE}
+
+rating_factors(model_freq1, model_freq2, model_data = dat) %>%
   autoplot()
 
 ```
+
+The following graph includes the exposure as a bar graph and shows some more options: 
+
+```{r example3c, eval = TRUE}
+
+rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) %>%
+  autoplot(., linetype = TRUE, color_bg = "skyblue") 
+
+```
+
 
 
 ## Example 2

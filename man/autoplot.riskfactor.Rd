@@ -11,7 +11,6 @@
   labels = TRUE,
   dec.mark = ",",
   ylab = "rate",
-  color = "dodgerblue",
   color_bg = "#E7B800",
   linetype = FALSE,
   ...
@@ -29,8 +28,6 @@
 \item{dec.mark}{control the format of the decimal point, as well as the mark between intervals before the decimal point, choose either "," (default) or "."}
 
 \item{ylab}{modify label for the y-axis}
-
-\item{color}{change the color of the points and line ("dodgerblue" is default)}
 
 \item{color_bg}{change the color of the histogram ("#E7B800" is default)}
 

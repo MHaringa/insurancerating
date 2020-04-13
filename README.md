@@ -11,11 +11,13 @@ Status](https://www.r-pkg.org/badges/version/insurancerating)](https://cran.r-pr
 <!-- badges: end -->
 
 The goal of `insurancerating` is to give analytic techniques that can be
-used in insurance rating. It provides a data driven strategy for the
-construction of tariff classes in P\&C insurance. The goal is to bin the
-continuous factors such that categorical risk factors result which
-capture the effect of the covariate on the response in an accurate way,
-while being easy to use in a generalized linear model (GLM).
+used in insurance rating. It helps actuaries to implement GLMs within
+all relevent steps needed to construct a risk premium from raw data. It
+provides a data driven strategy for the construction of tariff classes
+in P\&C insurance. The goal is to bin the continuous factors such that
+categorical risk factors result which capture the effect of the
+covariate on the response in an accurate way, while being easy to use in
+a generalized linear model (GLM).
 
 `insurancerating` also provides recipes on how to easily perform
 univariate analyses on an insurance portfolio. In addition it adds
@@ -98,10 +100,10 @@ age_policyholder_severity %>%
 ![](man/figures/figsev-1.png)<!-- -->
 
 The second part adds the constructed tariff classes for the variable
-*age\_policyholder* to the dataset, and sets the base level of the
-factor *age\_policyholder* to the level with the largest exposure. In
-this example for claim frequency the class for ages (39,50\], which
-contains the largest exposure.
+`age_policyholder` to the dataset, and sets the base level of the factor
+`age_policyholder` to the level with the largest exposure. In this
+example for claim frequency the class for ages (39,50\], which contains
+the largest exposure.
 
 ``` r
 library(dplyr)
@@ -133,43 +135,55 @@ model_freq1 <- glm(nclaims ~ age_policyholder_freq_cat, offset = log(exposure),
 model_freq2 <- glm(nclaims ~ age_policyholder_freq_cat + age_policyholder, offset = log(exposure), 
                   family = "poisson", data = dat)
 
-rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) 
+x <- rating_factors(model_freq1, model_freq2) 
+x
 ```
 
     ##                  risk_factor            level est_model_freq1 est_model_freq2
     ## 1                (Intercept)      (Intercept)       0.1368181       0.3210287
-    ## 2  age_policyholder_freq_cat          [18,25]       1.9438228       1.2909603
-    ## 3  age_policyholder_freq_cat          (25,32]       1.3234995       0.9802830
-    ## 4  age_policyholder_freq_cat          (32,39]       1.0568538       0.8923472
-    ## 5  age_policyholder_freq_cat          (39,50]       1.0000000       1.0000000
+    ## 2  age_policyholder_freq_cat          (39,50]       1.0000000       1.0000000
+    ## 3  age_policyholder_freq_cat          [18,25]       1.9438228       1.2909603
+    ## 4  age_policyholder_freq_cat          (25,32]       1.3234995       0.9802830
+    ## 5  age_policyholder_freq_cat          (32,39]       1.0568538       0.8923472
     ## 6  age_policyholder_freq_cat          (50,57]       0.8919696       1.0535866
     ## 7  age_policyholder_freq_cat          (57,64]       0.7423998       1.0056607
     ## 8  age_policyholder_freq_cat          (64,71]       0.7379362       1.1383509
     ## 9  age_policyholder_freq_cat          (71,83]       0.7021348       1.2486752
     ## 10 age_policyholder_freq_cat          (83,95]       0.6933378       1.5100830
     ## 11          age_policyholder age_policyholder              NA       0.9811935
-    ##     exposure
-    ## 1         NA
-    ## 2  1436.3589
-    ## 3  3981.6932
-    ## 4  4640.4904
-    ## 5  7462.4603
-    ## 6  3711.9699
-    ## 7  3101.1945
-    ## 8  2753.4822
-    ## 9  1884.1452
-    ## 10  115.9589
-    ## 11        NA
 
-`autoplot.riskfactor()` creates a
-figure:
+`autoplot.riskfactor()` creates a figure. The base level of the factor
+`age_policyholder_freq_cat` is the group with the largest exposure and
+is shown first.
 
 ``` r
-rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) %>%
-  autoplot()
+autoplot(x)
 ```
 
 ![](man/figures/example3a-1.png)<!-- -->
+
+Include `model_data` to sort the clustering in the original order.
+Ordering the factor `age_policyholder` only works when
+`biggest_reference()` is used to set the base level of the factor to the
+level with the largest exposure.
+
+``` r
+rating_factors(model_freq1, model_freq2, model_data = dat) %>%
+  autoplot()
+```
+
+![](man/figures/example3b-1.png)<!-- -->
+
+The following graph includes the exposure as a bar graph and shows some
+more
+options:
+
+``` r
+rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) %>%
+  autoplot(., linetype = TRUE, color_bg = "skyblue") 
+```
+
+![](man/figures/example3c-1.png)<!-- -->
 
 ## Example 2
 
