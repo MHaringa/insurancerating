@@ -1,3 +1,7 @@
+# insurancerating 0.6.1
+
+* 
+
 # insurancerating 0.6.0
 
 * `label_width` in `autoplot()` is added to wrap long labels in multiple lines

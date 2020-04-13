@@ -1,4 +1,4 @@
-#' Automatically create a ggplot for objects obtained from univariate_exposure()
+#' Automatically create a ggplot for objects obtained from univariate_exposure() (deprecated function; use 'autoplot.univariate()' instead)
 #' @noRd
 #'
 #' @description Takes an object produced by \code{univariate_exposure()}, and plots the exposure.

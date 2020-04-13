@@ -1,4 +1,4 @@
-#' Automatically create a ggplot for objects obtained from univariate_average_premium()
+#' Automatically create a ggplot for objects obtained from univariate_average_premium() (deprecated function; use 'autoplot.univariate()' instead)
 #' @noRd
 #'
 #' @description Takes an object produced by \code{univariate_average_premium()}, and plots the average premium.

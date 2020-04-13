@@ -1,19 +1,25 @@
 #' Include reference group in regression output
 #'
 #' @description This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables.
+#' Use rating_factors() to compare the output obtained from two or more glm objects.
 
-#' @param model glm object produced by \code{glm()}
-#' @param model_data data.frame used to create glm object
-#' @param exposure column in \code{model_data} with exposure
-#' @param colname name of column with estimates. Defaults to "estimate".
-#' @param exponentiate Logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.
-#'
+#' @param model a single glm object produced by \code{glm()}
+#' @param model_data data.frame used to create glm object, this should only be specified in case the exposure is desired in the output, default value is NULL
+#' @param exposure the name of the exposure column in \code{model_data}, default value is NULL
+#' @param colname the name of the output column, default value is "estimate"
+#' @param exponentiate logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.
 #'
 #' @importFrom data.table data.table
 #' @importFrom dplyr full_join
 #' @importFrom dplyr left_join
 #' @importFrom stats terms
 #' @importFrom utils stack
+#'
+#' @examples
+#' MTPL2a <- MTPL2
+#' MTPL2a$area <- as.factor(MTPL2a)
+#' x <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = MTPL2a)
+#' rating_factors1(x)
 #'
 #' @export
 rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname = "estimate", exponentiate = TRUE){
@@ -117,9 +123,9 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
 #' @description This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables.
 #'
 #' @param ... glm object(s) produced by \code{glm()}
-#' @param model_data data.frame used to create glm object(s)
-#' @param exposure column in \code{model_data} with exposure
-#' @param exponentiate Logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.
+#' @param model_data data.frame used to create glm object(s), this should only be specified in case the exposure is desired in the output, default value is NULL
+#' @param exposure column in \code{model_data} with exposure, default value is NULL
+#' @param exponentiate logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.
 #'
 #' @details A fitted linear model has coefficients for the contrasts of the factor terms, usually one less in number than the number of levels.
 #' This function re-expresses the coefficients in the original coding. This function is adopted from dummy.coef(). Our adoption prints a data.frame as output.

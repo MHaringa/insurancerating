@@ -1,4 +1,4 @@
-#' Univariate risk premium
+#' Univariate risk premium (deprecated function; use 'univariate()' instead)
 #' @noRd
 #'
 #' @description Risk premium for discrete risk factors in an insurance portfolio. For each level of the risk factor the risk premium is equal to the ratio between the severity and the exposure.

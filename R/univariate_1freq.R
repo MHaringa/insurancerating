@@ -1,4 +1,4 @@
-#' Univariate claim frequency
+#' Univariate claim frequency (deprecated function; use 'univariate()' instead)
 #' @noRd
 #'
 #' @description Claim frequency for discrete risk factors in an insurance portfolio. For each level of the risk factor the claim frequency is equal to the ratio between the number of claims and the exposure.

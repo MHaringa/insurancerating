@@ -1,4 +1,4 @@
-#' Automatically create a ggplot for objects obtained from univariate_all()
+#' Automatically create a ggplot for objects obtained from univariate_all() (deprecated function; use 'autoplot.univariate()' instead)
 #' @noRd
 #'
 #' @description Takes an object produced by \code{univariate_all()}, and plots the available input.

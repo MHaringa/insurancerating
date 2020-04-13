@@ -1,4 +1,4 @@
-#' Automatically create a ggplot for objects obtained from univariate_loss_ratio()
+#' Automatically create a ggplot for objects obtained from univariate_loss_ratio() (deprecated function; use 'autoplot.univariate()' instead)
 #' @noRd
 #'
 #' @description Takes an object produced by \code{univariate_loss_ratio()}, and plots the loss ratio.

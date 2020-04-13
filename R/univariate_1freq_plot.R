@@ -1,4 +1,4 @@
-#' Automatically create a ggplot for objects obtained from univariate_frequency()
+#' Automatically create a ggplot for objects obtained from univariate_frequency() (deprecated function; use 'autoplot.univariate()' instead)
 #' @noRd
 #'
 #' @description Takes an object produced by \code{univariate_frequency()}, and plots the claim frequency.

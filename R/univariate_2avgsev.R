@@ -1,4 +1,4 @@
-#' Univariate average claim severity
+#' Univariate average claim severity (deprecated function; use 'univariate()' instead)
 #' @noRd
 #'
 #' @description Average claim frequency for discrete risk factors in an insurance portfolio. For each level of the risk factor the average claim severity is equal to the ratio between the severity and the number of claims.

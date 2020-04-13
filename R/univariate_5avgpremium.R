@@ -1,4 +1,4 @@
-#' Univariate average premium
+#' Univariate average premium (deprecated function; use 'univariate()' instead)
 #' @noRd
 #'
 #' @description Average premium for discrete risk factors in an insurance portfolio. For each level of the risk factor the average premium is equal to the ratio between the premium and the exposure.

@@ -1,4 +1,4 @@
-#' Univariate exposure
+#' Univariate exposure (deprecated function; use 'univariate()' instead)
 #' @noRd
 #'
 #' @description Exposure for discrete risk factors in an insurance portfolio.
