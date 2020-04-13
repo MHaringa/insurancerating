@@ -173,8 +173,8 @@
 <a class="sourceLine" id="cb10-12" data-line-number="12"><span class="co">## 11          age_policyholder age_policyholder              NA       0.9811935</span></a></code></pre></div>
 <p><code><a href="reference/autoplot.riskfactor.html">autoplot.riskfactor()</a></code> creates a figure. The base level of the factor <code>age_policyholder_freq_cat</code> is the group with the largest exposure and is shown first.</p>
 <div class="sourceCode" id="cb11"><pre class="r"><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">x</span>)</pre></div>
-<p><img src="reference/figures/example3a-1.png"><!-- --></p>
-<p>Include <code>model_data</code> to sort the clustering in the original order. Ordering the factor <code>age_policyholder</code> only works when <code><a href="reference/biggest_reference.html">biggest_reference()</a></code> is used to set the base level of the factor to the level with the largest exposure.</p>
+<p><img src="reference/figures/example3a1-1.png"><!-- --></p>
+<p>Include <code>model_data</code> to sort the clustering in the original order. Ordering the factor <code>age_policyholder_freq_cat</code> only works when <code><a href="reference/biggest_reference.html">biggest_reference()</a></code> is used to set the base level of the factor to the level with the largest exposure.</p>
 <div class="sourceCode" id="cb12"><pre class="r"><span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span>(<span class="no">model_freq1</span>, <span class="no">model_freq2</span>, <span class="kw">model_data</span> <span class="kw">=</span> <span class="no">dat</span>) <span class="kw">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>()</pre></div>
 <p><img src="reference/figures/example3b-1.png"><!-- --></p>

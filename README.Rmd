@@ -121,13 +121,13 @@ x
 
 `autoplot.riskfactor()` creates a figure. The base level of the factor `age_policyholder_freq_cat` is the group with the largest exposure and is shown first. 
 
-```{r example3a, eval = TRUE}
+```{r example3a1, eval = TRUE}
 
 autoplot(x)
 
 ```
 
-Include `model_data` to sort the clustering in the original order. Ordering the factor `age_policyholder` only works when `biggest_reference()` is used to set the base level of the factor to the level with the largest exposure. 
+Include `model_data` to sort the clustering in the original order. Ordering the factor `age_policyholder_freq_cat` only works when `biggest_reference()` is used to set the base level of the factor to the level with the largest exposure. 
 
 ```{r example3b, eval = TRUE}
 

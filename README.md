@@ -160,10 +160,10 @@ is shown first.
 autoplot(x)
 ```
 
-![](man/figures/example3a-1.png)<!-- -->
+![](man/figures/example3a1-1.png)<!-- -->
 
 Include `model_data` to sort the clustering in the original order.
-Ordering the factor `age_policyholder` only works when
+Ordering the factor `age_policyholder_freq_cat` only works when
 `biggest_reference()` is used to set the base level of the factor to the
 level with the largest exposure.
 
