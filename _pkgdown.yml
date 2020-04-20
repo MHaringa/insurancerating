@@ -32,4 +32,6 @@ reference:
       - biggest_reference
       - fisher
       - period_to_months
+      - reduce
+      - summary.reduce
 
