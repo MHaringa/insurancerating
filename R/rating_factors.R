@@ -17,7 +17,7 @@
 #'
 #' @examples
 #' MTPL2a <- MTPL2
-#' MTPL2a$area <- as.factor(MTPL2a)
+#' MTPL2a$area <- as.factor(MTPL2a$area)
 #' x <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = MTPL2a)
 #' rating_factors1(x)
 #'

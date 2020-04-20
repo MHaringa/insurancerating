@@ -2,7 +2,7 @@
 #'
 #' @description Takes an object produced by \code{fit_gam()}, and plots the fitted GAM.
 #'
-#' @param object fitgam object produced by \code{fit_gam}
+#' @param object fitgam object produced by \code{fit_gam()}
 #' @param conf_int determines whether 95\% confidence intervals will be plotted. The default is \code{conf_int = FALSE}
 #' @param color_gam a color can be specified either by name (e.g.: "red") or by hexadecimal code (e.g. : "#FF1234") (default is "steelblue")
 #' @param x_stepsize set step size for labels horizontal axis

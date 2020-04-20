@@ -18,7 +18,7 @@
 )
 }
 \arguments{
-\item{object}{fitgam object produced by \code{fit_gam}}
+\item{object}{fitgam object produced by \code{fit_gam()}}
 
 \item{conf_int}{determines whether 95\% confidence intervals will be plotted. The default is \code{conf_int = FALSE}}
 

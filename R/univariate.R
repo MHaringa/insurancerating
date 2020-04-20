@@ -17,7 +17,7 @@
 #' @param exposure column in \code{df} with exposure (default is NULL)
 #' @param nclaims column in \code{df} with number of claims (default is NULL)
 #'
-#' @return An list of class \code{univ_all} with components
+#' @return A list of class \code{univ_all} with components
 #' \item{df}{data frame}
 #' \item{xvar}{name of column in df with risk factor}
 #' \item{severity}{name of column in df with severity}

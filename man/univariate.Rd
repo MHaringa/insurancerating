@@ -27,7 +27,7 @@ univariate(
 \item{premium}{column in \code{df} with premium (default is NULL)}
 }
 \value{
-An list of class \code{univ_all} with components
+A list of class \code{univ_all} with components
 \item{df}{data frame}
 \item{xvar}{name of column in df with risk factor}
 \item{severity}{name of column in df with severity}

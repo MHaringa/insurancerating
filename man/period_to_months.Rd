@@ -13,10 +13,10 @@ period_to_months(df, begin, end, ...)
 
 \item{end}{column in \code{df} with end dates}
 
-\item{...}{numeric columns in df to split}
+\item{...}{numeric columns in \code{df} to split}
 }
 \value{
-data.frame with same columns as in df, and one extra column called id
+data.frame with same columns as in \code{df}, and one extra column called \code{id}
 }
 \description{
 The function splits rows with a time period longer than one month to multiple rows with a time period of exactly one month each.

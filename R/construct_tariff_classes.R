@@ -46,7 +46,7 @@ get_splits <- function(x) {
 #' @references Wood, S.N. (2011). Fast stable restricted maximum likelihood and marginal likelihood estimation of semiparametric
 #' generalized linear models. Journal of the Royal Statistical Society (B) 73(1):3-36. doi:10.1111/j.1467-9868.2010.00749.x.
 #'
-#' @return A list with components
+#' @return A list of class \code{constructtariffclasses} with components
 #' \item{prediction}{data frame with predicted values}
 #' \item{x}{name of continuous risk factor for which tariff classes are constructed}
 #' \item{model}{either 'frequency', 'severity' or 'burning'}

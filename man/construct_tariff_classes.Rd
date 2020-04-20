@@ -25,7 +25,7 @@ render less tariff classes. (\code{alpha} = 0 is default).}
 \item{seed}{an numeric seed to initialize the random number generator (for reproducibility).}
 }
 \value{
-A list with components
+A list of class \code{constructtariffclasses} with components
 \item{prediction}{data frame with predicted values}
 \item{x}{name of continuous risk factor for which tariff classes are constructed}
 \item{model}{either 'frequency', 'severity' or 'burning'}

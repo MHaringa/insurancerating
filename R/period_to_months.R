@@ -6,9 +6,9 @@
 #' @param df data.frame
 #' @param begin column in \code{df} with begin dates
 #' @param end column in \code{df} with end dates
-#' @param ... numeric columns in df to split
+#' @param ... numeric columns in \code{df} to split
 #'
-#' @return data.frame with same columns as in df, and one extra column called id
+#' @return data.frame with same columns as in \code{df}, and one extra column called \code{id}
 #'
 #' @author Martin Haringa
 #'
