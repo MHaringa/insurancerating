@@ -1,10 +1,7 @@
-# insurancerating 0.6.2
+# insurancerating 0.6.1
 
 * `reduce()` is added to reduce an insurance portfolio by merging redundant date ranges
 * `summary.reduce()` takes an object produced by `reduce()`, and counts new and lost customers
-
-# insurancerating 0.6.1
-
 * `univariate_all()` and `autoplot.univ_all()` are now depreciated; use `univariate()` and `autoplot.univariate()` instead
 
 # insurancerating 0.6.0
