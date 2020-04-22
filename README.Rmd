@@ -10,7 +10,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# insurancerating
+# insurancerating <img src="logo.png" align="right" alt="" width="120" />
 
 <!-- badges: start -->
 [![CRAN Status](https://www.r-pkg.org/badges/version/insurancerating)](https://cran.r-project.org/package=insurancerating)

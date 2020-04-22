@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# insurancerating
+# insurancerating <img src="logo.png" align="right" alt="" width="120" />
 
 <!-- badges: start -->
 
@@ -116,8 +116,8 @@ dat <- MTPL %>%
 glimpse(dat)
 ```
 
-    ## Observations: 32,731
-    ## Variables: 5
+    ## Rows: 32,731
+    ## Columns: 5
     ## $ age_policyholder          <int> 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…
     ## $ nclaims                   <int> 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…
     ## $ exposure                  <dbl> 1.0000000, 1.0000000, 1.0000000, 1.0000000,…
