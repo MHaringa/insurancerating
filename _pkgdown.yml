@@ -1,5 +1,3 @@
-development:
-  mode: auto
 navbar:
   structure:
     left:  [home, reference, articles, news]

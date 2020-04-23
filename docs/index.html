@@ -93,7 +93,8 @@
   <div class="contents col-md-9">
 <div id="insurancerating" class="section level1">
 <div class="page-header"><h1 class="hasAnchor">
-<a href="#insurancerating" class="anchor"></a>insurancerating</h1></div>
+<a href="#insurancerating" class="anchor"></a>insurancerating <img src="logo.png" align="right" alt="" width="120">
+</h1></div>
 <!-- badges: start -->
 
 <p>The goal of <code>insurancerating</code> is to give analytic techniques that can be used in insurance rating. It helps actuaries to implement GLMs within all relevent steps needed to construct a risk premium from raw data. It provides a data driven strategy for the construction of tariff classes in P\&amp;C insurance. The goal is to bin the continuous factors such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way, while being easy to use in a generalized linear model (GLM).</p>
@@ -150,8 +151,8 @@
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate_all.html">mutate_if</a></span>(<span class="no">is.factor</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span>(~<span class="fu"><a href="reference/biggest_reference.html">biggest_reference</a></span>(<span class="no">.</span>, <span class="no">exposure</span>)))
 
 <span class="fu"><a href="https://dplyr.tidyverse.org/reference/reexports.html">glimpse</a></span>(<span class="no">dat</span>)</pre></div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">## Observations: 32,731</span></a>
-<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="co">## Variables: 5</span></a>
+<div class="sourceCode" id="cb8"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">## Rows: 32,731</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="co">## Columns: 5</span></a>
 <a class="sourceLine" id="cb8-3" data-line-number="3"><span class="co">## $ age_policyholder          &lt;int&gt; 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4"><span class="co">## $ nclaims                   &lt;int&gt; 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5"><span class="co">## $ exposure                  &lt;dbl&gt; 1.0000000, 1.0000000, 1.0000000, 1.0000000,…</span></a>
