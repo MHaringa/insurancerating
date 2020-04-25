@@ -47,7 +47,7 @@
 
 
 <meta property="og:title" content="Reduce portfolio by merging redundant date ranges — reduce" />
-<meta property="og:description" content="Transform all the date ranges together as a set to produce a new set of date ranges. Ranges separated by a gap of at least min.gapwidth positions are not merged." />
+<meta property="og:description" content="Transform all the date ranges together as a set to produce a new set of date ranges. Ranges separated by a gap of at least min.gapwidth days are not merged." />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -137,10 +137,10 @@
     </div>
 
     <div class="ref-description">
-    <p>Transform all the date ranges together as a set to produce a new set of date ranges. Ranges separated by a gap of at least <code>min.gapwidth</code> positions are not merged.</p>
+    <p>Transform all the date ranges together as a set to produce a new set of date ranges. Ranges separated by a gap of at least <code>min.gapwidth</code> days are not merged.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>reduce</span>(<span class='no'>df</span>, <span class='no'>begin</span>, <span class='no'>end</span>, <span class='no'>...</span>, <span class='kw'>min.gapwidth</span> <span class='kw'>=</span> <span class='fl'>5</span>)</pre>
+    <pre class="usage"><span class='fu'>reduce</span>(<span class='no'>df</span>, <span class='no'>begin</span>, <span class='no'>end</span>, <span class='no'>...</span>, <span class='kw'>agg_cols</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>agg</span> <span class='kw'>=</span> <span class='st'>"sum"</span>, <span class='kw'>min.gapwidth</span> <span class='kw'>=</span> <span class='fl'>5</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -162,8 +162,16 @@
       <td><p>names of columns in <code>df</code> used to group date ranges by</p></td>
     </tr>
     <tr>
+      <th>agg_cols</th>
+      <td><p>list with columns in <code>df</code> to aggregate by (defaults to NULL)</p></td>
+    </tr>
+    <tr>
+      <th>agg</th>
+      <td><p>aggregation type (defaults to "sum")</p></td>
+    </tr>
+    <tr>
       <th>min.gapwidth</th>
-      <td><p>ranges separated by a gap of at least <code>min.gapwidth</code> positions are not merged. Defaults to 5.</p></td>
+      <td><p>ranges separated by a gap of at least <code>min.gapwidth</code> days are not merged. Defaults to 5.</p></td>
     </tr>
     </table>
 
@@ -182,22 +190,30 @@ An object of class <code>"reduce"</code> is a list usually containing at least t
     <p>This function is adopted from <code>IRanges::reduce()</code>.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='no'>portfolio</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/structure.html'>structure</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='kw'>policy_nr</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>,
-<span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>,
-<span class='st'>"12345"</span>), <span class='kw'>productgroup</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>,
-<span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>), <span class='kw'>product</span> <span class='kw'>=</span>
-<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"contents"</span>, <span class='st'>"contents"</span>, <span class='st'>"contents"</span>, <span class='st'>"contents"</span>, <span class='st'>"contents"</span>,
-<span class='st'>"contents"</span>, <span class='st'>"contents"</span>, <span class='st'>"contents"</span>, <span class='st'>"contents"</span>, <span class='st'>"contents"</span>,
-<span class='st'>"contents"</span>), <span class='kw'>begin_dat</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/structure.html'>structure</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>16709</span>, <span class='fl'>16740</span>, <span class='fl'>16801</span>, <span class='fl'>17410</span>,
-<span class='fl'>17440</span>, <span class='fl'>17805</span>, <span class='fl'>17897</span>, <span class='fl'>17956</span>, <span class='fl'>17987</span>, <span class='fl'>18017</span>, <span class='fl'>18262</span>), <span class='kw'>class</span> <span class='kw'>=</span> <span class='st'>"Date"</span>),
-<span class='kw'>end_dat</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/structure.html'>structure</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>16739</span>, <span class='fl'>16800</span>, <span class='fl'>16831</span>, <span class='fl'>17439</span>, <span class='fl'>17531</span>, <span class='fl'>17896</span>,
-<span class='fl'>17955</span>, <span class='fl'>17986</span>, <span class='fl'>18016</span>, <span class='fl'>18261</span>, <span class='fl'>18292</span>), <span class='kw'>class</span> <span class='kw'>=</span> <span class='st'>"Date"</span>)),
-<span class='kw'>row.names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>NA</span>, -<span class='fl'>11L</span>), <span class='kw'>class</span> <span class='kw'>=</span> <span class='st'>"data.frame"</span>)
+    <pre class="examples"><div class='input'><span class='no'>portfolio</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/structure.html'>structure</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='kw'>policy_nr</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>,
+<span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>, <span class='st'>"12345"</span>),
+<span class='kw'>productgroup</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>,
+<span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>, <span class='st'>"fire"</span>), <span class='kw'>product</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"contents"</span>,
+<span class='st'>"contents"</span>, <span class='st'>"contents"</span>, <span class='st'>"contents"</span>, <span class='st'>"contents"</span>, <span class='st'>"contents"</span>, <span class='st'>"contents"</span>,
+<span class='st'>"contents"</span>, <span class='st'>"contents"</span>, <span class='st'>"contents"</span>, <span class='st'>"contents"</span>), <span class='kw'>begin_dat</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/structure.html'>structure</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>16709</span>,
+<span class='fl'>16740</span>, <span class='fl'>16801</span>, <span class='fl'>17410</span>, <span class='fl'>17440</span>, <span class='fl'>17805</span>, <span class='fl'>17897</span>, <span class='fl'>17956</span>, <span class='fl'>17987</span>, <span class='fl'>18017</span>,
+<span class='fl'>18262</span>), <span class='kw'>class</span> <span class='kw'>=</span> <span class='st'>"Date"</span>), <span class='kw'>end_dat</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/structure.html'>structure</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>16739</span>, <span class='fl'>16800</span>,
+<span class='fl'>16831</span>, <span class='fl'>17439</span>, <span class='fl'>17531</span>, <span class='fl'>17896</span>, <span class='fl'>17955</span>, <span class='fl'>17986</span>, <span class='fl'>18016</span>, <span class='fl'>18261</span>, <span class='fl'>18292</span>),
+<span class='kw'>class</span> <span class='kw'>=</span> <span class='st'>"Date"</span>), <span class='kw'>premium</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>89L</span>, <span class='fl'>58L</span>, <span class='fl'>83L</span>, <span class='fl'>73L</span>, <span class='fl'>69L</span>, <span class='fl'>94L</span>,
+<span class='fl'>91L</span>, <span class='fl'>97L</span>, <span class='fl'>57L</span>, <span class='fl'>65L</span>, <span class='fl'>55L</span>)), <span class='kw'>row.names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>NA</span>, -<span class='fl'>11L</span>), <span class='kw'>class</span> <span class='kw'>=</span> <span class='st'>"data.frame"</span>)
+
+<span class='co'># Merge periods</span>
 <span class='fu'>reduce</span>(<span class='no'>portfolio</span>, <span class='kw'>begin</span> <span class='kw'>=</span> <span class='no'>begin_dat</span>, <span class='kw'>end</span> <span class='kw'>=</span> <span class='no'>end_dat</span>, <span class='no'>policy_nr</span>,
-<span class='no'>productgroup</span>, <span class='no'>product</span>, <span class='kw'>min.gapwidth</span> <span class='kw'>=</span> <span class='fl'>5</span>)</div><div class='output co'>#&gt;   policy_nr productgroup  product index  begin_dat    end_dat
+    <span class='no'>productgroup</span>, <span class='no'>product</span>, <span class='kw'>min.gapwidth</span> <span class='kw'>=</span> <span class='fl'>5</span>)</div><div class='output co'>#&gt;   policy_nr productgroup  product index  begin_dat    end_dat
 #&gt; 1     12345         fire contents     0 2015-10-01 2016-01-31
 #&gt; 2     12345         fire contents     1 2017-09-01 2017-12-31
 #&gt; 3     12345         fire contents     2 2018-10-01 2020-01-31</div><div class='input'>
+<span class='co'># Merge periods and sum premium per period</span>
+<span class='fu'>reduce</span>(<span class='no'>portfolio</span>, <span class='kw'>begin</span> <span class='kw'>=</span> <span class='no'>begin_dat</span>, <span class='kw'>end</span> <span class='kw'>=</span> <span class='no'>end_dat</span>, <span class='no'>policy_nr</span>,
+    <span class='no'>productgroup</span>, <span class='no'>product</span>, <span class='kw'>agg_cols</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='no'>premium</span>), <span class='kw'>min.gapwidth</span> <span class='kw'>=</span> <span class='fl'>5</span>)</div><div class='output co'>#&gt;   policy_nr productgroup  product index    end_dat  begin_dat premium
+#&gt; 1     12345         fire contents     0 2016-01-31 2015-10-01     230
+#&gt; 2     12345         fire contents     1 2017-12-31 2017-09-01     142
+#&gt; 3     12345         fire contents     2 2020-01-31 2018-10-01     459</div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

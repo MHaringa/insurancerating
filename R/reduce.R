@@ -1,6 +1,6 @@
 #' Reduce portfolio by merging redundant date ranges
 #'
-#' @description Transform all the date ranges together as a set to produce a new set of date ranges. Ranges separated by a gap of at least \code{min.gapwidth} positions are not merged.
+#' @description Transform all the date ranges together as a set to produce a new set of date ranges. Ranges separated by a gap of at least \code{min.gapwidth} days are not merged.
 #'
 #' @param df data.frame
 #' @param begin name of column \code{df} with begin dates
@@ -8,7 +8,7 @@
 #' @param ... names of columns in \code{df} used to group date ranges by
 #' @param agg_cols list with columns in \code{df} to aggregate by (defaults to NULL)
 #' @param agg aggregation type (defaults to "sum")
-#' @param min.gapwidth ranges separated by a gap of at least \code{min.gapwidth} positions are not merged. Defaults to 5.
+#' @param min.gapwidth ranges separated by a gap of at least \code{min.gapwidth} days are not merged. Defaults to 5.
 #'
 #' @importFrom lubridate is.Date
 #' @importFrom data.table setDT
@@ -41,10 +41,14 @@
 #' 16831, 17439, 17531, 17896, 17955, 17986, 18016, 18261, 18292),
 #' class = "Date"), premium = c(89L, 58L, 83L, 73L, 69L, 94L,
 #' 91L, 97L, 57L, 65L, 55L)), row.names = c(NA, -11L), class = "data.frame")
+#'
+#' # Merge periods
 #' reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
-#' productgroup, product, min.gapwidth = 5)
+#'     productgroup, product, min.gapwidth = 5)
+#'
+#' # Merge periods and sum premium per period
 #' reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
-#' productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
+#'     productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
 #'
 #' @export
 reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwidth = 5) {
@@ -156,11 +160,15 @@ as.data.frame.reduce <- function(x, ...) {
 #' 16831, 17439, 17531, 17896, 17955, 17986, 18016, 18261, 18292),
 #' class = "Date"), premium = c(89L, 58L, 83L, 73L, 69L, 94L,
 #' 91L, 97L, 57L, 65L, 55L)), row.names = c(NA, -11L), class = "data.frame")
+#'
 #' x <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
-#' productgroup, product, min.gapwidth = 5)
+#'     productgroup, product, min.gapwidth = 5)
+#'
 #' summary(x, period = "days", policy_nr, productgroup, product)
+#'
 #' y <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
-#' productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
+#'     productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
+#'
 #' summary(y, period = "weeks", policy_nr, productgroup, product)
 #'
 #' @export

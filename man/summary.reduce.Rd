@@ -31,11 +31,15 @@ productgroup = c("fire", "fire", "fire", "fire", "fire", "fire",
 16831, 17439, 17531, 17896, 17955, 17986, 18016, 18261, 18292),
 class = "Date"), premium = c(89L, 58L, 83L, 73L, 69L, 94L,
 91L, 97L, 57L, 65L, 55L)), row.names = c(NA, -11L), class = "data.frame")
+
 x <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
-productgroup, product, min.gapwidth = 5)
+    productgroup, product, min.gapwidth = 5)
+
 summary(x, period = "days", policy_nr, productgroup, product)
+
 y <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
-productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
+    productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
+
 summary(y, period = "weeks", policy_nr, productgroup, product)
 
 }

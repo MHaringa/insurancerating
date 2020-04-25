@@ -19,7 +19,7 @@ reduce(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwidth = 5)
 
 \item{agg}{aggregation type (defaults to "sum")}
 
-\item{min.gapwidth}{ranges separated by a gap of at least \code{min.gapwidth} positions are not merged. Defaults to 5.}
+\item{min.gapwidth}{ranges separated by a gap of at least \code{min.gapwidth} days are not merged. Defaults to 5.}
 }
 \value{
 An object of class \code{"reduce"}.
@@ -31,7 +31,7 @@ An object of class \code{"reduce"} is a list usually containing at least the fol
 \item{cols}{names of columns in \code{df} used to group date ranges by}
 }
 \description{
-Transform all the date ranges together as a set to produce a new set of date ranges. Ranges separated by a gap of at least \code{min.gapwidth} positions are not merged.
+Transform all the date ranges together as a set to produce a new set of date ranges. Ranges separated by a gap of at least \code{min.gapwidth} days are not merged.
 }
 \details{
 This function is adopted from \code{IRanges::reduce()}.
@@ -48,9 +48,13 @@ productgroup = c("fire", "fire", "fire", "fire", "fire", "fire",
 16831, 17439, 17531, 17896, 17955, 17986, 18016, 18261, 18292),
 class = "Date"), premium = c(89L, 58L, 83L, 73L, 69L, 94L,
 91L, 97L, 57L, 65L, 55L)), row.names = c(NA, -11L), class = "data.frame")
+
+# Merge periods
 reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
-productgroup, product, min.gapwidth = 5)
+    productgroup, product, min.gapwidth = 5)
+
+# Merge periods and sum premium per period
 reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
-productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
+    productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
 
 }
