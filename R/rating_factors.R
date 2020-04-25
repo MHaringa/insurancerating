@@ -1,6 +1,6 @@
 #' Include reference group in regression output
 #'
-#' @description This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables.
+#' @description Extract coefficients in terms of the original levels of the coefficients rather than the coded variables.
 #' Use rating_factors() to compare the output obtained from two or more glm objects.
 
 #' @param model a single glm object produced by \code{glm()}
@@ -120,7 +120,7 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
 
 #' Include reference group in regression output
 #'
-#' @description This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables.
+#' @description Extract coefficients in terms of the original levels of the coefficients rather than the coded variables.
 #'
 #' @param ... glm object(s) produced by \code{glm()}
 #' @param model_data data.frame used to create glm object(s), this should only be specified in case the exposure is desired in the output, default value is NULL

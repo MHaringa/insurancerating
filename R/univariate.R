@@ -31,7 +31,7 @@
 #'
 #' @examples
 #' univariate(MTPL2, x = area, severity = amount, nclaims = nclaims,
-#'                  exposure = exposure, premium = premium)
+#'            exposure = exposure, premium = premium)
 #'
 #' # The summary statistics related to premium are not calculated
 #' univariate(MTPL2, x = area, severity = amount, nclaims = nclaims, exposure = exposure)

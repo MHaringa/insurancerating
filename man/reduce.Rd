@@ -4,7 +4,7 @@
 \alias{reduce}
 \title{Reduce portfolio by merging redundant date ranges}
 \usage{
-reduce(df, begin, end, ..., min.gapwidth = 5)
+reduce(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwidth = 5)
 }
 \arguments{
 \item{df}{data.frame}
@@ -14,6 +14,10 @@ reduce(df, begin, end, ..., min.gapwidth = 5)
 \item{end}{name of column in \code{df} with end dates}
 
 \item{...}{names of columns in \code{df} used to group date ranges by}
+
+\item{agg_cols}{list with columns in \code{df} to aggregate by (defaults to NULL)}
+
+\item{agg}{aggregation type (defaults to "sum")}
 
 \item{min.gapwidth}{ranges separated by a gap of at least \code{min.gapwidth} positions are not merged. Defaults to 5.}
 }
@@ -33,18 +37,20 @@ Transform all the date ranges together as a set to produce a new set of date ran
 This function is adopted from \code{IRanges::reduce()}.
 }
 \examples{
-portfolio <- structure(list(policy_nr = c("12345", "12345", "12345",
-"12345", "12345", "12345", "12345", "12345", "12345", "12345",
-"12345"), productgroup = c("fire", "fire", "fire", "fire", "fire",
-"fire", "fire", "fire", "fire", "fire", "fire"), product =
-c("contents", "contents", "contents", "contents", "contents",
-"contents", "contents", "contents", "contents", "contents",
-"contents"), begin_dat = structure(c(16709, 16740, 16801, 17410,
-17440, 17805, 17897, 17956, 17987, 18017, 18262), class = "Date"),
-end_dat = structure(c(16739, 16800, 16831, 17439, 17531, 17896,
-17955, 17986, 18016, 18261, 18292), class = "Date")),
-row.names = c(NA, -11L), class = "data.frame")
+portfolio <- structure(list(policy_nr = c("12345", "12345", "12345", "12345",
+"12345", "12345", "12345", "12345", "12345", "12345", "12345"),
+productgroup = c("fire", "fire", "fire", "fire", "fire", "fire",
+"fire", "fire", "fire", "fire", "fire"), product = c("contents",
+"contents", "contents", "contents", "contents", "contents", "contents",
+"contents", "contents", "contents", "contents"), begin_dat = structure(c(16709,
+16740, 16801, 17410, 17440, 17805, 17897, 17956, 17987, 18017,
+18262), class = "Date"), end_dat = structure(c(16739, 16800,
+16831, 17439, 17531, 17896, 17955, 17986, 18016, 18261, 18292),
+class = "Date"), premium = c(89L, 58L, 83L, 73L, 69L, 94L,
+91L, 97L, 57L, 65L, 55L)), row.names = c(NA, -11L), class = "data.frame")
 reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
 productgroup, product, min.gapwidth = 5)
+reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
+productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
 
 }

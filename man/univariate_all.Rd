@@ -2,7 +2,7 @@
 % Please edit documentation in R/univariate_all.R
 \name{univariate_all}
 \alias{univariate_all}
-\title{Univariate analysis for discrete risk factors}
+\title{Univariate analysis for discrete risk factors (deprecated function; use 'univariate()' instead)}
 \usage{
 univariate_all(
   df,
@@ -44,5 +44,4 @@ Univariate analysis for discrete risk factors in an insurance portfolio. The fol
  \item{loss ratio (i.e. severity / premium)}
  \item{average premium (i.e. premium / exposure)}
 }
-If input arguments are not specified, the summary statistics related to these arguments are ignored. (deprecated function; use 'univariate()' instead)
 }

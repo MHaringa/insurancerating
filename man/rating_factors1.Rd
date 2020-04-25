@@ -24,7 +24,7 @@ rating_factors1(
 \item{exponentiate}{logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.}
 }
 \description{
-This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables.
+Extract coefficients in terms of the original levels of the coefficients rather than the coded variables.
 Use rating_factors() to compare the output obtained from two or more glm objects.
 }
 \examples{

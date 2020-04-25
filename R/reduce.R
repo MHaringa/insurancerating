@@ -6,6 +6,8 @@
 #' @param begin name of column \code{df} with begin dates
 #' @param end name of column in \code{df} with end dates
 #' @param ... names of columns in \code{df} used to group date ranges by
+#' @param agg_cols list with columns in \code{df} to aggregate by (defaults to NULL)
+#' @param agg aggregation type (defaults to "sum")
 #' @param min.gapwidth ranges separated by a gap of at least \code{min.gapwidth} positions are not merged. Defaults to 5.
 #'
 #' @importFrom lubridate is.Date
@@ -28,22 +30,24 @@
 #' \item{cols}{names of columns in \code{df} used to group date ranges by}
 #'
 #' @examples
-#' portfolio <- structure(list(policy_nr = c("12345", "12345", "12345",
-#' "12345", "12345", "12345", "12345", "12345", "12345", "12345",
-#' "12345"), productgroup = c("fire", "fire", "fire", "fire", "fire",
-#' "fire", "fire", "fire", "fire", "fire", "fire"), product =
-#' c("contents", "contents", "contents", "contents", "contents",
-#' "contents", "contents", "contents", "contents", "contents",
-#' "contents"), begin_dat = structure(c(16709, 16740, 16801, 17410,
-#' 17440, 17805, 17897, 17956, 17987, 18017, 18262), class = "Date"),
-#' end_dat = structure(c(16739, 16800, 16831, 17439, 17531, 17896,
-#' 17955, 17986, 18016, 18261, 18292), class = "Date")),
-#' row.names = c(NA, -11L), class = "data.frame")
+#' portfolio <- structure(list(policy_nr = c("12345", "12345", "12345", "12345",
+#' "12345", "12345", "12345", "12345", "12345", "12345", "12345"),
+#' productgroup = c("fire", "fire", "fire", "fire", "fire", "fire",
+#' "fire", "fire", "fire", "fire", "fire"), product = c("contents",
+#' "contents", "contents", "contents", "contents", "contents", "contents",
+#' "contents", "contents", "contents", "contents"), begin_dat = structure(c(16709,
+#' 16740, 16801, 17410, 17440, 17805, 17897, 17956, 17987, 18017,
+#' 18262), class = "Date"), end_dat = structure(c(16739, 16800,
+#' 16831, 17439, 17531, 17896, 17955, 17986, 18016, 18261, 18292),
+#' class = "Date"), premium = c(89L, 58L, 83L, 73L, 69L, 94L,
+#' 91L, 97L, 57L, 65L, 55L)), row.names = c(NA, -11L), class = "data.frame")
 #' reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
 #' productgroup, product, min.gapwidth = 5)
+#' reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
+#' productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
 #'
 #' @export
-reduce <- function(df, begin, end, ..., min.gapwidth = 5) {
+reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwidth = 5) {
 
   .begin <- deparse(substitute(begin))
   .end <- deparse(substitute(end))
@@ -63,6 +67,14 @@ reduce <- function(df, begin, end, ..., min.gapwidth = 5) {
 
   splitvars <- substitute(list(...))[-1]
   cols0 <- sapply(splitvars, deparse)
+
+  aggvars <- substitute(agg_cols)[-1]
+  aggcols0 <- sapply(aggvars, deparse)
+
+  if ( length(cols0) == 0 ){
+    stop("define columns to group date ranges by")
+  }
+
   cols <- c(cols0, .begin, .end)
 
   # Set keys (also orders)
@@ -74,11 +86,23 @@ reduce <- function(df, begin, end, ..., min.gapwidth = 5) {
   dt[, c(.end) := get(.end) + min.gapwidth]
 
   # Get rid of overlapping transactions
-  dt_reduce <- dt[,.(start_dt = get(.begin),
-                     end_dt = get(.end),
-                     index = c(0, cumsum(as.numeric(dplyr::lead(get(.begin))) > cummax(as.numeric(get(.end))))[-.N])),
-                  keyby = c(cols0)]
-  dt_reduce <- dt_reduce[,.(start_dt = min(start_dt), end_dt = max(end_dt)), by = c(cols0, "index")]
+  if (length(aggcols0) == 0){
+    dt_reduce <- dt[,.(start_dt = get(.begin),
+                       end_dt = get(.end),
+                       index = c(0, cumsum(as.numeric(dplyr::lead(get(.begin))) > cummax(as.numeric(get(.end))))[-.N])),
+                    keyby = c(cols0)]
+    dt_reduce <- dt_reduce[,.(start_dt = min(start_dt), end_dt = max(end_dt)), by = c(cols0, "index")]
+  }
+
+  if ( length(aggcols0) > 0 ){
+    dt_reduce <- dt[, .(start_dt = get(.begin),
+                        end_dt = get(.end),
+                        index = c(0, cumsum(as.numeric(dplyr::lead(get(.begin))) > cummax(as.numeric(get(.end))))[-.N])),
+                    keyby = c(cols0)]
+    dt_reduce <- cbind(dt_reduce, dt[, ..aggcols0])
+    dt_reduce <- dt_reduce[, c(end_dt = max(end_dt), start_dt = min(start_dt), lapply(.SD, get(agg))), by = c(cols0, "index"), .SDcols = aggcols0]
+  }
+
   data.table::setnames(dt_reduce, old = c("start_dt", "end_dt"), new = c(.begin, .end))
 
   # Reverse gapwidth
@@ -121,21 +145,23 @@ as.data.frame.reduce <- function(x, ...) {
 #' @return data.frame
 #'
 #' @examples
-#' portfolio <- structure(list(policy_nr = c("12345", "12345", "12345",
-#' "12345", "12345", "12345", "12345", "12345", "12345", "12345", "12345"),
+#' portfolio <- structure(list(policy_nr = c("12345", "12345", "12345", "12345",
+#' "12345", "12345", "12345", "12345", "12345", "12345", "12345"),
 #' productgroup = c("fire", "fire", "fire", "fire", "fire", "fire",
 #' "fire", "fire", "fire", "fire", "fire"), product = c("contents",
-#' "contents", "contents", "contents", "contents", "contents",
-#' "contents", "contents", "contents", "contents", "contents"),
-#' begin_dat = structure(c(16709,16740, 16801, 17410, 17440, 17805,
-#' 17897, 17956, 17987, 18017, 18262), class = "Date"), end_dat =
-#' structure(c(16739, 16800, 16831, 17439, 17531, 17896, 17955, 17986,
-#' 18016, 18261, 18292), class = "Date")), row.names = c(NA, -11L),
-#' class = "data.frame")
+#' "contents", "contents", "contents", "contents", "contents", "contents",
+#' "contents", "contents", "contents", "contents"), begin_dat = structure(c(16709,
+#' 16740, 16801, 17410, 17440, 17805, 17897, 17956, 17987, 18017,
+#' 18262), class = "Date"), end_dat = structure(c(16739, 16800,
+#' 16831, 17439, 17531, 17896, 17955, 17986, 18016, 18261, 18292),
+#' class = "Date"), premium = c(89L, 58L, 83L, 73L, 69L, 94L,
+#' 91L, 97L, 57L, 65L, 55L)), row.names = c(NA, -11L), class = "data.frame")
 #' x <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
 #' productgroup, product, min.gapwidth = 5)
 #' summary(x, period = "days", policy_nr, productgroup, product)
-#' summary(x, period = "weeks", policy_nr, productgroup, product)
+#' y <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
+#' productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
+#' summary(y, period = "weeks", policy_nr, productgroup, product)
 #'
 #' @export
 summary.reduce <- function(object, period = "days", ...){
@@ -165,7 +191,6 @@ summary.reduce <- function(object, period = "days", ...){
   }
 
   type = week = month = quarter = NULL # due to NSE notes in R CMD check
-
 
   new <- data.table::data.table(df)[, list(count = .N), by = c(by_begin)][, type := "in"]
   lost <- data.table::data.table(df)[, list(count = .N), by = c(by_end)][, type := "out"]

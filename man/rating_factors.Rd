@@ -19,7 +19,7 @@ rating_factors(..., model_data = NULL, exposure = NULL, exponentiate = TRUE)
 data.frame
 }
 \description{
-This extracts coefficients in terms of the original levels of the coefficients rather than the coded variables.
+Extract coefficients in terms of the original levels of the coefficients rather than the coded variables.
 }
 \details{
 A fitted linear model has coefficients for the contrasts of the factor terms, usually one less in number than the number of levels.
