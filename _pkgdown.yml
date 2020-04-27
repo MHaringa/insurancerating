@@ -25,6 +25,15 @@ reference:
     contents:
       - MTPL
       - MTPL2
+  - title: "Performance and validation"
+    desc: >
+      Model quality and performance metrics
+    contents:
+      - check_normality
+      - autoplot.check_normality
+      - check_overdispersion
+      - model_performance
+      - rmse
   - title: "Additional"
     desc: >
       Often used in insurance ratings

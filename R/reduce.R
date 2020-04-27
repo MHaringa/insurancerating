@@ -56,7 +56,7 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwid
   .begin <- deparse(substitute(begin))
   .end <- deparse(substitute(end))
 
-  start_dt = end_dt = NULL # due to NSE notes in R CMD check
+  start_dt = end_dt = aggcols0 = NULL # due to NSE notes in R CMD check
 
   if (!lubridate::is.Date(df[[.begin]]) | !lubridate::is.Date(df[[.end]])) {
     stop("Columns begin and end should be Date objects. Use e.g. lubridate::ymd() to create Date object.")
@@ -103,7 +103,7 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwid
                         end_dt = get(.end),
                         index = c(0, cumsum(as.numeric(dplyr::lead(get(.begin))) > cummax(as.numeric(get(.end))))[-.N])),
                     keyby = c(cols0)]
-    dt_reduce <- cbind(dt_reduce, dt[, ..aggcols0])
+    dt_reduce <- cbind(dt_reduce, dt[, aggcols0, with = FALSE]) # ..aggcols0
     dt_reduce <- dt_reduce[, c(end_dt = max(end_dt), start_dt = min(start_dt), lapply(.SD, get(agg))), by = c(cols0, "index"), .SDcols = aggcols0]
   }
 
@@ -145,6 +145,7 @@ as.data.frame.reduce <- function(x, ...) {
 #' @importFrom data.table setcolorder
 #' @importFrom lubridate days
 #' @importFrom lubridate weeks
+#' @importFrom lubridate %m+%
 #'
 #' @return data.frame
 #'
@@ -161,15 +162,13 @@ as.data.frame.reduce <- function(x, ...) {
 #' class = "Date"), premium = c(89L, 58L, 83L, 73L, 69L, 94L,
 #' 91L, 97L, 57L, 65L, 55L)), row.names = c(NA, -11L), class = "data.frame")
 #'
-#' x <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
+#' pt1 <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
 #'     productgroup, product, min.gapwidth = 5)
+#' summary(pt1, period = "days", policy_nr, productgroup, product)
 #'
-#' summary(x, period = "days", policy_nr, productgroup, product)
-#'
-#' y <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
+#' pt2 <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
 #'     productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
-#'
-#' summary(y, period = "weeks", policy_nr, productgroup, product)
+#' summary(pt2, period = "weeks", policy_nr, productgroup, product)
 #'
 #' @export
 summary.reduce <- function(object, period = "days", ...){
@@ -178,10 +177,10 @@ summary.reduce <- function(object, period = "days", ...){
     stop("summary.reduce requires a reduce object, use object = object")
   }
 
-  df <- x$df
-  begin <- x$begin
-  end <- x$end
-  cols <- x$cols
+  df <- object$df
+  begin <- object$begin
+  end <- object$end
+  cols <- object$cols
 
   by_begin <- begin
   by_end <- end

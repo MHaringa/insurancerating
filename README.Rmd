@@ -145,6 +145,25 @@ rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) 
 
 ```
 
+Check Poisson GLM for overdispersion:
+
+```{r overdispersion, eval = TRUE}
+check_overdispersion(model_freq1)
+```
+
+Check model for (non-)normality of residuals. Normality of deviance residuals is in general not expected under a Poisson, and seing deviance residuals (or any other standard residuals) that differ from a straight line in a qqnorm plot is therefore in general no concern at all. 
+
+```{r normality, message = FALSE, eval = TRUE}
+check_normality(model_freq1, simulate_residuals = FALSE) %>%
+  autoplot(.)
+```
+
+Instead, setting `simulate_residuals = TRUE` corrects for notable deviations from normality for small counts. It implements the idea of randomized quantile residuals by Dunn and Smyth (1996). `check_normality()` adopts the implementation of this approach from `simulateResiduals()` in package DHARMa. Note that (for large data sets) formal tests for normality almost always yields significant results for the distribution of residuals and visual inspections (e.g. QQ plots) are preferable. The simulated residuals in the QQ plot show no clear deviation from normality.
+
+```{r normalitysim, message = FALSE, eval = TRUE}
+check_normality(model_freq1, simulate_residuals = TRUE, n_simulations = 50) %>%
+  autoplot(.)
+```
 
 
 ## Example 2

@@ -185,6 +185,56 @@ rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) 
 
 ![](man/figures/example3c-1.png)<!-- -->
 
+Check Poisson GLM for overdispersion:
+
+``` r
+check_overdispersion(model_freq1)
+```
+
+    ##        dispersion ratio =     1.180
+    ##   Pearson's Chi-Squared = 38627.337
+    ##                 p-value =   < 0.001
+
+    ## Overdispersion detected.
+
+Check model for (non-)normality of residuals. Normality of deviance
+residuals is in general not expected under a Poisson, and seing deviance
+residuals (or any other standard residuals) that differ from a straight
+line in a qqnorm plot is therefore in general no concern at all.
+
+``` r
+check_normality(model_freq1, simulate_residuals = FALSE) %>%
+  autoplot(.)
+```
+
+    ## 'check_normality()' only uses the first 5000 data points to test for normality.
+    ## Visual inspection (e.g. Q-Q plots) is preferable for large data sets.
+    ## Warning: Non-normality of residuals detected (p = 0.000).
+
+![](man/figures/normality-1.png)<!-- -->
+
+Instead, setting `simulate_residuals = TRUE` corrects for notable
+deviations from normality for small counts. It implements the idea of
+randomized quantile residuals by Dunn and Smyth (1996).
+`check_normality()` adopts the implementation of this approach from
+`simulateResiduals()` in package DHARMa. Note that (for large data sets)
+formal tests for normality almost always yields significant results for
+the distribution of residuals and visual inspections (e.g. QQ plots) are
+preferable. The simulated residuals in the QQ plot show no clear
+deviation from
+normality.
+
+``` r
+check_normality(model_freq1, simulate_residuals = TRUE, n_simulations = 50) %>%
+  autoplot(.)
+```
+
+    ## 'check_normality()' uses scaled residuals by simulating from the fitted model to test for normality.
+    ## Visual inspection (e.g. Q-Q plots) is preferable for large data sets.
+    ## Warning: Non-normality of residuals detected (p = 0.000).
+
+![](man/figures/normalitysim-1.png)<!-- -->
+
 ## Example 2
 
 This is a basic example which shows how to easily perform an univariate

@@ -177,14 +177,24 @@
 <span class='kw'>class</span> <span class='kw'>=</span> <span class='st'>"Date"</span>), <span class='kw'>premium</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>89L</span>, <span class='fl'>58L</span>, <span class='fl'>83L</span>, <span class='fl'>73L</span>, <span class='fl'>69L</span>, <span class='fl'>94L</span>,
 <span class='fl'>91L</span>, <span class='fl'>97L</span>, <span class='fl'>57L</span>, <span class='fl'>65L</span>, <span class='fl'>55L</span>)), <span class='kw'>row.names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>NA</span>, -<span class='fl'>11L</span>), <span class='kw'>class</span> <span class='kw'>=</span> <span class='st'>"data.frame"</span>)
 
-<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='reduce.html'>reduce</a></span>(<span class='no'>portfolio</span>, <span class='kw'>begin</span> <span class='kw'>=</span> <span class='no'>begin_dat</span>, <span class='kw'>end</span> <span class='kw'>=</span> <span class='no'>end_dat</span>, <span class='no'>policy_nr</span>,
+<span class='no'>pt1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='reduce.html'>reduce</a></span>(<span class='no'>portfolio</span>, <span class='kw'>begin</span> <span class='kw'>=</span> <span class='no'>begin_dat</span>, <span class='kw'>end</span> <span class='kw'>=</span> <span class='no'>end_dat</span>, <span class='no'>policy_nr</span>,
     <span class='no'>productgroup</span>, <span class='no'>product</span>, <span class='kw'>min.gapwidth</span> <span class='kw'>=</span> <span class='fl'>5</span>)
-
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>x</span>, <span class='kw'>period</span> <span class='kw'>=</span> <span class='st'>"days"</span>, <span class='no'>policy_nr</span>, <span class='no'>productgroup</span>, <span class='no'>product</span>)</div><div class='output co'>#&gt; <span class='error'>Error in summary.reduce(x, period = "days", policy_nr, productgroup, product): object 'x' not found</span></div><div class='input'>
-<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='reduce.html'>reduce</a></span>(<span class='no'>portfolio</span>, <span class='kw'>begin</span> <span class='kw'>=</span> <span class='no'>begin_dat</span>, <span class='kw'>end</span> <span class='kw'>=</span> <span class='no'>end_dat</span>, <span class='no'>policy_nr</span>,
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>pt1</span>, <span class='kw'>period</span> <span class='kw'>=</span> <span class='st'>"days"</span>, <span class='no'>policy_nr</span>, <span class='no'>productgroup</span>, <span class='no'>product</span>)</div><div class='output co'>#&gt;         date type count policy_nr productgroup  product
+#&gt; 1 2020-02-01  out     1     12345         fire contents
+#&gt; 2 2018-10-01   in     1     12345         fire contents
+#&gt; 3 2018-01-01  out     1     12345         fire contents
+#&gt; 4 2017-09-01   in     1     12345         fire contents
+#&gt; 5 2016-02-01  out     1     12345         fire contents
+#&gt; 6 2015-10-01   in     1     12345         fire contents</div><div class='input'>
+<span class='no'>pt2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='reduce.html'>reduce</a></span>(<span class='no'>portfolio</span>, <span class='kw'>begin</span> <span class='kw'>=</span> <span class='no'>begin_dat</span>, <span class='kw'>end</span> <span class='kw'>=</span> <span class='no'>end_dat</span>, <span class='no'>policy_nr</span>,
     <span class='no'>productgroup</span>, <span class='no'>product</span>, <span class='kw'>agg_cols</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='no'>premium</span>), <span class='kw'>min.gapwidth</span> <span class='kw'>=</span> <span class='fl'>5</span>)
-
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>y</span>, <span class='kw'>period</span> <span class='kw'>=</span> <span class='st'>"weeks"</span>, <span class='no'>policy_nr</span>, <span class='no'>productgroup</span>, <span class='no'>product</span>)</div><div class='output co'>#&gt; <span class='error'>Error in summary.reduce(y, period = "weeks", policy_nr, productgroup,     product): object 'x' not found</span></div><div class='input'>
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>pt2</span>, <span class='kw'>period</span> <span class='kw'>=</span> <span class='st'>"weeks"</span>, <span class='no'>policy_nr</span>, <span class='no'>productgroup</span>, <span class='no'>product</span>)</div><div class='output co'>#&gt;      week type count policy_nr productgroup  product
+#&gt; 1 2020W06  out     1     12345         fire contents
+#&gt; 2 2018W40   in     1     12345         fire contents
+#&gt; 3 2018W02  out     1     12345         fire contents
+#&gt; 4 2017W35   in     1     12345         fire contents
+#&gt; 5 2016W06  out     1     12345         fire contents
+#&gt; 6 2015W40   in     1     12345         fire contents</div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
