@@ -38,7 +38,7 @@ A list of class \code{univ_all} with components
 \description{
 Univariate analysis for discrete risk factors in an insurance portfolio. The following summary statistics are calculated:
 \itemize{
- \item{frequency (i.e. number of claims / expsore)}
+ \item{frequency (i.e. number of claims / exposure)}
  \item{average severity (i.e. severity / number of claims)}
  \item{risk premium (i.e. severity / exposure)}
  \item{loss ratio (i.e. severity / premium)}

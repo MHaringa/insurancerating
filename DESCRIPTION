@@ -5,7 +5,7 @@ Version: 0.6.1
 Authors@R: c(person("Martin", "Haringa", role = c("aut", "cre"), email = "mtharinga@gmail.com"))
 VignetteBuilder: knitr
 Maintainer: Martin Haringa <mtharinga@gmail.com>
-Description: Methods for insurance rating. It helps actuaries to implement GLMs within all relevent steps needed to construct 
+Description: Methods for insurance rating. It helps actuaries to implement GLMs within all relevant steps needed to construct 
     a risk premium from raw data. It provides a data driven strategy for the construction of insurance tariff classes. 
     This strategy is based on the work by Antonio and Valdez (2012) <doi:10.1007/s10182-011-0152-7>. It also provides recipes 
     on how to easily perform one-way, or univariate, analyses on an insurance portfolio. In addition it adds functionality 

@@ -25,7 +25,7 @@
 
 \item{show_plots}{numeric vector of plots to be shown (default is c(1,2,3,4,5,6,7,8,9)), there are nine available plots:
  \itemize{
-  \item{1. frequency (i.e. number of claims / expsore)}
+  \item{1. frequency (i.e. number of claims / exposure)}
   \item{2. average severity (i.e. severity / number of claims)}
   \item{3. risk premium (i.e. severity / exposure)}
   \item{4. loss ratio (i.e. severity / premium)}

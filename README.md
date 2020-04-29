@@ -12,7 +12,7 @@ Status](https://www.r-pkg.org/badges/version/insurancerating)](https://cran.r-pr
 
 The goal of `insurancerating` is to give analytic techniques that can be
 used in insurance rating. It helps actuaries to implement GLMs within
-all relevent steps needed to construct a risk premium from raw data. It
+all relevant steps needed to construct a risk premium from raw data. It
 provides a data driven strategy for the construction of tariff classes
 in P\&C insurance. The goal is to bin the continuous factors such that
 categorical risk factors result which capture the effect of the
@@ -258,9 +258,10 @@ check_overdispersion(model_freq1)
     ## Overdispersion detected.
 
 Check model for (non-)normality of residuals. Normality of deviance
-residuals is in general not expected under a Poisson, and seing deviance
-residuals (or any other standard residuals) that differ from a straight
-line in a qqnorm plot is therefore in general no concern at all.
+residuals is in general not expected under a Poisson, and seeing
+deviance residuals (or any other standard residuals) that differ from a
+straight line in a qqnorm plot is therefore in general no concern at
+all.
 
 Note that (for large data sets) formal tests for normality almost always
 yields significant results for the distribution of residuals and visual
@@ -334,7 +335,7 @@ univariate(MTPL2,
 
 The following indicators are calculated:
 
-1.  frequency (i.e. frequency = number of claims / expsore)
+1.  frequency (i.e. frequency = number of claims / exposure)
 2.  average\_severity (i.e. average severity = severity / number of
     claims)
 3.  risk\_premium (i.e. risk premium = severity / exposure = frequency x

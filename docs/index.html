@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="Analytic Insurance Rating Techniques">
-<meta property="og:description" content="Methods for insurance rating. It helps actuaries to implement GLMs within all relevent steps needed to construct 
+<meta property="og:description" content="Methods for insurance rating. It helps actuaries to implement GLMs within all relevant steps needed to construct 
     a risk premium from raw data. It provides a data driven strategy for the construction of insurance tariff classes. 
     This strategy is based on the work by Antonio and Valdez (2012) &lt;doi:10.1007/s10182-011-0152-7&gt;. It also provides recipes 
     on how to easily perform one-way, or univariate, analyses on an insurance portfolio. In addition it adds functionality 
@@ -98,7 +98,7 @@
 </h1></div>
 <!-- badges: start -->
 
-<p>The goal of <code>insurancerating</code> is to give analytic techniques that can be used in insurance rating. It helps actuaries to implement GLMs within all relevent steps needed to construct a risk premium from raw data. It provides a data driven strategy for the construction of tariff classes in P\&amp;C insurance. The goal is to bin the continuous factors such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way, while being easy to use in a generalized linear model (GLM).</p>
+<p>The goal of <code>insurancerating</code> is to give analytic techniques that can be used in insurance rating. It helps actuaries to implement GLMs within all relevant steps needed to construct a risk premium from raw data. It provides a data driven strategy for the construction of tariff classes in P\&amp;C insurance. The goal is to bin the continuous factors such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way, while being easy to use in a generalized linear model (GLM).</p>
 <p><code>insurancerating</code> also provides recipes on how to easily perform univariate analyses on an insurance portfolio. In addition it adds functionality to include reference categories in the levels of the coefficients in the output of a generalized linear regression analysis.</p>
 <div id="installation" class="section level2">
 <h2 class="hasAnchor">
@@ -225,7 +225,7 @@
 <a class="sourceLine" id="cb20-3" data-line-number="3"><span class="co">##                 p-value =   &lt; 0.001</span></a>
 <a class="sourceLine" id="cb20-4" data-line-number="4"></a>
 <a class="sourceLine" id="cb20-5" data-line-number="5"><span class="co">## Overdispersion detected.</span></a></code></pre></div>
-<p>Check model for (non-)normality of residuals. Normality of deviance residuals is in general not expected under a Poisson, and seing deviance residuals (or any other standard residuals) that differ from a straight line in a qqnorm plot is therefore in general no concern at all.</p>
+<p>Check model for (non-)normality of residuals. Normality of deviance residuals is in general not expected under a Poisson, and seeing deviance residuals (or any other standard residuals) that differ from a straight line in a qqnorm plot is therefore in general no concern at all.</p>
 <p>Note that (for large data sets) formal tests for normality almost always yields significant results for the distribution of residuals and visual inspections (e.g. QQ plots) are preferable.</p>
 <div class="sourceCode" id="cb21"><pre class="r"><span class="fu"><a href="reference/check_normality.html">check_normality</a></span>(<span class="no">model_freq1</span>, <span class="kw">simulate_residuals</span> <span class="kw">=</span> <span class="fl">FALSE</span>) <span class="kw">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>)</pre></div>
@@ -267,7 +267,7 @@
 <a class="sourceLine" id="cb26-10" data-line-number="10"><span class="co">## 4     520.1832   7.674058        67.78464</span></a></code></pre></div>
 <p>The following indicators are calculated:</p>
 <ol>
-<li>frequency (i.e. frequency = number of claims / expsore)</li>
+<li>frequency (i.e. frequency = number of claims / exposure)</li>
 <li>average_severity (i.e. average severity = severity / number of claims)</li>
 <li>risk_premium (i.e. risk premium = severity / exposure = frequency x average severity)</li>
 <li>loss_ratio (i.e. loss ratio = severity / premium)</li>
