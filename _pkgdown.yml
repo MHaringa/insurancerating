@@ -41,6 +41,7 @@ reference:
       Often used in insurance ratings
     contents:
       - biggest_reference
+      - add_prediction
       - fisher
       - period_to_months
       - reduce

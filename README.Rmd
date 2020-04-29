@@ -145,6 +145,17 @@ rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) 
 
 ```
 
+Add predictions to the data set:
+
+```{r addpredictions, eval = TRUE}
+
+dat_pred <- dat %>%
+  add_prediction(model_freq1, model_freq2) 
+
+glimpse(dat_pred)
+  
+```
+
 Compute indices of model performance for GLMs. The RMSE is the square root of the average of squared differences between prediction and actual observation and indicates the absolute fit of the model to the data. It can be interpreted as the standard deviation of the unexplained variance, and is in the same units as the response variable.
 
 ```{r modelperf, eval = TRUE}
@@ -152,6 +163,7 @@ Compute indices of model performance for GLMs. The RMSE is the square root of th
 model_performance(model_freq1, model_freq2) 
 
 ```
+
 
 To test the stability of the predictive ability of the fitted model it might be helpful to determine the variation in the computed RMSE. The variation is calculated by computing the root mean squared errors from \code{n} generated bootstrap replicates. 
 
@@ -166,7 +178,7 @@ bootstrap_rmse(model_freq1, dat, n = 100, show_progress = FALSE) %>%
 ```
 
 
-Check Poisson GLM for overdispersion:
+Check Poisson GLM for overdispersion. A dispersion ratio larger than one indicates overdispersion, this occurs when the observed variance is higher than the variance of the theoretical model. If the dispersion ratio is close to one, a Poisson model fits well to the data. A *p*-value < .05 indicates overdispersion. Overdispersion > 2 probably means there is a larger problem with the data: check (again) for outliers. 
 
 ```{r overdispersion, eval = TRUE}
 check_overdispersion(model_freq1)

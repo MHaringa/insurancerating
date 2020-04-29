@@ -2,7 +2,7 @@
 #'
 #' @description Compute indices of model performance for (one or more) GLMs.
 #'
-#' @param ... One or more object of class \code{glm}
+#' @param ... One or more objects of class \code{glm}.
 #'
 #' @details The following indices are computed:
 #' \itemize{

@@ -185,6 +185,25 @@ rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) 
 
 ![](man/figures/example3c-1.png)<!-- -->
 
+Add predictions to the data set:
+
+``` r
+dat_pred <- dat %>%
+  add_prediction(model_freq1, model_freq2) 
+
+glimpse(dat_pred)
+```
+
+    ## Rows: 32,731
+    ## Columns: 7
+    ## $ age_policyholder          <int> 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…
+    ## $ nclaims                   <int> 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…
+    ## $ exposure                  <dbl> 1.0000000, 1.0000000, 1.0000000, 1.0000000,…
+    ## $ amount                    <dbl> 0, 0, 0, 57540, 2057, 0, 0, 6510, 0, 0, 0, …
+    ## $ age_policyholder_freq_cat <fct> "(39,50]", "[18,25]", "(50,57]", "(39,50]",…
+    ## $ pred_nclaims_model_freq1  <dbl> 0.13681815, 0.26595024, 0.12203763, 0.13681…
+    ## $ pred_nclaims_model_freq2  <dbl> 0.14190382, 0.27816629, 0.12132927, 0.13923…
+
 Compute indices of model performance for GLMs. The RMSE is the square
 root of the average of squared differences between prediction and actual
 observation and indicates the absolute fit of the model to the data. It
@@ -220,7 +239,13 @@ bootstrap_rmse(model_freq1, dat, n = 100, show_progress = FALSE) %>%
 
 ![](man/figures/bootstraprmse-1.png)<!-- -->
 
-Check Poisson GLM for overdispersion:
+Check Poisson GLM for overdispersion. A dispersion ratio larger than one
+indicates overdispersion, this occurs when the observed variance is
+higher than the variance of the theoretical model. If the dispersion
+ratio is close to one, a Poisson model fits well to the data. A
+*p*-value \< .05 indicates overdispersion. Overdispersion \> 2 probably
+means there is a larger problem with the data: check (again) for
+outliers.
 
 ``` r
 check_overdispersion(model_freq1)

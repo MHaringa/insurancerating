@@ -192,31 +192,20 @@ for each iteration a sample with replacement is taken from the data set and the 
 mean squared error is calculated.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='no'>mod1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>age_policyholder</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>MTPL</span>,
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
+<span class='no'>mod1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>age_policyholder</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>MTPL</span>,
     <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>())
 
 <span class='co'># Use all records in MTPL</span>
-<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='fu'>bootstrap_rmse</span>(<span class='no'>mod1</span>, <span class='no'>MTPL</span>, <span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>show_progress</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>x</span>)</div><div class='output co'>#&gt;   [1] 0.3613475 0.3661612 0.3627384 0.3617565 0.3630564 0.3628717 0.3675056
-#&gt;   [8] 0.3628377 0.3606276 0.3649284 0.3604798 0.3704746 0.3631584 0.3684717
-#&gt;  [15] 0.3582311 0.3633513 0.3632268 0.3662625 0.3670657 0.3647767 0.3610929
-#&gt;  [22] 0.3636340 0.3733386 0.3674589 0.3688600 0.3708087 0.3621237 0.3680776
-#&gt;  [29] 0.3620785 0.3684285 0.3589155 0.3675080 0.3643659 0.3638027 0.3620952
-#&gt;  [36] 0.3614994 0.3624888 0.3661232 0.3689894 0.3591052 0.3604184 0.3586954
-#&gt;  [43] 0.3707492 0.3637578 0.3627793 0.3679300 0.3592797 0.3646215 0.3625323
-#&gt;  [50] 0.3607433 0.3616868 0.3625870 0.3585201 0.3620725 0.3626274 0.3714269
-#&gt;  [57] 0.3608796 0.3712357 0.3632842 0.3712101 0.3643107 0.3636771 0.3606365
-#&gt;  [64] 0.3627051 0.3656250 0.3683561 0.3587815 0.3668995 0.3684970 0.3569710
-#&gt;  [71] 0.3656956 0.3610785 0.3646078 0.3701758 0.3617315 0.3610782 0.3696105
-#&gt;  [78] 0.3703820 0.3579776 0.3678518 0.3650723 0.3610590 0.3643746 0.3649986
-#&gt;  [85] 0.3637467 0.3623391 0.3577127 0.3648790 0.3699154 0.3637599 0.3588667
-#&gt;  [92] 0.3646425 0.3635976 0.3696290 0.3581391 0.3615149 0.3624419 0.3664650
-#&gt;  [99] 0.3665306 0.3669058</div><div class='input'><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>x</span>)</div><div class='img'><img src='bootstrap_rmse-1.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='fu'>bootstrap_rmse</span>(<span class='no'>mod1</span>, <span class='no'>MTPL</span>, <span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>80</span>, <span class='kw'>show_progress</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>x</span>)
+<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>x</span>)
+
 <span class='co'># Use 80% of records to test whether predictive ability depends on which 80% is used</span>
 <span class='co'># This might for example be useful in case portfolio contains large claim sizes</span>
-<span class='no'>x_frac</span> <span class='kw'>&lt;-</span> <span class='fu'>bootstrap_rmse</span>(<span class='no'>mod1</span>, <span class='no'>MTPL</span>, <span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>frac</span> <span class='kw'>=</span> <span class='fl'>.8</span>, <span class='kw'>show_progress</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
-<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>x_frac</span>) <span class='co'># Variation is quite small for Poisson GLM</span></div><div class='img'><img src='bootstrap_rmse-2.png' alt='' width='700' height='433' /></div><div class='input'>
-</div></pre>
+<span class='no'>x_frac</span> <span class='kw'>&lt;-</span> <span class='fu'>bootstrap_rmse</span>(<span class='no'>mod1</span>, <span class='no'>MTPL</span>, <span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>50</span>, <span class='kw'>frac</span> <span class='kw'>=</span> <span class='fl'>.8</span>, <span class='kw'>show_progress</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>x_frac</span>) <span class='co'># Variation is quite small for Poisson GLM</span>
+}</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

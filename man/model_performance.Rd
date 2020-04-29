@@ -7,7 +7,7 @@
 model_performance(...)
 }
 \arguments{
-\item{...}{One or more object of class \code{glm}}
+\item{...}{One or more objects of class \code{glm}.}
 }
 \value{
 data frame
