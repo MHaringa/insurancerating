@@ -1,14 +1,12 @@
 ## Resubmission
 This is a resubmission. In this version:
 
-* `label_width` in `autoplot()` is added to wrap long labels in multiple lines
-* `sort_manual` in `autoplot()` is added to sort risk factors into an own ordering
-* `autoplot()` now works without manually loading package `ggplot2` and `patchwork` first
-* `rating_factors()` now returns an object of class `riskfactor`
-* `autoplot.riskfactor()` is added to create the corresponding plots to the output given by `rating_factors()`
+* `univariate_all()` and `autoplot.univ_all()` are now depreciated; use `univariate()` and `autoplot.univariate()` instead
+* `check_overdispersion()`, `check_normality()`, `model_performance()`, `bootstrap_rmse()`, and `add_prediction()` are added to test model quality and return performance metrics
+* `reduce()` is added to reduce an insurance portfolio by merging redundant date ranges
 
 ## Test environments
-* local OS X install, R 3.6.3
+* local OS X install, R 4.0.0
 * win-builder (devel and release)
 
 ## R CMD check results

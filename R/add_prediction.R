@@ -51,7 +51,9 @@ add_prediction <- function(data, ..., var = NULL, conf_int = FALSE, alpha = 0.1)
     if ( isTRUE(conf_int) ) {
        ucb <- paste0(var_nm, "_ucb")
        lcb <- paste0(var_nm, "_lcb")
-       lcbucb <- ciTools::add_ci(data, object, names = c("lcb", "ucb"), alpha = alpha)
+       suppressWarnings({
+         lcbucb <- ciTools::add_ci(data, object, names = c("lcb", "ucb"), alpha = alpha)
+       })
        df[[lcb]] <- lcbucb$lcb
        df[[ucb]] <- lcbucb$ucb
     }
