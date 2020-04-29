@@ -4,10 +4,12 @@
 \alias{rmse}
 \title{Root Mean Squared Error}
 \usage{
-rmse(object)
+rmse(object, data)
 }
 \arguments{
 \item{object}{fitted model}
+
+\item{data}{data.frame (defaults to NULL)}
 }
 \value{
 numeric value
@@ -24,7 +26,7 @@ The RMSE is the square root of the average of squared differences
 }
 \examples{
 x <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = MTPL2)
-rmse(x)
+rmse(x, MTPL2)
 
 }
 \author{

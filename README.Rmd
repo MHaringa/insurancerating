@@ -145,6 +145,27 @@ rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) 
 
 ```
 
+Compute indices of model performance for GLMs. The RMSE is the square root of the average of squared differences between prediction and actual observation and indicates the absolute fit of the model to the data. It can be interpreted as the standard deviation of the unexplained variance, and is in the same units as the response variable.
+
+```{r modelperf, eval = TRUE}
+
+model_performance(model_freq1, model_freq2) 
+
+```
+
+To test the stability of the predictive ability of the fitted model it might be helpful to determine the variation in the computed RMSE. The variation is calculated by computing the root mean squared errors from \code{n} generated bootstrap replicates. 
+
+For claim severity models it might be helpful to test the variation in the RMSE in case the portfolio contains large claim sizes. The figure below shows that the variation in the RMSE of the frequency model is quite low (as expected). The dashed line shows the RMSE of the fitted (original) model, the other lines represent the 95\% confidence interval. 
+
+
+```{r bootstraprmse, eval = TRUE}
+
+bootstrap_rmse(model_freq1, dat, n = 100, show_progress = FALSE) %>% 
+  autoplot(.)
+
+```
+
+
 Check Poisson GLM for overdispersion:
 
 ```{r overdispersion, eval = TRUE}
@@ -153,12 +174,16 @@ check_overdispersion(model_freq1)
 
 Check model for (non-)normality of residuals. Normality of deviance residuals is in general not expected under a Poisson, and seing deviance residuals (or any other standard residuals) that differ from a straight line in a qqnorm plot is therefore in general no concern at all. 
 
+Note that (for large data sets) formal tests for normality almost always yields significant results for the distribution of residuals and visual inspections (e.g. QQ plots) are preferable.
+
 ```{r normality, message = FALSE, eval = TRUE}
 check_normality(model_freq1, simulate_residuals = FALSE) %>%
   autoplot(.)
 ```
 
-Instead, setting `simulate_residuals = TRUE` corrects for notable deviations from normality for small counts. It implements the idea of randomized quantile residuals by Dunn and Smyth (1996). `check_normality()` adopts the implementation of this approach from `simulateResiduals()` in package DHARMa. Note that (for large data sets) formal tests for normality almost always yields significant results for the distribution of residuals and visual inspections (e.g. QQ plots) are preferable. The simulated residuals in the QQ plot show no clear deviation from normality.
+Instead, setting `simulate_residuals = TRUE` corrects for notable deviations from normality for small counts. It implements the idea of randomized quantile residuals by Dunn and Smyth (1996). `check_normality()` uses the implementation of randomized quantile residuals from `simulateResiduals()` in package DHARMa. 
+
+The simulated residuals in the QQ plot below show no clear deviation from normality.
 
 ```{r normalitysim, message = FALSE, eval = TRUE}
 check_normality(model_freq1, simulate_residuals = TRUE, n_simulations = 50) %>%

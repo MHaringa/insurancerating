@@ -34,10 +34,11 @@ model_performance <- function(...) {
   object_names <- match.call(expand.dots = FALSE)$`...`
 
   m <- mapply(function(.x, .y) {
+    dat <- .x$data
     out <- list()
     out$AIC <- stats::AIC(.x)
     out$BIC <- stats::BIC(.x)
-    out$RMSE <- rmse(.x)
+    out$RMSE <- rmse(.x, dat)
     dat <- as.data.frame(out[!sapply(out, function(i) length(i) == 0 || is.null(i) || (length(i) == 1 & is.na(i)) || any(i == "NULL"))])
     row.names(dat) <- NULL
     cbind(data.frame(Model = as.character(.y), stringsAsFactors = FALSE), dat)},

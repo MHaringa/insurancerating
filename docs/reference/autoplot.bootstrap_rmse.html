@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Automatically create a ggplot for objects obtained from check_normality() — autoplot.check_normality • insurancerating</title>
+<title>Automatically create a ggplot for objects obtained from bootstrap_rmse() — autoplot.bootstrap_rmse • insurancerating</title>
 
 <!-- favicons -->
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -46,8 +46,8 @@
 
 
 
-<meta property="og:title" content="Automatically create a ggplot for objects obtained from check_normality() — autoplot.check_normality" />
-<meta property="og:description" content="Takes an object produced by check_normality(), and plots the available input." />
+<meta property="og:title" content="Automatically create a ggplot for objects obtained from bootstrap_rmse() — autoplot.bootstrap_rmse" />
+<meta property="og:description" content="Takes an object produced by bootstrap_rmse(), and plots the simulated RMSE" />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -131,32 +131,24 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Automatically create a ggplot for objects obtained from check_normality()</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/check_normality.R'><code>R/check_normality.R</code></a></small>
-    <div class="hidden name"><code>autoplot.check_normality.Rd</code></div>
+    <h1>Automatically create a ggplot for objects obtained from bootstrap_rmse()</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/bootstrap_rmse.R'><code>R/bootstrap_rmse.R</code></a></small>
+    <div class="hidden name"><code>autoplot.bootstrap_rmse.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Takes an object produced by <code><a href='check_normality.html'>check_normality()</a></code>, and plots the available input.</p>
+    <p>Takes an object produced by <code><a href='bootstrap_rmse.html'>bootstrap_rmse()</a></code>, and plots the simulated RMSE</p>
     </div>
 
-    <pre class="usage"><span class='co'># S3 method for check_normality</span>
-<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>object</span>, <span class='kw'>type</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"qq"</span>, <span class='st'>"density"</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='co'># S3 method for bootstrap_rmse</span>
+<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>object</span>, <span class='no'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>object</th>
-      <td><p>check_normality object produced by <code><a href='check_normality.html'>check_normality()</a></code></p></td>
-    </tr>
-    <tr>
-      <th>type</th>
-      <td><p>character vector, "qq" (default) or "density"</p></td>
-    </tr>
-    <tr>
-      <th>data</th>
-      <td><p>data (defaults to NULL)</p></td>
+      <td><p>bootstrap_rmse object produced by <code><a href='bootstrap_rmse.html'>bootstrap_rmse()</a></code></p></td>
     </tr>
     <tr>
       <th>...</th>

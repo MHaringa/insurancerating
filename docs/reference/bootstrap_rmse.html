@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Root Mean Squared Error — rmse • insurancerating</title>
+<title>Bootstrapped RMSE — bootstrap_rmse • insurancerating</title>
 
 <!-- favicons -->
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -46,8 +46,8 @@
 
 
 
-<meta property="og:title" content="Root Mean Squared Error — rmse" />
-<meta property="og:description" content="Compute root mean squared error." />
+<meta property="og:title" content="Bootstrapped RMSE — bootstrap_rmse" />
+<meta property="og:description" content="Generate n bootstrap replicates to compute n root mean squared errors." />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -131,44 +131,91 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Root Mean Squared Error</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/rmse.R'><code>R/rmse.R</code></a></small>
-    <div class="hidden name"><code>rmse.Rd</code></div>
+    <h1>Bootstrapped RMSE</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/bootstrap_rmse.R'><code>R/bootstrap_rmse.R</code></a></small>
+    <div class="hidden name"><code>bootstrap_rmse.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Compute root mean squared error.</p>
+    <p>Generate <code>n</code> bootstrap replicates to compute <code>n</code> root mean squared errors.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>rmse</span>(<span class='no'>object</span>, <span class='no'>data</span>)</pre>
+    <pre class="usage"><span class='fu'>bootstrap_rmse</span>(
+  <span class='no'>model</span>,
+  <span class='no'>data</span>,
+  <span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>50</span>,
+  <span class='kw'>frac</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>show_progress</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>rmse_model</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>object</th>
-      <td><p>fitted model</p></td>
+      <th>model</th>
+      <td><p>a model object</p></td>
     </tr>
     <tr>
       <th>data</th>
-      <td><p>data.frame (defaults to NULL)</p></td>
+      <td><p>data used to fit model object</p></td>
+    </tr>
+    <tr>
+      <th>n</th>
+      <td><p>number of bootstrap replicates (defaults to 50)</p></td>
+    </tr>
+    <tr>
+      <th>frac</th>
+      <td><p>fraction used in training set if cross-validation is applied (defaults to 1)</p></td>
+    </tr>
+    <tr>
+      <th>show_progress</th>
+      <td><p>show progress bar (defaults to TRUE)</p></td>
+    </tr>
+    <tr>
+      <th>rmse_model</th>
+      <td><p>numeric RMSE to show as vertical dashed line in autoplot() (defaults to NULL)</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>numeric value</p>
+    <p>A list with components</p>
+<dt>rmse_bs</dt><dd><p>numerical vector with <code>n</code> root mean squared errors</p></dd>
+<dt>rmse_mod</dt><dd><p>root mean squared error for fitted (i.e. original) model</p></dd>
+
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>The RMSE is the square root of the average of squared differences
-  between prediction and actual observation and indicates
-  the absolute fit of the model to the data. It can be interpreted as the standard
-  deviation of the unexplained variance, and is in the same units as the
-  response variable. Lower values indicate better model fit.</p>
+    <p>To test the predictive ability of the fitted model it might be helpful to determine the variation in the computed RMSE.
+The variation is calculated by computing the root mean squared errors from <code>n</code> generated bootstrap replicates. More precisely,
+for each iteration a sample with replacement is taken from the data set and the model is refitted using this sample. Then, the root
+mean squared error is calculated.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>area</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>MTPL2</span>)
-<span class='fu'>rmse</span>(<span class='no'>x</span>, <span class='no'>MTPL2</span>)</div><div class='output co'>#&gt; [1] 0.3564342</div><div class='input'>
+    <pre class="examples"><div class='input'><span class='no'>mod1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>age_policyholder</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>MTPL</span>,
+    <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>())
+
+<span class='co'># Use all records in MTPL</span>
+<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='fu'>bootstrap_rmse</span>(<span class='no'>mod1</span>, <span class='no'>MTPL</span>, <span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>show_progress</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>x</span>)</div><div class='output co'>#&gt;   [1] 0.3613475 0.3661612 0.3627384 0.3617565 0.3630564 0.3628717 0.3675056
+#&gt;   [8] 0.3628377 0.3606276 0.3649284 0.3604798 0.3704746 0.3631584 0.3684717
+#&gt;  [15] 0.3582311 0.3633513 0.3632268 0.3662625 0.3670657 0.3647767 0.3610929
+#&gt;  [22] 0.3636340 0.3733386 0.3674589 0.3688600 0.3708087 0.3621237 0.3680776
+#&gt;  [29] 0.3620785 0.3684285 0.3589155 0.3675080 0.3643659 0.3638027 0.3620952
+#&gt;  [36] 0.3614994 0.3624888 0.3661232 0.3689894 0.3591052 0.3604184 0.3586954
+#&gt;  [43] 0.3707492 0.3637578 0.3627793 0.3679300 0.3592797 0.3646215 0.3625323
+#&gt;  [50] 0.3607433 0.3616868 0.3625870 0.3585201 0.3620725 0.3626274 0.3714269
+#&gt;  [57] 0.3608796 0.3712357 0.3632842 0.3712101 0.3643107 0.3636771 0.3606365
+#&gt;  [64] 0.3627051 0.3656250 0.3683561 0.3587815 0.3668995 0.3684970 0.3569710
+#&gt;  [71] 0.3656956 0.3610785 0.3646078 0.3701758 0.3617315 0.3610782 0.3696105
+#&gt;  [78] 0.3703820 0.3579776 0.3678518 0.3650723 0.3610590 0.3643746 0.3649986
+#&gt;  [85] 0.3637467 0.3623391 0.3577127 0.3648790 0.3699154 0.3637599 0.3588667
+#&gt;  [92] 0.3646425 0.3635976 0.3696290 0.3581391 0.3615149 0.3624419 0.3664650
+#&gt;  [99] 0.3665306 0.3669058</div><div class='input'><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>x</span>)</div><div class='img'><img src='bootstrap_rmse-1.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='co'># Use 80% of records to test whether predictive ability depends on which 80% is used</span>
+<span class='co'># This might for example be useful in case portfolio contains large claim sizes</span>
+<span class='no'>x_frac</span> <span class='kw'>&lt;-</span> <span class='fu'>bootstrap_rmse</span>(<span class='no'>mod1</span>, <span class='no'>MTPL</span>, <span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>frac</span> <span class='kw'>=</span> <span class='fl'>.8</span>, <span class='kw'>show_progress</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>x_frac</span>) <span class='co'># Variation is quite small for Poisson GLM</span></div><div class='img'><img src='bootstrap_rmse-2.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

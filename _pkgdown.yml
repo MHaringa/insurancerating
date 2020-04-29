@@ -34,6 +34,8 @@ reference:
       - check_overdispersion
       - model_performance
       - rmse
+      - bootstrap_rmse
+      - autoplot.bootstrap_rmse
   - title: "Additional"
     desc: >
       Often used in insurance ratings

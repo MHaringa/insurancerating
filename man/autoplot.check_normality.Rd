@@ -15,6 +15,9 @@
 
 \item{...}{other plotting parameters to affect the plot}
 }
+\value{
+a ggplot object
+}
 \description{
 Takes an object produced by \code{check_normality()}, and plots the available input.
 }

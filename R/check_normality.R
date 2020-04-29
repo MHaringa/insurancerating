@@ -120,6 +120,8 @@ check_normality <- function(object, simulate_residuals = TRUE, n_simulations = 2
 #' @param data data (defaults to NULL)
 #' @param ... other plotting parameters to affect the plot
 #'
+#' @return a ggplot object
+#'
 #' @author Martin Haringa
 #'
 #' @import ggplot2
