@@ -20,11 +20,11 @@
 #' the Poisson approaches normality for large means. For small counts, there is a
 #' notable deviation from normality.
 #'
-#' As explained \href{https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html}{here},
+#' As explained in the vignette of \href{https://CRAN.R-project.org/package=DHARMa}{DHARMa},
 #' neither deviance nor Pearson residuals are ideal for diagnosing Poisson models,
 #' as they will appear visually inhomogeneous for low count rates, even if the model is entirely correct.
 #' Instead, you can use \code{simulate_residuals = TRUE}, which implements the idea of randomized quantile residuals
-#' by Dunn and Smyth (1996). This approach is adopted from \code{\link[DHARMa]{simulateResiduals}}.
+#' by Dunn and Smyth (1996). This approach is adopted from DHARMa::simulateResiduals.
 #'
 #' @references Dunn, K. P., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics 5, 1-10.
 #' @references Gelman, A. & Hill, J. Data analysis using regression and multilevel/hierarchical models Cambridge University Press, 2006

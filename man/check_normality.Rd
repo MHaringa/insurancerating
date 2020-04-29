@@ -31,11 +31,11 @@ For large counts, QQ is approximately normally distributed, which is expected as
 the Poisson approaches normality for large means. For small counts, there is a
 notable deviation from normality.
 
-As explained \href{https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html}{here},
+As explained in the vignette of \href{https://CRAN.R-project.org/package=DHARMa}{DHARMa},
 neither deviance nor Pearson residuals are ideal for diagnosing Poisson models,
 as they will appear visually inhomogeneous for low count rates, even if the model is entirely correct.
 Instead, you can use \code{simulate_residuals = TRUE}, which implements the idea of randomized quantile residuals
-by Dunn and Smyth (1996). This approach is adopted from \code{\link[DHARMa]{simulateResiduals}}.
+by Dunn and Smyth (1996). This approach is adopted from DHARMa::simulateResiduals.
 }
 \examples{
 m1 <- lm(mpg ~ wt + cyl + gear + disp, data = mtcars)
