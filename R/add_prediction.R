@@ -6,7 +6,7 @@
 #' @param ... one or more objects of class \code{glm}.
 #' @param var the name of the output column(s), defaults to NULL
 #' @param alpha a real number between 0 and 1. Controls the confidence level of the interval estimates (defaults to 0.10,
-#' representing 95 percent confidence interval).
+#' representing 90 percent confidence interval).
 #' @param conf_int determines whether confidence intervals will be shown. Defaults to \code{conf_int = FALSE}.
 #'
 #' @importFrom ciTools add_ci

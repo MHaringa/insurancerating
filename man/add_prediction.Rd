@@ -16,7 +16,7 @@ add_prediction(data, ..., var = NULL, conf_int = FALSE, alpha = 0.1)
 \item{conf_int}{determines whether confidence intervals will be shown. Defaults to \code{conf_int = FALSE}.}
 
 \item{alpha}{a real number between 0 and 1. Controls the confidence level of the interval estimates (defaults to 0.10,
-representing 95 percent confidence interval).}
+representing 90 percent confidence interval).}
 }
 \value{
 data.frame
