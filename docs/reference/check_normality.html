@@ -80,7 +80,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.1.9000</span>
       </span>
     </div>
 
@@ -174,11 +174,11 @@ from a straight line in a qqnorm plot is therefore in general no concern at all.
 For large counts, QQ is approximately normally distributed, which is expected as
 the Poisson approaches normality for large means. For small counts, there is a
 notable deviation from normality.</p>
-<p>As explained <a href='https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html'>here</a>,
+<p>As explained in the vignette of <a href='https://CRAN.R-project.org/package=DHARMa'>DHARMa</a>,
 neither deviance nor Pearson residuals are ideal for diagnosing Poisson models,
 as they will appear visually inhomogeneous for low count rates, even if the model is entirely correct.
 Instead, you can use <code>simulate_residuals = TRUE</code>, which implements the idea of randomized quantile residuals
-by Dunn and Smyth (1996). This approach is adopted from <code><a href='https://rdrr.io/pkg/DHARMa/man/simulateResiduals.html'>simulateResiduals</a></code>.</p>
+by Dunn and Smyth (1996). This approach is adopted from DHARMa::simulateResiduals.</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     <p>Dunn, K. P., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics 5, 1-10.</p>

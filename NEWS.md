@@ -1,3 +1,6 @@
+# insurancerating 0.6.2
+
+
 # insurancerating 0.6.1
 
 * `univariate_all()` and `autoplot.univ_all()` are now depreciated; use `univariate()` and `autoplot.univariate()` instead
