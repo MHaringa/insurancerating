@@ -10,12 +10,10 @@
 #' @param agg aggregation type (defaults to "sum")
 #' @param min.gapwidth ranges separated by a gap of at least \code{min.gapwidth} days are not merged. Defaults to 5.
 #'
-#' @importFrom lubridate is.Date
-#' @importFrom data.table setDT
-#' @importFrom data.table setkeyv
-#' @importFrom data.table setnames
+#' @import data.table
 #' @importFrom dplyr lead
 #' @importFrom lubridate %m+%
+#' @importFrom lubridate is.Date
 #'
 #' @details This function is adopted from \code{IRanges::reduce()}.
 #'
@@ -139,10 +137,7 @@ as.data.frame.reduce <- function(x, ...) {
 #' @param period a character string indicating the period to aggregate on. Four options are available: "quarters", "months", "weeks", and "days" (the default option)
 #' @param ... names of columns to aggregate counts by
 #'
-#' @importFrom data.table data.table
-#' @importFrom data.table rbindlist
-#' @importFrom data.table setorderv
-#' @importFrom data.table setcolorder
+#' @import data.table
 #' @importFrom lubridate days
 #' @importFrom lubridate weeks
 #' @importFrom lubridate %m+%

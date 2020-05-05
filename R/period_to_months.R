@@ -12,9 +12,7 @@
 #'
 #' @author Martin Haringa
 #'
-#' @importFrom data.table data.table
-#' @importFrom data.table setnames
-#' @importFrom data.table setkeyv
+#' @import data.table
 #' @importFrom lubridate is.Date
 #' @importFrom lubridate ceiling_date
 #' @importFrom lubridate interval

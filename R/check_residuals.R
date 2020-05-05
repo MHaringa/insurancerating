@@ -18,6 +18,8 @@
 #'
 #' @author Martin Haringa
 #'
+#' @exportClass check_residuals
+#'
 #' @importFrom DHARMa simulateResiduals
 #' @importFrom insight print_color
 #' @importFrom stats approx
@@ -35,6 +37,10 @@
 #'
 #' @export
 check_residuals <- function(object, n_simulations = 30){
+
+  if (!requireNamespace("DHARMa", quietly = TRUE)) {
+    stop("DHARMa is needed for this function to work. Install it via install.packages(\"DHARMa\")", call. = FALSE)
+  }
 
   suppressMessages({
     simout <- DHARMa::simulateResiduals(object, n = n_simulations)
