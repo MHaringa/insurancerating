@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Include reference group in regression output — rating_factors • insurancerating</title>
+<title>Check model residuals — check_residuals • insurancerating</title>
 
 <!-- favicons -->
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -46,8 +46,8 @@
 
 
 
-<meta property="og:title" content="Include reference group in regression output — rating_factors" />
-<meta property="og:description" content="Extract coefficients in terms of the original levels of the coefficients rather than the coded variables." />
+<meta property="og:title" content="Check model residuals — check_residuals" />
+<meta property="og:description" content="Detect overall deviations from the expected distribution." />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -131,74 +131,55 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Include reference group in regression output</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/rating_factors.R'><code>R/rating_factors.R</code></a></small>
-    <div class="hidden name"><code>rating_factors.Rd</code></div>
+    <h1>Check model residuals</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/check_residuals.R'><code>R/check_residuals.R</code></a></small>
+    <div class="hidden name"><code>check_residuals.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Extract coefficients in terms of the original levels of the coefficients rather than the coded variables.</p>
+    <p>Detect overall deviations from the expected distribution.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>rating_factors</span>(
-  <span class='no'>...</span>,
-  <span class='kw'>model_data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>exponentiate</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>signif_stars</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>
-)</pre>
+    <pre class="usage"><span class='fu'>check_residuals</span>(<span class='no'>object</span>, <span class='kw'>n_simulations</span> <span class='kw'>=</span> <span class='fl'>30</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>...</th>
-      <td><p>glm object(s) produced by <code><a href='https://rdrr.io/r/stats/glm.html'>glm()</a></code></p></td>
+      <th>object</th>
+      <td><p>a model object</p></td>
     </tr>
     <tr>
-      <th>model_data</th>
-      <td><p>data.frame used to create glm object(s), this should only be specified in case the exposure is desired in the output, default value is NULL</p></td>
-    </tr>
-    <tr>
-      <th>exposure</th>
-      <td><p>column in <code>model_data</code> with exposure, default value is NULL</p></td>
-    </tr>
-    <tr>
-      <th>exponentiate</th>
-      <td><p>logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.</p></td>
-    </tr>
-    <tr>
-      <th>signif_stars</th>
-      <td><p>show significance stars for p-values (defaults to TRUE)</p></td>
+      <th>n_simulations</th>
+      <td><p>number of simulations (defaults to 30)</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>data.frame</p>
+    <p>Invisibly returns the p-value of the test statistics. A p-value &lt; 0.05 indicates a significant deviation from expected distribution.</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>A fitted linear model has coefficients for the contrasts of the factor terms, usually one less in number than the number of levels.
-This function re-expresses the coefficients in the original coding. This function is adopted from dummy.coef(). Our adoption prints a data.frame as output.</p>
+    <p>Misspecifications in GLMs cannot reliably be diagnosed with standard residual plots, and GLMs are thus often not as thoroughly checked as LMs.
+One reason why GLMs residuals are harder to interpret is that the expected distribution of the data changes with the fitted values.
+As a result, standard residual plots, when interpreted in the same way as for linear models, seem to show all kind of problems,
+such as non-normality, heteroscedasticity, even if the model is correctly specified. <code>check_residuals()</code> aims at solving these problems
+by creating readily interpretable residuals for GLMs that are standardized to values between 0 and 1,
+and that can be interpreted as intuitively as residuals for the linear model. This is achieved by a simulation-based approach,
+similar to the Bayesian p-value or the parametric bootstrap, that transforms the residuals to a standardized scale. This explanation is adopted
+from <code><a href='https://rdrr.io/pkg/DHARMa/man/simulateResiduals.html'>simulateResiduals</a></code>.</p>
+    <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
+
+    <p>Dunn, K. P., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics 5, 1-10.</p>
+<p>Gelman, A. &amp; Hill, J. Data analysis using regression and multilevel/hierarchical models Cambridge University Press, 2006</p>
+<p>Hartig, F. (2020). DHARMa: Residual Diagnostics for Hierarchical (Multi-Level / Mixed) Regression Models. R package version 0.3.0.
+<a href='https://CRAN.R-project.org/package=DHARMa'>https://CRAN.R-project.org/package=DHARMa</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='no'>dplyr</span>)
-<span class='no'>df</span> <span class='kw'>&lt;-</span> <span class='no'>MTPL2</span> <span class='kw'>%&gt;%</span>
-    <span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate_all.html'>mutate_at</a></span>(<span class='fu'><a href='https://dplyr.tidyverse.org/reference/vars.html'>vars</a></span>(<span class='no'>area</span>), <span class='no'>as.factor</span>) <span class='kw'>%&gt;%</span>
-    <span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate_all.html'>mutate_at</a></span>(<span class='fu'><a href='https://dplyr.tidyverse.org/reference/vars.html'>vars</a></span>(<span class='no'>area</span>), ~<span class='fu'><a href='biggest_reference.html'>biggest_reference</a></span>(<span class='no'>.</span>, <span class='no'>exposure</span>))
-
-<span class='no'>mod1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>area</span> + <span class='no'>premium</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>df</span>)
-<span class='no'>mod2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>area</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>df</span>)
-
-<span class='fu'>rating_factors</span>(<span class='no'>mod1</span>, <span class='no'>mod2</span>, <span class='kw'>model_data</span> <span class='kw'>=</span> <span class='no'>df</span>, <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='no'>exposure</span>)</div><div class='output co'>#&gt; <span style='color: #0000BB;'>Significance levels: *** p &lt; 0.001; ** p &lt; 0.01;  * p &lt; 0.05; . p &lt; 0.1
-#&gt; </span><span>  risk_factor       level     est_mod1     est_mod2   exposure
-#&gt; 1 (Intercept) (Intercept) 0.127954 *** 0.136993 ***         NA
-#&gt; 2        area           0 0.546558     0.548563       13.30685
-#&gt; 3        area           1 1.000000     1.000000     1065.74795
-#&gt; 4        area           2 0.872883     0.873953      818.53973
-#&gt; 5        area           3 1.076233     1.078260      764.99178
-#&gt; 6     premium     premium 1.001235           NA             NA</div><div class='input'>
-</div></span></pre>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
+<span class='no'>m1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>area</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>MTPL2</span>)
+<span class='fu'>check_residuals</span>(<span class='no'>m1</span>, <span class='kw'>n_simulations</span> <span class='kw'>=</span> <span class='fl'>50</span>) <span class='kw'>%&gt;%</span> <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>()
+}</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

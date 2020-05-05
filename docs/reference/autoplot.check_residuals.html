@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Include reference group in regression output — rating_factors • insurancerating</title>
+<title>Automatically create a ggplot for objects obtained from check_residuals() — autoplot.check_residuals • insurancerating</title>
 
 <!-- favicons -->
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -46,8 +46,8 @@
 
 
 
-<meta property="og:title" content="Include reference group in regression output — rating_factors" />
-<meta property="og:description" content="Extract coefficients in terms of the original levels of the coefficients rather than the coded variables." />
+<meta property="og:title" content="Automatically create a ggplot for objects obtained from check_residuals() — autoplot.check_residuals" />
+<meta property="og:description" content="Takes an object produced by check_residuals(), and produces a uniform quantile-quantile plot." />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -131,74 +131,39 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Include reference group in regression output</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/rating_factors.R'><code>R/rating_factors.R</code></a></small>
-    <div class="hidden name"><code>rating_factors.Rd</code></div>
+    <h1>Automatically create a ggplot for objects obtained from check_residuals()</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/check_residuals.R'><code>R/check_residuals.R</code></a></small>
+    <div class="hidden name"><code>autoplot.check_residuals.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Extract coefficients in terms of the original levels of the coefficients rather than the coded variables.</p>
+    <p>Takes an object produced by <code><a href='check_residuals.html'>check_residuals()</a></code>, and produces a uniform quantile-quantile plot.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>rating_factors</span>(
-  <span class='no'>...</span>,
-  <span class='kw'>model_data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>exponentiate</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>signif_stars</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>
-)</pre>
+    <pre class="usage"><span class='co'># S3 method for check_residuals</span>
+<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>object</span>, <span class='kw'>show_message</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
+      <th>object</th>
+      <td><p>check_residuals object produced by <code><a href='check_residuals.html'>check_residuals()</a></code></p></td>
+    </tr>
+    <tr>
+      <th>show_message</th>
+      <td><p>show output from test (defaults to TRUE)</p></td>
+    </tr>
+    <tr>
       <th>...</th>
-      <td><p>glm object(s) produced by <code><a href='https://rdrr.io/r/stats/glm.html'>glm()</a></code></p></td>
-    </tr>
-    <tr>
-      <th>model_data</th>
-      <td><p>data.frame used to create glm object(s), this should only be specified in case the exposure is desired in the output, default value is NULL</p></td>
-    </tr>
-    <tr>
-      <th>exposure</th>
-      <td><p>column in <code>model_data</code> with exposure, default value is NULL</p></td>
-    </tr>
-    <tr>
-      <th>exponentiate</th>
-      <td><p>logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.</p></td>
-    </tr>
-    <tr>
-      <th>signif_stars</th>
-      <td><p>show significance stars for p-values (defaults to TRUE)</p></td>
+      <td><p>other plotting parameters to affect the plot</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>data.frame</p>
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+    <p>a ggplot object</p>
 
-    <p>A fitted linear model has coefficients for the contrasts of the factor terms, usually one less in number than the number of levels.
-This function re-expresses the coefficients in the original coding. This function is adopted from dummy.coef(). Our adoption prints a data.frame as output.</p>
-
-    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='no'>dplyr</span>)
-<span class='no'>df</span> <span class='kw'>&lt;-</span> <span class='no'>MTPL2</span> <span class='kw'>%&gt;%</span>
-    <span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate_all.html'>mutate_at</a></span>(<span class='fu'><a href='https://dplyr.tidyverse.org/reference/vars.html'>vars</a></span>(<span class='no'>area</span>), <span class='no'>as.factor</span>) <span class='kw'>%&gt;%</span>
-    <span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate_all.html'>mutate_at</a></span>(<span class='fu'><a href='https://dplyr.tidyverse.org/reference/vars.html'>vars</a></span>(<span class='no'>area</span>), ~<span class='fu'><a href='biggest_reference.html'>biggest_reference</a></span>(<span class='no'>.</span>, <span class='no'>exposure</span>))
-
-<span class='no'>mod1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>area</span> + <span class='no'>premium</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>df</span>)
-<span class='no'>mod2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>area</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>df</span>)
-
-<span class='fu'>rating_factors</span>(<span class='no'>mod1</span>, <span class='no'>mod2</span>, <span class='kw'>model_data</span> <span class='kw'>=</span> <span class='no'>df</span>, <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='no'>exposure</span>)</div><div class='output co'>#&gt; <span style='color: #0000BB;'>Significance levels: *** p &lt; 0.001; ** p &lt; 0.01;  * p &lt; 0.05; . p &lt; 0.1
-#&gt; </span><span>  risk_factor       level     est_mod1     est_mod2   exposure
-#&gt; 1 (Intercept) (Intercept) 0.127954 *** 0.136993 ***         NA
-#&gt; 2        area           0 0.546558     0.548563       13.30685
-#&gt; 3        area           1 1.000000     1.000000     1065.74795
-#&gt; 4        area           2 0.872883     0.873953      818.53973
-#&gt; 5        area           3 1.076233     1.078260      764.99178
-#&gt; 6     premium     premium 1.001235           NA             NA</div><div class='input'>
-</div></span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

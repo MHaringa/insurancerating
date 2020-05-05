@@ -29,8 +29,8 @@ reference:
     desc: >
       Model quality and performance metrics
     contents:
-      - check_normality
-      - autoplot.check_normality
+      - check_residuals
+      - autoplot.check_residuals
       - check_overdispersion
       - model_performance
       - rmse

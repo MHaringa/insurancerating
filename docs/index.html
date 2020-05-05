@@ -168,18 +168,19 @@
 
 <span class="no">x</span> <span class="kw">&lt;-</span> <span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span>(<span class="no">model_freq1</span>, <span class="no">model_freq2</span>)
 <span class="no">x</span></pre></div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">##                  risk_factor            level est_model_freq1 est_model_freq2</span></a>
-<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="co">## 1                (Intercept)      (Intercept)       0.1368181       0.3210287</span></a>
-<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="co">## 2  age_policyholder_freq_cat          (39,50]       1.0000000       1.0000000</span></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="co">## 3  age_policyholder_freq_cat          [18,25]       1.9438228       1.2909603</span></a>
-<a class="sourceLine" id="cb10-5" data-line-number="5"><span class="co">## 4  age_policyholder_freq_cat          (25,32]       1.3234995       0.9802830</span></a>
-<a class="sourceLine" id="cb10-6" data-line-number="6"><span class="co">## 5  age_policyholder_freq_cat          (32,39]       1.0568538       0.8923472</span></a>
-<a class="sourceLine" id="cb10-7" data-line-number="7"><span class="co">## 6  age_policyholder_freq_cat          (50,57]       0.8919696       1.0535866</span></a>
-<a class="sourceLine" id="cb10-8" data-line-number="8"><span class="co">## 7  age_policyholder_freq_cat          (57,64]       0.7423998       1.0056607</span></a>
-<a class="sourceLine" id="cb10-9" data-line-number="9"><span class="co">## 8  age_policyholder_freq_cat          (64,71]       0.7379362       1.1383509</span></a>
-<a class="sourceLine" id="cb10-10" data-line-number="10"><span class="co">## 9  age_policyholder_freq_cat          (71,83]       0.7021348       1.2486752</span></a>
-<a class="sourceLine" id="cb10-11" data-line-number="11"><span class="co">## 10 age_policyholder_freq_cat          (83,95]       0.6933378       1.5100830</span></a>
-<a class="sourceLine" id="cb10-12" data-line-number="12"><span class="co">## 11          age_policyholder age_policyholder              NA       0.9811935</span></a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">## Significance levels: *** p &lt; 0.001; ** p &lt; 0.01;  * p &lt; 0.05; . p &lt; 0.1</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="co">##                  risk_factor            level est_model_freq1 est_model_freq2</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="co">## 1                (Intercept)      (Intercept)    0.136818 ***    0.321029 ***</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="co">## 2  age_policyholder_freq_cat          (39,50]    1.000000        1.000000    </span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5"><span class="co">## 3  age_policyholder_freq_cat          [18,25]    1.943823 ***    1.290960    </span></a>
+<a class="sourceLine" id="cb10-6" data-line-number="6"><span class="co">## 4  age_policyholder_freq_cat          (25,32]    1.323499 ***    0.980283    </span></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7"><span class="co">## 5  age_policyholder_freq_cat          (32,39]    1.056854        0.892347    </span></a>
+<a class="sourceLine" id="cb10-8" data-line-number="8"><span class="co">## 6  age_policyholder_freq_cat          (50,57]    0.891970 *      1.053587    </span></a>
+<a class="sourceLine" id="cb10-9" data-line-number="9"><span class="co">## 7  age_policyholder_freq_cat          (57,64]    0.742400 ***    1.005661    </span></a>
+<a class="sourceLine" id="cb10-10" data-line-number="10"><span class="co">## 8  age_policyholder_freq_cat          (64,71]    0.737936 ***    1.138351    </span></a>
+<a class="sourceLine" id="cb10-11" data-line-number="11"><span class="co">## 9  age_policyholder_freq_cat          (71,83]    0.702135 ***    1.248675    </span></a>
+<a class="sourceLine" id="cb10-12" data-line-number="12"><span class="co">## 10 age_policyholder_freq_cat          (83,95]    0.693338        1.510083    </span></a>
+<a class="sourceLine" id="cb10-13" data-line-number="13"><span class="co">## 11          age_policyholder age_policyholder          NA        0.981193 **</span></a></code></pre></div>
 <p><code><a href="reference/autoplot.riskfactor.html">autoplot.riskfactor()</a></code> creates a figure. The base level of the factor <code>age_policyholder_freq_cat</code> is the group with the largest exposure and is shown first.</p>
 <div class="sourceCode" id="cb11"><pre class="r"><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">x</span>)</pre></div>
 <p><img src="reference/figures/example3a1-1.png"><!-- --></p>
@@ -189,7 +190,7 @@
 <p><img src="reference/figures/example3b-1.png"><!-- --></p>
 <p>The following graph includes the exposure as a bar graph and shows some more options:</p>
 <div class="sourceCode" id="cb13"><pre class="r"><span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span>(<span class="no">model_freq1</span>, <span class="no">model_freq2</span>, <span class="kw">model_data</span> <span class="kw">=</span> <span class="no">dat</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>, <span class="kw">linetype</span> <span class="kw">=</span> <span class="fl">TRUE</span>, <span class="kw">color_bg</span> <span class="kw">=</span> <span class="st">"skyblue"</span>)</pre></div>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>, <span class="kw">linetype</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></div>
 <p><img src="reference/figures/example3c-1.png"><!-- --></p>
 <p>Add predictions to the data set:</p>
 <div class="sourceCode" id="cb14"><pre class="r"><span class="no">dat_pred</span> <span class="kw">&lt;-</span> <span class="no">dat</span> <span class="kw">%&gt;%</span>
@@ -225,21 +226,11 @@
 <a class="sourceLine" id="cb20-3" data-line-number="3"><span class="co">##                 p-value =   &lt; 0.001</span></a>
 <a class="sourceLine" id="cb20-4" data-line-number="4"></a>
 <a class="sourceLine" id="cb20-5" data-line-number="5"><span class="co">## Overdispersion detected.</span></a></code></pre></div>
-<p>Check model for (non-)normality of residuals. Normality of deviance residuals is in general not expected under a Poisson, and seeing deviance residuals (or any other standard residuals) that differ from a straight line in a qqnorm plot is therefore in general no concern at all.</p>
-<p>Note that (for large data sets) formal tests for normality almost always yields significant results for the distribution of residuals and visual inspections (e.g. QQ plots) are preferable.</p>
-<div class="sourceCode" id="cb21"><pre class="r"><span class="fu"><a href="reference/check_normality.html">check_normality</a></span>(<span class="no">model_freq1</span>, <span class="kw">simulate_residuals</span> <span class="kw">=</span> <span class="fl">FALSE</span>) <span class="kw">%&gt;%</span>
+<p>Misspecifications in GLMs cannot reliably be diagnosed with standard residual plots, and GLMs are thus often not as thoroughly checked as LMs. One reason why GLMs residuals are harder to interpret is that the expected distribution of the data changes with the fitted values. As a result, standard residual plots, when interpreted in the same way as for linear models, seem to show all kind of problems, such as non-normality, heteroscedasticity, even if the model is correctly specified. <code><a href="reference/check_residuals.html">check_residuals()</a></code> aims at solving these problems by creating readily interpretable residuals for GLMs that are standardized to values between 0 and 1, and that can be interpreted as intuitively as residuals for the linear model. This is achieved by a simulation-based approach, similar to the Bayesian p-value or the parametric bootstrap, that transforms the residuals to a standardized scale. This explanation is adopted from the <a href="https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html">vignette for DHARMa</a>.</p>
+<p>Detect deviations from the expected distribution, and produce a uniform quantile-quantile plot. The simulated residuals in the QQ plot below show no clear deviation from a Poisson distribution. Note that formal tests almost always yield significant results for the distribution of residuals and visual inspections (e.g. Q-Q plots) are preferable.</p>
+<div class="sourceCode" id="cb21"><pre class="r"><span class="fu"><a href="reference/check_residuals.html">check_residuals</a></span>(<span class="no">model_freq1</span>, <span class="kw">n_simulations</span> <span class="kw">=</span> <span class="fl">50</span>) <span class="kw">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>)</pre></div>
-<div class="sourceCode" id="cb22"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="co">## 'check_normality()' only uses the first 5000 data points to test for normality.</span></a>
-<a class="sourceLine" id="cb22-2" data-line-number="2"><span class="co">## Visual inspection (e.g. Q-Q plots) is preferable for large data sets.</span></a>
-<a class="sourceLine" id="cb22-3" data-line-number="3"><span class="co">## Warning: Non-normality of residuals detected (p = 0.000).</span></a></code></pre></div>
-<p><img src="reference/figures/normality-1.png"><!-- --></p>
-<p>Instead, setting <code>simulate_residuals = TRUE</code> corrects for notable deviations from normality for small counts. It implements the idea of randomized quantile residuals by Dunn and Smyth (1996). <code><a href="reference/check_normality.html">check_normality()</a></code> uses the implementation of randomized quantile residuals from <code>simulateResiduals()</code> in package DHARMa.</p>
-<p>The simulated residuals in the QQ plot below show no clear deviation from normality.</p>
-<div class="sourceCode" id="cb23"><pre class="r"><span class="fu"><a href="reference/check_normality.html">check_normality</a></span>(<span class="no">model_freq1</span>, <span class="kw">simulate_residuals</span> <span class="kw">=</span> <span class="fl">TRUE</span>, <span class="kw">n_simulations</span> <span class="kw">=</span> <span class="fl">50</span>) <span class="kw">%&gt;%</span>
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>)</pre></div>
-<div class="sourceCode" id="cb24"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="co">## 'check_normality()' uses scaled residuals by simulating from the fitted model to test for normality.</span></a>
-<a class="sourceLine" id="cb24-2" data-line-number="2"><span class="co">## Visual inspection (e.g. Q-Q plots) is preferable for large data sets.</span></a>
-<a class="sourceLine" id="cb24-3" data-line-number="3"><span class="co">## Warning: Non-normality of residuals detected (p = 0.000).</span></a></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="co">## Warning: deviations from the expected distribution detected (p = 0.000).</span></a></code></pre></div>
 <p><img src="reference/figures/normalitysim-1.png"><!-- --></p>
 </div>
 <div id="example-2" class="section level2">
@@ -248,23 +239,23 @@
 <p>This is a basic example which shows how to easily perform an univariate analysis on a MTPL portfolio using <code>insurancerating</code>.</p>
 <p>An univariate analysis consists in the evaluation of overall claim frequency, severity and risk premium. Its main purpose lies in verifying the experience data reasonableness using previous experience comparison and professional judgement.</p>
 <p><code><a href="reference/univariate.html">univariate()</a></code> shows the basic risk indicators split by the levels of the discrete risk factor:</p>
-<div class="sourceCode" id="cb25"><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">insurancerating</span>)
+<div class="sourceCode" id="cb23"><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">insurancerating</span>)
 <span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>,
            <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="co"># discrete risk factor</span>
            <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="co"># number of claims</span>
            <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>,
            <span class="kw">premium</span> <span class="kw">=</span> <span class="no">premium</span>,
            <span class="kw">severity</span> <span class="kw">=</span> <span class="no">amount</span>) <span class="co"># loss</span></pre></div>
-<div class="sourceCode" id="cb26"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">##   area  amount nclaims   exposure premium  frequency average_severity</span></a>
-<a class="sourceLine" id="cb26-2" data-line-number="2"><span class="co">## 1    2 4063270      98  818.53973   51896 0.11972540         41461.94</span></a>
-<a class="sourceLine" id="cb26-3" data-line-number="3"><span class="co">## 2    3 7945311     113  764.99178   49337 0.14771401         70312.49</span></a>
-<a class="sourceLine" id="cb26-4" data-line-number="4"><span class="co">## 3    1 6896187     146 1065.74795   65753 0.13699299         47234.16</span></a>
-<a class="sourceLine" id="cb26-5" data-line-number="5"><span class="co">## 4    0    6922       1   13.30685     902 0.07514927          6922.00</span></a>
-<a class="sourceLine" id="cb26-6" data-line-number="6"><span class="co">##   risk_premium loss_ratio average_premium</span></a>
-<a class="sourceLine" id="cb26-7" data-line-number="7"><span class="co">## 1    4964.0474  78.296400        63.40071</span></a>
-<a class="sourceLine" id="cb26-8" data-line-number="8"><span class="co">## 2   10386.1390 161.041632        64.49350</span></a>
-<a class="sourceLine" id="cb26-9" data-line-number="9"><span class="co">## 3    6470.7486 104.880188        61.69658</span></a>
-<a class="sourceLine" id="cb26-10" data-line-number="10"><span class="co">## 4     520.1832   7.674058        67.78464</span></a></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="co">##   area  amount nclaims   exposure premium  frequency average_severity</span></a>
+<a class="sourceLine" id="cb24-2" data-line-number="2"><span class="co">## 1    2 4063270      98  818.53973   51896 0.11972540         41461.94</span></a>
+<a class="sourceLine" id="cb24-3" data-line-number="3"><span class="co">## 2    3 7945311     113  764.99178   49337 0.14771401         70312.49</span></a>
+<a class="sourceLine" id="cb24-4" data-line-number="4"><span class="co">## 3    1 6896187     146 1065.74795   65753 0.13699299         47234.16</span></a>
+<a class="sourceLine" id="cb24-5" data-line-number="5"><span class="co">## 4    0    6922       1   13.30685     902 0.07514927          6922.00</span></a>
+<a class="sourceLine" id="cb24-6" data-line-number="6"><span class="co">##   risk_premium loss_ratio average_premium</span></a>
+<a class="sourceLine" id="cb24-7" data-line-number="7"><span class="co">## 1    4964.0474  78.296400        63.40071</span></a>
+<a class="sourceLine" id="cb24-8" data-line-number="8"><span class="co">## 2   10386.1390 161.041632        64.49350</span></a>
+<a class="sourceLine" id="cb24-9" data-line-number="9"><span class="co">## 3    6470.7486 104.880188        61.69658</span></a>
+<a class="sourceLine" id="cb24-10" data-line-number="10"><span class="co">## 4     520.1832   7.674058        67.78464</span></a></code></pre></div>
 <p>The following indicators are calculated:</p>
 <ol>
 <li>frequency (i.e. frequency = number of claims / exposure)</li>
@@ -275,14 +266,14 @@
 </ol>
 <p>The term risk premium is used here as an equivalent of pure premium and burning cost.</p>
 <p><code><a href="reference/univariate.html">univariate()</a></code> ignores missing input arguments, for instance only the claim frequency is calculated when <code>premium</code> and <code>severity</code> are unknown:</p>
-<div class="sourceCode" id="cb27"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>)</pre></div>
-<div class="sourceCode" id="cb28"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="co">##   area nclaims   exposure  frequency</span></a>
-<a class="sourceLine" id="cb28-2" data-line-number="2"><span class="co">## 1    2      98  818.53973 0.11972540</span></a>
-<a class="sourceLine" id="cb28-3" data-line-number="3"><span class="co">## 2    3     113  764.99178 0.14771401</span></a>
-<a class="sourceLine" id="cb28-4" data-line-number="4"><span class="co">## 3    1     146 1065.74795 0.13699299</span></a>
-<a class="sourceLine" id="cb28-5" data-line-number="5"><span class="co">## 4    0       1   13.30685 0.07514927</span></a></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>)</pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">##   area nclaims   exposure  frequency</span></a>
+<a class="sourceLine" id="cb26-2" data-line-number="2"><span class="co">## 1    2      98  818.53973 0.11972540</span></a>
+<a class="sourceLine" id="cb26-3" data-line-number="3"><span class="co">## 2    3     113  764.99178 0.14771401</span></a>
+<a class="sourceLine" id="cb26-4" data-line-number="4"><span class="co">## 3    1     146 1065.74795 0.13699299</span></a>
+<a class="sourceLine" id="cb26-5" data-line-number="5"><span class="co">## 4    0       1   13.30685 0.07514927</span></a></code></pre></div>
 <p>However, the above table is small and easy to understand, the same information might be presented more effectively with a graph, as shown below.</p>
-<div class="sourceCode" id="cb29"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
+<div class="sourceCode" id="cb27"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>)</pre></div>
 <p><img src="reference/figures/example6-1.png"><!-- --></p>
 <p>In <code><a href="reference/autoplot.univariate.html">autoplot.univariate()</a></code>, <code>show_plots</code> defines the plots to show and also the order of the plots. The following plots are available:</p>
@@ -298,28 +289,28 @@
 <li>premium</li>
 </ol>
 <p>For example, to show the exposure and claim frequency plots:</p>
-<div class="sourceCode" id="cb30"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
+<div class="sourceCode" id="cb28"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>, <span class="kw">show_plots</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">6</span>,<span class="fl">1</span>))</pre></div>
 <p><img src="reference/figures/example7-1.png"><!-- --></p>
 <p>To remove the bars from the plot with the line graph, add <code>background = FALSE</code>:</p>
-<div class="sourceCode" id="cb31"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
+<div class="sourceCode" id="cb29"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>, <span class="kw">show_plots</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">6</span>,<span class="fl">1</span>), <span class="kw">background</span> <span class="kw">=</span> <span class="fl">FALSE</span>)</pre></div>
 <p><img src="reference/figures/example8-1.png"><!-- --></p>
 <p><code>sort</code> orders the levels of the risk factor into descending order by exposure:</p>
-<div class="sourceCode" id="cb32"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
+<div class="sourceCode" id="cb30"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>, <span class="kw">show_plots</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">6</span>,<span class="fl">1</span>), <span class="kw">background</span> <span class="kw">=</span> <span class="fl">FALSE</span>, <span class="kw">sort</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></div>
 <p><img src="reference/figures/example9-1.png"><!-- --></p>
 <p><code>sort_manual</code> in <code><a href="reference/autoplot.univariate.html">autoplot.univariate()</a></code> can be used to sort the levels of the discrete risk factor into your own ordering. This makes sense when the levels of the risk factor has a natural order, or when not all levels of the risk factor are desired in the output.</p>
-<div class="sourceCode" id="cb33"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
+<div class="sourceCode" id="cb31"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>, <span class="kw">show_plots</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">6</span>,<span class="fl">1</span>), <span class="kw">background</span> <span class="kw">=</span> <span class="fl">FALSE</span>, <span class="kw">sort_manual</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"1"</span>, <span class="st">"0"</span>))</pre></div>
 <p><img src="reference/figures/example10-1.png"><!-- --></p>
 <p>The following graph shows some more options:</p>
-<div class="sourceCode" id="cb34"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
+<div class="sourceCode" id="cb32"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>, <span class="kw">show_plots</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">6</span>,<span class="fl">1</span>), <span class="kw">background</span> <span class="kw">=</span> <span class="fl">FALSE</span>, <span class="kw">sort</span> <span class="kw">=</span> <span class="fl">TRUE</span>, <span class="kw">ncol</span> <span class="kw">=</span> <span class="fl">2</span>,
            <span class="kw">color_bg</span> <span class="kw">=</span> <span class="st">"dodgerblue"</span>, <span class="kw">color</span> <span class="kw">=</span> <span class="st">"blue"</span>)</pre></div>
 <p><img src="reference/figures/example11-1.png"><!-- --></p>
 <p>Or create a bar graph for the number of claims:</p>
-<div class="sourceCode" id="cb35"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>) <span class="kw">%&gt;%</span>
+<div class="sourceCode" id="cb33"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>) <span class="kw">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>, <span class="kw">coord_flip</span> <span class="kw">=</span> <span class="fl">TRUE</span>, <span class="kw">sort</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></div>
 <p><img src="reference/figures/example12-1.png"><!-- --></p>
 </div>

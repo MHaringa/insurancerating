@@ -2,7 +2,7 @@
 % Please edit documentation in R/check_normality.R
 \name{check_normality}
 \alias{check_normality}
-\title{Check model for (non-)normality of residuals}
+\title{Check model for (non-)normality of residuals (deprecated function; use 'check_residuals()' instead)}
 \usage{
 check_normality(object, simulate_residuals = TRUE, n_simulations = 20)
 }
@@ -38,12 +38,13 @@ Instead, you can use \code{simulate_residuals = TRUE}, which implements the idea
 by Dunn and Smyth (1996). This approach is adopted from DHARMa::simulateResiduals.
 }
 \examples{
+
+\dontrun{
 m1 <- lm(mpg ~ wt + cyl + gear + disp, data = mtcars)
 check_normality(m1)
 
-# QQ-plot
-\dontrun{
 m1_norm <- check_normality(m1)
+# QQ-plot
 autoplot(m1_norm)
 
 # Density plot

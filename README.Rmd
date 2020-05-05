@@ -141,7 +141,7 @@ The following graph includes the exposure as a bar graph and shows some more opt
 ```{r example3c, eval = TRUE}
 
 rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) %>%
-  autoplot(., linetype = TRUE, color_bg = "skyblue") 
+  autoplot(., linetype = TRUE) 
 
 ```
 
@@ -184,22 +184,15 @@ Check Poisson GLM for overdispersion. A dispersion ratio larger than one indicat
 check_overdispersion(model_freq1)
 ```
 
-Check model for (non-)normality of residuals. Normality of deviance residuals is in general not expected under a Poisson, and seeing deviance residuals (or any other standard residuals) that differ from a straight line in a qqnorm plot is therefore in general no concern at all. 
+Misspecifications in GLMs cannot reliably be diagnosed with standard residual plots, and GLMs are thus often not as thoroughly checked as LMs. One reason why GLMs residuals are harder to interpret is that the expected distribution of the data changes with the fitted values. As a result, standard residual plots, when interpreted in the same way as for linear models, seem to show all kind of problems, such as non-normality, heteroscedasticity, even if the model is correctly specified. `check_residuals()` aims at solving these problems by creating readily interpretable residuals for GLMs that are standardized to values between 0 and 1, and that can be interpreted as intuitively as residuals for the linear model. This is achieved by a simulation-based approach, similar to the Bayesian p-value or the parametric bootstrap, that transforms the residuals to a standardized scale. This explanation is adopted from the [vignette for DHARMa](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). 
 
-Note that (for large data sets) formal tests for normality almost always yields significant results for the distribution of residuals and visual inspections (e.g. QQ plots) are preferable.
-
-```{r normality, message = FALSE, eval = TRUE}
-check_normality(model_freq1, simulate_residuals = FALSE) %>%
-  autoplot(.)
-```
-
-Instead, setting `simulate_residuals = TRUE` corrects for notable deviations from normality for small counts. It implements the idea of randomized quantile residuals by Dunn and Smyth (1996). `check_normality()` uses the implementation of randomized quantile residuals from `simulateResiduals()` in package DHARMa. 
-
-The simulated residuals in the QQ plot below show no clear deviation from normality.
+Detect deviations from the expected distribution, and produce a uniform quantile-quantile plot. The simulated residuals in the QQ plot below show no clear deviation from a Poisson distribution. Note that formal tests almost always yield significant results for the distribution of residuals and visual inspections (e.g. Q-Q plots) are preferable.
 
 ```{r normalitysim, message = FALSE, eval = TRUE}
-check_normality(model_freq1, simulate_residuals = TRUE, n_simulations = 50) %>%
+
+check_residuals(model_freq1, n_simulations = 50) %>%
   autoplot(.)
+
 ```
 
 

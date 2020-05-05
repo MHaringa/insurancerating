@@ -4,7 +4,13 @@
 \alias{rating_factors}
 \title{Include reference group in regression output}
 \usage{
-rating_factors(..., model_data = NULL, exposure = NULL, exponentiate = TRUE)
+rating_factors(
+  ...,
+  model_data = NULL,
+  exposure = NULL,
+  exponentiate = TRUE,
+  signif_stars = TRUE
+)
 }
 \arguments{
 \item{...}{glm object(s) produced by \code{glm()}}
@@ -14,6 +20,8 @@ rating_factors(..., model_data = NULL, exposure = NULL, exponentiate = TRUE)
 \item{exposure}{column in \code{model_data} with exposure, default value is NULL}
 
 \item{exponentiate}{logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.}
+
+\item{signif_stars}{show significance stars for p-values (defaults to TRUE)}
 }
 \value{
 data.frame

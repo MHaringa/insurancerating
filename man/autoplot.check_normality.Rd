@@ -2,7 +2,7 @@
 % Please edit documentation in R/check_normality.R
 \name{autoplot.check_normality}
 \alias{autoplot.check_normality}
-\title{Automatically create a ggplot for objects obtained from check_normality()}
+\title{Automatically create a ggplot for objects obtained from check_normality() (deprecated function; use 'autoplot.check_residuals()' instead)}
 \usage{
 \method{autoplot}{check_normality}(object, type = c("qq", "density"), data = NULL, ...)
 }

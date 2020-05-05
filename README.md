@@ -139,18 +139,19 @@ x <- rating_factors(model_freq1, model_freq2)
 x
 ```
 
+    ## Significance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1
     ##                  risk_factor            level est_model_freq1 est_model_freq2
-    ## 1                (Intercept)      (Intercept)       0.1368181       0.3210287
-    ## 2  age_policyholder_freq_cat          (39,50]       1.0000000       1.0000000
-    ## 3  age_policyholder_freq_cat          [18,25]       1.9438228       1.2909603
-    ## 4  age_policyholder_freq_cat          (25,32]       1.3234995       0.9802830
-    ## 5  age_policyholder_freq_cat          (32,39]       1.0568538       0.8923472
-    ## 6  age_policyholder_freq_cat          (50,57]       0.8919696       1.0535866
-    ## 7  age_policyholder_freq_cat          (57,64]       0.7423998       1.0056607
-    ## 8  age_policyholder_freq_cat          (64,71]       0.7379362       1.1383509
-    ## 9  age_policyholder_freq_cat          (71,83]       0.7021348       1.2486752
-    ## 10 age_policyholder_freq_cat          (83,95]       0.6933378       1.5100830
-    ## 11          age_policyholder age_policyholder              NA       0.9811935
+    ## 1                (Intercept)      (Intercept)    0.136818 ***    0.321029 ***
+    ## 2  age_policyholder_freq_cat          (39,50]    1.000000        1.000000    
+    ## 3  age_policyholder_freq_cat          [18,25]    1.943823 ***    1.290960    
+    ## 4  age_policyholder_freq_cat          (25,32]    1.323499 ***    0.980283    
+    ## 5  age_policyholder_freq_cat          (32,39]    1.056854        0.892347    
+    ## 6  age_policyholder_freq_cat          (50,57]    0.891970 *      1.053587    
+    ## 7  age_policyholder_freq_cat          (57,64]    0.742400 ***    1.005661    
+    ## 8  age_policyholder_freq_cat          (64,71]    0.737936 ***    1.138351    
+    ## 9  age_policyholder_freq_cat          (71,83]    0.702135 ***    1.248675    
+    ## 10 age_policyholder_freq_cat          (83,95]    0.693338        1.510083    
+    ## 11          age_policyholder age_policyholder          NA        0.981193 **
 
 `autoplot.riskfactor()` creates a figure. The base level of the factor
 `age_policyholder_freq_cat` is the group with the largest exposure and
@@ -180,7 +181,7 @@ options:
 
 ``` r
 rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) %>%
-  autoplot(., linetype = TRUE, color_bg = "skyblue") 
+  autoplot(., linetype = TRUE) 
 ```
 
 ![](man/figures/example3c-1.png)<!-- -->
@@ -257,45 +258,34 @@ check_overdispersion(model_freq1)
 
     ## Overdispersion detected.
 
-Check model for (non-)normality of residuals. Normality of deviance
-residuals is in general not expected under a Poisson, and seeing
-deviance residuals (or any other standard residuals) that differ from a
-straight line in a qqnorm plot is therefore in general no concern at
-all.
+Misspecifications in GLMs cannot reliably be diagnosed with standard
+residual plots, and GLMs are thus often not as thoroughly checked as
+LMs. One reason why GLMs residuals are harder to interpret is that the
+expected distribution of the data changes with the fitted values. As a
+result, standard residual plots, when interpreted in the same way as for
+linear models, seem to show all kind of problems, such as non-normality,
+heteroscedasticity, even if the model is correctly specified.
+`check_residuals()` aims at solving these problems by creating readily
+interpretable residuals for GLMs that are standardized to values between
+0 and 1, and that can be interpreted as intuitively as residuals for the
+linear model. This is achieved by a simulation-based approach, similar
+to the Bayesian p-value or the parametric bootstrap, that transforms the
+residuals to a standardized scale. This explanation is adopted from the
+[vignette for
+DHARMa](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html).
 
-Note that (for large data sets) formal tests for normality almost always
-yields significant results for the distribution of residuals and visual
-inspections (e.g. QQ plots) are preferable.
+Detect deviations from the expected distribution, and produce a uniform
+quantile-quantile plot. The simulated residuals in the QQ plot below
+show no clear deviation from a Poisson distribution. Note that formal
+tests almost always yield significant results for the distribution of
+residuals and visual inspections (e.g. Q-Q plots) are preferable.
 
 ``` r
-check_normality(model_freq1, simulate_residuals = FALSE) %>%
+check_residuals(model_freq1, n_simulations = 50) %>%
   autoplot(.)
 ```
 
-    ## 'check_normality()' only uses the first 5000 data points to test for normality.
-    ## Visual inspection (e.g. Q-Q plots) is preferable for large data sets.
-    ## Warning: Non-normality of residuals detected (p = 0.000).
-
-![](man/figures/normality-1.png)<!-- -->
-
-Instead, setting `simulate_residuals = TRUE` corrects for notable
-deviations from normality for small counts. It implements the idea of
-randomized quantile residuals by Dunn and Smyth (1996).
-`check_normality()` uses the implementation of randomized quantile
-residuals from `simulateResiduals()` in package DHARMa.
-
-The simulated residuals in the QQ plot below show no clear deviation
-from
-normality.
-
-``` r
-check_normality(model_freq1, simulate_residuals = TRUE, n_simulations = 50) %>%
-  autoplot(.)
-```
-
-    ## 'check_normality()' uses scaled residuals by simulating from the fitted model to test for normality.
-    ## Visual inspection (e.g. Q-Q plots) is preferable for large data sets.
-    ## Warning: Non-normality of residuals detected (p = 0.000).
+    ## Warning: deviations from the expected distribution detected (p = 0.000).
 
 ![](man/figures/normalitysim-1.png)<!-- -->
 
