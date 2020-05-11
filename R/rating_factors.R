@@ -202,36 +202,56 @@ rating_factors <- function(..., model_data = NULL, exposure = NULL, exponentiate
     }
   }
 
+  rf_fj_stars <- NULL
+  signif_levels <- NULL
+
+  if ( isTRUE(signif_stars) ) {
+    signif_levels <- "Significance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1"
+    rf_fj_stars <- rf_fj
+    for (i in 1:length(cols)){
+      pvalues_num <- round(rf_fj_stars[[paste0("est_", cols[i])]], 6)
+      pvalues_char <- format(pvalues_num, digits = 6, nsmall = 2)
+      stars_char <- rf_fj_stars[[paste0("signif_", cols[i])]]
+      stars_char[is.na(stars_char)] <- ""
+      rf_fj_stars[[paste0("est_", cols[i])]] <- format(paste0(pvalues_char, " ", stars_char), justify = "left")
+    }
+    rf_fj_stars <- rf_fj_stars[ , -which(names(rf_fj_stars) %in% paste0("signif_", cols))]
+  }
+
   return(structure(list(df = rf_fj,
+                        df_stars = rf_fj_stars,
                         models = cols,
                         exposure = exposure_nm,
                         model_data = model_data_nm,
                         expon = exponentiate,
-                        signif_stars = signif_stars),
+                        signif_stars = signif_stars,
+                        signif_levels = signif_levels),
                    class = "riskfactor"))
 }
 
 #' @export
 print.riskfactor <- function(x, ...) {
-  df <- x$df
-  if ( isTRUE(x$signif_stars)) {
-    insight::print_color("Significance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1\n", "blue")
-    models <- x$models
-    for (i in 1:length(models)){
-      pvalues_num <- round(df[[paste0("est_", models[i])]], 6)
-      pvalues_char <- format(pvalues_num, digits=6, nsmall=2)
-      stars_char <- df[[paste0("signif_", models[i])]]
-      stars_char[is.na(stars_char)] <- ""
-      df[[paste0("est_", models[i])]] <- format(paste0(pvalues_char, " ", stars_char), justify = "left")
-    }
-    df <- df[ , -which(names(df) %in% paste0("signif_", models))]
+
+  if ( isTRUE( x$signif_stars ) ){
+    x1 <- x$signif_levels
+    x1[!is.na(x1)] <- paste0("\033[34m", x1[!is.na(x1)], "\033[39m")
+    cat(x1)
+    print(x$df_stars)
+  } else{
+    print(x$df)
   }
-  print(df)
 }
+
 
 #' @export
 as.data.frame.riskfactor <- function(x, ...) {
-  df <- x$df
+
+    if ( isTRUE( x$signif_stars ) ){
+    df <- x$df_stars
+  } else{
+    df <- x$df
+  }
+
   return(as.data.frame(df))
 }
 
