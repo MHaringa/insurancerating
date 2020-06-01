@@ -1,7 +1,7 @@
 # insurancerating 0.6.2
 
 * `check_normality()` is now depreciated; use `check_residuals()` instead to detect overall deviations from the expected distribution
-* `rating_factors()` now returns significance stars for p-values
+* `rating_factors()` now shows significance stars for p-values
 * `period_to_months()` arithmetic operations with dates are rewritten; much faster
 
 # insurancerating 0.6.1

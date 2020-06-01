@@ -406,12 +406,3 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background =
 }
 
 
-
-
-
-
-
-
-
-
-
