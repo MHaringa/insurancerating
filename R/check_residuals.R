@@ -20,7 +20,7 @@
 #'
 #' @exportClass check_residuals
 #'
-#' @importFrom DHARMa simulateResiduals
+#' @import DHARMa
 #' @importFrom insight print_color
 #' @importFrom stats approx
 #' @importFrom stats ks.test
