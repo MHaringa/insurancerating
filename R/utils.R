@@ -20,6 +20,7 @@ elapsed_days <- function(end_date){
 }
 
 
+
 #' Get splits from partykit object
 #' @noRd
 #'
