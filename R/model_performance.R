@@ -18,7 +18,6 @@
 #'
 #' @author Martin Haringa
 #'
-#' @exportClass model_performance
 #'
 #' @details Adopted from \code{performance::model_performance()}.
 #'

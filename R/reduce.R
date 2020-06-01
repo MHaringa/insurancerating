@@ -17,8 +17,6 @@
 #'
 #' @details This function is adopted from \code{IRanges::reduce()}.
 #'
-#' @exportClass reduce
-#'
 #' @return An object of class \code{"reduce"}.
 #' The function \code{summary} is used to obtain and print a summary of the results.
 #' An object of class \code{"reduce"} is a list usually containing at least the following elements:

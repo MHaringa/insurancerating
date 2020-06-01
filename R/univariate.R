@@ -25,8 +25,6 @@
 #' \item{exposure}{name of column in df with exposure}
 #' \item{premium}{name of column in df with premium}
 #'
-#' @exportClass univariate
-#'
 #' @importFrom data.table data.table
 #'
 #' @examples

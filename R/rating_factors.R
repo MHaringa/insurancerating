@@ -140,8 +140,6 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
 #' @importFrom utils stack
 #' @importFrom stats coefficients
 #'
-#' @exportClass riskfactor
-#'
 #' @author Martin Haringa
 #'
 #' @examples

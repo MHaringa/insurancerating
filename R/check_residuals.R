@@ -18,8 +18,6 @@
 #'
 #' @author Martin Haringa
 #'
-#' @exportClass check_residuals
-#'
 #' @import DHARMa
 #' @importFrom insight print_color
 #' @importFrom stats approx

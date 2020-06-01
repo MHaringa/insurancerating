@@ -15,8 +15,6 @@
 #'
 #' @author Martin Haringa
 #'
-#' @exportClass overdispersion
-#'
 #' @importFrom stats family
 #' @importFrom stats pchisq
 #' @importFrom stats df.residual

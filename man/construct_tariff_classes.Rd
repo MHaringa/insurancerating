@@ -50,6 +50,7 @@ library(dplyr)
 fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure) \%>\%
    construct_tariff_classes(.)
 }
+
 }
 \references{
 Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a priori and a posteriori risk classification in insurance.

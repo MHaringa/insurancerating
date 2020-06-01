@@ -48,12 +48,11 @@
 #' \item{data}{data frame with predicted values and observed values}
 #' \item{x_obs}{observations for continuous risk factor}
 #'
-#' @export fit_gam
-#' @exportClass fitgam
-#'
 #' @author Martin Haringa
 #'
 #' @examples fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure)
+#'
+#' @export
 fit_gam <- function(data, nclaims, x, exposure, amount = NULL, pure_premium = NULL, model = "frequency", round_x = NULL){
 
   if (nrow(data) < 10)

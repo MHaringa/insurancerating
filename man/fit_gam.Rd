@@ -56,6 +56,7 @@ the estimated severity of claims. The word burning cost is used here as equivale
 }
 \examples{
 fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure)
+
 }
 \references{
 Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a priori and a posteriori risk classification in insurance.

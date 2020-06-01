@@ -35,9 +35,6 @@
 #' \item{splits}{vector with boundaries of the constructed tariff classes}
 #' \item{tariff_classes}{values in vector \code{x} coded according to which constructed tariff class they fall}
 #'
-#' @export construct_tariff_classes
-#' @exportClass constructtariffclasses
-#'
 #' @author Martin Haringa
 #'
 #' @examples
@@ -46,6 +43,8 @@
 #' fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure) %>%
 #'    construct_tariff_classes(.)
 #' }
+#'
+#' @export
 construct_tariff_classes <- function (object, alpha = 0, niterations = 10000, ntrees = 200, seed = 1) {
 
   new <- object[[4]]
