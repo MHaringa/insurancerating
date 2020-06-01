@@ -23,6 +23,7 @@
 #' @importFrom DHARMa simulateResiduals
 #' @importFrom insight print_color
 #' @importFrom stats approx
+#' @importFrom stats ks.test
 #'
 #' @references Dunn, K. P., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics 5, 1-10.
 #' @references Gelman, A. & Hill, J. Data analysis using regression and multilevel/hierarchical models Cambridge University Press, 2006
@@ -61,7 +62,7 @@ check_residuals <- function(object, n_simulations = 30){
   dat <- data.frame(x = sx, y = sy)
 
   ts <- tryCatch(
-    { ks.test(unique(u), "punif", alternative = "two.sided") },
+    { stats::ks.test(unique(u), "punif", alternative = "two.sided") },
     error = function(e) { NULL }
   )
 

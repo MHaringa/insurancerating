@@ -26,6 +26,7 @@ df <- chickwts \%>\%
 mutate_if(is.character, as.factor) \%>\%
 mutate_if(is.factor, list(~biggest_reference(., weight)))
 }
+
 }
 \references{
 Kaas, Rob & Goovaerts, Marc & Dhaene, Jan & Denuit, Michel. (2008). Modern Actuarial Risk Theory: Using R.

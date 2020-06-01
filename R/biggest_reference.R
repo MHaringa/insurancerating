@@ -15,7 +15,6 @@
 #' @importFrom stats relevel
 #'
 #' @return a factor of the same length as x
-#' @export biggest_reference
 #'
 #' @examples
 #' \dontrun{
@@ -24,10 +23,12 @@
 #' mutate_if(is.character, as.factor) %>%
 #' mutate_if(is.factor, list(~biggest_reference(., weight)))
 #' }
+#'
+#' @export
 biggest_reference <- function(x, weight) {
   if(!is.numeric(weight)) weight <- is.numeric(weight)
   counts <- sort(tapply(weight, x, FUN = sum), decreasing = TRUE)
-  xrelevel <- relevel(x, ref = names(counts)[1])
+  xrelevel <- stats::relevel(x, ref = names(counts)[1])
   attr(xrelevel, "xoriginal") <- levels(x)
   return(xrelevel)
 }

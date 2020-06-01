@@ -46,9 +46,7 @@ ggplot2::autoplot
 
 
 
-#' @importFrom magrittr %>%
-#' @export
-magrittr::`%>%`
+
 
 
 
