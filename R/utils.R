@@ -14,6 +14,12 @@ make_stars <- function(pval) {
 }
 
 
+#' @keywords internal
+elapsed_days <- function(end_date){
+  as.POSIXlt(end_date)$mday - 1
+}
+
+
 #' Get splits from partykit object
 #' @noRd
 #'

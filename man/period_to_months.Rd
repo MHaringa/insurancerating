@@ -39,7 +39,6 @@ exposure = c(0.2025, 0.3583),
 premium =  c(125, 150))
 period_to_months(portfolio, begin1, end, premium, exposure)
 
-
 }
 \author{
 Martin Haringa
