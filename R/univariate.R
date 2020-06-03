@@ -167,7 +167,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background =
     stop("show_plots should be numeric")
   }
 
-  if ( !any(show_plots > 0 & show_plots < 7) ){
+  if ( !any(show_plots > 0 & show_plots < 10) ){
     stop("elements in show_plots are unknown")
   }
 
@@ -176,70 +176,16 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background =
   }
 
   if ( isTRUE(sort) & exposure != "NULL" ){
-    df[[xvar]] <- factor(df[[xvar]], levels = df[[xvar]][order(df[[exposure]], decreasing = TRUE)])
+    df[[xvar]] <- order_factors_exposure(df[[xvar]], df[[exposure]], decreasing = coord_flip)
   }
 
-  if ( dec.mark == "," ){
-    sep_fn <- function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE)
-  } else{
-    sep_fn <- function(x) format(x, big.mark = ",", decimal.mark = ".", scientific = FALSE)
-  }
-
-  hist_bg_fn <- function(f_axis, s_axis){
-    df$s_axis_scale <- df[[s_axis]] / max(df[[s_axis]], na.rm = TRUE) * max(df[[f_axis]], na.rm = TRUE)
-    df$s_axis_print <- round(df[[s_axis]], 0)
-    return(df)
-  }
-
-  hist_plot_fn <- function(f_axis, s_axis){
-    list(
-      ggplot2::geom_bar(data = df, aes(x = .data[[xvar]], y = .data[["s_axis_scale"]]),
-                        stat = "identity", color = color_bg, fill = color_bg, alpha = 0.4),
-      ggplot2::scale_y_continuous(sec.axis = sec_axis(~ . * max(df[[s_axis]]) / max(df[[f_axis]]),
-                                                      name = s_axis,
-                                                      labels = sep_fn),
-                                  labels = sep_fn,
-                                  limits = c(0, NA),
-                                  expand = expansion(mult = c(0, 0.01))
-      )
-    )
-  }
-
-  point_line_fn <- function(y){
-    list(
-      ggplot2::geom_point(aes(x = .data[[xvar]], y = .data[[y]]), color = color),
-      ggplot2::geom_line(aes(x = .data[[xvar]], y = .data[[y]], group = 1), color = color),
-      ggplot2::theme_minimal()
-    )
-  }
-
-  labels_bg_fn <- function(){
-    list(
-      ggplot2::geom_text(data = df, aes(x = .data[[xvar]], y = .data[["s_axis_scale"]], label = sep_fn(.data[["s_axis_print"]])),
-                         vjust = "inward", size = 3)
-    )
-  }
-
-  if ( !is.null( sort_manual )){
-    hist_sort <- list(
-      ggplot2::scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = label_width), limits = sort_manual )
-    )
-  } else {
-    hist_sort <- list(
-      ggplot2::scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = label_width) )
-    )}
-
-
+  sep_mark <- separation_mark(dec.mark)
 
   bar_df_fn <- function(y){
     df$y_print <- round(df[[y]], 0)
 
-    if ( isTRUE( sort ) & isTRUE( coord_flip ) ){
-      df[[xvar]] <- factor(df[[xvar]], levels = df[[xvar]][order(df[[y]], decreasing = FALSE)])
-    }
-
-    if ( isTRUE( sort ) & !isTRUE( coord_flip ) ){
-      df[[xvar]] <- factor(df[[xvar]], levels = df[[xvar]][order(df[[y]], decreasing = TRUE)])
+    if ( isTRUE( sort ) ){
+      df[[xvar]] <- order_factors_exposure(df[[xvar]], df[[exposure]], decreasing = coord_flip)
     }
     return(df)
   }
@@ -253,19 +199,19 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background =
   theme_bar <- list(
     ggplot2::theme_minimal(),
     ggplot2::labs(y = exposure, x = xvar),
-    ggplot2::scale_y_continuous(labels = sep_fn)
+    ggplot2::scale_y_continuous(labels = sep_mark)
   )
 
   labels_bar_fn1 <- function(y){
     list(
-      ggplot2::geom_text(data = df, aes(x = .data[[xvar]], y = .data[[y]], label = sep_fn(.data[["y_print"]])),
+      ggplot2::geom_text(data = df, aes(x = .data[[xvar]], y = .data[[y]], label = sep_mark(.data[["y_print"]])),
                          vjust = "inward", size = 3)
     )
   }
 
   labels_bar_fn2 <- function(y){
     list(
-      ggplot2::geom_text(data = df, aes(x = .data[[xvar]], y = .data[[y]], label = sep_fn(.data[["y_print"]])),
+      ggplot2::geom_text(data = df, aes(x = .data[[xvar]], y = .data[[y]], label = sep_mark(.data[["y_print"]])),
                          hjust = "inward", size = 3)
     )
   }
@@ -276,7 +222,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background =
       theme_bar +
       { if( isTRUE( coord_flip )) ggplot2::coord_flip() } +
       ggplot2::labs(y = y, x = xvar) +
-      { if( !is.null( sort_manual )) hist_sort } +
+      sort_x_axis(sort_manual, label_width) +
       { if ( isTRUE(labels) & !isTRUE(coord_flip) ) labels_bar_fn1(y) } +
       { if ( isTRUE(labels) & isTRUE(coord_flip) ) labels_bar_fn2(y) }
     return(p0)
@@ -285,59 +231,63 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background =
   plots_allowed <- show_plots[show_plots < 10 & show_plots > 0]
   not_allowed <- NULL
 
+
   if ( "frequency" %in% names(df) & 1 %in% show_plots ){
-    if ( isTRUE(background) ) { df <- hist_bg_fn("frequency", exposure) }
+    df <- scale_second_axis(background, df, "frequency", exposure)
     p1 <- ggplot2::ggplot(data = df) +
-      {if ( isTRUE(background) ) { hist_plot_fn("frequency", exposure) }} +
-      point_line_fn("frequency") +
+      ggbarplot(background, df, xvar, "frequency", exposure, color_bg, sep_mark) +
+      ggpointline(xvar, "frequency", color) +
       ggplot2::labs(y = "Frequency", x = xvar) +
-      { if ( isTRUE( background ) & isTRUE( labels )) labels_bg_fn() } +
-      { if( !isTRUE ( background )) ggplot2::scale_y_continuous(labels = sep_fn) } +
-      { if( !is.null( sort_manual )) hist_sort }
+      gglabels(background, labels, df, xvar, sep_mark) +
+      ggyscale(background, sep_mark) +
+      sort_x_axis(sort_manual, label_width)
   } else( not_allowed <- c(not_allowed, 1))
 
+
   if ( "average_severity" %in% names(df) & 2 %in% show_plots ){
-    if ( isTRUE(background) ) { df <- hist_bg_fn("average_severity", nclaims) }
+    df <- scale_second_axis(background, df, "average_severity", nclaims)
     p2 <- ggplot2::ggplot(data = df) +
-      {if ( isTRUE(background) ) { hist_plot_fn("average_severity", nclaims) }} +
-      point_line_fn("average_severity") +
+      ggbarplot(background, df, xvar, "average_severity", nclaims, color_bg, sep_mark) +
+      ggpointline(xvar, "average_severity", color) +
       ggplot2::labs(y = "Average\nseverity", x = xvar) +
-      { if ( isTRUE( background ) & isTRUE( labels )) labels_bg_fn() } +
-      { if( !isTRUE ( background )) ggplot2::scale_y_continuous(labels = sep_fn) } +
-      { if( !is.null( sort_manual )) hist_sort }
+      gglabels(background, labels, df, xvar, sep_mark) +
+      ggyscale(background, sep_mark) +
+      sort_x_axis(sort_manual, label_width)
   } else( not_allowed <- c(not_allowed, 2))
 
+
   if ( "risk_premium" %in% names(df) & 3 %in% show_plots ){
-    if ( isTRUE(background) ) { df <- hist_bg_fn("risk_premium", exposure) }
+    df <- scale_second_axis(background, df, "risk_premium", exposure)
     p3 <- ggplot2::ggplot(data = df) +
-      {if ( isTRUE(background) ) { hist_plot_fn("risk_premium", exposure) }} +
-      point_line_fn("risk_premium") +
+      ggbarplot(background, df, xvar, "risk_premium", exposure, color_bg, sep_mark) +
+      ggpointline(xvar, "risk_premium", color) +
       ggplot2::labs(y = "Risk premium", x = xvar) +
-      { if ( isTRUE( background ) & isTRUE( labels )) labels_bg_fn() } +
-      { if( !isTRUE ( background )) ggplot2::scale_y_continuous(labels = sep_fn) } +
-      { if( !is.null( sort_manual )) hist_sort }
+      gglabels(background, labels, df, xvar, sep_mark) +
+      ggyscale(background, sep_mark) +
+      sort_x_axis(sort_manual, label_width)
   } else( not_allowed <- c(not_allowed, 3))
 
   if ( "loss_ratio" %in% names(df) & 4 %in% show_plots ){
-    if ( isTRUE(background) ) { df <- hist_bg_fn("loss_ratio", premium) }
+    df <- scale_second_axis(background, df, "loss_ratio", premium)
     p4 <- ggplot2::ggplot(data = df) +
-      {if ( isTRUE(background) ) { hist_plot_fn("loss_ratio", premium) }} +
-      point_line_fn("loss_ratio") +
+      ggbarplot(background, df, xvar, "loss_ratio", premium, color_bg, sep_mark) +
+      ggpointline(xvar, "loss_ratio", color) +
       ggplot2::labs(y = "Loss ratio", x = xvar) +
-      { if ( isTRUE( background ) & isTRUE( labels )) labels_bg_fn() } +
-      { if( !isTRUE ( background )) ggplot2::scale_y_continuous(labels = sep_fn) } +
-      { if( !is.null( sort_manual )) hist_sort }
+      gglabels(background, labels, df, xvar, sep_mark) +
+      ggyscale(background, sep_mark) +
+      sort_x_axis(sort_manual, label_width)
   } else( not_allowed <- c(not_allowed, 4))
 
+
   if ( "average_premium" %in% names(df) & 5 %in% show_plots ){
-    if ( isTRUE(background) ) { df <- hist_bg_fn("average_premium", exposure) }
+    df <- scale_second_axis(background, df, "average_premium", exposure)
     p5 <- ggplot2::ggplot(data = df) +
-      {if ( isTRUE(background) ) { hist_plot_fn("average_premium", exposure) }} +
-      point_line_fn("average_premium") +
+      ggbarplot(background, df, xvar, "average_premium", exposure, color_bg, sep_mark) +
+      ggpointline(xvar, "average_premium", color) +
       ggplot2::labs(y = "Average\npremium", x = xvar) +
-      { if ( isTRUE( background ) & isTRUE( labels )) labels_bg_fn() } +
-      { if( !isTRUE ( background )) ggplot2::scale_y_continuous(labels = sep_fn) } +
-      { if( !is.null( sort_manual )) hist_sort }
+      gglabels(background, labels, df, xvar, sep_mark) +
+      ggyscale(background, sep_mark) +
+      sort_x_axis(sort_manual, label_width)
   } else( not_allowed <- c(not_allowed, 5))
 
   if ( exposure %in% names(df) & 6 %in% show_plots ){
