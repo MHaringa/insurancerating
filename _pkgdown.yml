@@ -1,6 +1,6 @@
 navbar:
   structure:
-    left:  [home, reference, articles, news]
+    left:  [home, reference, news]
     right: [github]
 reference:
   - title: "Construct tariff classes"

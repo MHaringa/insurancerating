@@ -171,8 +171,8 @@ as.data.frame.univariate <- function(x, ...) {
 #' MTPL2a <- MTPL2
 #' MTPL2a$jaar <- sample(2015:2019, nrow(MTPL2a), replace = TRUE)
 #' x1 <- univariate(MTPL2a, x = area, severity = amount, nclaims = nclaims,
-#' exposure = exposure, premium = premium, by = jaar)
-#' autoplot(x1)
+#' exposure = exposure, by = jaar)
+#' autoplot(x1, show_plots = 1:2)
 #'
 #' @export
 autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background = TRUE, labels = TRUE,
