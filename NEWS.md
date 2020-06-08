@@ -3,6 +3,7 @@
 * `check_normality()` is now depreciated; use `check_residuals()` instead to detect overall deviations from the expected distribution
 * `rating_factors()` now shows significance stars for p-values
 * `period_to_months()` arithmetic operations with dates are rewritten; much faster
+* `univariate()` now has argument `by` to determine summary statistics for different subgroups 
 
 # insurancerating 0.6.1
 

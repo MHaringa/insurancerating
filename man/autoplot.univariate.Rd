@@ -70,4 +70,10 @@ x <- univariate(MTPL2, x = area, severity = amount, nclaims = nclaims, exposure 
 autoplot(x)
 autoplot(x, show_plots = c(6,1), background = FALSE, sort = TRUE)
 
+MTPL2a <- MTPL2
+MTPL2a$jaar <- sample(2015:2019, nrow(MTPL2a), replace = TRUE)
+x1 <- univariate(MTPL2a, x = area, severity = amount, nclaims = nclaims,
+exposure = exposure, premium = premium, by = jaar)
+autoplot(x1)
+
 }

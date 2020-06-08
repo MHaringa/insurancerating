@@ -10,7 +10,8 @@ univariate(
   severity = NULL,
   nclaims = NULL,
   exposure = NULL,
-  premium = NULL
+  premium = NULL,
+  by = NULL
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ univariate(
 \item{exposure}{column in \code{df} with exposure (default is NULL)}
 
 \item{premium}{column in \code{df} with premium (default is NULL)}
+
+\item{by}{column(s) in \code{df} to group by}
 }
 \value{
 A list of class \code{univ_all} with components
