@@ -1,3 +1,5 @@
+# insurancerating 0.6.3
+
 # insurancerating 0.6.2
 
 * `check_normality()` is now depreciated; use `check_residuals()` instead to detect overall deviations from the expected distribution
