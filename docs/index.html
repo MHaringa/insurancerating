@@ -42,7 +42,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.1.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.2</span>
       </span>
     </div>
 
@@ -56,18 +56,6 @@
 </li>
 <li>
   <a href="reference/index.html">Reference</a>
-</li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-    Articles
-     
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu">
-<li>
-      <a href="articles/vignette.html">Introduction to `insurancerating`</a>
-    </li>
-  </ul>
 </li>
 <li>
   <a href="news/index.html">Changelog</a>
@@ -92,13 +80,13 @@
 
       </header><div class="row">
   <div class="contents col-md-9">
-<div id="insurancerating" class="section level1">
+<div id="insurancerating-" class="section level1">
 <div class="page-header"><h1 class="hasAnchor">
-<a href="#insurancerating" class="anchor"></a>insurancerating <img src="logo.png" align="right" alt="" width="120">
+<a href="#insurancerating-" class="anchor"></a>insurancerating <img src="logo.png" align="right" alt="" width="120">
 </h1></div>
 <!-- badges: start -->
 
-<p>The goal of <code>insurancerating</code> is to give analytic techniques that can be used in insurance rating. It helps actuaries to implement GLMs within all relevant steps needed to construct a risk premium from raw data. It provides a data driven strategy for the construction of tariff classes in P\&amp;C insurance. The goal is to bin the continuous factors such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way, while being easy to use in a generalized linear model (GLM).</p>
+<p>The goal of <code>insurancerating</code> is to give analytic techniques that can be used in insurance rating. It helps actuaries to implement GLMs within all relevant steps needed to construct a risk premium from raw data. It provides a data driven strategy for the construction of tariff classes in P&amp;C insurance. The goal is to bin the continuous factors such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way, while being easy to use in a generalized linear model (GLM).</p>
 <p><code>insurancerating</code> also provides recipes on how to easily perform univariate analyses on an insurance portfolio. In addition it adds functionality to include reference categories in the levels of the coefficients in the output of a generalized linear regression analysis.</p>
 <div id="installation" class="section level2">
 <h2 class="hasAnchor">
@@ -152,13 +140,13 @@
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate_all.html">mutate_if</a></span>(<span class="no">is.factor</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span>(~<span class="fu"><a href="reference/biggest_reference.html">biggest_reference</a></span>(<span class="no">.</span>, <span class="no">exposure</span>)))
 
 <span class="fu"><a href="https://dplyr.tidyverse.org/reference/reexports.html">glimpse</a></span>(<span class="no">dat</span>)</pre></div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">## Rows: 32,731</span></a>
-<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="co">## Columns: 5</span></a>
-<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="co">## $ age_policyholder          &lt;int&gt; 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…</span></a>
-<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="co">## $ nclaims                   &lt;int&gt; 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…</span></a>
-<a class="sourceLine" id="cb8-5" data-line-number="5"><span class="co">## $ exposure                  &lt;dbl&gt; 1.0000000, 1.0000000, 1.0000000, 1.0000000,…</span></a>
-<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="co">## $ amount                    &lt;dbl&gt; 0, 0, 0, 57540, 2057, 0, 0, 6510, 0, 0, 0, …</span></a>
-<a class="sourceLine" id="cb8-7" data-line-number="7"><span class="co">## $ age_policyholder_freq_cat &lt;fct&gt; "(39,50]", "[18,25]", "(50,57]", "(39,50]",…</span></a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="co">## Rows: 32,731</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="co">## Columns: 5</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="co">## $ age_policyholder          &lt;int&gt; 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="co">## $ nclaims                   &lt;int&gt; 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="co">## $ exposure                  &lt;dbl&gt; 1.0000000, 1.0000000, 1.0000000, 1.0000000,…</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="co">## $ amount                    &lt;dbl&gt; 0, 0, 0, 57540, 2057, 0, 0, 6510, 0, 0, 0, …</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="co">## $ age_policyholder_freq_cat &lt;fct&gt; "(39,50]", "[18,25]", "(50,57]", "(39,50]",…</span></span></code></pre></div>
 <p>The last part is to fit a <em>generalized linear model</em>. <code><a href="reference/rating_factors.html">rating_factors()</a></code> prints the output including the reference group.</p>
 <div class="sourceCode" id="cb9"><pre class="r"><span class="no">model_freq1</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html">glm</a></span>(<span class="no">nclaims</span> ~ <span class="no">age_policyholder_freq_cat</span>, <span class="kw">offset</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">log</a></span>(<span class="no">exposure</span>),
                   <span class="kw">family</span> <span class="kw">=</span> <span class="st">"poisson"</span>, <span class="kw">data</span> <span class="kw">=</span> <span class="no">dat</span>)
@@ -168,19 +156,19 @@
 
 <span class="no">x</span> <span class="kw">&lt;-</span> <span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span>(<span class="no">model_freq1</span>, <span class="no">model_freq2</span>)
 <span class="no">x</span></pre></div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">## Significance levels: *** p &lt; 0.001; ** p &lt; 0.01;  * p &lt; 0.05; . p &lt; 0.1</span></a>
-<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="co">##                  risk_factor            level est_model_freq1 est_model_freq2</span></a>
-<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="co">## 1                (Intercept)      (Intercept)    0.136818 ***    0.321029 ***</span></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="co">## 2  age_policyholder_freq_cat          (39,50]    1.000000        1.000000    </span></a>
-<a class="sourceLine" id="cb10-5" data-line-number="5"><span class="co">## 3  age_policyholder_freq_cat          [18,25]    1.943823 ***    1.290960    </span></a>
-<a class="sourceLine" id="cb10-6" data-line-number="6"><span class="co">## 4  age_policyholder_freq_cat          (25,32]    1.323499 ***    0.980283    </span></a>
-<a class="sourceLine" id="cb10-7" data-line-number="7"><span class="co">## 5  age_policyholder_freq_cat          (32,39]    1.056854        0.892347    </span></a>
-<a class="sourceLine" id="cb10-8" data-line-number="8"><span class="co">## 6  age_policyholder_freq_cat          (50,57]    0.891970 *      1.053587    </span></a>
-<a class="sourceLine" id="cb10-9" data-line-number="9"><span class="co">## 7  age_policyholder_freq_cat          (57,64]    0.742400 ***    1.005661    </span></a>
-<a class="sourceLine" id="cb10-10" data-line-number="10"><span class="co">## 8  age_policyholder_freq_cat          (64,71]    0.737936 ***    1.138351    </span></a>
-<a class="sourceLine" id="cb10-11" data-line-number="11"><span class="co">## 9  age_policyholder_freq_cat          (71,83]    0.702135 ***    1.248675    </span></a>
-<a class="sourceLine" id="cb10-12" data-line-number="12"><span class="co">## 10 age_policyholder_freq_cat          (83,95]    0.693338        1.510083    </span></a>
-<a class="sourceLine" id="cb10-13" data-line-number="13"><span class="co">## 11          age_policyholder age_policyholder          NA        0.981193 **</span></a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="co">## Significance levels: *** p &lt; 0.001; ** p &lt; 0.01;  * p &lt; 0.05; . p &lt; 0.1</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="co">##                  risk_factor            level est_model_freq1 est_model_freq2</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="co">## 1                (Intercept)      (Intercept)    0.136818 ***    0.321029 ***</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a><span class="co">## 2  age_policyholder_freq_cat          (39,50]    1.000000        1.000000    </span></span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="co">## 3  age_policyholder_freq_cat          [18,25]    1.943823 ***    1.290960    </span></span>
+<span id="cb10-6"><a href="#cb10-6"></a><span class="co">## 4  age_policyholder_freq_cat          (25,32]    1.323499 ***    0.980283    </span></span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="co">## 5  age_policyholder_freq_cat          (32,39]    1.056854        0.892347    </span></span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="co">## 6  age_policyholder_freq_cat          (50,57]    0.891970 *      1.053587    </span></span>
+<span id="cb10-9"><a href="#cb10-9"></a><span class="co">## 7  age_policyholder_freq_cat          (57,64]    0.742400 ***    1.005661    </span></span>
+<span id="cb10-10"><a href="#cb10-10"></a><span class="co">## 8  age_policyholder_freq_cat          (64,71]    0.737936 ***    1.138351    </span></span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="co">## 9  age_policyholder_freq_cat          (71,83]    0.702135 ***    1.248675    </span></span>
+<span id="cb10-12"><a href="#cb10-12"></a><span class="co">## 10 age_policyholder_freq_cat          (83,95]    0.693338        1.510083    </span></span>
+<span id="cb10-13"><a href="#cb10-13"></a><span class="co">## 11          age_policyholder age_policyholder          NA        0.981193 **</span></span></code></pre></div>
 <p><code><a href="reference/autoplot.riskfactor.html">autoplot.riskfactor()</a></code> creates a figure. The base level of the factor <code>age_policyholder_freq_cat</code> is the group with the largest exposure and is shown first.</p>
 <div class="sourceCode" id="cb11"><pre class="r"><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">x</span>)</pre></div>
 <p><img src="reference/figures/example3a1-1.png"><!-- --></p>
@@ -197,23 +185,23 @@
   <span class="fu"><a href="reference/add_prediction.html">add_prediction</a></span>(<span class="no">model_freq1</span>, <span class="no">model_freq2</span>)
 
 <span class="fu"><a href="https://dplyr.tidyverse.org/reference/reexports.html">glimpse</a></span>(<span class="no">dat_pred</span>)</pre></div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">## Rows: 32,731</span></a>
-<a class="sourceLine" id="cb15-2" data-line-number="2"><span class="co">## Columns: 7</span></a>
-<a class="sourceLine" id="cb15-3" data-line-number="3"><span class="co">## $ age_policyholder          &lt;int&gt; 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…</span></a>
-<a class="sourceLine" id="cb15-4" data-line-number="4"><span class="co">## $ nclaims                   &lt;int&gt; 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…</span></a>
-<a class="sourceLine" id="cb15-5" data-line-number="5"><span class="co">## $ exposure                  &lt;dbl&gt; 1.0000000, 1.0000000, 1.0000000, 1.0000000,…</span></a>
-<a class="sourceLine" id="cb15-6" data-line-number="6"><span class="co">## $ amount                    &lt;dbl&gt; 0, 0, 0, 57540, 2057, 0, 0, 6510, 0, 0, 0, …</span></a>
-<a class="sourceLine" id="cb15-7" data-line-number="7"><span class="co">## $ age_policyholder_freq_cat &lt;fct&gt; "(39,50]", "[18,25]", "(50,57]", "(39,50]",…</span></a>
-<a class="sourceLine" id="cb15-8" data-line-number="8"><span class="co">## $ pred_nclaims_model_freq1  &lt;dbl&gt; 0.13681815, 0.26595024, 0.12203763, 0.13681…</span></a>
-<a class="sourceLine" id="cb15-9" data-line-number="9"><span class="co">## $ pred_nclaims_model_freq2  &lt;dbl&gt; 0.14190382, 0.27816629, 0.12132927, 0.13923…</span></a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a><span class="co">## Rows: 32,731</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="co">## Columns: 7</span></span>
+<span id="cb15-3"><a href="#cb15-3"></a><span class="co">## $ age_policyholder          &lt;int&gt; 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…</span></span>
+<span id="cb15-4"><a href="#cb15-4"></a><span class="co">## $ nclaims                   &lt;int&gt; 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…</span></span>
+<span id="cb15-5"><a href="#cb15-5"></a><span class="co">## $ exposure                  &lt;dbl&gt; 1.0000000, 1.0000000, 1.0000000, 1.0000000,…</span></span>
+<span id="cb15-6"><a href="#cb15-6"></a><span class="co">## $ amount                    &lt;dbl&gt; 0, 0, 0, 57540, 2057, 0, 0, 6510, 0, 0, 0, …</span></span>
+<span id="cb15-7"><a href="#cb15-7"></a><span class="co">## $ age_policyholder_freq_cat &lt;fct&gt; "(39,50]", "[18,25]", "(50,57]", "(39,50]",…</span></span>
+<span id="cb15-8"><a href="#cb15-8"></a><span class="co">## $ pred_nclaims_model_freq1  &lt;dbl&gt; 0.13681815, 0.26595024, 0.12203763, 0.13681…</span></span>
+<span id="cb15-9"><a href="#cb15-9"></a><span class="co">## $ pred_nclaims_model_freq2  &lt;dbl&gt; 0.14190382, 0.27816629, 0.12132927, 0.13923…</span></span></code></pre></div>
 <p>Compute indices of model performance for GLMs. The RMSE is the square root of the average of squared differences between prediction and actual observation and indicates the absolute fit of the model to the data. It can be interpreted as the standard deviation of the unexplained variance, and is in the same units as the response variable.</p>
 <div class="sourceCode" id="cb16"><pre class="r"><span class="fu"><a href="reference/model_performance.html">model_performance</a></span>(<span class="no">model_freq1</span>, <span class="no">model_freq2</span>)</pre></div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">## # Comparison of Model Performance Indices</span></a>
-<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="co">## </span></a>
-<a class="sourceLine" id="cb17-3" data-line-number="3"><span class="co">## Model       |      AIC |      BIC | RMSE</span></a>
-<a class="sourceLine" id="cb17-4" data-line-number="4"><span class="co">## ----------------------------------------</span></a>
-<a class="sourceLine" id="cb17-5" data-line-number="5"><span class="co">## model_freq1 | 25177.27 | 25252.84 | 0.36</span></a>
-<a class="sourceLine" id="cb17-6" data-line-number="6"><span class="co">## model_freq2 | 25171.15 | 25255.11 | 0.36</span></a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1"></a><span class="co">## # Comparison of Model Performance Indices</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a><span class="co">## </span></span>
+<span id="cb17-3"><a href="#cb17-3"></a><span class="co">## Model       |      AIC |      BIC | RMSE</span></span>
+<span id="cb17-4"><a href="#cb17-4"></a><span class="co">## ----------------------------------------</span></span>
+<span id="cb17-5"><a href="#cb17-5"></a><span class="co">## model_freq1 | 25177.27 | 25252.84 | 0.36</span></span>
+<span id="cb17-6"><a href="#cb17-6"></a><span class="co">## model_freq2 | 25171.15 | 25255.11 | 0.36</span></span></code></pre></div>
 <p>To test the stability of the predictive ability of the fitted model it might be helpful to determine the variation in the computed RMSE. The variation is calculated by computing the root mean squared errors from generated bootstrap replicates.</p>
 <p>For claim severity models it might be helpful to test the variation in the RMSE in case the portfolio contains large claim sizes. The figure below shows that the variation in the RMSE of the frequency model is quite low (as expected). The dashed line shows the RMSE of the fitted (original) model, the other lines represent the 95% confidence interval.</p>
 <div class="sourceCode" id="cb18"><pre class="r"><span class="fu"><a href="reference/bootstrap_rmse.html">bootstrap_rmse</a></span>(<span class="no">model_freq1</span>, <span class="no">dat</span>, <span class="kw">n</span> <span class="kw">=</span> <span class="fl">100</span>, <span class="kw">show_progress</span> <span class="kw">=</span> <span class="fl">FALSE</span>) <span class="kw">%&gt;%</span>
@@ -221,16 +209,16 @@
 <p><img src="reference/figures/bootstraprmse-1.png"><!-- --></p>
 <p>Check Poisson GLM for overdispersion. A dispersion ratio larger than one indicates overdispersion, this occurs when the observed variance is higher than the variance of the theoretical model. If the dispersion ratio is close to one, a Poisson model fits well to the data. A <em>p</em>-value &lt; .05 indicates overdispersion. Overdispersion &gt; 2 probably means there is a larger problem with the data: check (again) for outliers.</p>
 <div class="sourceCode" id="cb19"><pre class="r"><span class="fu"><a href="reference/check_overdispersion.html">check_overdispersion</a></span>(<span class="no">model_freq1</span>)</pre></div>
-<div class="sourceCode" id="cb20"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">##        dispersion ratio =     1.180</span></a>
-<a class="sourceLine" id="cb20-2" data-line-number="2"><span class="co">##   Pearson's Chi-Squared = 38627.337</span></a>
-<a class="sourceLine" id="cb20-3" data-line-number="3"><span class="co">##                 p-value =   &lt; 0.001</span></a>
-<a class="sourceLine" id="cb20-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb20-5" data-line-number="5"><span class="co">## Overdispersion detected.</span></a></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a><span class="co">##        dispersion ratio =     1.180</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="co">##   Pearson's Chi-Squared = 38627.337</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a><span class="co">##                 p-value =   &lt; 0.001</span></span>
+<span id="cb20-4"><a href="#cb20-4"></a></span>
+<span id="cb20-5"><a href="#cb20-5"></a><span class="co">## Overdispersion detected.</span></span></code></pre></div>
 <p>Misspecifications in GLMs cannot reliably be diagnosed with standard residual plots, and GLMs are thus often not as thoroughly checked as LMs. One reason why GLMs residuals are harder to interpret is that the expected distribution of the data changes with the fitted values. As a result, standard residual plots, when interpreted in the same way as for linear models, seem to show all kind of problems, such as non-normality, heteroscedasticity, even if the model is correctly specified. <code><a href="reference/check_residuals.html">check_residuals()</a></code> aims at solving these problems by creating readily interpretable residuals for GLMs that are standardized to values between 0 and 1, and that can be interpreted as intuitively as residuals for the linear model. This is achieved by a simulation-based approach, similar to the Bayesian p-value or the parametric bootstrap, that transforms the residuals to a standardized scale. This explanation is adopted from the <a href="https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html">vignette for DHARMa</a>.</p>
 <p>Detect deviations from the expected distribution, and produce a uniform quantile-quantile plot. The simulated residuals in the QQ plot below show no clear deviation from a Poisson distribution. Note that formal tests almost always yield significant results for the distribution of residuals and visual inspections (e.g. Q-Q plots) are preferable.</p>
 <div class="sourceCode" id="cb21"><pre class="r"><span class="fu"><a href="reference/check_residuals.html">check_residuals</a></span>(<span class="no">model_freq1</span>, <span class="kw">n_simulations</span> <span class="kw">=</span> <span class="fl">50</span>) <span class="kw">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>)</pre></div>
-<div class="sourceCode" id="cb22"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="co">## Warning: deviations from the expected distribution detected (p = 0.000).</span></a></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a><span class="co">## Warning: deviations from the expected distribution detected (p = 0.000).</span></span></code></pre></div>
 <p><img src="reference/figures/normalitysim-1.png"><!-- --></p>
 </div>
 <div id="example-2" class="section level2">
@@ -246,16 +234,16 @@
            <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>,
            <span class="kw">premium</span> <span class="kw">=</span> <span class="no">premium</span>,
            <span class="kw">severity</span> <span class="kw">=</span> <span class="no">amount</span>) <span class="co"># loss</span></pre></div>
-<div class="sourceCode" id="cb24"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="co">##   area  amount nclaims   exposure premium  frequency average_severity</span></a>
-<a class="sourceLine" id="cb24-2" data-line-number="2"><span class="co">## 1    2 4063270      98  818.53973   51896 0.11972540         41461.94</span></a>
-<a class="sourceLine" id="cb24-3" data-line-number="3"><span class="co">## 2    3 7945311     113  764.99178   49337 0.14771401         70312.49</span></a>
-<a class="sourceLine" id="cb24-4" data-line-number="4"><span class="co">## 3    1 6896187     146 1065.74795   65753 0.13699299         47234.16</span></a>
-<a class="sourceLine" id="cb24-5" data-line-number="5"><span class="co">## 4    0    6922       1   13.30685     902 0.07514927          6922.00</span></a>
-<a class="sourceLine" id="cb24-6" data-line-number="6"><span class="co">##   risk_premium loss_ratio average_premium</span></a>
-<a class="sourceLine" id="cb24-7" data-line-number="7"><span class="co">## 1    4964.0474  78.296400        63.40071</span></a>
-<a class="sourceLine" id="cb24-8" data-line-number="8"><span class="co">## 2   10386.1390 161.041632        64.49350</span></a>
-<a class="sourceLine" id="cb24-9" data-line-number="9"><span class="co">## 3    6470.7486 104.880188        61.69658</span></a>
-<a class="sourceLine" id="cb24-10" data-line-number="10"><span class="co">## 4     520.1832   7.674058        67.78464</span></a></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a><span class="co">##   area  amount nclaims   exposure premium  frequency average_severity</span></span>
+<span id="cb24-2"><a href="#cb24-2"></a><span class="co">## 1    2 4063270      98  818.53973   51896 0.11972540         41461.94</span></span>
+<span id="cb24-3"><a href="#cb24-3"></a><span class="co">## 2    3 7945311     113  764.99178   49337 0.14771401         70312.49</span></span>
+<span id="cb24-4"><a href="#cb24-4"></a><span class="co">## 3    1 6896187     146 1065.74795   65753 0.13699299         47234.16</span></span>
+<span id="cb24-5"><a href="#cb24-5"></a><span class="co">## 4    0    6922       1   13.30685     902 0.07514927          6922.00</span></span>
+<span id="cb24-6"><a href="#cb24-6"></a><span class="co">##   risk_premium loss_ratio average_premium</span></span>
+<span id="cb24-7"><a href="#cb24-7"></a><span class="co">## 1    4964.0474  78.296400        63.40071</span></span>
+<span id="cb24-8"><a href="#cb24-8"></a><span class="co">## 2   10386.1390 161.041632        64.49350</span></span>
+<span id="cb24-9"><a href="#cb24-9"></a><span class="co">## 3    6470.7486 104.880188        61.69658</span></span>
+<span id="cb24-10"><a href="#cb24-10"></a><span class="co">## 4     520.1832   7.674058        67.78464</span></span></code></pre></div>
 <p>The following indicators are calculated:</p>
 <ol>
 <li>frequency (i.e. frequency = number of claims / exposure)</li>
@@ -267,11 +255,11 @@
 <p>The term risk premium is used here as an equivalent of pure premium and burning cost.</p>
 <p><code><a href="reference/univariate.html">univariate()</a></code> ignores missing input arguments, for instance only the claim frequency is calculated when <code>premium</code> and <code>severity</code> are unknown:</p>
 <div class="sourceCode" id="cb25"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>)</pre></div>
-<div class="sourceCode" id="cb26"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">##   area nclaims   exposure  frequency</span></a>
-<a class="sourceLine" id="cb26-2" data-line-number="2"><span class="co">## 1    2      98  818.53973 0.11972540</span></a>
-<a class="sourceLine" id="cb26-3" data-line-number="3"><span class="co">## 2    3     113  764.99178 0.14771401</span></a>
-<a class="sourceLine" id="cb26-4" data-line-number="4"><span class="co">## 3    1     146 1065.74795 0.13699299</span></a>
-<a class="sourceLine" id="cb26-5" data-line-number="5"><span class="co">## 4    0       1   13.30685 0.07514927</span></a></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a><span class="co">##   area nclaims   exposure  frequency</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a><span class="co">## 1    2      98  818.53973 0.11972540</span></span>
+<span id="cb26-3"><a href="#cb26-3"></a><span class="co">## 2    3     113  764.99178 0.14771401</span></span>
+<span id="cb26-4"><a href="#cb26-4"></a><span class="co">## 3    1     146 1065.74795 0.13699299</span></span>
+<span id="cb26-5"><a href="#cb26-5"></a><span class="co">## 4    0       1   13.30685 0.07514927</span></span></code></pre></div>
 <p>However, the above table is small and easy to understand, the same information might be presented more effectively with a graph, as shown below.</p>
 <div class="sourceCode" id="cb27"><pre class="r"><span class="fu"><a href="reference/univariate.html">univariate</a></span>(<span class="no">MTPL2</span>, <span class="kw">x</span> <span class="kw">=</span> <span class="no">area</span>, <span class="kw">nclaims</span> <span class="kw">=</span> <span class="no">nclaims</span>, <span class="kw">exposure</span> <span class="kw">=</span> <span class="no">exposure</span>) <span class="kw">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span>(<span class="no">.</span>)</pre></div>

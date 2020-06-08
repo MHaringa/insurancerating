@@ -79,7 +79,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.1.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.2</span>
       </span>
     </div>
 
@@ -93,18 +93,6 @@
 </li>
 <li>
   <a href="../reference/index.html">Reference</a>
-</li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-    Articles
-     
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu">
-    <li>
-      <a href="../articles/vignette.html">Introduction to `insurancerating`</a>
-    </li>
-  </ul>
 </li>
 <li>
   <a href="../news/index.html">Changelog</a>
@@ -134,27 +122,37 @@
       <small>Source: <a href='https://github.com/mharinga/insurancerating/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
-    <div id="insurancerating-0-6-2" class="section level1">
+    <div id="insurancerating-062" class="section level1">
 <h1 class="page-header" data-toc-text="0.6.2">
-<a href="#insurancerating-0-6-2" class="anchor"></a>insurancerating 0.6.2<small> Unreleased </small>
+<a href="#insurancerating-062" class="anchor"></a>insurancerating 0.6.2<small> Unreleased </small>
 </h1>
+<ul>
+<li>
+<code>check_normality()</code> is now depreciated; use <code><a href="../reference/check_residuals.html">check_residuals()</a></code> instead to detect overall deviations from the expected distribution</li>
+<li>
+<code><a href="../reference/rating_factors.html">rating_factors()</a></code> now shows significance stars for p-values</li>
+<li>
+<code><a href="../reference/period_to_months.html">period_to_months()</a></code> arithmetic operations with dates are rewritten; much faster</li>
+<li>
+<code><a href="../reference/univariate.html">univariate()</a></code> now has argument <code>by</code> to determine summary statistics for different subgroups</li>
+</ul>
 </div>
-    <div id="insurancerating-0-6-1" class="section level1">
+    <div id="insurancerating-061" class="section level1">
 <h1 class="page-header" data-toc-text="0.6.1">
-<a href="#insurancerating-0-6-1" class="anchor"></a>insurancerating 0.6.1<small> 2020-04-29 </small>
+<a href="#insurancerating-061" class="anchor"></a>insurancerating 0.6.1<small> 2020-04-29 </small>
 </h1>
 <ul>
 <li>
 <code>univariate_all()</code> and <code>autoplot.univ_all()</code> are now depreciated; use <code><a href="../reference/univariate.html">univariate()</a></code> and <code><a href="../reference/autoplot.univariate.html">autoplot.univariate()</a></code> instead</li>
 <li>
-<code><a href="../reference/check_overdispersion.html">check_overdispersion()</a></code>, <code><a href="../reference/check_normality.html">check_normality()</a></code>, <code><a href="../reference/model_performance.html">model_performance()</a></code>, <code><a href="../reference/bootstrap_rmse.html">bootstrap_rmse()</a></code>, and <code><a href="../reference/add_prediction.html">add_prediction()</a></code> are added to test model quality and return performance metrics</li>
+<code><a href="../reference/check_overdispersion.html">check_overdispersion()</a></code>, <code>check_normality()</code>, <code><a href="../reference/model_performance.html">model_performance()</a></code>, <code><a href="../reference/bootstrap_rmse.html">bootstrap_rmse()</a></code>, and <code><a href="../reference/add_prediction.html">add_prediction()</a></code> are added to test model quality and return performance metrics</li>
 <li>
 <code><a href="../reference/reduce.html">reduce()</a></code> is added to reduce an insurance portfolio by merging redundant date ranges</li>
 </ul>
 </div>
-    <div id="insurancerating-0-6-0" class="section level1">
+    <div id="insurancerating-060" class="section level1">
 <h1 class="page-header" data-toc-text="0.6.0">
-<a href="#insurancerating-0-6-0" class="anchor"></a>insurancerating 0.6.0<small> 2020-04-10 </small>
+<a href="#insurancerating-060" class="anchor"></a>insurancerating 0.6.0<small> 2020-04-10 </small>
 </h1>
 <ul>
 <li>
@@ -171,18 +169,18 @@
 </li>
 </ul>
 </div>
-    <div id="insurancerating-0-5-2" class="section level1">
+    <div id="insurancerating-052" class="section level1">
 <h1 class="page-header" data-toc-text="0.5.2">
-<a href="#insurancerating-0-5-2" class="anchor"></a>insurancerating 0.5.2<small> 2020-03-30 </small>
+<a href="#insurancerating-052" class="anchor"></a>insurancerating 0.5.2<small> 2020-03-30 </small>
 </h1>
 <ul>
 <li>
 <code>autoplot.univ_all()</code> now gives correct labels on the x-axis when <code>ncol</code> &gt; 1.</li>
 </ul>
 </div>
-    <div id="insurancerating-0-5-1" class="section level1">
+    <div id="insurancerating-051" class="section level1">
 <h1 class="page-header" data-toc-text="0.5.1">
-<a href="#insurancerating-0-5-1" class="anchor"></a>insurancerating 0.5.1<small> 2020-03-29 </small>
+<a href="#insurancerating-051" class="anchor"></a>insurancerating 0.5.1<small> 2020-03-29 </small>
 </h1>
 <ul>
 <li>A package website is added using pkgdown.</li>
@@ -194,9 +192,9 @@
 <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot()</a></code> creates the corresponding plots to the summary statistics calculated by <code>univariate_*</code>.</li>
 </ul>
 </div>
-    <div id="insurancerating-0-5-0" class="section level1">
+    <div id="insurancerating-050" class="section level1">
 <h1 class="page-header" data-toc-text="0.5.0">
-<a href="#insurancerating-0-5-0" class="anchor"></a>insurancerating 0.5.0<small> 2020-03-12 </small>
+<a href="#insurancerating-050" class="anchor"></a>insurancerating 0.5.0<small> 2020-03-12 </small>
 </h1>
 <ul>
 <li>
@@ -204,18 +202,18 @@
 <li>A vignette is added on how to use the package.</li>
 </ul>
 </div>
-    <div id="insurancerating-0-4-3" class="section level1">
+    <div id="insurancerating-043" class="section level1">
 <h1 class="page-header" data-toc-text="0.4.3">
-<a href="#insurancerating-0-4-3" class="anchor"></a>insurancerating 0.4.3<small> 2019-11-01 </small>
+<a href="#insurancerating-043" class="anchor"></a>insurancerating 0.4.3<small> 2019-11-01 </small>
 </h1>
 <ul>
 <li>
 <code><a href="../reference/period_to_months.html">period_to_months()</a></code> is added to split rows with a time period longer than one month to multiple rows with a time period of exactly one month each.</li>
 </ul>
 </div>
-    <div id="insurancerating-0-4-2" class="section level1">
+    <div id="insurancerating-042" class="section level1">
 <h1 class="page-header" data-toc-text="0.4.2">
-<a href="#insurancerating-0-4-2" class="anchor"></a>insurancerating 0.4.2<small> 2019-05-31 </small>
+<a href="#insurancerating-042" class="anchor"></a>insurancerating 0.4.2<small> 2019-05-31 </small>
 </h1>
 <ul>
 <li>In <code><a href="../reference/construct_tariff_classes.html">construct_tariff_classes()</a></code>, <code>model</code> now also accepts ‘severity’ as specification.</li>

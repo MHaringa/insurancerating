@@ -81,7 +81,7 @@ Values in numeric columns (e.g. exposure or premium) are divided over the months
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.1.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.2</span>
       </span>
     </div>
 
@@ -95,18 +95,6 @@ Values in numeric columns (e.g. exposure or premium) are divided over the months
 </li>
 <li>
   <a href="../reference/index.html">Reference</a>
-</li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-    Articles
-     
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu">
-    <li>
-      <a href="../articles/vignette.html">Introduction to `insurancerating`</a>
-    </li>
-  </ul>
 </li>
 <li>
   <a href="../news/index.html">Changelog</a>
@@ -177,9 +165,7 @@ has the same number of days (i.e. 30).</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='no'>lubridate</span>)</div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Attaching package: ‘lubridate’</span></div><div class='output co'>#&gt; <span class='message'>The following objects are masked from ‘package:dplyr’:</span>
-#&gt; <span class='message'></span>
-#&gt; <span class='message'>    intersect, setdiff, union</span></div><div class='output co'>#&gt; <span class='message'>The following objects are masked from ‘package:base’:</span>
+#&gt; <span class='message'>Attaching package: ‘lubridate’</span></div><div class='output co'>#&gt; <span class='message'>The following objects are masked from ‘package:base’:</span>
 #&gt; <span class='message'></span>
 #&gt; <span class='message'>    date, intersect, setdiff, union</span></div><div class='input'><span class='no'>portfolio</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(
 <span class='kw'>begin1</span> <span class='kw'>=</span> <span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"2014-01-01"</span>, <span class='st'>"2014-01-01"</span>)),
@@ -187,16 +173,15 @@ has the same number of days (i.e. 30).</p>
 <span class='kw'>termination</span> <span class='kw'>=</span> <span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"2014-03-14"</span>, <span class='st'>"2014-05-10"</span>)),
 <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0.2025</span>, <span class='fl'>0.3583</span>),
 <span class='kw'>premium</span> <span class='kw'>=</span>  <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>125</span>, <span class='fl'>150</span>))
-<span class='fu'>period_to_months</span>(<span class='no'>portfolio</span>, <span class='no'>begin1</span>, <span class='no'>end</span>, <span class='no'>premium</span>, <span class='no'>exposure</span>)</div><div class='output co'>#&gt;   id     begin1        end termination   exposure  premium
-#&gt; 1  1 2014-01-01 2014-01-31  2014-03-14 0.08209459 50.67568
-#&gt; 2  1 2014-02-01 2014-02-28  2014-03-14 0.08209459 50.67568
-#&gt; 3  1 2014-03-01 2014-03-31  2014-03-14 0.03831081 23.64865
-#&gt; 4  2 2014-01-01 2014-01-31  2014-05-10 0.08268462 34.61538
-#&gt; 5  2 2014-02-01 2014-02-28  2014-05-10 0.08268462 34.61538
-#&gt; 6  2 2014-03-01 2014-03-31  2014-05-10 0.08268462 34.61538
-#&gt; 7  2 2014-04-01 2014-04-30  2014-05-10 0.08268462 34.61538
-#&gt; 8  2 2014-05-01 2014-05-31  2014-05-10 0.02756154 11.53846</div><div class='input'>
-
+<span class='fu'>period_to_months</span>(<span class='no'>portfolio</span>, <span class='no'>begin1</span>, <span class='no'>end</span>, <span class='no'>premium</span>, <span class='no'>exposure</span>)</div><div class='output co'>#&gt;    id     begin1        end termination   exposure  premium
+#&gt; 1:  1 2014-01-01 2014-01-31  2014-03-14 0.08209459 50.67568
+#&gt; 2:  1 2014-02-01 2014-02-28  2014-03-14 0.08209459 50.67568
+#&gt; 3:  1 2014-03-01 2014-03-31  2014-03-14 0.03831081 23.64865
+#&gt; 4:  2 2014-01-01 2014-01-31  2014-05-10 0.08268462 34.61538
+#&gt; 5:  2 2014-02-01 2014-02-28  2014-05-10 0.08268462 34.61538
+#&gt; 6:  2 2014-03-01 2014-03-31  2014-05-10 0.08268462 34.61538
+#&gt; 7:  2 2014-04-01 2014-04-30  2014-05-10 0.08268462 34.61538
+#&gt; 8:  2 2014-05-01 2014-05-31  2014-05-10 0.02756154 11.53846</div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
