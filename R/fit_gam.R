@@ -202,8 +202,8 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL, pure_premium = NU
 
   out <- data.frame(x = gam0[[1]]$x,
                     predicted = exp(gam0[[1]]$fit + mean(predict(gam_x))),
-                    lwr_95 = exp(gam0[[1]]$fit - 1.96 * gam0[[1]]$se + mean(predict(gam_x))),
-                    upr_95 = exp(gam0[[1]]$fit + 1.96 * gam0[[1]]$se + mean(predict(gam_x))))
+                    lwr_95 = exp(gam0[[1]]$fit - qnorm(.975) * gam0[[1]]$se + mean(predict(gam_x))),
+                    upr_95 = exp(gam0[[1]]$fit + qnorm(.975) * gam0[[1]]$se + mean(predict(gam_x))))
 
   name <- gam0[[1]]$xlab
   counting <- sort(gam0[[1]]$raw)

@@ -15,6 +15,8 @@
 #' @importFrom lubridate %m+%
 #' @importFrom lubridate is.Date
 #'
+#' @author Martin Haringa
+#'
 #' @details This function is adopted from \code{IRanges::reduce()}.
 #'
 #' @return An object of class \code{"reduce"}.

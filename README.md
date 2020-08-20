@@ -85,10 +85,14 @@ autoplot(clusters_freq, show_observations = TRUE)
 
 ![](man/figures/figfreq-1.png)<!-- -->
 
-The figure shows that younger policyholders have a higher risk profile.
-The fitted GAM is lower than might be expected from the observed claim
-frequency for policyholders of age 19. This is because there are very
-few young policyholders of age 19 present in the portfolio.
+In this example the term *exposure* is a measure of what is being
+insured. Here an insured vehicle is an exposure. If the vehicle is
+insured as of July 1 for a certain year, then during that year, this
+would represent an exposure of 0.5 to the insurance company. The figure
+shows that younger policyholders have a higher risk profile. The fitted
+GAM is lower than might be expected from the observed claim frequency
+for policyholders of age 19. This is because there are very few young
+policyholders of age 19 present in the portfolio.
 
 The GAM for the claim severity :
 
@@ -125,8 +129,7 @@ glimpse(dat)
     ## $ age_policyholder_freq_cat <fct> "(39,50]", "[18,25]", "(50,57]", "(39,50]",…
 
 The last part is to fit a *generalized linear model*. `rating_factors()`
-prints the output including the reference
-group.
+prints the output including the reference group.
 
 ``` r
 model_freq1 <- glm(nclaims ~ age_policyholder_freq_cat, offset = log(exposure), 
@@ -139,8 +142,7 @@ x <- rating_factors(model_freq1, model_freq2)
 x
 ```
 
-    ## Significance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1
-    ##                  risk_factor            level est_model_freq1 est_model_freq2
+    ## [34mSignificance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1[39m                 risk_factor            level est_model_freq1 est_model_freq2
     ## 1                (Intercept)      (Intercept)    0.136818 ***    0.321029 ***
     ## 2  age_policyholder_freq_cat          (39,50]    1.000000        1.000000    
     ## 3  age_policyholder_freq_cat          [18,25]    1.943823 ***    1.290960    
@@ -176,8 +178,7 @@ rating_factors(model_freq1, model_freq2, model_data = dat) %>%
 ![](man/figures/example3b-1.png)<!-- -->
 
 The following graph includes the exposure as a bar graph and shows some
-more
-options:
+more options:
 
 ``` r
 rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) %>%
@@ -281,13 +282,19 @@ tests almost always yield significant results for the distribution of
 residuals and visual inspections (e.g. Q-Q plots) are preferable.
 
 ``` r
-check_residuals(model_freq1, n_simulations = 50) %>%
+check_residuals(model_freq1, n_simulations = 1000) %>%
   autoplot(.)
 ```
 
-    ## Warning: deviations from the expected distribution detected (p = 0.000).
+    ## OK: residuals appear as from the expected distribution (p = 0.055).
 
 ![](man/figures/normalitysim-1.png)<!-- -->
+
+It might happen that in the fitted model for a data point all
+simulations have the same value (e.g. zero), this returns the error
+message *Error in approxfun: need at least two non-NA values to
+interpolate*. If that is the case, it could help to increase the number
+of simulations (e.g. \(n = 1000\)).
 
 ## Example 2
 
@@ -333,8 +340,11 @@ The following indicators are calculated:
 4.  loss\_ratio (i.e. loss ratio = severity / premium)
 5.  average\_premium (i.e. average premium = premium / exposure)
 
-The term risk premium is used here as an equivalent of pure premium and
-burning cost.
+Here the term *exposure* is a measure of what is being insured. For
+example, an insured vehicle is an exposure. If the vehicle is insured as
+of July 1 for a certain year, then during that year, this would
+represent an exposure of 0.5 to the insurance company. The term risk
+premium is used here as an equivalent of pure premium and burning cost.
 
 `univariate()` ignores missing input arguments, for instance only the
 claim frequency is calculated when `premium` and `severity` are unknown:
@@ -382,6 +392,18 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) %>%
 
 ![](man/figures/example7-1.png)<!-- -->
 
+To check whether claim frequency is consistent over the years:
+
+``` r
+MTPL2 %>%
+  mutate(year = sample(2016:2019, nrow(.), replace = TRUE)) %>%
+  univariate(., x = area, nclaims = nclaims, 
+           exposure = exposure, by = year) %>%
+  autoplot(., show_plots = 1)
+```
+
+![](man/figures/unnamed-chunk-3-1.png)<!-- -->
+
 To remove the bars from the plot with the line graph, add `background =
 FALSE`:
 
@@ -428,7 +450,7 @@ Or create a bar graph for the number of claims:
 
 ``` r
 univariate(MTPL2, x = area, nclaims = nclaims) %>%
-  autoplot(., coord_flip = TRUE, sort = TRUE)
+  autoplot(., show_plots = 8, coord_flip = TRUE, sort = TRUE)
 ```
 
 ![](man/figures/example12-1.png)<!-- -->

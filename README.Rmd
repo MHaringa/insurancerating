@@ -78,7 +78,7 @@ clusters_sev <- construct_tariff_classes(age_policyholder_severity)
 autoplot(clusters_freq, show_observations = TRUE)
 ```
 
-The figure shows that younger policyholders have a higher risk profile. The fitted GAM is lower than might be expected from the observed claim frequency for policyholders of age 19. This is because there are very few young policyholders of age 19 present in the portfolio. 
+In this example the term *exposure* is a measure of what is being insured. Here an insured vehicle is an exposure. If the vehicle is insured as of July 1 for a certain year, then during that year, this would represent an exposure of 0.5 to the insurance company. The figure shows that younger policyholders have a higher risk profile. The fitted GAM is lower than might be expected from the observed claim frequency for policyholders of age 19. This is because there are very few young policyholders of age 19 present in the portfolio. 
 
 The GAM for the claim severity : 
 
@@ -190,11 +190,13 @@ Detect deviations from the expected distribution, and produce a uniform quantile
 
 ```{r normalitysim, message = FALSE, eval = TRUE}
 
-check_residuals(model_freq1, n_simulations = 50) %>%
+check_residuals(model_freq1, n_simulations = 1000) %>%
   autoplot(.)
 
 ```
 
+
+It might happen that in the fitted model for a data point all simulations have the same value (e.g. zero), this returns the error message *Error in approxfun: need at least two non-NA values to interpolate*. If that is the case, it could help to increase the number of simulations (e.g. $n = 1000$). 
 
 ## Example 2
 This is a basic example which shows how to easily perform an univariate analysis on a MTPL portfolio using `insurancerating`.
@@ -223,7 +225,7 @@ The following indicators are calculated:
 4. loss_ratio (i.e. loss ratio = severity / premium)
 5. average_premium (i.e. average premium = premium / exposure)
 
-The term risk premium is used here as an equivalent of pure premium and burning cost.
+Here the term *exposure* is a measure of what is being insured. For example, an insured vehicle is an exposure. If the vehicle is insured as of July 1 for a certain year, then during that year, this would represent an exposure of 0.5 to the insurance company. The term risk premium is used here as an equivalent of pure premium and burning cost.
 
 `univariate()` ignores missing input arguments, for instance only the claim frequency is calculated when `premium` and `severity` are unknown:
 
@@ -260,6 +262,19 @@ For example, to show the exposure and claim frequency plots:
 
 univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) %>%
   autoplot(., show_plots = c(6,1))
+
+```
+
+
+To check whether claim frequency is consistent over the years:
+
+```{r}
+
+MTPL2 %>%
+  mutate(year = sample(2016:2019, nrow(.), replace = TRUE)) %>%
+  univariate(., x = area, nclaims = nclaims, 
+           exposure = exposure, by = year) %>%
+  autoplot(., show_plots = 1)
 
 ```
 
@@ -305,9 +320,13 @@ Or create a bar graph for the number of claims:
 ```{r example12, eval = TRUE, message = FALSE, warning = FALSE}
 
 univariate(MTPL2, x = area, nclaims = nclaims) %>%
-  autoplot(., coord_flip = TRUE, sort = TRUE)
+  autoplot(., show_plots = 8, coord_flip = TRUE, sort = TRUE)
 
 ```
+
+
+
+
 
 
 

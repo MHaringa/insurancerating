@@ -58,3 +58,6 @@ reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
     productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
 
 }
+\author{
+Martin Haringa
+}
