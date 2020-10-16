@@ -31,6 +31,7 @@
 #' @importFrom stats aggregate
 #' @importFrom stats predict
 #' @importFrom stats setNames
+#' @importFrom stats qnorm
 #'
 #' @references Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a priori and a posteriori risk classification in insurance.
 #' Advances in Statistical Analysis, 96(2):187–224. doi:10.1007/s10182-011-0152-7.
@@ -164,7 +165,8 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL, pure_premium = NU
                          pure_premium = data[[pure_premium]])
 
         df <- aggregate(list(exposure = df$exposure,
-                             pure_premium = df$pure_premium),
+                             pure_premium = df$pure_premium,
+                             weighted_premium = df$exposure * df$pure_premium),
                         by = list(x = df$x),
                         FUN = sum,
                         na.rm = TRUE,
@@ -172,7 +174,8 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL, pure_premium = NU
 
         df <- subset(df, pure_premium > 0 & exposure > 0)
 
-        df$avg_premium <- df$pure_premium / df$exposure
+        # Solve issue 2: df$avg_premium <- df$pure_premium / df$exposure
+        df$avg_premium <- df$weighted_premium / df$exposure
 
         df
       },

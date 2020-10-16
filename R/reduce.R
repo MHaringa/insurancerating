@@ -111,22 +111,25 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwid
   dt_reduce[, c(.begin) := get(.begin) + min.gapwidth]
   dt_reduce <- dt_reduce[, c(.end) := get(.end) - min.gapwidth]
 
-  return(structure(list(df = as.data.frame(dt_reduce),
-                        begin = .begin,
-                        end = .end,
-                        cols = cols0),
-                   class = "reduce"))
+  attr(dt_reduce, "begin") <- .begin
+  attr(dt_reduce, "end") <- .end
+  attr(dt_reduce, "cols") <- cols0
+
+  class(dt_reduce) <- append("reduce", class(dt_reduce))
+  return(dt_reduce)
 }
+
 
 #' @export
 print.reduce <- function(x, ...) {
-  print(x$df)
+  class(x) <- c("data.frame", "data.table")
+  print(x)
 }
 
 #' @export
 as.data.frame.reduce <- function(x, ...) {
-  df <- x$df
-  return(as.data.frame(df))
+  class(x) <- c("data.frame", "data.table")
+  return(as.data.frame(x))
 }
 
 #' Automatically create a summary for objects obtained from reduce()
@@ -172,10 +175,10 @@ summary.reduce <- function(object, period = "days", ...){
     stop("summary.reduce requires a reduce object, use object = object")
   }
 
-  df <- object$df
-  begin <- object$begin
-  end <- object$end
-  cols <- object$cols
+  df <- object
+  begin <- attr(object, "begin")
+  end <- attr(object, "end")
+  cols <- attr(object, "cols")
 
   by_begin <- begin
   by_end <- end
@@ -243,9 +246,5 @@ summary.reduce <- function(object, period = "days", ...){
 
   return(df)
 }
-
-
-
-
 
 
