@@ -130,7 +130,7 @@ Values in numeric columns (e.g. exposure or premium) are divided over the months
 Values in numeric columns (e.g. exposure or premium) are divided over the months proportionately.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>period_to_months</span>(<span class='no'>df</span>, <span class='no'>begin</span>, <span class='no'>end</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>period_to_months</span><span class='op'>(</span><span class='va'>df</span>, <span class='va'>begin</span>, <span class='va'>end</span>, <span class='va'>...</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -162,18 +162,23 @@ Values in numeric columns (e.g. exposure or premium) are divided over the months
 This is for example problematic in case exposures per month are desired.</p>
 <p>Since insurance premiums are constant over the months, and do not depend on the number of days per month, the function assumes that each month
 has the same number of days (i.e. 30).</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Martin Haringa</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='no'>lubridate</span>)</div><div class='output co'>#&gt; <span class='message'></span>
+    <pre class="examples"><div class='input'><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='http://lubridate.tidyverse.org'>lubridate</a></span><span class='op'>)</span>
+</div><div class='output co'>#&gt; <span class='message'></span>
 #&gt; <span class='message'>Attaching package: ‘lubridate’</span></div><div class='output co'>#&gt; <span class='message'>The following objects are masked from ‘package:base’:</span>
 #&gt; <span class='message'></span>
-#&gt; <span class='message'>    date, intersect, setdiff, union</span></div><div class='input'><span class='no'>portfolio</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(
-<span class='kw'>begin1</span> <span class='kw'>=</span> <span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"2014-01-01"</span>, <span class='st'>"2014-01-01"</span>)),
-<span class='kw'>end</span> <span class='kw'>=</span> <span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"2014-03-14"</span>, <span class='st'>"2014-05-10"</span>)),
-<span class='kw'>termination</span> <span class='kw'>=</span> <span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"2014-03-14"</span>, <span class='st'>"2014-05-10"</span>)),
-<span class='kw'>exposure</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0.2025</span>, <span class='fl'>0.3583</span>),
-<span class='kw'>premium</span> <span class='kw'>=</span>  <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>125</span>, <span class='fl'>150</span>))
-<span class='fu'>period_to_months</span>(<span class='no'>portfolio</span>, <span class='no'>begin1</span>, <span class='no'>end</span>, <span class='no'>premium</span>, <span class='no'>exposure</span>)</div><div class='output co'>#&gt;    id     begin1        end termination   exposure  premium
+#&gt; <span class='message'>    date, intersect, setdiff, union</span></div><div class='input'><span class='va'>portfolio</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+begin1 <span class='op'>=</span> <span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"2014-01-01"</span>, <span class='st'>"2014-01-01"</span><span class='op'>)</span><span class='op'>)</span>,
+end <span class='op'>=</span> <span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"2014-03-14"</span>, <span class='st'>"2014-05-10"</span><span class='op'>)</span><span class='op'>)</span>,
+termination <span class='op'>=</span> <span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"2014-03-14"</span>, <span class='st'>"2014-05-10"</span><span class='op'>)</span><span class='op'>)</span>,
+exposure <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.2025</span>, <span class='fl'>0.3583</span><span class='op'>)</span>,
+premium <span class='op'>=</span>  <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>125</span>, <span class='fl'>150</span><span class='op'>)</span><span class='op'>)</span>
+<span class='fu'>period_to_months</span><span class='op'>(</span><span class='va'>portfolio</span>, <span class='va'>begin1</span>, <span class='va'>end</span>, <span class='va'>premium</span>, <span class='va'>exposure</span><span class='op'>)</span>
+</div><div class='output co'>#&gt;    id     begin1        end termination   exposure  premium
 #&gt; 1:  1 2014-01-01 2014-01-31  2014-03-14 0.08209459 50.67568
 #&gt; 2:  1 2014-02-01 2014-02-28  2014-03-14 0.08209459 50.67568
 #&gt; 3:  1 2014-03-01 2014-03-31  2014-03-14 0.03831081 23.64865
@@ -198,7 +203,7 @@ has the same number of days (i.e. 30).</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

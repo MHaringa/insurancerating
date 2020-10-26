@@ -128,14 +128,14 @@
     <p>Generate <code>n</code> bootstrap replicates to compute <code>n</code> root mean squared errors.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>bootstrap_rmse</span>(
-  <span class='no'>model</span>,
-  <span class='no'>data</span>,
-  <span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>50</span>,
-  <span class='kw'>frac</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>show_progress</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>rmse_model</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
-)</pre>
+    <pre class="usage"><span class='fu'>bootstrap_rmse</span><span class='op'>(</span>
+  <span class='va'>model</span>,
+  <span class='va'>data</span>,
+  n <span class='op'>=</span> <span class='fl'>50</span>,
+  frac <span class='op'>=</span> <span class='fl'>1</span>,
+  show_progress <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  rmse_model <span class='op'>=</span> <span class='cn'>NULL</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -178,22 +178,27 @@
 The variation is calculated by computing the root mean squared errors from <code>n</code> generated bootstrap replicates. More precisely,
 for each iteration a sample with replacement is taken from the data set and the model is refitted using this sample. Then, the root
 mean squared error is calculated.</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Martin Haringa</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='no'>mod1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>age_policyholder</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>MTPL</span>,
-    <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>())
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='va'>mod1</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>nclaims</span> <span class='op'>~</span> <span class='va'>age_policyholder</span>, data <span class='op'>=</span> <span class='va'>MTPL</span>,
+    offset <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span><span class='op'>(</span><span class='va'>exposure</span><span class='op'>)</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span>
 
 <span class='co'># Use all records in MTPL</span>
-<span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='fu'>bootstrap_rmse</span>(<span class='no'>mod1</span>, <span class='no'>MTPL</span>, <span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>80</span>, <span class='kw'>show_progress</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>x</span>)
-<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>x</span>)
+<span class='va'>x</span> <span class='op'>&lt;-</span> <span class='fu'>bootstrap_rmse</span><span class='op'>(</span><span class='va'>mod1</span>, <span class='va'>MTPL</span>, n <span class='op'>=</span> <span class='fl'>80</span>, show_progress <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span>
+<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span>
 
 <span class='co'># Use 80% of records to test whether predictive ability depends on which 80% is used</span>
 <span class='co'># This might for example be useful in case portfolio contains large claim sizes</span>
-<span class='no'>x_frac</span> <span class='kw'>&lt;-</span> <span class='fu'>bootstrap_rmse</span>(<span class='no'>mod1</span>, <span class='no'>MTPL</span>, <span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>50</span>, <span class='kw'>frac</span> <span class='kw'>=</span> <span class='fl'>.8</span>, <span class='kw'>show_progress</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
-<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span>(<span class='no'>x_frac</span>) <span class='co'># Variation is quite small for Poisson GLM</span>
-}</div></pre>
+<span class='va'>x_frac</span> <span class='op'>&lt;-</span> <span class='fu'>bootstrap_rmse</span><span class='op'>(</span><span class='va'>mod1</span>, <span class='va'>MTPL</span>, n <span class='op'>=</span> <span class='fl'>50</span>, frac <span class='op'>=</span> <span class='fl'>.8</span>, show_progress <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
+<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span><span class='op'>(</span><span class='va'>x_frac</span><span class='op'>)</span> <span class='co'># Variation is quite small for Poisson GLM</span>
+<span class='op'>}</span>
+
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -209,7 +214,7 @@ mean squared error is calculated.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

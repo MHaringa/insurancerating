@@ -20,8 +20,8 @@
 #' \dontrun{
 #' library(dplyr)
 #' df <- chickwts %>%
-#' mutate_if(is.character, as.factor) %>%
-#' mutate_if(is.factor, list(~biggest_reference(., weight)))
+#' mutate(across(where(is.character), as.factor)) %>%
+#' mutate(across(where(is.factor), ~biggest_reference(., weight)))
 #' }
 #'
 #' @export

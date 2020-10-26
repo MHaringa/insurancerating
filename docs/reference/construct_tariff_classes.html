@@ -132,13 +132,13 @@ such that categorical risk factors result which capture the effect of the covari
 while being easy to use in a generalized linear model (GLM).</p>
     </div>
 
-    <pre class="usage"><span class='fu'>construct_tariff_classes</span>(
-  <span class='no'>object</span>,
-  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='kw'>niterations</span> <span class='kw'>=</span> <span class='fl'>10000</span>,
-  <span class='kw'>ntrees</span> <span class='kw'>=</span> <span class='fl'>200</span>,
-  <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>1</span>
-)</pre>
+    <pre class="usage"><span class='fu'>construct_tariff_classes</span><span class='op'>(</span>
+  <span class='va'>object</span>,
+  alpha <span class='op'>=</span> <span class='fl'>0</span>,
+  niterations <span class='op'>=</span> <span class='fl'>10000</span>,
+  ntrees <span class='op'>=</span> <span class='fl'>200</span>,
+  seed <span class='op'>=</span> <span class='fl'>1</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -192,13 +192,18 @@ optimal classification and regression trees in R. Journal of Statistical Softwar
 Scandinavian Actuarial Journal, 2018:8, 681-705. doi:10.1080/03461238.2018.1429300.</p>
 <p>Wood, S.N. (2011). Fast stable restricted maximum likelihood and marginal likelihood estimation of semiparametric
 generalized linear models. Journal of the Royal Statistical Society (B) 73(1):3-36. doi:10.1111/j.1467-9868.2010.00749.x.</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Martin Haringa</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='no'>dplyr</span>)
-<span class='fu'><a href='fit_gam.html'>fit_gam</a></span>(<span class='no'>MTPL</span>, <span class='kw'>nclaims</span> <span class='kw'>=</span> <span class='no'>nclaims</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>age_policyholder</span>, <span class='kw'>exposure</span> <span class='kw'>=</span> <span class='no'>exposure</span>) <span class='kw'>%&gt;%</span>
-   <span class='fu'>construct_tariff_classes</span>(<span class='no'>.</span>)
-}</div></pre>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://dplyr.tidyverse.org'>dplyr</a></span><span class='op'>)</span>
+<span class='fu'><a href='fit_gam.html'>fit_gam</a></span><span class='op'>(</span><span class='va'>MTPL</span>, nclaims <span class='op'>=</span> <span class='va'>nclaims</span>, x <span class='op'>=</span> <span class='va'>age_policyholder</span>, exposure <span class='op'>=</span> <span class='va'>exposure</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+   <span class='fu'>construct_tariff_classes</span><span class='op'>(</span><span class='va'>.</span><span class='op'>)</span>
+<span class='op'>}</span>
+
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -214,7 +219,7 @@ generalized linear models. Journal of the Royal Statistical Society (B) 73(1):3-
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

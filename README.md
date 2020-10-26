@@ -88,11 +88,12 @@ autoplot(clusters_freq, show_observations = TRUE)
 In this example the term *exposure* is a measure of what is being
 insured. Here an insured vehicle is an exposure. If the vehicle is
 insured as of July 1 for a certain year, then during that year, this
-would represent an exposure of 0.5 to the insurance company. The figure
-shows that younger policyholders have a higher risk profile. The fitted
-GAM is lower than might be expected from the observed claim frequency
-for policyholders of age 19. This is because there are very few young
-policyholders of age 19 present in the portfolio.
+would represent an exposure of 0.5 to the insurance company.
+
+The figure shows that younger policyholders have a higher risk profile.
+The fitted GAM is lower than might be expected from the observed claim
+frequency for policyholders of age 19. This is because there are very
+few young policyholders of age 19 present in the portfolio.
 
 The GAM for the claim severity :
 
@@ -114,9 +115,9 @@ library(dplyr)
 
 dat <- MTPL %>%
   mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) %>%
-  mutate_if(is.character, as.factor) %>%
-  mutate_if(is.factor, list(~biggest_reference(., exposure)))
-
+  mutate(across(where(is.character), as.factor)) %>%
+  mutate(across(where(is.factor), ~biggest_reference(., exposure)))
+  
 glimpse(dat)
 ```
 

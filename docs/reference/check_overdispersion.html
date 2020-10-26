@@ -128,7 +128,7 @@
     <p>Check Poisson GLM for overdispersion.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>check_overdispersion</span>(<span class='no'>object</span>)</pre>
+    <pre class="usage"><span class='fu'>check_overdispersion</span><span class='op'>(</span><span class='va'>object</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -157,10 +157,14 @@ Adopted from <code>performance::check_overdispersion()</code>.</p>
 <li><p>Bolker B et al. (2017): <a href='http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html'>GLMM FAQ.</a></p></li>
 </ul>
 
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Martin Haringa</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span>(<span class='no'>nclaims</span> ~ <span class='no'>area</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span>(<span class='no'>exposure</span>), <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>MTPL2</span>)
-<span class='fu'>check_overdispersion</span>(<span class='no'>x</span>)</div><div class='output co'>#&gt;        dispersion ratio =    1.229
+    <pre class="examples"><div class='input'><span class='va'>x</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>nclaims</span> <span class='op'>~</span> <span class='va'>area</span>, offset <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span><span class='op'>(</span><span class='va'>exposure</span><span class='op'>)</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span>, data <span class='op'>=</span> <span class='va'>MTPL2</span><span class='op'>)</span>
+<span class='fu'>check_overdispersion</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span>
+</div><div class='output co'>#&gt;        dispersion ratio =    1.229
 #&gt;   Pearson's Chi-Squared = 3684.679
 #&gt;                 p-value =  &lt; 0.001
 #&gt; </div><div class='output co'>#&gt; <span class='message'>Overdispersion detected.</span></div><div class='input'>
@@ -180,7 +184,7 @@ Adopted from <code>performance::check_overdispersion()</code>.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>
