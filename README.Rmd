@@ -327,6 +327,21 @@ univariate(MTPL2, x = area, nclaims = nclaims) %>%
 
 ```
 
+For continuous function a histogram can be created: 
+
+```{r example14, eval = TRUE, message = FALSE, warning = FALSE}
+
+histbin(MTPL2, premium)
+
+```
+
+Two ways of displaying numerical data over a very wide range of values in a compact way are taking the logarithm of the variable, or omitting the outliers. Both do not show the original distribution, however. Another way is to create one bin for all the outliers. This yields both the original distribution, and also gives a feel for the number of outliers.  
+
+```{r example15, eval = TRUE, message = FALSE, warning = FALSE}
+
+histbin(MTPL2, premium, right = 110, line = TRUE)
+
+```
 
 
 

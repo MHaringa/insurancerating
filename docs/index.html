@@ -42,7 +42,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.2.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.3</span>
       </span>
     </div>
 
@@ -335,6 +335,14 @@
 <span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span><span class="op">)</span> <span class="op">%&gt;%</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span><span class="op">(</span><span class="va">.</span>, show_plots <span class="op">=</span> <span class="fl">8</span>, coord_flip <span class="op">=</span> <span class="cn">TRUE</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></pre></div>
 <p><img src="reference/figures/example12-1.png"><!-- --></p>
+<p>For continuous function a histogram can be created:</p>
+<div class="sourceCode" id="cb35"><pre class="downlit">
+<span class="fu"><a href="reference/histbin.html">histbin</a></span><span class="op">(</span><span class="va">MTPL2</span>, <span class="va">premium</span><span class="op">)</span></pre></div>
+<p><img src="reference/figures/example14-1.png"><!-- --></p>
+<p>Two ways of displaying numerical data over a very wide range of values in a compact way are taking the logarithm of the variable, or omitting the outliers. Both do not show the original distribution, however. Another way is to create one bin for all the outliers. This yields both the original distribution, and also gives a feel for the number of outliers.</p>
+<div class="sourceCode" id="cb36"><pre class="downlit">
+<span class="fu"><a href="reference/histbin.html">histbin</a></span><span class="op">(</span><span class="va">MTPL2</span>, <span class="va">premium</span>, right <span class="op">=</span> <span class="fl">110</span>, line <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></pre></div>
+<p><img src="reference/figures/example15-1.png"><!-- --></p>
 </div>
 </div>
   </div>

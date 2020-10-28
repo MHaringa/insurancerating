@@ -222,6 +222,93 @@ ggcoordflip <- function(coord_flip){
   } else { NULL }
 }
 
+#' @keywords internal
+update_tickmarks_right <- function(plot_obj,
+                                   cut_off,
+                                   max_print) {
+  ranges <- suppressMessages(
+    ggplot2::ggplot_build(plot_obj)$layout$panel_params[[1]]$x
+  )
+  label_to_add <- sprintf("[%s, %s]", round(cut_off, 1), max_print)
+  tick_positions <- ranges$get_breaks()
+  tick_labels    <- ranges$get_labels()
+
+  if (overlap_right(tick_positions, cut_off)) {
+    tick_positions <- tick_positions[-length(tick_positions)]
+    tick_labels    <- tick_labels[-length(tick_labels)]
+  }
+
+  return(list(tick_positions = c(tick_positions, cut_off),
+              tick_labels    = c(tick_labels, label_to_add)))
+}
+
+#' @keywords internal
+overlap_right <- function(positions, cut_off) {
+
+  positions <- positions[!is.na(positions)]
+  n <- length(positions)
+  ticks_dif <- positions[n] - positions[n-1]
+  (cut_off - positions[n]) / ticks_dif < 0.25
+
+}
+
+#' @importFrom ggplot2 ggplot_build
+#' @keywords internal
+update_tickmarks_left <- function(plot_obj,
+                                  cut_off,
+                                  min_print) {
+  ranges <- suppressMessages(
+    ggplot2::ggplot_build(plot_obj)$layout$panel_params[[1]]$x)
+  label_to_add <- sprintf("[%s, %s]", min_print, round(cut_off, 1))
+  tick_positions <- ranges$get_breaks()
+  tick_labels    <- ranges$get_labels()
+
+  if (overlap_left(tick_positions, cut_off)) {
+    tick_positions <- tick_positions[-1]
+    tick_labels    <- tick_labels[-1]
+  }
+  return(list(tick_positions = c(cut_off, tick_positions),
+              tick_labels    = c(label_to_add, tick_labels)))
+}
+
+#' @keywords internal
+overlap_left <- function(positions, cut_off) {
+  positions <- positions[!is.na(positions)]
+  ticks_dif <- positions[2] - positions[1]
+  (positions[1] - cut_off) / ticks_dif < 0.25
+}
+
+#' @importFrom ggplot2 autoplot
+#' @import data.table
+#' @keywords internal
+split_x_fn <- function(data, x, left = NULL, right = NULL){
+
+  vec <- data[[x]]
+  vec_new <- data.table::data.table(data)[get(x) > right, c(x) := right][get(x) < left, c(x) := left][,get(x)]
+
+  if ( !is.null(left) ){
+    if ( left <= min(vec, na.rm = TRUE)){ stop( "Left should be greater than minimum value" ) }
+    if ( left >= max(vec, na.rm = TRUE)){ stop( "Left should be less than maximum value" )}
+  }
+
+  if ( !is.null(right) ){
+    if ( right >= max(vec, na.rm = TRUE)){ stop( "Right should be less than maximum value" ) }
+    if ( right <= min(vec, na.rm = TRUE)){ stop( "Right should be greater than minimum value")}
+  }
+
+  if ( !is.null(left) & !is.null(right)){
+    if ( left >= right ){ stop( "Right should be larger than left") }
+  }
+
+  l1 <- split(vec_new, cut(vec_new,
+                           breaks = c(min(vec, na.rm = TRUE), left, right - 1e-10, max(vec, na.rm = TRUE)),
+                           include.lowest = TRUE))
+
+  l1 <- lapply(l1, function(x) data.frame(x = x))
+  if ( is.null(left) ){ l1 <- append(list(NULL), l1) }
+  if ( is.null(right) ){ l1 <- append(l1, list(NULL)) }
+  return(l1)
+}
 
 
 

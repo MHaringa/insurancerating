@@ -1,13 +1,12 @@
 ## Resubmission
 This is a resubmission. In this version:
 
-* "Warning: S4 exports specified in 'NAMESPACE' but not defined in package 'insurancerating'" is solved for all flavors
-* `rating_factors()` now shows significance stars for p-values
-* `period_to_months()` arithmetic operations with dates are rewritten; much faster
-* `univariate()` now has argument `by` to determine summary statistics for different subgroups 
+* `fit_gam()` for pure premium is now using average premium for each x calculated as sum(pure_premium * exposure) / sum(exposure) instead of sum(pure_premium) / sum(exposure) (#2).
+* `histbin()` is added to create histograms with outliers
+* `reduce` now returns a data.frame as output 
 
 ## Test environments
-* local OS X install, R 4.0.0
+* local OS X install, R 4.0.3
 * win-builder (devel and release)
 
 ## R CMD check results

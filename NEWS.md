@@ -1,5 +1,9 @@
 # insurancerating 0.6.3
 
+* `fit_gam()` for pure premium is now using average premium for each x calculated as sum(pure_premium * exposure) / sum(exposure) instead of sum(pure_premium) / sum(exposure) (#2).
+* `histbin()` is added to create histograms with outliers
+* `reduce` now returns a data.frame as output 
+
 # insurancerating 0.6.2
 
 * `check_normality()` is now depreciated; use `check_residuals()` instead to detect overall deviations from the expected distribution

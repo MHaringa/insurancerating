@@ -81,7 +81,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.2.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.3</span>
       </span>
     </div>
 
@@ -194,7 +194,8 @@ as an offset, such that the expected number of claims is proportional to the exp
 <p>The 'severity' specification uses a lognormal GAM for fitting the average cost of a claim. The average cost of a claim is defined as the
 ratio of the claim amount and the number of claims. The number of claims is included as a weight.</p>
 <p>The 'burning' specification uses a lognormal GAM for fitting the pure premium of a claim. The pure premium is obtained by multiplying the estimated frequency and
-the estimated severity of claims. The word burning cost is used here as equivalent of risk premium and pure premium.</p>
+the estimated severity of claims. The word burning cost is used here as equivalent of risk premium and pure premium. Note that the functionality for fitting
+a GAM for pure premium is still experimental (in the early stages of development).</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     <p>Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a priori and a posteriori risk classification in insurance.

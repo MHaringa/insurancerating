@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Bootstrapped RMSE — bootstrap_rmse • insurancerating</title>
+<title>Create a histogram with outlier bins — histbin • insurancerating</title>
 
 <!-- favicons -->
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -46,8 +46,9 @@
 
 
 
-<meta property="og:title" content="Bootstrapped RMSE — bootstrap_rmse" />
-<meta property="og:description" content="Generate n bootstrap replicates to compute n root mean squared errors." />
+<meta property="og:title" content="Create a histogram with outlier bins — histbin" />
+<meta property="og:description" content="Visualize the distribution of a single continuous variable by dividing the x axis into bins and counting the number of observations in each bin.
+Data points that are considered outliers can be binned together. This might be helpful to display numerical data over a very wide range of values in a compact way." />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -119,85 +120,75 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Bootstrapped RMSE</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/bootstrap_rmse.R'><code>R/bootstrap_rmse.R</code></a></small>
-    <div class="hidden name"><code>bootstrap_rmse.Rd</code></div>
+    <h1>Create a histogram with outlier bins</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/histbin.R'><code>R/histbin.R</code></a></small>
+    <div class="hidden name"><code>histbin.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Generate <code>n</code> bootstrap replicates to compute <code>n</code> root mean squared errors.</p>
+    <p>Visualize the distribution of a single continuous variable by dividing the x axis into bins and counting the number of observations in each bin.
+Data points that are considered outliers can be binned together. This might be helpful to display numerical data over a very wide range of values in a compact way.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>bootstrap_rmse</span><span class='op'>(</span>
-  <span class='va'>model</span>,
+    <pre class="usage"><span class='fu'>histbin</span><span class='op'>(</span>
   <span class='va'>data</span>,
-  n <span class='op'>=</span> <span class='fl'>50</span>,
-  frac <span class='op'>=</span> <span class='fl'>1</span>,
-  show_progress <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  rmse_model <span class='op'>=</span> <span class='cn'>NULL</span>
+  <span class='va'>x</span>,
+  left <span class='op'>=</span> <span class='cn'>NULL</span>,
+  right <span class='op'>=</span> <span class='cn'>NULL</span>,
+  line <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  bins <span class='op'>=</span> <span class='fl'>30</span>,
+  fill <span class='op'>=</span> <span class='st'>"#E7B800"</span>,
+  fill_outliers <span class='op'>=</span> <span class='st'>"#a7d1a7"</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>model</th>
-      <td><p>a model object</p></td>
-    </tr>
-    <tr>
       <th>data</th>
-      <td><p>data used to fit model object</p></td>
+      <td><p>data.frame</p></td>
     </tr>
     <tr>
-      <th>n</th>
-      <td><p>number of bootstrap replicates (defaults to 50)</p></td>
+      <th>x</th>
+      <td><p>variable name in data.frame `data` that should be mapped</p></td>
     </tr>
     <tr>
-      <th>frac</th>
-      <td><p>fraction used in training set if cross-validation is applied (defaults to 1)</p></td>
+      <th>left</th>
+      <td><p>numeric indicating the floor of the range</p></td>
     </tr>
     <tr>
-      <th>show_progress</th>
-      <td><p>show progress bar (defaults to TRUE)</p></td>
+      <th>right</th>
+      <td><p>numeric indicating the ceiling of the range</p></td>
     </tr>
     <tr>
-      <th>rmse_model</th>
-      <td><p>numeric RMSE to show as vertical dashed line in autoplot() (defaults to NULL)</p></td>
+      <th>line</th>
+      <td><p>show density line (default is FALSE)</p></td>
+    </tr>
+    <tr>
+      <th>bins</th>
+      <td><p>numeric to indicate number of bins</p></td>
+    </tr>
+    <tr>
+      <th>fill</th>
+      <td><p>color used to fill bars</p></td>
+    </tr>
+    <tr>
+      <th>fill_outliers</th>
+      <td><p>color used to fill outlier bars</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>A list with components</p>
-<dt>rmse_bs</dt><dd><p>numerical vector with <code>n</code> root mean squared errors</p></dd>
-<dt>rmse_mod</dt><dd><p>root mean squared error for fitted (i.e. original) model</p></dd>
-
+    <p>a ggplot2 object</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>To test the predictive ability of the fitted model it might be helpful to determine the variation in the computed RMSE.
-The variation is calculated by computing the root mean squared errors from <code>n</code> generated bootstrap replicates. More precisely,
-for each iteration a sample with replacement is taken from the data set and the model is refitted using this sample. Then, the root
-mean squared error is calculated.</p>
-    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
-
-    <p>Martin Haringa</p>
+    <p>Wrapper function around `ggplot2::geom_histogram()`. The method is based on suggestions from <a href='https://edwinth.github.io/blog/outlier-bin/'>https://edwinth.github.io/blog/outlier-bin/</a>.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-<span class='va'>mod1</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>nclaims</span> <span class='op'>~</span> <span class='va'>age_policyholder</span>, data <span class='op'>=</span> <span class='va'>MTPL</span>,
-    offset <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span><span class='op'>(</span><span class='va'>exposure</span><span class='op'>)</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span>
-
-<span class='co'># Use all records in MTPL</span>
-<span class='va'>x</span> <span class='op'>&lt;-</span> <span class='fu'>bootstrap_rmse</span><span class='op'>(</span><span class='va'>mod1</span>, <span class='va'>MTPL</span>, n <span class='op'>=</span> <span class='fl'>80</span>, show_progress <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span>
-<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span>
-
-<span class='co'># Use 80% of records to test whether predictive ability depends on which 80% is used</span>
-<span class='co'># This might for example be useful in case portfolio contains large claim sizes</span>
-<span class='va'>x_frac</span> <span class='op'>&lt;-</span> <span class='fu'>bootstrap_rmse</span><span class='op'>(</span><span class='va'>mod1</span>, <span class='va'>MTPL</span>, n <span class='op'>=</span> <span class='fl'>50</span>, frac <span class='op'>=</span> <span class='fl'>.8</span>, show_progress <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
-<span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span><span class='op'>(</span><span class='va'>x_frac</span><span class='op'>)</span> <span class='co'># Variation is quite small for Poisson GLM</span>
-<span class='op'>}</span>
-
+    <pre class="examples"><div class='input'><span class='fu'>histbin</span><span class='op'>(</span><span class='va'>MTPL2</span>, <span class='va'>premium</span><span class='op'>)</span>
+</div><div class='img'><img src='histbin-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>histbin</span><span class='op'>(</span><span class='va'>MTPL2</span>, <span class='va'>premium</span>, left <span class='op'>=</span> <span class='fl'>30</span>, right <span class='op'>=</span> <span class='fl'>120</span>, line <span class='op'>=</span> <span class='cn'>TRUE</span>, bins <span class='op'>=</span> <span class='fl'>30</span><span class='op'>)</span>
+</div><div class='img'><img src='histbin-2.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

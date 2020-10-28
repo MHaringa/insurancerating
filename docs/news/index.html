@@ -79,7 +79,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.2.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.3</span>
       </span>
     </div>
 
@@ -126,6 +126,14 @@
 <h1 class="page-header" data-toc-text="0.6.3">
 <a href="#insurancerating-063" class="anchor"></a>insurancerating 0.6.3<small> Unreleased </small>
 </h1>
+<ul>
+<li>
+<code><a href="../reference/fit_gam.html">fit_gam()</a></code> for pure premium is now using average premium for each x calculated as sum(pure_premium * exposure) / sum(exposure) instead of sum(pure_premium) / sum(exposure) (<a href='https://github.com/mharinga/insurancerating/issues/2'>#2</a>).</li>
+<li>
+<code><a href="../reference/histbin.html">histbin()</a></code> is added to create histograms with outliers</li>
+<li>
+<code>reduce</code> now returns a data.frame as output</li>
+</ul>
 </div>
     <div id="insurancerating-062" class="section level1">
 <h1 class="page-header" data-toc-text="0.6.2">

@@ -52,7 +52,8 @@ The 'severity' specification uses a lognormal GAM for fitting the average cost o
 ratio of the claim amount and the number of claims. The number of claims is included as a weight.
 
 The 'burning' specification uses a lognormal GAM for fitting the pure premium of a claim. The pure premium is obtained by multiplying the estimated frequency and
-the estimated severity of claims. The word burning cost is used here as equivalent of risk premium and pure premium.
+the estimated severity of claims. The word burning cost is used here as equivalent of risk premium and pure premium. Note that the functionality for fitting
+a GAM for pure premium is still experimental (in the early stages of development).
 }
 \examples{
 fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure)
