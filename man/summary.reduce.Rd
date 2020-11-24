@@ -4,14 +4,16 @@
 \alias{summary.reduce}
 \title{Automatically create a summary for objects obtained from reduce()}
 \usage{
-\method{summary}{reduce}(object, period = "days", ...)
+\method{summary}{reduce}(object, ..., period = "days", name = "count")
 }
 \arguments{
 \item{object}{reduce object produced by \code{reduce()}}
 
+\item{...}{names of columns to aggregate counts by}
+
 \item{period}{a character string indicating the period to aggregate on. Four options are available: "quarters", "months", "weeks", and "days" (the default option)}
 
-\item{...}{names of columns to aggregate counts by}
+\item{name}{The name of the new column in the output. If omitted, it will default to count.}
 }
 \value{
 data.frame

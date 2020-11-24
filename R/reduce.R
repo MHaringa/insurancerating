@@ -79,7 +79,7 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwid
 
   cols <- c(cols0, .begin, .end)
 
-  # Set keys (also orders)
+  # Set keys (keys does ordering)
   dt <- data.table::setDT(df)
   data.table::setkeyv(dt, cols)
 
@@ -139,6 +139,7 @@ as.data.frame.reduce <- function(x, ...) {
 #' @param object reduce object produced by \code{reduce()}
 #' @param period a character string indicating the period to aggregate on. Four options are available: "quarters", "months", "weeks", and "days" (the default option)
 #' @param ... names of columns to aggregate counts by
+#' @param name The name of the new column in the output. If omitted, it will default to count.
 #'
 #' @import data.table
 #' @importFrom lubridate days
@@ -169,7 +170,7 @@ as.data.frame.reduce <- function(x, ...) {
 #' summary(pt2, period = "weeks", policy_nr, productgroup, product)
 #'
 #' @export
-summary.reduce <- function(object, period = "days", ...){
+summary.reduce <- function(object, ..., period = "days", name = "count"){
 
   if (!inherits(object, "reduce")) {
     stop("summary.reduce requires a reduce object, use object = object")
@@ -183,8 +184,8 @@ summary.reduce <- function(object, period = "days", ...){
   by_begin <- begin
   by_end <- end
 
-  if (!period %in% c("quarters", "quarter", "months", "month", "weeks", "week", "day", "days")){
-    stop("period is not valid: choose 'quarter', 'month', 'week', or 'day'")
+  if (!period %in% c("years", "year", "quarters", "quarter", "months", "month", "weeks", "week", "day", "days")){
+    stop("period is not valid: choose 'year', 'quarter', 'month', 'week', or 'day'")
   }
 
   splitvars <- substitute(list(...))[-1]
@@ -228,6 +229,11 @@ summary.reduce <- function(object, period = "days", ...){
     lost[, quarter := paste0(data.table::year(get(end) %m+% months(3)), "Q", data.table::quarter(get(end) %m+% months(3)))]
   }
 
+  if ( period %in% c("years", "year")){
+    new[, year := data.table::year(get(begin))]
+    lost[, year := data.table::year(get(end))]
+  }
+
   new[, c(begin) := NULL]
   lost[, c(end) := NULL]
 
@@ -242,6 +248,11 @@ summary.reduce <- function(object, period = "days", ...){
     data.table::setcolorder(dt, c(names(dt)[ncol(dt)], "type", "count", cols0))
     data.table::setorderv(dt, c(names(dt)[1], cols0, "type"), c(-1, rep(1, length(cols0)), 1))
     df <- as.data.frame(dt)
+  }
+
+  if( name != "count" ){
+    if ( !is.character(name) ) stop ( "Column name should be a character" )
+    names(df)[names(df) == 'count'] <- name
   }
 
   return(df)

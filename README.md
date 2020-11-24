@@ -456,7 +456,7 @@ univariate(MTPL2, x = area, nclaims = nclaims) %>%
 
 ![](man/figures/example12-1.png)<!-- -->
 
-For continuous function a histogram can be created:
+For continuous variables a histogram can be created:
 
 ``` r
 histbin(MTPL2, premium)

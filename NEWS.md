@@ -1,3 +1,7 @@
+# insurancerating 0.6.4
+
+* In `summary.reduce()`, `name` can be used to change the name of the new column in the output.
+
 # insurancerating 0.6.3
 
 * `fit_gam()` for pure premium is now using average premium for each x calculated as sum(pure_premium * exposure) / sum(exposure) instead of sum(pure_premium) / sum(exposure) (#2).
