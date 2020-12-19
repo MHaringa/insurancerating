@@ -58,7 +58,7 @@ print.model_performance <- function(x, digits = 3, ...) {
   insight::print_color("# Comparison of Model Performance Indices\n\n", "blue")
 
   x[] <- lapply(x, function(i) { if (is.numeric(i)) { round(i, digits = digits) } else { i } })
-  cat(insight::format_table(x))
+  cat(insight::export_table(x))
   invisible(orig_x)
 }
 
