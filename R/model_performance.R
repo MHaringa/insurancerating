@@ -50,7 +50,7 @@ model_performance <- function(...) {
 }
 
 
-#' @importFrom insight format_table
+#' @importFrom insight export_table
 #' @importFrom insight print_color
 #' @export
 print.model_performance <- function(x, digits = 3, ...) {
