@@ -80,7 +80,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.4</span>
       </span>
     </div>
 
@@ -88,7 +88,7 @@
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -102,7 +102,7 @@
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/mharinga/insurancerating/">
-    <span class="fab fa fab fa-github fa-lg"></span>
+    <span class="fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -129,7 +129,7 @@
     </div>
 
     <pre class="usage"><span class='co'># S3 method for reduce</span>
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>object</span>, period <span class='op'>=</span> <span class='st'>"days"</span>, <span class='va'>...</span><span class='op'>)</span></pre>
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>object</span>, <span class='va'>...</span>, period <span class='op'>=</span> <span class='st'>"days"</span>, name <span class='op'>=</span> <span class='st'>"count"</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -139,12 +139,16 @@
       <td><p>reduce object produced by <code><a href='reduce.html'>reduce()</a></code></p></td>
     </tr>
     <tr>
+      <th>...</th>
+      <td><p>names of columns to aggregate counts by</p></td>
+    </tr>
+    <tr>
       <th>period</th>
       <td><p>a character string indicating the period to aggregate on. Four options are available: "quarters", "months", "weeks", and "days" (the default option)</p></td>
     </tr>
     <tr>
-      <th>...</th>
-      <td><p>names of columns to aggregate counts by</p></td>
+      <th>name</th>
+      <td><p>The name of the new column in the output. If omitted, it will default to count.</p></td>
     </tr>
     </table>
 

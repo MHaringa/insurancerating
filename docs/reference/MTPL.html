@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Ages of 32,731 policyholders in a Motor Third Party Liability (MTPL) portfolio. — MTPL • insurancerating</title>
+<title>Characteristics of 30,000 policyholders in a Motor Third Party Liability (MTPL) portfolio. — MTPL • insurancerating</title>
 
 <!-- favicons -->
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -46,8 +46,8 @@
 
 
 
-<meta property="og:title" content="Ages of 32,731 policyholders in a Motor Third Party Liability (MTPL) portfolio. — MTPL" />
-<meta property="og:description" content="A dataset containing the age, number of claims, and exposure of almost 33,000 policyholders" />
+<meta property="og:title" content="Characteristics of 30,000 policyholders in a Motor Third Party Liability (MTPL) portfolio. — MTPL" />
+<meta property="og:description" content="A dataset containing the age, number of claims, exposure, claim amount, power, bm, and region of 30,000 policyholders." />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -80,7 +80,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.4</span>
       </span>
     </div>
 
@@ -88,7 +88,7 @@
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -102,7 +102,7 @@
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/mharinga/insurancerating/">
-    <span class="fab fa fab fa-github fa-lg"></span>
+    <span class="fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -119,13 +119,13 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Ages of 32,731 policyholders in a Motor Third Party Liability (MTPL) portfolio.</h1>
+    <h1>Characteristics of 30,000 policyholders in a Motor Third Party Liability (MTPL) portfolio.</h1>
     <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/MTPL.R'><code>R/MTPL.R</code></a></small>
     <div class="hidden name"><code>MTPL.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>A dataset containing the age, number of claims, and exposure of almost 33,000 policyholders</p>
+    <p>A dataset containing the age, number of claims, exposure, claim amount, power, bm, and region of 30,000 policyholders.</p>
     </div>
 
     <pre class="usage"><span class='va'>MTPL</span></pre>
@@ -133,11 +133,14 @@
 
     <h2 class="hasAnchor" id="format"><a class="anchor" href="#format"></a>Format</h2>
 
-    <p>A data frame with 32,731 rows and 4 variables:</p><dl>
+    <p>A data frame with 30,000 rows and 7 variables:</p><dl>
   <dt>age_policyholder</dt><dd><p>age of policyholder, in years.</p></dd>
   <dt>nclaims</dt><dd><p>number of claims.</p></dd>
   <dt>exposure</dt><dd><p>exposure, for example, if a vehicle is insured as of July 1 for a certain year, then during that year, this would represent an exposure of 0.5 to the insurance company.</p></dd>
   <dt>amount</dt><dd><p>claim amount in Euros.</p></dd>
+  <dt>power</dt><dd><p>engine power of vehicle (in kilowatts).</p></dd>
+  <dt>bm</dt><dd><p>level occupied in the 23-level bonus-malus scale (the higher the level occupied, the worse the claim history).</p></dd>
+  <dt>zip</dt><dd><p>region indicator.</p></dd>
 
 </dl>
 
