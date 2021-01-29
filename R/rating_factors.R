@@ -263,7 +263,7 @@ as.data.frame.riskfactor <- function(x, ...) {
 #' @param labels show labels with the exposure (default is TRUE)
 #' @param dec.mark control the format of the decimal point, as well as the mark between intervals before the decimal point, choose either "," (default) or "."
 #' @param ylab modify label for the y-axis
-#' @param color_bg change the color of the histogram ("#E7B800" is default)
+#' @param color_bg change the color of the histogram ("#f8e6b1" is default)
 #' @param linetype use different linetypes (default is FALSE)
 #' @param ... other plotting parameters to affect the plot
 #'
@@ -287,7 +287,7 @@ as.data.frame.riskfactor <- function(x, ...) {
 #' autoplot(x)
 #'
 autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1, labels = TRUE, dec.mark = ",",
-                                ylab = "rate", color_bg = "#E7B800", linetype = FALSE, ...){
+                                ylab = "rate", color_bg = "#f8e6b1", linetype = FALSE, ...){
 
   if ( !inherits(object, "riskfactor")){
     stop("autoplot.riskfactor requires a riskfactor object, use object = object")
@@ -350,7 +350,7 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1, labels = 
       ggplot2::theme_minimal() +
       { if (exposure_nm == "NULL")  ggplot2::scale_y_continuous(labels = sep_fn, limits = c(0, NA), expand = expansion(mult = c(0, 0.02))) } +
       { if (exposure_nm != "NULL") ggplot2::geom_bar(data = df1_bar, aes(x = .data[["level"]], y = .data[["s_axis_scale"]]),
-                                                     stat = "identity", color = color_bg, fill = color_bg, alpha = 0.4) } +
+                                                     stat = "identity", color = color_bg, fill = color_bg, alpha = 1) } +
       { if (exposure_nm != "NULL") ggplot2::scale_y_continuous(labels = sep_fn, limits = c(0, NA), expand = expansion(mult = c(0, 0.02)),
                                                                sec.axis = sec_axis(~ . * max(df1_bar[[exposure_nm]]) / max(df1[["est"]]),
                                                                                    name = exposure_nm, labels = sep_fn)) } +

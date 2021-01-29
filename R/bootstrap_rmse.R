@@ -145,8 +145,8 @@ autoplot.bootstrap_rmse <- function(object, ...){
 
   ggplot2::ggplot(dat, ggplot2::aes(x = x)) +
     ggplot2::geom_histogram(ggplot2::aes(y = ..density..),
-                            fill = "#E7B800",
-                            alpha = .4,
+                            fill = "#f8e6b1",
+                            alpha = 1,
                             bins = 30,
                             color = "#E7B800") +
     ggplot2::geom_density(alpha = .4,

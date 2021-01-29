@@ -152,7 +152,7 @@ as.data.frame.univariate <- function(x, ...) {
 #' @param sort_manual sort (or order) risk factor into own ordering; should be a character vector (default is NULL)
 #' @param dec.mark control the format of the decimal point, as well as the mark between intervals before the decimal point, choose either "," (default) or "."
 #' @param color change the color of the points and line ("dodgerblue" is default)
-#' @param color_bg change the color of the histogram ("#E7B800" is default)
+#' @param color_bg change the color of the histogram ("#f8e6b1" is default)
 #' @param label_width width of labels on the x-axis (10 is default)
 #' @param coord_flip flip cartesian coordinates so that horizontal becomes vertical, and vertical, horizontal (default is FALSE)
 #' @param ... other plotting parameters to affect the plot
@@ -177,7 +177,7 @@ as.data.frame.univariate <- function(x, ...) {
 #' @export
 autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background = TRUE, labels = TRUE,
                                 sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue",
-                                color_bg = "#E7B800", label_width = 10, coord_flip = FALSE, ...){
+                                color_bg = "#f8e6b1", label_width = 10, coord_flip = FALSE, ...){
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)

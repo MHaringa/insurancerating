@@ -106,7 +106,7 @@ ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg, sep_
 
       list(
         ggplot2::geom_bar(data = df, aes(x = .data[[xvar]], y = .data[["s_axis_scale"]]),
-                          stat = "identity", color = color_bg, fill = color_bg, alpha = 0.4),
+                          stat = "identity", color = color_bg, fill = color_bg, alpha = 1),
         ggplot2::scale_y_continuous(sec.axis = sec_axis(~ . * max(df[[s_axis]]) / max(df[[f_axis]]),
                                                         name = s_axis,
                                                         labels = sep_mark),
@@ -121,7 +121,7 @@ ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg, sep_
 
     list(
       ggplot2::geom_bar(data = df, aes(x = .data[[xvar]], y = .data[["s_axis_scale"]]),
-                        stat = "identity", color = color_bg, fill = color_bg, alpha = 0.4),
+                        stat = "identity", color = color_bg, fill = color_bg, alpha = 1),
       ggplot2::scale_y_continuous(sec.axis = sec_axis(~ . * max(df[[s_axis]], na.rm = TRUE) / max(dfby[[f_axis]], na.rm = TRUE),
                                                       name = s_axis,
                                                       labels = sep_mark),
@@ -217,7 +217,7 @@ ggbarline <- function(background, df, dfby, xvar, f_axis, f_axis_name, exposure,
 ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip){
   ggplot2::ggplot(data = df) +
     ggplot2::geom_bar(data = df, aes(x = .data[[xvar]], y = .data[[f_axis]]),
-                      stat = "identity", color = color_bg, fill = color_bg, alpha = 0.4) +
+                      stat = "identity", color = color_bg, fill = color_bg, alpha = 1) +
     ggplot2::theme_minimal() +
     ggplot2::labs(y = f_axis, x = xvar) +
     ggplot2::scale_y_continuous(labels = sep_mark) +

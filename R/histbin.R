@@ -24,7 +24,7 @@
 #'
 #' @export
 histbin <- function(data, x, left = NULL, right = NULL, line = FALSE, bins = 30,
-                    fill = "#E7B800", fill_outliers = "#a7d1a7"){
+                    fill = "#f8e6b1", fill_outliers = "#a7d1a7"){
 
 
   xvar00 <- deparse(substitute(x))
@@ -43,7 +43,7 @@ histbin <- function(data, x, left = NULL, right = NULL, line = FALSE, bins = 30,
   obj <- obj +
     ggplot2::geom_histogram(fill = fill,
                             color = fill,
-                            alpha = .4,
+                            alpha = 1,
                             binwidth = nbinwidth) +
     ggplot2::scale_y_continuous(expand = expansion(mult = c(0, .1)))
 
