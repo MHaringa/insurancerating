@@ -13,5 +13,5 @@ refit_glm.restricted(x)
 Object of class GLM
 }
 \description{
-Refit GLM
+Refit GLM model
 }

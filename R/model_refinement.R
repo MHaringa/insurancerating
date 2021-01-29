@@ -196,7 +196,7 @@ restrict_coef <- function(model, data){
 
 #' Refit GLM
 #'
-#' @description Refit GLM
+#' @description Refit GLM model
 #'
 #' @param x Object of class restricted
 #'
