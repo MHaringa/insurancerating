@@ -1,3 +1,6 @@
+# insurancerating 0.6.5
+
+
 # insurancerating 0.6.4
 
 * In `summary.reduce()`, `name` can be used to change the name of the new column in the output.

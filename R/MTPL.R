@@ -11,8 +11,8 @@
 #'   \item{exposure}{exposure, for example, if a vehicle is insured as of July 1 for a certain year, then during that year, this would represent an exposure of 0.5 to the insurance company.}
 #'   \item{amount}{claim amount in Euros.}
 #'   \item{power}{engine power of vehicle (in kilowatts).}
-#'   \item{bm}{level occupied in the 23-level bonus-malus scale (the higher the level occupied, the worse the claim history).}
-#'   \item{zip}{region indicator.}
+#'   \item{bm}{level occupied in the 23-level (0-22) bonus-malus scale (the higher the level occupied, the worse the claim history).}
+#'   \item{zip}{region indicator (0-3).}
 #' }
 #'
 #' @author Martin Haringa

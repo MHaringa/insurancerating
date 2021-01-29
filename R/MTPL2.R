@@ -7,7 +7,7 @@
 #' @format A data frame with 3,000 rows and 6 variables:
 #' \describe{
 #'   \item{customer_id}{customer id}
-#'   \item{area}{region where customer lives}
+#'   \item{area}{region where customer lives (0-3)}
 #'   \item{nclaims}{number of claims}
 #'   \item{amount}{claim amount (severity)}
 #'   \item{exposure}{exposure}

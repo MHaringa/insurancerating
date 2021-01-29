@@ -19,6 +19,7 @@ elapsed_days <- function(end_date){
   as.POSIXlt(end_date)$mday - 1
 }
 
+
 #' Get splits from partykit object
 #' @noRd
 #'
@@ -37,19 +38,23 @@ get_splits <- function(x) {
   return(splits)
 }
 
+
 #' @importFrom ggplot2 autoplot
 #' @export
 ggplot2::autoplot
 
+
 #' @importFrom magrittr %>%
 #' @export
 magrittr::`%>%`
+
 
 #' @keywords internal
 order_factors_exposure <- function(x, weight, decreasing) {
   counts <- sort(tapply(weight, x, FUN = sum), decreasing = !decreasing)
   factor(x, levels = names(counts))
 }
+
 
 #' @keywords internal
 scale_second_axis <- function(background, df, dfby, f_axis, s_axis, by){
@@ -69,6 +74,7 @@ scale_second_axis <- function(background, df, dfby, f_axis, s_axis, by){
   return(df)
 }
 
+
 #' @keywords internal
 separation_mark <- function(dec.mark){
   if ( dec.mark == "," ){
@@ -77,6 +83,7 @@ separation_mark <- function(dec.mark){
     function(x) format(x, big.mark = ",", decimal.mark = ".", scientific = FALSE)
   }
 }
+
 
 #' @keywords internal
 sort_x_axis <- function(sort_manual, label_width){ # hist_sort
@@ -128,6 +135,7 @@ ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg, sep_
   else{ NULL }
 }
 
+
 #' @keywords internal
 ggpointline <- function(df, dfby, xvar, y, color, by){
   if ( by == "NULL"){
@@ -146,6 +154,7 @@ ggpointline <- function(df, dfby, xvar, y, color, by){
   }
 }
 
+
 #' @keywords internal
 gglabels <- function(background, labels, df, xvar, sep_mark){
   if ( isTRUE(background) & isTRUE(labels) ){
@@ -158,6 +167,7 @@ gglabels <- function(background, labels, df, xvar, sep_mark){
     )
   } else { NULL }
 }
+
 
 #' @keywords internal
 ggbarlabels <- function(df, xvar, y, coord_flip, sep_mark){
@@ -189,6 +199,7 @@ ggyscale <- function(background, sep_mark){
   }
 }
 
+
 #' @keywords internal
 ggbarline <- function(background, df, dfby, xvar, f_axis, f_axis_name, exposure, color_bg, color, sep_mark, by, labels, sort_manual, label_width){
   df <- scale_second_axis(background, df, dfby, f_axis, exposure, by)
@@ -200,6 +211,7 @@ ggbarline <- function(background, df, dfby, xvar, f_axis, f_axis_name, exposure,
     ggyscale(background, sep_mark) +
     sort_x_axis(sort_manual, label_width)
 }
+
 
 #' @keywords internal
 ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip){
@@ -213,6 +225,7 @@ ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip){
     ggcoordflip(coord_flip)
 }
 
+
 #' @keywords internal
 ggcoordflip <- function(coord_flip){
   if ( isTRUE(coord_flip) ) {
@@ -221,6 +234,7 @@ ggcoordflip <- function(coord_flip){
     )
   } else { NULL }
 }
+
 
 #' @keywords internal
 update_tickmarks_right <- function(plot_obj,
@@ -242,6 +256,7 @@ update_tickmarks_right <- function(plot_obj,
               tick_labels    = c(tick_labels, label_to_add)))
 }
 
+
 #' @keywords internal
 overlap_right <- function(positions, cut_off) {
 
@@ -249,8 +264,8 @@ overlap_right <- function(positions, cut_off) {
   n <- length(positions)
   ticks_dif <- positions[n] - positions[n-1]
   (cut_off - positions[n]) / ticks_dif < 0.25
-
 }
+
 
 #' @importFrom ggplot2 ggplot_build
 #' @keywords internal
@@ -271,12 +286,14 @@ update_tickmarks_left <- function(plot_obj,
               tick_labels    = c(label_to_add, tick_labels)))
 }
 
+
 #' @keywords internal
 overlap_left <- function(positions, cut_off) {
   positions <- positions[!is.na(positions)]
   ticks_dif <- positions[2] - positions[1]
   (positions[1] - cut_off) / ticks_dif < 0.25
 }
+
 
 #' @importFrom ggplot2 autoplot
 #' @import data.table
