@@ -243,7 +243,7 @@ restrict_coef <- function(model, restrictions){
 #' @export
 refit_glm <- function(x, ...){
 
-  if( !inherits(fm_no_offset, "restricted") ) {
+  if( !inherits(x, "restricted") ) {
     stop("Input must be of class restricted", call. = FALSE)
   }
 
