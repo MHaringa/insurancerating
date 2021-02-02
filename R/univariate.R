@@ -52,7 +52,7 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, 
   xby00 <- xby00[xby00 != "NULL"]
 
   if ( length( cols ) == 0 ) {
-    stop("Define column names.")
+    stop("Define column names.", call. = FALSE)
   }
 
   dt <- data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE), by = xby00, .SDcols = cols]
@@ -188,7 +188,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background =
   }
 
   if (!inherits(object, "univariate")) {
-    stop("autoplot.univariate requires a univariate object, use object = object")
+    stop("autoplot.univariate requires a univariate object, use object = object", call. = FALSE)
   }
 
   xvar <- object$xvar
@@ -207,19 +207,19 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background =
   }
 
   if ( length(by) > 1){
-    stop("length of by should not be greater than one")
+    stop("length of by should not be greater than one", call. = FALSE)
   }
 
   if ( !is.numeric(show_plots) ){
-    stop("show_plots should be numeric")
+    stop("show_plots should be numeric", call. = FALSE)
   }
 
   if ( !any(show_plots > 0 & show_plots < 10) ){
-    stop("elements in show_plots are unknown")
+    stop("elements in show_plots are unknown", call. = FALSE)
   }
 
   if ( length(show_plots) > 1 & isTRUE(coord_flip) ){
-    stop("length of show_plots should be equal to one in case coord_flip = TRUE")
+    stop("length of show_plots should be equal to one in case coord_flip = TRUE", call. = FALSE)
   }
 
   if ( !is.factor(df[[xvar]]) ){
@@ -295,7 +295,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background =
   plots_possible <- setdiff(plots_allowed, not_allowed)
 
   if ( length (plots_possible) == 0 ){
-    stop("Ignoring plots: input is unknown")
+    stop("Ignoring plots: input is unknown", call. = FALSE)
   }
 
   diff_plots <- setdiff(show_plots, plots_possible)

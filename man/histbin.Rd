@@ -11,7 +11,7 @@ histbin(
   right = NULL,
   line = FALSE,
   bins = 30,
-  fill = "#E7B800",
+  fill = "#f8e6b1",
   fill_outliers = "#a7d1a7"
 )
 }

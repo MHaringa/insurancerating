@@ -11,7 +11,7 @@
   labels = TRUE,
   dec.mark = ",",
   ylab = "rate",
-  color_bg = "#E7B800",
+  color_bg = "#f8e6b1",
   linetype = FALSE,
   ...
 )
@@ -29,7 +29,7 @@
 
 \item{ylab}{modify label for the y-axis}
 
-\item{color_bg}{change the color of the histogram ("#E7B800" is default)}
+\item{color_bg}{change the color of the histogram ("#f8e6b1" is default)}
 
 \item{linetype}{use different linetypes (default is FALSE)}
 

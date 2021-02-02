@@ -44,7 +44,7 @@
 bootstrap_rmse <- function(model, data, n = 50, frac = 1, show_progress = TRUE, rmse_model = NULL) {
 
   if ( frac > 1 | frac <= 0){
-    stop("frac should be in interval: (0,1]")
+    stop("frac should be in interval: (0,1]", call. = FALSE)
   }
 
   data <- as.data.frame(data)
@@ -127,7 +127,7 @@ autoplot.bootstrap_rmse <- function(object, ...){
   }
 
   if (!inherits(object, "bootstrap_rmse")) {
-    stop("autoplot.bootstrap_rmse requires a bootstrap_rmse object, use object = object")
+    stop("autoplot.bootstrap_rmse requires a bootstrap_rmse object, use object = object", call. = FALSE)
   }
 
   rmse_bs <- object$rmse_bs

@@ -31,7 +31,7 @@
 check_overdispersion <- function(object) {
 
   if ( stats::family(object)$family != "poisson") {
-    stop("Family of object should be Poisson")
+    stop("Family of object should be Poisson", call. = FALSE)
   }
 
   rdf <- stats::df.residual(object)

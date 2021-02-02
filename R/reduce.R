@@ -57,14 +57,14 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwid
   start_dt = end_dt = aggcols0 = NULL # due to NSE notes in R CMD check
 
   if (!lubridate::is.Date(df[[.begin]]) | !lubridate::is.Date(df[[.end]])) {
-    stop("Columns begin and end should be Date objects. Use e.g. lubridate::ymd() to create Date object.")
+    stop("Columns begin and end should be Date objects. Use e.g. lubridate::ymd() to create Date object.", call. = FALSE)
   }
 
   if (anyNA(df[[.begin]])) {
-    stop("NA values in data.table 'begin' column: '", .begin, "'. All rows with NA values in the range columns must be removed for reduce() to work.")
+    stop("NA values in data.table 'begin' column: '", .begin, "'. All rows with NA values in the range columns must be removed for reduce() to work.", call. = FALSE)
   }
   else if (anyNA(df[[.end]])) {
-    stop("NA values in data.table 'end' column: '", .end, "'. All rows with NA values in the range columns must be removed for reduce() to work.")
+    stop("NA values in data.table 'end' column: '", .end, "'. All rows with NA values in the range columns must be removed for reduce() to work.", call. = FALSE)
   }
 
   splitvars <- substitute(list(...))[-1]
@@ -74,7 +74,7 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwid
   aggcols0 <- sapply(aggvars, deparse)
 
   if ( length(cols0) == 0 ){
-    stop("define columns to group date ranges by")
+    stop("define columns to group date ranges by", call. = FALSE)
   }
 
   cols <- c(cols0, .begin, .end)
@@ -173,7 +173,7 @@ as.data.frame.reduce <- function(x, ...) {
 summary.reduce <- function(object, ..., period = "days", name = "count"){
 
   if (!inherits(object, "reduce")) {
-    stop("summary.reduce requires a reduce object, use object = object")
+    stop("summary.reduce requires a reduce object, use object = object", call. = FALSE)
   }
 
   df <- object
@@ -185,7 +185,7 @@ summary.reduce <- function(object, ..., period = "days", name = "count"){
   by_end <- end
 
   if (!period %in% c("years", "year", "quarters", "quarter", "months", "month", "weeks", "week", "day", "days")){
-    stop("period is not valid: choose 'year', 'quarter', 'month', 'week', or 'day'")
+    stop("period is not valid: choose 'year', 'quarter', 'month', 'week', or 'day'", call. = FALSE)
   }
 
   splitvars <- substitute(list(...))[-1]
@@ -251,7 +251,7 @@ summary.reduce <- function(object, ..., period = "days", name = "count"){
   }
 
   if( name != "count" ){
-    if ( !is.character(name) ) stop ( "Column name should be a character" )
+    if ( !is.character(name) ) stop ( "Column name should be a character", call. = FALSE )
     names(df)[names(df) == 'count'] <- name
   }
 

@@ -21,3 +21,6 @@ Takes an object produced by \code{restrict_coef()}, and produces
   a line plot with a comparison between the restricted coefficients and
   estimated coefficents obtained from the model.
 }
+\author{
+Martin Haringa
+}

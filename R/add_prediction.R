@@ -28,7 +28,7 @@ add_prediction <- function(data, ..., var = NULL, conf_int = FALSE, alpha = 0.1)
   object_names <- match.call(expand.dots = FALSE)$`...`
 
   if ( !is.null(var) & length(var) != length(object_names)){
-    stop("Character vector 'var' should have the same length as number of objects")
+    stop("Character vector 'var' should have the same length as number of objects", call. = FALSE)
   }
 
   listdf <- list()

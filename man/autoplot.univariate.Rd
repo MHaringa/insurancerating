@@ -14,7 +14,7 @@
   sort_manual = NULL,
   dec.mark = ",",
   color = "dodgerblue",
-  color_bg = "#E7B800",
+  color_bg = "#f8e6b1",
   label_width = 10,
   coord_flip = FALSE,
   ...
@@ -50,7 +50,7 @@
 
 \item{color}{change the color of the points and line ("dodgerblue" is default)}
 
-\item{color_bg}{change the color of the histogram ("#E7B800" is default)}
+\item{color_bg}{change the color of the histogram ("#f8e6b1" is default)}
 
 \item{label_width}{width of labels on the x-axis (10 is default)}
 

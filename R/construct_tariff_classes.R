@@ -133,7 +133,7 @@ autoplot.constructtariffclasses <- function(object, conf_int = FALSE, color_gam 
   }
 
   if (!inherits(object, "constructtariffclasses")) {
-    stop("autoplot.constructtariffclasses requires a constructtariffclasses object, use object = object")
+    stop("autoplot.constructtariffclasses requires a constructtariffclasses object, use object = object", call. = FALSE)
   }
 
   prediction <- object[[1]]

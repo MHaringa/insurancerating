@@ -58,10 +58,10 @@
 fit_gam <- function(data, nclaims, x, exposure, amount = NULL, pure_premium = NULL, model = "frequency", round_x = NULL){
 
   if (nrow(data) < 10)
-    stop("At least 10 datapoints are required. The spline smoothers assume a default of 10 degrees of freedom.")
+    stop("At least 10 datapoints are required. The spline smoothers assume a default of 10 degrees of freedom.", call. = FALSE)
 
   if (!model %in% c("frequency", "severity", "burning"))
-    stop("Choose correct model specification: 'frequency', 'severity' or 'burning'.")
+    stop("Choose correct model specification: 'frequency', 'severity' or 'burning'.", call. = FALSE)
 
   nclaims <- deparse(substitute(nclaims))
   x <- deparse(substitute(x))
@@ -70,11 +70,11 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL, pure_premium = NU
   pure_premium <- deparse(substitute(pure_premium))
 
   if ( !is.numeric(data[[x]]) ) {
-    stop( "x should be numeric" )
+    stop( "x should be numeric", call. = FALSE)
   }
 
   if ( !is.numeric(data[[exposure]]) ) {
-    stop( "exposure should be numeric" )
+    stop( "exposure should be numeric", call. = FALSE)
   }
 
 
@@ -106,7 +106,7 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL, pure_premium = NU
 
 
     if( sum(df$exposure == 0) > 0 )
-      stop("Exposures should be greater than zero.")
+      stop("Exposures should be greater than zero.", call. = FALSE)
 
     # Poisson GAM
     gam_x <- mgcv::gam(nclaims ~ s(x),
@@ -276,7 +276,7 @@ autoplot.fitgam <- function(object, conf_int = FALSE, color_gam = "steelblue", s
   }
 
   if (!inherits(object, "fitgam")) {
-    stop("autoplot.fitgam requires a fitgam object, use object = object")
+    stop("autoplot.fitgam requires a fitgam object, use object = object", call. = FALSE)
   }
 
   prediction <- object[[1]]

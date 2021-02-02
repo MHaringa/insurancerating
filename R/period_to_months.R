@@ -42,11 +42,11 @@ period_to_months <- function (df, begin, end, ...) {
   column_names <- names(df)
 
   if (!lubridate::is.Date(df[[begin00]]) | !lubridate::is.Date(df[[end00]])) {
-    stop("Columns begin and end should be Date objects. Use e.g. lubridate::ymd() to create Date object.")
+    stop("Columns begin and end should be Date objects. Use e.g. lubridate::ymd() to create Date object.", call. = FALSE)
   }
 
   if (length(cols) > 0 & !all(cols %in% column_names)){
-    stop("Numeric column names to split not found in ", df00)
+    stop("Numeric column names to split not found in ", df00, call. = FALSE)
   }
 
   # Create look up table

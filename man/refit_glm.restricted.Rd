@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_refinement.R
 \name{refit_glm.restricted}
 \alias{refit_glm.restricted}
-\title{Refit GLM}
+\title{Refitting Generalized Linear Models}
 \usage{
 refit_glm.restricted(x)
 }
@@ -13,5 +13,19 @@ refit_glm.restricted(x)
 Object of class GLM
 }
 \description{
-Refit GLM model
+\code{refit_glm()} is used to refit generalized linear models,
+  and must be preceded by \code{restrict_coef()}.
+}
+\examples{
+\dontrun{
+restricted_df <- data.frame(gear = c(3,4,5), gear_coef = c(.9,1,1.1))
+mod1 <- glm(cyl ~ am + gear, offset = log(carb), family = "poisson", data = mtcars)
+mod1 \%>\%
+    restrict_coef(., restricted_df) \%>\%
+    refit_glm(.)
+}
+
+}
+\author{
+Martin Haringa
 }

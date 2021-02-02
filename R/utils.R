@@ -61,12 +61,14 @@ scale_second_axis <- function(background, df, dfby, f_axis, s_axis, by){
   if ( isTRUE(background) ){
 
     if ( by == "NULL"){
-      df$s_axis_scale <- df[[s_axis]] / max(df[[s_axis]], na.rm = TRUE) * max(df[[f_axis]], na.rm = TRUE)
+      df$s_axis_scale <- df[[s_axis]] / max(df[[s_axis]], na.rm = TRUE) *
+        max(df[[f_axis]], na.rm = TRUE)
       df$s_axis_print <- round(df[[s_axis]], 0)
     }
 
     if ( by != "NULL"){
-      df$s_axis_scale <- df[[s_axis]] / max(df[[s_axis]], na.rm = TRUE) * max(dfby[[f_axis]], na.rm = TRUE)
+      df$s_axis_scale <- df[[s_axis]] / max(df[[s_axis]], na.rm = TRUE) *
+        max(dfby[[f_axis]], na.rm = TRUE)
       df$s_axis_print <- round(df[[s_axis]], 0)
     }
 
@@ -140,14 +142,28 @@ ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg, sep_
 ggpointline <- function(df, dfby, xvar, y, color, by){
   if ( by == "NULL"){
     list(
-      ggplot2::geom_point(data = df, aes(x = .data[[xvar]], y = .data[[y]]), color = color),
-      ggplot2::geom_line(data = df, aes(x = .data[[xvar]], y = .data[[y]], group = 1), color = color),
+      ggplot2::geom_point(data = df,
+                          aes(x = .data[[xvar]],
+                              y = .data[[y]]),
+                          color = color),
+      ggplot2::geom_line(data = df,
+                         aes(x = .data[[xvar]],
+                             y = .data[[y]],
+                             group = 1),
+                         color = color),
       ggplot2::theme_minimal()
     )
   } else {
     list(
-      ggplot2::geom_point(data = dfby, aes(x = .data[[xvar]], y = .data[[y]], color = .data[[by]])),
-      ggplot2::geom_line(data = dfby, aes(x = .data[[xvar]], y = .data[[y]], group = .data[[by]], color = as.factor(.data[[by]]))),
+      ggplot2::geom_point(data = dfby,
+                          aes(x = .data[[xvar]],
+                              y = .data[[y]],
+                              color = .data[[by]])),
+      ggplot2::geom_line(data = dfby,
+                         aes(x = .data[[xvar]],
+                             y = .data[[y]],
+                             group = .data[[by]],
+                             color = as.factor(.data[[by]]))),
       ggplot2::theme_minimal(),
       ggplot2::labs(color = by)
     )
@@ -176,15 +192,23 @@ ggbarlabels <- function(df, xvar, y, coord_flip, sep_mark){
 
   if ( isTRUE(coord_flip) ){
     list(
-      ggplot2::geom_text(data = df, aes(x = .data[[xvar]], y = .data[[y]], label = sep_mark(.data[["y_print"]])),
-                         hjust = "inward", size = 3)
+      ggplot2::geom_text(data = df,
+                         aes(x = .data[[xvar]],
+                             y = .data[[y]],
+                             label = sep_mark(.data[["y_print"]])),
+                         hjust = "inward",
+                         size = 3)
     )
   }
 
   else if ( !isTRUE(coord_flip) ) {
     list(
-      ggplot2::geom_text(data = df, aes(x = .data[[xvar]], y = .data[[y]], label = sep_mark(.data[["y_print"]])),
-                         vjust = "inward", size = 3)
+      ggplot2::geom_text(data = df,
+                         aes(x = .data[[xvar]],
+                             y = .data[[y]],
+                             label = sep_mark(.data[["y_print"]])),
+                         vjust = "inward",
+                         size = 3)
     )
   }
 }
@@ -304,17 +328,17 @@ split_x_fn <- function(data, x, left = NULL, right = NULL){
   vec_new <- data.table::data.table(data)[get(x) > right, c(x) := right][get(x) < left, c(x) := left][,get(x)]
 
   if ( !is.null(left) ){
-    if ( left <= min(vec, na.rm = TRUE)){ stop( "Left should be greater than minimum value" ) }
-    if ( left >= max(vec, na.rm = TRUE)){ stop( "Left should be less than maximum value" )}
+    if ( left <= min(vec, na.rm = TRUE)){ stop( "Left should be greater than minimum value", call. = FALSE ) }
+    if ( left >= max(vec, na.rm = TRUE)){ stop( "Left should be less than maximum value", call. = FALSE )}
   }
 
   if ( !is.null(right) ){
-    if ( right >= max(vec, na.rm = TRUE)){ stop( "Right should be less than maximum value" ) }
-    if ( right <= min(vec, na.rm = TRUE)){ stop( "Right should be greater than minimum value")}
+    if ( right >= max(vec, na.rm = TRUE)){ stop( "Right should be less than maximum value", call. = FALSE ) }
+    if ( right <= min(vec, na.rm = TRUE)){ stop( "Right should be greater than minimum value", call. = FALSE)}
   }
 
   if ( !is.null(left) & !is.null(right)){
-    if ( left >= right ){ stop( "Right should be larger than left") }
+    if ( left >= right ){ stop( "Right should be larger than left", call. = FALSE) }
   }
 
   l1 <- split(vec_new, cut(vec_new,

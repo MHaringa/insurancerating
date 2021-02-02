@@ -2,18 +2,34 @@
 % Please edit documentation in R/model_refinement.R
 \name{restrict_coef}
 \alias{restrict_coef}
-\title{Restrict coefficients}
+\title{Restrict coefficients in the model}
 \usage{
 restrict_coef(model, data)
 }
 \arguments{
 \item{model}{object of class glm/restricted}
 
-\item{data}{data.frame with restricted data}
+\item{data}{data.frame with two columns containing restricted data. The first
+column, with the name of the risk factor as column name, must contain the
+levels of the risk factor. The second column must contain the restricted
+coefficients.}
 }
 \value{
-Object of class restricted
+Object of class restricted.
 }
 \description{
-Restrict coefficients
+Add restrictions, like a bonus-malus structure, on the risk
+factors used in the model. \code{restrict_coef()} must always be followed
+by \code{refit_glm()}.
+}
+\details{
+Although restrictions could be applied either to the frequency or
+  the severity model, it is more appropriate to impose the restrictions
+  on the premium model. This can be achieved by calculating the pure
+  premium for each record (i.e. expected number of claims times the expected
+  claim amount), then fitting an "unrestricted" Gamma GLM to the pure premium,
+  and then imposing the restrictions in a final "restricted" Gamma GLM.
+}
+\author{
+Martin Haringa
 }

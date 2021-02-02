@@ -89,7 +89,14 @@ update_formula_add <- function(offset_term, fm_no_offset, add_term){
     stop("Input must be of class formula", call. = FALSE)
   }
 
-  new_offset <- paste0("log(", add_term, ")", " + ", offset_term)
+  if (is.null(offset_term)){
+    new_offset <- paste0("log(", add_term, ")")
+  }
+
+  if (!is.null(offset_term)){
+    new_offset <- paste0("log(", add_term, ")", " + ", offset_term)
+  }
+
   new_offset_term <- paste0("offset(", new_offset, ")")
   new_fm <- update(fm_no_offset, paste("~ . +", new_offset_term))
   list(new_fm, new_offset)
@@ -144,26 +151,41 @@ add_restrictions_df <- function(model_data, restrictions_df){
 }
 
 
-#' Restrict coefficients
+#' Restrict coefficients in the model
 #'
-#' @description Restrict coefficients
+#' @description Add restrictions, like a bonus-malus structure, on the risk
+#' factors used in the model. \code{restrict_coef()} must always be followed
+#' by \code{refit_glm()}.
+#'
+#' @author Martin Haringa
+#'
+#' @details Although restrictions could be applied either to the frequency or
+#'   the severity model, it is more appropriate to impose the restrictions
+#'   on the premium model. This can be achieved by calculating the pure
+#'   premium for each record (i.e. expected number of claims times the expected
+#'   claim amount), then fitting an "unrestricted" Gamma GLM to the pure premium,
+#'   and then imposing the restrictions in a final "restricted" Gamma GLM.
 #'
 #' @param model object of class glm/restricted
-#' @param data data.frame with restricted data
+#' @param restrictions data.frame with two columns containing restricted data. The first
+#'   column, with the name of the risk factor as column name, must contain the
+#'   levels of the risk factor. The second column must contain the restricted
+#'   coefficients.
 #'
-#' @return Object of class restricted
+#' @return Object of class restricted.
 #'
 #' @export
-restrict_coef <- function(model, data){
+restrict_coef <- function(model, restrictions){
   if ( inherits(model, "glm") ){
     fm <- formula(model)
     offset_term <- get_offset(model)
     fm_no_offset <- remove_offset_formula(fm)
     df_new <- model$data
     model_family <- model$call$family
+    model_call <- model$call
     rfdf <- rating_factors(model)$df
-    rst_lst <- list(data)
-    names(rst_lst) <- names(data[1])
+    rst_lst <- list(restrictions)
+    names(rst_lst) <- names(restrictions[1])
   }
 
   if ( inherits(model, "restricted") ){
@@ -171,15 +193,16 @@ restrict_coef <- function(model, data){
     offset_term <- model$offset
     fm_no_offset <- model$formula_removed
     df_new <- model$data_restricted
+    model_call <- model$model_call
     model_family <- model$model_family
     rfdf <- model$rating_factors
     rst_lst <- model$restrictions_lst
-    rst_lst[[names(data)[1]]] <- data
+    rst_lst[[names(restrictions)[1]]] <- restrictions
   }
 
-  fm_remove <- update_formula_remove(fm_no_offset, names(data)[1])
-  fm_add <- update_formula_add(offset_term, fm_remove, names(data)[2])
-  df_restricted <- add_restrictions_df(df_new, data)
+  fm_remove <- update_formula_remove(fm_no_offset, names(restrictions)[1])
+  fm_add <- update_formula_add(offset_term, fm_remove, names(restrictions)[2])
+  df_restricted <- add_restrictions_df(df_new, restrictions)
 
   rt <- list(formula_restricted = fm_add[[1]],
              formula_removed = fm_remove,
@@ -188,24 +211,37 @@ restrict_coef <- function(model, data){
              offset = fm_add[[2]],
              model_family = model_family,
              rating_factors = rfdf,
-             restrictions_lst = rst_lst)
+             restrictions_lst = rst_lst,
+             model_call = model_call)
   attr(rt, "class") <- "restricted"
   invisible(rt)
 }
 
 
-#' Refit GLM
+#' Refitting Generalized Linear Models
 #'
-#' @description Refit GLM model
+#' @description \code{refit_glm()} is used to refit generalized linear models,
+#'   and must be preceded by \code{restrict_coef()}.
 #'
 #' @param x Object of class restricted
+#'
+#' @author Martin Haringa
 #'
 #' @importFrom stats glm
 #'
 #' @return Object of class GLM
 #'
+#' @examples
+#' \dontrun{
+#' restricted_df <- data.frame(gear = c(3,4,5), gear_coef = c(.9,1,1.1))
+#' mod1 <- glm(cyl ~ am + gear, offset = log(carb), family = "poisson", data = mtcars)
+#' mod1 %>%
+#'     restrict_coef(., restricted_df) %>%
+#'     refit_glm(.)
+#' }
+#'
 #' @export
-refit_glm.restricted <- function(x){
+refit_glm.restricted <- function(x, ...){
 
   if( !inherits(fm_no_offset, "restricted") ) {
     stop("Input must be of class restricted", call. = FALSE)
@@ -214,10 +250,20 @@ refit_glm.restricted <- function(x){
   df <- x$data_restricted
   fm_plus <- x$formula_restricted
   family <- x$model_family
-  x <- stats::glm(fm_plus, family = family, data = df)
-  x$call$formula <- fm_plus
-  x$call$family <- family
-  x
+  weight <- x$model_call$weights
+
+  if (is.null(weight)){
+    x_new <- stats::glm(fm_plus, family = family, data = df, ...)
+  }
+
+  if (!is.null(weight)){
+    x_new <- stats::glm(fm_plus, family = family, weights = weight, data = df, ...)
+    x_new$call$weights <- weight
+  }
+
+  x_new$call$formula <- fm_plus
+  x_new$call$family <- family
+  x_new
 }
 
 
@@ -227,6 +273,8 @@ refit_glm.restricted <- function(x){
 #' @param ... other plotting parameters to affect the output
 #'
 #' @return Print object
+#'
+#' @author Martin Haringa
 #'
 #' @export
 print.restricted <- function(x, ...){
@@ -244,6 +292,8 @@ print.restricted <- function(x, ...){
 #' @param object check_residuals object produced by \code{restrict_coef()}
 #' @param name name of risk factor to show (defaults to NULL)
 #' @param ... other plotting parameters to affect the plot
+#'
+#' @author Martin Haringa
 #'
 #' @importFrom dplyr left_join
 #' @importFrom tidyr pivot_longer
@@ -279,8 +329,9 @@ autoplot.restricted <- function(object, name = NULL, ...){
                                 values_to = "Coef")
   koppel$level <- as.factor(koppel$level)
 
-  ggplot2::ggplot(data = koppel,
-                  aes(x = level, y = Coef, color = type, group = type)) +
+  ggplot2::ggplot(data = koppel, aes(x = level,
+                                     y = Coef,
+                                     color = type, group = type)) +
     ggplot2::geom_point() +
     ggplot2::geom_line() +
     ggplot2::theme_minimal() +

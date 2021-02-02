@@ -17,3 +17,6 @@ Print object
 \description{
 Print for object of class restricted
 }
+\author{
+Martin Haringa
+}
