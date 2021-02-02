@@ -15,11 +15,13 @@ rating_factors(
 \arguments{
 \item{...}{glm object(s) produced by \code{glm()}}
 
-\item{model_data}{data.frame used to create glm object(s), this should only be specified in case the exposure is desired in the output, default value is NULL}
+\item{model_data}{data.frame used to create glm object(s), this should only
+be specified in case the exposure is desired in the output, default value is NULL}
 
 \item{exposure}{column in \code{model_data} with exposure, default value is NULL}
 
-\item{exponentiate}{logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.}
+\item{exponentiate}{logical indicating whether or not to exponentiate the
+coefficient estimates. Defaults to TRUE.}
 
 \item{signif_stars}{show significance stars for p-values (defaults to TRUE)}
 }
@@ -27,11 +29,14 @@ rating_factors(
 data.frame
 }
 \description{
-Extract coefficients in terms of the original levels of the coefficients rather than the coded variables.
+Extract coefficients in terms of the original levels of the
+  coefficients rather than the coded variables.
 }
 \details{
-A fitted linear model has coefficients for the contrasts of the factor terms, usually one less in number than the number of levels.
-This function re-expresses the coefficients in the original coding. This function is adopted from dummy.coef(). Our adoption prints a data.frame as output.
+A fitted linear model has coefficients for the contrasts of the
+  factor terms, usually one less in number than the number of levels. This
+  function re-expresses the coefficients in the original coding. This
+  function is adopted from dummy.coef(). Our adoption prints a data.frame as output.
 }
 \examples{
 library(dplyr)

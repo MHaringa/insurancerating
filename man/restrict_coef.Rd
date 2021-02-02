@@ -4,12 +4,12 @@
 \alias{restrict_coef}
 \title{Restrict coefficients in the model}
 \usage{
-restrict_coef(model, data)
+restrict_coef(model, restrictions)
 }
 \arguments{
 \item{model}{object of class glm/restricted}
 
-\item{data}{data.frame with two columns containing restricted data. The first
+\item{restrictions}{data.frame with two columns containing restricted data. The first
 column, with the name of the risk factor as column name, must contain the
 levels of the risk factor. The second column must contain the restricted
 coefficients.}

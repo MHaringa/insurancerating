@@ -15,17 +15,22 @@ rating_factors1(
 \arguments{
 \item{model}{a single glm object produced by \code{glm()}}
 
-\item{model_data}{data.frame used to create glm object, this should only be specified in case the exposure is desired in the output, default value is NULL}
+\item{model_data}{data.frame used to create glm object, this should only
+be specified in case the exposure is desired in the output, default
+value is NULL}
 
-\item{exposure}{the name of the exposure column in \code{model_data}, default value is NULL}
+\item{exposure}{the name of the exposure column in \code{model_data},
+default value is NULL}
 
 \item{colname}{the name of the output column, default value is "estimate"}
 
-\item{exponentiate}{logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.}
+\item{exponentiate}{logical indicating whether or not to exponentiate
+the coefficient estimates. Defaults to TRUE.}
 }
 \description{
-Extract coefficients in terms of the original levels of the coefficients rather than the coded variables.
-Use rating_factors() to compare the output obtained from two or more glm objects.
+Extract coefficients in terms of the original levels of the
+  coefficients rather than the coded variables.Use rating_factors() to
+  compare the output obtained from two or more glm objects.
 }
 \examples{
 MTPL2a <- MTPL2
