@@ -181,8 +181,6 @@ restrict_coef <- function(model, restrictions){
     offset_term <- get_offset(model)
     fm_no_offset <- remove_offset_formula(fm)
     df_new <- model$data
-    model_family <- model$call$family
-    model_call <- model$call
     rfdf <- rating_factors(model)$df
     rst_lst <- list(restrictions)
     names(rst_lst) <- names(restrictions[1])
@@ -193,8 +191,6 @@ restrict_coef <- function(model, restrictions){
     offset_term <- model$offset
     fm_no_offset <- model$formula_removed
     df_new <- model$data_restricted
-    model_call <- model$model_call
-    model_family <- model$model_family
     rfdf <- model$rating_factors
     rst_lst <- model$restrictions_lst
     rst_lst[[names(restrictions)[1]]] <- restrictions
@@ -209,10 +205,8 @@ restrict_coef <- function(model, restrictions){
              data_restricted = df_restricted,
              fm_no_offset = fm_no_offset,
              offset = fm_add[[2]],
-             model_family = model_family,
              rating_factors = rfdf,
-             restrictions_lst = rst_lst,
-             model_call = model_call)
+             restrictions_lst = rst_lst)
   attr(rt, "class") <- "restricted"
   invisible(rt)
 }
@@ -228,6 +222,7 @@ restrict_coef <- function(model, restrictions){
 #' @author Martin Haringa
 #'
 #' @importFrom stats glm
+#' @importFrom utils modifyList
 #'
 #' @return Object of class GLM
 #'
@@ -241,29 +236,18 @@ restrict_coef <- function(model, restrictions){
 #' }
 #'
 #' @export
-refit_glm <- function(x, ...){
+refit_glm <- function(x){
 
   if( !inherits(x, "restricted") ) {
     stop("Input must be of class restricted", call. = FALSE)
   }
 
-  df <- x$data_restricted
-  fm_plus <- x$formula_restricted
-  family <- x$model_family
-  weight <- x$model_call$weights
-
-  if (is.null(weight)){
-    x_new <- stats::glm(fm_plus, family = family, data = df, ...)
-  }
-
-  if (!is.null(weight)){
-    x_new <- stats::glm(fm_plus, family = family, weights = weight, data = df, ...)
-    x_new$call$weights <- weight
-  }
-
-  x_new$call$formula <- fm_plus
-  x_new$call$family <- family
-  x_new
+  lst_call <- as.list(x$model_call)
+  lst <- list(formula = x$formula_restricted, data = x$data_restricted)
+  y <- eval(as.call(modifyList(lst_call, lst)))
+  y$call$formula <- lst$formula
+  y$call$data <- quote(df_new)
+  y
 }
 
 

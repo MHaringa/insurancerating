@@ -4,7 +4,7 @@
 \alias{refit_glm}
 \title{Refitting Generalized Linear Models}
 \usage{
-refit_glm(x, ...)
+refit_glm(x)
 }
 \arguments{
 \item{x}{Object of class restricted}
