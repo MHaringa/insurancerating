@@ -181,6 +181,7 @@ restrict_coef <- function(model, restrictions){
     offset_term <- get_offset(model)
     fm_no_offset <- remove_offset_formula(fm)
     df_new <- model$data
+    model_call <- model$call
     rfdf <- rating_factors(model)$df
     rst_lst <- list(restrictions)
     names(rst_lst) <- names(restrictions[1])
@@ -191,6 +192,7 @@ restrict_coef <- function(model, restrictions){
     offset_term <- model$offset
     fm_no_offset <- model$formula_removed
     df_new <- model$data_restricted
+    model_call <- model$model_call
     rfdf <- model$rating_factors
     rst_lst <- model$restrictions_lst
     rst_lst[[names(restrictions)[1]]] <- restrictions
@@ -206,7 +208,8 @@ restrict_coef <- function(model, restrictions){
              fm_no_offset = fm_no_offset,
              offset = fm_add[[2]],
              rating_factors = rfdf,
-             restrictions_lst = rst_lst)
+             restrictions_lst = rst_lst,
+             model_call = model_call)
   attr(rt, "class") <- "restricted"
   invisible(rt)
 }
@@ -222,7 +225,6 @@ restrict_coef <- function(model, restrictions){
 #' @author Martin Haringa
 #'
 #' @importFrom stats glm
-#' @importFrom utils modifyList
 #'
 #' @return Object of class GLM
 #'
