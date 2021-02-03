@@ -299,7 +299,7 @@ autoplot.restricted <- function(object, name = NULL, ...){
   }
 
   if ( is.null(name) ) {
-    name <- names(x$restrictions_lst)[1]
+    name <- names(object$restrictions_lst)[1]
   }
 
   naam_rst <- object$restrictions_lst[[name]]
