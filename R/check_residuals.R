@@ -8,11 +8,11 @@
 #' @details Misspecifications in GLMs cannot reliably be diagnosed with standard residual plots, and GLMs are thus often not as thoroughly checked as LMs.
 #' One reason why GLMs residuals are harder to interpret is that the expected distribution of the data changes with the fitted values.
 #' As a result, standard residual plots, when interpreted in the same way as for linear models, seem to show all kind of problems,
-#' such as non-normality, heteroscedasticity, even if the model is correctly specified. \code{check_residuals()} aims at solving these problems
+#' such as non-normality, heteroscedasticity, even if the model is correctly specified. `check_residuals()` aims at solving these problems
 #' by creating readily interpretable residuals for GLMs that are standardized to values between 0 and 1,
 #' and that can be interpreted as intuitively as residuals for the linear model. This is achieved by a simulation-based approach,
 #' similar to the Bayesian p-value or the parametric bootstrap, that transforms the residuals to a standardized scale. This explanation is adopted
-#' from \code{\link[DHARMa]{simulateResiduals}}.
+#' from [DHARMa::simulateResiduals()].
 #'
 #' @return Invisibly returns the p-value of the test statistics. A p-value < 0.05 indicates a significant deviation from expected distribution.
 #'
@@ -26,7 +26,7 @@
 #' @references Dunn, K. P., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics 5, 1-10.
 #' @references Gelman, A. & Hill, J. Data analysis using regression and multilevel/hierarchical models Cambridge University Press, 2006
 #' @references Hartig, F. (2020). DHARMa: Residual Diagnostics for Hierarchical (Multi-Level / Mixed) Regression Models. R package version 0.3.0.
-#' \url{https://CRAN.R-project.org/package=DHARMa}
+#' <https://CRAN.R-project.org/package=DHARMa>
 #'
 #' @examples
 #' \dontrun{
@@ -84,10 +84,10 @@ print.check_residuals <- function(x, ...) {
 
 #' Automatically create a ggplot for objects obtained from check_residuals()
 #'
-#' @description Takes an object produced by \code{check_residuals()}, and produces a uniform quantile-quantile plot.
+#' @description Takes an object produced by `check_residuals()`, and produces a uniform quantile-quantile plot.
 #'
 #'
-#' @param object check_residuals object produced by \code{check_residuals()}
+#' @param object check_residuals object produced by `check_residuals()`
 #' @param show_message show output from test (defaults to TRUE)
 #' @param ... other plotting parameters to affect the plot
 #'

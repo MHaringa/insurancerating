@@ -10,9 +10,10 @@
 #' @param line show density line (default is FALSE)
 #' @param bins numeric to indicate number of bins
 #' @param fill color used to fill bars
+#' @param color color for bar lines
 #' @param fill_outliers color used to fill outlier bars
 #'
-#' @details Wrapper function around `ggplot2::geom_histogram()`. The method is based on suggestions from \url{https://edwinth.github.io/blog/outlier-bin/}.
+#' @details Wrapper function around `ggplot2::geom_histogram()`. The method is based on suggestions from <https://edwinth.github.io/blog/outlier-bin/>.
 #'
 #' @return a ggplot2 object
 #'
@@ -20,14 +21,29 @@
 #'
 #' @examples
 #' histbin(MTPL2, premium)
-#' histbin(MTPL2, premium, left = 30, right = 120, line = TRUE, bins = 30)
+#' histbin(MTPL2, premium, left = 30, right = 120, bins = 30)
 #'
 #' @export
 histbin <- function(data, x, left = NULL, right = NULL, line = FALSE, bins = 30,
-                    fill = "#f8e6b1", fill_outliers = "#a7d1a7"){
+                    fill = NULL, color = NULL, fill_outliers = "#a7d1a7"){
 
 
   xvar00 <- deparse(substitute(x))
+
+  if ( is.null(fill) & is.null(color) ){
+    fill <- "steelblue"
+    color <- darken_color(fill)[2]
+  }
+
+  if ( is.null(fill) & !is.null(color) ){
+    color <- color
+    fill <- lighten_color(color)[2]
+  }
+
+  if ( !is.null(fill) & is.null(color) ){
+    fill <- fill
+    color <- darken_color(fill)[2]
+  }
 
   splitsing <- split_x_fn(data, xvar00, left = left, right = right)
   nbinwidth <- diff(range(do.call(rbind, splitsing)$x)) / bins
@@ -42,7 +58,7 @@ histbin <- function(data, x, left = NULL, right = NULL, line = FALSE, bins = 30,
 
   obj <- obj +
     ggplot2::geom_histogram(fill = fill,
-                            color = fill,
+                            color = color,
                             alpha = 1,
                             binwidth = nbinwidth) +
     ggplot2::scale_y_continuous(expand = expansion(mult = c(0, .1)))

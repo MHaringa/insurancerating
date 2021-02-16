@@ -30,13 +30,13 @@ data.frame
 }
 \description{
 Extract coefficients in terms of the original levels of the
-  coefficients rather than the coded variables.
+coefficients rather than the coded variables.
 }
 \details{
 A fitted linear model has coefficients for the contrasts of the
-  factor terms, usually one less in number than the number of levels. This
-  function re-expresses the coefficients in the original coding. This
-  function is adopted from dummy.coef(). Our adoption prints a data.frame as output.
+factor terms, usually one less in number than the number of levels. This
+function re-expresses the coefficients in the original coding. This
+function is adopted from dummy.coef(). Our adoption prints a data.frame as output.
 }
 \examples{
 library(dplyr)

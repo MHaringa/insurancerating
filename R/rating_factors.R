@@ -1,14 +1,15 @@
 #' Include reference group in regression output
 #'
+#'
 #' @description Extract coefficients in terms of the original levels of the
 #'   coefficients rather than the coded variables.Use rating_factors() to
 #'   compare the output obtained from two or more glm objects.
 #'
-#' @param model a single glm object produced by \code{glm()}
+#' @param model a single glm object produced by `glm()`
 #' @param model_data data.frame used to create glm object, this should only
 #'   be specified in case the exposure is desired in the output, default
 #'   value is NULL
-#' @param exposure the name of the exposure column in \code{model_data},
+#' @param exposure the name of the exposure column in `model_data`,
 #'   default value is NULL
 #' @param colname the name of the output column, default value is "estimate"
 #' @param exponentiate logical indicating whether or not to exponentiate
@@ -137,10 +138,10 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
 #' @description Extract coefficients in terms of the original levels of the
 #'   coefficients rather than the coded variables.
 #'
-#' @param ... glm object(s) produced by \code{glm()}
+#' @param ... glm object(s) produced by `glm()`
 #' @param model_data data.frame used to create glm object(s), this should only
 #'   be specified in case the exposure is desired in the output, default value is NULL
-#' @param exposure column in \code{model_data} with exposure, default value is NULL
+#' @param exposure column in `model_data` with exposure, default value is NULL
 #' @param exponentiate logical indicating whether or not to exponentiate the
 #'   coefficient estimates. Defaults to TRUE.
 #' @param signif_stars show significance stars for p-values (defaults to TRUE)
@@ -275,10 +276,10 @@ as.data.frame.riskfactor <- function(x, ...) {
 
 #' Automatically create a ggplot for objects obtained from rating_factors()
 #'
-#' @description Takes an object produced by \code{univariate()}, and plots the
+#' @description Takes an object produced by `univariate()`, and plots the
 #'   available input.
 #'
-#' @param object riskfactor object produced by \code{rating_factors()}
+#' @param object riskfactor object produced by `rating_factors()`
 #' @param risk_factors character vector to define which factors are included.
 #'   Defaults to all risk factors.
 #' @param ncol number of columns in output (default is 1)
@@ -286,7 +287,8 @@ as.data.frame.riskfactor <- function(x, ...) {
 #' @param dec.mark control the format of the decimal point, as well as the mark
 #'   between intervals before the decimal point, choose either "," (default) or "."
 #' @param ylab modify label for the y-axis
-#' @param color_bg change the color of the histogram ("#f8e6b1" is default)
+#' @param fill color to fill histogram
+#' @param color color to plot line colors of histogram (default is "skyblue")
 #' @param linetype use different linetypes (default is FALSE)
 #' @param ... other plotting parameters to affect the plot
 #'
@@ -296,6 +298,7 @@ as.data.frame.riskfactor <- function(x, ...) {
 #' @import ggplot2
 #' @importFrom patchwork wrap_plots
 #' @importFrom tidyr pivot_longer
+#' @importFrom tidyselect all_of
 #'
 #' @examples
 #' library(dplyr)
@@ -311,7 +314,7 @@ as.data.frame.riskfactor <- function(x, ...) {
 #'
 autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
                                 labels = TRUE, dec.mark = ",",
-                                ylab = "rate", color_bg = "#f8e6b1",
+                                ylab = "rate", fill = NULL, color = NULL,
                                 linetype = FALSE, ...){
 
   if ( !inherits(object, "riskfactor")){
@@ -334,7 +337,7 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
 
   df <- df[df$risk_factor != df$level, ]
 
-  df_long <- tidyr::pivot_longer(df, cols = models_nm, names_to = "model", values_to = "est")
+  df_long <- tidyr::pivot_longer(df, cols = tidyselect::all_of(models_nm), names_to = "model", values_to = "est")
   df_long$model <- gsub("^est_", "", df_long$model)
 
   if ( !isTRUE(expon) ){
@@ -373,6 +376,21 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
       df1_bar <- unique(df1[, c("risk_factor", "level", exposure_nm, "s_axis_scale", "y_print")])
     }
 
+    if ( is.null(fill) & is.null(color) ){
+      color <- "lightskyblue"
+      fill <- lighten_color(color)[2]
+    }
+
+    if ( is.null(fill) & !is.null(color) ){
+      color <- color
+      fill <- lighten_color(color)[2]
+    }
+
+    if ( !is.null(fill) & is.null(color) ){
+      fill <- fill
+      color <- darken_color(fill)[3]
+    }
+
     fig_list[[paste0("p", i)]] <- ggplot2::ggplot(data = df1) +
       ggplot2::theme_minimal() +
       { if (exposure_nm == "NULL")  ggplot2::scale_y_continuous(labels = sep_fn,
@@ -382,8 +400,8 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
                                                      aes(x = .data[["level"]],
                                                          y = .data[["s_axis_scale"]]),
                                                      stat = "identity",
-                                                     color = color_bg,
-                                                     fill = color_bg,
+                                                     color = color,
+                                                     fill = fill,
                                                      alpha = 1) } +
       { if (exposure_nm != "NULL") ggplot2::scale_y_continuous(
         labels = sep_fn,
@@ -396,6 +414,7 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
                               y = .data[["est"]],
                               group = .data[["model"]],
                               color = .data[["model"]])) +
+      { if ( length(models) == 1) theme(legend.position = "none") } +
       { if (isTRUE(linetype)) ggplot2::geom_line(aes(x = .data[["level"]],
                                                      y = .data[["est"]],
                                                      group = .data[["model"]],

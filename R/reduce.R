@@ -1,14 +1,14 @@
 #' Reduce portfolio by merging redundant date ranges
 #'
-#' @description Transform all the date ranges together as a set to produce a new set of date ranges. Ranges separated by a gap of at least \code{min.gapwidth} days are not merged.
+#' @description Transform all the date ranges together as a set to produce a new set of date ranges. Ranges separated by a gap of at least `min.gapwidth` days are not merged.
 #'
 #' @param df data.frame
-#' @param begin name of column \code{df} with begin dates
-#' @param end name of column in \code{df} with end dates
-#' @param ... names of columns in \code{df} used to group date ranges by
-#' @param agg_cols list with columns in \code{df} to aggregate by (defaults to NULL)
+#' @param begin name of column `df` with begin dates
+#' @param end name of column in `df` with end dates
+#' @param ... names of columns in `df` used to group date ranges by
+#' @param agg_cols list with columns in `df` to aggregate by (defaults to NULL)
 #' @param agg aggregation type (defaults to "sum")
-#' @param min.gapwidth ranges separated by a gap of at least \code{min.gapwidth} days are not merged. Defaults to 5.
+#' @param min.gapwidth ranges separated by a gap of at least `min.gapwidth` days are not merged. Defaults to 5.
 #'
 #' @import data.table
 #' @importFrom dplyr lead
@@ -17,15 +17,15 @@
 #'
 #' @author Martin Haringa
 #'
-#' @details This function is adopted from \code{IRanges::reduce()}.
+#' @details This function is adopted from `IRanges::reduce()`.
 #'
-#' @return An object of class \code{"reduce"}.
-#' The function \code{summary} is used to obtain and print a summary of the results.
-#' An object of class \code{"reduce"} is a list usually containing at least the following elements:
+#' @return An object of class `"reduce"`.
+#' The function `summary` is used to obtain and print a summary of the results.
+#' An object of class `"reduce"` is a list usually containing at least the following elements:
 #' \item{df}{data frame with reduced time periods}
-#' \item{begin}{name of column in \code{df} with begin dates}
-#' \item{end}{name of column in \code{df} with end dates}
-#' \item{cols}{names of columns in \code{df} used to group date ranges by}
+#' \item{begin}{name of column in `df` with begin dates}
+#' \item{end}{name of column in `df` with end dates}
+#' \item{cols}{names of columns in `df` used to group date ranges by}
 #'
 #' @examples
 #' portfolio <- structure(list(policy_nr = c("12345", "12345", "12345", "12345",
@@ -134,9 +134,9 @@ as.data.frame.reduce <- function(x, ...) {
 
 #' Automatically create a summary for objects obtained from reduce()
 #'
-#' @description Takes an object produced by \code{reduce()}, and counts new and lost customers.
+#' @description Takes an object produced by `reduce()`, and counts new and lost customers.
 #'
-#' @param object reduce object produced by \code{reduce()}
+#' @param object reduce object produced by `reduce()`
 #' @param period a character string indicating the period to aggregate on. Four options are available: "quarters", "months", "weeks", and "days" (the default option)
 #' @param ... names of columns to aggregate counts by
 #' @param name The name of the new column in the output. If omitted, it will default to count.

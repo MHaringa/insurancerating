@@ -14,7 +14,7 @@
   sort_manual = NULL,
   dec.mark = ",",
   color = "dodgerblue",
-  color_bg = "#f8e6b1",
+  color_bg = "lightskyblue",
   label_width = 10,
   coord_flip = FALSE,
   ...
@@ -24,16 +24,16 @@
 \item{object}{univariate object produced by \code{univariate()}}
 
 \item{show_plots}{numeric vector of plots to be shown (default is c(1,2,3,4,5,6,7,8,9)), there are nine available plots:
- \itemize{
-  \item{1. frequency (i.e. number of claims / exposure)}
-  \item{2. average severity (i.e. severity / number of claims)}
-  \item{3. risk premium (i.e. severity / exposure)}
-  \item{4. loss ratio (i.e. severity / premium)}
-  \item{5. average premium (i.e. premium / exposure)}
-  \item{6. exposure}
-  \item{7. severity}
-  \item{8. nclaims}
-  \item{9. premium}
+\itemize{
+\item{1. frequency (i.e. number of claims / exposure)}
+\item{2. average severity (i.e. severity / number of claims)}
+\item{3. risk premium (i.e. severity / exposure)}
+\item{4. loss ratio (i.e. severity / premium)}
+\item{5. average premium (i.e. premium / exposure)}
+\item{6. exposure}
+\item{7. severity}
+\item{8. nclaims}
+\item{9. premium}
 }}
 
 \item{ncol}{number of columns in output (default is 1)}
@@ -70,10 +70,9 @@ x <- univariate(MTPL2, x = area, severity = amount, nclaims = nclaims, exposure 
 autoplot(x)
 autoplot(x, show_plots = c(6,1), background = FALSE, sort = TRUE)
 
-MTPL2a <- MTPL2
-MTPL2a$jaar <- sample(2015:2019, nrow(MTPL2a), replace = TRUE)
-x1 <- univariate(MTPL2a, x = area, severity = amount, nclaims = nclaims,
-exposure = exposure, by = jaar)
-autoplot(x1, show_plots = 1:2)
+# Group by `zip`
+xzip <- univariate(MTPL, x = bm, severity = amount, nclaims = nclaims,
+exposure = exposure, by = zip)
+autoplot(xzip, show_plots = 1:2)
 
 }

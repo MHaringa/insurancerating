@@ -18,9 +18,9 @@ Compute indices of model performance for (one or more) GLMs.
 \details{
 The following indices are computed:
 \itemize{
-  \item{\strong{AIC}} {Akaike's Information Criterion, see \code{\link[stats]{AIC}}}
-  \item{\strong{BIC}} {Bayesian Information Criterion, see \code{\link[stats]{BIC}}}
-  \item{\strong{RMSE}} {Root mean squared error, \code{\link{rmse}}}
+\item{\strong{AIC}} {Akaike's Information Criterion, see \code{\link[stats:AIC]{stats::AIC()}}}
+\item{\strong{BIC}} {Bayesian Information Criterion, see \code{\link[stats:AIC]{stats::BIC()}}}
+\item{\strong{RMSE}} {Root mean squared error, \code{\link[=rmse]{rmse()}}}
 }
 
 Adopted from \code{performance::model_performance()}.

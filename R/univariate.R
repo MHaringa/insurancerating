@@ -11,128 +11,133 @@
 #' If input arguments are not specified, the summary statistics related to these arguments are ignored.
 #'
 #' @param df data.frame with insurance portfolio
-#' @param x column in \code{df} with risk factor
-#' @param severity column in \code{df} with severity (default is NULL)
-#' @param premium column in \code{df} with premium (default is NULL)
-#' @param exposure column in \code{df} with exposure (default is NULL)
-#' @param nclaims column in \code{df} with number of claims (default is NULL)
-#' @param by column(s) in \code{df} to group by
+#' @param x column in `df` with risk factor
+#' @param severity column in `df` with severity (default is NULL)
+#' @param premium column in `df` with premium (default is NULL)
+#' @param exposure column in `df` with exposure (default is NULL)
+#' @param nclaims column in `df` with number of claims (default is NULL)
+#' @param by list of column(s) in `df` to group by
 #'
-#' @return A list of class \code{univ_all} with components
-#' \item{df}{data frame}
-#' \item{xvar}{name of column in df with risk factor}
-#' \item{severity}{name of column in df with severity}
-#' \item{nclaims}{name of column in df with number of claims}
-#' \item{exposure}{name of column in df with exposure}
-#' \item{premium}{name of column in df with premium}
+#' @return A data.frame
 #'
 #' @importFrom data.table data.table
 #'
 #' @examples
+#' # Summarize by `area`
 #' univariate(MTPL2, x = area, severity = amount, nclaims = nclaims,
 #'            exposure = exposure, premium = premium)
 #'
-#' # The summary statistics related to premium are not calculated
-#' univariate(MTPL2, x = area, severity = amount, nclaims = nclaims, exposure = exposure)
+#' # Summarize by `zip` and `bm`
+#' univariate(MTPL, x = zip, severity = amount, nclaims = nclaims,
+#'            exposure = exposure, by = bm)
+#'
+#' # Summarize by `zip`, `bm` and `power`
+#' univariate(MTPL, x = zip, severity = amount, nclaims = nclaims,
+#'            exposure = exposure, by = list(bm, power))
 #'
 #' @export
-univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, premium = NULL, by = NULL){
+univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, premium = NULL, by = NULL) {
 
-  x00 <- deparse(substitute(x))
-  severity00 <- deparse(substitute(severity))
-  nclaims00 <- deparse(substitute(nclaims))
-  exposure00 <- deparse(substitute(exposure))
-  premium00 <- deparse(substitute(premium))
-  by00 <- deparse(substitute(by))
+  .xvar <- deparse(substitute(x))
+  .severity <- deparse(substitute(severity))
+  .nclaims <- deparse(substitute(nclaims))
+  .exposure <- deparse(substitute(exposure))
+  .premium <- deparse(substitute(premium))
 
-  cols <- c(severity00, nclaims00, exposure00, premium00)
-  cols <- cols[cols != "NULL"]
+  mc <- as.list(match.call())
+  byl <- as.list(mc$by)
 
-  xby00 <- c(x00, by00)
-  xby00 <- xby00[xby00 != "NULL"]
+  if( !.xvar %in% names(df) ) stop("Column ", .xvar, " can't be found", call. = FALSE)
 
-  if ( length( cols ) == 0 ) {
+  if ( length(byl) > 0L && byl[[1]] == "c" ) stop("`by` must be a list", call. = FALSE)
+
+  if (length(byl) > 0L && (byl[[1L]] == as.symbol("list") || byl[[1L]] == as.symbol(".")))
+    byl <- byl[-1L]
+
+  COLS <- c()
+  if (!missing(severity))
+    COLS <- deparse(mc$severity)
+  if (!missing(nclaims))
+    COLS <- c(COLS, deparse(mc$nclaims))
+  if (!missing(exposure))
+    COLS <- c(COLS, deparse(mc$exposure))
+  if (!missing(premium))
+    COLS <- c(COLS, deparse(mc$premium))
+
+  if (length(COLS) == 0) {
     stop("Define column names.", call. = FALSE)
   }
 
-  dt <- data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE), by = xby00, .SDcols = cols]
+  BY <- as.call(c(as.symbol("list"), substitute(x), byl))
+  dt <- eval(bquote(data.table(df)[, lapply(.SD, sum, na.rm = TRUE), by=.(BY), .SDcols=.(COLS)]))
 
-  if ( by00 != "NULL"){
-    dt1 <- data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE), by = x00, .SDcols = cols]
-  } else {
-    dt1 <- NULL
+  dt1 <- NULL
+  if (!missing(by)){
+    BYx <- as.call(c(as.symbol("list"), substitute(x)))
+    dt1 <- eval(bquote(data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE), by = .(BYx), .SDcols=.(COLS)]))
   }
 
   frequency = average_severity = risk_premium = loss_ratio = average_premium = NULL # due to NSE notes in R CMD check
 
   # Frequency
-  if ( all(c(nclaims00, exposure00) %in% cols)  ){
-    dt <- dt[, frequency := get(nclaims00) / get(exposure00)]
-    if ( by00 != "NULL" ){
-      dt1 <- dt1[, frequency := get(nclaims00) / get(exposure00)]
+  if ( all(c(.nclaims, .exposure) %in% COLS)  ){
+    dt <- dt[, frequency := get(.nclaims) / get(.exposure)]
+    if (!missing(by)){
+      dt1 <- dt1[, frequency := get(.nclaims) / get(.exposure)]
     }
   }
 
   # Average severity
-  if ( all(c(severity00, nclaims00) %in% cols) ){
-    dt <- dt[, average_severity := get(severity00) / get(nclaims00)]
-    if ( by00 != "NULL" ){
-      dt1 <- dt1[, average_severity := get(severity00) / get(nclaims00)]
+  if ( all(c(.severity, .nclaims) %in% COLS) ){
+    dt <- dt[, average_severity := get(.severity) / get(.nclaims)]
+    if (!missing(by)){
+      dt1 <- dt1[, average_severity := get(.severity) / get(.nclaims)]
     }
   }
 
   # Risk premium
-  if ( all(c(severity00, exposure00) %in% cols) ){
-    dt <- dt[, risk_premium := get(severity00) / get(exposure00)]
-    if ( by00 != "NULL" ){
-      dt1 <- dt1[, risk_premium := get(severity00) / get(exposure00)]
+  if ( all(c(.severity, .exposure) %in% COLS) ){
+    dt <- dt[, risk_premium := get(.severity) / get(.exposure)]
+    if (!missing(by)){
+      dt1 <- dt1[, risk_premium := get(.severity) / get(.exposure)]
     }
   }
 
   # Loss ratio
-  if ( all(c(severity00, premium00) %in% cols) ){
-    dt <- dt[, loss_ratio := get(severity00) / get(premium00)]
-    if ( by00 != "NULL" ){
-      dt1 <- dt1[, loss_ratio := get(severity00) / get(premium00)]
+  if ( all(c(.severity, .premium) %in% COLS) ){
+    dt <- dt[, loss_ratio := get(.severity) / get(.premium)]
+    if (!missing(by)){
+      dt1 <- dt1[, loss_ratio := get(.severity) / get(.premium)]
     }
   }
 
   # Average premium
-  if ( all(c(premium00, exposure00) %in% cols) ){
-    dt <- dt[, average_premium := get(premium00) / get(exposure00)]
-    if ( by00 != "NULL" ){
-      dt1 <- dt1[, average_premium := get(premium00) / get(exposure00)]
+  if ( all(c(.premium, .exposure) %in% COLS) ){
+    dt <- dt[, average_premium := get(.premium) / get(.exposure)]
+    if (!missing(by)){
+      dt1 <- dt1[, average_premium := get(.premium) / get(.exposure)]
     }
   }
 
-  return(structure(list(df = as.data.frame(dt),
-                        xvar = x00,
-                        severity = severity00,
-                        nclaims = nclaims00,
-                        exposure = exposure00,
-                        premium = premium00,
-                        by = by00,
-                        dfby = as.data.frame(dt1)),
-                   class = "univariate"))
+  attr(dt, "xvar") <- .xvar
+  attr(dt, "severity") <- .severity
+  attr(dt, "nclaims") <- .nclaims
+  attr(dt, "exposure") <- .exposure
+  attr(dt, "premium") <- .premium
+  attr(dt, "by") <- byl
+  attr(dt, "dfby") <- as.data.frame(dt1)
+
+  class(dt) <- append(class(dt), "univariate")
+  return(dt)
 }
 
 
-#' @export
-print.univariate <- function(x, ...) {
-  print(x$df)
-}
-
-#' @export
-as.data.frame.univariate <- function(x, ...) {
-  df <- x$df
-  return(as.data.frame(df))
-}
 
 #' Automatically create a ggplot for objects obtained from univariate()
 #'
-#' @description Takes an object produced by \code{univariate()}, and plots the available input.
+#' @description Takes an object produced by `univariate()`, and plots the available input.
 #'
-#' @param object univariate object produced by \code{univariate()}
+#' @param object univariate object produced by `univariate()`
 #' @param show_plots numeric vector of plots to be shown (default is c(1,2,3,4,5,6,7,8,9)), there are nine available plots:
 #'  \itemize{
 #'   \item{1. frequency (i.e. number of claims / exposure)}
@@ -168,16 +173,15 @@ as.data.frame.univariate <- function(x, ...) {
 #' autoplot(x)
 #' autoplot(x, show_plots = c(6,1), background = FALSE, sort = TRUE)
 #'
-#' MTPL2a <- MTPL2
-#' MTPL2a$jaar <- sample(2015:2019, nrow(MTPL2a), replace = TRUE)
-#' x1 <- univariate(MTPL2a, x = area, severity = amount, nclaims = nclaims,
-#' exposure = exposure, by = jaar)
-#' autoplot(x1, show_plots = 1:2)
+#' # Group by `zip`
+#' xzip <- univariate(MTPL, x = bm, severity = amount, nclaims = nclaims,
+#' exposure = exposure, by = zip)
+#' autoplot(xzip, show_plots = 1:2)
 #'
 #' @export
 autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background = TRUE, labels = TRUE,
                                 sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue",
-                                color_bg = "#f8e6b1", label_width = 10, coord_flip = FALSE, ...){
+                                color_bg = "lightskyblue", label_width = 10, coord_flip = FALSE, ...){
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
@@ -191,35 +195,39 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background =
     stop("autoplot.univariate requires a univariate object, use object = object", call. = FALSE)
   }
 
-  xvar <- object$xvar
-  nclaims <- object$nclaims
-  exposure <- object$exposure
-  severity <- object$severity
-  premium <- object$premium
-  by <- object$by
+  xvar <- attr(object, "xvar")
+  nclaims <- attr(object, "nclaims")
+  exposure <- attr(object, "exposure")
+  severity <- attr(object, "severity")
+  premium <- attr(object, "premium")
+  by <- as.character(attr(object, "by"))
 
-  if ( by == "NULL" ){
-    df <- object$df
-    dfby <- object$dfby
-  } else {
-    df <- object$dfby
-    dfby <- object$df
-  }
+  if ( length(by) == 0 ) { by <- "NULL" }
+
+  dfby0 <- attr(object, "dfby")
 
   if ( length(by) > 1){
-    stop("length of by should not be greater than one", call. = FALSE)
+    stop("length of `by` in `univariate()` must be equal to one", call. = FALSE)
   }
 
   if ( !is.numeric(show_plots) ){
-    stop("show_plots should be numeric", call. = FALSE)
+    stop("`show_plots` should be numeric", call. = FALSE)
   }
 
   if ( !any(show_plots > 0 & show_plots < 10) ){
-    stop("elements in show_plots are unknown", call. = FALSE)
+    stop("elements in `show_plots` are unknown", call. = FALSE)
   }
 
   if ( length(show_plots) > 1 & isTRUE(coord_flip) ){
-    stop("length of show_plots should be equal to one in case coord_flip = TRUE", call. = FALSE)
+    stop("length of `show_plots` must be equal to one in case `coord_flip = TRUE`", call. = FALSE)
+  }
+
+  if ( by == "NULL" ){
+    df <- object
+    dfby <- dfby0
+  } else {
+    df <- dfby0
+    dfby <- object
   }
 
   if ( !is.factor(df[[xvar]]) ){

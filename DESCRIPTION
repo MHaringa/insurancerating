@@ -4,11 +4,11 @@ Title: Analytic Insurance Rating Techniques
 Version: 0.6.4.9000
 Authors@R: c(person("Martin", "Haringa", role = c("aut", "cre"), email = "mtharinga@gmail.com"))
 Maintainer: Martin Haringa <mtharinga@gmail.com>
-Description: Methods for insurance rating. It helps actuaries to implement GLMs within all relevant steps needed to construct 
-    a risk premium from raw data. It provides a data driven strategy for the construction of insurance tariff classes. 
-    This strategy is based on the work by Antonio and Valdez (2012) <doi:10.1007/s10182-011-0152-7>. It also provides recipes 
-    on how to easily perform one-way, or univariate, analyses on an insurance portfolio. In addition it adds functionality 
-    to include reference categories in the levels of the coefficients in the output of a generalized linear regression analysis.
+Description: Methods for insurance rating. It helps actuaries to implement GLMs within all relevant steps needed to construct
+ a risk premium from raw data. It provides a data driven strategy for the construction of insurance tariff classes.
+ This strategy is based on the work by Antonio and Valdez (2012) <doi:10.1007/s10182-011-0152-7>. It also provides recipes
+ on how to easily perform one-way, or univariate, analyses on an insurance portfolio. In addition it adds functionality
+ to include reference categories in the levels of the coefficients in the output of a generalized linear regression analysis.
 License: GPL (>= 2)
 URL: https://github.com/mharinga/insurancerating, https://mharinga.github.io/insurancerating/
 Encoding: UTF-8
@@ -17,6 +17,7 @@ RoxygenNote: 7.1.1
 Imports: 
     ciTools,
     classInt,
+    colorspace,
     data.table, 
     DHARMa,
     dplyr,
@@ -28,10 +29,12 @@ Imports:
     mgcv,
     patchwork,
     stringr, 
-    tidyr
+    tidyr, 
+    tidyselect
 Depends: R (>= 3.3)
 Suggests: 
     knitr, 
     rmarkdown,
     scales,
     testthat
+Roxygen: list(markdown = TRUE)

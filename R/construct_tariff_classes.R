@@ -1,17 +1,17 @@
 #' Construct insurance tariff classes
 #'
-#' @description Constructs insurance tariff classes to \code{fitgam} objects produced by \code{fit_gam}. The goal is to bin the continuous risk factors
+#' @description Constructs insurance tariff classes to `fitgam` objects produced by `fit_gam`. The goal is to bin the continuous risk factors
 #' such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way,
 #' while being easy to use in a generalized linear model (GLM).
 #'
-#' @param object fitgam object produced by \code{fit_gam}
-#' @param alpha complexity parameter. The complexity parameter (alpha) is used to control the number of tariff classes. Higher values for \code{alpha}
-#' render less tariff classes. (\code{alpha} = 0 is default).
+#' @param object fitgam object produced by `fit_gam`
+#' @param alpha complexity parameter. The complexity parameter (alpha) is used to control the number of tariff classes. Higher values for `alpha`
+#' render less tariff classes. (`alpha` = 0 is default).
 #' @param niterations in case the run does not converge, it terminates after a specified number of iterations defined by niterations.
 #' @param ntrees the number of trees in the population.
 #' @param seed an numeric seed to initialize the random number generator (for reproducibility).
 #'
-#' @details Evolutionary trees are used as a technique to bin the \code{fitgam} object produced by \code{fit_gam} into risk homogeneous categories.
+#' @details Evolutionary trees are used as a technique to bin the `fitgam` object produced by `fit_gam` into risk homogeneous categories.
 #' This method is based on the work by Henckaerts et al. (2018). See Grubinger et al. (2014) for more details on the various parameters that
 #' control aspects of the evtree fit.
 #'
@@ -26,14 +26,14 @@
 #' @references Wood, S.N. (2011). Fast stable restricted maximum likelihood and marginal likelihood estimation of semiparametric
 #' generalized linear models. Journal of the Royal Statistical Society (B) 73(1):3-36. doi:10.1111/j.1467-9868.2010.00749.x.
 #'
-#' @return A list of class \code{constructtariffclasses} with components
+#' @return A list of class `constructtariffclasses` with components
 #' \item{prediction}{data frame with predicted values}
 #' \item{x}{name of continuous risk factor for which tariff classes are constructed}
 #' \item{model}{either 'frequency', 'severity' or 'burning'}
 #' \item{data}{data frame with predicted values and observed values}
 #' \item{x_obs}{observations for continuous risk factor}
 #' \item{splits}{vector with boundaries of the constructed tariff classes}
-#' \item{tariff_classes}{values in vector \code{x} coded according to which constructed tariff class they fall}
+#' \item{tariff_classes}{values in vector `x` coded according to which constructed tariff class they fall}
 #'
 #' @author Martin Haringa
 #'
@@ -94,11 +94,11 @@ as.vector.constructtariffclasses <- function(x, ...) {
 
 #' Automatically create a ggplot for objects obtained from construct_tariff_classes()
 #'
-#' @description Takes an object produced by \code{construct_tariff_classes()}, and plots the fitted GAM.
+#' @description Takes an object produced by `construct_tariff_classes()`, and plots the fitted GAM.
 #' In addition the constructed tariff classes are shown.
 #'
-#' @param object constructtariffclasses object produced by \code{construct_tariff_classes}
-#' @param conf_int determines whether 95\% confidence intervals will be plotted. The default is \code{conf_int = FALSE}
+#' @param object constructtariffclasses object produced by `construct_tariff_classes`
+#' @param conf_int determines whether 95 percent confidence intervals will be plotted. The default is `conf_int = FALSE`
 #' @param color_gam a color can be specified either by name (e.g.: "red") or by hexadecimal code (e.g. : "#FF1234") (default is "steelblue")
 #' @param color_splits change the color of the splits in the graph ("grey50" is default)
 #' @param show_observations add observed frequency/severity points for each level of the variable for which tariff classes are constructed

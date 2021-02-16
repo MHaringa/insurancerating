@@ -4,10 +4,14 @@
 \alias{autoplot.bootstrap_rmse}
 \title{Automatically create a ggplot for objects obtained from bootstrap_rmse()}
 \usage{
-\method{autoplot}{bootstrap_rmse}(object, ...)
+\method{autoplot}{bootstrap_rmse}(object, fill = NULL, color = NULL, ...)
 }
 \arguments{
 \item{object}{bootstrap_rmse object produced by \code{bootstrap_rmse()}}
+
+\item{fill}{color to fill histogram (default is "steelblue")}
+
+\item{color}{color to plot line colors of histogram}
 
 \item{...}{other plotting parameters to affect the plot}
 }

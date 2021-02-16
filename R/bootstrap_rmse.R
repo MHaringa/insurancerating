@@ -1,6 +1,6 @@
 #' Bootstrapped RMSE
 #'
-#' @description Generate \code{n} bootstrap replicates to compute \code{n} root mean squared errors.
+#' @description Generate `n` bootstrap replicates to compute `n` root mean squared errors.
 #'
 #' @param model a model object
 #' @param data data used to fit model object
@@ -10,13 +10,13 @@
 #' @param rmse_model numeric RMSE to show as vertical dashed line in autoplot() (defaults to NULL)
 #'
 #' @return A list with components
-#' \item{rmse_bs}{numerical vector with \code{n} root mean squared errors}
+#' \item{rmse_bs}{numerical vector with `n` root mean squared errors}
 #' \item{rmse_mod}{root mean squared error for fitted (i.e. original) model}
 #'
 #' @author Martin Haringa
 #'
 #' @details To test the predictive ability of the fitted model it might be helpful to determine the variation in the computed RMSE.
-#' The variation is calculated by computing the root mean squared errors from \code{n} generated bootstrap replicates. More precisely,
+#' The variation is calculated by computing the root mean squared errors from `n` generated bootstrap replicates. More precisely,
 #' for each iteration a sample with replacement is taken from the data set and the model is refitted using this sample. Then, the root
 #' mean squared error is calculated.
 #'
@@ -108,9 +108,11 @@ as.vector.bootstrap_rmse <- function(x, ...) {
 
 #' Automatically create a ggplot for objects obtained from bootstrap_rmse()
 #'
-#' @description Takes an object produced by \code{bootstrap_rmse()}, and plots the simulated RMSE
+#' @description Takes an object produced by `bootstrap_rmse()`, and plots the simulated RMSE
 #'
-#' @param object bootstrap_rmse object produced by \code{bootstrap_rmse()}
+#' @param object bootstrap_rmse object produced by `bootstrap_rmse()`
+#' @param fill color to fill histogram (default is "steelblue")
+#' @param color color to plot line colors of histogram
 #' @param ... other plotting parameters to affect the plot
 #'
 #' @author Martin Haringa
@@ -120,7 +122,7 @@ as.vector.bootstrap_rmse <- function(x, ...) {
 #' @return a ggplot object
 #'
 #' @export
-autoplot.bootstrap_rmse <- function(object, ...){
+autoplot.bootstrap_rmse <- function(object, fill = NULL, color = NULL, ...){
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
@@ -134,6 +136,21 @@ autoplot.bootstrap_rmse <- function(object, ...){
   rmse_mod <- object$rmse_mod
   dat <- data.frame(x = rmse_bs)
 
+  if ( is.null(fill) & is.null(color) ){
+    fill <- "steelblue"
+    color <- darken_color(fill)[2]
+  }
+
+  if ( is.null(fill) & !is.null(color) ){
+    color <- color
+    fill <- lighten_color(color)[2]
+  }
+
+  if ( !is.null(fill) & is.null(color) ){
+    fill <- fill
+    color <- darken_color(fill)[2]
+  }
+
   conf_bounds <- tryCatch(
     {
       as.vector(stats::quantile(rmse_bs, c(0.025, 0.975)))
@@ -145,10 +162,10 @@ autoplot.bootstrap_rmse <- function(object, ...){
 
   ggplot2::ggplot(dat, ggplot2::aes(x = x)) +
     ggplot2::geom_histogram(ggplot2::aes(y = ..density..),
-                            fill = "#f8e6b1",
+                            fill = fill,
                             alpha = 1,
                             bins = 30,
-                            color = "#E7B800") +
+                            color = color) +
     ggplot2::geom_density(alpha = .4,
                           fill = "antiquewhite3",
                           color = "grey") +

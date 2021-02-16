@@ -3,11 +3,11 @@
 #' @description Add model predictions and confidence bounds to a data frame.
 #'
 #' @param data 	a data frame of new data.
-#' @param ... one or more objects of class \code{glm}.
+#' @param ... one or more objects of class `glm`.
 #' @param var the name of the output column(s), defaults to NULL
 #' @param alpha a real number between 0 and 1. Controls the confidence level of the interval estimates (defaults to 0.10,
 #' representing 90 percent confidence interval).
-#' @param conf_int determines whether confidence intervals will be shown. Defaults to \code{conf_int = FALSE}.
+#' @param conf_int determines whether confidence intervals will be shown. Defaults to `conf_int = FALSE`.
 #'
 #' @importFrom ciTools add_ci
 #'

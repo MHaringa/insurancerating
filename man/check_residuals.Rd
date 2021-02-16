@@ -25,7 +25,7 @@ such as non-normality, heteroscedasticity, even if the model is correctly specif
 by creating readily interpretable residuals for GLMs that are standardized to values between 0 and 1,
 and that can be interpreted as intuitively as residuals for the linear model. This is achieved by a simulation-based approach,
 similar to the Bayesian p-value or the parametric bootstrap, that transforms the residuals to a standardized scale. This explanation is adopted
-from \code{\link[DHARMa]{simulateResiduals}}.
+from \code{\link[DHARMa:simulateResiduals]{DHARMa::simulateResiduals()}}.
 }
 \examples{
 \dontrun{

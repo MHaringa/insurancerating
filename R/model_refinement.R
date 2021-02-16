@@ -1,5 +1,7 @@
 #' Get offset from model object
 #'
+#' @noRd
+#'
 #' @param model Must be of class glm
 #'
 #' @return Character string with offset term
@@ -32,6 +34,8 @@ get_offset <- function(model) {
 
 #' Remove offset term from formula
 #'
+#' @noRd
+#'
 #' @param formula Formula of class formula
 #'
 #' @keywords internal
@@ -52,6 +56,8 @@ remove_offset_formula <- function(formula) {
 
 
 #' Remove risk factor from formula
+#'
+#' @noRd
 #'
 #' @param fm Formula of class formula
 #' @param remove_term Risk factor to remove
@@ -105,6 +111,8 @@ update_formula_add <- function(offset_term, fm_no_offset, add_term){
 
 #' Join restricted data to model data
 #'
+#' @noRd
+#'
 #' @param model_data data.frame with original model data
 #' @param restrictions_df data.frame with two columns, column 1 must include
 #'   the levels of the risk factor, and column 2 must include the new restricted
@@ -153,9 +161,10 @@ add_restrictions_df <- function(model_data, restrictions_df){
 
 #' Restrict coefficients in the model
 #'
-#' @description Add restrictions, like a bonus-malus structure, on the risk
-#' factors used in the model. \code{restrict_coef()} must always be followed
-#' by \code{refit_glm()}.
+#' @description `r lifecycle::badge('experimental')`
+#'  Add restrictions, like a bonus-malus structure, on the risk
+#'  factors used in the model. `restrict_coef()` must always be followed
+#'  by `refit_glm()`.
 #'
 #' @author Martin Haringa
 #'
@@ -173,6 +182,33 @@ add_restrictions_df <- function(model_data, restrictions_df){
 #'   coefficients.
 #'
 #' @return Object of class restricted.
+#'
+#' @examples
+#' # Add restrictions to risk factors for region (zip) -------------------------
+#'
+#' # Fit frequency and severity model
+#' library(dplyr)
+#' freq <- glm(nclaims ~ bm + zip, offset = log(exposure), family = poisson(),
+#'              data = MTPL)
+#' sev <- glm(amount ~ bm + zip, weights = nclaims, family = Gamma(link = "log"),
+#'             data = MTPL %>% filter(amount > 0))
+#'
+#' # Add predictions for freq and sev to data, and calculate premium
+#' premium_df <- MTPL %>%
+#'    add_prediction(freq, sev) %>%
+#'    mutate(premium = pred_nclaims_freq * pred_amount_sev)
+#'
+#' # Restrictions on risk factors for region (zip)
+#' zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
+#'
+#' # Fit unrestricted model
+#' burn <- glm(premium ~ bm + zip, weights = exposure,
+#'             family = Gamma(link = "log"), data = premium_df)
+#'
+#' # Fit restricted model
+#' burn_rst <- burn %>%
+#'   restrict_coef(., zip_df) %>%
+#'   refit_glm()
 #'
 #' @export
 restrict_coef <- function(model, restrictions){
@@ -217,25 +253,18 @@ restrict_coef <- function(model, restrictions){
 
 #' Refitting Generalized Linear Models
 #'
-#' @description \code{refit_glm()} is used to refit generalized linear models,
-#'   and must be preceded by \code{restrict_coef()}.
+#' @description `r lifecycle::badge('experimental')`
+#'  `refit_glm()` is used to refit generalized linear models, and must be
+#'  preceded by `restrict_coef()`.
 #'
 #' @param x Object of class restricted
 #'
 #' @author Martin Haringa
 #'
 #' @importFrom stats glm
+#' @importFrom utils modifyList
 #'
 #' @return Object of class GLM
-#'
-#' @examples
-#' \dontrun{
-#' restricted_df <- data.frame(gear = c(3,4,5), gear_coef = c(.9,1,1.1))
-#' mod1 <- glm(cyl ~ am + gear, offset = log(carb), family = "poisson", data = mtcars)
-#' mod1 %>%
-#'     restrict_coef(., restricted_df) %>%
-#'     refit_glm(.)
-#' }
 #'
 #' @export
 refit_glm <- function(x){
@@ -265,17 +294,17 @@ refit_glm <- function(x){
 #' @export
 print.restricted <- function(x, ...){
   cat("Formula: ")
-  x$formula_restricted
+  print(x$formula_restricted)
 }
-
 
 #' Automatically create a ggplot for objects obtained from restrict_coef()
 #'
-#' @description Takes an object produced by \code{restrict_coef()}, and produces
-#'   a line plot with a comparison between the restricted coefficients and
-#'   estimated coefficents obtained from the model.
+#' @description `r lifecycle::badge('experimental')`
+#'  Takes an object produced by `restrict_coef()`, and produces
+#'  a line plot with a comparison between the restricted coefficients and
+#'  estimated coefficients obtained from the model.
 #'
-#' @param object check_residuals object produced by \code{restrict_coef()}
+#' @param object object produced by `restrict_coef()`
 #' @param name name of risk factor to show (defaults to NULL)
 #' @param ... other plotting parameters to affect the plot
 #'
@@ -286,6 +315,13 @@ print.restricted <- function(x, ...){
 #' @import ggplot2
 #'
 #' @return Object of class ggplot2
+#'
+#' @examples
+#' freq <- glm(nclaims ~ bm + zip, weights = power, family = poisson(), data = MTPL)
+#' zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
+#' freq %>%
+#'   restrict_coef(., zip_df) %>%
+#'   autoplot()
 #'
 #' @export
 autoplot.restricted <- function(object, name = NULL, ...){
@@ -307,6 +343,8 @@ autoplot.restricted <- function(object, name = NULL, ...){
   naam_rf <- rf[rf$risk_factor == name,]
   naam_rf <- naam_rf[,2:3]
   names(naam_rst)[names(naam_rst) == name] <- "level"
+
+  naam_rf <- matchColClasses(naam_rst, naam_rf)
   koppel <- dplyr::left_join(naam_rst, naam_rf, by = "level")
 
   koppel <- tidyr::pivot_longer(koppel,

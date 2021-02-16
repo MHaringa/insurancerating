@@ -11,14 +11,15 @@ histbin(
   right = NULL,
   line = FALSE,
   bins = 30,
-  fill = "#f8e6b1",
+  fill = NULL,
+  color = NULL,
   fill_outliers = "#a7d1a7"
 )
 }
 \arguments{
 \item{data}{data.frame}
 
-\item{x}{variable name in data.frame `data` that should be mapped}
+\item{x}{variable name in data.frame \code{data} that should be mapped}
 
 \item{left}{numeric indicating the floor of the range}
 
@@ -30,6 +31,8 @@ histbin(
 
 \item{fill}{color used to fill bars}
 
+\item{color}{color for bar lines}
+
 \item{fill_outliers}{color used to fill outlier bars}
 }
 \value{
@@ -40,10 +43,10 @@ Visualize the distribution of a single continuous variable by dividing the x axi
 Data points that are considered outliers can be binned together. This might be helpful to display numerical data over a very wide range of values in a compact way.
 }
 \details{
-Wrapper function around `ggplot2::geom_histogram()`. The method is based on suggestions from \url{https://edwinth.github.io/blog/outlier-bin/}.
+Wrapper function around \code{ggplot2::geom_histogram()}. The method is based on suggestions from \url{https://edwinth.github.io/blog/outlier-bin/}.
 }
 \examples{
 histbin(MTPL2, premium)
-histbin(MTPL2, premium, left = 30, right = 120, line = TRUE, bins = 30)
+histbin(MTPL2, premium, left = 30, right = 120, bins = 30)
 
 }

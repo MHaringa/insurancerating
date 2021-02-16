@@ -19,10 +19,10 @@ Compute root mean squared error.
 }
 \details{
 The RMSE is the square root of the average of squared differences
-  between prediction and actual observation and indicates
-  the absolute fit of the model to the data. It can be interpreted as the standard
-  deviation of the unexplained variance, and is in the same units as the
-  response variable. Lower values indicate better model fit.
+between prediction and actual observation and indicates
+the absolute fit of the model to the data. It can be interpreted as the standard
+deviation of the unexplained variance, and is in the same units as the
+response variable. Lower values indicate better model fit.
 }
 \examples{
 x <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = MTPL2)

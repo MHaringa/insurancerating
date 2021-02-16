@@ -20,7 +20,7 @@
 \arguments{
 \item{object}{fitgam object produced by \code{fit_gam()}}
 
-\item{conf_int}{determines whether 95\% confidence intervals will be plotted. The default is \code{conf_int = FALSE}}
+\item{conf_int}{determines whether 95 percent confidence intervals will be plotted. The default is \code{conf_int = FALSE}.}
 
 \item{color_gam}{a color can be specified either by name (e.g.: "red") or by hexadecimal code (e.g. : "#FF1234") (default is "steelblue")}
 

@@ -11,7 +11,8 @@
   labels = TRUE,
   dec.mark = ",",
   ylab = "rate",
-  color_bg = "#f8e6b1",
+  fill = NULL,
+  color = NULL,
   linetype = FALSE,
   ...
 )
@@ -31,7 +32,9 @@ between intervals before the decimal point, choose either "," (default) or "."}
 
 \item{ylab}{modify label for the y-axis}
 
-\item{color_bg}{change the color of the histogram ("#f8e6b1" is default)}
+\item{fill}{color to fill histogram}
+
+\item{color}{color to plot line colors of histogram (default is "skyblue")}
 
 \item{linetype}{use different linetypes (default is FALSE)}
 
@@ -42,7 +45,7 @@ a ggplot2 object
 }
 \description{
 Takes an object produced by \code{univariate()}, and plots the
-  available input.
+available input.
 }
 \examples{
 library(dplyr)

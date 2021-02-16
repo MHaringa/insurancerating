@@ -2,7 +2,7 @@
 #'
 #' @description Check Poisson GLM for overdispersion.
 #'
-#' @param object fitted model of class \code{glm} and family Poisson
+#' @param object fitted model of class `glm` and family Poisson
 #'
 #' @return A list with dispersion ratio, chi-squared statistic, and p-value.
 #'
@@ -11,7 +11,7 @@
 #' model. If the dispersion ratio is close to one, a Poisson model fits well to the data.
 #' A p-value < .05 indicates overdispersion. Overdispersion > 2 probably means there
 #' is a larger problem with the data: check (again) for outliers, obvious lack of fit.
-#' Adopted from \code{performance::check_overdispersion()}.
+#' Adopted from `performance::check_overdispersion()`.
 #'
 #' @author Martin Haringa
 #'
@@ -20,7 +20,7 @@
 #' @importFrom stats df.residual
 #'
 #' @references \itemize{
-#'  \item Bolker B et al. (2017): \href{http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html}{GLMM FAQ.}
+#'  \item Bolker B et al. (2017): [GLMM FAQ.](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html)
 #'  }
 #'
 #' @examples

@@ -29,8 +29,8 @@ the coefficient estimates. Defaults to TRUE.}
 }
 \description{
 Extract coefficients in terms of the original levels of the
-  coefficients rather than the coded variables.Use rating_factors() to
-  compare the output obtained from two or more glm objects.
+coefficients rather than the coded variables.Use rating_factors() to
+compare the output obtained from two or more glm objects.
 }
 \examples{
 MTPL2a <- MTPL2

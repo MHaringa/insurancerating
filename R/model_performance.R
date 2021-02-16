@@ -2,13 +2,13 @@
 #'
 #' @description Compute indices of model performance for (one or more) GLMs.
 #'
-#' @param ... One or more objects of class \code{glm}.
+#' @param ... One or more objects of class `glm`.
 #'
 #' @details The following indices are computed:
 #' \itemize{
-#'   \item{\strong{AIC}} {Akaike's Information Criterion, see \code{\link[stats]{AIC}}}
-#'   \item{\strong{BIC}} {Bayesian Information Criterion, see \code{\link[stats]{BIC}}}
-#'   \item{\strong{RMSE}} {Root mean squared error, \code{\link{rmse}}}
+#'   \item{**AIC**} {Akaike's Information Criterion, see [stats::AIC()]}
+#'   \item{**BIC**} {Bayesian Information Criterion, see [stats::BIC()]}
+#'   \item{**RMSE**} {Root mean squared error, [rmse()]}
 #' }
 #'
 #' @importFrom stats AIC
@@ -19,7 +19,7 @@
 #' @author Martin Haringa
 #'
 #'
-#' @details Adopted from \code{performance::model_performance()}.
+#' @details Adopted from `performance::model_performance()`.
 #'
 #' @examples
 #' m1 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = MTPL2)

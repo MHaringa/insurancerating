@@ -18,17 +18,46 @@ coefficients.}
 Object of class restricted.
 }
 \description{
+\ifelse{html}{\out{<a href='https://www.tidyverse.org/lifecycle/#experimental'><img src='figures/lifecycle-experimental.svg' alt='Experimental lifecycle'></a>}}{\strong{Experimental}}
 Add restrictions, like a bonus-malus structure, on the risk
 factors used in the model. \code{restrict_coef()} must always be followed
 by \code{refit_glm()}.
 }
 \details{
 Although restrictions could be applied either to the frequency or
-  the severity model, it is more appropriate to impose the restrictions
-  on the premium model. This can be achieved by calculating the pure
-  premium for each record (i.e. expected number of claims times the expected
-  claim amount), then fitting an "unrestricted" Gamma GLM to the pure premium,
-  and then imposing the restrictions in a final "restricted" Gamma GLM.
+the severity model, it is more appropriate to impose the restrictions
+on the premium model. This can be achieved by calculating the pure
+premium for each record (i.e. expected number of claims times the expected
+claim amount), then fitting an "unrestricted" Gamma GLM to the pure premium,
+and then imposing the restrictions in a final "restricted" Gamma GLM.
+}
+\examples{
+# Add restrictions to risk factors for region (zip) -------------------------
+
+# Fit frequency and severity model
+library(dplyr)
+freq <- glm(nclaims ~ bm + zip, offset = log(exposure), family = poisson(),
+             data = MTPL)
+sev <- glm(amount ~ bm + zip, weights = nclaims, family = Gamma(link = "log"),
+            data = MTPL \%>\% filter(amount > 0))
+
+# Add predictions for freq and sev to data, and calculate premium
+premium_df <- MTPL \%>\%
+   add_prediction(freq, sev) \%>\%
+   mutate(premium = pred_nclaims_freq * pred_amount_sev)
+
+# Restrictions on risk factors for region (zip)
+zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
+
+# Fit unrestricted model
+burn <- glm(premium ~ bm + zip, weights = exposure,
+            family = Gamma(link = "log"), data = premium_df)
+
+# Fit restricted model
+burn_rst <- burn \%>\%
+  restrict_coef(., zip_df) \%>\%
+  refit_glm()
+
 }
 \author{
 Martin Haringa

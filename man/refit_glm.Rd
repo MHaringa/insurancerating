@@ -13,18 +13,9 @@ refit_glm(x)
 Object of class GLM
 }
 \description{
-\code{refit_glm()} is used to refit generalized linear models,
-  and must be preceded by \code{restrict_coef()}.
-}
-\examples{
-\dontrun{
-restricted_df <- data.frame(gear = c(3,4,5), gear_coef = c(.9,1,1.1))
-mod1 <- glm(cyl ~ am + gear, offset = log(carb), family = "poisson", data = mtcars)
-mod1 \%>\%
-    restrict_coef(., restricted_df) \%>\%
-    refit_glm(.)
-}
-
+\ifelse{html}{\out{<a href='https://www.tidyverse.org/lifecycle/#experimental'><img src='figures/lifecycle-experimental.svg' alt='Experimental lifecycle'></a>}}{\strong{Experimental}}
+\code{refit_glm()} is used to refit generalized linear models, and must be
+preceded by \code{restrict_coef()}.
 }
 \author{
 Martin Haringa

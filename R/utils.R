@@ -19,6 +19,20 @@ elapsed_days <- function(end_date){
   as.POSIXlt(end_date)$mday - 1
 }
 
+#' @keywords internal
+matchColClasses <- function(df1, df2) {
+
+  sharedColNames <- names(df1)[names(df1) %in% names(df2)]
+  sharedColTypes <- sapply(df1[,sharedColNames, drop = FALSE], class)
+
+  for (n in sharedColNames) {
+    attributes(df2[,n]) <- attributes(df1[,n])
+    class(df2[, n]) <- sharedColTypes[n]
+  }
+
+  return(df2)
+}
+
 
 #' Get splits from partykit object
 #' @noRd
@@ -100,15 +114,42 @@ sort_x_axis <- function(sort_manual, label_width){ # hist_sort
   }
 }
 
+#' @importFrom colorspace lighten
+#' @keywords internal
+lighten_color <- function(color, amount = 0.25, n = 3){
+  x <- vector(mode = "character", length = n)
+  x[1] <- color
+  if (n > 1){
+    for (i in 2:n){
+      x[i] <- colorspace::lighten(color, i * amount)
+    }
+    x
+  }
+}
+
+#' @importFrom colorspace darken
+#' @keywords internal
+darken_color <- function(color, amount = 0.25, n = 3){
+  x <- vector(mode = "character", length = n)
+  x[1] <- color
+  if (n > 1){
+    for (i in 2:n){
+      x[i] <- colorspace::darken(color, i * amount)
+    }
+    x
+  }
+}
+
 
 
 #' @keywords internal
 ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg, sep_mark, by){
+  fill_bg <- lighten_color(color_bg)[2]
   if ( isTRUE(background) & by == "NULL" ){
 
       list(
         ggplot2::geom_bar(data = df, aes(x = .data[[xvar]], y = .data[["s_axis_scale"]]),
-                          stat = "identity", color = color_bg, fill = color_bg, alpha = 1),
+                          stat = "identity", color = color_bg, fill = fill_bg, alpha = 1),
         ggplot2::scale_y_continuous(sec.axis = sec_axis(~ . * max(df[[s_axis]]) / max(df[[f_axis]]),
                                                         name = s_axis,
                                                         labels = sep_mark),
@@ -123,7 +164,7 @@ ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg, sep_
 
     list(
       ggplot2::geom_bar(data = df, aes(x = .data[[xvar]], y = .data[["s_axis_scale"]]),
-                        stat = "identity", color = color_bg, fill = color_bg, alpha = 1),
+                        stat = "identity", color = color_bg, fill = fill_bg, alpha = 1),
       ggplot2::scale_y_continuous(sec.axis = sec_axis(~ . * max(df[[s_axis]], na.rm = TRUE) / max(dfby[[f_axis]], na.rm = TRUE),
                                                       name = s_axis,
                                                       labels = sep_mark),
@@ -239,9 +280,10 @@ ggbarline <- function(background, df, dfby, xvar, f_axis, f_axis_name, exposure,
 
 #' @keywords internal
 ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip){
+  fill_bg <- lighten_color(color_bg)[2]
   ggplot2::ggplot(data = df) +
     ggplot2::geom_bar(data = df, aes(x = .data[[xvar]], y = .data[[f_axis]]),
-                      stat = "identity", color = color_bg, fill = color_bg, alpha = 1) +
+                      stat = "identity", color = color_bg, fill = fill_bg, alpha = 1) +
     ggplot2::theme_minimal() +
     ggplot2::labs(y = f_axis, x = xvar) +
     ggplot2::scale_y_continuous(labels = sep_mark) +

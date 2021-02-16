@@ -7,7 +7,7 @@
 \method{autoplot}{restricted}(object, name = NULL, ...)
 }
 \arguments{
-\item{object}{check_residuals object produced by \code{restrict_coef()}}
+\item{object}{object produced by \code{restrict_coef()}}
 
 \item{name}{name of risk factor to show (defaults to NULL)}
 
@@ -17,9 +17,18 @@
 Object of class ggplot2
 }
 \description{
+\ifelse{html}{\out{<a href='https://www.tidyverse.org/lifecycle/#experimental'><img src='figures/lifecycle-experimental.svg' alt='Experimental lifecycle'></a>}}{\strong{Experimental}}
 Takes an object produced by \code{restrict_coef()}, and produces
-  a line plot with a comparison between the restricted coefficients and
-  estimated coefficents obtained from the model.
+a line plot with a comparison between the restricted coefficients and
+estimated coefficients obtained from the model.
+}
+\examples{
+freq <- glm(nclaims ~ bm + zip, weights = power, family = poisson(), data = MTPL)
+zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
+freq \%>\%
+  restrict_coef(., zip_df) \%>\%
+  autoplot()
+
 }
 \author{
 Martin Haringa

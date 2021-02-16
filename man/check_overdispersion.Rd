@@ -30,8 +30,8 @@ check_overdispersion(x)
 }
 \references{
 \itemize{
- \item Bolker B et al. (2017): \href{http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html}{GLMM FAQ.}
- }
+\item Bolker B et al. (2017): \href{http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html}{GLMM FAQ.}
+}
 }
 \author{
 Martin Haringa
