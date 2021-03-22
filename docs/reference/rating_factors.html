@@ -47,7 +47,8 @@
 
 
 <meta property="og:title" content="Include reference group in regression output — rating_factors" />
-<meta property="og:description" content="Extract coefficients in terms of the original levels of the coefficients rather than the coded variables." />
+<meta property="og:description" content="Extract coefficients in terms of the original levels of the
+coefficients rather than the coded variables." />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -80,7 +81,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.5</span>
       </span>
     </div>
 
@@ -125,7 +126,8 @@
     </div>
 
     <div class="ref-description">
-    <p>Extract coefficients in terms of the original levels of the coefficients rather than the coded variables.</p>
+    <p>Extract coefficients in terms of the original levels of the
+coefficients rather than the coded variables.</p>
     </div>
 
     <pre class="usage"><span class='fu'>rating_factors</span><span class='op'>(</span>
@@ -145,7 +147,8 @@
     </tr>
     <tr>
       <th>model_data</th>
-      <td><p>data.frame used to create glm object(s), this should only be specified in case the exposure is desired in the output, default value is NULL</p></td>
+      <td><p>data.frame used to create glm object(s), this should only
+be specified in case the exposure is desired in the output, default value is NULL</p></td>
     </tr>
     <tr>
       <th>exposure</th>
@@ -153,7 +156,8 @@
     </tr>
     <tr>
       <th>exponentiate</th>
-      <td><p>logical indicating whether or not to exponentiate the the coefficient estimates. Defaults to TRUE.</p></td>
+      <td><p>logical indicating whether or not to exponentiate the
+coefficient estimates. Defaults to TRUE.</p></td>
     </tr>
     <tr>
       <th>signif_stars</th>
@@ -166,8 +170,10 @@
     <p>data.frame</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>A fitted linear model has coefficients for the contrasts of the factor terms, usually one less in number than the number of levels.
-This function re-expresses the coefficients in the original coding. This function is adopted from dummy.coef(). Our adoption prints a data.frame as output.</p>
+    <p>A fitted linear model has coefficients for the contrasts of the
+factor terms, usually one less in number than the number of levels. This
+function re-expresses the coefficients in the original coding. This
+function is adopted from dummy.coef(). Our adoption prints a data.frame as output.</p>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
     <p>Martin Haringa</p>

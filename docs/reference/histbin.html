@@ -81,7 +81,7 @@ Data points that are considered outliers can be binned together. This might be h
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.5</span>
       </span>
     </div>
 
@@ -137,7 +137,8 @@ Data points that are considered outliers can be binned together. This might be h
   right <span class='op'>=</span> <span class='cn'>NULL</span>,
   line <span class='op'>=</span> <span class='cn'>FALSE</span>,
   bins <span class='op'>=</span> <span class='fl'>30</span>,
-  fill <span class='op'>=</span> <span class='st'>"#E7B800"</span>,
+  fill <span class='op'>=</span> <span class='cn'>NULL</span>,
+  color <span class='op'>=</span> <span class='cn'>NULL</span>,
   fill_outliers <span class='op'>=</span> <span class='st'>"#a7d1a7"</span>
 <span class='op'>)</span></pre>
 
@@ -150,7 +151,7 @@ Data points that are considered outliers can be binned together. This might be h
     </tr>
     <tr>
       <th>x</th>
-      <td><p>variable name in data.frame `data` that should be mapped</p></td>
+      <td><p>variable name in data.frame <code>data</code> that should be mapped</p></td>
     </tr>
     <tr>
       <th>left</th>
@@ -173,6 +174,10 @@ Data points that are considered outliers can be binned together. This might be h
       <td><p>color used to fill bars</p></td>
     </tr>
     <tr>
+      <th>color</th>
+      <td><p>color for bar lines</p></td>
+    </tr>
+    <tr>
       <th>fill_outliers</th>
       <td><p>color used to fill outlier bars</p></td>
     </tr>
@@ -183,11 +188,11 @@ Data points that are considered outliers can be binned together. This might be h
     <p>a ggplot2 object</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Wrapper function around `ggplot2::geom_histogram()`. The method is based on suggestions from <a href='https://edwinth.github.io/blog/outlier-bin/'>https://edwinth.github.io/blog/outlier-bin/</a>.</p>
+    <p>Wrapper function around <code><a href='https://ggplot2.tidyverse.org/reference/geom_histogram.html'>ggplot2::geom_histogram()</a></code>. The method is based on suggestions from <a href='https://edwinth.github.io/blog/outlier-bin/'>https://edwinth.github.io/blog/outlier-bin/</a>.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='fu'>histbin</span><span class='op'>(</span><span class='va'>MTPL2</span>, <span class='va'>premium</span><span class='op'>)</span>
-</div><div class='img'><img src='histbin-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>histbin</span><span class='op'>(</span><span class='va'>MTPL2</span>, <span class='va'>premium</span>, left <span class='op'>=</span> <span class='fl'>30</span>, right <span class='op'>=</span> <span class='fl'>120</span>, line <span class='op'>=</span> <span class='cn'>TRUE</span>, bins <span class='op'>=</span> <span class='fl'>30</span><span class='op'>)</span>
+</div><div class='img'><img src='histbin-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>histbin</span><span class='op'>(</span><span class='va'>MTPL2</span>, <span class='va'>premium</span>, left <span class='op'>=</span> <span class='fl'>30</span>, right <span class='op'>=</span> <span class='fl'>120</span>, bins <span class='op'>=</span> <span class='fl'>30</span><span class='op'>)</span>
 </div><div class='img'><img src='histbin-2.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>

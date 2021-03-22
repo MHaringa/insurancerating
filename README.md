@@ -14,7 +14,7 @@ The goal of `insurancerating` is to give analytic techniques that can be
 used in insurance rating. It helps actuaries to implement GLMs within
 all relevant steps needed to construct a risk premium from raw data. It
 provides a data driven strategy for the construction of tariff classes
-in P\&C insurance. The goal is to bin the continuous factors such that
+in P&C insurance. The goal is to bin the continuous factors such that
 categorical risk factors result which capture the effect of the
 covariate on the response in an accurate way, while being easy to use in
 a generalized linear model (GLM).
@@ -121,13 +121,16 @@ dat <- MTPL %>%
 glimpse(dat)
 ```
 
-    ## Rows: 32,731
-    ## Columns: 5
-    ## $ age_policyholder          <int> 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…
-    ## $ nclaims                   <int> 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…
-    ## $ exposure                  <dbl> 1.0000000, 1.0000000, 1.0000000, 1.0000000,…
-    ## $ amount                    <dbl> 0, 0, 0, 57540, 2057, 0, 0, 6510, 0, 0, 0, …
-    ## $ age_policyholder_freq_cat <fct> "(39,50]", "[18,25]", "(50,57]", "(39,50]",…
+    ## Rows: 30,000
+    ## Columns: 8
+    ## $ age_policyholder          <int> 70, 40, 78, 49, 59, 71, 55, 52, 51, 47, 62, …
+    ## $ nclaims                   <int> 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0,…
+    ## $ exposure                  <dbl> 1.0000000, 1.0000000, 1.0000000, 1.0000000, …
+    ## $ amount                    <dbl> 0, 0, 0, 0, 0, 0, 2607, 0, 0, 0, 0, 2890, 0,…
+    ## $ power                     <int> 106, 74, 65, 64, 29, 66, 43, 55, 100, 66, 44…
+    ## $ bm                        <int> 5, 3, 8, 10, 1, 6, 2, 2, 1, 2, 1, 2, 2, 9, 5…
+    ## $ zip                       <fct> 1, 1, 2, 1, 3, 3, 3, 3, 3, 3, 2, 1, 1, 2, 2,…
+    ## $ age_policyholder_freq_cat <fct> "(39,84]", "(39,84]", "(39,84]", "(39,84]", …
 
 The last part is to fit a *generalized linear model*. `rating_factors()`
 prints the output including the reference group.
@@ -143,18 +146,14 @@ x <- rating_factors(model_freq1, model_freq2)
 x
 ```
 
-    ## [34mSignificance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1[39m                 risk_factor            level est_model_freq1 est_model_freq2
-    ## 1                (Intercept)      (Intercept)    0.136818 ***    0.321029 ***
-    ## 2  age_policyholder_freq_cat          (39,50]    1.000000        1.000000    
-    ## 3  age_policyholder_freq_cat          [18,25]    1.943823 ***    1.290960    
-    ## 4  age_policyholder_freq_cat          (25,32]    1.323499 ***    0.980283    
-    ## 5  age_policyholder_freq_cat          (32,39]    1.056854        0.892347    
-    ## 6  age_policyholder_freq_cat          (50,57]    0.891970 *      1.053587    
-    ## 7  age_policyholder_freq_cat          (57,64]    0.742400 ***    1.005661    
-    ## 8  age_policyholder_freq_cat          (64,71]    0.737936 ***    1.138351    
-    ## 9  age_policyholder_freq_cat          (71,83]    0.702135 ***    1.248675    
-    ## 10 age_policyholder_freq_cat          (83,95]    0.693338        1.510083    
-    ## 11          age_policyholder age_policyholder          NA        0.981193 **
+    ## [34mSignificance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1[39m                risk_factor            level est_model_freq1 est_model_freq2
+    ## 1               (Intercept)      (Intercept)    0.117926 ***    0.245890 ***
+    ## 2 age_policyholder_freq_cat          (39,84]    1.000000        1.000000    
+    ## 3 age_policyholder_freq_cat          [18,25]    2.216848 ***    1.453099 ***
+    ## 4 age_policyholder_freq_cat          (25,32]    1.517625 ***    1.073952    
+    ## 5 age_policyholder_freq_cat          (32,39]    1.227861 ***    0.952683    
+    ## 6 age_policyholder_freq_cat          (84,95]    0.588749        0.901689    
+    ## 7          age_policyholder age_policyholder          NA        0.986728 ***
 
 `autoplot.riskfactor()` creates a figure. The base level of the factor
 `age_policyholder_freq_cat` is the group with the largest exposure and
@@ -197,15 +196,18 @@ dat_pred <- dat %>%
 glimpse(dat_pred)
 ```
 
-    ## Rows: 32,731
-    ## Columns: 7
-    ## $ age_policyholder          <int> 43, 21, 54, 44, 20, 38, 68, 45, 76, 30, 28,…
-    ## $ nclaims                   <int> 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0…
-    ## $ exposure                  <dbl> 1.0000000, 1.0000000, 1.0000000, 1.0000000,…
-    ## $ amount                    <dbl> 0, 0, 0, 57540, 2057, 0, 0, 6510, 0, 0, 0, …
-    ## $ age_policyholder_freq_cat <fct> "(39,50]", "[18,25]", "(50,57]", "(39,50]",…
-    ## $ pred_nclaims_model_freq1  <dbl> 0.13681815, 0.26595024, 0.12203763, 0.13681…
-    ## $ pred_nclaims_model_freq2  <dbl> 0.14190382, 0.27816629, 0.12132927, 0.13923…
+    ## Rows: 30,000
+    ## Columns: 10
+    ## $ age_policyholder          <int> 70, 40, 78, 49, 59, 71, 55, 52, 51, 47, 62, …
+    ## $ nclaims                   <int> 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0,…
+    ## $ exposure                  <dbl> 1.0000000, 1.0000000, 1.0000000, 1.0000000, …
+    ## $ amount                    <dbl> 0, 0, 0, 0, 0, 0, 2607, 0, 0, 0, 0, 2890, 0,…
+    ## $ power                     <int> 106, 74, 65, 64, 29, 66, 43, 55, 100, 66, 44…
+    ## $ bm                        <int> 5, 3, 8, 10, 1, 6, 2, 2, 1, 2, 1, 2, 2, 9, 5…
+    ## $ zip                       <fct> 1, 1, 2, 1, 3, 3, 3, 3, 3, 3, 2, 1, 1, 2, 2,…
+    ## $ age_policyholder_freq_cat <fct> "(39,84]", "(39,84]", "(39,84]", "(39,84]", …
+    ## $ pred_nclaims_model_freq1  <dbl> 0.11792558, 0.11792558, 0.11792558, 0.117925…
+    ## $ pred_nclaims_model_freq2  <dbl> 0.09650865, 0.14409239, 0.08672539, 0.127766…
 
 Compute indices of model performance for GLMs. The RMSE is the square
 root of the average of squared differences between prediction and actual
@@ -221,12 +223,12 @@ model_performance(model_freq1, model_freq2)
     ## 
     ## Model       |      AIC |      BIC | RMSE
     ## ----------------------------------------
-    ## model_freq1 | 25177.27 | 25252.84 | 0.36
-    ## model_freq2 | 25171.15 | 25255.11 | 0.36
+    ## model_freq1 | 22983.34 | 23024.88 | 0.36
+    ## model_freq2 | 22943.06 | 22992.92 | 0.36
 
 To test the stability of the predictive ability of the fitted model it
 might be helpful to determine the variation in the computed RMSE. The
-variation is calculated by computing the root mean squared errors from 
+variation is calculated by computing the root mean squared errors from
 generated bootstrap replicates.
 
 For claim severity models it might be helpful to test the variation in
@@ -246,16 +248,16 @@ Check Poisson GLM for overdispersion. A dispersion ratio larger than one
 indicates overdispersion, this occurs when the observed variance is
 higher than the variance of the theoretical model. If the dispersion
 ratio is close to one, a Poisson model fits well to the data. A
-*p*-value \< .05 indicates overdispersion. Overdispersion \> 2 probably
-means there is a larger problem with the data: check (again) for
-outliers.
+*p*-value &lt; .05 indicates overdispersion. Overdispersion &gt; 2
+probably means there is a larger problem with the data: check (again)
+for outliers.
 
 ``` r
 check_overdispersion(model_freq1)
 ```
 
-    ##        dispersion ratio =     1.180
-    ##   Pearson's Chi-Squared = 38627.337
+    ##        dispersion ratio =     1.185
+    ##   Pearson's Chi-Squared = 35554.163
     ##                 p-value =   < 0.001
 
     ## Overdispersion detected.
@@ -287,7 +289,7 @@ check_residuals(model_freq1, n_simulations = 1000) %>%
   autoplot(.)
 ```
 
-    ## OK: residuals appear as from the expected distribution (p = 0.055).
+    ## OK: residuals appear as from the expected distribution (p = 0.362).
 
 ![](man/figures/normalitysim-1.png)<!-- -->
 
@@ -295,7 +297,7 @@ It might happen that in the fitted model for a data point all
 simulations have the same value (e.g. zero), this returns the error
 message *Error in approxfun: need at least two non-NA values to
 interpolate*. If that is the case, it could help to increase the number
-of simulations (e.g. \(n = 1000\)).
+of simulations (e.g. *n* = 1000).
 
 ## Example 2
 
@@ -320,16 +322,16 @@ univariate(MTPL2,
            severity = amount) # loss
 ```
 
-    ##   area  amount nclaims   exposure premium  frequency average_severity
-    ## 1    2 4063270      98  818.53973   51896 0.11972540         41461.94
-    ## 2    3 7945311     113  764.99178   49337 0.14771401         70312.49
-    ## 3    1 6896187     146 1065.74795   65753 0.13699299         47234.16
-    ## 4    0    6922       1   13.30685     902 0.07514927          6922.00
-    ##   risk_premium loss_ratio average_premium
-    ## 1    4964.0474  78.296400        63.40071
-    ## 2   10386.1390 161.041632        64.49350
-    ## 3    6470.7486 104.880188        61.69658
-    ## 4     520.1832   7.674058        67.78464
+    ##    area  amount nclaims   exposure premium  frequency average_severity
+    ## 1:    2 4063270      98  818.53973   51896 0.11972540         41461.94
+    ## 2:    3 7945311     113  764.99178   49337 0.14771401         70312.49
+    ## 3:    1 6896187     146 1065.74795   65753 0.13699299         47234.16
+    ## 4:    0    6922       1   13.30685     902 0.07514927          6922.00
+    ##    risk_premium loss_ratio average_premium
+    ## 1:    4964.0474  78.296400        63.40071
+    ## 2:   10386.1390 161.041632        64.49350
+    ## 3:    6470.7486 104.880188        61.69658
+    ## 4:     520.1832   7.674058        67.78464
 
 The following indicators are calculated:
 
@@ -354,11 +356,11 @@ claim frequency is calculated when `premium` and `severity` are unknown:
 univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) 
 ```
 
-    ##   area nclaims   exposure  frequency
-    ## 1    2      98  818.53973 0.11972540
-    ## 2    3     113  764.99178 0.14771401
-    ## 3    1     146 1065.74795 0.13699299
-    ## 4    0       1   13.30685 0.07514927
+    ##    area nclaims   exposure  frequency
+    ## 1:    2      98  818.53973 0.11972540
+    ## 2:    3     113  764.99178 0.14771401
+    ## 3:    1     146 1065.74795 0.13699299
+    ## 4:    0       1   13.30685 0.07514927
 
 However, the above table is small and easy to understand, the same
 information might be presented more effectively with a graph, as shown
@@ -405,8 +407,8 @@ MTPL2 %>%
 
 ![](man/figures/unnamed-chunk-3-1.png)<!-- -->
 
-To remove the bars from the plot with the line graph, add `background =
-FALSE`:
+To remove the bars from the plot with the line graph, add
+`background = FALSE`:
 
 ``` r
 univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) %>%
@@ -472,7 +474,218 @@ the original distribution, and also gives a feel for the number of
 outliers.
 
 ``` r
-histbin(MTPL2, premium, right = 110, line = TRUE)
+histbin(MTPL2, premium, right = 110)
 ```
 
 ![](man/figures/example15-1.png)<!-- -->
+
+## Example 3
+
+This is a basic example which shows how to easily perform model
+refinement using `insurancerating`. `insurancerating` can be used to
+impose either smoothing to the parameter estimates or to add
+restrictions to the parameter estimates.
+
+Fit (again) a Poisson GLM and a Gamma GLM, and combine them to determine
+premiums:
+
+``` r
+mod_freq <- glm(nclaims ~ zip + age_policyholder_freq_cat, 
+                offset = log(exposure), 
+                family = "poisson", 
+                data = dat)
+
+mod_sev <- glm(amount ~ bm + zip, 
+               weights = nclaims, 
+               family = Gamma(link = "log"), 
+               data = dat %>% filter(amount > 0))
+
+MTPL_premium <- dat %>%
+  add_prediction(mod_freq, mod_sev) %>%
+  mutate(premium = pred_nclaims_mod_freq * pred_amount_mod_sev)
+```
+
+Fit a burning model without restrictions. Even though restrictions could
+be applied to frequency and severity models, it is more appropriate to
+add restrictions (and smoothing) to the risk premium model.
+
+``` r
+burn_unrestricted <- glm(premium ~ zip + bm + age_policyholder_freq_cat, 
+                         weights = exposure, 
+                         family = Gamma(link = "log"), 
+                         data = MTPL_premium) 
+```
+
+Smoothing can be used to reduce the tolerance for rate change. In
+`smooth_coef()`, `x_cut` is the name of the risk factor with clusters,
+`x_org` is the name of the original risk factor, `degree` is the order
+of the polynomial, and `breaks` is a numerical vector with new clusters
+for `x_org`. The smoothed estimates are added as an offset term to the
+model. An offset is just a fixed term added to the linear predictor,
+therefore if there is already an offset in the model, the offset terms
+are added together first
+(i.e. offset = log (*a*) + log (*b*) = log (*a* ⋅ *b*)).
+
+``` r
+burn_unrestricted %>%
+  smooth_coef(x_cut = "age_policyholder_freq_cat", 
+              x_org = "age_policyholder", 
+              breaks = seq(18, 95, 5)) %>%
+  print()
+```
+
+    ## Formula: premium ~ zip + bm + offset(log(age_policyholder_freq_cat_smooth))
+
+`autoplot()` creates a figure for the smoothed estimates. The blue
+segments show the estimates from the unrestricted model. The red
+segments are the new estimates based on the polynomial.
+
+``` r
+burn_unrestricted %>%
+  smooth_coef(x_cut = "age_policyholder_freq_cat", 
+              x_org = "age_policyholder", 
+              breaks = seq(18, 95, 5)) %>%
+  autoplot()
+```
+
+![](man/figures/example18a-1.png)<!-- -->
+
+`degree` can be used to change the order of the polynomial:
+
+``` r
+burn_unrestricted %>%
+  smooth_coef(x_cut = "age_policyholder_freq_cat", 
+              x_org = "age_policyholder", 
+              degree = 1,
+              breaks = seq(18, 95, 5)) %>%
+  autoplot()
+```
+
+![](man/figures/example19-1.png)<!-- -->
+
+`smooth_coef()` must always be followed by `refit_glm()` to refit the
+GLM.
+
+``` r
+burn_restricted <- burn_unrestricted %>%
+  smooth_coef(x_cut = "age_policyholder_freq_cat", 
+              x_org = "age_policyholder", 
+              breaks = seq(18, 95, 5)) %>%
+  refit_glm()
+
+# Show rating factors
+rating_factors(burn_restricted)
+```
+
+    ## [34mSignificance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1[39m               risk_factor       level est_burn_restricted
+    ## 1              (Intercept) (Intercept)     9184.248396 ***
+    ## 2                      zip           1        1.000000    
+    ## 3                      zip           0        0.354033 ***
+    ## 4                      zip           2        0.731117 ***
+    ## 5                      zip           3        0.753704 ***
+    ## 6  age_policyholder_smooth     [18,23]        2.311122    
+    ## 7  age_policyholder_smooth     (23,28]        1.719606    
+    ## 8  age_policyholder_smooth     (28,33]        1.377440    
+    ## 9  age_policyholder_smooth     (33,38]        1.205472    
+    ## 10 age_policyholder_smooth     (38,43]        1.137252    
+    ## 11 age_policyholder_smooth     (43,48]        1.119032    
+    ## 12 age_policyholder_smooth     (48,53]        1.109767    
+    ## 13 age_policyholder_smooth     (53,58]        1.081112    
+    ## 14 age_policyholder_smooth     (58,63]        1.017424    
+    ## 15 age_policyholder_smooth     (63,68]        0.915763    
+    ## 16 age_policyholder_smooth     (68,73]        0.785889    
+    ## 17 age_policyholder_smooth     (73,78]        0.650267    
+    ## 18 age_policyholder_smooth     (78,83]        0.544060    
+    ## 19 age_policyholder_smooth     (83,88]        0.515136    
+    ## 20 age_policyholder_smooth     (88,93]        0.624062    
+    ## 21                      bm          bm        1.037056 ***
+
+Most insurers have some form of a Bonus-Malus System in vehicle third
+party liability insurance. `restrict_coef()` can be used to impose such
+restrictions. `restrictions` must be a data.frame with in the first
+column the name of the column for which the restrictions should be
+applied and in the second column the restricted coefficients. The
+following example shows restrictions on the risk factor for region
+`zip`:
+
+``` r
+zip_df <- data.frame(zip = c(0,1,2,3),
+                     zip_restricted = c(0.8, 0.9, 1, 1.2))
+
+burn_unrestricted %>%
+  restrict_coef(., zip_df) %>%
+  print()
+```
+
+    ## Formula: premium ~ bm + age_policyholder_freq_cat + offset(log(zip_restricted))
+
+To adjust the glm, `restict_coef()` must always be followed by
+`refit_glm()`:
+
+``` r
+burn_restricted2 <- burn_unrestricted %>%
+  restrict_coef(., zip_df) %>%
+  refit_glm()
+
+rating_factors(burn_restricted2)
+```
+
+    ## [34mSignificance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1[39m                 risk_factor       level est_burn_restricted2
+    ## 1                (Intercept) (Intercept)      7766.514389 ***
+    ## 2  age_policyholder_freq_cat     (39,84]         1.000000    
+    ## 3  age_policyholder_freq_cat     [18,25]         2.172458 ***
+    ## 4  age_policyholder_freq_cat     (25,32]         1.491470 ***
+    ## 5  age_policyholder_freq_cat     (32,39]         1.209953 ***
+    ## 6  age_policyholder_freq_cat     (84,95]         0.574445 ***
+    ## 7             zip_restricted           0         0.800000    
+    ## 8             zip_restricted           1         0.900000    
+    ## 9             zip_restricted           2         1.000000    
+    ## 10            zip_restricted           3         1.200000    
+    ## 11                        bm          bm         1.037167 ***
+
+`autoplot()` compares the restricted and the unrestricted estimates:
+
+``` r
+burn_unrestricted %>%
+  restrict_coef(., zip_df) %>%
+  autoplot()
+```
+
+![](man/figures/example23-1.png)<!-- -->
+
+`burn_restricted3` combines `restrict_coef()` and `smooth_coef()`:
+
+``` r
+burn_restricted3 <- burn_unrestricted %>%
+  restrict_coef(., zip_df) %>%
+  smooth_coef(x_cut = "age_policyholder_freq_cat", 
+              x_org = "age_policyholder", 
+              breaks = seq(18, 95, 5)) %>%
+  refit_glm() 
+  
+# Show rating factors
+rating_factors(burn_restricted3)
+```
+
+    ## [34mSignificance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1[39m               risk_factor       level est_burn_restricted3
+    ## 1              (Intercept) (Intercept)      7880.289822 ***
+    ## 2           zip_restricted           0         0.800000    
+    ## 3           zip_restricted           1         0.900000    
+    ## 4           zip_restricted           2         1.000000    
+    ## 5           zip_restricted           3         1.200000    
+    ## 6  age_policyholder_smooth     [18,23]         2.311122    
+    ## 7  age_policyholder_smooth     (23,28]         1.719606    
+    ## 8  age_policyholder_smooth     (28,33]         1.377440    
+    ## 9  age_policyholder_smooth     (33,38]         1.205472    
+    ## 10 age_policyholder_smooth     (38,43]         1.137252    
+    ## 11 age_policyholder_smooth     (43,48]         1.119032    
+    ## 12 age_policyholder_smooth     (48,53]         1.109767    
+    ## 13 age_policyholder_smooth     (53,58]         1.081112    
+    ## 14 age_policyholder_smooth     (58,63]         1.017424    
+    ## 15 age_policyholder_smooth     (63,68]         0.915763    
+    ## 16 age_policyholder_smooth     (68,73]         0.785889    
+    ## 17 age_policyholder_smooth     (73,78]         0.650267    
+    ## 18 age_policyholder_smooth     (78,83]         0.544060    
+    ## 19 age_policyholder_smooth     (83,88]         0.515136    
+    ## 20 age_policyholder_smooth     (88,93]         0.624062    
+    ## 21                      bm          bm         1.036909 ***

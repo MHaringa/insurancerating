@@ -7,13 +7,13 @@
 refit_glm(x)
 }
 \arguments{
-\item{x}{Object of class restricted}
+\item{x}{Object of class restricted or of class smooth}
 }
 \value{
 Object of class GLM
 }
 \description{
-\ifelse{html}{\out{<a href='https://www.tidyverse.org/lifecycle/#experimental'><img src='figures/lifecycle-experimental.svg' alt='Experimental lifecycle'></a>}}{\strong{Experimental}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 \code{refit_glm()} is used to refit generalized linear models, and must be
 preceded by \code{restrict_coef()}.
 }

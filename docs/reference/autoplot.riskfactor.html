@@ -47,7 +47,8 @@
 
 
 <meta property="og:title" content="Automatically create a ggplot for objects obtained from rating_factors() — autoplot.riskfactor" />
-<meta property="og:description" content="Takes an object produced by univariate(), and plots the available input." />
+<meta property="og:description" content="Takes an object produced by univariate(), and plots the
+available input." />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -80,7 +81,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.5</span>
       </span>
     </div>
 
@@ -125,7 +126,8 @@
     </div>
 
     <div class="ref-description">
-    <p>Takes an object produced by <code><a href='univariate.html'>univariate()</a></code>, and plots the available input.</p>
+    <p>Takes an object produced by <code><a href='univariate.html'>univariate()</a></code>, and plots the
+available input.</p>
     </div>
 
     <pre class="usage"><span class='co'># S3 method for riskfactor</span>
@@ -136,7 +138,8 @@
   labels <span class='op'>=</span> <span class='cn'>TRUE</span>,
   dec.mark <span class='op'>=</span> <span class='st'>","</span>,
   ylab <span class='op'>=</span> <span class='st'>"rate"</span>,
-  color_bg <span class='op'>=</span> <span class='st'>"#E7B800"</span>,
+  fill <span class='op'>=</span> <span class='cn'>NULL</span>,
+  color <span class='op'>=</span> <span class='cn'>NULL</span>,
   linetype <span class='op'>=</span> <span class='cn'>FALSE</span>,
   <span class='va'>...</span>
 <span class='op'>)</span></pre>
@@ -150,7 +153,8 @@
     </tr>
     <tr>
       <th>risk_factors</th>
-      <td><p>character vector to define which factors are included. Defaults to all risk factors.</p></td>
+      <td><p>character vector to define which factors are included.
+Defaults to all risk factors.</p></td>
     </tr>
     <tr>
       <th>ncol</th>
@@ -162,15 +166,20 @@
     </tr>
     <tr>
       <th>dec.mark</th>
-      <td><p>control the format of the decimal point, as well as the mark between intervals before the decimal point, choose either "," (default) or "."</p></td>
+      <td><p>control the format of the decimal point, as well as the mark
+between intervals before the decimal point, choose either "," (default) or "."</p></td>
     </tr>
     <tr>
       <th>ylab</th>
       <td><p>modify label for the y-axis</p></td>
     </tr>
     <tr>
-      <th>color_bg</th>
-      <td><p>change the color of the histogram ("#E7B800" is default)</p></td>
+      <th>fill</th>
+      <td><p>color to fill histogram</p></td>
+    </tr>
+    <tr>
+      <th>color</th>
+      <td><p>color to plot line colors of histogram (default is "skyblue")</p></td>
     </tr>
     <tr>
       <th>linetype</th>

@@ -18,7 +18,7 @@ coefficients.}
 Object of class restricted.
 }
 \description{
-\ifelse{html}{\out{<a href='https://www.tidyverse.org/lifecycle/#experimental'><img src='figures/lifecycle-experimental.svg' alt='Experimental lifecycle'></a>}}{\strong{Experimental}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Add restrictions, like a bonus-malus structure, on the risk
 factors used in the model. \code{restrict_coef()} must always be followed
 by \code{refit_glm()}.
@@ -32,6 +32,7 @@ claim amount), then fitting an "unrestricted" Gamma GLM to the pure premium,
 and then imposing the restrictions in a final "restricted" Gamma GLM.
 }
 \examples{
+\dontrun{
 # Add restrictions to risk factors for region (zip) -------------------------
 
 # Fit frequency and severity model
@@ -58,7 +59,19 @@ burn_rst <- burn \%>\%
   restrict_coef(., zip_df) \%>\%
   refit_glm()
 
+# Show rating factors
+rating_factors(burn_rst)
+}
+
+}
+\seealso{
+\code{\link[=refit_glm]{refit_glm()}} for refitting the restricted model, and \code{\link[=autoplot.restricted]{autoplot.restricted()}}.
+
+Other refit_glm: 
+\code{\link{smooth_coef}()}
 }
 \author{
 Martin Haringa
 }
+\concept{autoplot.restricted}
+\concept{refit_glm}

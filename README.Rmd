@@ -339,13 +339,146 @@ Two ways of displaying numerical data over a very wide range of values in a comp
 
 ```{r example15, eval = TRUE, message = FALSE, warning = FALSE}
 
-histbin(MTPL2, premium, right = 110, line = TRUE)
+histbin(MTPL2, premium, right = 110)
 
 ```
 
+## Example 3
+
+This is a basic example which shows how to easily perform model refinement using `insurancerating`. `insurancerating` can be used to impose either smoothing to the parameter estimates or to add restrictions to the parameter estimates. 
+
+Fit (again) a Poisson GLM and a Gamma GLM, and combine them to determine premiums:
+
+```{r example16, eval = TRUE, message = FALSE, warning = FALSE}
+
+mod_freq <- glm(nclaims ~ zip + age_policyholder_freq_cat, 
+                offset = log(exposure), 
+                family = "poisson", 
+                data = dat)
+
+mod_sev <- glm(amount ~ bm + zip, 
+               weights = nclaims, 
+               family = Gamma(link = "log"), 
+               data = dat %>% filter(amount > 0))
+
+MTPL_premium <- dat %>%
+  add_prediction(mod_freq, mod_sev) %>%
+  mutate(premium = pred_nclaims_mod_freq * pred_amount_mod_sev)
+
+```
+
+Fit a burning model without restrictions. Even though restrictions could be applied to frequency and severity models, it is more appropriate to add restrictions (and smoothing) to the risk premium model. 
+
+```{r example17, eval = TRUE, message = FALSE, warning = FALSE}
+
+burn_unrestricted <- glm(premium ~ zip + bm + age_policyholder_freq_cat, 
+                         weights = exposure, 
+                         family = Gamma(link = "log"), 
+                         data = MTPL_premium) 
+
+```
+
+Smoothing can be used to reduce the tolerance for rate change. In `smooth_coef()`, `x_cut` is the name of the risk factor with clusters, `x_org` is the name of the original risk factor, `degree` is the order of the polynomial, and `breaks` is a numerical vector with new clusters for `x_org`. The smoothed estimates are added as an offset term to the model. An offset is just a fixed term added to the linear predictor, therefore if there is already an offset in the model, the offset terms are added together first (i.e. $\text{offset} = \log(a) + \log(b) = \log(a \cdot b)$). 
+
+```{r example18, eval = TRUE, message = FALSE, warning = FALSE}
+
+burn_unrestricted %>%
+  smooth_coef(x_cut = "age_policyholder_freq_cat", 
+              x_org = "age_policyholder", 
+              breaks = seq(18, 95, 5)) %>%
+  print()
+
+```
+
+`autoplot()` creates a figure for the smoothed estimates. The blue segments show the estimates from the unrestricted model. The red segments are the new estimates based on the polynomial. 
+
+```{r example18a, eval = TRUE, message = FALSE, warning = FALSE}
+
+burn_unrestricted %>%
+  smooth_coef(x_cut = "age_policyholder_freq_cat", 
+              x_org = "age_policyholder", 
+              breaks = seq(18, 95, 5)) %>%
+  autoplot()
+```
+
+`degree` can be used to change the order of the polynomial:
+
+```{r example19, eval = TRUE, message = FALSE, warning = FALSE}
+
+burn_unrestricted %>%
+  smooth_coef(x_cut = "age_policyholder_freq_cat", 
+              x_org = "age_policyholder", 
+              degree = 1,
+              breaks = seq(18, 95, 5)) %>%
+  autoplot()
+
+```
+
+`smooth_coef()` must always be followed by `refit_glm()` to refit the GLM. 
+
+```{r example20, eval = TRUE, message = FALSE, warning = FALSE}
+
+burn_restricted <- burn_unrestricted %>%
+  smooth_coef(x_cut = "age_policyholder_freq_cat", 
+              x_org = "age_policyholder", 
+              breaks = seq(18, 95, 5)) %>%
+  refit_glm()
+
+# Show rating factors
+rating_factors(burn_restricted)
+
+```
+
+Most insurers have some form of a Bonus-Malus System in vehicle third party liability insurance. `restrict_coef()` can be used to impose such restrictions. `restrictions` must be a data.frame with in the first column the name of the column for which the restrictions should be applied and in the second column the restricted coefficients. The following example shows restrictions on the risk factor for region `zip`:
+
+```{r example21, eval = TRUE, message = FALSE, warning = FALSE}
+
+zip_df <- data.frame(zip = c(0,1,2,3),
+                     zip_restricted = c(0.8, 0.9, 1, 1.2))
+
+burn_unrestricted %>%
+  restrict_coef(., zip_df) %>%
+  print()
+
+```
+
+To adjust the glm, `restict_coef()` must always be followed by `refit_glm()`:
+
+```{r example22, eval = TRUE, message = FALSE, warning = FALSE}
+
+burn_restricted2 <- burn_unrestricted %>%
+  restrict_coef(., zip_df) %>%
+  refit_glm()
+
+rating_factors(burn_restricted2)
+
+```
+
+`autoplot()` compares the restricted and the unrestricted estimates:
+
+```{r example23, eval = TRUE, message = FALSE, warning = FALSE}
+
+burn_unrestricted %>%
+  restrict_coef(., zip_df) %>%
+  autoplot()
+```
+
+`burn_restricted3` combines `restrict_coef()` and `smooth_coef()`:
+
+```{r example24, eval = TRUE, message = FALSE, warning = FALSE}
+
+burn_restricted3 <- burn_unrestricted %>%
+  restrict_coef(., zip_df) %>%
+  smooth_coef(x_cut = "age_policyholder_freq_cat", 
+              x_org = "age_policyholder", 
+              breaks = seq(18, 95, 5)) %>%
+  refit_glm() 
+  
+# Show rating factors
+rating_factors(burn_restricted3)
 
 
-
+```
 
 
 

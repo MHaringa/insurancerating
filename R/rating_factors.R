@@ -1,6 +1,5 @@
 #' Include reference group in regression output
 #'
-#'
 #' @description Extract coefficients in terms of the original levels of the
 #'   coefficients rather than the coded variables.Use rating_factors() to
 #'   compare the output obtained from two or more glm objects.
@@ -34,15 +33,70 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
   xl <- model$xlevels
   model_nm <- deparse(substitute(model))
 
-  if(!length(xl)){ # no factors in model
-    stop(paste0("no factors in model"), call. = FALSE)
+  if( inherits(model, c("restricted", "smooth")) ) {
+    stop("Input must be of class glm. Use refit_glm() first.", call. = FALSE)
   }
 
-  xl_names <- names(xl)
-  xl_df <- stack(xl)
-  xl_df$ind <- as.character(xl_df$ind)
-  xl_df$values <- as.character(xl_df$values)
-  xl_df$ind_values <- paste0(xl_df$ind, xl_df$values)
+  if( !inherits(model, c("glm", "refitsmooth", "refitrestricted")) ) {
+    stop("Input must be of class glm.", call. = FALSE)
+  }
+
+  if(!length(xl)){ # no factors in model
+    warning(paste0("No factors detected in model"), call. = FALSE)
+  }
+
+  if (inherits(model, "refitsmooth")){
+    smooth_rf <- attr(model, "new_rf")
+    smooth_rf$ind <- as.character(smooth_rf$risk_factor)
+    smooth_rf$values <- as.character(smooth_rf$level)
+    smooth_rf$ind_values <- paste0(smooth_rf$ind, smooth_rf$values)
+    smooth_rf2 <- smooth_rf[, c("ind", "values", "ind_values")]
+  }
+
+  if (inherits(model, "refitrestricted")){
+    rst_rf <- attr(model, "new_rf_rst")
+    rst_rf$ind <- as.character(rst_rf$risk_factor)
+    rst_rf$values <- as.character(rst_rf$level)
+    rst_rf$ind_values <- paste0(rst_rf$ind, rst_rf$values)
+    rst_rf2 <- rst_rf[, c("ind", "values", "ind_values")]
+  }
+
+  xl_names <- NULL
+
+  if ( length(xl) > 0) {
+    xl_names <- names(xl)
+    xl_df <- stack(xl)
+    xl_df$ind <- as.character(xl_df$ind)
+    xl_df$values <- as.character(xl_df$values)
+    xl_df$ind_values <- paste0(xl_df$ind, xl_df$values)
+  }
+
+  if (inherits(model, "refitsmooth")) {
+
+    if ( length(xl) > 0){
+      xl_df <- rbind(xl_df, smooth_rf2)
+    }
+
+    if ( !length(xl) ){
+      xl_df <- smooth_rf2
+    }
+
+    xl_names <- c(xl_names, unique(smooth_rf$ind))
+  }
+
+  if (inherits(model, "refitrestricted")) {
+
+    if ( length(xl) > 0){
+      xl_df <- rbind(xl_df, rst_rf2)
+    }
+
+    if ( !length(xl) ){
+      xl_df <- rst_rf2
+    }
+
+    xl_names <- c(xl_names, unique(rst_rf$ind))
+  }
+
   names(xl_df)[names(xl_df) == "values"] <- "level"
   names(xl_df)[names(xl_df) == "ind"] <- "risk_factor"
 
@@ -52,6 +106,7 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
   xl_names_in <- xl_names[which(xl_names %in% names(model_data))]
   xl_names_out <- setdiff(xl_names, xl_names_in)
 
+  # Determine exposure per level
   if ( !is.null( model_data ) & exposure != "NULL" ){
 
     if ( length( xl_names_in ) > 0){
@@ -95,6 +150,24 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
 
   vals$pvalues <- as.numeric(coef(summary(model))[,4])
   vals$ind <- as.character(vals$ind)
+
+  if ( inherits(model, "refitsmooth")){
+    smooth_coef <- smooth_rf[, c("yhat", "ind_values")]
+    colnames(smooth_coef)[1] <- "values"
+    colnames(smooth_coef)[2] <- "ind"
+    smooth_coef$pvalues <- NA
+    smooth_coef$values <- log(smooth_coef$values)
+    vals <- rbind(vals, smooth_coef)
+  }
+
+  if ( inherits(model, "refitrestricted")){
+    rst_coef <- rst_rf[, c("yhat", "ind_values")]
+    colnames(rst_coef)[1] <- "values"
+    colnames(rst_coef)[2] <- "ind"
+    rst_coef$pvalues <- NA
+    rst_coef$values <- log(rst_coef$values)
+    vals <- rbind(vals, rst_coef)
+  }
 
   uit <- dplyr::full_join(xl_df, vals, by = c("ind_values" = "ind"))
   uit$values <- ifelse(is.na( uit$values ), 0, uit$values)
@@ -265,7 +338,7 @@ print.riskfactor <- function(x, ...) {
 #' @export
 as.data.frame.riskfactor <- function(x, ...) {
 
-    if ( isTRUE( x$signif_stars ) ){
+  if ( isTRUE( x$signif_stars ) ){
     df <- x$df_stars
   } else{
     df <- x$df
@@ -408,8 +481,8 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
         limits = c(0, NA),
         expand = expansion(mult = c(0, 0.02)),
         sec.axis = sec_axis(~ . * max(df1_bar[[exposure_nm]]) / max(df1[["est"]]),
-        name = exposure_nm,
-        labels = sep_fn)) } +
+                            name = exposure_nm,
+                            labels = sep_fn)) } +
       ggplot2::geom_point(aes(x = .data[["level"]],
                               y = .data[["est"]],
                               group = .data[["model"]],

@@ -2,3 +2,5 @@ packrat/lib*/
 .Rproj.user
 doc
 Meta
+^model_refinement\.html$
+^model_refinement\.Rmd$

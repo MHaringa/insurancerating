@@ -1,5 +1,7 @@
 # insurancerating 0.6.5
 
+* `smooth_coef()` and `restrict_coef()` are added for model refinement
+* `histbin()` now uses darkblue as default fill color 
 
 # insurancerating 0.6.4
 

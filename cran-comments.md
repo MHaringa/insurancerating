@@ -1,12 +1,10 @@
 ## Resubmission
 This is a resubmission. In this version:
 
-* In `summary.reduce()`, `name` can be used to change the name of the new column in the output.
-* Dataset `MTPL` now contains extra columns for `power`, `bm`, and `zip`. 
-* Some functions in `insight` are renamed, therefore `insight::format_table()` is replaced with `insight::export_table()`.
+* `smooth_coef()` and `restrict_coef()` are added for model refinement
 
 ## Test environments
-* local OS X install, R 4.0.3
+* local OS X install, R 4.0.4
 * win-builder (devel and release)
 
 ## R CMD check results

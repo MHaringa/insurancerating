@@ -4,12 +4,10 @@
 \alias{autoplot.restricted}
 \title{Automatically create a ggplot for objects obtained from restrict_coef()}
 \usage{
-\method{autoplot}{restricted}(object, name = NULL, ...)
+\method{autoplot}{restricted}(object, ...)
 }
 \arguments{
 \item{object}{object produced by \code{restrict_coef()}}
-
-\item{name}{name of risk factor to show (defaults to NULL)}
 
 \item{...}{other plotting parameters to affect the plot}
 }
@@ -17,7 +15,7 @@
 Object of class ggplot2
 }
 \description{
-\ifelse{html}{\out{<a href='https://www.tidyverse.org/lifecycle/#experimental'><img src='figures/lifecycle-experimental.svg' alt='Experimental lifecycle'></a>}}{\strong{Experimental}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Takes an object produced by \code{restrict_coef()}, and produces
 a line plot with a comparison between the restricted coefficients and
 estimated coefficients obtained from the model.

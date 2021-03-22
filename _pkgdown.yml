@@ -16,6 +16,13 @@ reference:
       - univariate
       - autoplot.univariate
       - histbin
+  - title: "Model refinement"
+    contents:
+      - restrict_coef
+      - smooth_coef
+      - refit_glm
+      - autoplot.restricted
+      - autoplot.smooth
   - title: "Rating factors"
     desc: >
       Calculate and plot rating factors obtained from (multiple) (generalized) lineair model objects
