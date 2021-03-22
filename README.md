@@ -74,7 +74,9 @@ autoplot(age_policyholder_frequency, show_observations = TRUE)
 ![](man/figures/plotgam-1.png)<!-- -->
 
 Determine classes for the claim frequency (the points show the ratio
-between the observed number of claims and exposure for each age):
+between the observed number of claims and exposure for each age). This
+method is based on the work by Henckaerts et al. (2018), see
+`?construct_tariff_classes` for the reference.
 
 ``` r
 clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
@@ -484,7 +486,9 @@ histbin(MTPL2, premium, right = 110)
 This is a basic example which shows how to easily perform model
 refinement using `insurancerating`. `insurancerating` can be used to
 impose either smoothing to the parameter estimates or to add
-restrictions to the parameter estimates.
+restrictions to the parameter estimates. These methods are deduced from
+the article *Third Party Motor Liability Ratemaking with R*, by
+Spedicato, G. (2012).
 
 Fit (again) a Poisson GLM and a Gamma GLM, and combine them to determine
 premiums:

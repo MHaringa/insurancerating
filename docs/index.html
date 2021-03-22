@@ -124,7 +124,7 @@
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span><span class="op">(</span><span class="va">age_policyholder_frequency</span>, show_observations <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
 <p><img src="reference/figures/plotgam-1.png"><!-- --></p>
-<p>Determine classes for the claim frequency (the points show the ratio between the observed number of claims and exposure for each age):</p>
+<p>Determine classes for the claim frequency (the points show the ratio between the observed number of claims and exposure for each age). This method is based on the work by Henckaerts et al. (2018), see <code><a href="reference/construct_tariff_classes.html">?construct_tariff_classes</a></code> for the reference.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">clusters_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/construct_tariff_classes.html">construct_tariff_classes</a></span><span class="op">(</span><span class="va">age_policyholder_frequency</span><span class="op">)</span>
 <span class="va">clusters_sev</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/construct_tariff_classes.html">construct_tariff_classes</a></span><span class="op">(</span><span class="va">age_policyholder_severity</span><span class="op">)</span>
@@ -349,7 +349,7 @@
 <div id="example-3" class="section level2">
 <h2 class="hasAnchor">
 <a href="#example-3" class="anchor"></a>Example 3</h2>
-<p>This is a basic example which shows how to easily perform model refinement using <code>insurancerating</code>. <code>insurancerating</code> can be used to impose either smoothing to the parameter estimates or to add restrictions to the parameter estimates.</p>
+<p>This is a basic example which shows how to easily perform model refinement using <code>insurancerating</code>. <code>insurancerating</code> can be used to impose either smoothing to the parameter estimates or to add restrictions to the parameter estimates. These methods are deduced from the article <em>Third Party Motor Liability Ratemaking with R</em>, by Spedicato, G. (2012).</p>
 <p>Fit (again) a Poisson GLM and a Gamma GLM, and combine them to determine premiums:</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">mod_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">zip</span> <span class="op">+</span> <span class="va">age_policyholder_freq_cat</span>, 

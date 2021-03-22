@@ -13,10 +13,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Inleiding
 
-Na het bewerken van de data, het schatten van een GLM en het bepalen van risicopremies is de laatste stap in het proces het verfijnen van de risicopremie. Deze laatste stap is vaak onderbelicht. Dit document beschrijft voor deze verfijning twee veelvuldig toepasbare methoden. Ten eerste worden restricties op de risico factoren toegepast. Vaak wordt op basis van commerciële overwegingen een BM-ladder toegepast. Dit betekent dat de premieverhouding tussen de verschillende tredes in de BM-ladder niet wordt bepaald op basis van de historie in de portefeuille maar op basis van commerciële motieven. Ten tweede wordt vaak een *smoothing* op de geschatte premiefactoren toegepast. Dit betekent dat de overgang tussen de verschillende premieklassen geleidelijker verloopt. Dit document beschrijft beide methodieken en geeft daarbij voorbeelden. De eerste sectie beschrijft de portefeuille, vervolgens wordt een risicomodel geschat en daarna de risicopremies verfijnt. De theoretische onderbouwing van de methodes voor het verfijnen van het risicomodel is terug te vinden in de Appendix.  
+Wanneer het premiemodel eenmaal een aantal iteraties heeft doorstaan en het premiemodel alleen significante parameters bevat, kan een smoothing op de geschatte parameters worden toegepast om de overgang tussen premieklassen te verkleinen. Het verkleinen van deze premieovergangen is vaak wenselijk vanuit commercieel oogpunt. Daarnaast is het mogelijk dat er op basis van juridische of commerciele redenen beperkingen om bepaalde factoren worden gezet. Denk hierbij aan een BM-ladder. 
+
+Het vaststellen van nieuwe premies bestaat uit vier stappen. Dit document beschrijft punt 3:
+
+1. Pre-modelleer analyses, beschouwt data preparatie en ook het doen van portefeuille onderzoek
+2. Model iteraties, maakt een premiemodel en doet onderzoek naar zowel model selectie als model validatie
+3. Model refinement, onderzoekt het toepassen van smoothing en het invoegen van restricties (bijv. BM-ladder)
+4. Interpretatie van de resultaten, vergelijkt de uitkomsten van het model met de bestaande premiestelling
+
+Aan de hand van een aantal voorbeelden werkt dit document Stap 3 (model refinement) met behulp van `insurancerating` uit. De eerste sectie beschrijft de portefeuille, vervolgens wordt een premiemodel geschat en daarna model refinement toegepast. 
 
 # Portefeuille
-
 De technieken om het model te verfijnen worden in dit document toegepast op een WA-portefeuille voor motorrijtuigen. Deze voorbeeld portefeuille bevat kenmerken van 30.000 polishouders. Het gaat om de leeftijd van de polishouder, het aantal claims, exposure, schadebedrag in Euro's, het vermogen van de motor (in kW), BM-trede (0-22) en een regio indicator (0-3). De voorbeeld portefeuille is afgeleid van een grote Belgische verzekeraar. 
 
 
@@ -155,11 +163,11 @@ glimpse(MTPL_premie)
 
 # Risicomodel verfijning
 
-In deze sectie wordt het risicomodel op twee manieren verfijnd. Het eerste deel bevat het `smoothen` van de continue risico factoren. In het tweede deel wordt een BM-ladder toegepast. 
+Nu een risicomodel is geschat, kan smoothing op de geschatte parameters worden toegepast om de overgang tussen premieklassen te verkleinen. Daarnaast is het mogelijk dat er op basis van juridische of commerciele redenen beperkingen om bepaalde factoren worden gezet. Deze sectie geeft toepassingen van beide methoden.   
 
 ## Burning model
 
-Om deze toe te voegen in het model wordt eerst een zogenaamd burning model geschat. Hierin wordt de risicopremies uit de vorige stap nogmaals gemodelleerd. Hierin is de premie de afhankelijke variabele. Dit *burning model* wordt in eerste instantie geschat zonder restricties. Dit model wordt geschat omdat het smoothen toegepast dient te worden op de risicopremie en niet op de gemodelleerde frequentie of schadelast. 
+Om het model te kunnen verfijnen wordt eerst een zogenaamd burning model geschat. Hierin wordt de risicopremie uit de vorige stap nogmaals gemodelleerd. Hierin is de premie de afhankelijke variabele. Dit *burning model* wordt in eerste instantie geschat zonder restricties. Dit model wordt geschat omdat het smoothen toegepast dient te worden op de risicopremie en niet op de gemodelleerde frequentie of schadelast. 
 
 De gehanteerde niveaus voor de onafhankelijke variabelen in het *burning model* zijn in dit geval gelijk aan de niveaus die gewenst zijn in de uiteindelijke premiestelling. Het is hier niet noodzakelijk dat de niveaus gelijk zijn aan de niveaus in het frequentiemodel of het schadelastmodel. 
 
@@ -191,7 +199,7 @@ burn_unrestricted %>%
 
 ```
 
-Het is ook mogelijk om de graad van de polynoom aan te passen. Op basis van *expert judgement* kan hiermee een gewenste *smoothing* worden gedaan. Onderstaand voorbeeld geeft een eerste graads polynoom. 
+Het is ook mogelijk om de graad van de polynoom aan te passen. Op basis van *expert judgement* kan hiermee een gewenste *smoothing* worden gedaan. Onderstaand voorbeeld geeft een eerstegraads polynoom. 
 
 ```{r}
 
@@ -203,9 +211,10 @@ burn_unrestricted %>%
   autoplot()
 
 ```
+
 Om het model opnieuw te schatten is het nodig om in plaats van `autoplot()` gebruik te maken van `refit_glm()`. Dit betekent:
 
-```{r}
+```{r, eval = FALSE}
 
 burn_unrestricted %>%
   smooth_coef(x_cut = "age_policyholder_freq_cat", 
@@ -283,7 +292,7 @@ burn_unrestricted %>%
 
 ```
 
-Toon de nieuwe formule. Hierin is de risico factor met restricties opgenomen in de offset-term. Een offset is een fixed vector die wordt opgeteld bij de linear predictor van een model. Zie de Appendix voor meer achtergrond. 
+Toon de nieuwe formule. Hierin is de risico factor met restricties opgenomen in de offset-term. Een offset is een fixed vector die wordt opgeteld bij de linear predictor van een model. 
 
 Het is ook mogelijk om de vastgezette coefficienten voor de regiofactor af te zetten tegen de geschatte risicofactoren uit het model:
 
@@ -294,9 +303,10 @@ burn_unrestricted %>%
   autoplot()
 
 ```
+
 Nu de coefficienten zijn vastgezet kan het model opnieuw worden geschat:
 
-```{r, eval = TRUE}
+```{r, eval = FALSE}
 
 burn_unrestricted %>%
   restrict_coef(., zip_df) %>%
@@ -314,16 +324,6 @@ burn_restricted2 <- burn_unrestricted %>%
   restrict_coef(., zip_df) %>%
   restrict_coef(., bm_df) %>% 
   refit_glm()
-
-```
-
-
-Door bepaalde coefficienten vast te zetten zullen ook de andere coefficienten in het model aangepast worden. Toon de verschillen in coefficienten. Het valt op dat de coefficienten van de andere variabelen in dit geval slechts fractioneel aangepast worden door het vastzetten van de regiofactor zip. Wanneer de vastgezette coefficienten sterker zullen afwijken van de geschatte coefficienten zullen de verschillen in de andere coefficienten ook groter worden. 
-
-
-```{r, eval = TRUE}
-
-rating_factors(burn_restricted2) 
 
 ```
 
