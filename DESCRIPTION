@@ -34,7 +34,9 @@ Imports:
     tidyselect
 Depends: R (>= 3.3)
 Suggests: 
-    knitr, 
+    spelling,
+    knitr,
     rmarkdown,
     testthat
 Roxygen: list(markdown = TRUE)
+Language: en-US
