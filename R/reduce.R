@@ -41,12 +41,19 @@
 #' 91L, 97L, 57L, 65L, 55L)), row.names = c(NA, -11L), class = "data.frame")
 #'
 #' # Merge periods
-#' reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
+#' pt1 <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
 #'     productgroup, product, min.gapwidth = 5)
 #'
+#' # Aggregate per period
+#' summary(pt1, period = "days", policy_nr, productgroup, product)
+#'
 #' # Merge periods and sum premium per period
-#' reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
+#' pt2 <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
 #'     productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
+#'
+#' # Create summary with aggregation per week
+#' summary(pt2, period = "weeks", policy_nr, productgroup, product)
+#'
 #'
 #' @export
 reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwidth = 5) {
@@ -148,32 +155,11 @@ as.data.frame.reduce <- function(x, ...) {
 #'
 #' @return data.frame
 #'
-#' @examples
-#' portfolio <- structure(list(policy_nr = c("12345", "12345", "12345", "12345",
-#' "12345", "12345", "12345", "12345", "12345", "12345", "12345"),
-#' productgroup = c("fire", "fire", "fire", "fire", "fire", "fire",
-#' "fire", "fire", "fire", "fire", "fire"), product = c("contents",
-#' "contents", "contents", "contents", "contents", "contents", "contents",
-#' "contents", "contents", "contents", "contents"), begin_dat = structure(c(16709,
-#' 16740, 16801, 17410, 17440, 17805, 17897, 17956, 17987, 18017,
-#' 18262), class = "Date"), end_dat = structure(c(16739, 16800,
-#' 16831, 17439, 17531, 17896, 17955, 17986, 18016, 18261, 18292),
-#' class = "Date"), premium = c(89L, 58L, 83L, 73L, 69L, 94L,
-#' 91L, 97L, 57L, 65L, 55L)), row.names = c(NA, -11L), class = "data.frame")
-#'
-#' pt1 <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
-#'     productgroup, product, min.gapwidth = 5)
-#' summary(pt1, period = "days", policy_nr, productgroup, product)
-#'
-#' pt2 <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
-#'     productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
-#' summary(pt2, period = "weeks", policy_nr, productgroup, product)
-#'
 #' @export
 summary.reduce <- function(object, ..., period = "days", name = "count"){
 
   if (!inherits(object, "reduce")) {
-    stop("summary.reduce requires a reduce object, use object = object", call. = FALSE)
+    stop("summary.reduce requires an object of class reduce", call. = FALSE)
   }
 
   df <- object
@@ -240,12 +226,14 @@ summary.reduce <- function(object, ..., period = "days", name = "count"){
   dt <- data.table::rbindlist(list(new, lost))
 
   if ( length(cols0) == 0){
+    dt <- dt[, .(count = sum(count)), by = c(names(dt)[ncol(dt)], "type")]
     data.table::setorderv(dt, c(names(dt)[ncol(dt)], "type", "count"), c(-1,1,1))
-    df <- as.data.frame(dt)[, 3:1]
+    df <- as.data.frame(dt)
   }
 
   if( length(cols0) > 0){
-    data.table::setcolorder(dt, c(names(dt)[ncol(dt)], "type", "count", cols0))
+    dt <- dt[, .(count = sum(count)), by = c(names(dt)[ncol(dt)], "type", cols0)]
+    data.table::setcolorder(dt, c(names(dt)[1], "type", "count", cols0))
     data.table::setorderv(dt, c(names(dt)[1], cols0, "type"), c(-1, rep(1, length(cols0)), 1))
     df <- as.data.frame(dt)
   }

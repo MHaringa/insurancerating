@@ -50,12 +50,19 @@ class = "Date"), premium = c(89L, 58L, 83L, 73L, 69L, 94L,
 91L, 97L, 57L, 65L, 55L)), row.names = c(NA, -11L), class = "data.frame")
 
 # Merge periods
-reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
+pt1 <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
     productgroup, product, min.gapwidth = 5)
 
+# Aggregate per period
+summary(pt1, period = "days", policy_nr, productgroup, product)
+
 # Merge periods and sum premium per period
-reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
+pt2 <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
     productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
+
+# Create summary with aggregation per week
+summary(pt2, period = "weeks", policy_nr, productgroup, product)
+
 
 }
 \author{

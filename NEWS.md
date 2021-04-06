@@ -1,5 +1,7 @@
 # insurancerating 0.6.6
 
+* `summary.reduce()` now gives correct aggregation for periods "months" and "quarters" 
+
 # insurancerating 0.6.5
 
 * `smooth_coef()` and `restrict_coef()` are added for model refinement
