@@ -1,6 +1,7 @@
 # insurancerating 0.6.6
 
 * `summary.reduce()` now gives correct aggregation for periods "months" and "quarters" 
+* `rows_per_date()` is added to determine active portfolio for a certain date
 
 # insurancerating 0.6.5
 
