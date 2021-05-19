@@ -80,7 +80,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.6</span>
       </span>
     </div>
 
@@ -194,19 +194,32 @@ class <span class='op'>=</span> <span class='st'>"Date"</span><span class='op'>)
 <span class='fl'>91L</span>, <span class='fl'>97L</span>, <span class='fl'>57L</span>, <span class='fl'>65L</span>, <span class='fl'>55L</span><span class='op'>)</span><span class='op'>)</span>, row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='cn'>NA</span>, <span class='op'>-</span><span class='fl'>11L</span><span class='op'>)</span>, class <span class='op'>=</span> <span class='st'>"data.frame"</span><span class='op'>)</span>
 
 <span class='co'># Merge periods</span>
-<span class='fu'>reduce</span><span class='op'>(</span><span class='va'>portfolio</span>, begin <span class='op'>=</span> <span class='va'>begin_dat</span>, end <span class='op'>=</span> <span class='va'>end_dat</span>, <span class='va'>policy_nr</span>,
+<span class='va'>pt1</span> <span class='op'>&lt;-</span> <span class='fu'>reduce</span><span class='op'>(</span><span class='va'>portfolio</span>, begin <span class='op'>=</span> <span class='va'>begin_dat</span>, end <span class='op'>=</span> <span class='va'>end_dat</span>, <span class='va'>policy_nr</span>,
     <span class='va'>productgroup</span>, <span class='va'>product</span>, min.gapwidth <span class='op'>=</span> <span class='fl'>5</span><span class='op'>)</span>
-</div><div class='output co'>#&gt;   policy_nr productgroup  product index  begin_dat    end_dat
-#&gt; 1     12345         fire contents     0 2015-10-01 2016-01-31
-#&gt; 2     12345         fire contents     1 2017-09-01 2017-12-31
-#&gt; 3     12345         fire contents     2 2018-10-01 2020-01-31</div><div class='input'>
+
+<span class='co'># Aggregate per period</span>
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>pt1</span>, period <span class='op'>=</span> <span class='st'>"days"</span>, <span class='va'>policy_nr</span>, <span class='va'>productgroup</span>, <span class='va'>product</span><span class='op'>)</span>
+</div><div class='output co'>#&gt;         date type count policy_nr productgroup  product
+#&gt; 1 2020-02-01  out     1     12345         fire contents
+#&gt; 2 2018-10-01   in     1     12345         fire contents
+#&gt; 3 2018-01-01  out     1     12345         fire contents
+#&gt; 4 2017-09-01   in     1     12345         fire contents
+#&gt; 5 2016-02-01  out     1     12345         fire contents
+#&gt; 6 2015-10-01   in     1     12345         fire contents</div><div class='input'>
 <span class='co'># Merge periods and sum premium per period</span>
-<span class='fu'>reduce</span><span class='op'>(</span><span class='va'>portfolio</span>, begin <span class='op'>=</span> <span class='va'>begin_dat</span>, end <span class='op'>=</span> <span class='va'>end_dat</span>, <span class='va'>policy_nr</span>,
+<span class='va'>pt2</span> <span class='op'>&lt;-</span> <span class='fu'>reduce</span><span class='op'>(</span><span class='va'>portfolio</span>, begin <span class='op'>=</span> <span class='va'>begin_dat</span>, end <span class='op'>=</span> <span class='va'>end_dat</span>, <span class='va'>policy_nr</span>,
     <span class='va'>productgroup</span>, <span class='va'>product</span>, agg_cols <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span><span class='va'>premium</span><span class='op'>)</span>, min.gapwidth <span class='op'>=</span> <span class='fl'>5</span><span class='op'>)</span>
-</div><div class='output co'>#&gt;   policy_nr productgroup  product index    end_dat  begin_dat premium
-#&gt; 1     12345         fire contents     0 2016-01-31 2015-10-01     230
-#&gt; 2     12345         fire contents     1 2017-12-31 2017-09-01     142
-#&gt; 3     12345         fire contents     2 2020-01-31 2018-10-01     459</div><div class='input'>
+
+<span class='co'># Create summary with aggregation per week</span>
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>pt2</span>, period <span class='op'>=</span> <span class='st'>"weeks"</span>, <span class='va'>policy_nr</span>, <span class='va'>productgroup</span>, <span class='va'>product</span><span class='op'>)</span>
+</div><div class='output co'>#&gt;      week type count policy_nr productgroup  product
+#&gt; 1 2020W06  out     1     12345         fire contents
+#&gt; 2 2018W40   in     1     12345         fire contents
+#&gt; 3 2018W02  out     1     12345         fire contents
+#&gt; 4 2017W35   in     1     12345         fire contents
+#&gt; 5 2016W06  out     1     12345         fire contents
+#&gt; 6 2015W40   in     1     12345         fire contents</div><div class='input'>
+
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

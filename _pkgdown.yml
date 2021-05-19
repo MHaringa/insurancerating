@@ -52,6 +52,7 @@ reference:
       - add_prediction
       - fisher
       - period_to_months
+      - rows_per_date
       - reduce
       - summary.reduce
 

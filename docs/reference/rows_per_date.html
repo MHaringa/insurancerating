@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Characteristics of 30,000 policyholders in a Motor Third Party Liability (MTPL) portfolio. — MTPL • insurancerating</title>
+<title>Find active rows per date — rows_per_date • insurancerating</title>
 
 <!-- favicons -->
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -46,8 +46,8 @@
 
 
 
-<meta property="og:title" content="Characteristics of 30,000 policyholders in a Motor Third Party Liability (MTPL) portfolio. — MTPL" />
-<meta property="og:description" content="A dataset containing the age, number of claims, exposure, claim amount, power, bm, and region of 30,000 policyholders." />
+<meta property="og:title" content="Find active rows per date — rows_per_date" />
+<meta property="og:description" content="Find active rows per date." />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -119,38 +119,66 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Characteristics of 30,000 policyholders in a Motor Third Party Liability (MTPL) portfolio.</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/MTPL.R'><code>R/MTPL.R</code></a></small>
-    <div class="hidden name"><code>MTPL.Rd</code></div>
+    <h1>Find active rows per date</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/rows_per_date.R'><code>R/rows_per_date.R</code></a></small>
+    <div class="hidden name"><code>rows_per_date.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>A dataset containing the age, number of claims, exposure, claim amount, power, bm, and region of 30,000 policyholders.</p>
+    <p>Find active rows per date.</p>
     </div>
 
-    <pre class="usage"><span class='va'>MTPL</span></pre>
+    <pre class="usage"><span class='fu'>rows_per_date</span><span class='op'>(</span><span class='va'>df</span>, <span class='va'>dates</span>, <span class='va'>begin</span>, <span class='va'>end</span><span class='op'>)</span></pre>
 
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>df</th>
+      <td><p>data.frame</p></td>
+    </tr>
+    <tr>
+      <th>dates</th>
+      <td><p>vector of dates</p></td>
+    </tr>
+    <tr>
+      <th>begin</th>
+      <td><p>column name in <code>df</code> with begin dates</p></td>
+    </tr>
+    <tr>
+      <th>end</th>
+      <td><p>column name in <code>df</code> with end dates</p></td>
+    </tr>
+    </table>
 
-    <h2 class="hasAnchor" id="format"><a class="anchor" href="#format"></a>Format</h2>
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>A data frame with 30,000 rows and 7 variables:</p><dl>
-<dt>age_policyholder</dt><dd><p>age of policyholder, in years.</p></dd>
-<dt>nclaims</dt><dd><p>number of claims.</p></dd>
-<dt>exposure</dt><dd><p>exposure, for example, if a vehicle is insured as of July 1 for a certain year, then during that year, this would represent an exposure of 0.5 to the insurance company.</p></dd>
-<dt>amount</dt><dd><p>claim amount in Euros.</p></dd>
-<dt>power</dt><dd><p>engine power of vehicle (in kilowatts).</p></dd>
-<dt>bm</dt><dd><p>level occupied in the 23-level (0-22) bonus-malus scale (the higher the level occupied, the worse the claim history).</p></dd>
-<dt>zip</dt><dd><p>region indicator (0-3).</p></dd>
-
-</dl>
-
-    <h2 class="hasAnchor" id="source"><a class="anchor" href="#source"></a>Source</h2>
-
-    <p>The data is derived from the portfolio of a large Dutch motor insurance company.</p>
+    <p>returned class is equal to class of <code>df</code></p>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
     <p>Martin Haringa</p>
 
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><div class='input'><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://lubridate.tidyverse.org'>lubridate</a></span><span class='op'>)</span>
+<span class='va'>portfolio</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>
+begin1 <span class='op'>=</span> <span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"2014-01-01"</span>, <span class='st'>"2014-01-01"</span><span class='op'>)</span><span class='op'>)</span>,
+end <span class='op'>=</span> <span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"2014-03-14"</span>, <span class='st'>"2014-05-10"</span><span class='op'>)</span><span class='op'>)</span>,
+termination <span class='op'>=</span> <span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"2014-03-14"</span>, <span class='st'>"2014-05-10"</span><span class='op'>)</span><span class='op'>)</span>,
+exposure <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.2025</span>, <span class='fl'>0.3583</span><span class='op'>)</span>,
+premium <span class='op'>=</span>  <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>125</span>, <span class='fl'>150</span><span class='op'>)</span><span class='op'>)</span>
+
+<span class='va'>active_date</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq</a></span><span class='op'>(</span><span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span><span class='op'>(</span><span class='st'>"2014-01-01"</span><span class='op'>)</span>, <span class='fu'><a href='http://lubridate.tidyverse.org/reference/ymd.html'>ymd</a></span><span class='op'>(</span><span class='st'>"2014-05-01"</span><span class='op'>)</span>, by <span class='op'>=</span> <span class='st'>"months"</span><span class='op'>)</span>
+<span class='fu'>rows_per_date</span><span class='op'>(</span><span class='va'>portfolio</span>, <span class='va'>active_date</span>, begin <span class='op'>=</span> <span class='va'>begin1</span>, end <span class='op'>=</span> <span class='va'>end</span><span class='op'>)</span>
+</div><div class='output co'>#&gt;   active_date     begin1        end termination exposure premium
+#&gt; 1  2014-01-01 2014-01-01 2014-03-14  2014-03-14   0.2025     125
+#&gt; 2  2014-01-01 2014-01-01 2014-05-10  2014-05-10   0.3583     150
+#&gt; 3  2014-02-01 2014-01-01 2014-03-14  2014-03-14   0.2025     125
+#&gt; 4  2014-02-01 2014-01-01 2014-05-10  2014-05-10   0.3583     150
+#&gt; 5  2014-03-01 2014-01-01 2014-03-14  2014-03-14   0.2025     125
+#&gt; 6  2014-03-01 2014-01-01 2014-05-10  2014-05-10   0.3583     150
+#&gt; 7  2014-04-01 2014-01-01 2014-05-10  2014-05-10   0.3583     150
+#&gt; 8  2014-05-01 2014-01-01 2014-05-10  2014-05-10   0.3583     150</div><div class='input'>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
