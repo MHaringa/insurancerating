@@ -1,11 +1,11 @@
 ## Resubmission
 This is a resubmission. In this version:
 
-* `smooth_coef()` and `restrict_coef()` are added for model refinement
-* `histbin()` now uses darkblue as default fill color 
+* `summary.reduce()` now gives correct aggregation for periods "months" and "quarters" 
+* `rows_per_date()` is added to determine active portfolio for a certain date
 
 ## Test environments
-* local OS X install, R 4.0.4
+* local OS X install, R 4.0.5
 * win-builder (devel and release)
 
 ## R CMD check results
