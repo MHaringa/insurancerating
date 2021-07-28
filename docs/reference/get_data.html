@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Set reference group to the group with largest exposure — biggest_reference • insurancerating</title>
+<title>Get data from refitted Generalized Linear Model — get_data • insurancerating</title>
 
 <!-- favicons -->
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -46,10 +46,10 @@
 
 
 
-<meta property="og:title" content="Set reference group to the group with largest exposure — biggest_reference" />
-<meta property="og:description" content="This function specifies the first level of a factor to the level with the largest exposure. Levels of factors are sorted
-using an alphabetic ordering. If the factor is used in a regression context, then the first level will be the reference. For insurance
-applications it is common to specify the reference level to the level with the largest exposure." />
+<meta property="og:title" content="Get data from refitted Generalized Linear Model — get_data" />
+<meta property="og:description" content="
+get_data() is used to get data from refitted generalized linear models, and must be
+preceded by refit_glm()." />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -121,52 +121,35 @@ applications it is common to specify the reference level to the level with the l
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Set reference group to the group with largest exposure</h1>
-    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/biggest_reference.R'><code>R/biggest_reference.R</code></a></small>
-    <div class="hidden name"><code>biggest_reference.Rd</code></div>
+    <h1>Get data from refitted Generalized Linear Model</h1>
+    <small class="dont-index">Source: <a href='https://github.com/mharinga/insurancerating/blob/master/R/model_refinement.R'><code>R/model_refinement.R</code></a></small>
+    <div class="hidden name"><code>get_data.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>This function specifies the first level of a factor to the level with the largest exposure. Levels of factors are sorted
-using an alphabetic ordering. If the factor is used in a regression context, then the first level will be the reference. For insurance
-applications it is common to specify the reference level to the level with the largest exposure.</p>
+    <p><a href='https://lifecycle.r-lib.org/articles/stages.html#experimental'><img src='figures/lifecycle-experimental.svg' alt='[Experimental]' /></a>
+<code>get_data()</code> is used to get data from refitted generalized linear models, and must be
+preceded by <code><a href='refit_glm.html'>refit_glm()</a></code>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>biggest_reference</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>weight</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>get_data</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>x</th>
-      <td><p>an unordered factor</p></td>
-    </tr>
-    <tr>
-      <th>weight</th>
-      <td><p>a vector containing weights (e.g. exposure). Should be numeric.</p></td>
+      <td><p>Object of class refitsmooth or of class refitrestricted</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>a factor of the same length as x</p>
-    <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
-
-    <p>Kaas, Rob &amp; Goovaerts, Marc &amp; Dhaene, Jan &amp; Denuit, Michel. (2008). Modern Actuarial Risk Theory: Using R.
-doi:10.1007/978-3-540-70998-5.</p>
+    <p>data.frame</p>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
     <p>Martin Haringa</p>
 
-    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://dplyr.tidyverse.org'>dplyr</a></span><span class='op'>)</span>
-<span class='va'>df</span> <span class='op'>&lt;-</span> <span class='va'>chickwts</span> <span class='op'>%&gt;%</span>
-<span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate.html'>mutate</a></span><span class='op'>(</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/across.html'>across</a></span><span class='op'>(</span><span class='fu'>where</span><span class='op'>(</span><span class='va'>is.character</span><span class='op'>)</span>, <span class='va'>as.factor</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
-<span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate.html'>mutate</a></span><span class='op'>(</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/across.html'>across</a></span><span class='op'>(</span><span class='fu'>where</span><span class='op'>(</span><span class='va'>is.factor</span><span class='op'>)</span>, <span class='op'>~</span><span class='fu'>biggest_reference</span><span class='op'>(</span><span class='va'>.</span>, <span class='va'>weight</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
-<span class='op'>}</span>
-
-</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

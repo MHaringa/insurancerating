@@ -693,3 +693,41 @@ rating_factors(burn_restricted3)
     ## 19 age_policyholder_smooth     (83,88]         0.515136    
     ## 20 age_policyholder_smooth     (88,93]         0.624062    
     ## 21                      bm          bm         1.036909 ***
+
+And add refined premiums to the data:
+
+``` r
+premiums3 <- get_data(burn_restricted3) %>%
+  add_prediction(burn_restricted3)
+
+head(premiums3)
+```
+
+    ##   age_policyholder age_policyholder_freq_cat_smooth age_policyholder_smooth
+    ## 1               70                        0.7858894                 (68,73]
+    ## 2               40                        1.1372518                 (38,43]
+    ## 3               78                        0.6502670                 (73,78]
+    ## 4               49                        1.1097671                 (48,53]
+    ## 5               59                        1.0174238                 (58,63]
+    ## 6               71                        0.7858894                 (68,73]
+    ##   nclaims  exposure amount power bm zip age_policyholder_freq_cat
+    ## 1       0 1.0000000      0   106  5   1                   (39,84]
+    ## 2       0 1.0000000      0    74  3   1                   (39,84]
+    ## 3       0 1.0000000      0    65  8   2                   (39,84]
+    ## 4       0 1.0000000      0    64 10   1                   (39,84]
+    ## 5       0 1.0000000      0    29  1   3                   (39,84]
+    ## 6       0 0.4547945      0    66  6   3                   (39,84]
+    ##   pred_nclaims_mod_freq pred_amount_mod_sev   premium zip_restricted
+    ## 1            0.12314843            92178.78 11351.672            0.9
+    ## 2            0.12314843            85686.38 10552.142            0.9
+    ## 3            0.11069758            82808.65  9166.717            1.0
+    ## 4            0.12314843           110644.28 13625.670            0.9
+    ## 5            0.11751490            62444.85  7338.200            1.2
+    ## 6            0.05344513            74953.96  4005.925            1.2
+    ##   pred_premium_burn_restricted3
+    ## 1                      6681.109
+    ## 2                      8992.135
+    ## 3                      6847.906
+    ## 4                     11308.927
+    ## 5                      9976.216
+    ## 6                      9236.933
