@@ -1,3 +1,6 @@
+# insurancerating 0.6.8
+
+
 # insurancerating 0.6.7
 
 * `smooth_coef()` now returns an error message when intervals are not obtained by cut()
