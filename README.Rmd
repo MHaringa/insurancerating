@@ -477,6 +477,16 @@ burn_restricted3 <- burn_unrestricted %>%
 # Show rating factors
 rating_factors(burn_restricted3)
 
+```
+
+And add refined premiums to the data:
+
+```{r}
+
+premiums3 <- get_data(burn_restricted3) %>%
+  add_prediction(burn_restricted3)
+
+head(premiums3)
 
 ```
 

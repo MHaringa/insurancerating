@@ -1,3 +1,8 @@
+# insurancerating 0.6.7
+
+* `smooth_coef()` now returns an error message when intervals are not obtained by cut()
+* `get_data()` is added to return the data used in `refit_glm()`
+
 # insurancerating 0.6.6
 
 * `summary.reduce()` now gives correct aggregation for periods "months" and "quarters" 

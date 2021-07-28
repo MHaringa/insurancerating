@@ -45,7 +45,8 @@
 #' }
 #'
 #' @export
-construct_tariff_classes <- function (object, alpha = 0, niterations = 10000, ntrees = 200, seed = 1) {
+construct_tariff_classes <- function (object, alpha = 0, niterations = 10000,
+                                      ntrees = 200, seed = 1) {
 
   new <- object[[4]]
   counting <- new$x
@@ -69,7 +70,7 @@ construct_tariff_classes <- function (object, alpha = 0, niterations = 10000, nt
 
   # Add min and max to binning
   splits <- c(min(counting), split_x, max(counting))
-  cuts <- cut(object[[5]], breaks = splits, include.lowest = TRUE)
+  cuts <- cut(object[[5]], breaks = splits, include.lowest = TRUE, dig.lab = 20)
 
   return(structure(list(prediction = object[[1]],
                         x = object[[2]],

@@ -112,6 +112,7 @@ update_formula_add <- function(offset_term, fm_no_offset, add_term){
 cut_borders_df <- function(df, col){
   if (!col %in% names(df)) stop("Column name must be available in data", call. = FALSE)
   df_vec <- df[[col]]
+
   pattern <- "(\\(|\\[)(-*[0-9]+\\.*[0-9]*),(-*[0-9]+\\.*[0-9]*)(\\)|\\])"
   suppressWarnings({
     df$start_oc <- ifelse(gsub(pattern,"\\1", df_vec) == "(", "open",
@@ -122,6 +123,13 @@ cut_borders_df <- function(df, col){
     df$end_ <- as.numeric(gsub(pattern,"\\3", df_vec))
   })
   df$avg_ <- rowMeans(df[, c('start_', 'end_')], na.rm = TRUE)
+
+  if( any(is.na(df$avg_)) ) stop(
+    "Can't find cut points in column ", col, ". Intervals in ", col,
+    " should be in the same format as the output from cut().
+  Use e.g. cut() or insurancerating::construct_tariff_classes().",
+    call. = FALSE)
+
   return(df)
 }
 

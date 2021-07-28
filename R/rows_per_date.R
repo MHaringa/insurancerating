@@ -48,9 +48,11 @@ rows_per_date <- function(df, dates, begin, end){
   data.table::setkeyv(lookup, c(begin00, end00))
 
   data.table::setDT(df)
-  ans <- data.table::foverlaps(df, lookup, type = "any", which = FALSE, nomatch=NULL)
+  ans <- data.table::foverlaps(df, lookup, type = "any", which = FALSE, nomatch = NULL)
   ans[, c(begin00) := NULL]
-  data.table::setnames(ans, c(end00, paste0("i.", begin00), paste0("i.", end00)), new = c(reeks00, begin00, end00))
+  data.table::setnames(ans,
+                       old = c(end00, paste0("i.", begin00), paste0("i.", end00)),
+                       new = c(reeks00, begin00, end00))
   ans <- ans[order(get(reeks00))]
   class(ans) <- class00
   return(ans)

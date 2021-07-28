@@ -463,6 +463,30 @@ refit_glm <- function(x){
   y
 }
 
+#' Get data from refitted Generalized Linear Model
+#'
+#' @description `r lifecycle::badge('experimental')`
+#'  `get_data()` is used to get data from refitted generalized linear models, and must be
+#'  preceded by `refit_glm()`.
+#'
+#' @param x Object of class refitsmooth or of class refitrestricted
+#'
+#' @author Martin Haringa
+#'
+#' @return data.frame
+#'
+#' @export
+get_data <- function(x){
+  if( !inherits(x, c("refitsmooth", "refitrestricted")) ) {
+    stop("Input must be of class refitsmooth or of class refitrestricted", call. = FALSE)
+  }
+  xdf <- x$data
+  xdf[!names(xdf) %in% c("breaks_min", "breaks_max",
+                         "start_oc", "end_oc",
+                         "start_", "end_",
+                         "avg_", "risk_factor")]
+}
+
 
 
 
