@@ -41,10 +41,6 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
     stop("Input must be of class glm.", call. = FALSE)
   }
 
-  if(!length(xl)){ # no factors in model
-    warning(paste0("No factors detected in model"), call. = FALSE)
-  }
-
   if (inherits(model, "refitsmooth")){
     smooth_rf <- attr(model, "new_rf")
     smooth_rf$ind <- as.character(smooth_rf$risk_factor)
@@ -70,6 +66,14 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
     xl_df$values <- as.character(xl_df$values)
     xl_df$ind_values <- paste0(xl_df$ind, xl_df$values)
   }
+
+  if ( is.null(xl) ){
+    xl_df <- data.frame(ind = character(),
+                        values = character(),
+                        ind_values = character(),
+                        stringsAsFactors = FALSE)
+  }
+
 
   if (inherits(model, "refitsmooth")) {
 
@@ -235,8 +239,8 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
 #' @examples
 #' library(dplyr)
 #' df <- MTPL2 %>%
-#'     mutate_at(vars(area), as.factor) %>%
-#'     mutate_at(vars(area), ~biggest_reference(., exposure))
+#'   mutate(across(c(area), as.factor)) %>%
+#'   mutate(across(c(area), ~biggest_reference(., exposure)))
 #'
 #' mod1 <- glm(nclaims ~ area + premium, offset = log(exposure), family = poisson(), data = df)
 #' mod2 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = df)

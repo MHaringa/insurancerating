@@ -41,8 +41,8 @@ function is adopted from dummy.coef(). Our adoption prints a data.frame as outpu
 \examples{
 library(dplyr)
 df <- MTPL2 \%>\%
-    mutate_at(vars(area), as.factor) \%>\%
-    mutate_at(vars(area), ~biggest_reference(., exposure))
+  mutate(across(c(area), as.factor)) \%>\%
+  mutate(across(c(area), ~biggest_reference(., exposure)))
 
 mod1 <- glm(nclaims ~ area + premium, offset = log(exposure), family = poisson(), data = df)
 mod2 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = df)

@@ -49,8 +49,6 @@
 
 \item{sort_manual}{sort (or order) risk factor into own ordering; should be a character vector (default is NULL)}
 
-\item{dec.mark}{control the format of the decimal point, as well as the mark between intervals before the decimal point, choose either "," (default) or "."}
-
 \item{color}{change the color of the points and line ("dodgerblue" is default)}
 
 \item{color_bg}{change the color of the histogram ("#f8e6b1" is default)}
