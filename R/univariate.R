@@ -157,7 +157,6 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, 
 #' @param labels show labels with the exposure (default is TRUE)
 #' @param sort sort (or order) risk factor into descending order by exposure (default is FALSE)
 #' @param sort_manual sort (or order) risk factor into own ordering; should be a character vector (default is NULL)
-#' @param dec.mark control the format of the decimal point, as well as the mark between intervals before the decimal point, choose either "," (default) or "."
 #' @param color change the color of the points and line ("dodgerblue" is default)
 #' @param color_bg change the color of the histogram ("#f8e6b1" is default)
 #' @param label_width width of labels on the x-axis (10 is default)
