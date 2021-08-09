@@ -180,7 +180,8 @@ ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg, sep_
 
 
 #' @keywords internal
-ggpointline <- function(df, dfby, xvar, y, color, by){
+ggpointline <- function(df, dfby, xvar, y, color, by,
+                        show_total, total_color, total_name){
   if ( by == "NULL"){
     list(
       ggplot2::geom_point(data = df,
@@ -195,6 +196,7 @@ ggpointline <- function(df, dfby, xvar, y, color, by){
       ggplot2::theme_minimal()
     )
   } else {
+    if ( isTRUE(show_total) ){
     list(
       ggplot2::geom_point(data = dfby,
                           aes(x = .data[[xvar]],
@@ -206,8 +208,33 @@ ggpointline <- function(df, dfby, xvar, y, color, by){
                              group = .data[[by]],
                              color = as.factor(.data[[by]]))),
       ggplot2::theme_minimal(),
-      ggplot2::labs(color = by)
-    )
+      ggplot2::labs(color = by, linetype = NULL),
+      ggplot2::geom_point(data = df,
+                          aes(x = .data[[xvar]],
+                              y = .data[[y]]),
+                          color = total_color),
+      ggplot2::geom_line(data = df,
+                         aes(x = .data[[xvar]],
+                             y = .data[[y]],
+                             linetype = total_name,
+                             group = "black"),
+                         color = total_color)
+    )}
+    else {
+      list(
+        ggplot2::geom_point(data = dfby,
+                            aes(x = .data[[xvar]],
+                                y = .data[[y]],
+                                color = .data[[by]])),
+        ggplot2::geom_line(data = dfby,
+                           aes(x = .data[[xvar]],
+                               y = .data[[y]],
+                               group = .data[[by]],
+                               color = as.factor(.data[[by]]))),
+        ggplot2::theme_minimal(),
+        ggplot2::labs(color = by)
+      )
+    }
   }
 }
 
@@ -266,11 +293,15 @@ ggyscale <- function(background, sep_mark){
 
 
 #' @keywords internal
-ggbarline <- function(background, df, dfby, xvar, f_axis, f_axis_name, exposure, color_bg, color, sep_mark, by, labels, sort_manual, label_width){
+ggbarline <- function(background, df, dfby, xvar, f_axis,
+                      f_axis_name, exposure, color_bg, color,
+                      sep_mark, by, labels, sort_manual, label_width,
+                      show_total, total_color, total_name){
   df <- scale_second_axis(background, df, dfby, f_axis, exposure, by)
   ggplot2::ggplot() +
     ggbarplot(background, df, dfby, xvar, f_axis, exposure, color_bg, sep_mark, by) +
-    ggpointline(df, dfby, xvar, f_axis, color, by) +
+    ggpointline(df, dfby, xvar, f_axis, color, by,
+                show_total, total_color, total_name) +
     ggplot2::labs(y = f_axis_name, x = xvar) +
     gglabels(background, labels, df, xvar, sep_mark) +
     ggyscale(background, sep_mark) +

@@ -57,3 +57,6 @@ univariate(MTPL, x = zip, severity = amount, nclaims = nclaims,
            exposure = exposure, by = list(bm, power))
 
 }
+\author{
+Marc Haine, Martin Haringa
+}

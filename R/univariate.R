@@ -18,6 +18,8 @@
 #' @param nclaims column in `df` with number of claims (default is NULL)
 #' @param by list of column(s) in `df` to group by
 #'
+#' @author Marc Haine, Martin Haringa
+#'
 #' @return A data.frame
 #'
 #' @importFrom data.table data.table
@@ -160,6 +162,9 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, 
 #' @param color_bg change the color of the histogram ("#f8e6b1" is default)
 #' @param label_width width of labels on the x-axis (10 is default)
 #' @param coord_flip flip cartesian coordinates so that horizontal becomes vertical, and vertical, horizontal (default is FALSE)
+#' @param show_total show line for total if by is used in univariate (default is FALSE)
+#' @param total_color change the color for the total line ("black" is default)
+#' @param total_name add legend name for the total line (e.g. "total")
 #' @param ... other plotting parameters to affect the plot
 #'
 #' @import patchwork
@@ -179,9 +184,13 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, 
 #' autoplot(xzip, show_plots = 1:2)
 #'
 #' @export
-autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background = TRUE, labels = TRUE,
-                                sort = FALSE, sort_manual = NULL, dec.mark = ",", color = "dodgerblue",
-                                color_bg = "lightskyblue", label_width = 10, coord_flip = FALSE, ...){
+autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
+                                background = TRUE, labels = TRUE,
+                                sort = FALSE, sort_manual = NULL,
+                                dec.mark = ",", color = "dodgerblue",
+                                color_bg = "lightskyblue", label_width = 10,
+                                coord_flip = FALSE, show_total = FALSE,
+                                total_color = NULL, total_name = NULL, ...){
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
@@ -246,6 +255,10 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background =
     }
   }
 
+  if ( is.null(total_color) ){
+    total_color <- "black"
+  }
+
   if ( isTRUE(sort) & exposure != "NULL" ){
     df[[xvar]] <- order_factors_exposure(df[[xvar]], df[[exposure]], decreasing = coord_flip)
   }
@@ -257,30 +270,40 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1, background =
 
   if ( "frequency" %in% names(df) & 1 %in% show_plots ){
     p1 <- ggbarline(background, df, dfby, xvar, "frequency", "Frequency", exposure,
-                    color_bg, color, sep_mark, by, labels, sort_manual, label_width)
+                    color_bg, color, sep_mark, by, labels,
+                    sort_manual, label_width,
+                    show_total, total_color, total_name)
   } else( not_allowed <- c(not_allowed, 1) )
 
   if ( "average_severity" %in% names(df) & 2 %in% show_plots ){
     p2 <- ggbarline(background, df, dfby, xvar, "average_severity", "Average\nseverity", nclaims,
-                    color_bg, color, sep_mark, by, labels, sort_manual, label_width)
+                    color_bg, color, sep_mark, by, labels,
+                    sort_manual, label_width,
+                    show_total, total_color, total_name)
     if ( !1 %in% not_allowed ) { p2 <- p2 + theme(legend.position = "none") }
   } else( not_allowed <- c(not_allowed, 2) )
 
   if ( "risk_premium" %in% names(df) & 3 %in% show_plots ){
     p3 <- ggbarline(background, df, dfby, xvar, "risk_premium", "Risk premium", exposure,
-                    color_bg, color, sep_mark, by, labels, sort_manual, label_width)
+                    color_bg, color, sep_mark, by, labels,
+                    sort_manual, label_width,
+                    show_total, total_color, total_name)
     if ( !all(1:2 %in% not_allowed) ) { p3 <- p3 + theme(legend.position = "none") }
   } else( not_allowed <- c(not_allowed, 3) )
 
   if ( "loss_ratio" %in% names(df) & 4 %in% show_plots ){
     p4 <- ggbarline(background, df, dfby, xvar, "loss_ratio", "Loss ratio", premium,
-                    color_bg, color, sep_mark, by, labels, sort_manual, label_width)
+                    color_bg, color, sep_mark, by, labels,
+                    sort_manual, label_width,
+                    show_total, total_color, total_name)
     if ( !all(1:3 %in% not_allowed) ) { p4 <- p4 + theme(legend.position = "none") }
   } else( not_allowed <- c(not_allowed, 4) )
 
   if ( "average_premium" %in% names(df) & 5 %in% show_plots ){
     p5 <- ggbarline(background, df, dfby, xvar, "average_premium", "Average\npremium", exposure,
-                    color_bg, color, sep_mark, by, labels, sort_manual, label_width)
+                    color_bg, color, sep_mark, by, labels,
+                    sort_manual, label_width,
+                    show_total, total_color, total_name)
     if ( !all(1:4 %in% not_allowed) ) { p5 <- p5 + theme(legend.position = "none") }
   } else( not_allowed <- c(not_allowed, 5) )
 

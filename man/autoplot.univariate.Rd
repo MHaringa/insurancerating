@@ -17,6 +17,9 @@
   color_bg = "lightskyblue",
   label_width = 10,
   coord_flip = FALSE,
+  show_total = FALSE,
+  total_color = NULL,
+  total_name = NULL,
   ...
 )
 }
@@ -55,6 +58,12 @@
 \item{label_width}{width of labels on the x-axis (10 is default)}
 
 \item{coord_flip}{flip cartesian coordinates so that horizontal becomes vertical, and vertical, horizontal (default is FALSE)}
+
+\item{show_total}{show line for total if by is used in univariate (default is FALSE)}
+
+\item{total_color}{change the color for the total line ("black" is default)}
+
+\item{total_name}{add legend name for the total line (e.g. "total")}
 
 \item{...}{other plotting parameters to affect the plot}
 }
