@@ -9,7 +9,8 @@ rating_factors1(
   model_data = NULL,
   exposure = NULL,
   colname = "estimate",
-  exponentiate = TRUE
+  exponentiate = TRUE,
+  round_exposure = 0
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ default value is NULL}
 
 \item{exponentiate}{logical indicating whether or not to exponentiate
 the coefficient estimates. Defaults to TRUE.}
+
+\item{round_exposure}{number of digits for exposure (default to 0)}
 }
 \description{
 Extract coefficients in terms of the original levels of the

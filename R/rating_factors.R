@@ -13,6 +13,7 @@
 #' @param colname the name of the output column, default value is "estimate"
 #' @param exponentiate logical indicating whether or not to exponentiate
 #'   the coefficient estimates. Defaults to TRUE.
+#' @param round_exposure number of digits for exposure (default to 0)
 #'
 #' @author Martin Haringa
 #'
@@ -30,7 +31,8 @@
 #'
 #' @export
 rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
-                            colname = "estimate", exponentiate = TRUE){
+                            colname = "estimate", exponentiate = TRUE,
+                            round_exposure = 0){
 
   xl <- model$xlevels
   model_nm <- deparse(substitute(model))
@@ -202,6 +204,7 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
   row.names(uit) <- NULL
   if ( !is.null( model_data ) & exposure != "NULL" & length( xl_names_in ) > 0){
     uit <- uit[, c("risk_factor", "level", "values", exposure, "pvalues")]
+    uit[[exposure]] <- round(uit[[exposure]], round_exposure)
   } else {
     uit <- uit[, c("risk_factor", "level", "values", "pvalues")]
   }
@@ -224,6 +227,7 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
 #' @param exponentiate logical indicating whether or not to exponentiate the
 #'   coefficient estimates. Defaults to TRUE.
 #' @param signif_stars show significance stars for p-values (defaults to TRUE)
+#' @param round_exposure number of digits for exposure (defaults to 0)
 #'
 #' @details A fitted linear model has coefficients for the contrasts of the
 #'   factor terms, usually one less in number than the number of levels. This
@@ -251,7 +255,8 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
 #'
 #' @export
 rating_factors <- function(..., model_data = NULL, exposure = NULL,
-                           exponentiate = TRUE, signif_stars = TRUE){
+                           exponentiate = TRUE, signif_stars = TRUE,
+                           round_exposure = 0){
 
   model_data_nm <- deparse(substitute(model_data))
   exposure_nm <- deparse(substitute(exposure))
@@ -263,7 +268,8 @@ rating_factors <- function(..., model_data = NULL, exposure = NULL,
   for (i in 1:length(cols)){
     df <- eval.parent(substitute(rating_factors1(eval(parse( text = cols[i])),
                                                  model_data, exposure,
-                                                 exponentiate = exponentiate)))
+                                                 exponentiate = exponentiate,
+                                                 round_exposure = round_exposure)))
     names(df)[names(df) == "estimate"] <- paste0("est_", cols[i])
     names(df)[names(df) == "pvalues"] <- paste0("signif_", cols[i])
     rf_list[[paste0("m_", i)]] <- df

@@ -9,7 +9,8 @@ rating_factors(
   model_data = NULL,
   exposure = NULL,
   exponentiate = TRUE,
-  signif_stars = TRUE
+  signif_stars = TRUE,
+  round_exposure = 0
 )
 }
 \arguments{
@@ -24,6 +25,8 @@ be specified in case the exposure is desired in the output, default value is NUL
 coefficient estimates. Defaults to TRUE.}
 
 \item{signif_stars}{show significance stars for p-values (defaults to TRUE)}
+
+\item{round_exposure}{number of digits for exposure (defaults to 0)}
 }
 \value{
 data.frame
