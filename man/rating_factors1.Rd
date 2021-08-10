@@ -39,3 +39,6 @@ x <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = MTPL
 rating_factors1(x)
 
 }
+\author{
+Martin Haringa
+}

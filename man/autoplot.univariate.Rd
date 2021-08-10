@@ -83,3 +83,6 @@ exposure = exposure, by = zip)
 autoplot(xzip, show_plots = 1:2)
 
 }
+\author{
+Marc Haine, Martin Haringa
+}

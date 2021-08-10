@@ -14,6 +14,8 @@
 #' @param exponentiate logical indicating whether or not to exponentiate
 #'   the coefficient estimates. Defaults to TRUE.
 #'
+#' @author Martin Haringa
+#'
 #' @importFrom data.table data.table
 #' @importFrom dplyr full_join
 #' @importFrom dplyr left_join
@@ -369,6 +371,8 @@ as.data.frame.riskfactor <- function(x, ...) {
 #' @param linetype use different linetypes (default is FALSE)
 #' @param ... other plotting parameters to affect the plot
 #'
+#' @author Martin Haringa
+#'
 #' @return a ggplot2 object
 #' @export
 #'
@@ -380,8 +384,8 @@ as.data.frame.riskfactor <- function(x, ...) {
 #' @examples
 #' library(dplyr)
 #' df <- MTPL2 %>%
-#'     mutate_at(vars(area), as.factor) %>%
-#'     mutate_at(vars(area), ~biggest_reference(., exposure))
+#'   mutate(across(c(area), as.factor)) %>%
+#'   mutate(across(c(area), ~biggest_reference(., exposure)))
 #'
 #' mod1 <- glm(nclaims ~ area + premium, offset = log(exposure), family = poisson(), data = df)
 #' mod2 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = df)

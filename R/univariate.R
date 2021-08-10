@@ -18,7 +18,7 @@
 #' @param nclaims column in `df` with number of claims (default is NULL)
 #' @param by list of column(s) in `df` to group by
 #'
-#' @author Marc Haine, Martin Haringa
+#' @author Martin Haringa
 #'
 #' @return A data.frame
 #'
@@ -168,6 +168,8 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, 
 #'
 #' @import patchwork
 #' @import ggplot2
+#'
+#' @author Marc Haine, Martin Haringa
 #'
 #' @return a ggplot2 object
 #'
