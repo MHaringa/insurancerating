@@ -425,6 +425,37 @@ split_x_fn <- function(data, x, left = NULL, right = NULL){
 }
 
 
+#' @keywords internal
+moments <- function(x, dist = c("gamma", "lognormal")){
+
+  dist <- match.arg(dist)
+  m <- mean(x, na.rm = TRUE)
+  s <- sd(x, na.rm = TRUE)
+  v <- s^2
+
+  if ( dist == "gamma" ){
+    scale <- m ^ 2 / s
+    shape <- s / m
+    return(list(scale = scale, shape = shape))
+  }
+
+  if ( dist == "lognormal" ){
+    meanlog <- log(m ^ 2 / sqrt(v + m ^ 2) )
+    sdlog <- log( v / (m ^ 2) + 1)
+    return(list(meanlog = meanlog, sdlog = sdlog))
+  }
+}
+
+
+##' @keywords internal
+#dtruncated_gamma <- function(x, scale, shape) {
+#  if (!requireNamespace("truncdist", quietly = TRUE)) {
+#    stop("Package \"truncdist\" needed for this function to work. Please install it.",
+#         call. = FALSE)
+#  }
+#  truncdist::dtrunc(x, "gamma", a = left, b = right, scale = scale, shape = shape)
+#}
+
 
 
 

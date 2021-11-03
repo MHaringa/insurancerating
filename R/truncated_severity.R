@@ -1,0 +1,176 @@
+
+# https://stat.ethz.ch/pipermail/r-help/2008-September/172574.html
+#dtruncated_gamma <- function(x, scale, shape) {
+#  truncdist::dtrunc(x, "gamma", a = left, b = right, scale = scale, shape = shape)
+#}
+
+#ptruncated_gamma <- function(q, scale, shape) {
+#  truncdist::ptrunc(q, "gamma", a = left, b = right, scale = scale, shape = shape)
+#}
+
+#dtruncated_log_normal <- function(x, meanlog, sdlog){
+#  truncdist::dtrunc(x, "lnorm", a = left, b = right, meanlog = meanlog, sdlog = sdlog)
+#}
+
+#ptruncated_log_normal <- function(q, meanlog, sdlog){
+#  truncdist::ptrunc(q, "lnorm", a = left, b = right, meanlog = meanlog, sdlog = sdlog)
+#}
+
+
+#' @keywords internal
+moments <- function(x, dist = c("gamma", "lognormal")){
+
+  dist <- match.arg(dist)
+  m <- mean(x, na.rm = TRUE)
+  s <- sd(x, na.rm = TRUE)
+  v <- s^2
+
+  if ( dist == "gamma" ){
+    scale <- m ^ 2 / s
+    shape <- s / m
+    return(list(scale = scale, shape = shape))
+  }
+
+  if ( dist == "lognormal" ){
+    meanlog <- log(m ^ 2 / sqrt(v + m ^ 2) )
+    sdlog <- log( v / (m ^ 2) + 1)
+    return(list(meanlog = meanlog, sdlog = sdlog))
+  }
+}
+
+#' Fit a distribution to truncated severity (loss) data
+#'
+#' Estimate the original distribution from truncated data. Truncated data arise frequently in insurance studies. It is common that only claims above a certain threshold are known.
+#'
+#' @param y vector with observations of losses
+#' @param dist distribution for severity ("gamma" or "lognormal"). Defaults to "gamma".
+#' @param left numeric. Observations below this threshold are not present in the sample.
+#' @param right numeric. Observations above this threshold are not present in the sample. Defaults to Inf.
+#' @param start list of starting parameters for the algorithm.
+#' @param print_initial print attempts for initial parameters.
+#'
+#' @importFrom stats sd
+#' @importFrom utils capture.output
+#'
+#' @return fitdist returns an object of class "fitdist"
+#' @examples
+#' \dontrun{
+#' # Original observations for severity
+#' set.seed(1)
+#' e <- rgamma(1000, scale = 148099.5, shape = 0.4887023)
+#'
+#' # Truncated data (only claims above 30.000 euros)
+#' threshold <- 30000
+#' f <- e[e > threshold]
+#'
+#' # Toon figuur
+#' library(dplyr)
+#' library(ggplot2)
+#' data.frame(value = c(e, f),
+#' variable = rep(c("Original data", "Only claims above 30.000 euros"),
+#'                c(length(e), length(f)))) %>%
+#'                filter(value < 5e5) %>%
+#'                mutate(value = value / 1000) %>%
+#'                ggplot(aes(x = value)) +
+#'                geom_histogram(colour = "white") +
+#'                facet_wrap(~variable, ncol = 1) +
+#'                labs(y = "Number of observations", x = "Severity (x 1000 EUR)")
+#'
+#' # scale = 156259.7 and shape = 0.4588. Close to parameters of original distribution!
+#' fit_truncated_dist(f, left = threshold, dist = "gamma")
+#' }
+#'
+#' @author Martin Haringa
+#'
+#' @export
+fit_truncated_dist <- function(y, dist = c("gamma", "lognormal"), left = NULL,
+                               right = NULL, start = NULL, print_initial = TRUE){
+
+  if (!requireNamespace("fitdistrplus", quietly = TRUE)) {
+    stop("Package \"fitdistrplus\" needed for this function to work. Please install it.",
+         call. = FALSE)
+  }
+
+  if (!requireNamespace("truncdist", quietly = TRUE)) {
+    stop("Package \"truncdist\" needed for this function to work. Please install it.",
+         call. = FALSE)
+  }
+
+  dist <- match.arg(dist)
+  x <- moments(y, dist)
+  distt <- switch(dist,
+                  "gamma" = "truncated_gamma",
+                  "lognormal" = "truncated_log_normal")
+
+  if ( is.null(left) ){ left <- 0 }
+  if ( is.null(right) ){ right <- Inf }
+
+  dtruncated_gamma = ptruncated_gamma = dtruncated_log_normal = ptruncated_log_normal = NULL
+
+  if ( dist == "gamma" ){
+
+    dtruncated_gamma <<- function(x, scale, shape) {
+      truncdist::dtrunc(x, "gamma", a = left, b = right, scale = scale, shape = shape)
+    }
+
+    ptruncated_gamma <<- function(q, scale, shape) {
+      truncdist::ptrunc(q, "gamma", a = left, b = right, scale = scale, shape = shape)
+    }
+
+    if ( is.null(start) ){
+
+      sc <- seq(1, x$scale, by = 100)
+      sh <- seq(0.01, 1, length.out = 100)
+      x_grid <- expand.grid(scale = c(x$scale, c(rbind(x$scale + sc, x$scale - sc))),
+                            shape = c(x$shape, c(rbind(x$shape + sh, x$shape - sh))))
+      start <- list(scale = x_grid$scale,
+                    shape = x_grid$shape)
+    }
+  }
+
+  if ( dist == "lognormal" ){
+    dtruncated_log_normal <<- function(x, meanlog, sdlog){
+      truncdist::dtrunc(x, "lnorm", a = left, b = right, meanlog = meanlog, sdlog = sdlog)
+    }
+
+    ptruncated_log_normal <<- function(q, meanlog, sdlog){
+      truncdist::ptrunc(q, "lnorm", a = left, b = right, meanlog = meanlog, sdlog = sdlog)
+    }
+
+    if ( is.null(start) ){
+      m <- seq(.1, x$meanlog, by = .5)
+      sd <- seq(0.01, 1, length.out = 100)
+      x_grid <- expand.grid(meanlog = c(x$meanlog, c(rbind(x$meanlog + m, x$meanlog - m))),
+                            sdlog = c(x$sdlog, c(rbind(x$sdlog + sd, x$sdlog - sd))))
+      start <- list(meanlog = x_grid$meanlog,
+                    sdlog = x_grid$sdlog)
+    }
+  }
+
+  for ( i in 1:length(start[[1]])){
+    start_e <- lapply(start, "[[", i)
+    start_e_chr <- paste0(names(start_e)[1], " = " , as.numeric(start_e[1]),
+                          ", and ", names(start_e)[2], " = " , as.numeric(start_e[2]))
+
+    capture.output(out <- tryCatch(expr = { fitdistrplus::fitdist(y, distt,
+                                                                  method = "mle",
+                                                                  lower = c(0,0),
+                                                                  start = start_e) },
+                                   error = function(e){
+                                     if ( isTRUE(print_initial) ){
+                                       message("initial values: ", start_e_chr,
+                                               ", attempt is not in the interior of the feasible region")
+                                     }
+                                     NULL
+                                   }))
+    if ( !is.null(out) ){
+      if ( isTRUE(print_initial) ){
+        message("initial values: ", start_e_chr, ", attempt returns:")
+      }
+      break
+    }
+  }
+  return(out)
+}
+
+

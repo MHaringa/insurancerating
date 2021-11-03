@@ -49,6 +49,8 @@
 
 \item{sort_manual}{sort (or order) risk factor into own ordering; should be a character vector (default is NULL)}
 
+\item{dec.mark}{decimal mark; defaults to ","}
+
 \item{color}{change the color of the points and line ("dodgerblue" is default)}
 
 \item{color_bg}{change the color of the histogram ("#f8e6b1" is default)}
