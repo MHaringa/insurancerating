@@ -1,22 +1,4 @@
 
-# https://stat.ethz.ch/pipermail/r-help/2008-September/172574.html
-#dtruncated_gamma <- function(x, scale, shape) {
-#  truncdist::dtrunc(x, "gamma", a = left, b = right, scale = scale, shape = shape)
-#}
-
-#ptruncated_gamma <- function(q, scale, shape) {
-#  truncdist::ptrunc(q, "gamma", a = left, b = right, scale = scale, shape = shape)
-#}
-
-#dtruncated_log_normal <- function(x, meanlog, sdlog){
-#  truncdist::dtrunc(x, "lnorm", a = left, b = right, meanlog = meanlog, sdlog = sdlog)
-#}
-
-#ptruncated_log_normal <- function(q, meanlog, sdlog){
-#  truncdist::ptrunc(q, "lnorm", a = left, b = right, meanlog = meanlog, sdlog = sdlog)
-#}
-
-
 #' @keywords internal
 moments <- function(x, dist = c("gamma", "lognormal")){
 
@@ -40,7 +22,7 @@ moments <- function(x, dist = c("gamma", "lognormal")){
 
 #' Fit a distribution to truncated severity (loss) data
 #'
-#' Estimate the original distribution from truncated data. Truncated data arise frequently in insurance studies. It is common that only claims above a certain threshold are known.
+#' @description `r lifecycle::badge('experimental')` Estimate the original distribution from truncated data. Truncated data arise frequently in insurance studies. It is common that only claims above a certain threshold are known.
 #'
 #' @param y vector with observations of losses
 #' @param dist distribution for severity ("gamma" or "lognormal"). Defaults to "gamma".
@@ -105,6 +87,7 @@ fit_truncated_dist <- function(y, dist = c("gamma", "lognormal"), left = NULL,
   if ( is.null(left) ){ left <- 0 }
   if ( is.null(right) ){ right <- Inf }
 
+  # https://stat.ethz.ch/pipermail/r-help/2008-September/172574.html
   dtruncated_gamma = ptruncated_gamma = dtruncated_log_normal = ptruncated_log_normal = NULL
 
   if ( dist == "gamma" ){
