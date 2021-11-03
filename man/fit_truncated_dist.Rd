@@ -42,7 +42,6 @@ e <- rgamma(1000, scale = 148099.5, shape = 0.4887023)
 threshold <- 30000
 f <- e[e > threshold]
 
-# Toon figuur
 library(dplyr)
 library(ggplot2)
 data.frame(value = c(e, f),
@@ -56,7 +55,20 @@ variable = rep(c("Original data", "Only claims above 30.000 euros"),
                labs(y = "Number of observations", x = "Severity (x 1000 EUR)")
 
 # scale = 156259.7 and shape = 0.4588. Close to parameters of original distribution!
-fit_truncated_dist(f, left = threshold, dist = "gamma")
+x <- fit_truncated_dist(f, left = threshold, dist = "gamma")
+
+est_scale <- x$estimate[1]
+est_shape <- x$estimate[2]
+
+# Claims below 1 mln
+pgamma(1e6, scale = est_scale, shape = est_shape)
+
+# Claims between 0.5 mln and 1 mln
+claims_between <- pgamma(1e6, scale = est_scale, shape = est_shape) -
+pgamma(5e5, scale = est_scale, shape = est_shape)
+
+# That is 1 per 104 claims
+1 / claims_between
 }
 
 }
