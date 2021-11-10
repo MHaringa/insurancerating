@@ -216,12 +216,6 @@ join_to_nearest <- function(dat, reference, x){
   as.data.frame(join)
 }
 
-join_nearest <- function(dat, reference, x){
-  reference <- data.table::data.table(reference)
-  dat <- data.table::data.table(dat)
-  join <- reference[dat, roll = "nearest", on = x][is.na(get(x)), yhat := NA]
-  as.data.frame(join)
-}
 
 
 #' Join restricted data to model data
