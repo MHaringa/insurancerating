@@ -209,6 +209,13 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL){
 #' @importFrom data.table data.table
 #'
 #' @keywords internal
+join_to_nearest <- function(dat, reference, x){
+  reference <- data.table::data.table(reference)
+  dat <- data.table::data.table(dat)
+  join <- reference[dat, roll = "nearest", on = x][is.na(get(x)), yhat := NA]
+  as.data.frame(join)
+}
+
 join_nearest <- function(dat, reference, x){
   reference <- data.table::data.table(reference)
   dat <- data.table::data.table(dat)
