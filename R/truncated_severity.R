@@ -169,3 +169,59 @@ fit_truncated_dist <- function(y, dist = c("gamma", "lognormal"), left = NULL,
 }
 
 
+#' Generate data from truncated lognormal distribution
+#'
+#' @description Random generation for the truncated log normal distribution whose logarithm has mean equal to meanlog and standard deviation equal to sdlog.
+#'
+#' @param n number of observations
+#' @param meanlog mean of the distribution on the log scale
+#' @param sdlog standard deviation of the distribution on the log scale
+#' @param lower numeric. Observations below this threshold are not present in the sample.
+#' @param upper numeric. Observations above this threshold are not present in the sample.
+#'
+#' @importFrom stats plnorm
+#' @importFrom stats runif
+#' @importFrom stats qlnorm
+#'
+#' @author Martin Haringa
+#'
+#' @return The length of the result is determined by `n`.
+#'
+#' @export
+rlnormt <- function(n, meanlog, sdlog, lower, upper) {
+  #https://www.r-bloggers.com/2020/08/generating-data-from-a-truncated-distribution/
+  F.a <- plnorm(lower, meanlog = meanlog, sdlog = sdlog)
+  F.b <- plnorm(upper, meanlog = meanlog, sdlog = sdlog)
+  u <- runif(n, min = F.a, max = F.b)
+  qlnorm(u, meanlog = meanlog, sdlog = sdlog)
+}
+
+#' Generate data from truncated gamma distribution
+#'
+#' @description Random generation for the truncated Gamma distribution with parameters shape and scale.
+#'
+#' @param n number of observations
+#' @param scale scale parameter
+#' @param shape shape parameter
+#' @param lower numeric. Observations below this threshold are not present in the sample.
+#' @param upper numeric. Observations above this threshold are not present in the sample.
+#'
+#' @importFrom stats pgamma
+#' @importFrom stats runif
+#' @importFrom stats qgamma
+#'
+#' @author Martin Haringa
+#'
+#' @return The length of the result is determined by `n`.
+#'
+#' @export
+rgammat <- function(n, scale = scale, shape = shape, lower, upper) {
+  #https://www.r-bloggers.com/2020/08/generating-data-from-a-truncated-distribution/
+  F.a <- pgamma(lower, scale = scale, shape = shape)
+  F.b <- pgamma(upper, scale = scale, shape = shape)
+  u <- runif(n, min = F.a, max = F.b)
+  qgamma(u, scale = scale, shape = shape)
+}
+
+
+
