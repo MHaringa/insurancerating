@@ -212,7 +212,7 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL){
 join_to_nearest <- function(dat, reference, x){
   reference <- data.table::data.table(reference)
   dat <- data.table::data.table(dat)
-  join <- reference[dat, roll = "nearest", on = x]
+  join <- reference[dat, roll = "nearest", on = x, rollends = c(FALSE, FALSE)]
   as.data.frame(join)
 }
 

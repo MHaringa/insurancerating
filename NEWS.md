@@ -3,6 +3,7 @@
 * `show_total` in `autoplot.univariate()` is added to add line for total of groups in case `by` is used in `univariate()`; `total_color` can be used to change the color of the line, and `total_name` is added to change the name of the legend for the line
 * `rating_factors()` now accepts GLMs with an intercept only
 * `fit_truncated_dist()` is added to fit the original distribution (gamma, lognormal) from truncated severity data
+* `join_to_nearest()` now returns NA in case NA is used as input
 
 # insurancerating 0.6.7
 
