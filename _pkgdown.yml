@@ -56,4 +56,7 @@ reference:
       - rows_per_date
       - reduce
       - summary.reduce
+      - fit_truncated_dist
+      - rlnormt
+      - rgammat
 

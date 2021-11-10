@@ -82,7 +82,7 @@ compare the output obtained from two or more glm objects." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.8</span>
       </span>
     </div>
 
@@ -137,7 +137,8 @@ compare the output obtained from two or more glm objects.</p>
   model_data <span class='op'>=</span> <span class='cn'>NULL</span>,
   exposure <span class='op'>=</span> <span class='cn'>NULL</span>,
   colname <span class='op'>=</span> <span class='st'>"estimate"</span>,
-  exponentiate <span class='op'>=</span> <span class='cn'>TRUE</span>
+  exponentiate <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  round_exposure <span class='op'>=</span> <span class='fl'>0</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -167,21 +168,29 @@ default value is NULL</p></td>
       <td><p>logical indicating whether or not to exponentiate
 the coefficient estimates. Defaults to TRUE.</p></td>
     </tr>
+    <tr>
+      <th>round_exposure</th>
+      <td><p>number of digits for exposure (default to 0)</p></td>
+    </tr>
     </table>
 
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Martin Haringa</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='va'>MTPL2a</span> <span class='op'>&lt;-</span> <span class='va'>MTPL2</span>
-<span class='va'>MTPL2a</span><span class='op'>$</span><span class='va'>area</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>as.factor</a></span><span class='op'>(</span><span class='va'>MTPL2a</span><span class='op'>$</span><span class='va'>area</span><span class='op'>)</span>
-<span class='va'>x</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>nclaims</span> <span class='op'>~</span> <span class='va'>area</span>, offset <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span><span class='op'>(</span><span class='va'>exposure</span><span class='op'>)</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span>, data <span class='op'>=</span> <span class='va'>MTPL2a</span><span class='op'>)</span>
-<span class='fu'>rating_factors1</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span>
-</div><div class='output co'>#&gt;   risk_factor       level   estimate pvalues
-#&gt; 1 (Intercept) (Intercept) 0.07514927      **
-#&gt; 2        area           0 1.00000000        
-#&gt; 3        area           1 1.82294511        
-#&gt; 4        area           2 1.59316792        
-#&gt; 5        area           3 1.96560801        </div><div class='input'>
-</div></pre>
+    <pre class="examples"><span class='r-in'><span class='va'>MTPL2a</span> <span class='op'>&lt;-</span> <span class='va'>MTPL2</span></span>
+<span class='r-in'><span class='va'>MTPL2a</span><span class='op'>$</span><span class='va'>area</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>as.factor</a></span><span class='op'>(</span><span class='va'>MTPL2a</span><span class='op'>$</span><span class='va'>area</span><span class='op'>)</span></span>
+<span class='r-in'><span class='va'>x</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>nclaims</span> <span class='op'>~</span> <span class='va'>area</span>, offset <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span><span class='op'>(</span><span class='va'>exposure</span><span class='op'>)</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span>, data <span class='op'>=</span> <span class='va'>MTPL2a</span><span class='op'>)</span></span>
+<span class='r-in'><span class='fu'>rating_factors1</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span></span>
+<span class='r-out co'><span class='r-pr'>#&gt;</span>   risk_factor       level   estimate pvalues</span>
+<span class='r-out co'><span class='r-pr'>#&gt;</span> 1 (Intercept) (Intercept) 0.07514927      **</span>
+<span class='r-out co'><span class='r-pr'>#&gt;</span> 2        area           0 1.00000000        </span>
+<span class='r-out co'><span class='r-pr'>#&gt;</span> 3        area           1 1.82294511        </span>
+<span class='r-out co'><span class='r-pr'>#&gt;</span> 4        area           2 1.59316792        </span>
+<span class='r-out co'><span class='r-pr'>#&gt;</span> 5        area           3 1.96560801        </span>
+<span class='r-in'></span>
+</pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

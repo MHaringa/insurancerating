@@ -83,7 +83,7 @@ estimated coefficients obtained from the model." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.8</span>
       </span>
     </div>
 
@@ -158,13 +158,14 @@ estimated coefficients obtained from the model.</p>
     <p>Martin Haringa</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='va'>freq</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>nclaims</span> <span class='op'>~</span> <span class='va'>bm</span> <span class='op'>+</span> <span class='va'>zip</span>, weights <span class='op'>=</span> <span class='va'>power</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span>, data <span class='op'>=</span> <span class='va'>MTPL</span><span class='op'>)</span>
-<span class='va'>zip_df</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>zip <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0</span>,<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>3</span><span class='op'>)</span>, zip_rst <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.8</span>, <span class='fl'>0.9</span>, <span class='fl'>1</span>, <span class='fl'>1.2</span><span class='op'>)</span><span class='op'>)</span>
-<span class='va'>freq</span> <span class='op'>%&gt;%</span>
-  <span class='fu'><a href='restrict_coef.html'>restrict_coef</a></span><span class='op'>(</span><span class='va'>.</span>, <span class='va'>zip_df</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
-  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span><span class='op'>(</span><span class='op'>)</span>
-</div><div class='img'><img src='autoplot.restricted-1.png' alt='' width='700' height='433' /></div><div class='input'>
-</div></pre>
+    <pre class="examples"><span class='r-in'><span class='va'>freq</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>nclaims</span> <span class='op'>~</span> <span class='va'>bm</span> <span class='op'>+</span> <span class='va'>zip</span>, weights <span class='op'>=</span> <span class='va'>power</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span>, data <span class='op'>=</span> <span class='va'>MTPL</span><span class='op'>)</span></span>
+<span class='r-in'><span class='va'>zip_df</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>zip <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0</span>,<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>3</span><span class='op'>)</span>, zip_rst <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.8</span>, <span class='fl'>0.9</span>, <span class='fl'>1</span>, <span class='fl'>1.2</span><span class='op'>)</span><span class='op'>)</span></span>
+<span class='r-in'><span class='va'>freq</span> <span class='op'><a href='https://magrittr.tidyverse.org/reference/pipe.html'>%&gt;%</a></span></span>
+<span class='r-in'>  <span class='fu'><a href='restrict_coef.html'>restrict_coef</a></span><span class='op'>(</span><span class='va'>.</span>, <span class='va'>zip_df</span><span class='op'>)</span> <span class='op'><a href='https://magrittr.tidyverse.org/reference/pipe.html'>%&gt;%</a></span></span>
+<span class='r-in'>  <span class='fu'><a href='https://ggplot2.tidyverse.org/reference/autoplot.html'>autoplot</a></span><span class='op'>(</span><span class='op'>)</span></span>
+<span class='r-plt img'><img src='autoplot.restricted-1.png' alt='' width='700' height='433' /></span>
+<span class='r-in'></span>
+</pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

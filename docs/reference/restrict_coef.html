@@ -83,7 +83,7 @@ by refit_glm()." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.6.8</span>
       </span>
     </div>
 
@@ -173,38 +173,38 @@ and then imposing the restrictions in a final "restricted" Gamma GLM.</p>
     <p>Martin Haringa</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-<span class='co'># Add restrictions to risk factors for region (zip) -------------------------</span>
-
-<span class='co'># Fit frequency and severity model</span>
-<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://dplyr.tidyverse.org'>dplyr</a></span><span class='op'>)</span>
-<span class='va'>freq</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>nclaims</span> <span class='op'>~</span> <span class='va'>bm</span> <span class='op'>+</span> <span class='va'>zip</span>, offset <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span><span class='op'>(</span><span class='va'>exposure</span><span class='op'>)</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span>,
-             data <span class='op'>=</span> <span class='va'>MTPL</span><span class='op'>)</span>
-<span class='va'>sev</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>amount</span> <span class='op'>~</span> <span class='va'>bm</span> <span class='op'>+</span> <span class='va'>zip</span>, weights <span class='op'>=</span> <span class='va'>nclaims</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>Gamma</a></span><span class='op'>(</span>link <span class='op'>=</span> <span class='st'>"log"</span><span class='op'>)</span>,
-            data <span class='op'>=</span> <span class='va'>MTPL</span> <span class='op'>%&gt;%</span> <span class='fu'><a href='https://dplyr.tidyverse.org/reference/filter.html'>filter</a></span><span class='op'>(</span><span class='va'>amount</span> <span class='op'>&gt;</span> <span class='fl'>0</span><span class='op'>)</span><span class='op'>)</span>
-
-<span class='co'># Add predictions for freq and sev to data, and calculate premium</span>
-<span class='va'>premium_df</span> <span class='op'>&lt;-</span> <span class='va'>MTPL</span> <span class='op'>%&gt;%</span>
-   <span class='fu'><a href='add_prediction.html'>add_prediction</a></span><span class='op'>(</span><span class='va'>freq</span>, <span class='va'>sev</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
-   <span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate.html'>mutate</a></span><span class='op'>(</span>premium <span class='op'>=</span> <span class='va'>pred_nclaims_freq</span> <span class='op'>*</span> <span class='va'>pred_amount_sev</span><span class='op'>)</span>
-
-<span class='co'># Restrictions on risk factors for region (zip)</span>
-<span class='va'>zip_df</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>zip <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0</span>,<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>3</span><span class='op'>)</span>, zip_rst <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.8</span>, <span class='fl'>0.9</span>, <span class='fl'>1</span>, <span class='fl'>1.2</span><span class='op'>)</span><span class='op'>)</span>
-
-<span class='co'># Fit unrestricted model</span>
-<span class='va'>burn</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>premium</span> <span class='op'>~</span> <span class='va'>bm</span> <span class='op'>+</span> <span class='va'>zip</span>, weights <span class='op'>=</span> <span class='va'>exposure</span>,
-            family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>Gamma</a></span><span class='op'>(</span>link <span class='op'>=</span> <span class='st'>"log"</span><span class='op'>)</span>, data <span class='op'>=</span> <span class='va'>premium_df</span><span class='op'>)</span>
-
-<span class='co'># Fit restricted model</span>
-<span class='va'>burn_rst</span> <span class='op'>&lt;-</span> <span class='va'>burn</span> <span class='op'>%&gt;%</span>
-  <span class='fu'>restrict_coef</span><span class='op'>(</span><span class='va'>.</span>, <span class='va'>zip_df</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
-  <span class='fu'><a href='refit_glm.html'>refit_glm</a></span><span class='op'>(</span><span class='op'>)</span>
-
-<span class='co'># Show rating factors</span>
-<span class='fu'><a href='rating_factors.html'>rating_factors</a></span><span class='op'>(</span><span class='va'>burn_rst</span><span class='op'>)</span>
-<span class='op'>}</span>
-
-</div></pre>
+    <pre class="examples"><span class='r-in'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span></span>
+<span class='r-in'><span class='co'># Add restrictions to risk factors for region (zip) -------------------------</span></span>
+<span class='r-in'></span>
+<span class='r-in'><span class='co'># Fit frequency and severity model</span></span>
+<span class='r-in'><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://dplyr.tidyverse.org'>dplyr</a></span><span class='op'>)</span></span>
+<span class='r-in'><span class='va'>freq</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>nclaims</span> <span class='op'>~</span> <span class='va'>bm</span> <span class='op'>+</span> <span class='va'>zip</span>, offset <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Log.html'>log</a></span><span class='op'>(</span><span class='va'>exposure</span><span class='op'>)</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span><span class='op'>(</span><span class='op'>)</span>,</span>
+<span class='r-in'>             data <span class='op'>=</span> <span class='va'>MTPL</span><span class='op'>)</span></span>
+<span class='r-in'><span class='va'>sev</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>amount</span> <span class='op'>~</span> <span class='va'>bm</span> <span class='op'>+</span> <span class='va'>zip</span>, weights <span class='op'>=</span> <span class='va'>nclaims</span>, family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>Gamma</a></span><span class='op'>(</span>link <span class='op'>=</span> <span class='st'>"log"</span><span class='op'>)</span>,</span>
+<span class='r-in'>            data <span class='op'>=</span> <span class='va'>MTPL</span> <span class='op'><a href='https://magrittr.tidyverse.org/reference/pipe.html'>%&gt;%</a></span> <span class='fu'><a href='https://dplyr.tidyverse.org/reference/filter.html'>filter</a></span><span class='op'>(</span><span class='va'>amount</span> <span class='op'>&gt;</span> <span class='fl'>0</span><span class='op'>)</span><span class='op'>)</span></span>
+<span class='r-in'></span>
+<span class='r-in'><span class='co'># Add predictions for freq and sev to data, and calculate premium</span></span>
+<span class='r-in'><span class='va'>premium_df</span> <span class='op'>&lt;-</span> <span class='va'>MTPL</span> <span class='op'><a href='https://magrittr.tidyverse.org/reference/pipe.html'>%&gt;%</a></span></span>
+<span class='r-in'>   <span class='fu'><a href='add_prediction.html'>add_prediction</a></span><span class='op'>(</span><span class='va'>freq</span>, <span class='va'>sev</span><span class='op'>)</span> <span class='op'><a href='https://magrittr.tidyverse.org/reference/pipe.html'>%&gt;%</a></span></span>
+<span class='r-in'>   <span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate.html'>mutate</a></span><span class='op'>(</span>premium <span class='op'>=</span> <span class='va'>pred_nclaims_freq</span> <span class='op'>*</span> <span class='va'>pred_amount_sev</span><span class='op'>)</span></span>
+<span class='r-in'></span>
+<span class='r-in'><span class='co'># Restrictions on risk factors for region (zip)</span></span>
+<span class='r-in'><span class='va'>zip_df</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>zip <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0</span>,<span class='fl'>1</span>,<span class='fl'>2</span>,<span class='fl'>3</span><span class='op'>)</span>, zip_rst <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.8</span>, <span class='fl'>0.9</span>, <span class='fl'>1</span>, <span class='fl'>1.2</span><span class='op'>)</span><span class='op'>)</span></span>
+<span class='r-in'></span>
+<span class='r-in'><span class='co'># Fit unrestricted model</span></span>
+<span class='r-in'><span class='va'>burn</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/stats/glm.html'>glm</a></span><span class='op'>(</span><span class='va'>premium</span> <span class='op'>~</span> <span class='va'>bm</span> <span class='op'>+</span> <span class='va'>zip</span>, weights <span class='op'>=</span> <span class='va'>exposure</span>,</span>
+<span class='r-in'>            family <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>Gamma</a></span><span class='op'>(</span>link <span class='op'>=</span> <span class='st'>"log"</span><span class='op'>)</span>, data <span class='op'>=</span> <span class='va'>premium_df</span><span class='op'>)</span></span>
+<span class='r-in'></span>
+<span class='r-in'><span class='co'># Fit restricted model</span></span>
+<span class='r-in'><span class='va'>burn_rst</span> <span class='op'>&lt;-</span> <span class='va'>burn</span> <span class='op'><a href='https://magrittr.tidyverse.org/reference/pipe.html'>%&gt;%</a></span></span>
+<span class='r-in'>  <span class='fu'>restrict_coef</span><span class='op'>(</span><span class='va'>.</span>, <span class='va'>zip_df</span><span class='op'>)</span> <span class='op'><a href='https://magrittr.tidyverse.org/reference/pipe.html'>%&gt;%</a></span></span>
+<span class='r-in'>  <span class='fu'><a href='refit_glm.html'>refit_glm</a></span><span class='op'>(</span><span class='op'>)</span></span>
+<span class='r-in'></span>
+<span class='r-in'><span class='co'># Show rating factors</span></span>
+<span class='r-in'><span class='fu'><a href='rating_factors.html'>rating_factors</a></span><span class='op'>(</span><span class='va'>burn_rst</span><span class='op'>)</span></span>
+<span class='r-in'><span class='op'>}</span></span>
+<span class='r-in'></span>
+</pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
