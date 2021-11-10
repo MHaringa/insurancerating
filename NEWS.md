@@ -1,3 +1,5 @@
+# insurancerating 0.6.9
+
 # insurancerating 0.6.8
 
 * `show_total` in `autoplot.univariate()` is added to add line for total of groups in case `by` is used in `univariate()`; `total_color` can be used to change the color of the line, and `total_name` is added to change the name of the legend for the line
