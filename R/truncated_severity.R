@@ -63,15 +63,11 @@ moments <- function(x, dist = c("gamma", "lognormal")){
 #' est_scale <- x$estimate[1]
 #' est_shape <- x$estimate[2]
 #'
-#' # Claims below 1 mln
-#' pgamma(1e6, scale = est_scale, shape = est_shape)
+#' # Generate data from truncated distribution (between 30k en 20 mln)
+#' rg <- rgammat(10, scale = est_scale, shape = est_shape, lower = 3e4, upper = 20e6)
 #'
-#' # Claims between 0.5 mln and 1 mln
-#' claims_between <- pgamma(1e6, scale = est_scale, shape = est_shape) -
-#' pgamma(5e5, scale = est_scale, shape = est_shape)
-#'
-#' # That is 1 per 104 claims
-#' 1 / claims_between
+#' # Calculate quantiles
+#' quantile(rg, probs = c(.5, .9, .99, .995))
 #' }
 #'
 #' @author Martin Haringa
