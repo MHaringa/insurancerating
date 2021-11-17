@@ -124,12 +124,6 @@ cut_borders_df <- function(df, col){
   })
   df$avg_ <- rowMeans(df[, c('start_', 'end_')], na.rm = TRUE)
 
-  if( any(is.na(df$avg_)) ) stop(
-    "Can't find cut points in column ", col, ". Intervals in ", col,
-    " should be in the same format as the output from cut().
-  Use e.g. cut() or insurancerating::construct_tariff_classes().",
-    call. = FALSE)
-
   return(df)
 }
 
@@ -170,7 +164,7 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL){
   breaks_mid <- breaks_mid[!is.na(breaks_mid)]
 
   unique_borders <- unique(c(breaks_min, breaks_max))
-  levels_borders <- levels(cut(breaks_min, breaks = unique_borders, include.lowest = TRUE))
+  levels_borders <- levels(cut(breaks_min, breaks = unique_borders, include.lowest = TRUE, dig.lab = 9))
 
   lm_poly <- lm(estimate ~ poly(avg_, degree = degree), data = borders_model)
   new_poly_df <- data.frame(avg_ = breaks_mid)
