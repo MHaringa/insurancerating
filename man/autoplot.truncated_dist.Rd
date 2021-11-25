@@ -2,7 +2,7 @@
 % Please edit documentation in R/truncated_severity.R
 \name{autoplot.truncated_dist}
 \alias{autoplot.truncated_dist}
-\title{Create autoplot}
+\title{Automatically create a ggplot for objects obtained from fit_truncated_dist()}
 \usage{
 \method{autoplot}{truncated_dist}(
   object,
@@ -18,29 +18,32 @@
 )
 }
 \arguments{
-\item{object}{variable}
+\item{object}{object univariate object produced by \code{fit_truncated_dist()}}
 
-\item{geom_ecdf}{type of line}
+\item{geom_ecdf}{the geometric object to use display the data (point or step)}
 
-\item{xlab}{label x}
+\item{xlab}{the title of the x axis}
 
-\item{ylab}{label y}
+\item{ylab}{the title of the y axis}
 
-\item{ylim}{y limit}
+\item{ylim}{two numeric values, specifying the lower limit and the upper limit of the scale}
 
-\item{xlim}{x limit}
+\item{xlim}{two numeric values, specifying the left limit and the right limit of the scale}
 
-\item{print_title}{true of false}
+\item{print_title}{show title (default to TRUE)}
 
-\item{print_dig}{number of digits}
+\item{print_dig}{number of digits for parameters in title (default 2)}
 
-\item{print_trunc}{number of truncation}
+\item{print_trunc}{number of digits for truncation values to print}
 
 \item{...}{other plotting parameters to affect the plot}
 }
 \value{
-ggplot2 object
+a ggplot2 object
 }
 \description{
-Create autoplot
+Takes an object produced by \code{fit_truncated_dist()}, and plots the available input.
+}
+\author{
+Martin Haringa
 }

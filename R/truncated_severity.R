@@ -215,20 +215,27 @@ rgammat <- function(n, scale = scale, shape = shape, lower, upper) {
 }
 
 
-#' Create autoplot
+#' Automatically create a ggplot for objects obtained from fit_truncated_dist()
 #'
-#' @param object variable
-#' @param geom_ecdf type of line
-#' @param xlab label x
-#' @param ylab label y
-#' @param ylim y limit
-#' @param xlim x limit
-#' @param print_title true of false
-#' @param print_dig number of digits
-#' @param print_trunc number of truncation
+#' @description Takes an object produced by `fit_truncated_dist()`, and plots the available input.
+#'
+#' @param object object univariate object produced by `fit_truncated_dist()`
+#' @param geom_ecdf the geometric object to use display the data (point or step)
+#' @param xlab the title of the x axis
+#' @param ylab the title of the y axis
+#' @param ylim two numeric values, specifying the lower limit and the upper limit of the scale
+#' @param xlim two numeric values, specifying the left limit and the right limit of the scale
+#' @param print_title show title (default to TRUE)
+#' @param print_dig number of digits for parameters in title (default 2)
+#' @param print_trunc number of digits for truncation values to print
 #' @param ... other plotting parameters to affect the plot
 #'
-#' @return ggplot2 object
+#' @importFrom truncdist ptrunc
+#' @import ggplot2
+#'
+#' @author Martin Haringa
+#'
+#' @return a ggplot2 object
 #'
 #' @export
 autoplot.truncated_dist <- function(object, geom_ecdf = c("point", "step"), xlab = NULL, ylab = NULL,
