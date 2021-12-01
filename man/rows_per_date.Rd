@@ -4,22 +4,39 @@
 \alias{rows_per_date}
 \title{Find active rows per date}
 \usage{
-rows_per_date(df, dates, begin, end)
+rows_per_date(
+  df,
+  dates,
+  df_begin,
+  df_end,
+  dates_date,
+  ...,
+  nomatch = NULL,
+  mult = "all"
+)
 }
 \arguments{
-\item{df}{data.frame}
+\item{df}{data.frame with portfolio (df should include time period)}
 
-\item{dates}{vector of dates}
+\item{dates}{data.frame with dates to join}
 
-\item{begin}{column name in \code{df} with begin dates}
+\item{df_begin}{column name with begin dates of time period in \code{df}}
 
-\item{end}{column name in \code{df} with end dates}
+\item{df_end}{column name with end dates of time period in \code{df}}
+
+\item{dates_date}{column name with dates in \code{dates}}
+
+\item{...}{additional column names in \code{dates} to join by}
+
+\item{nomatch}{When a row (with interval say, \verb{[a,b]}) in x has no match in y, nomatch=NA means NA is returned for y's non-by.y columns for that row of x. nomatch=NULL (default) means no rows will be returned for that row of x.}
+
+\item{mult}{When multiple rows in y match to the row in x, \code{mult} controls which values are returned - "all" (default), "first" or "last".}
 }
 \value{
 returned class is equal to class of \code{df}
 }
 \description{
-Find active rows per date.
+Fast overlap joins. Usually, \code{df} is a very large data.table (e.g. insurance portfolio) with small interval ranges, and \code{dates} is much smaller with (e.g.) claim dates.
 }
 \examples{
 library(lubridate)
@@ -28,10 +45,21 @@ begin1 = ymd(c("2014-01-01", "2014-01-01")),
 end = ymd(c("2014-03-14", "2014-05-10")),
 termination = ymd(c("2014-03-14", "2014-05-10")),
 exposure = c(0.2025, 0.3583),
-premium =  c(125, 150))
+premium =  c(125, 150),
+car_type = c("BMW", "TESLA"))
 
-active_date <- seq(ymd("2014-01-01"), ymd("2014-05-01"), by = "months")
-rows_per_date(portfolio, active_date, begin = begin1, end = end)
+## Find active rows on different dates
+dates0 <- data.frame(active_date = seq(ymd("2014-01-01"), ymd("2014-05-01"), by = "months"))
+rows_per_date(portfolio, dates0, df_begin = begin1, df_end = end, dates_date = active_date)
+
+## With extra identifiers (merge claim date with time interval in portfolio)
+claim_dates <- data.frame(claim_date = ymd("2014-01-01"), car_type = c("BMW", "VOLVO"))
+
+### Only rows are returned that can be matched
+rows_per_date(portfolio, claim_dates, df_begin = begin1, df_end = end, dates_date = claim_date, car_type)
+
+### When row cannot be matched, NA is returned for that row
+rows_per_date(portfolio, claim_dates, df_begin = begin1, df_end = end, dates_date = claim_date, car_type, nomatch = NA)
 
 }
 \author{

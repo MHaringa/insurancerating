@@ -60,6 +60,12 @@ moments <- function(x, dist = c("gamma", "lognormal")){
 #' # scale = 156259.7 and shape = 0.4588. Close to parameters of original distribution!
 #' x <- fit_truncated_dist(f, left = threshold, dist = "gamma")
 #'
+#' # Print cdf
+#' autoplot(x)
+#'
+#' # CDF with modifications
+#' autoplot(x, print_dig = 5, xlab = "loss", ylab = "cdf", ylim = c(.9, 1))
+#'
 #' est_scale <- x$estimate[1]
 #' est_shape <- x$estimate[2]
 #'

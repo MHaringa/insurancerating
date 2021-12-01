@@ -110,7 +110,8 @@ restrict_coef <- function(model, restrictions){
              restrictions_lst = rst_lst,
              rf_restricted_df = restricted_df,
              model_call = model_call,
-             model_out = model_out)
+             model_out = model_out,
+             getdata_nm = unique(Reduce(c, lapply(rst_lst, names))))
   attr(rt, "class") <- "restricted"
   invisible(rt)
 }
