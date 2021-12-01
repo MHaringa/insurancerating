@@ -33,6 +33,9 @@ moments <- function(x, dist = c("gamma", "lognormal")){
 #'
 #' @importFrom stats sd
 #' @importFrom utils capture.output
+#' @importFrom truncdist dtrunc
+#' @importFrom truncdist ptrunc
+#' @importFrom fitdistrplus fitdist
 #'
 #' @return fitdist returns an object of class "fitdist"
 #' @examples
@@ -131,8 +134,9 @@ fit_truncated_dist <- function (y, dist = c("gamma", "lognormal"), left = NULL,
       m <- seq(0.1, x$meanlog, by = 0.5)
       sd <- seq(0.01, 1, length.out = 100)
       x_grid <- expand.grid(meanlog = c(x$meanlog, c(rbind(x$meanlog +
-                                                             m, x$meanlog - m))), sdlog = c(x$sdlog, c(rbind(x$sdlog +
-                                                                                                               sd, x$sdlog - sd))))
+                                                             m, x$meanlog - m))),
+                            sdlog = c(x$sdlog, c(rbind(x$sdlog +
+                                                         sd, x$sdlog - sd))))
       start <- list(meanlog = x_grid$meanlog, sdlog = x_grid$sdlog)
     }
   }

@@ -61,18 +61,20 @@ rows_per_date <- function(df, dates, df_begin, df_end, dates_date, ..., nomatch 
   }
 
   cols1 <- as.character(c(reeks00, cols0))
-  lookup <- data.table::data.table(dates)[, cols1, with = FALSE]
+  dates_nm <- setdiff(names(dates), cols1)
+  lookup <- data.table::data.table(dates)[, c(cols1, dates_nm), with = FALSE]
   data.table::setnames(lookup, old = c(reeks00), new = c(begin00))
-  lookup2 <- lookup[, c(end00) := get(begin00)]
+  lookup2 <- lookup[, c(end00) := get(begin00)][, index_dates := .I]
   data.table::setkeyv(lookup2, as.character(c(cols0, begin00, end00)))
   data.table::setDT(df)
-  ans <- data.table::foverlaps(df, lookup2, type = "any", which = FALSE, nomatch = nomatch, mult = mult)
+  df1 <- df[, index_df := .I]
+  ans <- data.table::foverlaps(df1, lookup2, type = "any", which = FALSE, nomatch = nomatch, mult = mult)
   ans[, c(begin00) := NULL]
   data.table::setnames(ans,
                        old = c(end00, paste0("i.", begin00), paste0("i.", end00)),
                        new = c(reeks00, begin00, end00))
   ans <- ans[order(get(reeks00))]
-  data.table::setcolorder(ans, c(names(df), setdiff(names(df), names(ans))))
+  data.table::setcolorder(ans, c(names(df1), setdiff(names(df1), names(ans))))
   class(ans) <- class00
   return(ans)
 }
