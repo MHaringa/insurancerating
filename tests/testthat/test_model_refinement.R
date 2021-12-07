@@ -43,4 +43,21 @@ testthat::test_that(
   }
 )
 
+testthat::test_that(
+  "Input and output in matchColClasses() are of same type", {
+    freq <- glm(nclaims ~ bm + zip, weights = power,
+                family = poisson(), data = MTPL)
+    zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
+    x <- restrict_coef(freq, zip_df)
+    names_rf <- names(x$restrictions_lst)
+    name <- names_rf[length(names_rf)]
+    naam_rst <- x$restrictions_lst[[name]]
+    rf <- x$rating_factors
+    naam_rf <- rf[rf$risk_factor == name,]
+    naam_rf <- naam_rf[,2:3]
+    names(naam_rst)[names(naam_rst) == name] <- "level"
+    rt <- matchColClasses(naam_rst, naam_rf)
+    testthat::expect_type(rt$level, typeof(naam_rst$level))
+  })
+
 

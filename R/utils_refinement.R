@@ -110,15 +110,18 @@ update_formula_add <- function(offset_term, fm_no_offset, add_term){
 
 #' @keywords internal
 cut_borders_df <- function(df, col){
-  if (!col %in% names(df)) stop("Column name must be available in data", call. = FALSE)
+  if (!col %in% names(df)) stop("Column name must be available in data",
+                                call. = FALSE)
   df_vec <- df[[col]]
 
   pattern <- "(\\(|\\[)(-*[0-9]+\\.*[0-9]*),(-*[0-9]+\\.*[0-9]*)(\\)|\\])"
   suppressWarnings({
     df$start_oc <- ifelse(gsub(pattern,"\\1", df_vec) == "(", "open",
-                          ifelse(gsub(pattern,"\\1", df_vec) == "[", "closed", NA))
+                          ifelse(gsub(pattern,"\\1", df_vec) == "[",
+                                 "closed", NA))
     df$end_oc <- ifelse(gsub(pattern,"\\4", df_vec) == ")", "open",
-                        ifelse(gsub(pattern,"\\4", df_vec) == "]", "closed", NA))
+                        ifelse(gsub(pattern,"\\4", df_vec) == "]",
+                               "closed", NA))
     df$start_  <- as.numeric(gsub(pattern,"\\2", df_vec))
     df$end_ <- as.numeric(gsub(pattern,"\\3", df_vec))
   })
@@ -154,7 +157,8 @@ cut_borders_model <- function(model, x_cut){
 fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL){
 
   if ( is.null(breaks) ){
-    breaks <- seq(min(borders_model$start_), max(borders_model$end_), length.out = nrow(borders_model))
+    breaks <- seq(min(borders_model$start_), max(borders_model$end_),
+                  length.out = nrow(borders_model))
   }
 
   # Take halfway points of breaks to fit polynomial
@@ -164,7 +168,8 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL){
   breaks_mid <- breaks_mid[!is.na(breaks_mid)]
 
   unique_borders <- unique(c(breaks_min, breaks_max))
-  levels_borders <- levels(cut(breaks_min, breaks = unique_borders, include.lowest = TRUE, dig.lab = 9))
+  levels_borders <- levels(cut(breaks_min, breaks = unique_borders,
+                               include.lowest = TRUE, dig.lab = 9))
 
   lm_poly <- lm(estimate ~ poly(avg_, degree = degree), data = borders_model)
   new_poly_df <- data.frame(avg_ = breaks_mid)
@@ -208,7 +213,8 @@ join_to_nearest <- function(dat, reference, x){
   dat <- data.table::data.table(dat)
   reference_nm <- setdiff(names(reference), x)
   dat <- dat[, c(x) := as.numeric(get(x))]
-  join <- reference[dat, roll = "nearest", on = x][is.na(get(x)), c(reference_nm) := NA]
+  join <- reference[dat, roll = "nearest", on = x][is.na(get(x)),
+                                                   c(reference_nm) := NA]
   as.data.frame(join)
 }
 

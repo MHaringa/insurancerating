@@ -11,18 +11,20 @@
 #'   the severity model, it is more appropriate to impose the restrictions
 #'   on the premium model. This can be achieved by calculating the pure
 #'   premium for each record (i.e. expected number of claims times the expected
-#'   claim amount), then fitting an "unrestricted" Gamma GLM to the pure premium,
-#'   and then imposing the restrictions in a final "restricted" Gamma GLM.
+#'   claim amount), then fitting an "unrestricted" Gamma GLM to the pure
+#'   premium,and then imposing the restrictions in a final "restricted" Gamma
+#'   GLM.
 #'
 #' @param model object of class glm/restricted
-#' @param restrictions data.frame with two columns containing restricted data. The first
-#'   column, with the name of the risk factor as column name, must contain the
-#'   levels of the risk factor. The second column must contain the restricted
-#'   coefficients.
+#' @param restrictions data.frame with two columns containing restricted data.
+#'   The first column, with the name of the risk factor as column name, must
+#'   contain the levels of the risk factor. The second column must contain the
+#'   restricted coefficients.
 #'
 #' @family refit_glm
 #' @family autoplot.restricted
-#' @seealso [refit_glm()] for refitting the restricted model, and [autoplot.restricted()].
+#' @seealso [refit_glm()] for refitting the restricted model,
+#' and [autoplot.restricted()].
 #'
 #' @return Object of class restricted.
 #'
@@ -34,7 +36,8 @@
 #' library(dplyr)
 #' freq <- glm(nclaims ~ bm + zip, offset = log(exposure), family = poisson(),
 #'              data = MTPL)
-#' sev <- glm(amount ~ bm + zip, weights = nclaims, family = Gamma(link = "log"),
+#' sev <- glm(amount ~ bm + zip, weights = nclaims,
+#'             family = Gamma(link = "log"),
 #'             data = MTPL %>% filter(amount > 0))
 #'
 #' # Add predictions for freq and sev to data, and calculate premium
@@ -100,6 +103,7 @@ restrict_coef <- function(model, restrictions){
   fm_remove <- update_formula_remove(fm_no_offset, names(restrictions)[1])
   fm_add <- update_formula_add(offset_term, fm_remove, names(restrictions)[2])
   df_restricted <- add_restrictions_df(df_new, restrictions)
+  rst_lst_nm <- unique(Reduce(c, lapply(rst_lst, names)))
 
   rt <- list(formula_restricted = fm_add[[1]],
              formula_removed = fm_remove,
@@ -111,7 +115,7 @@ restrict_coef <- function(model, restrictions){
              rf_restricted_df = restricted_df,
              model_call = model_call,
              model_out = model_out,
-             getdata_nm = unique(Reduce(c, lapply(rst_lst, names))))
+             getdata_nm = rst_lst_nm)
   attr(rt, "class") <- "restricted"
   invisible(rt)
 }
@@ -129,8 +133,9 @@ restrict_coef <- function(model, restrictions){
 #'   the severity model, it is more appropriate to impose the smoothing
 #'   on the premium model. This can be achieved by calculating the pure
 #'   premium for each record (i.e. expected number of claims times the expected
-#'   claim amount), then fitting an "unrestricted" Gamma GLM to the pure premium,
-#'   and then imposing the restrictions in a final "restricted" Gamma GLM.
+#'   claim amount), then fitting an "unrestricted" Gamma GLM to the pure
+#'   premium, and then imposing the restrictions in a final "restricted"
+#'   Gamma GLM.
 #'
 #' @param model object of class glm/smooth
 #' @param x_cut column name with breaks/cut
@@ -140,7 +145,8 @@ restrict_coef <- function(model, restrictions){
 #'
 #' @family refit_glm
 #' @family autoplot.smooth
-#' @seealso [refit_glm()] for refitting the smoothed model, and [autoplot.smooth()].
+#' @seealso [refit_glm()] for refitting the smoothed model,
+#' and [autoplot.smooth()].
 #'
 #' @return Object of class smooth
 #'
@@ -165,10 +171,10 @@ restrict_coef <- function(model, restrictions){
 #'   mutate(across(where(is.factor), ~biggest_reference(., exposure)))
 #'
 #' # Fit frequency and severity model
-#' freq <- glm(nclaims ~ bm + age_policyholder_freq_cat, offset = log(exposure), family = poisson(),
-#'             data = dat)
-#' sev <- glm(amount ~ bm + zip, weights = nclaims, family = Gamma(link = "log"),
-#'            data = dat %>% filter(amount > 0))
+#' freq <- glm(nclaims ~ bm + age_policyholder_freq_cat, offset = log(exposure),
+#'  family = poisson(), data = dat)
+#' sev <- glm(amount ~ bm + zip, weights = nclaims,
+#'  family = Gamma(link = "log"), data = dat %>% filter(amount > 0))
 #'
 #' # Add predictions for freq and sev to data, and calculate premium
 #' premium_df <- dat %>%
@@ -326,7 +332,8 @@ print.smooth <- function(x, ...){
 #' @return Object of class ggplot2
 #'
 #' @examples
-#' freq <- glm(nclaims ~ bm + zip, weights = power, family = poisson(), data = MTPL)
+#' freq <- glm(nclaims ~ bm + zip, weights = power, family = poisson(),
+#'  data = MTPL)
 #' zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
 #' freq %>%
 #'   restrict_coef(., zip_df) %>%
@@ -343,6 +350,7 @@ autoplot.restricted <- function(object, ...){
   naam_rf <- rf[rf$risk_factor == name,]
   naam_rf <- naam_rf[,2:3]
   names(naam_rst)[names(naam_rst) == name] <- "level"
+
   naam_rf <- matchColClasses(naam_rst, naam_rf)
 
   koppel <- dplyr::left_join(naam_rst, naam_rf, by = "level")
@@ -405,21 +413,48 @@ autoplot.smooth <- function(object, ...){
   names(new_line)[names(new_line) == x_name] <- "col1"
 
   ggplot2::ggplot(data = rf2) +
-    ggplot2::geom_segment(ggplot2::aes(x = start_, y = estimate, xend = end_, yend = estimate, color = "Model fit"), group = 1) +
-    ggplot2::geom_segment(data = new, ggplot2::aes(x = breaks_min, y = yhat, xend = breaks_max, yend = yhat, color = "New cluster"), group = 2) +
-    ggplot2::geom_point(data = rf2_start_closed, ggplot2::aes(x = start_, y = estimate), color = "dodgerblue") +
-    ggplot2::geom_point(data = rf2_end_closed, ggplot2::aes(x = end_, y = estimate), color = "dodgerblue") +
-    ggplot2::geom_point(data = rf2_start_open, ggplot2::aes(x = start_, y = estimate), color = "dodgerblue", shape = 21, fill = "white") +
-    ggplot2::geom_point(data = rf2_end_open, ggplot2::aes(x = end_, y = estimate), color = "dodgerblue", shape = 21, fill = "white") +
-    ggplot2::geom_point(data = new_start_closed, ggplot2::aes(x = start_, y = yhat), color = "red") +
-    ggplot2::geom_point(data = new_end_closed, ggplot2::aes(x = end_, y = yhat), color = "red") +
-    ggplot2::geom_point(data = new_start_open, ggplot2::aes(x = start_, y = yhat), color = "red", shape = 21, fill = "white") +
-    ggplot2::geom_point(data = new_end_open, ggplot2::aes(x = end_, y = yhat), color = "red", shape = 21, fill = "white") +
+    ggplot2::geom_segment(ggplot2::aes(x = start_, y = estimate, xend = end_,
+                                       yend = estimate, color = "Model fit"),
+                          group = 1) +
+    ggplot2::geom_segment(data = new, ggplot2::aes(x = breaks_min, y = yhat,
+                                                   xend = breaks_max,
+                                                   yend = yhat,
+                                                   color = "New cluster"),
+                          group = 2) +
+    ggplot2::geom_point(data = rf2_start_closed, ggplot2::aes(x = start_,
+                                                              y = estimate),
+                        color = "dodgerblue") +
+    ggplot2::geom_point(data = rf2_end_closed, ggplot2::aes(x = end_,
+                                                            y = estimate),
+                        color = "dodgerblue") +
+    ggplot2::geom_point(data = rf2_start_open, ggplot2::aes(x = start_,
+                                                            y = estimate),
+                        color = "dodgerblue", shape = 21, fill = "white") +
+    ggplot2::geom_point(data = rf2_end_open, ggplot2::aes(x = end_,
+                                                          y = estimate),
+                        color = "dodgerblue", shape = 21, fill = "white") +
+    ggplot2::geom_point(data = new_start_closed, ggplot2::aes(x = start_,
+                                                              y = yhat),
+                        color = "red") +
+    ggplot2::geom_point(data = new_end_closed, ggplot2::aes(x = end_,
+                                                            y = yhat),
+                        color = "red") +
+    ggplot2::geom_point(data = new_start_open, ggplot2::aes(x = start_,
+                                                            y = yhat),
+                        color = "red", shape = 21, fill = "white") +
+    ggplot2::geom_point(data = new_end_open, ggplot2::aes(x = end_,
+                                                          y = yhat),
+                        color = "red", shape = 21, fill = "white") +
     ggplot2::labs(x = x_name, y = "Estimated coefficient") +
-    ggplot2::geom_line(data = new_line, ggplot2::aes(x = col1, y = yhat, color = "Smooth"), group = 3) +
+    ggplot2::geom_line(data = new_line, ggplot2::aes(x = col1, y = yhat,
+                                                     color = "Smooth"),
+                       group = 3) +
     ggplot2::scale_colour_manual(name = "Risk factor",
-                                 values = c("Model fit" = "dodgerblue", "New cluster" = "red", "Smooth" = "black"),
-                                 labels = c("Model fit", "New cluster", degree_name)) +
+                                 values = c("Model fit" = "dodgerblue",
+                                            "New cluster" = "red",
+                                            "Smooth" = "black"),
+                                 labels = c("Model fit", "New cluster",
+                                            degree_name)) +
     ggplot2::theme_minimal()
 }
 
@@ -446,7 +481,8 @@ refit_glm <- function(x){
   }
 
   lst_call <- as.list(x$model_call)
-  lst <- list(formula = x$formula_restricted, data = x$data_restricted, offset = NULL)
+  lst <- list(formula = x$formula_restricted, data = x$data_restricted,
+              offset = NULL)
   y <- eval(as.call(modifyList(lst_call, lst)))
   y$call$formula <- lst$formula
   y$call$data <- quote(df_new)
@@ -466,9 +502,9 @@ refit_glm <- function(x){
 
 #' Get data from refitted Generalized Linear Model
 #'
-#' @description `r lifecycle::badge('experimental')`
-#'  `get_data()` is used to get data from refitted generalized linear models, and must be
-#'  preceded by `refit_glm()`.
+#' @description `r lifecycle::badge('experimental')` `get_data()` is used to
+#' get data from refitted generalized linear models, and must be preceded by
+#' `refit_glm()`.
 #'
 #' @param x Object of class refitsmooth or of class refitrestricted
 #'
@@ -479,7 +515,8 @@ refit_glm <- function(x){
 #' @export
 get_data <- function(x){
   if( !inherits(x, c("refitsmooth", "refitrestricted")) ) {
-    stop("Input must be of class refitsmooth or of class refitrestricted", call. = FALSE)
+    stop("Input must be of class refitsmooth or of class refitrestricted",
+         call. = FALSE)
   }
   xdf <- x$data
   xdf[!names(xdf) %in% c("breaks_min", "breaks_max",

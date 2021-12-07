@@ -57,6 +57,7 @@ reference:
       - reduce
       - summary.reduce
       - fit_truncated_dist
+      - autoplot.truncated_dist
       - rlnormt
       - rgammat
 

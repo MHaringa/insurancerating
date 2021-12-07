@@ -1,6 +1,8 @@
 #' Reduce portfolio by merging redundant date ranges
 #'
-#' @description Transform all the date ranges together as a set to produce a new set of date ranges. Ranges separated by a gap of at least `min.gapwidth` days are not merged.
+#' @description Transform all the date ranges together as a set to produce a
+#' new set of date ranges. Ranges separated by a gap of at least `min.gapwidth`
+#' days are not merged.
 #'
 #' @param df data.frame
 #' @param begin name of column `df` with begin dates
@@ -8,7 +10,8 @@
 #' @param ... names of columns in `df` used to group date ranges by
 #' @param agg_cols list with columns in `df` to aggregate by (defaults to NULL)
 #' @param agg aggregation type (defaults to "sum")
-#' @param min.gapwidth ranges separated by a gap of at least `min.gapwidth` days are not merged. Defaults to 5.
+#' @param min.gapwidth ranges separated by a gap of at least `min.gapwidth`
+#' days are not merged. Defaults to 5.
 #'
 #' @import data.table
 #' @importFrom dplyr lead
@@ -21,7 +24,8 @@
 #'
 #' @return An object of class `"reduce"`.
 #' The function `summary` is used to obtain and print a summary of the results.
-#' An object of class `"reduce"` is a list usually containing at least the following elements:
+#' An object of class `"reduce"` is a list usually containing at least the
+#' following elements:
 #' \item{df}{data frame with reduced time periods}
 #' \item{begin}{name of column in `df` with begin dates}
 #' \item{end}{name of column in `df` with end dates}
@@ -33,12 +37,13 @@
 #' productgroup = c("fire", "fire", "fire", "fire", "fire", "fire",
 #' "fire", "fire", "fire", "fire", "fire"), product = c("contents",
 #' "contents", "contents", "contents", "contents", "contents", "contents",
-#' "contents", "contents", "contents", "contents"), begin_dat = structure(c(16709,
-#' 16740, 16801, 17410, 17440, 17805, 17897, 17956, 17987, 18017,
-#' 18262), class = "Date"), end_dat = structure(c(16739, 16800,
-#' 16831, 17439, 17531, 17896, 17955, 17986, 18016, 18261, 18292),
-#' class = "Date"), premium = c(89L, 58L, 83L, 73L, 69L, 94L,
-#' 91L, 97L, 57L, 65L, 55L)), row.names = c(NA, -11L), class = "data.frame")
+#' "contents", "contents", "contents", "contents"),
+#' begin_dat = structure(c(16709,16740, 16801, 17410, 17440, 17805, 17897,
+#' 17956, 17987, 18017, 18262), class = "Date"),
+#' end_dat = structure(c(16739, 16800, 16831, 17439, 17531, 17896, 17955,
+#' 17986, 18016, 18261, 18292), class = "Date"),
+#' premium = c(89L, 58L, 83L, 73L, 69L, 94L, 91L, 97L, 57L, 65L, 55L)),
+#' row.names = c(NA, -11L), class = "data.frame")
 #'
 #' # Merge periods
 #' pt1 <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
@@ -56,7 +61,8 @@
 #'
 #'
 #' @export
-reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwidth = 5) {
+reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum",
+                   min.gapwidth = 5) {
 
   .begin <- deparse(substitute(begin))
   .end <- deparse(substitute(end))
@@ -64,21 +70,24 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwid
   start_dt = end_dt = aggcols0 = NULL # due to NSE notes in R CMD check
 
   if (!lubridate::is.Date(df[[.begin]]) | !lubridate::is.Date(df[[.end]])) {
-    stop("Columns begin and end should be Date objects. Use e.g. lubridate::ymd() to create Date object.", call. = FALSE)
+    stop("Columns begin and end should be Date objects.
+         Use e.g. lubridate::ymd() to create Date object.", call. = FALSE)
   }
 
   if (anyNA(df[[.begin]])) {
-    stop("NA values in data.table 'begin' column: '", .begin, "'. All rows with NA values in the range columns must be removed for reduce() to work.", call. = FALSE)
+    stop("NA values in data.table 'begin' column: '", .begin, "'. All rows with
+         NA values in the range columns must be removed for reduce() to work.",
+         call. = FALSE)
   }
   else if (anyNA(df[[.end]])) {
-    stop("NA values in data.table 'end' column: '", .end, "'. All rows with NA values in the range columns must be removed for reduce() to work.", call. = FALSE)
+    stop("NA values in data.table 'end' column: '", .end, "'. All rows with NA
+         values in the range columns must be removed for reduce() to work.",
+         call. = FALSE)
   }
 
-  splitvars <- substitute(list(...))[-1]
-  cols0 <- sapply(splitvars, deparse)
+  cols0 <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
+  aggcols0 <- vapply(substitute(agg_cols)[-1],deparse, FUN.VALUE = character(1))
 
-  aggvars <- substitute(agg_cols)[-1]
-  aggcols0 <- sapply(aggvars, deparse)
 
   if ( length(cols0) == 0 ){
     stop("define columns to group date ranges by", call. = FALSE)
@@ -98,21 +107,30 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwid
   if (length(aggcols0) == 0){
     dt_reduce <- dt[,.(start_dt = get(.begin),
                        end_dt = get(.end),
-                       index = c(0, cumsum(as.numeric(dplyr::lead(get(.begin))) > cummax(as.numeric(get(.end))))[-.N])),
+                       index = c(0,
+                                 cumsum(as.numeric(dplyr::lead(get(.begin))) >
+                                          cummax(as.numeric(get(.end))))[-.N])),
                     keyby = c(cols0)]
-    dt_reduce <- dt_reduce[,.(start_dt = min(start_dt), end_dt = max(end_dt)), by = c(cols0, "index")]
+    dt_reduce <- dt_reduce[,.(start_dt = min(start_dt), end_dt = max(end_dt)),
+                           by = c(cols0, "index")]
   }
 
   if ( length(aggcols0) > 0 ){
     dt_reduce <- dt[, .(start_dt = get(.begin),
                         end_dt = get(.end),
-                        index = c(0, cumsum(as.numeric(dplyr::lead(get(.begin))) > cummax(as.numeric(get(.end))))[-.N])),
+                        index = c(0,
+                                  cumsum(as.numeric(dplyr::lead(get(.begin))) >
+                                           cummax(
+                                             as.numeric(get(.end))))[-.N])),
                     keyby = c(cols0)]
     dt_reduce <- cbind(dt_reduce, dt[, aggcols0, with = FALSE]) # ..aggcols0
-    dt_reduce <- dt_reduce[, c(end_dt = max(end_dt), start_dt = min(start_dt), lapply(.SD, get(agg))), by = c(cols0, "index"), .SDcols = aggcols0]
+    dt_reduce <- dt_reduce[, c(end_dt = max(end_dt), start_dt = min(start_dt),
+                               lapply(.SD, get(agg))), by = c(cols0, "index"),
+                           .SDcols = aggcols0]
   }
 
-  data.table::setnames(dt_reduce, old = c("start_dt", "end_dt"), new = c(.begin, .end))
+  data.table::setnames(dt_reduce, old = c("start_dt", "end_dt"),
+                       new = c(.begin, .end))
 
   # Reverse gapwidth
   dt_reduce[, c(.begin) := get(.begin) + min.gapwidth]
@@ -141,12 +159,16 @@ as.data.frame.reduce <- function(x, ...) {
 
 #' Automatically create a summary for objects obtained from reduce()
 #'
-#' @description Takes an object produced by `reduce()`, and counts new and lost customers.
+#' @description Takes an object produced by `reduce()`, and counts new and lost
+#' customers.
 #'
 #' @param object reduce object produced by `reduce()`
-#' @param period a character string indicating the period to aggregate on. Four options are available: "quarters", "months", "weeks", and "days" (the default option)
+#' @param period a character string indicating the period to aggregate on.
+#' Four options are available: "quarters", "months", "weeks", and "days"
+#' (the default option)
 #' @param ... names of columns to aggregate counts by
-#' @param name The name of the new column in the output. If omitted, it will default to count.
+#' @param name The name of the new column in the output. If omitted, it will
+#' default to count.
 #'
 #' @import data.table
 #' @importFrom lubridate days
@@ -158,10 +180,6 @@ as.data.frame.reduce <- function(x, ...) {
 #' @export
 summary.reduce <- function(object, ..., period = "days", name = "count"){
 
-  if (!inherits(object, "reduce")) {
-    stop("summary.reduce requires an object of class reduce", call. = FALSE)
-  }
-
   df <- object
   begin <- attr(object, "begin")
   end <- attr(object, "end")
@@ -170,12 +188,13 @@ summary.reduce <- function(object, ..., period = "days", name = "count"){
   by_begin <- begin
   by_end <- end
 
-  if (!period %in% c("years", "year", "quarters", "quarter", "months", "month", "weeks", "week", "day", "days")){
-    stop("period is not valid: choose 'year', 'quarter', 'month', 'week', or 'day'", call. = FALSE)
+  if (!period %in% c("years", "year", "quarters", "quarter", "months", "month",
+                     "weeks", "week", "day", "days")){
+    stop("period is not valid: choose 'year', 'quarter', 'month',
+         'week', or 'day'", call. = FALSE)
   }
 
-  splitvars <- substitute(list(...))[-1]
-  cols0 <- sapply(splitvars, deparse)
+  cols0 <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
 
   if( length(cols0) > 0){
     by_begin <- c(by_begin, cols0)
@@ -184,8 +203,10 @@ summary.reduce <- function(object, ..., period = "days", name = "count"){
 
   type = week = month = quarter = NULL # due to NSE notes in R CMD check
 
-  new <- data.table::data.table(df)[, list(count = .N), by = c(by_begin)][, type := "in"]
-  lost <- data.table::data.table(df)[, list(count = .N), by = c(by_end)][, type := "out"]
+  new <- data.table::data.table(df)[, list(count = .N),
+                                    by = c(by_begin)][, type := "in"]
+  lost <- data.table::data.table(df)[, list(count = .N),
+                                     by = c(by_end)][, type := "out"]
 
   if (period %in% c("days", "day")){
     new[, date := get(begin)]
@@ -195,24 +216,34 @@ summary.reduce <- function(object, ..., period = "days", name = "count"){
   if (period %in% c("weeks", "week")){
     new[, week := get(begin)]
     new[, week := paste0(data.table::year(week), "W",
-                         ifelse(nchar(data.table::week(week)) == 1, paste0("0", data.table::week(week)), data.table::week(week)))]
+                         ifelse(nchar(data.table::week(week)) == 1,
+                                paste0("0", data.table::week(week)),
+                                data.table::week(week)))]
     lost[, week := get(end) %m+% lubridate::weeks(1)]
     lost[, week := paste0(data.table::year(week), "W",
-                          ifelse(nchar(data.table::week(week)) == 1, paste0("0", data.table::week(week)), data.table::week(week)))]
+                          ifelse(nchar(data.table::week(week)) == 1,
+                                 paste0("0", data.table::week(week)),
+                                 data.table::week(week)))]
   }
 
   if ( period %in% c("months", "month")){
     new[, month := get(begin)]
     new[, month := paste0(data.table::year(month), "M",
-                          ifelse(nchar(data.table::month(month)) == 1, paste0("0", data.table::month(month)), data.table::month(month)))]
+                          ifelse(nchar(data.table::month(month)) == 1,
+                                 paste0("0", data.table::month(month)),
+                                 data.table::month(month)))]
     lost[, month := get(end) %m+% months(1)]
     lost[, month := paste0(data.table::year(month), "M",
-                           ifelse(nchar(data.table::month(month)) == 1, paste0("0", data.table::month(month)), data.table::month(month)))]
+                           ifelse(nchar(data.table::month(month)) == 1,
+                                  paste0("0", data.table::month(month)),
+                                  data.table::month(month)))]
   }
 
   if ( period %in% c("quarters", "quarter")){
-    new[, quarter := paste0(data.table::year(get(begin)), "Q", data.table::quarter(get(begin)))]
-    lost[, quarter := paste0(data.table::year(get(end) %m+% months(3)), "Q", data.table::quarter(get(end) %m+% months(3)))]
+    new[, quarter := paste0(data.table::year(get(begin)), "Q",
+                            data.table::quarter(get(begin)))]
+    lost[, quarter := paste0(data.table::year(get(end) %m+% months(3)), "Q",
+                             data.table::quarter(get(end) %m+% months(3)))]
   }
 
   if ( period %in% c("years", "year")){
@@ -227,19 +258,23 @@ summary.reduce <- function(object, ..., period = "days", name = "count"){
 
   if ( length(cols0) == 0){
     dt <- dt[, .(count = sum(count)), by = c(names(dt)[ncol(dt)], "type")]
-    data.table::setorderv(dt, c(names(dt)[ncol(dt)], "type", "count"), c(-1,1,1))
+    data.table::setorderv(dt, c(names(dt)[ncol(dt)], "type", "count"),
+                          c(-1,1,1))
     df <- as.data.frame(dt)
   }
 
   if( length(cols0) > 0){
-    dt <- dt[, .(count = sum(count)), by = c(names(dt)[ncol(dt)], "type", cols0)]
+    dt <- dt[, .(count = sum(count)),
+             by = c(names(dt)[ncol(dt)], "type", cols0)]
     data.table::setcolorder(dt, c(names(dt)[1], "type", "count", cols0))
-    data.table::setorderv(dt, c(names(dt)[1], cols0, "type"), c(-1, rep(1, length(cols0)), 1))
+    data.table::setorderv(dt, c(names(dt)[1], cols0, "type"),
+                          c(-1, rep(1, length(cols0)), 1))
     df <- as.data.frame(dt)
   }
 
   if( name != "count" ){
-    if ( !is.character(name) ) stop ( "Column name should be a character", call. = FALSE )
+    if ( !is.character(name) ) stop ( "Column name should be a character",
+                                      call. = FALSE )
     names(df)[names(df) == 'count'] <- name
   }
 

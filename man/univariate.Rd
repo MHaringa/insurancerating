@@ -33,7 +33,8 @@ univariate(
 A data.frame
 }
 \description{
-Univariate analysis for discrete risk factors in an insurance portfolio. The following summary statistics are calculated:
+Univariate analysis for discrete risk factors in an insurance
+portfolio. The following summary statistics are calculated:
 \itemize{
 \item{frequency (i.e. number of claims / exposure)}
 \item{average severity (i.e. severity / number of claims)}
@@ -41,7 +42,8 @@ Univariate analysis for discrete risk factors in an insurance portfolio. The fol
 \item{loss ratio (i.e. severity / premium)}
 \item{average premium (i.e. premium / exposure)}
 }
-If input arguments are not specified, the summary statistics related to these arguments are ignored.
+If input arguments are not specified, the summary statistics related to
+these arguments are ignored.
 }
 \examples{
 # Summarize by `area`

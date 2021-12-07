@@ -4,6 +4,7 @@ Title: Analytic Insurance Rating Techniques
 Version: 0.6.8.9000
 Authors@R: c(person("Martin", "Haringa", role = c("aut", "cre"), email = "mtharinga@gmail.com"))
 Maintainer: Martin Haringa <mtharinga@gmail.com>
+BugReports: https://github.com/mharinga/insurancerating/issues
 Description: Methods for insurance rating. It helps actuaries to implement GLMs within all relevant steps needed to construct
  a risk premium from raw data. It provides a data driven strategy for the construction of insurance tariff classes.
  This strategy is based on the work by Antonio and Valdez (2012) <doi:10.1007/s10182-011-0152-7>. It also provides recipes
@@ -22,6 +23,7 @@ Imports:
     DHARMa,
     dplyr,
     evtree,
+    fitdistrplus, 
     ggplot2,
     insight,
     lubridate,
@@ -31,14 +33,13 @@ Imports:
     scales,
     stringr, 
     tidyr, 
-    tidyselect
+    tidyselect, 
+    truncdist
 Depends: R (>= 3.3)
 Suggests: 
     spelling,
     knitr,
     rmarkdown,
-    testthat,
-    fitdistrplus,
-    truncdist
+    testthat
 Roxygen: list(markdown = TRUE)
 Language: en-US

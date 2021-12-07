@@ -16,11 +16,14 @@ fit_truncated_dist(
 \arguments{
 \item{y}{vector with observations of losses}
 
-\item{dist}{distribution for severity ("gamma" or "lognormal"). Defaults to "gamma".}
+\item{dist}{distribution for severity ("gamma" or "lognormal"). Defaults to
+"gamma".}
 
-\item{left}{numeric. Observations below this threshold are not present in the sample.}
+\item{left}{numeric. Observations below this threshold are not present in the
+sample.}
 
-\item{right}{numeric. Observations above this threshold are not present in the sample. Defaults to Inf.}
+\item{right}{numeric. Observations above this threshold are not present in
+the sample. Defaults to Inf.}
 
 \item{start}{list of starting parameters for the algorithm.}
 
@@ -30,7 +33,10 @@ fit_truncated_dist(
 fitdist returns an object of class "fitdist"
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} Estimate the original distribution from truncated data. Truncated data arise frequently in insurance studies. It is common that only claims above a certain threshold are known.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} Estimate the original
+distribution from truncated data. Truncated data arise frequently in
+insurance studies. It is common that only claims above a certain threshold
+are known.
 }
 \examples{
 \dontrun{
@@ -52,9 +58,11 @@ variable = rep(c("Original data", "Only claims above 30.000 euros"),
                ggplot(aes(x = value)) +
                geom_histogram(colour = "white") +
                facet_wrap(~variable, ncol = 1) +
-               labs(y = "Number of observations", x = "Severity (x 1000 EUR)")
+               labs(y = "Number of observations",
+                    x = "Severity (x 1000 EUR)")
 
-# scale = 156259.7 and shape = 0.4588. Close to parameters of original distribution!
+# scale = 156259.7 and shape = 0.4588. Close to parameters of original
+# distribution!
 x <- fit_truncated_dist(f, left = threshold, dist = "gamma")
 
 # Print cdf
@@ -67,7 +75,8 @@ est_scale <- x$estimate[1]
 est_shape <- x$estimate[2]
 
 # Generate data from truncated distribution (between 30k en 20 mln)
-rg <- rgammat(10, scale = est_scale, shape = est_shape, lower = 3e4, upper = 20e6)
+rg <- rgammat(10, scale = est_scale, shape = est_shape, lower = 3e4,
+ upper = 20e6)
 
 # Calculate quantiles
 quantile(rg, probs = c(.5, .9, .99, .995))

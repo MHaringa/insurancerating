@@ -1,6 +1,7 @@
 #' Univariate analysis for discrete risk factors
 #'
-#' @description Univariate analysis for discrete risk factors in an insurance portfolio. The following summary statistics are calculated:
+#' @description Univariate analysis for discrete risk factors in an insurance
+#' portfolio. The following summary statistics are calculated:
 #' \itemize{
 #'  \item{frequency (i.e. number of claims / exposure)}
 #'  \item{average severity (i.e. severity / number of claims)}
@@ -8,7 +9,8 @@
 #'  \item{loss ratio (i.e. severity / premium)}
 #'  \item{average premium (i.e. premium / exposure)}
 #' }
-#' If input arguments are not specified, the summary statistics related to these arguments are ignored.
+#' If input arguments are not specified, the summary statistics related to
+#' these arguments are ignored.
 #'
 #' @param df data.frame with insurance portfolio
 #' @param x column in `df` with risk factor
@@ -38,7 +40,8 @@
 #'            exposure = exposure, by = list(bm, power))
 #'
 #' @export
-univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, premium = NULL, by = NULL) {
+univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
+                       premium = NULL, by = NULL) {
 
   .xvar <- deparse(substitute(x))
   .severity <- deparse(substitute(severity))
@@ -49,11 +52,14 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, 
   mc <- as.list(match.call())
   byl <- as.list(mc$by)
 
-  if( !.xvar %in% names(df) ) stop("Column ", .xvar, " can't be found", call. = FALSE)
+  if( !.xvar %in% names(df) ) stop("Column ", .xvar, " can't be found",
+                                   call. = FALSE)
 
-  if ( length(byl) > 0L && byl[[1]] == "c" ) stop("`by` must be a list", call. = FALSE)
+  if ( length(byl) > 0L && byl[[1]] == "c" ) stop("`by` must be a list",
+                                                  call. = FALSE)
 
-  if (length(byl) > 0L && (byl[[1L]] == as.symbol("list") || byl[[1L]] == as.symbol(".")))
+  if (length(byl) > 0L && (byl[[1L]] == as.symbol("list") ||
+                           byl[[1L]] == as.symbol(".")))
     byl <- byl[-1L]
 
   COLS <- c()
@@ -71,15 +77,20 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, 
   }
 
   BY <- as.call(c(as.symbol("list"), substitute(x), byl))
-  dt <- eval(bquote(data.table(df)[, lapply(.SD, sum, na.rm = TRUE), by=.(BY), .SDcols=.(COLS)]))
+  dt <- eval(bquote(data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
+                                   by = .(BY), .SDcols=.(COLS)]))
 
   dt1 <- NULL
   if (!missing(by)){
     BYx <- as.call(c(as.symbol("list"), substitute(x)))
-    dt1 <- eval(bquote(data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE), by = .(BYx), .SDcols=.(COLS)]))
+    dt1 <- eval(bquote(
+      data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
+                                 by = .(BYx), .SDcols=.(COLS)]
+      ))
   }
 
-  frequency = average_severity = risk_premium = loss_ratio = average_premium = NULL # due to NSE notes in R CMD check
+  frequency = average_severity = risk_premium = loss_ratio =
+    average_premium = NULL # due to NSE notes in R CMD check
 
   # Frequency
   if ( all(c(.nclaims, .exposure) %in% COLS)  ){
@@ -137,10 +148,12 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, 
 
 #' Automatically create a ggplot for objects obtained from univariate()
 #'
-#' @description Takes an object produced by `univariate()`, and plots the available input.
+#' @description Takes an object produced by `univariate()`, and plots the
+#' available input.
 #'
 #' @param object univariate object produced by `univariate()`
-#' @param show_plots numeric vector of plots to be shown (default is c(1,2,3,4,5,6,7,8,9)), there are nine available plots:
+#' @param show_plots numeric vector of plots to be shown (default is
+#' c(1,2,3,4,5,6,7,8,9)), there are nine available plots:
 #'  \itemize{
 #'   \item{1. frequency (i.e. number of claims / exposure)}
 #'   \item{2. average severity (i.e. severity / number of claims)}
@@ -155,14 +168,19 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, 
 #' @param ncol number of columns in output (default is 1)
 #' @param background show exposure as a background histogram (default is TRUE)
 #' @param labels show labels with the exposure (default is TRUE)
-#' @param sort sort (or order) risk factor into descending order by exposure (default is FALSE)
-#' @param sort_manual sort (or order) risk factor into own ordering; should be a character vector (default is NULL)
+#' @param sort sort (or order) risk factor into descending order by exposure
+#' (default is FALSE)
+#' @param sort_manual sort (or order) risk factor into own ordering; should be
+#' a character vector (default is NULL)
 #' @param dec.mark decimal mark; defaults to ","
-#' @param color change the color of the points and line ("dodgerblue" is default)
+#' @param color change the color of the points and line ("dodgerblue" is
+#' default)
 #' @param color_bg change the color of the histogram ("#f8e6b1" is default)
 #' @param label_width width of labels on the x-axis (10 is default)
-#' @param coord_flip flip cartesian coordinates so that horizontal becomes vertical, and vertical, horizontal (default is FALSE)
-#' @param show_total show line for total if by is used in univariate (default is FALSE)
+#' @param coord_flip flip cartesian coordinates so that horizontal becomes
+#' vertical, and vertical, horizontal (default is FALSE)
+#' @param show_total show line for total if by is used in univariate (default
+#' is FALSE)
 #' @param total_color change the color for the total line ("black" is default)
 #' @param total_name add legend name for the total line (e.g. "total")
 #' @param ... other plotting parameters to affect the plot
@@ -176,7 +194,8 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL, 
 #'
 #' @examples
 #' library(ggplot2)
-#' x <- univariate(MTPL2, x = area, severity = amount, nclaims = nclaims, exposure = exposure)
+#' x <- univariate(MTPL2, x = area, severity = amount, nclaims = nclaims,
+#' exposure = exposure)
 #' autoplot(x)
 #' autoplot(x, show_plots = c(6,1), background = FALSE, sort = TRUE)
 #'
@@ -193,18 +212,6 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                                 color_bg = "lightskyblue", label_width = 10,
                                 coord_flip = FALSE, show_total = FALSE,
                                 total_color = NULL, total_name = NULL, ...){
-
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
-  }
-
-  if (!requireNamespace("patchwork", quietly = TRUE)) {
-    stop("patchwork is needed for this function to work. Install it via install.packages(\"patchwork\")", call. = FALSE)
-  }
-
-  if (!inherits(object, "univariate")) {
-    stop("autoplot.univariate requires a univariate object, use object = object", call. = FALSE)
-  }
 
   xvar <- attr(object, "xvar")
   nclaims <- attr(object, "nclaims")
@@ -230,7 +237,8 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
   }
 
   if ( length(show_plots) > 1 & isTRUE(coord_flip) ){
-    stop("length of `show_plots` must be equal to one in case `coord_flip = TRUE`", call. = FALSE)
+    stop("length of `show_plots` must be equal to one in
+         case `coord_flip = TRUE`", call. = FALSE)
   }
 
   if ( by == "NULL" ){
@@ -262,7 +270,8 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
   }
 
   if ( isTRUE(sort) & exposure != "NULL" ){
-    df[[xvar]] <- order_factors_exposure(df[[xvar]], df[[exposure]], decreasing = coord_flip)
+    df[[xvar]] <- order_factors_exposure(df[[xvar]], df[[exposure]],
+                                         decreasing = coord_flip)
   }
 
   sep_mark <- separation_mark(dec.mark)
@@ -271,14 +280,16 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
   not_allowed <- NULL
 
   if ( "frequency" %in% names(df) & 1 %in% show_plots ){
-    p1 <- ggbarline(background, df, dfby, xvar, "frequency", "Frequency", exposure,
+    p1 <- ggbarline(background, df, dfby, xvar,
+                    "frequency", "Frequency", exposure,
                     color_bg, color, sep_mark, by, labels,
                     sort_manual, label_width,
                     show_total, total_color, total_name)
   } else( not_allowed <- c(not_allowed, 1) )
 
   if ( "average_severity" %in% names(df) & 2 %in% show_plots ){
-    p2 <- ggbarline(background, df, dfby, xvar, "average_severity", "Average\nseverity", nclaims,
+    p2 <- ggbarline(background, df, dfby, xvar,
+                    "average_severity", "Average\nseverity", nclaims,
                     color_bg, color, sep_mark, by, labels,
                     sort_manual, label_width,
                     show_total, total_color, total_name)
@@ -286,27 +297,33 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
   } else( not_allowed <- c(not_allowed, 2) )
 
   if ( "risk_premium" %in% names(df) & 3 %in% show_plots ){
-    p3 <- ggbarline(background, df, dfby, xvar, "risk_premium", "Risk premium", exposure,
+    p3 <- ggbarline(background, df, dfby, xvar,
+                    "risk_premium", "Risk premium", exposure,
                     color_bg, color, sep_mark, by, labels,
                     sort_manual, label_width,
                     show_total, total_color, total_name)
-    if ( !all(1:2 %in% not_allowed) ) { p3 <- p3 + theme(legend.position = "none") }
+    if ( !all(1:2 %in% not_allowed) ) { p3 <- p3 +
+      theme(legend.position = "none") }
   } else( not_allowed <- c(not_allowed, 3) )
 
   if ( "loss_ratio" %in% names(df) & 4 %in% show_plots ){
-    p4 <- ggbarline(background, df, dfby, xvar, "loss_ratio", "Loss ratio", premium,
+    p4 <- ggbarline(background, df, dfby, xvar,
+                    "loss_ratio", "Loss ratio", premium,
                     color_bg, color, sep_mark, by, labels,
                     sort_manual, label_width,
                     show_total, total_color, total_name)
-    if ( !all(1:3 %in% not_allowed) ) { p4 <- p4 + theme(legend.position = "none") }
+    if ( !all(1:3 %in% not_allowed) ) { p4 <- p4 +
+      theme(legend.position = "none") }
   } else( not_allowed <- c(not_allowed, 4) )
 
   if ( "average_premium" %in% names(df) & 5 %in% show_plots ){
-    p5 <- ggbarline(background, df, dfby, xvar, "average_premium", "Average\npremium", exposure,
+    p5 <- ggbarline(background, df, dfby, xvar,
+                    "average_premium", "Average\npremium", exposure,
                     color_bg, color, sep_mark, by, labels,
                     sort_manual, label_width,
                     show_total, total_color, total_name)
-    if ( !all(1:4 %in% not_allowed) ) { p5 <- p5 + theme(legend.position = "none") }
+    if ( !all(1:4 %in% not_allowed) ) { p5 <- p5 +
+      theme(legend.position = "none") }
   } else( not_allowed <- c(not_allowed, 5) )
 
   if ( exposure %in% names(df) & 6 %in% show_plots ){
@@ -333,7 +350,8 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
 
   diff_plots <- setdiff(show_plots, plots_possible)
   if ( length (diff_plots) > 0 ){
-    message(paste0("Ignoring plots ", paste0(diff_plots, collapse = ", "), ": input is unknown"))
+    message(paste0("Ignoring plots ",
+                   paste0(diff_plots, collapse = ", "), ": input is unknown"))
   }
 
   if ( isTRUE(sort) & exposure == "NULL" ){
@@ -349,20 +367,25 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                                axis.text.x = element_blank(),
                                axis.ticks.x = element_blank()) )
 
-    plot_last <- paste0("p", plots_possible[length( plots_possible )], collapse = " + ")
+    plot_last <- paste0("p",
+                        plots_possible[length( plots_possible )],
+                        collapse = " + ")
 
     if ( length(plots_possible) == 1 ){
       plot_out <- eval(parse( text = plot_last ))
     }
 
     if ( length(plots_possible) > 1 ){
-      plot_nrs <- paste0("p", plots_possible[-length(plots_possible)], " + remove_axis", collapse = " + ")
+      plot_nrs <- paste0("p", plots_possible[-length(plots_possible)],
+                         " + remove_axis", collapse = " + ")
       plot_all <- paste0("(", plot_nrs, " + ", plot_last, ")")
-      plot_out <- eval(parse( text = plot_all )) + patchwork::plot_layout(ncol = 1, guides = 'collect')
+      plot_out <- eval(parse( text = plot_all )) +
+        patchwork::plot_layout(ncol = 1, guides = 'collect')
     }
   } else {
     plot_all <- paste0("p", plots_possible, collapse = " + ")
-    plot_out <- eval(parse( text = plot_all )) + patchwork::plot_layout(ncol = ncol, guides = 'collect')
+    plot_out <- eval(parse( text = plot_all )) +
+      patchwork::plot_layout(ncol = ncol, guides = 'collect')
   }
 
   return(plot_out)

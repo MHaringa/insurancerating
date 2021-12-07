@@ -13,9 +13,9 @@ get_data(x)
 data.frame
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-\code{get_data()} is used to get data from refitted generalized linear models, and must be
-preceded by \code{refit_glm()}.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} \code{get_data()} is used to
+get data from refitted generalized linear models, and must be preceded by
+\code{refit_glm()}.
 }
 \author{
 Martin Haringa

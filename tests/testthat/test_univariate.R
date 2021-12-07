@@ -39,12 +39,14 @@ test_that("check if average premium is calculated", {
 })
 
 test_that("check correct error message if column that does not exist is used", {
-  expect_error(univariate(MTPL2, x = areaaa, premium = premium, exposure = exposure),
+  expect_error(univariate(MTPL2, x = areaaa, premium = premium,
+                          exposure = exposure),
                "Column areaaa can't be found")
 })
 
 test_that("check if correct attribute for `by` is returned if length = 1", {
-  x <- univariate(MTPL, x = zip, nclaims = nclaims, exposure = exposure, by = bm)
+  x <- univariate(MTPL, x = zip, nclaims = nclaims, exposure = exposure,
+                  by = bm)
   expect_equal(as.character(attr(x, "by")[[1]]), "bm")
 })
 

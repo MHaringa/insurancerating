@@ -1,13 +1,16 @@
 #' Bootstrapped RMSE
 #'
-#' @description Generate `n` bootstrap replicates to compute `n` root mean squared errors.
+#' @description Generate `n` bootstrap replicates to compute `n` root mean
+#' squared errors.
 #'
 #' @param model a model object
 #' @param data data used to fit model object
 #' @param n number of bootstrap replicates (defaults to 50)
-#' @param frac fraction used in training set if cross-validation is applied (defaults to 1)
+#' @param frac fraction used in training set if cross-validation is applied
+#' (defaults to 1)
 #' @param show_progress show progress bar (defaults to TRUE)
-#' @param rmse_model numeric RMSE to show as vertical dashed line in autoplot() (defaults to NULL)
+#' @param rmse_model numeric RMSE to show as vertical dashed line in autoplot()
+#' (defaults to NULL)
 #'
 #' @return A list with components
 #' \item{rmse_bs}{numerical vector with `n` root mean squared errors}
@@ -15,10 +18,12 @@
 #'
 #' @author Martin Haringa
 #'
-#' @details To test the predictive ability of the fitted model it might be helpful to determine the variation in the computed RMSE.
-#' The variation is calculated by computing the root mean squared errors from `n` generated bootstrap replicates. More precisely,
-#' for each iteration a sample with replacement is taken from the data set and the model is refitted using this sample. Then, the root
-#' mean squared error is calculated.
+#' @details To test the predictive ability of the fitted model it might be
+#' helpful to determine the variation in the computed RMSE. The variation is
+#' calculated by computing the root mean squared errors from `n` generated
+#' bootstrap replicates. More precisely, for each iteration a sample with
+#' replacement is taken from the data set and the model is refitted using
+#' this sample. Then, the root mean squared error is calculated.
 #'
 #' @importFrom stats formula
 #' @importFrom stats predict
@@ -34,14 +39,17 @@
 #' print(x)
 #' autoplot(x)
 #'
-#' # Use 80% of records to test whether predictive ability depends on which 80% is used
-#' # This might for example be useful in case portfolio contains large claim sizes
-#' x_frac <- bootstrap_rmse(mod1, MTPL, n = 50, frac = .8, show_progress = FALSE)
+#' # Use 80% of records to test whether predictive ability depends on which 80%
+#' # is used. This might for example be useful in case portfolio contains large
+#' # claim sizes
+#' x_frac <- bootstrap_rmse(mod1, MTPL, n = 50, frac = .8,
+#'  show_progress = FALSE)
 #' autoplot(x_frac) # Variation is quite small for Poisson GLM
 #' }
 #'
 #' @export
-bootstrap_rmse <- function(model, data, n = 50, frac = 1, show_progress = TRUE, rmse_model = NULL) {
+bootstrap_rmse <- function(model, data, n = 50, frac = 1, show_progress = TRUE,
+                           rmse_model = NULL) {
 
   if ( frac > 1 | frac <= 0){
     stop("frac should be in interval: (0,1]", call. = FALSE)
@@ -108,7 +116,8 @@ as.vector.bootstrap_rmse <- function(x, ...) {
 
 #' Automatically create a ggplot for objects obtained from bootstrap_rmse()
 #'
-#' @description Takes an object produced by `bootstrap_rmse()`, and plots the simulated RMSE
+#' @description Takes an object produced by `bootstrap_rmse()`, and plots the
+#' simulated RMSE
 #'
 #' @param object bootstrap_rmse object produced by `bootstrap_rmse()`
 #' @param fill color to fill histogram (default is "steelblue")
@@ -123,14 +132,6 @@ as.vector.bootstrap_rmse <- function(x, ...) {
 #'
 #' @export
 autoplot.bootstrap_rmse <- function(object, fill = NULL, color = NULL, ...){
-
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop("ggplot2 is needed for this function to work. Install it via install.packages(\"ggplot2\")", call. = FALSE)
-  }
-
-  if (!inherits(object, "bootstrap_rmse")) {
-    stop("autoplot.bootstrap_rmse requires a bootstrap_rmse object, use object = object", call. = FALSE)
-  }
 
   rmse_bs <- object$rmse_bs
   rmse_mod <- object$rmse_mod
@@ -170,7 +171,8 @@ autoplot.bootstrap_rmse <- function(object, fill = NULL, color = NULL, ...){
                           fill = "antiquewhite3",
                           color = "grey") +
     ggplot2::geom_vline(xintercept = rmse_mod, linetype = 2) +
-    { if ( !is.null(conf_bounds)){ ggplot2::geom_vline(xintercept = conf_bounds, linetype = 3) }} +
+    { if ( !is.null(conf_bounds)){ ggplot2::geom_vline(xintercept = conf_bounds,
+                                                       linetype = 3) }} +
     ggplot2::theme_minimal() +
     ggplot2::labs(title = "Bootstrapped RMSE",
                   x = "(Simulated) RMSE",

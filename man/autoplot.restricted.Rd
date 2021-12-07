@@ -21,7 +21,8 @@ a line plot with a comparison between the restricted coefficients and
 estimated coefficients obtained from the model.
 }
 \examples{
-freq <- glm(nclaims ~ bm + zip, weights = power, family = poisson(), data = MTPL)
+freq <- glm(nclaims ~ bm + zip, weights = power, family = poisson(),
+ data = MTPL)
 zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
 freq \%>\%
   restrict_coef(., zip_df) \%>\%

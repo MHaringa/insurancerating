@@ -26,9 +26,11 @@
 
 \item{ylab}{the title of the y axis}
 
-\item{ylim}{two numeric values, specifying the lower limit and the upper limit of the scale}
+\item{ylim}{two numeric values, specifying the lower limit and the upper
+limit of the scale}
 
-\item{xlim}{two numeric values, specifying the left limit and the right limit of the scale}
+\item{xlim}{two numeric values, specifying the left limit and the right
+limit of the scale}
 
 \item{print_title}{show title (default to TRUE)}
 
@@ -42,7 +44,8 @@
 a ggplot2 object
 }
 \description{
-Takes an object produced by \code{fit_truncated_dist()}, and plots the available input.
+Takes an object produced by \code{fit_truncated_dist()}, and plots
+the available input.
 }
 \author{
 Martin Haringa

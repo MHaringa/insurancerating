@@ -26,7 +26,8 @@
 \arguments{
 \item{object}{univariate object produced by \code{univariate()}}
 
-\item{show_plots}{numeric vector of plots to be shown (default is c(1,2,3,4,5,6,7,8,9)), there are nine available plots:
+\item{show_plots}{numeric vector of plots to be shown (default is
+c(1,2,3,4,5,6,7,8,9)), there are nine available plots:
 \itemize{
 \item{1. frequency (i.e. number of claims / exposure)}
 \item{2. average severity (i.e. severity / number of claims)}
@@ -45,21 +46,26 @@
 
 \item{labels}{show labels with the exposure (default is TRUE)}
 
-\item{sort}{sort (or order) risk factor into descending order by exposure (default is FALSE)}
+\item{sort}{sort (or order) risk factor into descending order by exposure
+(default is FALSE)}
 
-\item{sort_manual}{sort (or order) risk factor into own ordering; should be a character vector (default is NULL)}
+\item{sort_manual}{sort (or order) risk factor into own ordering; should be
+a character vector (default is NULL)}
 
 \item{dec.mark}{decimal mark; defaults to ","}
 
-\item{color}{change the color of the points and line ("dodgerblue" is default)}
+\item{color}{change the color of the points and line ("dodgerblue" is
+default)}
 
 \item{color_bg}{change the color of the histogram ("#f8e6b1" is default)}
 
 \item{label_width}{width of labels on the x-axis (10 is default)}
 
-\item{coord_flip}{flip cartesian coordinates so that horizontal becomes vertical, and vertical, horizontal (default is FALSE)}
+\item{coord_flip}{flip cartesian coordinates so that horizontal becomes
+vertical, and vertical, horizontal (default is FALSE)}
 
-\item{show_total}{show line for total if by is used in univariate (default is FALSE)}
+\item{show_total}{show line for total if by is used in univariate (default
+is FALSE)}
 
 \item{total_color}{change the color for the total line ("black" is default)}
 
@@ -71,11 +77,13 @@
 a ggplot2 object
 }
 \description{
-Takes an object produced by \code{univariate()}, and plots the available input.
+Takes an object produced by \code{univariate()}, and plots the
+available input.
 }
 \examples{
 library(ggplot2)
-x <- univariate(MTPL2, x = area, severity = amount, nclaims = nclaims, exposure = exposure)
+x <- univariate(MTPL2, x = area, severity = amount, nclaims = nclaims,
+exposure = exposure)
 autoplot(x)
 autoplot(x, show_plots = c(6,1), background = FALSE, sort = TRUE)
 

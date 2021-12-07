@@ -13,15 +13,19 @@ rlnormt(n, meanlog, sdlog, lower, upper)
 
 \item{sdlog}{standard deviation of the distribution on the log scale}
 
-\item{lower}{numeric. Observations below this threshold are not present in the sample.}
+\item{lower}{numeric. Observations below this threshold are not present in
+the sample.}
 
-\item{upper}{numeric. Observations above this threshold are not present in the sample.}
+\item{upper}{numeric. Observations above this threshold are not present in
+the sample.}
 }
 \value{
 The length of the result is determined by \code{n}.
 }
 \description{
-Random generation for the truncated log normal distribution whose logarithm has mean equal to meanlog and standard deviation equal to sdlog.
+Random generation for the truncated log normal distribution
+whose logarithm has mean equal to meanlog and standard deviation equal to
+sdlog.
 }
 \author{
 Martin Haringa

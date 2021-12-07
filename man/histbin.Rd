@@ -39,11 +39,15 @@ histbin(
 a ggplot2 object
 }
 \description{
-Visualize the distribution of a single continuous variable by dividing the x axis into bins and counting the number of observations in each bin.
-Data points that are considered outliers can be binned together. This might be helpful to display numerical data over a very wide range of values in a compact way.
+Visualize the distribution of a single continuous variable by dividing the x
+axis into bins and counting the number of observations in each bin.
+Data points that are considered outliers can be binned together. This might
+be helpful to display numerical data over a very wide range of values in a
+compact way.
 }
 \details{
-Wrapper function around \code{ggplot2::geom_histogram()}. The method is based on suggestions from \url{https://edwinth.github.io/blog/outlier-bin/}.
+Wrapper function around \code{ggplot2::geom_histogram()}. The method is
+based on suggestions from \url{https://edwinth.github.io/blog/outlier-bin/}.
 }
 \examples{
 histbin(MTPL2, premium)

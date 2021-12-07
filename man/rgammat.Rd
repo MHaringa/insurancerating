@@ -13,15 +13,18 @@ rgammat(n, scale = scale, shape = shape, lower, upper)
 
 \item{shape}{shape parameter}
 
-\item{lower}{numeric. Observations below this threshold are not present in the sample.}
+\item{lower}{numeric. Observations below this threshold are not present in
+the sample.}
 
-\item{upper}{numeric. Observations above this threshold are not present in the sample.}
+\item{upper}{numeric. Observations above this threshold are not present in
+the sample.}
 }
 \value{
 The length of the result is determined by \code{n}.
 }
 \description{
-Random generation for the truncated Gamma distribution with parameters shape and scale.
+Random generation for the truncated Gamma distribution with
+parameters shape and scale.
 }
 \author{
 Martin Haringa

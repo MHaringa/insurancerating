@@ -1,5 +1,78 @@
+#' Set reference group to the group with largest exposure
+#'
+#' @description This function specifies the first level of a factor to the level
+#' with the largest exposure. Levels of factors are sorted using an alphabetic
+#' ordering. If the factor is used in a regression context, then the first level
+#' will be the reference. For insurance applications it is common to specify
+#' the reference level to the level with the largest exposure.
+#'
+#' @param x an unordered factor
+#' @param weight a vector containing weights (e.g. exposure). Should be numeric.
+#'
+#' @author Martin Haringa
+#'
+#' @references Kaas, Rob & Goovaerts, Marc & Dhaene, Jan & Denuit, Michel.
+#' (2008). Modern Actuarial Risk Theory: Using R. doi:10.1007/978-3-540-70998-5.
+#'
+#' @importFrom stats relevel
+#'
+#' @return a factor of the same length as x
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#' df <- chickwts %>%
+#' mutate(across(where(is.character), as.factor)) %>%
+#' mutate(across(where(is.factor), ~biggest_reference(., weight)))
+#' }
+#'
+#' @export
+biggest_reference <- function(x, weight) {
+  if(!is.numeric(weight)) weight <- is.numeric(weight)
+  counts <- sort(tapply(weight, x, FUN = sum), decreasing = TRUE)
+  xrelevel <- stats::relevel(x, ref = names(counts)[1])
+  attr(xrelevel, "xoriginal") <- levels(x)
+  return(xrelevel)
+}
+
+
+#' Fisher's natural breaks classification
+#'
+#' @description The function provides an interface to finding class intervals
+#' for continuous numerical variables, for example for choosing colours for
+#' plotting maps.
+#'
+#' @param vec a continuous numerical variable
+#' @param n number of classes required (n = 7 is default)
+#' @param diglab number of digits (n = 2 is default)
+#'
+#' @return Vector with clustering
+#'
+#' @importFrom classInt classIntervals
+#'
+#' @author Martin Haringa
+#'
+#' @details The "fisher" style uses the algorithm proposed by W. D. Fisher
+#' (1958) and discussed by Slocum et al. (2005) as the Fisher-Jenks algorithm.
+#' This function is adopted from the classInt package.
+#'
+#' @references Bivand, R. (2018). classInt: Choose Univariate Class Intervals.
+#' R package version 0.2-3. <https://CRAN.R-project.org/package=classInt>
+#' @references Fisher, W. D. 1958 "On grouping for maximum homogeneity", Journal
+#' of the American Statistical Association, 53, pp. 789–798.
+#' doi: 10.1080/01621459.1958.10501479.
+#'
+#' @export fisher
+fisher <- function(vec, n = 7, diglab = 2){
+  cluster <- classInt::classIntervals(vec, n = n, style = 'fisher',
+                                      intervalClosure = 'right')[[2]]
+  cut(vec, breaks = cluster, include.lowest = TRUE, dig.lab = diglab)
+}
+
+
 #' @keywords internal
 make_stars <- function(pval) {
+  # returns character string
   if ( is.na(pval) ) {pval <- is.numeric(pval)}
   if(pval <= 0.001)
     stars = "***"
@@ -23,7 +96,8 @@ elapsed_days <- function(end_date){
 matchColClasses <- function(df1, df2) {
 
   sharedColNames <- names(df1)[names(df1) %in% names(df2)]
-  sharedColTypes <- sapply(df1[,sharedColNames, drop = FALSE], class)
+  sharedColTypes <- vapply(df1[, sharedColNames, drop = FALSE], class,
+                           FUN.VALUE = character(1))
 
   for (n in sharedColNames) {
     attributes(df2[,n]) <- attributes(df1[,n])
@@ -94,9 +168,11 @@ scale_second_axis <- function(background, df, dfby, f_axis, s_axis, by){
 #' @keywords internal
 separation_mark <- function(dec.mark){
   if ( dec.mark == "," ){
-    function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE)
+    function(x) format(x, big.mark = ".", decimal.mark = ",",
+                       scientific = FALSE)
   } else{
-    function(x) format(x, big.mark = ",", decimal.mark = ".", scientific = FALSE)
+    function(x) format(x, big.mark = ",", decimal.mark = ".",
+                       scientific = FALSE)
   }
 }
 
@@ -105,11 +181,13 @@ separation_mark <- function(dec.mark){
 sort_x_axis <- function(sort_manual, label_width){ # hist_sort
   if ( !is.null(sort_manual) ){
     list(
-      ggplot2::scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = label_width), limits = sort_manual )
+      ggplot2::scale_x_discrete(labels = function(x)
+        stringr::str_wrap(x, width = label_width), limits = sort_manual )
     )
   } else{
     list(
-      ggplot2::scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = label_width) )
+      ggplot2::scale_x_discrete(labels = function(x)
+        stringr::str_wrap(x, width = label_width) )
     )
   }
 }
@@ -143,14 +221,19 @@ darken_color <- function(color, amount = 0.25, n = 3){
 
 
 #' @keywords internal
-ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg, sep_mark, by){
+ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg,
+                      sep_mark, by){
   fill_bg <- lighten_color(color_bg)[2]
   if ( isTRUE(background) & by == "NULL" ){
 
       list(
-        ggplot2::geom_bar(data = df, aes(x = .data[[xvar]], y = .data[["s_axis_scale"]]),
-                          stat = "identity", color = color_bg, fill = fill_bg, alpha = 1),
-        ggplot2::scale_y_continuous(sec.axis = sec_axis(~ . * max(df[[s_axis]]) / max(df[[f_axis]]),
+        ggplot2::geom_bar(data = df, aes(x = .data[[xvar]],
+                                         y = .data[["s_axis_scale"]]),
+                          stat = "identity", color = color_bg,
+                          fill = fill_bg, alpha = 1),
+        ggplot2::scale_y_continuous(sec.axis = sec_axis(~ . *
+                                                          max(df[[s_axis]]) /
+                                                          max(df[[f_axis]]),
                                                         name = s_axis,
                                                         labels = sep_mark),
                                     labels = sep_mark,
@@ -163,9 +246,15 @@ ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg, sep_
   else if ( isTRUE(background) & by != "NULL" ){
 
     list(
-      ggplot2::geom_bar(data = df, aes(x = .data[[xvar]], y = .data[["s_axis_scale"]]),
-                        stat = "identity", color = color_bg, fill = fill_bg, alpha = 1),
-      ggplot2::scale_y_continuous(sec.axis = sec_axis(~ . * max(df[[s_axis]], na.rm = TRUE) / max(dfby[[f_axis]], na.rm = TRUE),
+      ggplot2::geom_bar(data = df, aes(x = .data[[xvar]],
+                                       y = .data[["s_axis_scale"]]),
+                        stat = "identity", color = color_bg, fill = fill_bg,
+                        alpha = 1),
+      ggplot2::scale_y_continuous(sec.axis = sec_axis(~ . *
+                                                        max(df[[s_axis]],
+                                                            na.rm = TRUE) /
+                                                        max(dfby[[f_axis]],
+                                                            na.rm = TRUE),
                                                       name = s_axis,
                                                       labels = sep_mark),
                                   labels = sep_mark,
@@ -243,9 +332,10 @@ ggpointline <- function(df, dfby, xvar, y, color, by,
 gglabels <- function(background, labels, df, xvar, sep_mark){
   if ( isTRUE(background) & isTRUE(labels) ){
     list(
-      ggplot2::geom_text(data = df, aes(x = .data[[xvar]],
-                                        y = .data[["s_axis_scale"]],
-                                        label = sep_mark(.data[["s_axis_print"]])),
+      ggplot2::geom_text(data = df,
+                         aes(x = .data[[xvar]],
+                             y = .data[["s_axis_scale"]],
+                             label = sep_mark(.data[["s_axis_print"]])),
                          vjust = "inward",
                          size = 3)
     )
@@ -299,7 +389,8 @@ ggbarline <- function(background, df, dfby, xvar, f_axis,
                       show_total, total_color, total_name){
   df <- scale_second_axis(background, df, dfby, f_axis, exposure, by)
   ggplot2::ggplot() +
-    ggbarplot(background, df, dfby, xvar, f_axis, exposure, color_bg, sep_mark, by) +
+    ggbarplot(background, df, dfby, xvar, f_axis, exposure,
+              color_bg, sep_mark, by) +
     ggpointline(df, dfby, xvar, f_axis, color, by,
                 show_total, total_color, total_name) +
     ggplot2::labs(y = f_axis_name, x = xvar) +
@@ -314,7 +405,8 @@ ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip){
   fill_bg <- lighten_color(color_bg)[2]
   ggplot2::ggplot(data = df) +
     ggplot2::geom_bar(data = df, aes(x = .data[[xvar]], y = .data[[f_axis]]),
-                      stat = "identity", color = color_bg, fill = fill_bg, alpha = 1) +
+                      stat = "identity", color = color_bg,
+                      fill = fill_bg, alpha = 1) +
     ggplot2::theme_minimal() +
     ggplot2::labs(y = f_axis, x = xvar) +
     ggplot2::scale_y_continuous(labels = sep_mark) +
@@ -398,24 +490,31 @@ overlap_left <- function(positions, cut_off) {
 split_x_fn <- function(data, x, left = NULL, right = NULL){
 
   vec <- data[[x]]
-  vec_new <- data.table::data.table(data)[get(x) > right, c(x) := right][get(x) < left, c(x) := left][,get(x)]
+  vec_new <- data.table::data.table(data)[get(x) > right, c(x) := right][
+    get(x) < left, c(x) := left][,get(x)]
 
   if ( !is.null(left) ){
-    if ( left <= min(vec, na.rm = TRUE)){ stop( "Left should be greater than minimum value", call. = FALSE ) }
-    if ( left >= max(vec, na.rm = TRUE)){ stop( "Left should be less than maximum value", call. = FALSE )}
+    if ( left <= min(vec, na.rm = TRUE)){
+      stop( "Left should be greater than minimum value", call. = FALSE ) }
+    if ( left >= max(vec, na.rm = TRUE)){
+      stop( "Left should be less than maximum value", call. = FALSE )}
   }
 
   if ( !is.null(right) ){
-    if ( right >= max(vec, na.rm = TRUE)){ stop( "Right should be less than maximum value", call. = FALSE ) }
-    if ( right <= min(vec, na.rm = TRUE)){ stop( "Right should be greater than minimum value", call. = FALSE)}
+    if ( right >= max(vec, na.rm = TRUE)){
+      stop( "Right should be less than maximum value", call. = FALSE ) }
+    if ( right <= min(vec, na.rm = TRUE)){
+      stop( "Right should be greater than minimum value", call. = FALSE)}
   }
 
   if ( !is.null(left) & !is.null(right)){
-    if ( left >= right ){ stop( "Right should be larger than left", call. = FALSE) }
+    if ( left >= right ){
+      stop( "Right should be larger than left", call. = FALSE) }
   }
 
   l1 <- split(vec_new, cut(vec_new,
-                           breaks = c(min(vec, na.rm = TRUE), left, right - 1e-10, max(vec, na.rm = TRUE)),
+                           breaks = c(min(vec, na.rm = TRUE), left,
+                                      right - 1e-10, max(vec, na.rm = TRUE)),
                            include.lowest = TRUE))
 
   l1 <- lapply(l1, function(x) data.frame(x = x))
@@ -447,14 +546,6 @@ moments <- function(x, dist = c("gamma", "lognormal")){
 }
 
 
-##' @keywords internal
-#dtruncated_gamma <- function(x, scale, shape) {
-#  if (!requireNamespace("truncdist", quietly = TRUE)) {
-#    stop("Package \"truncdist\" needed for this function to work. Please install it.",
-#         call. = FALSE)
-#  }
-#  truncdist::dtrunc(x, "gamma", a = left, b = right, scale = scale, shape = shape)
-#}
 
 
 

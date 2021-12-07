@@ -9,10 +9,10 @@ restrict_coef(model, restrictions)
 \arguments{
 \item{model}{object of class glm/restricted}
 
-\item{restrictions}{data.frame with two columns containing restricted data. The first
-column, with the name of the risk factor as column name, must contain the
-levels of the risk factor. The second column must contain the restricted
-coefficients.}
+\item{restrictions}{data.frame with two columns containing restricted data.
+The first column, with the name of the risk factor as column name, must
+contain the levels of the risk factor. The second column must contain the
+restricted coefficients.}
 }
 \value{
 Object of class restricted.
@@ -28,8 +28,9 @@ Although restrictions could be applied either to the frequency or
 the severity model, it is more appropriate to impose the restrictions
 on the premium model. This can be achieved by calculating the pure
 premium for each record (i.e. expected number of claims times the expected
-claim amount), then fitting an "unrestricted" Gamma GLM to the pure premium,
-and then imposing the restrictions in a final "restricted" Gamma GLM.
+claim amount), then fitting an "unrestricted" Gamma GLM to the pure
+premium,and then imposing the restrictions in a final "restricted" Gamma
+GLM.
 }
 \examples{
 \dontrun{
@@ -39,7 +40,8 @@ and then imposing the restrictions in a final "restricted" Gamma GLM.
 library(dplyr)
 freq <- glm(nclaims ~ bm + zip, offset = log(exposure), family = poisson(),
              data = MTPL)
-sev <- glm(amount ~ bm + zip, weights = nclaims, family = Gamma(link = "log"),
+sev <- glm(amount ~ bm + zip, weights = nclaims,
+            family = Gamma(link = "log"),
             data = MTPL \%>\% filter(amount > 0))
 
 # Add predictions for freq and sev to data, and calculate premium
@@ -65,7 +67,8 @@ rating_factors(burn_rst)
 
 }
 \seealso{
-\code{\link[=refit_glm]{refit_glm()}} for refitting the restricted model, and \code{\link[=autoplot.restricted]{autoplot.restricted()}}.
+\code{\link[=refit_glm]{refit_glm()}} for refitting the restricted model,
+and \code{\link[=autoplot.restricted]{autoplot.restricted()}}.
 
 Other refit_glm: 
 \code{\link{smooth_coef}()}

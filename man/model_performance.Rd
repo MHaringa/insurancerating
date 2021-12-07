@@ -26,8 +26,10 @@ The following indices are computed:
 Adopted from \code{performance::model_performance()}.
 }
 \examples{
-m1 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = MTPL2)
-m2 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(), data = MTPL2)
+m1 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
+          data = MTPL2)
+m2 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
+          data = MTPL2)
 model_performance(m1, m2)
 
 }
