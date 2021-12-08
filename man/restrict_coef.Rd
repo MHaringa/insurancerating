@@ -21,7 +21,7 @@ Object of class restricted.
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Add restrictions, like a bonus-malus structure, on the risk
 factors used in the model. \code{restrict_coef()} must always be followed
-by \code{refit_glm()}.
+by \code{update_glm()}.
 }
 \details{
 Although restrictions could be applied either to the frequency or
@@ -59,7 +59,7 @@ burn <- glm(premium ~ bm + zip, weights = exposure,
 # Fit restricted model
 burn_rst <- burn \%>\%
   restrict_coef(., zip_df) \%>\%
-  refit_glm()
+  update_glm()
 
 # Show rating factors
 rating_factors(burn_rst)
@@ -67,14 +67,14 @@ rating_factors(burn_rst)
 
 }
 \seealso{
-\code{\link[=refit_glm]{refit_glm()}} for refitting the restricted model,
+\code{\link[=update_glm]{update_glm()}} for refitting the restricted model,
 and \code{\link[=autoplot.restricted]{autoplot.restricted()}}.
 
-Other refit_glm: 
+Other update_glm: 
 \code{\link{smooth_coef}()}
 }
 \author{
 Martin Haringa
 }
 \concept{autoplot.restricted}
-\concept{refit_glm}
+\concept{update_glm}

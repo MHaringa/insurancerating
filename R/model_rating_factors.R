@@ -273,7 +273,6 @@ rating_factors <- function(..., model_data = NULL, exposure = NULL,
 
   cols <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
 
-
   rf_list <- list()
   for (i in seq_len(length(cols))){
     df <- eval.parent(substitute(
@@ -406,8 +405,6 @@ as.data.frame.riskfactor <- function(x, ...) {
 #'
 #' @import ggplot2
 #' @importFrom patchwork wrap_plots
-#' @importFrom tidyr pivot_longer
-#' @importFrom tidyselect all_of
 #'
 #' @examples
 #' library(dplyr)
@@ -435,15 +432,20 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
   expon <- object$expon
 
   df <- df[df$risk_factor != df$level, ]
+  df_dt <- data.table::setDT(df)
+  df_long_dt <- data.table::melt(df_dt,
+                                 id.vars = names(df_dt)[!names(df_dt) %in%
+                                                          models_nm],
+                                 measure.vars = models_nm,
+                                 variable.name = "model",
+                                 value.name = "est")
+  df_long <- data.table::setDF(df_long_dt)
 
-  df_long <- tidyr::pivot_longer(df, cols = tidyselect::all_of(models_nm),
-                                 names_to = "model", values_to = "est")
   df_long$model <- gsub("^est_", "", df_long$model)
 
   if ( !isTRUE(expon) ){
     df_long$est = exp(df_long$est)
   }
-
 
   if ( dec.mark == "," ){
     sep_fn <- function(x) format(x, big.mark = ".", decimal.mark = ",",

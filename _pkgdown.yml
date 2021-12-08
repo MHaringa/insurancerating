@@ -21,7 +21,7 @@ reference:
       - restrict_coef
       - smooth_coef
       - refit_glm
-      - get_data
+      - construct_model_points
       - autoplot.restricted
       - autoplot.smooth
   - title: "Rating factors"

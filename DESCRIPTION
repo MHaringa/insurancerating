@@ -31,10 +31,7 @@ Imports:
     mgcv,
     patchwork,
     scales,
-    stringr, 
-    tidyr, 
-    tidyselect, 
-    truncdist
+    stringr
 Depends: R (>= 3.3)
 Suggests: 
     spelling,

@@ -39,8 +39,6 @@ moments <- function(x, dist = c("gamma", "lognormal")){
 #'
 #' @importFrom stats sd
 #' @importFrom utils capture.output
-#' @importFrom truncdist dtrunc
-#' @importFrom truncdist ptrunc
 #' @importFrom fitdistrplus fitdist
 #'
 #' @return fitdist returns an object of class "fitdist"
@@ -92,7 +90,7 @@ moments <- function(x, dist = c("gamma", "lognormal")){
 #'
 #' @export
 fit_truncated_dist <- function (y, dist = c("gamma", "lognormal"), left = NULL,
-                                 right = NULL, start = NULL,
+                                right = NULL, start = NULL,
                                 print_initial = TRUE){
 
   dist <- match.arg(dist)
@@ -109,12 +107,12 @@ fit_truncated_dist <- function (y, dist = c("gamma", "lognormal"), left = NULL,
     ptruncated_log_normal = NULL
   if (dist == "gamma") {
     dtruncated_gamma <<- function(x, scale, shape) {
-      truncdist::dtrunc(x, "gamma", a = left, b = right,
-                        scale = scale, shape = shape)
+      dtrunc(x, "gamma", a = left, b = right,
+             scale = scale, shape = shape)
     }
     ptruncated_gamma <<- function(q, scale, shape) {
-      truncdist::ptrunc(q, "gamma", a = left, b = right,
-                        scale = scale, shape = shape)
+      ptrunc(q, "gamma", a = left, b = right,
+             scale = scale, shape = shape)
     }
     if (is.null(start)) {
       sc <- seq(1, x$scale, by = 100)
@@ -128,12 +126,12 @@ fit_truncated_dist <- function (y, dist = c("gamma", "lognormal"), left = NULL,
   }
   if (dist == "lognormal") {
     dtruncated_log_normal <<- function(x, meanlog, sdlog) {
-      truncdist::dtrunc(x, "lnorm", a = left, b = right,
-                        meanlog = meanlog, sdlog = sdlog)
+      dtrunc(x, "lnorm", a = left, b = right,
+             meanlog = meanlog, sdlog = sdlog)
     }
     ptruncated_log_normal <<- function(q, meanlog, sdlog) {
-      truncdist::ptrunc(q, "lnorm", a = left, b = right,
-                        meanlog = meanlog, sdlog = sdlog)
+      ptrunc(q, "lnorm", a = left, b = right,
+             meanlog = meanlog, sdlog = sdlog)
     }
     if (is.null(start)) {
       m <- seq(0.1, x$meanlog, by = 0.5)
@@ -255,7 +253,6 @@ rgammat <- function(n, scale = scale, shape = shape, lower, upper) {
 #' @param print_trunc number of digits for truncation values to print
 #' @param ... other plotting parameters to affect the plot
 #'
-#' @importFrom truncdist ptrunc
 #' @import ggplot2
 #'
 #' @author Martin Haringa
@@ -288,13 +285,13 @@ autoplot.truncated_dist <- function(object, geom_ecdf = c("point", "step"),
   ptruncated_gamma = ptruncated_log_normal = NULL
 
   ptruncated_gamma <<- function(q, scale, shape) { # x was q
-    truncdist::ptrunc(q, "gamma", a = left, b = right,
-                      scale = scale, shape = shape)
+    ptrunc(q, "gamma", a = left, b = right,
+           scale = scale, shape = shape)
   }
 
   ptruncated_log_normal <<- function(q, meanlog, sdlog) {
-    truncdist::ptrunc(q, "lnorm", a = left, b = right,
-                      meanlog = meanlog, sdlog = sdlog)
+    ptrunc(q, "lnorm", a = left, b = right,
+           meanlog = meanlog, sdlog = sdlog)
   }
 
   geom_ecdf <- match.arg(geom_ecdf)

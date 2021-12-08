@@ -3,7 +3,7 @@
 #' @description `r lifecycle::badge('experimental')`
 #'  Add restrictions, like a bonus-malus structure, on the risk
 #'  factors used in the model. `restrict_coef()` must always be followed
-#'  by `refit_glm()`.
+#'  by `update_glm()`.
 #'
 #' @author Martin Haringa
 #'
@@ -21,9 +21,9 @@
 #'   contain the levels of the risk factor. The second column must contain the
 #'   restricted coefficients.
 #'
-#' @family refit_glm
+#' @family update_glm
 #' @family autoplot.restricted
-#' @seealso [refit_glm()] for refitting the restricted model,
+#' @seealso [update_glm()] for refitting the restricted model,
 #' and [autoplot.restricted()].
 #'
 #' @return Object of class restricted.
@@ -55,7 +55,7 @@
 #' # Fit restricted model
 #' burn_rst <- burn %>%
 #'   restrict_coef(., zip_df) %>%
-#'   refit_glm()
+#'   update_glm()
 #'
 #' # Show rating factors
 #' rating_factors(burn_rst)
@@ -72,10 +72,12 @@ restrict_coef <- function(model, restrictions){
     model_call <- model$call
     model_out <- model
 
-    rfdf <- rating_factors(model)$df
+    rfdf <- rating_factors1(model)
     rst_lst <- list(restrictions)
     names(rst_lst) <- names(restrictions[1])
     restricted_df <- restrict_df(restrictions)
+    new_col_nm <- NULL
+    old_col_nm <- NULL
   }
 
   if ( inherits(model, c("smooth", "restricted")) ){
@@ -90,6 +92,8 @@ restrict_coef <- function(model, restrictions){
     rst_lst <- model$restrictions_lst
     rst_lst[[names(restrictions)[1]]] <- restrictions
     restricted_df <- restrict_df(restrictions)
+    new_col_nm <- model$new_col_nm
+    old_col_nm <- model$old_col_nm
   }
 
   if ( inherits(model, "restricted") ){
@@ -103,7 +107,12 @@ restrict_coef <- function(model, restrictions){
   fm_remove <- update_formula_remove(fm_no_offset, names(restrictions)[1])
   fm_add <- update_formula_add(offset_term, fm_remove, names(restrictions)[2])
   df_restricted <- add_restrictions_df(df_new, restrictions)
-  rst_lst_nm <- unique(Reduce(c, lapply(rst_lst, names)))
+
+  new_col_nm <- unique(append(new_col_nm,
+                              setdiff(names(restrictions),
+                                      unique(rfdf$risk_factor))))
+  old_col_nm <- unique(append(old_col_nm, setdiff(names(restrictions),
+                                                  new_col_nm)))
 
   rt <- list(formula_restricted = fm_add[[1]],
              formula_removed = fm_remove,
@@ -115,17 +124,19 @@ restrict_coef <- function(model, restrictions){
              rf_restricted_df = restricted_df,
              model_call = model_call,
              model_out = model_out,
-             getdata_nm = rst_lst_nm)
+             new_col_nm = new_col_nm,
+             old_col_nm = old_col_nm)
   attr(rt, "class") <- "restricted"
   invisible(rt)
 }
+
 
 
 #' Smooth coefficients in the model
 #'
 #' @description `r lifecycle::badge('experimental')`
 #'  Apply smoothing on the risk factors used in the model. `smooth_coef()`
-#'  must always be followed by `refit_glm()`.
+#'  must always be followed by `update_glm()`.
 #'
 #' @author Martin Haringa
 #'
@@ -143,9 +154,9 @@ restrict_coef <- function(model, restrictions){
 #' @param degree order of polynomial
 #' @param breaks numerical vector with new clusters for x
 #'
-#' @family refit_glm
+#' @family update_glm
 #' @family autoplot.smooth
-#' @seealso [refit_glm()] for refitting the smoothed model,
+#' @seealso [update_glm()] for refitting the smoothed model,
 #' and [autoplot.smooth()].
 #'
 #' @return Object of class smooth
@@ -199,7 +210,7 @@ restrict_coef <- function(model, restrictions){
 #'   smooth_coef(x_cut = "age_policyholder_freq_cat",
 #'               x_org = "age_policyholder",
 #'               breaks = seq(18, 95, 5)) %>%
-#'   refit_glm()
+#'   update_glm()
 #'
 #' # Show new rating factors
 #' rating_factors(burn_restricted)
@@ -220,8 +231,10 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL){
     model_call <- model$call
     model_out <- model
 
-    rfdf <- rating_factors(model)$df
+    rfdf <- rating_factors1(model)
     rst_lst <- NULL
+    new_col_nm <- NULL
+    old_col_nm <- NULL
   }
 
   if ( inherits(model, c("smooth", "restricted")) ){
@@ -234,7 +247,12 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL){
 
     rfdf <- model$rating_factors
     rst_lst <- model$restrictions_lst
+    new_col_nm <- model$new_col_nm
+    old_col_nm <- model$old_col_nm
   }
+
+  old_col_nm <- append(old_col_nm, x_cut)
+  new_col_nm <- append(new_col_nm, paste0(x_org, "_smooth"))
 
   fm_remove <- update_formula_remove(fm_no_offset, x_cut)
   fm_add <- update_formula_add(offset_term, fm_remove, paste0(x_cut, "_smooth"))
@@ -274,7 +292,9 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL){
              restrictions_lst = rst_lst,
              new_rf = df_new_rf,
              degree = degree,
-             model_out = model_out)
+             model_out = model_out,
+             new_col_nm = new_col_nm,
+             old_col_nm = old_col_nm)
   attr(st, "class") <- "smooth"
   invisible(st)
 }
@@ -326,7 +346,9 @@ print.smooth <- function(x, ...){
 #' @author Martin Haringa
 #'
 #' @importFrom dplyr left_join
-#' @importFrom tidyr pivot_longer
+#' @importFrom data.table melt
+#' @importFrom data.table setDT
+#' @importFrom data.table setDF
 #' @import ggplot2
 #'
 #' @return Object of class ggplot2
@@ -354,11 +376,18 @@ autoplot.restricted <- function(object, ...){
   naam_rf <- matchColClasses(naam_rst, naam_rf)
 
   koppel <- dplyr::left_join(naam_rst, naam_rf, by = "level")
-  koppel <- tidyr::pivot_longer(koppel,
-                                cols = c(names(naam_rst)[2], names(rf)[3]),
-                                names_to = "type",
-                                values_to = "Coef")
+  meas_vars <- c(names(naam_rst)[2], names(rf)[3])
+
+  koppel_dt <- data.table::setDT(koppel)
+  koppel_ldt <- data.table::melt(koppel_dt,
+                                 id.vars = names(koppel_dt)[!names(
+                                   koppel_dt) %in% meas_vars],
+                                 measure.vars = meas_vars,
+                                 variable.name = "type",
+                                 value.name = "Coef")
+  koppel <- data.table::setDF(koppel_ldt)
   koppel$level <- as.factor(koppel$level)
+  koppel$type <- as.character(koppel$type)
 
   koppel$type[koppel$type == names(naam_rst)[2]] <- "restricted"
   koppel$type[koppel$type == names(rf)[3]] <- "unrestricted"
@@ -385,7 +414,6 @@ autoplot.restricted <- function(object, ...){
 #' @author Martin Haringa
 #'
 #' @importFrom dplyr left_join
-#' @importFrom tidyr pivot_longer
 #' @import ggplot2
 #' @importFrom scales ordinal
 #'
@@ -458,10 +486,11 @@ autoplot.smooth <- function(object, ...){
     ggplot2::theme_minimal()
 }
 
+
 #' Refitting Generalized Linear Models
 #'
 #' @description `r lifecycle::badge('experimental')`
-#'  `refit_glm()` is used to refit generalized linear models, and must be
+#'  `update_glm()` is used to refit generalized linear models, and must be
 #'  preceded by `restrict_coef()`.
 #'
 #' @param x Object of class restricted or of class smooth
@@ -474,7 +503,7 @@ autoplot.smooth <- function(object, ...){
 #' @return Object of class GLM
 #'
 #' @export
-refit_glm <- function(x){
+update_glm <- function(x){
 
   if( !inherits(x, c("restricted", "smooth")) ) {
     stop("Input must be of class restricted or of class smooth", call. = FALSE)
@@ -497,33 +526,15 @@ refit_glm <- function(x){
     attr(y, "class") <- append(class(y), "refitrestricted")
   }
 
+  rf <- x$rating_factors
+  rf2 <- unique(rf$risk_factor[rf$risk_factor != "(Intercept)"])
+
+  attr(y, "new_col_nm") <- x$new_col_nm
+  attr(y, "old_col_nm") <- x$old_col_nm
+  attr(y, "rf") <- rf2
   y
 }
 
-#' Get data from refitted Generalized Linear Model
-#'
-#' @description `r lifecycle::badge('experimental')` `get_data()` is used to
-#' get data from refitted generalized linear models, and must be preceded by
-#' `refit_glm()`.
-#'
-#' @param x Object of class refitsmooth or of class refitrestricted
-#'
-#' @author Martin Haringa
-#'
-#' @return data.frame
-#'
-#' @export
-get_data <- function(x){
-  if( !inherits(x, c("refitsmooth", "refitrestricted")) ) {
-    stop("Input must be of class refitsmooth or of class refitrestricted",
-         call. = FALSE)
-  }
-  xdf <- x$data
-  xdf[!names(xdf) %in% c("breaks_min", "breaks_max",
-                         "start_oc", "end_oc",
-                         "start_", "end_",
-                         "avg_", "risk_factor")]
-}
 
 
 

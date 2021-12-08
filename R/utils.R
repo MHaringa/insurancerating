@@ -96,8 +96,9 @@ elapsed_days <- function(end_date){
 matchColClasses <- function(df1, df2) {
 
   sharedColNames <- names(df1)[names(df1) %in% names(df2)]
-  sharedColTypes <- vapply(df1[, sharedColNames, drop = FALSE], class,
-                           FUN.VALUE = character(1))
+  #sharedColTypes <- vapply(df1[, sharedColNames, drop = FALSE], class,
+  #                         FUN.VALUE = character(1))
+  sharedColTypes <- sapply(df1[,sharedColNames, drop = FALSE], class)
 
   for (n in sharedColNames) {
     attributes(df2[,n]) <- attributes(df1[,n])
@@ -543,6 +544,62 @@ moments <- function(x, dist = c("gamma", "lognormal")){
     sdlog <- log( v / (m ^ 2) + 1)
     return(list(meanlog = meanlog, sdlog = sdlog))
   }
+}
+
+#' @keywords internal
+dtrunc <- function( x, spec, a = -Inf, b= Inf, ... ){
+  ###
+  ### this function computes the density function defined by the spec argument
+  ### for the vector of quantile values in x.  The random variable is truncated
+  ### to be in the interval ( a, b )
+  ###
+  ### Arguments
+  ### x = a numeric vector of quantiles
+  ### spec = a character value for the name of the distribution (e.g., "norm")
+  ### ... = other arguments passed to the corresponding density function
+  ###
+  if ( a >= b )
+    stop( "argument a is greater than or equal to b" )
+  tt <- rep( 0, length( x ) )
+  g <- get( paste( "d", spec, sep="" ), mode="function" )
+  G <- get( paste( "p", spec, sep="" ), mode="function" )
+  G.a <- G( a, ... )
+  G.b <- G( b, ... )
+  if ( G.a == G.b ) {
+    stop( "Trunction interval is not inside the domain of the density function" )
+  }
+  tt[x >= a & x <= b] <- g( x[x >= a & x <= b], ...) / ( G( b, ... ) - G( a, ... ) )
+  return( tt )
+}
+
+#' @keywords internal
+ptrunc <- function( q, spec, a = -Inf, b = Inf, ... )
+{
+  ###
+  ### this function computes the distribution function defined by the spec argument
+  ### for the vector of quantile values in x.  The random variable is truncated
+  ### to be in the interval ( a, b )
+  ###
+  ### Arguments
+  ### q = a numeric vector of quantiles
+  ### spec = a character value for the name of the distribution (e.g., "norm")
+  ### ... = other arguments passed to the corresponding density function
+  ###
+  if ( a >= b )
+    stop( "argument a is greater than or equal to b" )
+  tt <- q
+  aa <- rep( a, length( q ) )
+  bb <- rep( b, length( q ) )
+  G <- get( paste( "p", spec, sep="" ), mode="function" )
+  tt <- G( apply( cbind( apply( cbind( q, bb ), 1, min ), aa ), 1, max ), ... )
+  tt <- tt - G ( aa, ... )
+  G.a <- G( aa, ... )
+  G.b <- G( bb, ... )
+  if ( any( G.a == G.b ) ) {
+    stop( "Trunction interval is not inside the domain of the distribution function" )
+  }
+  result <- tt / ( G( bb, ... ) - G ( aa, ... ) )
+  return( result )
 }
 
 
