@@ -1,7 +1,7 @@
 # insurancerating 0.6.9
 
 * `refit_glm()` is renamed to `update_glm()`
-* `construct_model_points()` is added to create model points for the portfolio
+* `construct_model_points()` and `model_data()` are added to create model points 
 
 # insurancerating 0.6.8
 

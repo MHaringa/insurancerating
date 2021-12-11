@@ -20,7 +20,9 @@ reference:
     contents:
       - restrict_coef
       - smooth_coef
+      - update_glm
       - refit_glm
+      - model_data
       - construct_model_points
       - autoplot.restricted
       - autoplot.smooth

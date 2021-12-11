@@ -1,39 +1,207 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://insurancerating.r-lib.org/index.html</loc>
+    <loc>/404.html</loc>
   </url>
   <url>
-    <loc>https://insurancerating.r-lib.org/reference/MTPL.html</loc>
+    <loc>/articles/index.html</loc>
   </url>
   <url>
-    <loc>https://insurancerating.r-lib.org/reference/autoplot.constructtariffclasses.html</loc>
+    <loc>/articles/vignette.html</loc>
   </url>
   <url>
-    <loc>https://insurancerating.r-lib.org/reference/autoplot.fitgam.html</loc>
+    <loc>/authors.html</loc>
   </url>
   <url>
-    <loc>https://insurancerating.r-lib.org/reference/biggest_reference.html</loc>
+    <loc>/index.html</loc>
   </url>
   <url>
-    <loc>https://insurancerating.r-lib.org/reference/construct_tariff_classes.html</loc>
+    <loc>/news/index.html</loc>
   </url>
   <url>
-    <loc>https://insurancerating.r-lib.org/reference/fisher.html</loc>
+    <loc>/reference/MTPL.html</loc>
   </url>
   <url>
-    <loc>https://insurancerating.r-lib.org/reference/fit_gam.html</loc>
+    <loc>/reference/MTPL2.html</loc>
   </url>
   <url>
-    <loc>https://insurancerating.r-lib.org/reference/get_splits.html</loc>
+    <loc>/reference/add_prediction.html</loc>
   </url>
   <url>
-    <loc>https://insurancerating.r-lib.org/reference/period_to_months.html</loc>
+    <loc>/reference/autoplot.bootstrap_rmse.html</loc>
   </url>
   <url>
-    <loc>https://insurancerating.r-lib.org/reference/rating_factors.html</loc>
+    <loc>/reference/autoplot.check_normality.html</loc>
   </url>
   <url>
-    <loc>https://insurancerating.r-lib.org/articles/vignette.html</loc>
+    <loc>/reference/autoplot.check_residuals.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.constructtariffclasses.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.fitgam.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.restricted.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.riskfactor.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.smooth.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.truncated_dist.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.univ_all.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.univ_avgpremium.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.univ_avgsev.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.univ_exposure.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.univ_freq.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.univ_lossratio.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.univ_premium.html</loc>
+  </url>
+  <url>
+    <loc>/reference/autoplot.univariate.html</loc>
+  </url>
+  <url>
+    <loc>/reference/biggest_reference.html</loc>
+  </url>
+  <url>
+    <loc>/reference/bootstrap_rmse.html</loc>
+  </url>
+  <url>
+    <loc>/reference/check_normality.html</loc>
+  </url>
+  <url>
+    <loc>/reference/check_overdispersion.html</loc>
+  </url>
+  <url>
+    <loc>/reference/check_residuals.html</loc>
+  </url>
+  <url>
+    <loc>/reference/construct_model_points.html</loc>
+  </url>
+  <url>
+    <loc>/reference/construct_tariff_classes.html</loc>
+  </url>
+  <url>
+    <loc>/reference/fisher.html</loc>
+  </url>
+  <url>
+    <loc>/reference/fit_gam.html</loc>
+  </url>
+  <url>
+    <loc>/reference/fit_truncated_dist.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_data.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_quantiles.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_splits.html</loc>
+  </url>
+  <url>
+    <loc>/reference/histbin.html</loc>
+  </url>
+  <url>
+    <loc>/reference/index.html</loc>
+  </url>
+  <url>
+    <loc>/reference/model_data.html</loc>
+  </url>
+  <url>
+    <loc>/reference/model_performance.html</loc>
+  </url>
+  <url>
+    <loc>/reference/period_to_months.html</loc>
+  </url>
+  <url>
+    <loc>/reference/print.restricted.html</loc>
+  </url>
+  <url>
+    <loc>/reference/print.smooth.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rating_factors.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rating_factors1.html</loc>
+  </url>
+  <url>
+    <loc>/reference/reduce.html</loc>
+  </url>
+  <url>
+    <loc>/reference/reexports.html</loc>
+  </url>
+  <url>
+    <loc>/reference/refit_glm.html</loc>
+  </url>
+  <url>
+    <loc>/reference/restrict_coef.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rgammat.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rlnormt.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rmse.html</loc>
+  </url>
+  <url>
+    <loc>/reference/rows_per_date.html</loc>
+  </url>
+  <url>
+    <loc>/reference/smooth_coef.html</loc>
+  </url>
+  <url>
+    <loc>/reference/summary.reduce.html</loc>
+  </url>
+  <url>
+    <loc>/reference/univariate.html</loc>
+  </url>
+  <url>
+    <loc>/reference/univariate_all.html</loc>
+  </url>
+  <url>
+    <loc>/reference/univariate_average_premium.html</loc>
+  </url>
+  <url>
+    <loc>/reference/univariate_average_severity.html</loc>
+  </url>
+  <url>
+    <loc>/reference/univariate_exposure.html</loc>
+  </url>
+  <url>
+    <loc>/reference/univariate_frequency.html</loc>
+  </url>
+  <url>
+    <loc>/reference/univariate_loss_ratio.html</loc>
+  </url>
+  <url>
+    <loc>/reference/univariate_risk_premium.html</loc>
+  </url>
+  <url>
+    <loc>/reference/update_formula_add.html</loc>
+  </url>
+  <url>
+    <loc>/reference/update_glm.html</loc>
   </url>
 </urlset>
