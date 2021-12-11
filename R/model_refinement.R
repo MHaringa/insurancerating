@@ -78,6 +78,8 @@ restrict_coef <- function(model, restrictions){
     restricted_df <- restrict_df(restrictions)
     new_col_nm <- NULL
     old_col_nm <- NULL
+    mgd_rst <- NULL
+    mgd_smt <- NULL
   }
 
   if ( inherits(model, c("smooth", "restricted")) ){
@@ -94,6 +96,8 @@ restrict_coef <- function(model, restrictions){
     restricted_df <- restrict_df(restrictions)
     new_col_nm <- model$new_col_nm
     old_col_nm <- model$old_col_nm
+    mgd_rst <- model$mgd_rst
+    mgd_smt <- model$mgd_smt
   }
 
   if ( inherits(model, "restricted") ){
@@ -107,6 +111,10 @@ restrict_coef <- function(model, restrictions){
   fm_remove <- update_formula_remove(fm_no_offset, names(restrictions)[1])
   fm_add <- update_formula_add(offset_term, fm_remove, names(restrictions)[2])
   df_restricted <- add_restrictions_df(df_new, restrictions)
+
+  nrst <- unique(setdiff(names(restrictions), unique(rfdf$risk_factor)))
+  orst <- unique(setdiff(names(restrictions), new_col_nm))
+  mgd_rst <- append(mgd_rst, list(unique(c(orst, nrst))))
 
   new_col_nm <- unique(append(new_col_nm,
                               setdiff(names(restrictions),
@@ -125,7 +133,9 @@ restrict_coef <- function(model, restrictions){
              model_call = model_call,
              model_out = model_out,
              new_col_nm = new_col_nm,
-             old_col_nm = old_col_nm)
+             old_col_nm = old_col_nm,
+             mgd_rst = mgd_rst,
+             mgd_smt = mgd_smt)
   attr(rt, "class") <- "restricted"
   invisible(rt)
 }
@@ -235,6 +245,8 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL){
     rst_lst <- NULL
     new_col_nm <- NULL
     old_col_nm <- NULL
+    mgd_smt <- NULL
+    mgd_rst <- NULL
   }
 
   if ( inherits(model, c("smooth", "restricted")) ){
@@ -249,10 +261,15 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL){
     rst_lst <- model$restrictions_lst
     new_col_nm <- model$new_col_nm
     old_col_nm <- model$old_col_nm
+    mgd_smt <- model$mgd_smt
+    mgd_rst <- model$mgd_rst
   }
 
-  old_col_nm <- append(old_col_nm, x_cut)
-  new_col_nm <- append(new_col_nm, paste0(x_org, "_smooth"))
+  mgd_smt <- append(mgd_smt, list(c(paste0(x_org, "_smooth"),
+                                    paste0(x_cut, "_smooth"))))
+
+  old_col_nm <- append(old_col_nm, paste0(x_org, "_smooth"))
+  new_col_nm <- append(new_col_nm, paste0(x_cut, "_smooth"))
 
   fm_remove <- update_formula_remove(fm_no_offset, x_cut)
   fm_add <- update_formula_add(offset_term, fm_remove, paste0(x_cut, "_smooth"))
@@ -294,7 +311,9 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL){
              degree = degree,
              model_out = model_out,
              new_col_nm = new_col_nm,
-             old_col_nm = old_col_nm)
+             old_col_nm = old_col_nm,
+             mgd_rst = mgd_rst,
+             mgd_smt = mgd_smt)
   attr(st, "class") <- "smooth"
   invisible(st)
 }
@@ -516,6 +535,15 @@ update_glm <- function(x){
   y$call$formula <- lst$formula
   y$call$data <- quote(df_new)
 
+  offweights <- NULL
+  if ( !is.null(lst_call$weights) ) {
+    offweights <- append(offweights, as.character(lst_call$weights))
+  }
+
+  if ( !is.null(lst_call$offset) ) {
+    offweights <- append(offweights, as.character(lst_call$offset)[2])
+  }
+
   if ( inherits(x, "smooth")) {
     attr(y, "new_rf") <- x[["new_rf"]]
     attr(y, "class") <- append(class(y), "refitsmooth")
@@ -532,6 +560,9 @@ update_glm <- function(x){
   attr(y, "new_col_nm") <- x$new_col_nm
   attr(y, "old_col_nm") <- x$old_col_nm
   attr(y, "rf") <- rf2
+  attr(y, "mgd_smt") <- x$mgd_smt
+  attr(y, "mgd_rst") <- x$mgd_rst
+  attr(y, "offweights") <- offweights
   y
 }
 

@@ -7,15 +7,15 @@
 model_data(x)
 }
 \arguments{
-\item{x}{Object of class refitsmooth or of class refitrestricted}
+\item{x}{Object of class refitsmooth, refitrestricted or glm}
 }
 \value{
 data.frame
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} \code{construct_model_points()}
-is used to construct model points from refitted generalized linear models,
-and must be preceded by \code{update_glm()}.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} \code{model_data()}
+is used to get data from glm, and must be preceded by \code{update_glm()} or
+\code{glm()}.
 }
 \author{
 Martin Haringa
