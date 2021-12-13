@@ -150,6 +150,7 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
       stop("Input must be of class model_data, use model_data() to create data",
            call. = FALSE)
     }
+    offweights <- NULL
     xdf <- data.frame(xdf)
     premium_nm <- setdiff(names(xdf), c(aggcols0, exposure_nm, exposure_by_nm))
     premium_df <- xdf[, premium_nm, drop = FALSE]
@@ -207,47 +208,40 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
       }
     }
 
-
     if ( exposure_by_nm != "NULL" ){
 
       if (length(aggcols0) == 0){
+
         xdt_agg0 <- xdf[
           , .(count = .N), by = c(premium_nm, exposure_by_nm)][
             , (exposure_by_nm) := paste0("count_", get(exposure_by_nm))]
 
-        f <- as.formula(paste0(paste0(premium_nm, collapse = " + "), "~ ",
-                               paste(exposure_by_nm)))
-
+        f <- construct_fm(premium_nm, exposure_by_nm)
         xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = "count")
       }
 
       if (length(aggcols0) > 0){
-        xdt_agg0 <- xdf[, c(.N, lapply(.SD, sum, na.rm = TRUE)),
-                        by = c(premium_nm, exposure_by_nm), .SDcols = aggcols0][
-                          , (exposure_by_nm) := paste0("count_",
-                                                       get(exposure_by_nm))]
-        data.table::setnames(xdt_agg0, old = "N", new = "count")
+        xdt_agg0 <- xdf[
+          , c(.N, lapply(.SD, sum, na.rm = TRUE)), by =
+            c(premium_nm, exposure_by_nm), .SDcols = aggcols0][
+              , (exposure_by_nm) := paste0("count_", get(exposure_by_nm))]
 
-        f <- as.formula(paste0(paste0(c(premium_nm, aggcols0),
-                                      collapse = " + "), "~ ",
-                               paste(exposure_by_nm)))
-
-        xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = "count")
+        f <- construct_fm(c(premium_nm, aggcols0), exposure_by_nm)
+        xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = "N")
       }
     }
 
     xdt_agg <- data.frame(xdt_agg)
   }
 
-
   if ( exposure_nm != "NULL" ){
     xdf <- data.table::data.table(xdf)
 
     if ( exposure_by_nm == "NULL" ){
+
       if (length(aggcols0) == 0){
-        xdt_agg <- xdf[, .(count = sum(get(exposure_nm), na.rm = TRUE)),
-                       by = premium_nm]
-        data.table::setnames(xdt_agg, old = "count", new = exposure_nm)
+        xdt_agg <- xdf[, lapply(.SD, sum, na.rm = TRUE), by = premium_nm,
+                       .SDcols = exposure_nm]
       }
 
       if ( length(aggcols0) > 0 ){
@@ -258,17 +252,15 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
 
     if ( exposure_by_nm != "NULL" ){
 
-
       if (length(aggcols0) == 0){
 
         xdt_agg0 <- xdf[
-          , lapply(.SD, sum, na.rm = TRUE),
-          by = c(premium_nm, exposure_by_nm),
-          .SDcols = exposure_nm][
+          , lapply(.SD, sum, na.rm = TRUE), by =
+            c(premium_nm, exposure_by_nm), .SDcols = exposure_nm][
             , (exposure_by_nm) := paste0(exposure_nm, "_", get(exposure_by_nm))]
 
-        f <- as.formula(paste0(paste0(premium_nm, collapse = " + "), "~ ",
-                               paste(exposure_by_nm)))
+        f <- construct_fm(premium_nm, exposure_by_nm)
+        xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = exposure_nm)
       }
 
       if (length(aggcols0) > 0){
@@ -283,9 +275,7 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
           .SDcols = c(aggcols0, exposure_nm)][
             , (exposure_by_nm) := paste0(exposure_nm, "_", get(exposure_by_nm))]
 
-        f <- as.formula(paste0(paste0(c(premium_nm),
-                                      collapse = " + "), "~ ",
-                               paste(exposure_by_nm)))
+        f <- construct_fm(premium_nm, exposure_by_nm)
 
         if ( isTRUE(offweights %in% aggcols0)) {
           xdt_ext <- xdt_agg0[, lapply(.SD, sum, na.rm = TRUE), by = premium_nm,
@@ -300,8 +290,10 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
       }
     }
 
-    data.table::setnames(xdt_agg, old = offweights,
+    if( inherits(x, c("model_data")) ) {
+      data.table::setnames(xdt_agg, old = offweights,
                          new = gsub('_99$', '', offweights))
+    }
     xdt_agg <- data.frame(xdt_agg)
   }
 

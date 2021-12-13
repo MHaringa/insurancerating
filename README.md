@@ -45,7 +45,7 @@ This is a basic example which shows the techniques provided in
 insurancerating.
 
 The first part shows how to fit a GAM for the variable
-*age\_policyholder* in the MTPL dataset:
+*age_policyholder* in the MTPL dataset:
 
 ``` r
 library(insurancerating)
@@ -145,10 +145,16 @@ model_freq2 <- glm(nclaims ~ age_policyholder_freq_cat + age_policyholder, offse
                   family = "poisson", data = dat)
 
 x <- rating_factors(model_freq1, model_freq2) 
+```
+
+    ## Significance levels: *** p < 0.001; ** p < 0.01;
+    ##     * p < 0.05; . p < 0.1
+
+``` r
 x
 ```
 
-    ## [34mSignificance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1[39m                risk_factor            level est_model_freq1 est_model_freq2
+    ##                 risk_factor            level est_model_freq1 est_model_freq2
     ## 1               (Intercept)      (Intercept)    0.117926 ***    0.245890 ***
     ## 2 age_policyholder_freq_cat          (39,84]    1.000000        1.000000    
     ## 3 age_policyholder_freq_cat          [18,25]    2.216848 ***    1.453099 ***
@@ -177,6 +183,9 @@ rating_factors(model_freq1, model_freq2, model_data = dat) %>%
   autoplot()
 ```
 
+    ## Significance levels: *** p < 0.001; ** p < 0.01;
+    ##     * p < 0.05; . p < 0.1
+
 ![](man/figures/example3b-1.png)<!-- -->
 
 The following graph includes the exposure as a bar graph and shows some
@@ -186,6 +195,9 @@ more options:
 rating_factors(model_freq1, model_freq2, model_data = dat, exposure = exposure) %>%
   autoplot(., linetype = TRUE) 
 ```
+
+    ## Significance levels: *** p < 0.001; ** p < 0.01;
+    ##     * p < 0.05; . p < 0.1
 
 ![](man/figures/example3c-1.png)<!-- -->
 
@@ -250,9 +262,9 @@ Check Poisson GLM for overdispersion. A dispersion ratio larger than one
 indicates overdispersion, this occurs when the observed variance is
 higher than the variance of the theoretical model. If the dispersion
 ratio is close to one, a Poisson model fits well to the data. A
-*p*-value &lt; .05 indicates overdispersion. Overdispersion &gt; 2
-probably means there is a larger problem with the data: check (again)
-for outliers.
+*p*-value \< .05 indicates overdispersion. Overdispersion \> 2 probably
+means there is a larger problem with the data: check (again) for
+outliers.
 
 ``` r
 check_overdispersion(model_freq1)
@@ -291,7 +303,8 @@ check_residuals(model_freq1, n_simulations = 1000) %>%
   autoplot(.)
 ```
 
-    ## OK: residuals appear as from the expected distribution (p = 0.362).
+    ## OK: residuals appear as from the expected
+    ##                                    distribution (p = 0.362).
 
 ![](man/figures/normalitysim-1.png)<!-- -->
 
@@ -338,12 +351,12 @@ univariate(MTPL2,
 The following indicators are calculated:
 
 1.  frequency (i.e. frequency = number of claims / exposure)
-2.  average\_severity (i.e. average severity = severity / number of
+2.  average_severity (i.e. average severity = severity / number of
     claims)
-3.  risk\_premium (i.e. risk premium = severity / exposure = frequency x
+3.  risk_premium (i.e. risk premium = severity / exposure = frequency x
     average severity)
-4.  loss\_ratio (i.e. loss ratio = severity / premium)
-5.  average\_premium (i.e. average premium = premium / exposure)
+4.  loss_ratio (i.e. loss ratio = severity / premium)
+5.  average_premium (i.e. average premium = premium / exposure)
 
 Here the term *exposure* is a measure of what is being insured. For
 example, an insured vehicle is an exposure. If the vehicle is insured as
@@ -379,10 +392,10 @@ In `autoplot.univariate()`, `show_plots` defines the plots to show and
 also the order of the plots. The following plots are available:
 
 1.  frequency
-2.  average\_severity
-3.  risk\_premium
-4.  loss\_ratio
-5.  average\_premium
+2.  average_severity
+3.  risk_premium
+4.  loss_ratio
+5.  average_premium
 6.  exposure
 7.  severity
 8.  nclaims
@@ -528,7 +541,7 @@ for `x_org`. The smoothed estimates are added as an offset term to the
 model. An offset is just a fixed term added to the linear predictor,
 therefore if there is already an offset in the model, the offset terms
 are added together first
-(i.e. offset = log (*a*) + log (*b*) = log (*a* ⋅ *b*)).
+(i.e. offset = log (*a*) + log (*b*) = log (*a*⋅*b*)).
 
 ``` r
 burn_unrestricted %>%
@@ -567,7 +580,7 @@ burn_unrestricted %>%
 
 ![](man/figures/example19-1.png)<!-- -->
 
-`smooth_coef()` must always be followed by `refit_glm()` to refit the
+`smooth_coef()` must always be followed by `update_glm()` to refit the
 GLM.
 
 ``` r
@@ -575,13 +588,16 @@ burn_restricted <- burn_unrestricted %>%
   smooth_coef(x_cut = "age_policyholder_freq_cat", 
               x_org = "age_policyholder", 
               breaks = seq(18, 95, 5)) %>%
-  refit_glm()
+  update_glm()
 
 # Show rating factors
 rating_factors(burn_restricted)
 ```
 
-    ## [34mSignificance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1[39m               risk_factor       level est_burn_restricted
+    ## Significance levels: *** p < 0.001; ** p < 0.01;
+    ##     * p < 0.05; . p < 0.1
+
+    ##                risk_factor       level est_burn_restricted
     ## 1              (Intercept) (Intercept)     9184.248396 ***
     ## 2                      zip           1        1.000000    
     ## 3                      zip           0        0.354033 ***
@@ -624,17 +640,20 @@ burn_unrestricted %>%
     ## Formula: premium ~ bm + age_policyholder_freq_cat + offset(log(zip_restricted))
 
 To adjust the glm, `restict_coef()` must always be followed by
-`refit_glm()`:
+`update_glm()`:
 
 ``` r
 burn_restricted2 <- burn_unrestricted %>%
   restrict_coef(., zip_df) %>%
-  refit_glm()
+  update_glm()
 
 rating_factors(burn_restricted2)
 ```
 
-    ## [34mSignificance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1[39m                 risk_factor       level est_burn_restricted2
+    ## Significance levels: *** p < 0.001; ** p < 0.01;
+    ##     * p < 0.05; . p < 0.1
+
+    ##                  risk_factor       level est_burn_restricted2
     ## 1                (Intercept) (Intercept)      7766.514389 ***
     ## 2  age_policyholder_freq_cat     (39,84]         1.000000    
     ## 3  age_policyholder_freq_cat     [18,25]         2.172458 ***
@@ -665,13 +684,16 @@ burn_restricted3 <- burn_unrestricted %>%
   smooth_coef(x_cut = "age_policyholder_freq_cat", 
               x_org = "age_policyholder", 
               breaks = seq(18, 95, 5)) %>%
-  refit_glm() 
+  update_glm() 
   
 # Show rating factors
 rating_factors(burn_restricted3)
 ```
 
-    ## [34mSignificance levels: *** p < 0.001; ** p < 0.01;  * p < 0.05; . p < 0.1[39m               risk_factor       level est_burn_restricted3
+    ## Significance levels: *** p < 0.001; ** p < 0.01;
+    ##     * p < 0.05; . p < 0.1
+
+    ##                risk_factor       level est_burn_restricted3
     ## 1              (Intercept) (Intercept)      7880.289822 ***
     ## 2           zip_restricted           0         0.800000    
     ## 3           zip_restricted           1         0.900000    
@@ -697,7 +719,7 @@ rating_factors(burn_restricted3)
 And add refined premiums to the data:
 
 ``` r
-premiums3 <- get_data(burn_restricted3) %>%
+premiums3 <- model_data(burn_restricted3) %>%
   add_prediction(burn_restricted3)
 
 head(premiums3)
@@ -731,3 +753,35 @@ head(premiums3)
     ## 4                     11308.927
     ## 5                      9976.216
     ## 6                      9236.933
+
+Or do the same with model points:
+
+``` r
+premiums4 <- model_data(burn_restricted3) %>%
+  construct_model_points() %>%
+  add_prediction(burn_restricted3)
+
+head(premiums4)
+```
+
+    ##   age_policyholder_smooth zip bm zip_restricted
+    ## 1                 (23,28]   1  1            0.9
+    ## 2                 (23,28]   1  2            0.9
+    ## 3                 (23,28]   1  3            0.9
+    ## 4                 (23,28]   1  4            0.9
+    ## 5                 (23,28]   1  5            0.9
+    ## 6                 (23,28]   1  6            0.9
+    ##   age_policyholder_freq_cat_smooth count  exposure
+    ## 1                         1.719606   414 342.57808
+    ## 2                         1.719606   173 145.25753
+    ## 3                         1.719606    53  46.53699
+    ## 4                         1.719606    26  22.31507
+    ## 5                         1.719606    54  46.78630
+    ## 6                         1.719606    71  65.13699
+    ##   pred_premium_burn_restricted3
+    ## 1                      12646.03
+    ## 2                      13112.77
+    ## 3                      13596.75
+    ## 4                      14098.59
+    ## 5                      14618.95
+    ## 6                      15158.51

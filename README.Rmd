@@ -414,7 +414,7 @@ burn_unrestricted %>%
 
 ```
 
-`smooth_coef()` must always be followed by `refit_glm()` to refit the GLM. 
+`smooth_coef()` must always be followed by `update_glm()` to refit the GLM. 
 
 ```{r example20, eval = TRUE, message = FALSE, warning = FALSE}
 
@@ -422,7 +422,7 @@ burn_restricted <- burn_unrestricted %>%
   smooth_coef(x_cut = "age_policyholder_freq_cat", 
               x_org = "age_policyholder", 
               breaks = seq(18, 95, 5)) %>%
-  refit_glm()
+  update_glm()
 
 # Show rating factors
 rating_factors(burn_restricted)
@@ -442,13 +442,13 @@ burn_unrestricted %>%
 
 ```
 
-To adjust the glm, `restict_coef()` must always be followed by `refit_glm()`:
+To adjust the glm, `restict_coef()` must always be followed by `update_glm()`:
 
 ```{r example22, eval = TRUE, message = FALSE, warning = FALSE}
 
 burn_restricted2 <- burn_unrestricted %>%
   restrict_coef(., zip_df) %>%
-  refit_glm()
+  update_glm()
 
 rating_factors(burn_restricted2)
 
@@ -472,7 +472,7 @@ burn_restricted3 <- burn_unrestricted %>%
   smooth_coef(x_cut = "age_policyholder_freq_cat", 
               x_org = "age_policyholder", 
               breaks = seq(18, 95, 5)) %>%
-  refit_glm() 
+  update_glm() 
   
 # Show rating factors
 rating_factors(burn_restricted3)
@@ -483,15 +483,24 @@ And add refined premiums to the data:
 
 ```{r}
 
-premiums3 <- get_data(burn_restricted3) %>%
+premiums3 <- model_data(burn_restricted3) %>%
   add_prediction(burn_restricted3)
 
 head(premiums3)
 
 ```
 
+Or do the same with model points:
 
+```{r}
 
+premiums4 <- model_data(burn_restricted3) %>%
+  construct_model_points() %>%
+  add_prediction(burn_restricted3)
+
+head(premiums4)
+
+```
 
 
 

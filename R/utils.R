@@ -524,6 +524,11 @@ split_x_fn <- function(data, x, left = NULL, right = NULL){
   return(l1)
 }
 
+#' @keywords internal
+construct_fm <- function(lhs, rhs){
+  as.formula(paste0(paste0(lhs, collapse = " + "), "~ ", rhs))
+}
+
 
 #' @keywords internal
 moments <- function(x, dist = c("gamma", "lognormal")){

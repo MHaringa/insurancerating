@@ -1,3 +1,5 @@
+# insurancerating 0.7.0
+
 # insurancerating 0.6.9
 
 * `refit_glm()` is renamed to `update_glm()`
