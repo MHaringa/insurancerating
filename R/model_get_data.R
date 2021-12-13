@@ -265,28 +265,19 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
 
       if (length(aggcols0) > 0){
 
-        aggcols01 <- aggcols0
-        if ( isTRUE(offweights %in% aggcols0)) {
-          aggcols01 <- aggcols0[aggcols0 != offweights]
-        }
-
         xdt_agg0 <- xdf[
           , lapply(.SD, sum, na.rm = TRUE), by = c(premium_nm, exposure_by_nm),
           .SDcols = c(aggcols0, exposure_nm)][
             , (exposure_by_nm) := paste0(exposure_nm, "_", get(exposure_by_nm))]
 
         f <- construct_fm(premium_nm, exposure_by_nm)
+        xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = exposure_nm)
 
         if ( isTRUE(offweights %in% aggcols0)) {
           xdt_ext <- xdt_agg0[, lapply(.SD, sum, na.rm = TRUE), by = premium_nm,
                               .SDcols = aggcols0]
+          xdt_agg <- merge(xdt_agg, xdt_ext, all.x = TRUE)
         }
-      }
-
-      xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = exposure_nm)
-
-      if ( isTRUE(offweights %in% aggcols0)) {
-        xdt_agg <- merge(xdt_agg, xdt_ext, all.x = TRUE)
       }
     }
 
@@ -310,12 +301,10 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
 
   refinement_df <- NULL
   if( inherits(x, c("model_data")) ) {
-    old_nm <- attr(x, "old_nm")
-    new_nm <- attr(x, "new_nm")
-    df <- data.frame(old_nm, new_nm)
-    xdf <- x
-    refinement_nm <- lapply(split(df, seq_len(nrow(df))), as.character)
-    refinement_df <- lapply(refinement_nm, function(x) xdf[, x, drop = FALSE])
+    mgd_rst <- attr(x, "mgd_rst")
+    mgd_smt <- attr(x, "mgd_smt")
+    refinement_nm <- append(mgd_rst, mgd_smt)
+    refinement_df <- lapply(refinement_nm, function(y) x[, y, drop = FALSE])
     refinement_df <- lapply(refinement_df, unique)
   }
 
