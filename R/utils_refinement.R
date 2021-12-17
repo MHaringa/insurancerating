@@ -75,7 +75,7 @@ update_formula_remove <- function(fm, remove_term){
 
   fm_new <- update(fm, paste("~ . -", remove_term))
 
-  if ( fm == fm_new ) {
+  if ( identical(fm, fm_new ) ) {
     warning("Column '", remove_term, "' must be in model call.\n")
   }
 
