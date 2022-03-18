@@ -110,23 +110,28 @@ update_formula_add <- function(offset_term, fm_no_offset, add_term){
 
 #' @keywords internal
 cut_borders_df <- function(df, col){
+
   if (!col %in% names(df)) stop("Column name must be available in data",
                                 call. = FALSE)
   df_vec <- df[[col]]
 
-  pattern <- "(\\(|\\[)(-*[0-9]+\\.*[0-9]*),(-*[0-9]+\\.*[0-9]*)(\\)|\\])"
+  if( anyNA(df_vec) ){
+    message("NAs detected in column ", col)
+  }
+
   suppressWarnings({
-    df$start_oc <- ifelse(gsub(pattern,"\\1", df_vec) == "(", "open",
-                          ifelse(gsub(pattern,"\\1", df_vec) == "[",
-                                 "closed", NA))
-    df$end_oc <- ifelse(gsub(pattern,"\\4", df_vec) == ")", "open",
-                        ifelse(gsub(pattern,"\\4", df_vec) == "]",
-                               "closed", NA))
-    df$start_  <- as.numeric(gsub(pattern,"\\2", df_vec))
-    df$end_ <- as.numeric(gsub(pattern,"\\3", df_vec))
+    s1 <- substr(df_vec, start = 1, stop = 1)
+    nchr <- if ( is.factor(df_vec) ){ nchar(levels(df_vec)[df_vec]) } else {
+      nchar(df_vec)
+    }
+    e1 <- substr(df_vec, start = nchr, stop = nchr)
+    m <- substr(df_vec, start = 2, stop = nchr - 1)
+    df$start_oc <- ifelse(s1 == "(", "open", ifelse(s1 == "[", "closed", NA))
+    df$end_oc <- ifelse(e1 == ")", "open", ifelse(e1 == "]", "closed", NA))
+    df$start_  <- as.numeric(gsub("^(.*?),.*", "\\1", m))
+    df$end_ <- as.numeric(sub('.*,', '', m))
   })
   df$avg_ <- rowMeans(df[, c('start_', 'end_')], na.rm = TRUE)
-
   return(df)
 }
 
