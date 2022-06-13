@@ -128,6 +128,7 @@ model_data <- function(x){
 #' model_data(pmodel) %>%
 #'  construct_model_points(exposure = exposure, exposure_by = jaar) %>%
 #'  add_prediction(., pmodel)
+#'  }
 #'
 #' @export
 construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,

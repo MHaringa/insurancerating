@@ -16,7 +16,6 @@
 #' @import data.table
 #' @importFrom dplyr lead
 #' @importFrom lubridate %m+%
-#' @importFrom lubridate is.Date
 #'
 #' @author Martin Haringa
 #'
@@ -69,7 +68,8 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum",
 
   start_dt = end_dt = aggcols0 = NULL # due to NSE notes in R CMD check
 
-  if (!lubridate::is.Date(df[[.begin]]) | !lubridate::is.Date(df[[.end]])) {
+  if (!inherits(df[[.begin]], c("Date", "POSIXt")) |
+      !inherits(df[[.end]], c("Date", "POSIXt")) ){
     stop("Columns begin and end should be Date objects.
          Use e.g. lubridate::ymd() to create Date object.", call. = FALSE)
   }

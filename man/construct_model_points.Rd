@@ -57,22 +57,22 @@ mtcars \%>\%
 library(datasets)
 data1 <- warpbreaks \%>\%
  mutate(jaar = c(rep(2000, 10), rep(2010, 44))) \%>\%
- mutate(nclaims = 1)
+ mutate(exposure = 1) \%>\%
+ mutate(nclaims = 2)
 
-pmodel <- glm(breaks ~ wool + tension, data1, offset = log(nclaims),
-family = poisson(link = "log"))
+pmodel <- glm(breaks ~ wool + tension, data1, offset = log(exposure),
+ family = poisson(link = "log"))
 
 model_data(pmodel) \%>\%
  construct_model_points()
 
 model_data(pmodel) \%>\%
- construct_model_points(exposure = breaks, agg_cols = list(nclaims))
+ construct_model_points(agg_cols = list(nclaims))
 
 model_data(pmodel) \%>\%
- construct_model_points(exposure = breaks, exposure_by = jaar,
- agg_cols = list(nclaims)) \%>\%
+ construct_model_points(exposure = exposure, exposure_by = jaar) \%>\%
  add_prediction(., pmodel)
-}
+ }
 
 }
 \author{
