@@ -1,11 +1,11 @@
 ## Resubmission
 This is a resubmission. In this version:
 
-* `refit_glm()` is renamed to `update_glm()`
-* `construct_model_points()` and `model_data()` are added to create model points 
+* `smooth_coef()` now gives correct results for intervals with scientific notation
+* `reduce()` now returns no errors anymore for columns with dates in POSIXt format
 
 ## Test environments
-* local OS X install, R 4.1.2
+* local OS X install, R 4.2.0
 * win-builder (devel and release)
 
 ## R CMD check results
