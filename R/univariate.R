@@ -13,7 +13,8 @@
 #' these arguments are ignored.
 #'
 #' @param df data.frame with insurance portfolio
-#' @param x column in `df` with risk factor
+#' @param x column in `df` with risk factor, or use `vec_ext()` for use with
+#' an external vector (see examples)
 #' @param severity column in `df` with severity (default is NULL)
 #' @param premium column in `df` with premium (default is NULL)
 #' @param exposure column in `df` with exposure (default is NULL)
@@ -31,6 +32,11 @@
 #' univariate(MTPL2, x = area, severity = amount, nclaims = nclaims,
 #'            exposure = exposure, premium = premium)
 #'
+#' # Summarize by `area`, with column name in external vector
+#' xt <- "area"
+#' univariate(MTPL2, x = vec_ext(xt), severity = amount, nclaims = nclaims,
+#'            exposure = exposure, premium = premium)
+#'
 #' # Summarize by `zip` and `bm`
 #' univariate(MTPL, x = zip, severity = amount, nclaims = nclaims,
 #'            exposure = exposure, by = bm)
@@ -43,11 +49,22 @@
 univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
                        premium = NULL, by = NULL) {
 
-  .xvar <- deparse(substitute(x))
-  .severity <- deparse(substitute(severity))
-  .nclaims <- deparse(substitute(nclaims))
-  .exposure <- deparse(substitute(exposure))
-  .premium <- deparse(substitute(premium))
+  nse_se_input <- function(x){
+    expr <- substitute(x)
+    if ( is.call(expr) && expr[[1]] == quote(vec_ext)){
+      as.character(eval.parent(expr[[2]]))
+    } else if ( is.character(expr) ){
+      x
+    } else{
+      deparse(expr)
+    }
+  }
+
+  .xvar <- eval.parent(substitute(nse_se_input(x)))
+  .severity <- eval.parent(substitute(nse_se_input(severity)))
+  .nclaims <- eval.parent(substitute(nse_se_input(nclaims)))
+  .exposure <- eval.parent(substitute(nse_se_input(exposure)))
+  .premium <- eval.parent(substitute(nse_se_input(premium)))
 
   mc <- as.list(match.call())
   byl <- as.list(mc$by)
@@ -76,17 +93,19 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
     stop("Define column names.", call. = FALSE)
   }
 
-  BY <- as.call(c(as.symbol("list"), substitute(x), byl))
+  #BY <- as.call(c(as.symbol("list"), substitute(x), byl))
+  BY <- as.call(c(as.symbol("list"), as.symbol(.xvar), byl))
   dt <- eval(bquote(data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
-                                   by = .(BY), .SDcols=.(COLS)]))
+                                   by = .(BY), .SDcols = .(COLS)]))
 
   dt1 <- NULL
   if (!missing(by)){
-    BYx <- as.call(c(as.symbol("list"), substitute(x)))
+  #  BYx <- as.call(c(as.symbol("list"), substitute(x)))
+    BYx <- as.call(c(as.symbol("list"), as.symbol(.xvar)))
     dt1 <- eval(bquote(
       data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
                                  by = .(BYx), .SDcols=.(COLS)]
-      ))
+    ))
   }
 
   frequency = average_severity = risk_premium = loss_ratio =
@@ -183,6 +202,7 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' is FALSE)
 #' @param total_color change the color for the total line ("black" is default)
 #' @param total_name add legend name for the total line (e.g. "total")
+#' @param rotate_angle numeric value for angle of labels on the x-axis (degrees)
 #' @param ... other plotting parameters to affect the plot
 #'
 #' @import patchwork
@@ -211,7 +231,8 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                                 dec.mark = ",", color = "dodgerblue",
                                 color_bg = "lightskyblue", label_width = 10,
                                 coord_flip = FALSE, show_total = FALSE,
-                                total_color = NULL, total_name = NULL, ...){
+                                total_color = NULL, total_name = NULL,
+                                rotate_angle = NULL, ...){
 
   xvar <- attr(object, "xvar")
   nclaims <- attr(object, "nclaims")
@@ -386,6 +407,13 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
     plot_all <- paste0("p", plots_possible, collapse = " + ")
     plot_out <- eval(parse( text = plot_all )) +
       patchwork::plot_layout(ncol = ncol, guides = 'collect')
+  }
+
+  if ( !is.null(rotate_angle) ){
+    plot_out <- plot_out +
+      ggplot2::theme(axis.text.x = element_text(angle = rotate_angle,
+                                                vjust = 0.5,
+                                                hjust = 1))
   }
 
   return(plot_out)

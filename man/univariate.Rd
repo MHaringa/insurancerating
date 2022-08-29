@@ -17,7 +17,8 @@ univariate(
 \arguments{
 \item{df}{data.frame with insurance portfolio}
 
-\item{x}{column in \code{df} with risk factor}
+\item{x}{column in \code{df} with risk factor, or use \code{vec_ext()} for use with
+an external vector (see examples)}
 
 \item{severity}{column in \code{df} with severity (default is NULL)}
 
@@ -48,6 +49,11 @@ these arguments are ignored.
 \examples{
 # Summarize by `area`
 univariate(MTPL2, x = area, severity = amount, nclaims = nclaims,
+           exposure = exposure, premium = premium)
+
+# Summarize by `area`, with column name in external vector
+xt <- "area"
+univariate(MTPL2, x = vec_ext(xt), severity = amount, nclaims = nclaims,
            exposure = exposure, premium = premium)
 
 # Summarize by `zip` and `bm`

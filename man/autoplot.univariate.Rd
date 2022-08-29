@@ -20,6 +20,7 @@
   show_total = FALSE,
   total_color = NULL,
   total_name = NULL,
+  rotate_angle = NULL,
   ...
 )
 }
@@ -70,6 +71,8 @@ is FALSE)}
 \item{total_color}{change the color for the total line ("black" is default)}
 
 \item{total_name}{add legend name for the total line (e.g. "total")}
+
+\item{rotate_angle}{numeric value for angle of labels on the x-axis (degrees)}
 
 \item{...}{other plotting parameters to affect the plot}
 }
