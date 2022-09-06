@@ -1,3 +1,5 @@
+# insurancerating 0.7.2
+
 # insurancerating 0.7.1
 
 * `rotate_angle` in `autoplot.univariate()` is added to rotate x-labels
