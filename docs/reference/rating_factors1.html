@@ -19,7 +19,7 @@ compare the output obtained from two or more glm objects."><meta property="og:im
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.1</span>
       </span>
     </div>
 
@@ -57,34 +57,45 @@ compare the output obtained from two or more glm objects.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">rating_factors1</span><span class="op">(</span>
-  <span class="va">model</span>,
-  model_data <span class="op">=</span> <span class="cn">NULL</span>,
-  exposure <span class="op">=</span> <span class="cn">NULL</span>,
-  colname <span class="op">=</span> <span class="st">"estimate"</span>,
-  exponentiate <span class="op">=</span> <span class="cn">TRUE</span>,
-  round_exposure <span class="op">=</span> <span class="fl">0</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rating_factors1</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  model_data <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  colname <span class="op">=</span> <span class="st">"estimate"</span>,</span>
+<span>  exponentiate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  round_exposure <span class="op">=</span> <span class="fl">0</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>model</dt>
 <dd><p>a single glm object produced by <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code></p></dd>
+
+
 <dt>model_data</dt>
 <dd><p>data.frame used to create glm object, this should only
 be specified in case the exposure is desired in the output, default
 value is NULL</p></dd>
+
+
 <dt>exposure</dt>
 <dd><p>the name of the exposure column in <code>model_data</code>,
 default value is NULL</p></dd>
+
+
 <dt>colname</dt>
 <dd><p>the name of the output column, default value is "estimate"</p></dd>
+
+
 <dt>exponentiate</dt>
 <dd><p>logical indicating whether or not to exponentiate
 the coefficient estimates. Defaults to TRUE.</p></dd>
+
+
 <dt>round_exposure</dt>
 <dd><p>number of digits for exposure (default to 0)</p></dd>
+
 </dl></div>
     <div id="author">
     <h2>Author</h2>
@@ -93,18 +104,18 @@ the coefficient estimates. Defaults to TRUE.</p></dd>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">MTPL2a</span> <span class="op">&lt;-</span> <span class="va">MTPL2</span></span>
-<span class="r-in"><span class="va">MTPL2a</span><span class="op">$</span><span class="va">area</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">MTPL2a</span><span class="op">$</span><span class="va">area</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">area</span>, offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span class="r-in"> data <span class="op">=</span> <span class="va">MTPL2a</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">rating_factors1</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">MTPL2a</span> <span class="op">&lt;-</span> <span class="va">MTPL2</span></span></span>
+<span class="r-in"><span><span class="va">MTPL2a</span><span class="op">$</span><span class="va">area</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">MTPL2a</span><span class="op">$</span><span class="va">area</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">area</span>, offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span> data <span class="op">=</span> <span class="va">MTPL2a</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">rating_factors1</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   risk_factor       level   estimate pvalues</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 (Intercept) (Intercept) 0.07514927      **</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2        area           0 1.00000000        </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3        area           1 1.82294511        </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4        area           2 1.59316792        </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5        area           3 1.96560801        </span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -119,7 +130,7 @@ the coefficient estimates. Defaults to TRUE.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

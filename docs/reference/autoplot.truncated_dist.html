@@ -18,7 +18,7 @@ the available input."><meta property="og:image" content="/logo.png"><!-- mathjax
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.1</span>
       </span>
     </div>
 
@@ -55,49 +55,70 @@ the available input.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="co"># S3 method for truncated_dist</span>
-<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span>
-  <span class="va">object</span>,
-  geom_ecdf <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"point"</span>, <span class="st">"step"</span><span class="op">)</span>,
-  xlab <span class="op">=</span> <span class="cn">NULL</span>,
-  ylab <span class="op">=</span> <span class="cn">NULL</span>,
-  ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>,
-  xlim <span class="op">=</span> <span class="cn">NULL</span>,
-  print_title <span class="op">=</span> <span class="cn">TRUE</span>,
-  print_dig <span class="op">=</span> <span class="fl">2</span>,
-  print_trunc <span class="op">=</span> <span class="fl">2</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for truncated_dist</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span></span>
+<span>  <span class="va">object</span>,</span>
+<span>  geom_ecdf <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"point"</span>, <span class="st">"step"</span><span class="op">)</span>,</span>
+<span>  xlab <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ylab <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>,</span>
+<span>  xlim <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  print_title <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  print_dig <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  print_trunc <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>object</dt>
 <dd><p>object univariate object produced by <code><a href="fit_truncated_dist.html">fit_truncated_dist()</a></code></p></dd>
+
+
 <dt>geom_ecdf</dt>
 <dd><p>the geometric object to use display the data (point or step)</p></dd>
+
+
 <dt>xlab</dt>
 <dd><p>the title of the x axis</p></dd>
+
+
 <dt>ylab</dt>
 <dd><p>the title of the y axis</p></dd>
+
+
 <dt>ylim</dt>
 <dd><p>two numeric values, specifying the lower limit and the upper
 limit of the scale</p></dd>
+
+
 <dt>xlim</dt>
 <dd><p>two numeric values, specifying the left limit and the right
 limit of the scale</p></dd>
+
+
 <dt>print_title</dt>
 <dd><p>show title (default to TRUE)</p></dd>
+
+
 <dt>print_dig</dt>
 <dd><p>number of digits for parameters in title (default 2)</p></dd>
+
+
 <dt>print_trunc</dt>
 <dd><p>number of digits for truncation values to print</p></dd>
+
+
 <dt>...</dt>
 <dd><p>other plotting parameters to affect the plot</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>a ggplot2 object</p>
+    
+
+<p>a ggplot2 object</p>
     </div>
     <div id="author">
     <h2>Author</h2>
@@ -116,7 +137,7 @@ limit of the scale</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

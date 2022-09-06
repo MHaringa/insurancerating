@@ -18,7 +18,7 @@ customers."><meta property="og:image" content="/logo.png"><!-- mathjax --><scrip
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.1</span>
       </span>
     </div>
 
@@ -55,27 +55,36 @@ customers.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="co"># S3 method for reduce</span>
-<span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span>, period <span class="op">=</span> <span class="st">"days"</span>, name <span class="op">=</span> <span class="st">"count"</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for reduce</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span>, period <span class="op">=</span> <span class="st">"days"</span>, name <span class="op">=</span> <span class="st">"count"</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>object</dt>
 <dd><p>reduce object produced by <code><a href="reduce.html">reduce()</a></code></p></dd>
+
+
 <dt>...</dt>
 <dd><p>names of columns to aggregate counts by</p></dd>
+
+
 <dt>period</dt>
 <dd><p>a character string indicating the period to aggregate on.
 Four options are available: "quarters", "months", "weeks", and "days"
 (the default option)</p></dd>
+
+
 <dt>name</dt>
 <dd><p>The name of the new column in the output. If omitted, it will
 default to count.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>data.frame</p>
+    
+
+<p>data.frame</p>
     </div>
 
   </div>
@@ -90,7 +99,7 @@ default to count.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

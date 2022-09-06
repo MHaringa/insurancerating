@@ -21,7 +21,7 @@ compact way."><meta property="og:image" content="/logo.png"><!-- mathjax --><scr
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.1</span>
       </span>
     </div>
 
@@ -61,43 +61,62 @@ compact way.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">histbin</span><span class="op">(</span>
-  <span class="va">data</span>,
-  <span class="va">x</span>,
-  left <span class="op">=</span> <span class="cn">NULL</span>,
-  right <span class="op">=</span> <span class="cn">NULL</span>,
-  line <span class="op">=</span> <span class="cn">FALSE</span>,
-  bins <span class="op">=</span> <span class="fl">30</span>,
-  fill <span class="op">=</span> <span class="cn">NULL</span>,
-  color <span class="op">=</span> <span class="cn">NULL</span>,
-  fill_outliers <span class="op">=</span> <span class="st">"#a7d1a7"</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">histbin</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  <span class="va">x</span>,</span>
+<span>  left <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  right <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  line <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  bins <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  fill <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fill_outliers <span class="op">=</span> <span class="st">"#a7d1a7"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>data</dt>
 <dd><p>data.frame</p></dd>
+
+
 <dt>x</dt>
 <dd><p>variable name in data.frame <code>data</code> that should be mapped</p></dd>
+
+
 <dt>left</dt>
 <dd><p>numeric indicating the floor of the range</p></dd>
+
+
 <dt>right</dt>
 <dd><p>numeric indicating the ceiling of the range</p></dd>
+
+
 <dt>line</dt>
 <dd><p>show density line (default is FALSE)</p></dd>
+
+
 <dt>bins</dt>
 <dd><p>numeric to indicate number of bins</p></dd>
+
+
 <dt>fill</dt>
 <dd><p>color used to fill bars</p></dd>
+
+
 <dt>color</dt>
 <dd><p>color for bar lines</p></dd>
+
+
 <dt>fill_outliers</dt>
 <dd><p>color used to fill outlier bars</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>a ggplot2 object</p>
+    
+
+<p>a ggplot2 object</p>
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -107,11 +126,11 @@ based on suggestions from <a href="https://edwinth.github.io/blog/outlier-bin/" 
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="fu">histbin</span><span class="op">(</span><span class="va">MTPL2</span>, <span class="va">premium</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">histbin</span><span class="op">(</span><span class="va">MTPL2</span>, <span class="va">premium</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="histbin-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span class="fu">histbin</span><span class="op">(</span><span class="va">MTPL2</span>, <span class="va">premium</span>, left <span class="op">=</span> <span class="fl">30</span>, right <span class="op">=</span> <span class="fl">120</span>, bins <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
+<span class="r-in"><span><span class="fu">histbin</span><span class="op">(</span><span class="va">MTPL2</span>, <span class="va">premium</span>, left <span class="op">=</span> <span class="fl">30</span>, right <span class="op">=</span> <span class="fl">120</span>, bins <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="histbin-2.png" alt="" width="700" height="433"></span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -126,7 +145,7 @@ based on suggestions from <a href="https://edwinth.github.io/blog/outlier-bin/" 
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

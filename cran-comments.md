@@ -1,8 +1,8 @@
 ## Resubmission
 This is a resubmission. In this version:
 
-* `smooth_coef()` now gives correct results for intervals with scientific notation
-* `reduce()` now returns no errors anymore for columns with dates in POSIXt format
+* `rotate_angle` in `autoplot.univariate()` is added to rotate x-labels
+* `univariate()` now accepts external vectors for `x`; `vec_ext()` must be used
 
 ## Test environments
 * local OS X install, R 4.2.0

@@ -20,7 +20,7 @@ proportionately."><meta property="og:image" content="/logo.png"><!-- mathjax -->
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.1</span>
       </span>
     </div>
 
@@ -59,24 +59,35 @@ proportionately.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">period_to_months</span><span class="op">(</span><span class="va">df</span>, <span class="va">begin</span>, <span class="va">end</span>, <span class="va">...</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">period_to_months</span><span class="op">(</span><span class="va">df</span>, <span class="va">begin</span>, <span class="va">end</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>df</dt>
 <dd><p>data.frame</p></dd>
+
+
 <dt>begin</dt>
 <dd><p>column in <code>df</code> with begin dates</p></dd>
+
+
 <dt>end</dt>
 <dd><p>column in <code>df</code> with end dates</p></dd>
+
+
 <dt>...</dt>
 <dd><p>numeric columns in <code>df</code> to split</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>data.frame with same columns as in <code>df</code>, and one extra column
+    
+
+<p>data.frame with same columns as in <code>df</code>, and one extra column
 called <code>id</code></p>
+
+
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -94,19 +105,19 @@ same number of days (i.e. 30).</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lubridate.tidyverse.org" class="external-link">lubridate</a></span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lubridate.tidyverse.org" class="external-link">lubridate</a></span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Attaching package: ‘lubridate’</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> The following objects are masked from ‘package:base’:</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>     date, intersect, setdiff, union</span>
-<span class="r-in"><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span class="r-in">begin1 <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2014-01-01"</span>, <span class="st">"2014-01-01"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span class="r-in">end <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2014-03-14"</span>, <span class="st">"2014-05-10"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span class="r-in">termination <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2014-03-14"</span>, <span class="st">"2014-05-10"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span class="r-in">exposure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.2025</span>, <span class="fl">0.3583</span><span class="op">)</span>,</span>
-<span class="r-in">premium <span class="op">=</span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">125</span>, <span class="fl">150</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">period_to_months</span><span class="op">(</span><span class="va">portfolio</span>, <span class="va">begin1</span>, <span class="va">end</span>, <span class="va">premium</span>, <span class="va">exposure</span><span class="op">)</span></span>
+<span class="r-in"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>begin1 <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2014-01-01"</span>, <span class="st">"2014-01-01"</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>end <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2014-03-14"</span>, <span class="st">"2014-05-10"</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>termination <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2014-03-14"</span>, <span class="st">"2014-05-10"</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>exposure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.2025</span>, <span class="fl">0.3583</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>premium <span class="op">=</span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">125</span>, <span class="fl">150</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">period_to_months</span><span class="op">(</span><span class="va">portfolio</span>, <span class="va">begin1</span>, <span class="va">end</span>, <span class="va">premium</span>, <span class="va">exposure</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    id     begin1        end termination   exposure  premium</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1:  1 2014-01-01 2014-01-31  2014-03-14 0.08209459 50.67568</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2:  1 2014-02-01 2014-02-28  2014-03-14 0.08209459 50.67568</span>
@@ -116,7 +127,7 @@ same number of days (i.e. 30).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6:  2 2014-03-01 2014-03-31  2014-05-10 0.08268462 34.61538</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 7:  2 2014-04-01 2014-04-30  2014-05-10 0.08268462 34.61538</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 8:  2 2014-05-01 2014-05-31  2014-05-10 0.02756154 11.53846</span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -131,7 +142,7 @@ same number of days (i.e. 30).</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

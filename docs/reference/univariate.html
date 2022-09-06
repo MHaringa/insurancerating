@@ -25,7 +25,7 @@ these arguments are ignored."><meta property="og:image" content="/logo.png"><!--
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.1</span>
       </span>
     </div>
 
@@ -68,37 +68,53 @@ these arguments are ignored.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">univariate</span><span class="op">(</span>
-  <span class="va">df</span>,
-  <span class="va">x</span>,
-  severity <span class="op">=</span> <span class="cn">NULL</span>,
-  nclaims <span class="op">=</span> <span class="cn">NULL</span>,
-  exposure <span class="op">=</span> <span class="cn">NULL</span>,
-  premium <span class="op">=</span> <span class="cn">NULL</span>,
-  by <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">univariate</span><span class="op">(</span></span>
+<span>  <span class="va">df</span>,</span>
+<span>  <span class="va">x</span>,</span>
+<span>  severity <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nclaims <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  premium <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  by <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>df</dt>
 <dd><p>data.frame with insurance portfolio</p></dd>
+
+
 <dt>x</dt>
-<dd><p>column in <code>df</code> with risk factor</p></dd>
+<dd><p>column in <code>df</code> with risk factor, or use <code>vec_ext()</code> for use with
+an external vector (see examples)</p></dd>
+
+
 <dt>severity</dt>
 <dd><p>column in <code>df</code> with severity (default is NULL)</p></dd>
+
+
 <dt>nclaims</dt>
 <dd><p>column in <code>df</code> with number of claims (default is NULL)</p></dd>
+
+
 <dt>exposure</dt>
 <dd><p>column in <code>df</code> with exposure (default is NULL)</p></dd>
+
+
 <dt>premium</dt>
 <dd><p>column in <code>df</code> with premium (default is NULL)</p></dd>
+
+
 <dt>by</dt>
 <dd><p>list of column(s) in <code>df</code> to group by</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A data.frame</p>
+    
+
+<p>A data.frame</p>
     </div>
     <div id="author">
     <h2>Author</h2>
@@ -107,9 +123,9 @@ these arguments are ignored.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="co"># Summarize by `area`</span></span>
-<span class="r-in"><span class="fu">univariate</span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, severity <span class="op">=</span> <span class="va">amount</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>,</span>
-<span class="r-in">           exposure <span class="op">=</span> <span class="va">exposure</span>, premium <span class="op">=</span> <span class="va">premium</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Summarize by `area`</span></span></span>
+<span class="r-in"><span><span class="fu">univariate</span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, severity <span class="op">=</span> <span class="va">amount</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>,</span></span>
+<span class="r-in"><span>           exposure <span class="op">=</span> <span class="va">exposure</span>, premium <span class="op">=</span> <span class="va">premium</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    area  amount nclaims   exposure premium  frequency average_severity</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1:    2 4063270      98  818.53973   51896 0.11972540         41461.94</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2:    3 7945311     113  764.99178   49337 0.14771401         70312.49</span>
@@ -120,10 +136,25 @@ these arguments are ignored.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2:   10386.1390 161.041632        64.49350</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3:    6470.7486 104.880188        61.69658</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4:     520.1832   7.674058        67.78464</span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Summarize by `zip` and `bm`</span></span>
-<span class="r-in"><span class="fu">univariate</span><span class="op">(</span><span class="va">MTPL</span>, x <span class="op">=</span> <span class="va">zip</span>, severity <span class="op">=</span> <span class="va">amount</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>,</span>
-<span class="r-in">           exposure <span class="op">=</span> <span class="va">exposure</span>, by <span class="op">=</span> <span class="va">bm</span><span class="op">)</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Summarize by `area`, with column name in external vector</span></span></span>
+<span class="r-in"><span><span class="va">xt</span> <span class="op">&lt;-</span> <span class="st">"area"</span></span></span>
+<span class="r-in"><span><span class="fu">univariate</span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="fu">vec_ext</span><span class="op">(</span><span class="va">xt</span><span class="op">)</span>, severity <span class="op">=</span> <span class="va">amount</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>,</span></span>
+<span class="r-in"><span>           exposure <span class="op">=</span> <span class="va">exposure</span>, premium <span class="op">=</span> <span class="va">premium</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    area  amount nclaims   exposure premium  frequency average_severity</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:    2 4063270      98  818.53973   51896 0.11972540         41461.94</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2:    3 7945311     113  764.99178   49337 0.14771401         70312.49</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3:    1 6896187     146 1065.74795   65753 0.13699299         47234.16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4:    0    6922       1   13.30685     902 0.07514927          6922.00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    risk_premium loss_ratio average_premium</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:    4964.0474  78.296400        63.40071</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2:   10386.1390 161.041632        64.49350</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3:    6470.7486 104.880188        61.69658</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4:     520.1832   7.674058        67.78464</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Summarize by `zip` and `bm`</span></span></span>
+<span class="r-in"><span><span class="fu">univariate</span><span class="op">(</span><span class="va">MTPL</span>, x <span class="op">=</span> <span class="va">zip</span>, severity <span class="op">=</span> <span class="va">amount</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>,</span></span>
+<span class="r-in"><span>           exposure <span class="op">=</span> <span class="va">exposure</span>, by <span class="op">=</span> <span class="va">bm</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     zip bm   amount nclaims     exposure  frequency average_severity</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  1:   1  5  4938135      82 5.496986e+02 0.14917265         60221.16</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  2:   1  3  3623485      86 6.139808e+02 0.14006952         42133.55</span>
@@ -296,10 +327,10 @@ these arguments are ignored.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 83:       0.0000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 84:       0.0000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     risk_premium</span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Summarize by `zip`, `bm` and `power`</span></span>
-<span class="r-in"><span class="fu">univariate</span><span class="op">(</span><span class="va">MTPL</span>, x <span class="op">=</span> <span class="va">zip</span>, severity <span class="op">=</span> <span class="va">amount</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>,</span>
-<span class="r-in">           exposure <span class="op">=</span> <span class="va">exposure</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">bm</span>, <span class="va">power</span><span class="op">)</span><span class="op">)</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Summarize by `zip`, `bm` and `power`</span></span></span>
+<span class="r-in"><span><span class="fu">univariate</span><span class="op">(</span><span class="va">MTPL</span>, x <span class="op">=</span> <span class="va">zip</span>, severity <span class="op">=</span> <span class="va">amount</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>,</span></span>
+<span class="r-in"><span>           exposure <span class="op">=</span> <span class="va">exposure</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">bm</span>, <span class="va">power</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       zip bm power amount nclaims   exposure  frequency average_severity</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    1:   1  5   106      0       0  1.0000000 0.00000000              NaN</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    2:   1  3    74   2687       1 14.1397260 0.07072273          2687.00</span>
@@ -324,7 +355,7 @@ these arguments are ignored.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3288:        0.000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3289:        0.000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3290:        0.000</span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -339,7 +370,7 @@ these arguments are ignored.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

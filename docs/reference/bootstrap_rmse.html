@@ -18,7 +18,7 @@ squared errors."><meta property="og:image" content="/logo.png"><!-- mathjax --><
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.1</span>
       </span>
     </div>
 
@@ -55,40 +55,55 @@ squared errors.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">bootstrap_rmse</span><span class="op">(</span>
-  <span class="va">model</span>,
-  <span class="va">data</span>,
-  n <span class="op">=</span> <span class="fl">50</span>,
-  frac <span class="op">=</span> <span class="fl">1</span>,
-  show_progress <span class="op">=</span> <span class="cn">TRUE</span>,
-  rmse_model <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">bootstrap_rmse</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  n <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  frac <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  show_progress <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  rmse_model <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>model</dt>
 <dd><p>a model object</p></dd>
+
+
 <dt>data</dt>
 <dd><p>data used to fit model object</p></dd>
+
+
 <dt>n</dt>
 <dd><p>number of bootstrap replicates (defaults to 50)</p></dd>
+
+
 <dt>frac</dt>
 <dd><p>fraction used in training set if cross-validation is applied
 (defaults to 1)</p></dd>
+
+
 <dt>show_progress</dt>
 <dd><p>show progress bar (defaults to TRUE)</p></dd>
+
+
 <dt>rmse_model</dt>
 <dd><p>numeric RMSE to show as vertical dashed line in autoplot()
 (defaults to NULL)</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list with components</p>
+    
+
+<p>A list with components</p>
 <dl><dt>rmse_bs</dt>
 <dd><p>numerical vector with <code>n</code> root mean squared errors</p></dd>
+
 <dt>rmse_mod</dt>
 <dd><p>root mean squared error for fitted (i.e. original) model</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -106,23 +121,23 @@ this sample. Then, the root mean squared error is calculated.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="va">mod1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">age_policyholder</span>, data <span class="op">=</span> <span class="va">MTPL</span>,</span>
-<span class="r-in">    offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Use all records in MTPL</span></span>
-<span class="r-in"><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu">bootstrap_rmse</span><span class="op">(</span><span class="va">mod1</span>, <span class="va">MTPL</span>, n <span class="op">=</span> <span class="fl">80</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Use 80% of records to test whether predictive ability depends on which 80%</span></span>
-<span class="r-in"><span class="co"># is used. This might for example be useful in case portfolio contains large</span></span>
-<span class="r-in"><span class="co"># claim sizes</span></span>
-<span class="r-in"><span class="va">x_frac</span> <span class="op">&lt;-</span> <span class="fu">bootstrap_rmse</span><span class="op">(</span><span class="va">mod1</span>, <span class="va">MTPL</span>, n <span class="op">=</span> <span class="fl">50</span>, frac <span class="op">=</span> <span class="fl">.8</span>,</span>
-<span class="r-in"> show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">x_frac</span><span class="op">)</span> <span class="co"># Variation is quite small for Poisson GLM</span></span>
-<span class="r-in"><span class="op">}</span></span>
-<span class="r-in"></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="va">mod1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">age_policyholder</span>, data <span class="op">=</span> <span class="va">MTPL</span>,</span></span>
+<span class="r-in"><span>    offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Use all records in MTPL</span></span></span>
+<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu">bootstrap_rmse</span><span class="op">(</span><span class="va">mod1</span>, <span class="va">MTPL</span>, n <span class="op">=</span> <span class="fl">80</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Use 80% of records to test whether predictive ability depends on which 80%</span></span></span>
+<span class="r-in"><span><span class="co"># is used. This might for example be useful in case portfolio contains large</span></span></span>
+<span class="r-in"><span><span class="co"># claim sizes</span></span></span>
+<span class="r-in"><span><span class="va">x_frac</span> <span class="op">&lt;-</span> <span class="fu">bootstrap_rmse</span><span class="op">(</span><span class="va">mod1</span>, <span class="va">MTPL</span>, n <span class="op">=</span> <span class="fl">50</span>, frac <span class="op">=</span> <span class="fl">.8</span>,</span></span>
+<span class="r-in"><span> show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">x_frac</span><span class="op">)</span> <span class="co"># Variation is quite small for Poisson GLM</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -137,7 +152,7 @@ this sample. Then, the root mean squared error is calculated.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

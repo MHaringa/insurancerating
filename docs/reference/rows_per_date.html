@@ -19,7 +19,7 @@ smaller with (e.g.) claim dates."><meta property="og:image" content="/logo.png">
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.1</span>
       </span>
     </div>
 
@@ -57,43 +57,62 @@ smaller with (e.g.) claim dates.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">rows_per_date</span><span class="op">(</span>
-  <span class="va">df</span>,
-  <span class="va">dates</span>,
-  <span class="va">df_begin</span>,
-  <span class="va">df_end</span>,
-  <span class="va">dates_date</span>,
-  <span class="va">...</span>,
-  nomatch <span class="op">=</span> <span class="cn">NULL</span>,
-  mult <span class="op">=</span> <span class="st">"all"</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rows_per_date</span><span class="op">(</span></span>
+<span>  <span class="va">df</span>,</span>
+<span>  <span class="va">dates</span>,</span>
+<span>  <span class="va">df_begin</span>,</span>
+<span>  <span class="va">df_end</span>,</span>
+<span>  <span class="va">dates_date</span>,</span>
+<span>  <span class="va">...</span>,</span>
+<span>  nomatch <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  mult <span class="op">=</span> <span class="st">"all"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>df</dt>
 <dd><p>data.frame with portfolio (df should include time period)</p></dd>
+
+
 <dt>dates</dt>
 <dd><p>data.frame with dates to join</p></dd>
+
+
 <dt>df_begin</dt>
 <dd><p>column name with begin dates of time period in <code>df</code></p></dd>
+
+
 <dt>df_end</dt>
 <dd><p>column name with end dates of time period in <code>df</code></p></dd>
+
+
 <dt>dates_date</dt>
 <dd><p>column name with dates in <code>dates</code></p></dd>
+
+
 <dt>...</dt>
 <dd><p>additional column names in <code>dates</code> to join by</p></dd>
+
+
 <dt>nomatch</dt>
 <dd><p>When a row (with interval say, <code>[a,b]</code>) in x has no match in
 y, nomatch=NA means NA is returned for y's non-by.y columns for that row of
 x. nomatch=NULL (default) means no rows will be returned for that row of x.</p></dd>
+
+
 <dt>mult</dt>
 <dd><p>When multiple rows in y match to the row in x, <code>mult</code> controls
 which values are returned - "all" (default), "first" or "last".</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>returned class is equal to class of <code>df</code></p>
+    
+
+<p>returned class is equal to class of <code>df</code></p>
+
+
     </div>
     <div id="author">
     <h2>Author</h2>
@@ -102,20 +121,20 @@ which values are returned - "all" (default), "first" or "last".</p></dd>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lubridate.tidyverse.org" class="external-link">lubridate</a></span><span class="op">)</span></span>
-<span class="r-in"><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span class="r-in">begin1 <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2014-01-01"</span>, <span class="st">"2014-01-01"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span class="r-in">end <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2014-03-14"</span>, <span class="st">"2014-05-10"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span class="r-in">termination <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2014-03-14"</span>, <span class="st">"2014-05-10"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span class="r-in">exposure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.2025</span>, <span class="fl">0.3583</span><span class="op">)</span>,</span>
-<span class="r-in">premium <span class="op">=</span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">125</span>, <span class="fl">150</span><span class="op">)</span>,</span>
-<span class="r-in">car_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BMW"</span>, <span class="st">"TESLA"</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">## Find active rows on different dates</span></span>
-<span class="r-in"><span class="va">dates0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>active_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2014-01-01"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2014-05-01"</span><span class="op">)</span>,</span>
-<span class="r-in">by <span class="op">=</span> <span class="st">"months"</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">rows_per_date</span><span class="op">(</span><span class="va">portfolio</span>, <span class="va">dates0</span>, df_begin <span class="op">=</span> <span class="va">begin1</span>, df_end <span class="op">=</span> <span class="va">end</span>,</span>
-<span class="r-in">dates_date <span class="op">=</span> <span class="va">active_date</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lubridate.tidyverse.org" class="external-link">lubridate</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>begin1 <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2014-01-01"</span>, <span class="st">"2014-01-01"</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>end <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2014-03-14"</span>, <span class="st">"2014-05-10"</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>termination <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2014-03-14"</span>, <span class="st">"2014-05-10"</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>exposure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.2025</span>, <span class="fl">0.3583</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>premium <span class="op">=</span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">125</span>, <span class="fl">150</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>car_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BMW"</span>, <span class="st">"TESLA"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Find active rows on different dates</span></span></span>
+<span class="r-in"><span><span class="va">dates0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>active_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2014-01-01"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2014-05-01"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>by <span class="op">=</span> <span class="st">"months"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">rows_per_date</span><span class="op">(</span><span class="va">portfolio</span>, <span class="va">dates0</span>, df_begin <span class="op">=</span> <span class="va">begin1</span>, df_end <span class="op">=</span> <span class="va">end</span>,</span></span>
+<span class="r-in"><span>dates_date <span class="op">=</span> <span class="va">active_date</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       begin1        end termination exposure premium car_type index_df</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 2014-01-01 2014-03-14  2014-03-14   0.2025     125      BMW        1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 2014-01-01 2014-05-10  2014-05-10   0.3583     150    TESLA        2</span>
@@ -134,29 +153,29 @@ which values are returned - "all" (default), "first" or "last".</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6  2014-03-01           3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 7  2014-04-01           4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 8  2014-05-01           5</span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">## With extra identifiers (merge claim date with time interval in portfolio)</span></span>
-<span class="r-in"><span class="va">claim_dates</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>claim_date <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2014-01-01"</span><span class="op">)</span>,</span>
-<span class="r-in">car_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BMW"</span>, <span class="st">"VOLVO"</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">### Only rows are returned that can be matched</span></span>
-<span class="r-in"><span class="fu">rows_per_date</span><span class="op">(</span><span class="va">portfolio</span>, <span class="va">claim_dates</span>, df_begin <span class="op">=</span> <span class="va">begin1</span>,</span>
-<span class="r-in">   df_end <span class="op">=</span> <span class="va">end</span>, dates_date <span class="op">=</span> <span class="va">claim_date</span>, <span class="va">car_type</span><span class="op">)</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## With extra identifiers (merge claim date with time interval in portfolio)</span></span></span>
+<span class="r-in"><span><span class="va">claim_dates</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>claim_date <span class="op">=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2014-01-01"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>car_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BMW"</span>, <span class="st">"VOLVO"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">### Only rows are returned that can be matched</span></span></span>
+<span class="r-in"><span><span class="fu">rows_per_date</span><span class="op">(</span><span class="va">portfolio</span>, <span class="va">claim_dates</span>, df_begin <span class="op">=</span> <span class="va">begin1</span>,</span></span>
+<span class="r-in"><span>   df_end <span class="op">=</span> <span class="va">end</span>, dates_date <span class="op">=</span> <span class="va">claim_date</span>, <span class="va">car_type</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        begin1        end termination exposure premium car_type index_df</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1: 2014-01-01 2014-03-14  2014-03-14   0.2025     125      BMW        1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    claim_date index_dates</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1: 2014-01-01           1</span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">### When row cannot be matched, NA is returned for that row</span></span>
-<span class="r-in"><span class="fu">rows_per_date</span><span class="op">(</span><span class="va">portfolio</span>, <span class="va">claim_dates</span>, df_begin <span class="op">=</span> <span class="va">begin1</span>,</span>
-<span class="r-in">   df_end <span class="op">=</span> <span class="va">end</span>, dates_date <span class="op">=</span> <span class="va">claim_date</span>, <span class="va">car_type</span>, nomatch <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">### When row cannot be matched, NA is returned for that row</span></span></span>
+<span class="r-in"><span><span class="fu">rows_per_date</span><span class="op">(</span><span class="va">portfolio</span>, <span class="va">claim_dates</span>, df_begin <span class="op">=</span> <span class="va">begin1</span>,</span></span>
+<span class="r-in"><span>   df_end <span class="op">=</span> <span class="va">end</span>, dates_date <span class="op">=</span> <span class="va">claim_date</span>, <span class="va">car_type</span>, nomatch <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        begin1        end termination exposure premium car_type index_df</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1: 2014-01-01 2014-03-14  2014-03-14   0.2025     125      BMW        1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2: 2014-01-01 2014-05-10  2014-05-10   0.3583     150    TESLA        2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    claim_date index_dates</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1: 2014-01-01           1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2:       &lt;NA&gt;          NA</span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -171,7 +190,7 @@ which values are returned - "all" (default), "first" or "last".</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

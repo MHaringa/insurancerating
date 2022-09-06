@@ -19,7 +19,7 @@ days are not merged."><meta property="og:image" content="/logo.png"><!-- mathjax
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.1</span>
       </span>
     </div>
 
@@ -57,41 +57,60 @@ days are not merged.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">reduce</span><span class="op">(</span><span class="va">df</span>, <span class="va">begin</span>, <span class="va">end</span>, <span class="va">...</span>, agg_cols <span class="op">=</span> <span class="cn">NULL</span>, agg <span class="op">=</span> <span class="st">"sum"</span>, min.gapwidth <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">reduce</span><span class="op">(</span><span class="va">df</span>, <span class="va">begin</span>, <span class="va">end</span>, <span class="va">...</span>, agg_cols <span class="op">=</span> <span class="cn">NULL</span>, agg <span class="op">=</span> <span class="st">"sum"</span>, min.gapwidth <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>df</dt>
 <dd><p>data.frame</p></dd>
+
+
 <dt>begin</dt>
 <dd><p>name of column <code>df</code> with begin dates</p></dd>
+
+
 <dt>end</dt>
 <dd><p>name of column in <code>df</code> with end dates</p></dd>
+
+
 <dt>...</dt>
 <dd><p>names of columns in <code>df</code> used to group date ranges by</p></dd>
+
+
 <dt>agg_cols</dt>
 <dd><p>list with columns in <code>df</code> to aggregate by (defaults to NULL)</p></dd>
+
+
 <dt>agg</dt>
 <dd><p>aggregation type (defaults to "sum")</p></dd>
+
+
 <dt>min.gapwidth</dt>
 <dd><p>ranges separated by a gap of at least <code>min.gapwidth</code>
 days are not merged. Defaults to 5.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>An object of class <code>"reduce"</code>.
+    
+
+<p>An object of class <code>"reduce"</code>.
 The function <code>summary</code> is used to obtain and print a summary of the results.
 An object of class <code>"reduce"</code> is a list usually containing at least the
 following elements:</p>
 <dl><dt>df</dt>
 <dd><p>data frame with reduced time periods</p></dd>
+
 <dt>begin</dt>
 <dd><p>name of column in <code>df</code> with begin dates</p></dd>
+
 <dt>end</dt>
 <dd><p>name of column in <code>df</code> with end dates</p></dd>
+
 <dt>cols</dt>
 <dd><p>names of columns in <code>df</code> used to group date ranges by</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -104,25 +123,25 @@ following elements:</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/structure.html" class="external-link">structure</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>policy_nr <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span>,</span>
-<span class="r-in"><span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span><span class="op">)</span>,</span>
-<span class="r-in">productgroup <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span>,</span>
-<span class="r-in"><span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span><span class="op">)</span>, product <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"contents"</span>,</span>
-<span class="r-in"><span class="st">"contents"</span>, <span class="st">"contents"</span>, <span class="st">"contents"</span>, <span class="st">"contents"</span>, <span class="st">"contents"</span>, <span class="st">"contents"</span>,</span>
-<span class="r-in"><span class="st">"contents"</span>, <span class="st">"contents"</span>, <span class="st">"contents"</span>, <span class="st">"contents"</span><span class="op">)</span>,</span>
-<span class="r-in">begin_dat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/structure.html" class="external-link">structure</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">16709</span>,<span class="fl">16740</span>, <span class="fl">16801</span>, <span class="fl">17410</span>, <span class="fl">17440</span>, <span class="fl">17805</span>, <span class="fl">17897</span>,</span>
-<span class="r-in"><span class="fl">17956</span>, <span class="fl">17987</span>, <span class="fl">18017</span>, <span class="fl">18262</span><span class="op">)</span>, class <span class="op">=</span> <span class="st">"Date"</span><span class="op">)</span>,</span>
-<span class="r-in">end_dat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/structure.html" class="external-link">structure</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">16739</span>, <span class="fl">16800</span>, <span class="fl">16831</span>, <span class="fl">17439</span>, <span class="fl">17531</span>, <span class="fl">17896</span>, <span class="fl">17955</span>,</span>
-<span class="r-in"><span class="fl">17986</span>, <span class="fl">18016</span>, <span class="fl">18261</span>, <span class="fl">18292</span><span class="op">)</span>, class <span class="op">=</span> <span class="st">"Date"</span><span class="op">)</span>,</span>
-<span class="r-in">premium <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">89L</span>, <span class="fl">58L</span>, <span class="fl">83L</span>, <span class="fl">73L</span>, <span class="fl">69L</span>, <span class="fl">94L</span>, <span class="fl">91L</span>, <span class="fl">97L</span>, <span class="fl">57L</span>, <span class="fl">65L</span>, <span class="fl">55L</span><span class="op">)</span><span class="op">)</span>,</span>
-<span class="r-in">row.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="op">-</span><span class="fl">11L</span><span class="op">)</span>, class <span class="op">=</span> <span class="st">"data.frame"</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Merge periods</span></span>
-<span class="r-in"><span class="va">pt1</span> <span class="op">&lt;-</span> <span class="fu">reduce</span><span class="op">(</span><span class="va">portfolio</span>, begin <span class="op">=</span> <span class="va">begin_dat</span>, end <span class="op">=</span> <span class="va">end_dat</span>, <span class="va">policy_nr</span>,</span>
-<span class="r-in">    <span class="va">productgroup</span>, <span class="va">product</span>, min.gapwidth <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Aggregate per period</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">pt1</span>, period <span class="op">=</span> <span class="st">"days"</span>, <span class="va">policy_nr</span>, <span class="va">productgroup</span>, <span class="va">product</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/structure.html" class="external-link">structure</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>policy_nr <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span>,</span></span>
+<span class="r-in"><span><span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span>, <span class="st">"12345"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>productgroup <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span>,</span></span>
+<span class="r-in"><span><span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span>, <span class="st">"fire"</span><span class="op">)</span>, product <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"contents"</span>,</span></span>
+<span class="r-in"><span><span class="st">"contents"</span>, <span class="st">"contents"</span>, <span class="st">"contents"</span>, <span class="st">"contents"</span>, <span class="st">"contents"</span>, <span class="st">"contents"</span>,</span></span>
+<span class="r-in"><span><span class="st">"contents"</span>, <span class="st">"contents"</span>, <span class="st">"contents"</span>, <span class="st">"contents"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>begin_dat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/structure.html" class="external-link">structure</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">16709</span>,<span class="fl">16740</span>, <span class="fl">16801</span>, <span class="fl">17410</span>, <span class="fl">17440</span>, <span class="fl">17805</span>, <span class="fl">17897</span>,</span></span>
+<span class="r-in"><span><span class="fl">17956</span>, <span class="fl">17987</span>, <span class="fl">18017</span>, <span class="fl">18262</span><span class="op">)</span>, class <span class="op">=</span> <span class="st">"Date"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>end_dat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/structure.html" class="external-link">structure</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">16739</span>, <span class="fl">16800</span>, <span class="fl">16831</span>, <span class="fl">17439</span>, <span class="fl">17531</span>, <span class="fl">17896</span>, <span class="fl">17955</span>,</span></span>
+<span class="r-in"><span><span class="fl">17986</span>, <span class="fl">18016</span>, <span class="fl">18261</span>, <span class="fl">18292</span><span class="op">)</span>, class <span class="op">=</span> <span class="st">"Date"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>premium <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">89L</span>, <span class="fl">58L</span>, <span class="fl">83L</span>, <span class="fl">73L</span>, <span class="fl">69L</span>, <span class="fl">94L</span>, <span class="fl">91L</span>, <span class="fl">97L</span>, <span class="fl">57L</span>, <span class="fl">65L</span>, <span class="fl">55L</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>row.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="op">-</span><span class="fl">11L</span><span class="op">)</span>, class <span class="op">=</span> <span class="st">"data.frame"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Merge periods</span></span></span>
+<span class="r-in"><span><span class="va">pt1</span> <span class="op">&lt;-</span> <span class="fu">reduce</span><span class="op">(</span><span class="va">portfolio</span>, begin <span class="op">=</span> <span class="va">begin_dat</span>, end <span class="op">=</span> <span class="va">end_dat</span>, <span class="va">policy_nr</span>,</span></span>
+<span class="r-in"><span>    <span class="va">productgroup</span>, <span class="va">product</span>, min.gapwidth <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Aggregate per period</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">pt1</span>, period <span class="op">=</span> <span class="st">"days"</span>, <span class="va">policy_nr</span>, <span class="va">productgroup</span>, <span class="va">product</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         date type count policy_nr productgroup  product</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 2020-02-01  out     1     12345         fire contents</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 2018-10-01   in     1     12345         fire contents</span>
@@ -130,13 +149,13 @@ following elements:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4 2017-09-01   in     1     12345         fire contents</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 2016-02-01  out     1     12345         fire contents</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6 2015-10-01   in     1     12345         fire contents</span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Merge periods and sum premium per period</span></span>
-<span class="r-in"><span class="va">pt2</span> <span class="op">&lt;-</span> <span class="fu">reduce</span><span class="op">(</span><span class="va">portfolio</span>, begin <span class="op">=</span> <span class="va">begin_dat</span>, end <span class="op">=</span> <span class="va">end_dat</span>, <span class="va">policy_nr</span>,</span>
-<span class="r-in">    <span class="va">productgroup</span>, <span class="va">product</span>, agg_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">premium</span><span class="op">)</span>, min.gapwidth <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Create summary with aggregation per week</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">pt2</span>, period <span class="op">=</span> <span class="st">"weeks"</span>, <span class="va">policy_nr</span>, <span class="va">productgroup</span>, <span class="va">product</span><span class="op">)</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Merge periods and sum premium per period</span></span></span>
+<span class="r-in"><span><span class="va">pt2</span> <span class="op">&lt;-</span> <span class="fu">reduce</span><span class="op">(</span><span class="va">portfolio</span>, begin <span class="op">=</span> <span class="va">begin_dat</span>, end <span class="op">=</span> <span class="va">end_dat</span>, <span class="va">policy_nr</span>,</span></span>
+<span class="r-in"><span>    <span class="va">productgroup</span>, <span class="va">product</span>, agg_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">premium</span><span class="op">)</span>, min.gapwidth <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Create summary with aggregation per week</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">pt2</span>, period <span class="op">=</span> <span class="st">"weeks"</span>, <span class="va">policy_nr</span>, <span class="va">productgroup</span>, <span class="va">product</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      week type count policy_nr productgroup  product</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 2020W06  out     1     12345         fire contents</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 2018W40   in     1     12345         fire contents</span>
@@ -144,8 +163,8 @@ following elements:</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4 2017W35   in     1     12345         fire contents</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 2016W06  out     1     12345         fire contents</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6 2015W40   in     1     12345         fire contents</span>
-<span class="r-in"></span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -160,7 +179,7 @@ following elements:</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

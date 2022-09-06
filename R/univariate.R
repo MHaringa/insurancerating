@@ -93,14 +93,12 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
     stop("Define column names.", call. = FALSE)
   }
 
-  #BY <- as.call(c(as.symbol("list"), substitute(x), byl))
   BY <- as.call(c(as.symbol("list"), as.symbol(.xvar), byl))
   dt <- eval(bquote(data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
                                    by = .(BY), .SDcols = .(COLS)]))
 
   dt1 <- NULL
   if (!missing(by)){
-  #  BYx <- as.call(c(as.symbol("list"), substitute(x)))
     BYx <- as.call(c(as.symbol("list"), as.symbol(.xvar)))
     dt1 <- eval(bquote(
       data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE),

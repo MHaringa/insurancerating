@@ -20,7 +20,7 @@ or the burning cost (i.e. risk premium or pure premium)."><meta property="og:ima
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.6.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.1</span>
       </span>
     </div>
 
@@ -59,52 +59,74 @@ or the burning cost (i.e. risk premium or pure premium).</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">fit_gam</span><span class="op">(</span>
-  <span class="va">data</span>,
-  <span class="va">nclaims</span>,
-  <span class="va">x</span>,
-  <span class="va">exposure</span>,
-  amount <span class="op">=</span> <span class="cn">NULL</span>,
-  pure_premium <span class="op">=</span> <span class="cn">NULL</span>,
-  model <span class="op">=</span> <span class="st">"frequency"</span>,
-  round_x <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">fit_gam</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  <span class="va">nclaims</span>,</span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">exposure</span>,</span>
+<span>  amount <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pure_premium <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  model <span class="op">=</span> <span class="st">"frequency"</span>,</span>
+<span>  round_x <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>data</dt>
 <dd><p>data.frame of an insurance portfolio</p></dd>
+
+
 <dt>nclaims</dt>
 <dd><p>column in <code>data</code> with number of claims</p></dd>
+
+
 <dt>x</dt>
 <dd><p>column in <code>data</code> with continuous risk factor</p></dd>
+
+
 <dt>exposure</dt>
 <dd><p>column in <code>data</code> with exposure</p></dd>
+
+
 <dt>amount</dt>
 <dd><p>column in <code>data</code> with claim amount</p></dd>
+
+
 <dt>pure_premium</dt>
 <dd><p>column in <code>data</code> with pure premium</p></dd>
+
+
 <dt>model</dt>
 <dd><p>choose either 'frequency', 'severity' or 'burning'
 (model = 'frequency' is default). See details section.</p></dd>
+
+
 <dt>round_x</dt>
 <dd><p>round elements in column <code>x</code> to multiple of <code>round_x</code>. This
 gives a speed enhancement for data containing many levels for <code>x</code>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list with components</p>
+    
+
+<p>A list with components</p>
 <dl><dt>prediction</dt>
 <dd><p>data frame with predicted values</p></dd>
+
 <dt>x</dt>
 <dd><p>name of continuous risk factor</p></dd>
+
 <dt>model</dt>
 <dd><p>either 'frequency', 'severity' or 'burning'</p></dd>
+
 <dt>data</dt>
 <dd><p>data frame with predicted values and observed values</p></dd>
+
 <dt>x_obs</dt>
 <dd><p>observations for continuous risk factor</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -146,8 +168,8 @@ doi:10.1111/j.1467-9868.2010.00749.x.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="fu">fit_gam</span><span class="op">(</span><span class="va">MTPL</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, x <span class="op">=</span> <span class="va">age_policyholder</span>,</span>
-<span class="r-in">exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">fit_gam</span><span class="op">(</span><span class="va">MTPL</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, x <span class="op">=</span> <span class="va">age_policyholder</span>,</span></span>
+<span class="r-in"><span>exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            x  predicted     lwr_95    upr_95</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1   18.00000 0.33683705 0.21781040 0.5209081</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2   18.77778 0.32218997 0.21698662 0.4783999</span>
@@ -249,7 +271,7 @@ doi:10.1111/j.1467-9868.2010.00749.x.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 98  93.44444 0.10305920 0.03233509 0.3284728</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 99  94.22222 0.10312138 0.02991252 0.3555039</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 100 95.00000 0.10318029 0.02763269 0.3852745</span>
-<span class="r-in"></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -264,7 +286,7 @@ doi:10.1111/j.1467-9868.2010.00749.x.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>
