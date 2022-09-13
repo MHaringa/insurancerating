@@ -250,7 +250,7 @@ add_restrictions_df <- function(model_data, restrictions_df){
     stop("Number of columns must be equal to 2.", call. = FALSE)
   }
 
-  if ( length(unique(restrictions_df[,1])) != nrow(restrictions_df) ) {
+  if ( length(unique(restrictions_df[[1]])) != nrow(restrictions_df) ) {
     stop(rcol1, "in restricted data must have unique values.", call. = FALSE)
   }
 
