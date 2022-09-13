@@ -251,7 +251,7 @@ add_restrictions_df <- function(model_data, restrictions_df){
   }
 
   if ( length(unique(restrictions_df[[1]])) != nrow(restrictions_df) ) {
-    stop(rcol1, "in restricted data must have unique values.", call. = FALSE)
+    stop(rcol1, " in restricted data must have unique values.", call. = FALSE)
   }
 
   if ( rcol2 %in% names(model_data) ) {
