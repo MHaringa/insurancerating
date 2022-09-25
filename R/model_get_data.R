@@ -8,6 +8,8 @@
 #'
 #' @author Martin Haringa
 #'
+#' @import data.table
+#'
 #' @return data.frame
 #'
 #' @export
@@ -39,11 +41,16 @@ model_data <- function(x){
   }
 
   if( inherits(x, c("refitsmooth", "refitrestricted")) ) {
-    xdf <- x$data
-    out <- xdf[!names(xdf) %in% c("breaks_min", "breaks_max",
-                                  "start_oc", "end_oc",
-                                  "start_", "end_",
-                                  "avg_", "risk_factor")]
+
+    xdf <- data.table::data.table(x$data)
+
+    xdf_nm <- names(xdf)
+    rem_nm <- c("breaks_min", "breaks_max", "start_oc",
+                "end_oc", "start_", "end_", "avg_", "risk_factor")
+
+    xrem <- xdf_nm[! xdf_nm %in% rem_nm]
+
+    out <- xdf[, .SD, .SDcols = xrem]
 
     attr(out, "new_nm") <- attr(x, "new_col_nm")
     attr(out, "old_nm") <- attr(x, "old_col_nm")

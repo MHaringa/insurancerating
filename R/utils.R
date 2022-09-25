@@ -71,18 +71,20 @@ fisher <- function(vec, n = 7, diglab = 2){
 
 
 #' @keywords internal
-make_stars <- function(pval) {
+make_stars <- function(pval){
   # returns character string
-  if ( is.na(pval) ) {pval <- is.numeric(pval)}
-  if(pval <= 0.001)
+  if (is.na(pval)) { pval <- is.numeric(pval) }
+  if (pval > 0 & pval <= 0.001)
     stars = "***"
-  else if(pval > 0.001 & pval <= 0.01)
+  else if (pval > 0.001 & pval <= 0.01)
     stars = "**"
-  else if(pval > 0.01 & pval <= 0.05)
+  else if (pval > 0.01 & pval <= 0.05)
     stars = "*"
-  else if(pval > 0.05 & pval <= 0.1)
+  else if (pval > 0.05 & pval <= 0.1)
     stars = "."
-  else {stars = ""}
+  else {
+    stars = ""
+  }
   stars
 }
 

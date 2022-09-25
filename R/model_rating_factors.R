@@ -31,195 +31,189 @@
 #' rating_factors1(x)
 #'
 #' @export
-rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
-                            colname = "estimate", exponentiate = TRUE,
-                            round_exposure = 0){
-
+rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname = "estimate",
+                            exponentiate = TRUE, round_exposure = 0){
   xl <- model$xlevels
   model_nm <- deparse(substitute(model))
+  exposure <- deparse(substitute(exposure))
+  model_data_name <- deparse(substitute(model_data))
 
-  if( inherits(model, c("restricted", "smooth")) ) {
-    stop("Input must be of class glm. Use refit_glm() first.", call. = FALSE)
+  if (inherits(model, c("restricted", "smooth"))) {
+    stop("Input must be of class glm. Use refit_glm() first.",
+         call. = FALSE)
   }
 
-  if( !inherits(model, c("glm", "refitsmooth", "refitrestricted")) ) {
-    stop("Input must be of class glm.", call. = FALSE)
+  if (!inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
+    stop("Input must be of class glm.",
+         call. = FALSE)
   }
 
-  if (inherits(model, "refitsmooth")){
-    smooth_rf <- attr(model, "new_rf")
-    smooth_rf$ind <- as.character(smooth_rf$risk_factor)
-    smooth_rf$values <- as.character(smooth_rf$level)
-    smooth_rf$ind_values <- paste0(smooth_rf$ind, smooth_rf$values)
+  smre <- function(dfatt){
+    x <- attr(model, dfatt)
+    x$ind <- as.character(x$risk_factor)
+    x$values <- as.character(x$level)
+    x$ind_values <- paste0(x$ind, x$values)
+    return(x)
+  }
+
+  if (inherits(model, "refitsmooth")) {
+    smooth_rf <- smre("new_rf")
     smooth_rf2 <- smooth_rf[, c("ind", "values", "ind_values")]
   }
-
-  if (inherits(model, "refitrestricted")){
-    rst_rf <- attr(model, "new_rf_rst")
-    rst_rf$ind <- as.character(rst_rf$risk_factor)
-    rst_rf$values <- as.character(rst_rf$level)
-    rst_rf$ind_values <- paste0(rst_rf$ind, rst_rf$values)
+  if (inherits(model, "refitrestricted")) {
+    rst_rf <- smre("new_rf_rst")
     rst_rf2 <- rst_rf[, c("ind", "values", "ind_values")]
   }
 
   xl_names <- NULL
 
-  if ( length(xl) > 0) {
+  if (length(xl) > 0) {
     xl_names <- names(xl)
     xl_df <- stack(xl)
-    xl_df$ind <- as.character(xl_df$ind)
-    xl_df$values <- as.character(xl_df$values)
+    xl_df[,c("ind","values")] <- lapply(xl_df[,c("ind","values")], as.character)
     xl_df$ind_values <- paste0(xl_df$ind, xl_df$values)
   }
 
-  if ( is.null(xl) ){
+  if (is.null(xl)) {
     xl_df <- data.frame(ind = character(),
                         values = character(),
                         ind_values = character(),
                         stringsAsFactors = FALSE)
   }
 
+  smre_df <- function(x){
+    if (length(xl) > 0) {
+      xl_df <- rbind(xl_df, x)
+    }
+    if (!length(xl)) {
+      xl_df <- x
+    }
+    return(xl_df)
+  }
 
   if (inherits(model, "refitsmooth")) {
-
-    if ( length(xl) > 0){
-      xl_df <- rbind(xl_df, smooth_rf2)
-    }
-
-    if ( !length(xl) ){
-      xl_df <- smooth_rf2
-    }
-
+    xl_df <- smre_df(smooth_rf2)
     xl_names <- c(xl_names, unique(smooth_rf$ind))
   }
 
   if (inherits(model, "refitrestricted")) {
-
-    if ( length(xl) > 0){
-      xl_df <- rbind(xl_df, rst_rf2)
-    }
-
-    if ( !length(xl) ){
-      xl_df <- rst_rf2
-    }
-
+    xl_df <- smre_df(rst_rf2)
     xl_names <- c(xl_names, unique(rst_rf$ind))
   }
 
   names(xl_df)[names(xl_df) == "values"] <- "level"
   names(xl_df)[names(xl_df) == "ind"] <- "risk_factor"
 
-  exposure <- deparse(substitute(exposure))
-  model_data_name <- deparse(substitute(model_data))
-
   xl_names_in <- xl_names[which(xl_names %in% names(model_data))]
   xl_names_out <- setdiff(xl_names, xl_names_in)
 
-  # Determine exposure per level
-  if ( !is.null( model_data ) & exposure != "NULL" ){
-
-    if ( length( xl_names_in ) > 0){
-
+  if (!is.null(model_data) & exposure != "NULL") {
+    if (length(xl_names_in) > 0) {
       model_data <- as.data.frame(model_data)
-
-      if ( !exposure %in% names(model_data) ) {
-        stop( exposure, " is unknown in ", model_data_name, call. = FALSE)
+      if (!exposure %in% names(model_data)) {
+        stop(exposure, " is unknown in ", model_data_name,
+             call. = FALSE)
       }
-
-      if ( !is.numeric(model_data[[exposure]] )) {
-        stop( exposure, " should be numeric", call. = FALSE)
+      if (!is.numeric(model_data[[exposure]])) {
+        stop(exposure, " should be numeric", call. = FALSE)
       }
-
-      if ( length( xl_names_out ) > 0){
-        message(paste0(xl_names_out, collapse = ", "), " not in ",
-                model_data_name)
+      if (length(xl_names_out) > 0) {
+        message(paste0(xl_names_out, collapse = ", "),
+                " not in ", model_data_name)
       }
-
-      xl_names_in <- xl_names_in[which(xl_names_in %in% names(model_data))]
-
-      exp_fn <- function(var1){
-        x <- model_data[!is.na(model_data[[var1]]),]
+      xl_names_in <- xl_names_in[which(xl_names_in %in%
+                                         names(model_data))]
+      exp_fn <- function(var1) {
+        x <- model_data[!is.na(model_data[[var1]]), ]
         x <- data.table::data.table(x)[, lapply(.SD, sum, na.rm = TRUE),
                                        by = var1, .SDcols = exposure]
         names(x)[1] <- c("level")
         x$risk_factor <- var1
         return(x)
       }
-
       listexp <- lapply(xl_names_in, exp_fn)
       dfexp <- do.call(rbind, listexp)
       dfexp$level <- as.character(dfexp$level)
-      xl_df <- dplyr::left_join(xl_df, dfexp, by = c("level", "risk_factor"))
-    } else{
-      message(paste0(xl_names_out, collapse = ", "), " not in ",
-              model_data_name)
+      xl_df <- dplyr::left_join(xl_df, dfexp, by = c("level",
+                                                     "risk_factor"))
     }
+    else {
+      message(paste0(xl_names_out, collapse = ", "),
+              " not in ", model_data_name)
+    }
+  }
+
+  ret <- coefficients(summary(model))
+  ret <- cbind(ind = rownames(ret), data.frame(ret, row.names = NULL))
+  coefs <- stats::coef(model)
+
+  if (length(coefs) != nrow(ret)) {
+    coefs <- stack(coefs)
+    colnames(coefs)[colnames(coefs) == 'values'] <- 'Estimate'
+    ret <- merge(x = coefs, y = ret, by = c("ind", "Estimate"), all.x = TRUE)
   }
 
   coef <- coefficients(model)
   vals <- stack(coef)
-
-  vals$pvalues <- as.numeric(coef(summary(model))[,4])
+  vals$pvalues <- as.numeric(ret[,5])
+  vals$pvalues <- ifelse(is.na(vals$pvalues), -9e9, vals$pvalues)
   vals$ind <- as.character(vals$ind)
 
-  if ( inherits(model, "refitsmooth")){
-    smooth_coef <- smooth_rf[, c("yhat", "ind_values")]
-    colnames(smooth_coef)[1] <- "values"
-    colnames(smooth_coef)[2] <- "ind"
-    smooth_coef$pvalues <- NA
-    smooth_coef$values <- log(smooth_coef$values)
-    vals <- rbind(vals, smooth_coef)
+  smre_vals <- function(x){
+    xc <- x[, c("yhat", "ind_values")]
+    colnames(xc)[1] <- "values"
+    colnames(xc)[2] <- "ind"
+    xc$pvalues <- NA
+    xc$values <- log(xc$values)
+    return(rbind(vals, xc))
   }
 
-  if ( inherits(model, "refitrestricted")){
-    rst_coef <- rst_rf[, c("yhat", "ind_values")]
-    colnames(rst_coef)[1] <- "values"
-    colnames(rst_coef)[2] <- "ind"
-    rst_coef$pvalues <- NA
-    rst_coef$values <- log(rst_coef$values)
-    vals <- rbind(vals, rst_coef)
+  if (inherits(model, "refitsmooth")) {
+    vals <- smre_vals(smooth_rf)
   }
 
-  uit <- dplyr::full_join(xl_df, vals, by = c("ind_values" = "ind"))
-  uit$values <- ifelse(is.na( uit$values ), 0, uit$values)
+  if (inherits(model, "refitrestricted")) {
+    vals <- smre_vals(rst_rf)
+  }
+
+  uit <- dplyr::full_join(xl_df, vals, by = c(ind_values = "ind"))
+  uit$values <- ifelse(is.na(uit$pvalues), 0, uit$values)
 
   Terms <- terms(model)
   int <- attr(Terms, "intercept")
+  uit$level <- ifelse(int == 1 & uit$ind_values == "(Intercept)",
+                      "(Intercept)", uit$level)
+  uit$risk_factor <- ifelse(int == 1 & uit$ind_values == "(Intercept)",
+                            "(Intercept)", uit$risk_factor)
+  uit$level <- ifelse(is.na(uit$level) & is.na(uit$risk_factor),
+                      uit$ind_values, uit$level)
+  uit$risk_factor <- ifelse(is.na(uit$risk_factor), uit$ind_values,
+                            uit$risk_factor)
 
-  uit$level <- ifelse( int == 1 & uit$ind_values == "(Intercept)",
-                       "(Intercept)", uit$level)
-  uit$risk_factor <- ifelse( int == 1 & uit$ind_values == "(Intercept)",
-                             "(Intercept)", uit$risk_factor)
-  uit$level <- ifelse( is.na(uit$level) & is.na(uit$risk_factor),
-                       uit$ind_values, uit$level)
-  uit$risk_factor <- ifelse( is.na(uit$risk_factor), uit$ind_values,
-                             uit$risk_factor)
-
-  if ( isTRUE( exponentiate )) {
+  if (isTRUE(exponentiate)) {
     uit$values <- exp(uit$values)
   }
 
-  if ( int == 1){
+  if (int == 1) {
     int_row <- uit[uit$risk_factor == "(Intercept)", ]
     uit1 <- uit[uit$risk_factor != "(Intercept)", ]
     uit <- rbind(int_row, uit1)
   }
+
   row.names(uit) <- NULL
-  if ( !is.null( model_data ) & exposure != "NULL" &
-       length( xl_names_in ) > 0){
+  if (!is.null(model_data) & exposure != "NULL" & length(xl_names_in) > 0) {
     uit <- uit[, c("risk_factor", "level", "values", exposure, "pvalues")]
     uit[[exposure]] <- round(uit[[exposure]], round_exposure)
-  } else {
+  }
+  else {
     uit <- uit[, c("risk_factor", "level", "values", "pvalues")]
   }
   names(uit)[names(uit) == "values"] <- colname
-
-  #uit$pvalues <- sapply(uit$pvalues, function(x) make_stars(x))
+  uit$pvalues <- ifelse(uit$pvalues < 0, NA, uit$pvalues)
   uit$pvalues <- vapply(uit$pvalues, function(x) make_stars(x),
                         FUN.VALUE = character(1))
   return(uit)
 }
-
 
 #' Include reference group in regression output
 #'

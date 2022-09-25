@@ -14,7 +14,6 @@
 #' days are not merged. Defaults to 5.
 #'
 #' @import data.table
-#' @importFrom dplyr lead
 #' @importFrom lubridate %m+%
 #'
 #' @author Martin Haringa
@@ -60,86 +59,70 @@
 #'
 #'
 #' @export
-reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum",
-                   min.gapwidth = 5) {
+reduce <- function (df, begin, end, ..., agg_cols = NULL, agg = "sum",
+                    min.gapwidth = 5){
 
   .begin <- deparse(substitute(begin))
   .end <- deparse(substitute(end))
-
-  start_dt = end_dt = aggcols0 = NULL # due to NSE notes in R CMD check
-
+  start_dt = end_dt = aggcols0 = NULL
   if (!inherits(df[[.begin]], c("Date", "POSIXt")) |
-      !inherits(df[[.end]], c("Date", "POSIXt")) ){
-    stop("Columns begin and end should be Date objects.
-         Use e.g. lubridate::ymd() to create Date object.", call. = FALSE)
+      !inherits(df[[.end]], c("Date", "POSIXt"))) {
+    stop("Columns begin and end should be Date objects.\n         Use e.g. lubridate::ymd() to create Date object.",
+         call. = FALSE)
   }
-
   if (anyNA(df[[.begin]])) {
-    stop("NA values in data.table 'begin' column: '", .begin, "'. All rows with
-         NA values in the range columns must be removed for reduce() to work.",
+    stop("NA values in data.table 'begin' column: '",
+         .begin, "'. All rows with\n         NA values in the range columns must be removed for reduce() to work.",
          call. = FALSE)
   }
   else if (anyNA(df[[.end]])) {
-    stop("NA values in data.table 'end' column: '", .end, "'. All rows with NA
-         values in the range columns must be removed for reduce() to work.",
+    stop("NA values in data.table 'end' column: '",
+         .end, "'. All rows with NA\n         values in the range columns must be removed for reduce() to work.",
          call. = FALSE)
   }
-
   cols0 <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
-  aggcols0 <- vapply(substitute(agg_cols)[-1],deparse, FUN.VALUE = character(1))
-
-
-  if ( length(cols0) == 0 ){
+  aggcols0 <- vapply(substitute(agg_cols)[-1], deparse, FUN.VALUE = character(1))
+  if (length(cols0) == 0) {
     stop("define columns to group date ranges by", call. = FALSE)
   }
-
   cols <- c(cols0, .begin, .end)
 
-  # Set keys (keys does ordering)
   dt <- data.table::setDT(df)
   data.table::setkeyv(dt, cols)
-
-  # Add gapwidth
-  dt[, c(.begin) := get(.begin) - min.gapwidth]
-  dt[, c(.end) := get(.end) + min.gapwidth]
-
-  # Get rid of overlapping transactions
-  if (length(aggcols0) == 0){
-    dt_reduce <- dt[,.(start_dt = get(.begin),
-                       end_dt = get(.end),
-                       index = c(0,
-                                 cumsum(as.numeric(dplyr::lead(get(.begin))) >
-                                          cummax(as.numeric(get(.end))))[-.N])),
+  dt[, `:=`(c(.begin), get(.begin) - min.gapwidth)]
+  dt[, `:=`(c(.end), get(.end) + min.gapwidth)]
+  if (length(aggcols0) == 0) {
+    dt <- unique(dt, by = cols)
+    dt_reduce <- dt[, .(start_dt = get(.begin), end_dt = get(.end),
+                        index = c(0, cumsum(as.numeric(
+                          data.table::shift(get(.begin), 1, type = "lead")) >
+                            cummax(as.numeric(get(.end))))[-.N])),
                     keyby = c(cols0)]
-    dt_reduce <- dt_reduce[,.(start_dt = min(start_dt), end_dt = max(end_dt)),
-                           by = c(cols0, "index")]
+    dt_reduce <- dt_reduce[, .(start_dt = min(start_dt),
+                               end_dt = max(end_dt)), by = c(cols0, "index")]
   }
-
-  if ( length(aggcols0) > 0 ){
-    dt_reduce <- dt[, .(start_dt = get(.begin),
-                        end_dt = get(.end),
-                        index = c(0,
-                                  cumsum(as.numeric(dplyr::lead(get(.begin))) >
-                                           cummax(
-                                             as.numeric(get(.end))))[-.N])),
+  if (length(aggcols0) > 0) {
+    dt <- dt[, lapply(.SD, get(agg), na.rm = TRUE), by = cols, .SDcols = aggcols0]
+    dt_reduce <- dt[, .(start_dt = get(.begin), end_dt = get(.end),
+                        index = c(0, cumsum(as.numeric(
+                          data.table::shift(get(.begin), 1, type = "lead")) >
+                            cummax(as.numeric(get(.end))))[-.N])),
                     keyby = c(cols0)]
-    dt_reduce <- cbind(dt_reduce, dt[, aggcols0, with = FALSE]) # ..aggcols0
+    dt_reduce <- cbind(dt_reduce, dt[, aggcols0, with = FALSE])
     dt_reduce <- dt_reduce[, c(end_dt = max(end_dt), start_dt = min(start_dt),
-                               lapply(.SD, get(agg))), by = c(cols0, "index"),
+                               lapply(.SD, get(agg), na.rm = TRUE)),
+                           by = c(cols0, "index"),
                            .SDcols = aggcols0]
   }
-
-  data.table::setnames(dt_reduce, old = c("start_dt", "end_dt"),
+  data.table::setnames(dt_reduce,
+                       old = c("start_dt", "end_dt"),
                        new = c(.begin, .end))
-
-  # Reverse gapwidth
-  dt_reduce[, c(.begin) := get(.begin) + min.gapwidth]
-  dt_reduce <- dt_reduce[, c(.end) := get(.end) - min.gapwidth]
-
+  dt_reduce[, `:=`(c(.begin), get(.begin) + min.gapwidth)]
+  dt_reduce <- dt_reduce[, `:=`(c(.end), get(.end) -
+                                  min.gapwidth)]
   attr(dt_reduce, "begin") <- .begin
   attr(dt_reduce, "end") <- .end
   attr(dt_reduce, "cols") <- cols0
-
   class(dt_reduce) <- append("reduce", class(dt_reduce))
   return(dt_reduce)
 }

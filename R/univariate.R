@@ -46,117 +46,105 @@
 #'            exposure = exposure, by = list(bm, power))
 #'
 #' @export
-univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
-                       premium = NULL, by = NULL) {
+univariate <- function (df, x, severity = NULL, nclaims = NULL, exposure = NULL,
+                   premium = NULL, by = NULL) {
 
-  nse_se_input <- function(x){
+  nse_se_input <- function(x) {
     expr <- substitute(x)
-    if ( is.call(expr) && expr[[1]] == quote(vec_ext)){
+    if (is.call(expr) && expr[[1]] == quote(vec_ext)) {
       as.character(eval.parent(expr[[2]]))
-    } else if ( is.character(expr) ){
+    }
+    else if (is.character(expr)) {
       x
-    } else{
+    }
+    else if (is.call(expr) && (expr[[1]] == quote(list) ||
+                               expr[[1]] == quote(c) ||
+                               expr[[1]] == quote(.))) {
+      as.character(expr[-1L])
+    }
+    else {
       deparse(expr)
     }
   }
-
   .xvar <- eval.parent(substitute(nse_se_input(x)))
   .severity <- eval.parent(substitute(nse_se_input(severity)))
   .nclaims <- eval.parent(substitute(nse_se_input(nclaims)))
   .exposure <- eval.parent(substitute(nse_se_input(exposure)))
   .premium <- eval.parent(substitute(nse_se_input(premium)))
+  .by <- eval.parent(substitute(nse_se_input(by)))
 
-  mc <- as.list(match.call())
-  byl <- as.list(mc$by)
+  .xvar_out <- .xvar
+  .by_out <- .by
 
-  if( !.xvar %in% names(df) ) stop("Column ", .xvar, " can't be found",
-                                   call. = FALSE)
+  if (!all(.xvar %in% names(df))) {
+    stop("Column(s) ", .xvar, " can't be found in data.frame", call. = FALSE)
+  }
 
-  if ( length(byl) > 0L && byl[[1]] == "c" ) stop("`by` must be a list",
-                                                  call. = FALSE)
-
-  if (length(byl) > 0L && (byl[[1L]] == as.symbol("list") ||
-                           byl[[1L]] == as.symbol(".")))
-    byl <- byl[-1L]
+  if ( length(.xvar) >  1 ){
+    .by <- append(.xvar[-1], .by)
+    .xvar <- .xvar[1]
+  }
 
   COLS <- c()
-  if (!missing(severity))
-    COLS <- deparse(mc$severity)
-  if (!missing(nclaims))
-    COLS <- c(COLS, deparse(mc$nclaims))
-  if (!missing(exposure))
-    COLS <- c(COLS, deparse(mc$exposure))
-  if (!missing(premium))
-    COLS <- c(COLS, deparse(mc$premium))
+  if (!missing(severity)) { COLS <- append(COLS, .severity) }
+  if (!missing(nclaims)) { COLS <- append(COLS, .nclaims) }
+  if (!missing(exposure)) { COLS <- append(COLS, .exposure) }
+  if (!missing(premium)) { COLS <- append(COLS, .premium) }
 
   if (length(COLS) == 0) {
     stop("Define column names.", call. = FALSE)
   }
 
-  BY <- as.call(c(as.symbol("list"), as.symbol(.xvar), byl))
-  dt <- eval(bquote(data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
-                                   by = .(BY), .SDcols = .(COLS)]))
+  BY <- setdiff(append(.xvar, .by), "NULL")
+  dt <- data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
+                                   by = BY, .SDcols = COLS]
 
   dt1 <- NULL
-  if (!missing(by)){
-    BYx <- as.call(c(as.symbol("list"), as.symbol(.xvar)))
-    dt1 <- eval(bquote(
-      data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
-                                 by = .(BYx), .SDcols=.(COLS)]
-    ))
+  if (!missing(by)) {
+    dt1 <- data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
+                                      by = .xvar, .SDcols = COLS]
   }
 
-  frequency = average_severity = risk_premium = loss_ratio =
-    average_premium = NULL # due to NSE notes in R CMD check
+  frequency = average_severity = risk_premium = loss_ratio = average_premium = NULL
 
-  # Frequency
-  if ( all(c(.nclaims, .exposure) %in% COLS)  ){
-    dt <- dt[, frequency := get(.nclaims) / get(.exposure)]
-    if (!missing(by)){
-      dt1 <- dt1[, frequency := get(.nclaims) / get(.exposure)]
+  if (all(c(.nclaims, .exposure) %in% COLS)) {
+    dt <- dt[, `:=`(frequency, get(.nclaims) / get(.exposure))]
+    if (!missing(by)) {
+      dt1 <- dt1[, `:=`(frequency, get(.nclaims) / get(.exposure))]
+    }
+  }
+  if (all(c(.severity, .nclaims) %in% COLS)) {
+    dt <- dt[, `:=`(average_severity, get(.severity) / get(.nclaims))]
+    if (!missing(by)) {
+      dt1 <- dt1[, `:=`(average_severity, get(.severity) / get(.nclaims))]
+    }
+  }
+  if (all(c(.severity, .exposure) %in% COLS)) {
+    dt <- dt[, `:=`(risk_premium, get(.severity) / get(.exposure))]
+    if (!missing(by)) {
+      dt1 <- dt1[, `:=`(risk_premium, get(.severity) / get(.exposure))]
+    }
+  }
+  if (all(c(.severity, .premium) %in% COLS)) {
+    dt <- dt[, `:=`(loss_ratio, get(.severity) / get(.premium))]
+    if (!missing(by)) {
+      dt1 <- dt1[, `:=`(loss_ratio, get(.severity) / get(.premium))]
+    }
+  }
+  if (all(c(.premium, .exposure) %in% COLS)) {
+    dt <- dt[, `:=`(average_premium, get(.premium)/get(.exposure))]
+    if (!missing(by)) {
+      dt1 <- dt1[, `:=`(average_premium, get(.premium)/get(.exposure))]
     }
   }
 
-  # Average severity
-  if ( all(c(.severity, .nclaims) %in% COLS) ){
-    dt <- dt[, average_severity := get(.severity) / get(.nclaims)]
-    if (!missing(by)){
-      dt1 <- dt1[, average_severity := get(.severity) / get(.nclaims)]
-    }
-  }
-
-  # Risk premium
-  if ( all(c(.severity, .exposure) %in% COLS) ){
-    dt <- dt[, risk_premium := get(.severity) / get(.exposure)]
-    if (!missing(by)){
-      dt1 <- dt1[, risk_premium := get(.severity) / get(.exposure)]
-    }
-  }
-
-  # Loss ratio
-  if ( all(c(.severity, .premium) %in% COLS) ){
-    dt <- dt[, loss_ratio := get(.severity) / get(.premium)]
-    if (!missing(by)){
-      dt1 <- dt1[, loss_ratio := get(.severity) / get(.premium)]
-    }
-  }
-
-  # Average premium
-  if ( all(c(.premium, .exposure) %in% COLS) ){
-    dt <- dt[, average_premium := get(.premium) / get(.exposure)]
-    if (!missing(by)){
-      dt1 <- dt1[, average_premium := get(.premium) / get(.exposure)]
-    }
-  }
-
-  attr(dt, "xvar") <- .xvar
+  attr(dt, "xvar") <- .xvar_out
   attr(dt, "severity") <- .severity
   attr(dt, "nclaims") <- .nclaims
   attr(dt, "exposure") <- .exposure
   attr(dt, "premium") <- .premium
-  attr(dt, "by") <- byl
+  attr(dt, "by") <- .by_out
   attr(dt, "dfby") <- as.data.frame(dt1)
-
   class(dt) <- append(class(dt), "univariate")
   return(dt)
 }
@@ -238,6 +226,11 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
   severity <- attr(object, "severity")
   premium <- attr(object, "premium")
   by <- as.character(attr(object, "by"))
+
+  if ( length(xvar) > 1 ){
+    message(xvar, "has more than one element. Only the first is shown.")
+    xvar <- xvar[1]
+  }
 
   if ( length(by) == 0 ) { by <- "NULL" }
 
