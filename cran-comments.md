@@ -4,7 +4,7 @@ This is a resubmission. In this version:
 * `update_glm()` now always returns the correct interval in case the function is used in combination with `smooth_coef()`
 
 ## Test environments
-* local OS X install, R 4.2.0
+* local OS X install, R 4.2.2
 * win-builder (devel and release)
 
 ## R CMD check results
