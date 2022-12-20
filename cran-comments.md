@@ -1,8 +1,7 @@
 ## Resubmission
 This is a resubmission. In this version:
 
-* `rotate_angle` in `autoplot.univariate()` is added to rotate x-labels
-* `univariate()` now accepts external vectors for `x`; `vec_ext()` must be used
+* `update_glm()` now always returns the correct interval in case the function is used in combination with `smooth_coef()`
 
 ## Test environments
 * local OS X install, R 4.2.0

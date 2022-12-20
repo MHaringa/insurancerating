@@ -609,12 +609,3 @@ ptrunc <- function( q, spec, a = -Inf, b = Inf, ... )
   return( result )
 }
 
-
-
-
-
-
-
-
-
-

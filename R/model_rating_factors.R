@@ -48,21 +48,12 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
          call. = FALSE)
   }
 
-  smre <- function(dfatt){
-    x <- attr(model, dfatt)
-    x$ind <- as.character(x$risk_factor)
-    x$values <- as.character(x$level)
-    x$ind_values <- paste0(x$ind, x$values)
-    return(x)
+  if ( inherits(model, "refitsmooth") ){
+    x <- attr(model, "new_rf")
   }
 
-  if (inherits(model, "refitsmooth")) {
-    smooth_rf <- smre("new_rf")
-    smooth_rf2 <- smooth_rf[, c("ind", "values", "ind_values")]
-  }
-  if (inherits(model, "refitrestricted")) {
-    rst_rf <- smre("new_rf_rst")
-    rst_rf2 <- rst_rf[, c("ind", "values", "ind_values")]
+  if ( inherits(model, "refitrestricted") ){
+    x <- attr(model, "new_rf_rst")
   }
 
   xl_names <- NULL
@@ -70,7 +61,7 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
   if (length(xl) > 0) {
     xl_names <- names(xl)
     xl_df <- stack(xl)
-    xl_df[,c("ind","values")] <- lapply(xl_df[,c("ind","values")], as.character)
+    xl_df[,c("ind","values")] <- lapply(xl_df[, c("ind","values")], as.character)
     xl_df$ind_values <- paste0(xl_df$ind, xl_df$values)
   }
 
@@ -81,24 +72,21 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
                         stringsAsFactors = FALSE)
   }
 
-  smre_df <- function(x){
+  if ( inherits(model, c("refitsmooth", "refitrestricted")) ) {
+    x$ind <- as.character(x$risk_factor)
+    x$values <- as.character(x$level)
+    x$ind_values <- paste0(x$ind, x$values)
+    x2 <- x[, c("ind", "values", "ind_values")]
+
     if (length(xl) > 0) {
-      xl_df <- rbind(xl_df, x)
+      xl_df <- rbind(xl_df, x2)
     }
+
     if (!length(xl)) {
-      xl_df <- x
+      xl_df <- x2
     }
-    return(xl_df)
-  }
 
-  if (inherits(model, "refitsmooth")) {
-    xl_df <- smre_df(smooth_rf2)
-    xl_names <- c(xl_names, unique(smooth_rf$ind))
-  }
-
-  if (inherits(model, "refitrestricted")) {
-    xl_df <- smre_df(rst_rf2)
-    xl_names <- c(xl_names, unique(rst_rf$ind))
+    xl_names <- c(xl_names, unique(x$ind))
   }
 
   names(xl_df)[names(xl_df) == "values"] <- "level"
@@ -159,21 +147,13 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
   vals$pvalues <- ifelse(is.na(vals$pvalues), -9e9, vals$pvalues)
   vals$ind <- as.character(vals$ind)
 
-  smre_vals <- function(x){
+  if ( inherits(model, c("refitsmooth", "refitrestricted")) ) {
     xc <- x[, c("yhat", "ind_values")]
     colnames(xc)[1] <- "values"
     colnames(xc)[2] <- "ind"
     xc$pvalues <- NA
     xc$values <- log(xc$values)
-    return(rbind(vals, xc))
-  }
-
-  if (inherits(model, "refitsmooth")) {
-    vals <- smre_vals(smooth_rf)
-  }
-
-  if (inherits(model, "refitrestricted")) {
-    vals <- smre_vals(rst_rf)
+    vals <- rbind(vals, xc)
   }
 
   uit <- dplyr::full_join(xl_df, vals, by = c(ind_values = "ind"))
@@ -214,6 +194,7 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
                         FUN.VALUE = character(1))
   return(uit)
 }
+
 
 #' Include reference group in regression output
 #'

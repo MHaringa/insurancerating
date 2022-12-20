@@ -211,16 +211,34 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL){
 #' @param x character string to join on
 #'
 #' @importFrom data.table data.table
+#' @importFrom data.table setnames
+#' @importFrom data.table setkeyv
+#' @importFrom data.table foverlaps
+#' @importFrom data.table setcolorder
 #'
 #' @keywords internal
 join_to_nearest <- function(dat, reference, x){
-  reference <- data.table::data.table(reference)
+  ref <- data.table::data.table(reference)
   dat <- data.table::data.table(dat)
-  reference_nm <- setdiff(names(reference), x)
-  dat <- dat[, c(x) := as.numeric(get(x))]
-  join <- reference[dat, roll = "nearest", on = x][is.na(get(x)),
-                                                   c(reference_nm) := NA]
-  as.data.frame(join)
+
+  # due to NSE notes in R CMD check
+  end_oc = lookup_start = lookup_start2 = start_oc = NULL
+
+  ref[start_oc == "open", breaks_min := breaks_min + 1e-6][
+    end_oc == "open", breaks_max := breaks_max - 1e-6][
+      , c(x) := NULL]
+  data.table::setnames(dat, x, "lookup_start")
+  dat[, lookup_start2 := lookup_start]
+  data.table::setkeyv(ref, c("breaks_min", "breaks_max"))
+  data.table::setkeyv(dat, c("lookup_start", "lookup_start2"))
+  fov <- data.table::foverlaps(dat, ref, type = "within",
+                               mult = "all", nomatch = 0L)
+  fov[start_oc == "open", breaks_min := breaks_min - 1e-6][
+    end_oc == "open", breaks_max := breaks_max + 1e-6][
+      , lookup_start2 := NULL]
+  data.table::setnames(fov, "lookup_start", x)
+  data.table::setcolorder(fov, x)
+  as.data.frame(fov)
 }
 
 
