@@ -1,3 +1,5 @@
+# insurancerating 0.7.3
+
 # insurancerating 0.7.2
 
 * `update_glm()` now always returns the correct interval in case the function is used in combination with `smooth_coef()`

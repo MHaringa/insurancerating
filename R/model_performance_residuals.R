@@ -26,7 +26,6 @@
 #' @author Martin Haringa
 #'
 #' @importFrom DHARMa simulateResiduals
-#' @importFrom insight print_color
 #' @importFrom stats approx
 #' @importFrom stats ks.test
 #'
@@ -82,12 +81,9 @@ check_residuals <- function(object, n_simulations = 30){
 print.check_residuals <- function(x, ...) {
   p.val <- x$p.val
   if (p.val < 0.05) {
-    insight::print_color(sprintf("Warning: deviations from the expected
-                                 distribution detected (p = %.3f).", p.val),
-                         "red")
+    cat(color_red(sprintf("Warning: deviations from the expected distribution detected (p = %.3f).", p.val)))
   } else {
-    insight::print_color(sprintf("OK: residuals appear as from the expected
-                                 distribution (p = %.3f).", p.val), "green")
+    cat(color_green(sprintf("OK: residuals appear as from the expected distribution (p = %.3f).", p.val)))
   }
 }
 
@@ -113,12 +109,9 @@ autoplot.check_residuals <- function(object, show_message = TRUE, ...) {
   if ( isTRUE(show_message) ){
     p.val <- object$p.val
     if (p.val < 0.05) {
-      insight::print_color(sprintf("Warning: deviations from the expected
-                                   distribution detected (p = %.3f).", p.val),
-                           "red")
+      cat(color_red(sprintf("Warning: deviations from the expected distribution detected (p = %.3f).", p.val)))
     } else {
-      insight::print_color(sprintf("OK: residuals appear as from the expected
-                                   distribution (p = %.3f).", p.val), "green")
+      cat(color_green(sprintf("OK: residuals appear as from the expected distribution (p = %.3f).", p.val)))
     }
   }
   dat <- object$df

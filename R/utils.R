@@ -609,3 +609,24 @@ ptrunc <- function( q, spec, a = -Inf, b = Inf, ... )
   return( result )
 }
 
+#' @keywords internal
+color_blue <- function(x){
+  x[!is.na(x)] <- paste0("\033[", "3", "4m", x[!is.na(x)],
+                         "\033[", "3", "9m")
+  x
+}
+
+
+#' @keywords internal
+color_red <- function(x){
+  x[!is.na(x)] <- paste0("\033[", "3", "1m", x[!is.na(x)],
+                         "\033[", "3", "9m")
+  x
+}
+
+#' @keywords internal
+color_green <- function(x){
+  x[!is.na(x)] <- paste0("\033[", "3", "2m", x[!is.na(x)],
+                         "\033[", "3", "9m")
+  x
+}

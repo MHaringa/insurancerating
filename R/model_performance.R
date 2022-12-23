@@ -91,21 +91,16 @@ model_performance <- function(...){
 
 
 #' @importFrom insight export_table
-#' @importFrom insight print_color
 #' @export
 print.model_performance <- function(x, digits = 3, ...) {
   orig_x <- x
-  insight::print_color("# Comparison of Model Performance Indices\n\n", "blue")
-
+  cat(color_blue("# Comparison of Model Performance Indices\n\n"))
   x[] <- lapply(x, function(i) { if (is.numeric(i)) {
     round(i, digits = digits) } else { i } })
+  return(x)
   cat(insight::export_table(x))
   invisible(orig_x)
 }
-
-
-
-
 
 
 
