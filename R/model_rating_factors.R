@@ -157,7 +157,10 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
   }
 
   uit <- dplyr::full_join(xl_df, vals, by = c(ind_values = "ind"))
-  uit$values <- ifelse(is.na(uit$pvalues), 0, uit$values)
+
+  uit$values <- ifelse(is.na(uit$pvalues) &
+                         !any(endsWith(uit$risk_factor, c("_smooth", "_rst"))),
+                       0, uit$values)
 
   Terms <- terms(model)
   int <- attr(Terms, "intercept")
@@ -255,7 +258,7 @@ rating_factors <- function(..., model_data = NULL, exposure = NULL,
                       model_data, exposure,
                       exponentiate = exponentiate,
                       round_exposure = round_exposure)
-      ))
+    ))
     names(df)[names(df) == "estimate"] <- paste0("est_", cols[i])
     names(df)[names(df) == "pvalues"] <- paste0("signif_", cols[i])
     rf_list[[paste0("m_", i)]] <- df

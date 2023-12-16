@@ -222,7 +222,7 @@ join_to_nearest <- function(dat, reference, x){
   dat <- data.table::data.table(dat)
 
   # due to NSE notes in R CMD check
-  end_oc = lookup_start = lookup_start2 = start_oc = NULL
+  end_oc = lookup_start = lookup_start2 = start_oc = idkey = NULL
 
   ref[start_oc == "open", breaks_min := breaks_min + 1e-6][
     end_oc == "open", breaks_max := breaks_max - 1e-6][
@@ -231,8 +231,26 @@ join_to_nearest <- function(dat, reference, x){
   dat[, lookup_start2 := lookup_start]
   data.table::setkeyv(ref, c("breaks_min", "breaks_max"))
   data.table::setkeyv(dat, c("lookup_start", "lookup_start2"))
-  fov <- data.table::foverlaps(dat, ref, type = "within",
-                               mult = "all", nomatch = 0L)
+
+  if( anyNA( dat[["lookup_start"]]) ){
+    message("NAs detected in column ", x)
+    dat[, idkey := seq_along(lookup_start)]
+    dat2 <- dat[!is.na(lookup_start2)]
+    fov <- data.table::foverlaps(dat2, ref, type = "within",
+                                 mult = "all",
+                                 nomatch = 0L)
+    keycols <- names(dat)
+    data.table::setkeyv(fov, keycols)
+    data.table::setkeyv(dat, keycols)
+    fov <- fov[dat][, idkey := NULL]
+  }
+
+  if( !anyNA( dat[["lookup_start"]]) ){
+    fov <- data.table::foverlaps(dat, ref, type = "within",
+                                 mult = "all",
+                                 nomatch = 0L)
+  }
+
   fov[start_oc == "open", breaks_min := breaks_min - 1e-6][
     end_oc == "open", breaks_max := breaks_max + 1e-6][
       , lookup_start2 := NULL]

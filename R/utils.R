@@ -235,8 +235,10 @@ ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg,
                           stat = "identity", color = color_bg,
                           fill = fill_bg, alpha = 1),
         ggplot2::scale_y_continuous(sec.axis = sec_axis(~ . *
-                                                          max(df[[s_axis]]) /
-                                                          max(df[[f_axis]]),
+                                                          max(df[[s_axis]],
+                                                              na.rm = TRUE) /
+                                                          max(df[[f_axis]],
+                                                              na.rm = TRUE),
                                                         name = s_axis,
                                                         labels = sep_mark),
                                     labels = sep_mark,
