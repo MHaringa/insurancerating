@@ -62,9 +62,9 @@
 #' }
 #'
 #' @export
-restrict_coef <- function(model, restrictions){
+restrict_coef <- function(model, restrictions) {
 
-  if ( inherits(model, "glm") ){
+  if (inherits(model, "glm")) {
     fm <- formula(model)
     offset_term <- get_offset(model)
     fm_no_offset <- remove_offset_formula(fm)
@@ -72,7 +72,8 @@ restrict_coef <- function(model, restrictions){
     model_call <- model$call
     model_out <- model
 
-    rfdf <- rating_factors1(model)
+    rfdf <- rating_factors(model, signif_stars = FALSE)$df
+    colnames(rfdf)[3] <- c("estimate")
     rst_lst <- list(restrictions)
     names(rst_lst) <- names(restrictions[1])
     restricted_df <- restrict_df(restrictions)
@@ -82,7 +83,7 @@ restrict_coef <- function(model, restrictions){
     mgd_smt <- NULL
   }
 
-  if ( inherits(model, c("smooth", "restricted")) ){
+  if (inherits(model, c("smooth", "restricted"))) {
     fm <- model$formula_restricted
     offset_term <- model$offset
     fm_no_offset <- model$formula_removed
@@ -100,11 +101,11 @@ restrict_coef <- function(model, restrictions){
     mgd_smt <- model$mgd_smt
   }
 
-  if ( inherits(model, "restricted") ){
+  if (inherits(model, "restricted")) {
     restricted_df <- rbind(model$rf_restricted_df, restricted_df)
   }
 
-  if ( inherits(model, "smooth") ){
+  if (inherits(model, "smooth")) {
     restricted_df <- rbind(model$new_rf, restricted_df)
   }
 
@@ -227,13 +228,13 @@ restrict_coef <- function(model, restrictions){
 #' }
 #'
 #' @export
-smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL){
+smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL) {
 
-  if ( is.null(breaks) | !is.numeric(breaks) ){
+  if (is.null(breaks) || !is.numeric(breaks)) {
     stop("'breaks' must be a numerical vector", call. = FALSE)
   }
 
-  if ( inherits(model, "glm") ){
+  if (inherits(model, "glm")) {
     fm <- formula(model)
     offset_term <- get_offset(model)
     fm_no_offset <- remove_offset_formula(fm)
@@ -241,7 +242,8 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL){
     model_call <- model$call
     model_out <- model
 
-    rfdf <- rating_factors1(model)
+    rfdf <- rating_factors(model, signif_stars = FALSE)$df
+    colnames(rfdf)[3] <- c("estimate")
     rst_lst <- NULL
     new_col_nm <- NULL
     old_col_nm <- NULL
@@ -249,7 +251,7 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL){
     mgd_rst <- NULL
   }
 
-  if ( inherits(model, c("smooth", "restricted")) ){
+  if (inherits(model, c("smooth", "restricted"))) {
     fm <- model$formula_restricted
     offset_term <- model$offset
     fm_no_offset <- model$formula_removed
@@ -276,7 +278,7 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL){
 
   borders_x_cut <- cut_borders_model(model, x_cut)
 
-  if ( is.null(degree) ){
+  if (is.null(degree)) {
     degree <- nrow(borders_x_cut) - 1
   }
 
@@ -285,16 +287,16 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL){
   df_poly_line <- fit_poly[["poly_line"]]
   df_new_rf <- fit_poly[["new_rf"]]
 
-  if ( inherits(model, "smooth")){
+  if (inherits(model, "smooth")) {
     df_new_rf <- rbind(model$new_rf, df_new_rf)
   }
 
-  if ( inherits(model, "restricted")){
+  if (inherits(model, "restricted")) {
     df_new_rf <- rbind(model$rf_restricted_df, df_new_rf)
   }
 
   df_smooth <- join_to_nearest(df_new, df_poly, x_org)
-  names(df_smooth)[names(df_smooth) == 'yhat'] <- paste0(x_cut, "_smooth")
+  names(df_smooth)[names(df_smooth) == "yhat"] <- paste0(x_cut, "_smooth")
 
   st <- list(formula_restricted = fm_add[[1]],
              formula_removed = fm_remove,
@@ -331,7 +333,7 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL){
 #' @author Martin Haringa
 #'
 #' @export
-print.restricted <- function(x, ...){
+print.restricted <- function(x, ...) {
   cat("Formula: ")
   print(x$formula_restricted)
 }
@@ -347,7 +349,7 @@ print.restricted <- function(x, ...){
 #' @author Martin Haringa
 #'
 #' @export
-print.smooth <- function(x, ...){
+print.smooth <- function(x, ...) {
   cat("Formula: ")
   print(x$formula_restricted)
 }
@@ -381,15 +383,15 @@ print.smooth <- function(x, ...){
 #'   autoplot()
 #'
 #' @export
-autoplot.restricted <- function(object, ...){
+autoplot.restricted <- function(object, ...) {
 
   names_rf <- names(object$restrictions_lst)
   name <- names_rf[length(names_rf)]
   naam_rst <- object$restrictions_lst[[name]]
 
   rf <- object$rating_factors
-  naam_rf <- rf[rf$risk_factor == name,]
-  naam_rf <- naam_rf[,2:3]
+  naam_rf <- rf[rf$risk_factor == name, ]
+  naam_rf <- naam_rf[, 2:3]
   names(naam_rst)[names(naam_rst) == name] <- "level"
 
   naam_rf <- matchColClasses(naam_rst, naam_rf)
@@ -439,22 +441,22 @@ autoplot.restricted <- function(object, ...){
 #' @return Object of class ggplot2
 #'
 #' @export
-autoplot.smooth <- function(object, ...){
+autoplot.smooth <- function(object, ...) {
   rf2 <- object$borders
   new <- object$new
   new_line <- object$new_line
   degree <- scales::ordinal(object$degree)
   degree_name <- paste0(degree, " order polynomial")
 
-  rf2_start_open <- rf2[rf2$start_oc == "open",]
-  rf2_start_closed <- rf2[rf2$start_oc == "closed",]
-  rf2_end_open <- rf2[rf2$end_oc == "open",]
-  rf2_end_closed <- rf2[rf2$end_oc == "closed",]
+  rf2_start_open <- rf2[rf2$start_oc == "open", ]
+  rf2_start_closed <- rf2[rf2$start_oc == "closed", ]
+  rf2_end_open <- rf2[rf2$end_oc == "open", ]
+  rf2_end_closed <- rf2[rf2$end_oc == "closed", ]
 
-  new_start_open <- new[new$start_oc == "open",]
-  new_start_closed <- new[new$start_oc == "closed",]
-  new_end_open <- new[new$end_oc == "open",]
-  new_end_closed <- new[new$end_oc == "closed",]
+  new_start_open <- new[new$start_oc == "open", ]
+  new_start_closed <- new[new$start_oc == "closed", ]
+  new_end_open <- new[new$end_oc == "open", ]
+  new_end_closed <- new[new$end_oc == "closed", ]
 
   x_name <- names(new_line)[1]
   names(new_line)[names(new_line) == x_name] <- "col1"
@@ -522,9 +524,9 @@ autoplot.smooth <- function(object, ...){
 #' @return Object of class GLM
 #'
 #' @export
-update_glm <- function(x){
+update_glm <- function(x) {
 
-  if( !inherits(x, c("restricted", "smooth")) ) {
+  if (!inherits(x, c("restricted", "smooth"))) {
     stop("Input must be of class restricted or of class smooth", call. = FALSE)
   }
 
@@ -536,20 +538,20 @@ update_glm <- function(x){
   y$call$data <- quote(df_new)
 
   offweights <- NULL
-  if ( !is.null(lst_call$weights) ) {
+  if (!is.null(lst_call$weights)) {
     offweights <- append(offweights, as.character(lst_call$weights))
   }
 
-  if ( !is.null(lst_call$offset) ) {
+  if (!is.null(lst_call$offset)) {
     offweights <- append(offweights, as.character(lst_call$offset)[2])
   }
 
-  if ( inherits(x, "smooth")) {
+  if (inherits(x, "smooth")) {
     attr(y, "new_rf") <- x[["new_rf"]]
     attr(y, "class") <- append(class(y), "refitsmooth")
   }
 
-  if ( inherits(x, "restricted")) {
+  if (inherits(x, "restricted")) {
     attr(y, "new_rf_rst") <- x[["rf_restricted_df"]]
     attr(y, "class") <- append(class(y), "refitrestricted")
   }
@@ -565,8 +567,3 @@ update_glm <- function(x){
   attr(y, "offweights") <- offweights
   y
 }
-
-
-
-
-

@@ -54,3 +54,6 @@ histbin(MTPL2, premium)
 histbin(MTPL2, premium, left = 30, right = 120, bins = 30)
 
 }
+\author{
+Martin Haringa
+}

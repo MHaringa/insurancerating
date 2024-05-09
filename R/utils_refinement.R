@@ -9,22 +9,22 @@
 #' @keywords internal
 get_offset <- function(model) {
 
-  if( !inherits(model, "lm") ) {
+  if (!inherits(model, "lm")) {
     stop("Input must be of class (g)lm", call. = FALSE)
   }
 
   nm1 <- names(attributes(model$terms)$dataClasses)
   n_offsets <- sum(lengths(regmatches(nm1, gregexpr("offset", nm1))))
 
-  if ( n_offsets > 1 ) {
+  if (n_offsets > 1) {
     stop("Length of offset-terms must be equal to 1", call. = FALSE)
   }
 
-  if( '(offset)' %in% nm1 ) {
+  if ("(offset)" %in% nm1) {
     deparse(as.list(model$call)$offset)
   } else {
-    out <- sub("offset\\((.*)\\)$", "\\1", grep('offset', nm1, value = TRUE))
-    if ( identical(out, character(0)) ) {
+    out <- sub("offset\\((.*)\\)$", "\\1", grep("offset", nm1, value = TRUE))
+    if (identical(out, character(0))) {
       out <- NULL
     }
     out
@@ -41,7 +41,7 @@ get_offset <- function(model) {
 #' @keywords internal
 remove_offset_formula <- function(formula) {
 
-  if( !inherits(formula, "formula") ) {
+  if (!inherits(formula, "formula")) {
     stop("Input must be of class formula", call. = FALSE)
   }
 
@@ -63,19 +63,19 @@ remove_offset_formula <- function(formula) {
 #' @param remove_term Risk factor to remove
 #'
 #' @keywords internal
-update_formula_remove <- function(fm, remove_term){
+update_formula_remove <- function(fm, remove_term) {
 
-  if( !inherits(fm, "formula") ) {
+  if (!inherits(fm, "formula")) {
     stop("Input must be of class formula.", call. = FALSE)
   }
 
-  if ( !is.character(remove_term) ){
+  if (!is.character(remove_term)) {
     stop("Column must be a character.", call. = FALSE)
   }
 
   fm_new <- update(fm, paste("~ . -", remove_term))
 
-  if ( identical(fm, fm_new ) ) {
+  if (identical(fm, fm_new)) {
     warning("Column '", remove_term, "' must be in model call.\n")
   }
 
@@ -89,17 +89,17 @@ update_formula_remove <- function(fm, remove_term){
 #' @param add_term Name of restricted risk factor to add
 #'
 #' @keywords internal
-update_formula_add <- function(offset_term, fm_no_offset, add_term){
+update_formula_add <- function(offset_term, fm_no_offset, add_term) {
 
-  if( !inherits(fm_no_offset, "formula") ) {
+  if (!inherits(fm_no_offset, "formula")) {
     stop("Input must be of class formula", call. = FALSE)
   }
 
-  if (is.null(offset_term)){
+  if (is.null(offset_term)) {
     new_offset <- paste0("log(", add_term, ")")
   }
 
-  if (!is.null(offset_term)){
+  if (!is.null(offset_term)) {
     new_offset <- paste0("log(", add_term, ")", " + ", offset_term)
   }
 
@@ -109,19 +109,21 @@ update_formula_add <- function(offset_term, fm_no_offset, add_term){
 }
 
 #' @keywords internal
-cut_borders_df <- function(df, col){
+cut_borders_df <- function(df, col) {
 
   if (!col %in% names(df)) stop("Column name must be available in data",
                                 call. = FALSE)
   df_vec <- df[[col]]
 
-  if( anyNA(df_vec) ){
+  if (anyNA(df_vec)) {
     message("NAs detected in column ", col)
   }
 
   suppressWarnings({
     s1 <- substr(df_vec, start = 1, stop = 1)
-    nchr <- if ( is.factor(df_vec) ){ nchar(levels(df_vec)[df_vec]) } else {
+    nchr <- if (is.factor(df_vec)) {
+      nchar(levels(df_vec)[df_vec])
+    } else {
       nchar(df_vec)
     }
     e1 <- substr(df_vec, start = nchr, stop = nchr)
@@ -129,27 +131,28 @@ cut_borders_df <- function(df, col){
     df$start_oc <- ifelse(s1 == "(", "open", ifelse(s1 == "[", "closed", NA))
     df$end_oc <- ifelse(e1 == ")", "open", ifelse(e1 == "]", "closed", NA))
     df$start_  <- as.numeric(gsub("^(.*?),.*", "\\1", m))
-    df$end_ <- as.numeric(sub('.*,', '', m))
+    df$end_ <- as.numeric(sub(".*,", "", m))
   })
-  df$avg_ <- rowMeans(df[, c('start_', 'end_')], na.rm = TRUE)
+  df$avg_ <- rowMeans(df[, c("start_", "end_")], na.rm = TRUE)
   return(df)
 }
 
 #' @keywords internal
-cut_borders_model <- function(model, x_cut){
+cut_borders_model <- function(model, x_cut) {
 
-  if ( inherits(model, "glm") ){
-    rf <- rating_factors1(model)
+  if (inherits(model, "glm")) {
+    rf <- rating_factors(model, signif_stars = FALSE)$df
   }
 
-  if ( inherits(model, "smooth") ){
-    rf <- rating_factors1(model$model_out)
+  if (inherits(model, "smooth")) {
+    rf <- rating_factors(model$model_out, signif_stars = FALSE)$df
   }
 
-  if ( inherits(model, "restricted")){
-    rf <- rating_factors1(model$model_out)
+  if (inherits(model, "restricted")) {
+    rf <- rating_factors(model$model_out, signif_stars = FALSE)$df
   }
 
+  colnames(rf)[3] <- c("estimate")
   rf_xcut <- rf[rf$risk_factor == x_cut, ]
   cut_borders_df(rf_xcut, "level")
 }
@@ -159,9 +162,9 @@ cut_borders_model <- function(model, x_cut){
 #' @importFrom stats lm
 #'
 #' @keywords internal
-fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL){
+fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL) {
 
-  if ( is.null(breaks) ){
+  if (is.null(breaks)) {
     breaks <- seq(min(borders_model$start_), max(borders_model$end_),
                   length.out = nrow(borders_model))
   }
@@ -187,8 +190,6 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL){
   new_poly_df$cuts <- levels_borders
   new_poly_df$risk_factor <- paste0(x_org, "_smooth")
   colnames(new_poly_df)[1] <- x_org
-
-  # new_colname_cat <- paste0(x_org, "_cat_new")
   new_colname_cat <- paste0(x_org, "_smooth")
   colnames(new_poly_df)[5] <- new_colname_cat
   new_poly_df <- cut_borders_df(new_poly_df, new_colname_cat)
@@ -217,12 +218,12 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL){
 #' @importFrom data.table setcolorder
 #'
 #' @keywords internal
-join_to_nearest <- function(dat, reference, x){
+join_to_nearest <- function(dat, reference, x) {
   ref <- data.table::data.table(reference)
   dat <- data.table::data.table(dat)
 
   # due to NSE notes in R CMD check
-  end_oc = lookup_start = lookup_start2 = start_oc = idkey = NULL
+  end_oc <- lookup_start <- lookup_start2 <- start_oc <- idkey <- NULL
 
   ref[start_oc == "open", breaks_min := breaks_min + 1e-6][
     end_oc == "open", breaks_max := breaks_max - 1e-6][
@@ -232,7 +233,7 @@ join_to_nearest <- function(dat, reference, x){
   data.table::setkeyv(ref, c("breaks_min", "breaks_max"))
   data.table::setkeyv(dat, c("lookup_start", "lookup_start2"))
 
-  if( anyNA( dat[["lookup_start"]]) ){
+  if (anyNA(dat[["lookup_start"]])) {
     message("NAs detected in column ", x)
     dat[, idkey := seq_along(lookup_start)]
     dat2 <- dat[!is.na(lookup_start2)]
@@ -245,7 +246,7 @@ join_to_nearest <- function(dat, reference, x){
     fov <- fov[dat][, idkey := NULL]
   }
 
-  if( !anyNA( dat[["lookup_start"]]) ){
+  if (!anyNA(dat[["lookup_start"]])) {
     fov <- data.table::foverlaps(dat, ref, type = "within",
                                  mult = "all",
                                  nomatch = 0L)
@@ -273,37 +274,37 @@ join_to_nearest <- function(dat, reference, x){
 #' @importFrom dplyr left_join
 #'
 #' @keywords internal
-add_restrictions_df <- function(model_data, restrictions_df){
+add_restrictions_df <- function(model_data, restrictions_df) {
 
   rcol1 <- names(restrictions_df)[1]
   rcol2 <- names(restrictions_df)[2]
 
-  if ( !rcol1 %in% names(model_data) ) {
-    stop("Can't find column '", rcol1, "' in model call.", call. = FALSE )
+  if (!rcol1 %in% names(model_data)) {
+    stop("Can't find column '", rcol1, "' in model call.", call. = FALSE)
   }
 
-  if ( ncol(restrictions_df) != 2){
+  if (ncol(restrictions_df) != 2) {
     stop("Number of columns must be equal to 2.", call. = FALSE)
   }
 
-  if ( length(unique(restrictions_df[[1]])) != nrow(restrictions_df) ) {
+  if (length(unique(restrictions_df[[1]])) != nrow(restrictions_df)) {
     stop(rcol1, " in restricted data must have unique values.", call. = FALSE)
   }
 
-  if ( rcol2 %in% names(model_data) ) {
+  if (rcol2 %in% names(model_data)) {
     stop("Column '", rcol2,
          "' in restricted data must be different from existing columns.",
          call. = FALSE)
   }
 
-  if ( is.factor(model_data[[rcol1]]) ){
+  if (is.factor(model_data[[rcol1]])) {
     restrictions_df[[rcol1]] <- as.factor(restrictions_df[[rcol1]])
   }
 
   model_df_restrictions <- dplyr::left_join(model_data, restrictions_df,
                                             by = rcol1)
 
-  if ( anyNA(model_df_restrictions[[rcol2]]) ) {
+  if (anyNA(model_df_restrictions[[rcol2]])) {
     warning("Can't match all existing factor levels to new levels.\n")
   }
 
@@ -318,13 +319,10 @@ add_restrictions_df <- function(model_data, restrictions_df){
 #' @param restricted_df data.frame with restrictions
 #'
 #' @keywords internal
-restrict_df <- function(restricted_df){
+restrict_df <- function(restricted_df) {
   restricted_df$risk_factor <- colnames(restricted_df)[2]
   colnames(restricted_df)[2] <- "yhat"
   colnames(restricted_df)[1] <- "level"
   restricted_df$level <- as.character(restricted_df$level)
   restricted_df
 }
-
-
-

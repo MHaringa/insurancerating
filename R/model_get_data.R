@@ -13,26 +13,27 @@
 #' @return data.frame
 #'
 #' @export
-model_data <- function(x){
+model_data <- function(x) {
 
-  if( !inherits(x, c("refitsmooth", "refitrestricted", "glm")) ) {
+  if (!inherits(x, c("refitsmooth", "refitrestricted", "glm"))) {
     stop("Input must be of class refitsmooth, glm or of class refitrestricted",
          call. = FALSE)
   }
 
-  if ( inherits(x, "glm") ){
+  if (inherits(x, "glm")) {
     out <- x$data
-    rf <- rating_factors1(x)
+    rf <- rating_factors(x, signif_stars = FALSE)$df
+    colnames(rf)[3] <- c("estimate")
     rf2_nm <- unique(rf$risk_factor[rf$risk_factor != "(Intercept)"])
 
     lst_call <- as.list(x$call)
     offweights <- NULL
 
-    if ( !is.null(lst_call$weights) ) {
+    if (!is.null(lst_call$weights)) {
       offweights <- append(offweights, as.character(lst_call$weights))
     }
 
-    if ( !is.null(lst_call$offset) ) {
+    if (!is.null(lst_call$offset)) {
       offweights <- append(offweights, as.character(lst_call$offset)[2])
     }
 
@@ -40,7 +41,7 @@ model_data <- function(x){
     attr(out, "rf") <- rf2_nm
   }
 
-  if( inherits(x, c("refitsmooth", "refitrestricted")) ) {
+  if (inherits(x, c("refitsmooth", "refitrestricted"))) {
 
     xdf <- data.table::data.table(x$data)
 
@@ -58,8 +59,8 @@ model_data <- function(x){
     rf <- attr(x, "rf")
     mgd_smt <- attr(x, "mgd_smt")
 
-    for ( i in seq_len(length(mgd_smt)) ){
-      zsm <- gsub('_smooth$', '', mgd_smt[[i]][2])
+    for (i in seq_len(length(mgd_smt))) {
+      zsm <- gsub("_smooth$", "", mgd_smt[[i]][2])
       rf[rf == zsm] <- mgd_smt[[i]][1]
     }
 
@@ -139,22 +140,22 @@ model_data <- function(x){
 #'
 #' @export
 construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
-                                   agg_cols = NULL, drop_na = FALSE){
+                                   agg_cols = NULL, drop_na = FALSE) {
 
-  aggcols0 <- tryCatch(vapply(substitute(agg_cols)[-1], deparse,
-                              FUN.VALUE = character(1)),
-                       error = function(e){
-         stop("agg_cols must be a list, use agg_cols = list(var1, var2, var3)",
-                              call. = FALSE)
-                       })
+  aggcols0 <- tryCatch(
+    vapply(substitute(agg_cols)[-1], deparse, FUN.VALUE = character(1)),
+    error = function(e) {
+      stop("agg_cols must be a list, use agg_cols = list(var1, var2, var3)",
+           call. = FALSE)
+    })
 
   exposure_nm <- deparse(substitute(exposure))
   exposure_by_nm <- deparse(substitute(exposure_by))
 
   xdf <- x
 
-  if( !inherits(x, c("model_data")) ) {
-    if( !inherits(x, "data.frame") ){
+  if (!inherits(x, c("model_data"))) {
+    if (!inherits(x, "data.frame")) {
       stop("Input must be of class model_data, use model_data() to create data",
            call. = FALSE)
     }
@@ -165,60 +166,63 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
     premium_df <- unique(premium_df)
   }
 
-  if( inherits(x, c("model_data")) ) {
+  if (inherits(x, c("model_data"))) {
     premium_nm <- attr(x, "rf")
-    if ( isTRUE(exposure_nm %in% premium_nm )) {
+    if (isTRUE(exposure_nm %in% premium_nm)) {
       stop("Column exposure is already used as covariate in model.",
            call. = FALSE)
     }
 
     offweights <- unique(attr(x, "offweights"))
 
-    if ( isTRUE(exposure_nm %in% c(premium_nm, offweights )) &
-         exposure_by_nm == "NULL") {
+    if (isTRUE(exposure_nm %in% c(premium_nm, offweights)) &&
+        exposure_by_nm == "NULL") {
       warning("Column exposure is already used in model.",
-           call. = FALSE)
-    }
-
-    if ( isTRUE(any(aggcols0 %in% offweights ))) {
-      stop("Column in list agg_cols is already used in model.",
               call. = FALSE)
     }
 
-    if ( isTRUE(exposure_by_nm %in% premium_nm )) {
+    if (isTRUE(any(aggcols0 %in% offweights))) {
+      stop("Column in list agg_cols is already used in model.",
+           call. = FALSE)
+    }
+
+    if (isTRUE(exposure_by_nm %in% premium_nm)) {
       stop("Column exposure_by is already used as covariate in model.",
            call. = FALSE)
     }
 
-    if ( identical(offweights, exposure_nm) ) {
+    if (identical(offweights, exposure_nm)) {
       offweights <- paste0(offweights, "_99")
-      xdf[[offweights]] <- xdf[[exposure_nm]] }
-    if ( isTRUE(offweights %in% aggcols0 )) { offweights <- NULL }
+      xdf[[offweights]] <- xdf[[exposure_nm]]
+    }
+    if (isTRUE(offweights %in% aggcols0)) {
+      offweights <- NULL
+    }
     aggcols0 <- append(aggcols0, offweights)
     premium_df <- xdf[, premium_nm, drop = FALSE]
     premium_df <- unique(premium_df)
   }
 
-  if ( exposure_nm == "NULL" ){
+  if (exposure_nm == "NULL") {
 
     xdf <- data.table::data.table(xdf)
 
-    if ( exposure_by_nm == "NULL" ){
+    if (exposure_by_nm == "NULL") {
 
-      if (length(aggcols0) == 0){
+      if (length(aggcols0) == 0) {
         xdt_agg <- xdf[, .(count = .N), by = premium_nm]
       }
 
-      if (length(aggcols0) > 0){
+      if (length(aggcols0) > 0) {
         xdt_agg <- xdf[, c(.N, lapply(.SD, sum, na.rm = TRUE)),
                        by = premium_nm, .SDcols = aggcols0]
         data.table::setnames(xdt_agg, old = "N", new = "count")
       }
     }
 
-    if ( exposure_by_nm != "NULL" ){
+    if (exposure_by_nm != "NULL") {
 
-      if (length(aggcols0) == 0){
+      if (length(aggcols0) == 0) {
 
         xdt_agg0 <- xdf[
           , .(count = .N), by = c(premium_nm, exposure_by_nm)][
@@ -228,7 +232,7 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
         xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = "count")
       }
 
-      if (length(aggcols0) > 0){
+      if (length(aggcols0) > 0) {
         xdt_agg0 <- xdf[
           , c(.N, lapply(.SD, sum, na.rm = TRUE)), by =
             c(premium_nm, exposure_by_nm), .SDcols = aggcols0][
@@ -242,36 +246,37 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
     xdt_agg <- data.frame(xdt_agg)
   }
 
-  if ( exposure_nm != "NULL" ){
+  if (exposure_nm != "NULL") {
     xdf <- data.table::data.table(xdf)
 
-    if ( exposure_by_nm == "NULL" ){
+    if (exposure_by_nm == "NULL") {
 
-      if (length(aggcols0) == 0){
+      if (length(aggcols0) == 0) {
         xdt_agg <- xdf[, lapply(.SD, sum, na.rm = TRUE), by = premium_nm,
                        .SDcols = exposure_nm]
       }
 
-      if ( length(aggcols0) > 0 ){
+      if (length(aggcols0) > 0) {
         xdt_agg <- xdf[, lapply(.SD, sum, na.rm = TRUE), by = premium_nm,
                        .SDcols = c(aggcols0, exposure_nm)]
       }
     }
 
-    if ( exposure_by_nm != "NULL" ){
+    if (exposure_by_nm != "NULL") {
 
-      if (length(aggcols0) == 0){
+      if (length(aggcols0) == 0) {
 
         xdt_agg0 <- xdf[
           , lapply(.SD, sum, na.rm = TRUE), by =
             c(premium_nm, exposure_by_nm), .SDcols = exposure_nm][
-            , (exposure_by_nm) := paste0(exposure_nm, "_", get(exposure_by_nm))]
+              , (exposure_by_nm) := paste0(exposure_nm, "_",
+                                           get(exposure_by_nm))]
 
         f <- construct_fm(premium_nm, exposure_by_nm)
         xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = exposure_nm)
       }
 
-      if (length(aggcols0) > 0){
+      if (length(aggcols0) > 0) {
 
         xdt_agg0 <- xdf[
           , lapply(.SD, sum, na.rm = TRUE), by = c(premium_nm, exposure_by_nm),
@@ -281,7 +286,7 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
         f <- construct_fm(premium_nm, exposure_by_nm)
         xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = exposure_nm)
 
-        if ( isTRUE(offweights %in% aggcols0)) {
+        if (isTRUE(offweights %in% aggcols0)) {
           xdt_ext <- xdt_agg0[, lapply(.SD, sum, na.rm = TRUE), by = premium_nm,
                               .SDcols = aggcols0]
           xdt_agg <- merge(xdt_agg, xdt_ext, all.x = TRUE)
@@ -289,18 +294,18 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
       }
     }
 
-    if( inherits(x, c("model_data")) ) {
+    if (inherits(x, c("model_data"))) {
       data.table::setnames(xdt_agg, old = offweights,
-                         new = gsub('_99$', '', offweights))
+                           new = gsub("_99$", "", offweights))
     }
     xdt_agg <- data.frame(xdt_agg)
   }
 
-  if ( isTRUE(drop_na) ){
+  if (isTRUE(drop_na)) {
     premium_vec <- sapply(premium_df, function(x) unique(na.omit(x)))
   }
 
-  if ( !isTRUE(drop_na) ){
+  if (!isTRUE(drop_na)) {
     premium_vec <- sapply(premium_df, unique)
   }
 
@@ -308,7 +313,7 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
   names(premium_complete) <- names(premium_df)
 
   refinement_df <- NULL
-  if( inherits(x, c("model_data")) ) {
+  if (inherits(x, c("model_data"))) {
     mgd_rst <- attr(x, "mgd_rst")
     mgd_smt <- attr(x, "mgd_smt")
     refinement_nm <- append(mgd_rst, mgd_smt)
@@ -321,4 +326,3 @@ construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
                          premium_refinement_lst)
   merge(premium_join, xdt_agg, all.x = TRUE)
 }
-

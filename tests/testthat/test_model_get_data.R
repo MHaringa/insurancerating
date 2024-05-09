@@ -44,7 +44,7 @@ context("Get data from restricted model")
 
 library(dplyr)
 freq <- glm(nclaims ~ bm + zip, offset = log(exposure), family = poisson(),
-             data = MTPL)
+            data = MTPL)
 sev <- glm(amount ~ bm + zip, weights = nclaims,
             family = Gamma(link = "log"),
             data = MTPL %>% filter(amount > 0))
@@ -55,7 +55,7 @@ premium_df <- MTPL %>%
    mutate(premium = pred_nclaims_freq * pred_amount_sev)
 
 # Restrictions on risk factors for region (zip)
-zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
+zip_df <- data.frame(zip = c(0, 1, 2, 3), zip_rst = c(0.8, 0.9, 1, 1.2))
 
 # Fit unrestricted model
 burn <- glm(premium ~ bm + zip, weights = exposure,
@@ -80,5 +80,3 @@ testthat::test_that(
     testthat::expect_error(model_data(burn_rst2), NA)
   }
 )
-
-

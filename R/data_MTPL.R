@@ -50,4 +50,3 @@
 #' @source The data is derived from the portfolio of a large Dutch motor
 #' insurance company.
 "MTPL2"
-

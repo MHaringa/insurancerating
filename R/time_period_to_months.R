@@ -38,19 +38,19 @@
 #' period_to_months(portfolio, begin1, end, premium, exposure)
 #'
 #' @export
-period_to_months <- function (df, begin, end, ...) {
+period_to_months <- function(df, begin, end, ...) {
   begin00 <- deparse(substitute(begin))
   end00 <- deparse(substitute(end))
   df00 <- deparse(substitute(df))
   cols <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
   column_names <- names(df)
 
-  if (!lubridate::is.Date(df[[begin00]]) | !lubridate::is.Date(df[[end00]])) {
+  if (!lubridate::is.Date(df[[begin00]]) || !lubridate::is.Date(df[[end00]])) {
     stop("Columns begin and end should be Date objects. Use e.g.
          lubridate::ymd() to create Date object.", call. = FALSE)
   }
 
-  if (length(cols) > 0 & !all(cols %in% column_names)){
+  if (length(cols) > 0 && !all(cols %in% column_names)) {
     stop("Numeric column names to split not found in ", df00, call. = FALSE)
   }
 
@@ -64,8 +64,8 @@ period_to_months <- function (df, begin, end, ...) {
   data.table::setkeyv(lookup, c(begin00, end00))
 
   # due to NSE notes in R CMD check
-  new_end00 = start_int = end_int = end_days = begin_days =
-    overlap_begin_end = overlap_period = overlap_total = NULL
+  new_end00 <- start_int <- end_int <- end_days <- begin_days <-
+    overlap_begin_end <- overlap_period <- overlap_total <- NULL
 
   data.table::setDT(df)
   df[, id := .I][ # Add row id
@@ -76,7 +76,7 @@ period_to_months <- function (df, begin, end, ...) {
   ans <- data.table::foverlaps(df, lookup, type = "any", which = FALSE)
 
   # Divide periods
-  if (length(cols) > 0){
+  if (length(cols) > 0) {
     ans[, start_int := data.table::fifelse(
       get(begin00) < get(paste0("i.", begin00)), 0, 1)][
       , end_int := data.table::fifelse(
@@ -99,4 +99,3 @@ period_to_months <- function (df, begin, end, ...) {
 
   ans[, c("id", column_names), with = FALSE]
 }
-

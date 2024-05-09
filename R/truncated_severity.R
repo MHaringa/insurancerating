@@ -1,21 +1,21 @@
 
 #' @keywords internal
-moments <- function(x, dist = c("gamma", "lognormal")){
+moments <- function(x, dist = c("gamma", "lognormal")) {
 
   dist <- match.arg(dist)
   m <- mean(x, na.rm = TRUE)
   s <- sd(x, na.rm = TRUE)
   v <- s^2
 
-  if ( dist == "gamma" ){
+  if (dist == "gamma") {
     scale <- m ^ 2 / s
     shape <- s / m
     return(list(scale = scale, shape = shape))
   }
 
-  if ( dist == "lognormal" ){
-    meanlog <- log(m ^ 2 / sqrt(v + m ^ 2) )
-    sdlog <- log( v / (m ^ 2) + 1)
+  if (dist == "lognormal") {
+    meanlog <- log(m ^ 2 / sqrt(v + m ^ 2))
+    sdlog <- log(v / (m ^ 2) + 1)
     return(list(meanlog = meanlog, sdlog = sdlog))
   }
 }
@@ -89,9 +89,9 @@ moments <- function(x, dist = c("gamma", "lognormal")){
 #' @author Martin Haringa
 #'
 #' @export
-fit_truncated_dist <- function (y, dist = c("gamma", "lognormal"), left = NULL,
-                                right = NULL, start = NULL,
-                                print_initial = TRUE){
+fit_truncated_dist <- function(y, dist = c("gamma", "lognormal"), left = NULL,
+                               right = NULL, start = NULL,
+                               print_initial = TRUE) {
 
   dist <- match.arg(dist)
   x <- moments(y, dist)
@@ -103,8 +103,8 @@ fit_truncated_dist <- function (y, dist = c("gamma", "lognormal"), left = NULL,
   if (is.null(right)) {
     right <- Inf
   }
-  dtruncated_gamma = ptruncated_gamma = dtruncated_log_normal =
-    ptruncated_log_normal = NULL
+  dtruncated_gamma <- ptruncated_gamma <- dtruncated_log_normal <-
+    ptruncated_log_normal <- NULL
   if (dist == "gamma") {
     dtruncated_gamma <<- function(x, scale, shape) {
       dtrunc(x, "gamma", a = left, b = right,
@@ -143,7 +143,7 @@ fit_truncated_dist <- function (y, dist = c("gamma", "lognormal"), left = NULL,
       start <- list(meanlog = x_grid$meanlog, sdlog = x_grid$sdlog)
     }
   }
-  for (i in 1:length(start[[1]])) {
+  for (i in seq_along(start[[1]])) {
     start_e <- lapply(start, "[[", i)
     start_e_chr <- paste0(names(start_e)[1], " = ",
                           as.numeric(start_e[1]), ", and ", names(start_e)[2],
@@ -198,9 +198,9 @@ fit_truncated_dist <- function (y, dist = c("gamma", "lognormal"), left = NULL,
 #' @export
 rlnormt <- function(n, meanlog, sdlog, lower, upper) {
   # www.r-bloggers.com/2020/08/generating-data-from-a-truncated-distribution/
-  F.a <- plnorm(lower, meanlog = meanlog, sdlog = sdlog)
-  F.b <- plnorm(upper, meanlog = meanlog, sdlog = sdlog)
-  u <- runif(n, min = F.a, max = F.b)
+  f_a <- plnorm(lower, meanlog = meanlog, sdlog = sdlog)
+  f_b <- plnorm(upper, meanlog = meanlog, sdlog = sdlog)
+  u <- runif(n, min = f_a, max = f_b)
   qlnorm(u, meanlog = meanlog, sdlog = sdlog)
 }
 
@@ -228,9 +228,9 @@ rlnormt <- function(n, meanlog, sdlog, lower, upper) {
 #' @export
 rgammat <- function(n, scale = scale, shape = shape, lower, upper) {
   # www.r-bloggers.com/2020/08/generating-data-from-a-truncated-distribution/
-  F.a <- pgamma(lower, scale = scale, shape = shape)
-  F.b <- pgamma(upper, scale = scale, shape = shape)
-  u <- runif(n, min = F.a, max = F.b)
+  f_a <- pgamma(lower, scale = scale, shape = shape)
+  f_b <- pgamma(upper, scale = scale, shape = shape)
+  u <- runif(n, min = f_a, max = f_b)
   qgamma(u, scale = scale, shape = shape)
 }
 
@@ -261,9 +261,9 @@ rgammat <- function(n, scale = scale, shape = shape, lower, upper) {
 #'
 #' @export
 autoplot.truncated_dist <- function(object, geom_ecdf = c("point", "step"),
-                                    xlab = NULL, ylab = NULL, ylim = c(0,1),
+                                    xlab = NULL, ylab = NULL, ylim = c(0, 1),
                                     xlim = NULL, print_title = TRUE,
-                                    print_dig = 2, print_trunc = 2, ...){
+                                    print_dig = 2, print_trunc = 2, ...) {
 
   left <- attr(object, "left")
   right <- attr(object, "right")
@@ -272,17 +272,17 @@ autoplot.truncated_dist <- function(object, geom_ecdf = c("point", "step"),
   rch <- round(right, print_trunc)
   lch <- format(round(left, print_trunc), big.mark = " ", scientific = FALSE)
 
-  trunc_bounds <- if (left > 0 & right < Inf) {
+  trunc_bounds <- if (left > 0 && right < Inf) {
     paste0(" (left truncation at ", lch, " and right truncation at ", rch, ") ")
-  } else if (left > 0 & right == Inf) {
+  } else if (left > 0 && right == Inf) {
     paste0(" (left truncation at ", lch, ") ")
-  } else if (left == 0 & right < Inf){
+  } else if (left == 0 && right < Inf) {
     paste0(" (right truncation at ", rch, ") ")
   } else {
     ""
   }
 
-  ptruncated_gamma = ptruncated_log_normal = NULL
+  ptruncated_gamma <- ptruncated_log_normal <- NULL
 
   ptruncated_gamma <<- function(q, scale, shape) { # x was q
     ptrunc(q, "gamma", a = left, b = right,
@@ -299,12 +299,17 @@ autoplot.truncated_dist <- function(object, geom_ecdf = c("point", "step"),
   xvar_vec <- attr(object, "truncated_vec")
   df <- data.frame(xvar = xvar_vec)
 
-  if ( is.null(xlim) ){
+  if (is.null(xlim)) {
     xlim <- c(0, max(df$xvar, na.rm = TRUE))
   }
 
-  if ( is.null(xlab) ){ xlab <- "severity" }
-  if ( is.null(ylab) ){ ylab <- "cumulative proportion"}
+  if (is.null(xlab)) {
+    xlab <- "severity"
+  }
+
+  if (is.null(ylab)) {
+    ylab <- "cumulative proportion"
+  }
 
   distt <- switch(object$distname,
                   truncated_gamma = "gamma distribution",
@@ -315,27 +320,32 @@ autoplot.truncated_dist <- function(object, geom_ecdf = c("point", "step"),
                       names(est)[2], " = ", round(est[2], print_dig))
 
   ggplot2::ggplot(data = df, aes(x = xvar)) +
-    ggplot2::stat_ecdf(geom = geom_ecdf) +
-    {if ( object$distname == "truncated_gamma"){
-      ggplot2::stat_function(
-        fun = "ptruncated_gamma",
-        color = "dodgerblue",
-        args = list(shape = est[names(est) == "shape"] ,
-                    scale = est[names(est) == "scale"])) }} +
-    {if ( object$distname == "truncated_log_normal"){
-      ggplot2::stat_function(
-        fun = "ptruncated_log_normal",
-        color = "dodgerblue",
-        args = list(meanlog = est[names(est) == "meanlog"] ,
-                    sdlog = est[names(est) == "sdlog"])) }} +
-    ggplot2::theme_minimal() +
-    {if ( isTRUE( print_title )){
-      ggplot2::labs(x = xlab, y = ylab,
-                    title = paste0("CDF of truncated ", distt, trunc_bounds),
-                    subtitle =  paste0("(", est_title, ")")) }} +
+    ggplot2::stat_ecdf(geom = geom_ecdf) + {
+      if (object$distname == "truncated_gamma") {
+        ggplot2::stat_function(
+          fun = "ptruncated_gamma",
+          color = "dodgerblue",
+          args = list(shape = est[names(est) == "shape"],
+                      scale = est[names(est) == "scale"]))
+      }
+    } + {
+      if (object$distname == "truncated_log_normal") {
+        ggplot2::stat_function(
+          fun = "ptruncated_log_normal",
+          color = "dodgerblue",
+          args = list(meanlog = est[names(est) == "meanlog"],
+                      sdlog = est[names(est) == "sdlog"]))
+      }
+    } +
+    ggplot2::theme_minimal() + {
+      if (isTRUE(print_title)) {
+        ggplot2::labs(x = xlab, y = ylab,
+                      title = paste0("CDF of truncated ", distt, trunc_bounds),
+                      subtitle =  paste0("(", est_title, ")"))
+      }
+    } +
     ggplot2::coord_cartesian(ylim = ylim, xlim = xlim) +
-    ggplot2::scale_x_continuous(labels = function(x) format(x, big.mark = " ",
-                                                            scientific = FALSE))
+    ggplot2::scale_x_continuous(
+      labels = function(x) format(x, big.mark = " ", scientific = FALSE)
+    )
 }
-
-

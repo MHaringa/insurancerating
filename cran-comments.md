@@ -1,10 +1,13 @@
 ## Resubmission
 This is a resubmission. In this version:
 
-* `update_glm()` now always returns the correct interval in case the function is used in combination with `smooth_coef()`
+* `autoplot.univariate()` now generates a plot even when there are missing 
+values in the rows
+* `rating_factors()` now always returns the correct coefficients when used
+on a 'refitsmooth' or 'refitrestricted' class of GLM. 
 
 ## Test environments
-* local OS X install, R 4.2.2
+* local OS X install, R 4.4.0
 * win-builder (devel and release)
 
 ## R CMD check results

@@ -44,10 +44,9 @@ function is adopted from dummy.coef(). Our adoption prints a data.frame as
 output.
 }
 \examples{
-library(dplyr)
-df <- MTPL2 \%>\%
-  mutate(across(c(area), as.factor)) \%>\%
-  mutate(across(c(area), ~biggest_reference(., exposure)))
+df <- MTPL2 |>
+dplyr::mutate(dplyr::across(c(area), as.factor)) |>
+dplyr::mutate(dplyr::across(c(area), ~biggest_reference(., exposure)))
 
 mod1 <- glm(nclaims ~ area + premium, offset = log(exposure),
 family = poisson(), data = df)

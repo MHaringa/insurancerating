@@ -52,7 +52,7 @@
 #'
 #' @export
 rows_per_date <- function(df, dates, df_begin, df_end, dates_date, ...,
-                          nomatch = NULL, mult = "all"){
+                          nomatch = NULL, mult = "all") {
 
   cols0 <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
 
@@ -61,13 +61,13 @@ rows_per_date <- function(df, dates, df_begin, df_end, dates_date, ...,
   reeks00 <- deparse(substitute(dates_date))
   class00 <- class(df)
 
-  if (!lubridate::is.Date(df[[begin00]]) | !lubridate::is.Date(df[[end00]])) {
+  if (!lubridate::is.Date(df[[begin00]]) || !lubridate::is.Date(df[[end00]])) {
     stop("Columns df_begin and df_end should be Date objects.
          Use e.g. lubridate::ymd() to create Date object.",
          call. = FALSE)
   }
 
-  if (!lubridate::is.Date(dates[[reeks00]])){
+  if (!lubridate::is.Date(dates[[reeks00]])) {
     stop("Column dates_date must be a Date object.
          Use e.g. lubridate::ymd() to create Date object.",
          call. = FALSE)

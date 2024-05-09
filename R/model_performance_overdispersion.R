@@ -33,18 +33,18 @@
 #' @export
 check_overdispersion <- function(object) {
 
-  if ( stats::family(object)$family != "poisson") {
+  if (stats::family(object)$family != "poisson") {
     stop("Family of object should be Poisson", call. = FALSE)
   }
 
   rdf <- stats::df.residual(object)
   rp <- residuals(object, type = "pearson")
-  Pearson.chisq <- sum(rp^2)
-  prat <- Pearson.chisq / rdf
-  pval <- stats::pchisq(Pearson.chisq, df=rdf, lower.tail = FALSE)
+  pearson_chisq <- sum(rp^2)
+  prat <- pearson_chisq / rdf
+  pval <- stats::pchisq(pearson_chisq, df = rdf, lower.tail = FALSE)
 
   return(structure(
-    list(chisq = Pearson.chisq,
+    list(chisq = pearson_chisq,
          ratio = prat,
          rdf = rdf,
          p = pval),

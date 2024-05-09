@@ -23,18 +23,11 @@
 #' @importFrom stats terms
 #' @importFrom utils stack
 #'
-#' @examples
-#' MTPL2a <- MTPL2
-#' MTPL2a$area <- as.factor(MTPL2a$area)
-#' x <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
-#'  data = MTPL2a)
-#' rating_factors1(x)
-#'
-#' @export
-rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname = "estimate",
-                            exponentiate = TRUE, round_exposure = 0){
+#' @noRd
+rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
+                            colname = "estimate",
+                            exponentiate = TRUE, round_exposure = 0) {
   xl <- model$xlevels
-  model_nm <- deparse(substitute(model))
   exposure <- deparse(substitute(exposure))
   model_data_name <- deparse(substitute(model_data))
 
@@ -48,11 +41,11 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
          call. = FALSE)
   }
 
-  if ( inherits(model, "refitsmooth") ){
+  if (inherits(model, "refitsmooth")) {
     x <- attr(model, "new_rf")
   }
 
-  if ( inherits(model, "refitrestricted") ){
+  if (inherits(model, "refitrestricted")) {
     x <- attr(model, "new_rf_rst")
   }
 
@@ -61,7 +54,8 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
   if (length(xl) > 0) {
     xl_names <- names(xl)
     xl_df <- stack(xl)
-    xl_df[,c("ind","values")] <- lapply(xl_df[, c("ind","values")], as.character)
+    xl_df[, c("ind", "values")] <- lapply(xl_df[, c("ind", "values")],
+                                          as.character)
     xl_df$ind_values <- paste0(xl_df$ind, xl_df$values)
   }
 
@@ -72,7 +66,7 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
                         stringsAsFactors = FALSE)
   }
 
-  if ( inherits(model, c("refitsmooth", "refitrestricted")) ) {
+  if (inherits(model, c("refitsmooth", "refitrestricted"))) {
     x$ind <- as.character(x$risk_factor)
     x$values <- as.character(x$level)
     x$ind_values <- paste0(x$ind, x$values)
@@ -95,7 +89,7 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
   xl_names_in <- xl_names[which(xl_names %in% names(model_data))]
   xl_names_out <- setdiff(xl_names, xl_names_in)
 
-  if (!is.null(model_data) & exposure != "NULL") {
+  if (!is.null(model_data) && exposure != "NULL") {
     if (length(xl_names_in) > 0) {
       model_data <- as.data.frame(model_data)
       if (!exposure %in% names(model_data)) {
@@ -124,8 +118,7 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
       dfexp$level <- as.character(dfexp$level)
       xl_df <- dplyr::left_join(xl_df, dfexp, by = c("level",
                                                      "risk_factor"))
-    }
-    else {
+    } else {
       message(paste0(xl_names_out, collapse = ", "),
               " not in ", model_data_name)
     }
@@ -137,17 +130,17 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
 
   if (length(coefs) != nrow(ret)) {
     coefs <- stack(coefs)
-    colnames(coefs)[colnames(coefs) == 'values'] <- 'Estimate'
+    colnames(coefs)[colnames(coefs) == "values"] <- "Estimate"
     ret <- merge(x = coefs, y = ret, by = c("ind", "Estimate"), all.x = TRUE)
   }
 
   coef <- coefficients(model)
   vals <- stack(coef)
-  vals$pvalues <- as.numeric(ret[,5])
+  vals$pvalues <- as.numeric(ret[, 5])
   vals$pvalues <- ifelse(is.na(vals$pvalues), -9e9, vals$pvalues)
   vals$ind <- as.character(vals$ind)
 
-  if ( inherits(model, c("refitsmooth", "refitrestricted")) ) {
+  if (inherits(model, c("refitsmooth", "refitrestricted"))) {
     xc <- x[, c("yhat", "ind_values")]
     colnames(xc)[1] <- "values"
     colnames(xc)[2] <- "ind"
@@ -184,19 +177,19 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
   }
 
   row.names(uit) <- NULL
-  if (!is.null(model_data) & exposure != "NULL" & length(xl_names_in) > 0) {
+  if (!is.null(model_data) && exposure != "NULL" && length(xl_names_in) > 0) {
     uit <- uit[, c("risk_factor", "level", "values", exposure, "pvalues")]
     uit[[exposure]] <- round(uit[[exposure]], round_exposure)
-  }
-  else {
+  } else {
     uit <- uit[, c("risk_factor", "level", "values", "pvalues")]
   }
   names(uit)[names(uit) == "values"] <- colname
   uit$pvalues <- ifelse(uit$pvalues < 0, NA, uit$pvalues)
   uit$pvalues <- vapply(uit$pvalues, function(x) make_stars(x),
                         FUN.VALUE = character(1))
-  return(uit)
+  uit
 }
+
 
 
 #' Include reference group in regression output
@@ -229,10 +222,9 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
 #' @author Martin Haringa
 #'
 #' @examples
-#' library(dplyr)
-#' df <- MTPL2 %>%
-#'   mutate(across(c(area), as.factor)) %>%
-#'   mutate(across(c(area), ~biggest_reference(., exposure)))
+#' df <- MTPL2 |>
+#' dplyr::mutate(dplyr::across(c(area), as.factor)) |>
+#' dplyr::mutate(dplyr::across(c(area), ~biggest_reference(., exposure)))
 #'
 #' mod1 <- glm(nclaims ~ area + premium, offset = log(exposure),
 #' family = poisson(), data = df)
@@ -243,59 +235,68 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL, colname =
 #'
 #' @export
 rating_factors <- function(..., model_data = NULL, exposure = NULL,
-                           exponentiate = TRUE, signif_stars = TRUE,
-                           round_exposure = 0){
+                            exponentiate = TRUE, signif_stars = TRUE,
+                            round_exposure = 0) {
 
   model_data_nm <- deparse(substitute(model_data))
   exposure_nm <- deparse(substitute(exposure))
 
   cols <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
 
+  # Loop through each provided GLM model
   rf_list <- list()
-  for (i in seq_len(length(cols))){
-    df <- eval.parent(substitute(
-      rating_factors1(eval(parse( text = cols[i])),
-                      model_data, exposure,
-                      exponentiate = exponentiate,
-                      round_exposure = round_exposure)
-    ))
+  for (i in 1:length(list(...))) {
+    coef_name <- paste0("m_", i)
+    df <- rating_factors2(list(...)[[i]],
+                          model_data, exposure,
+                          exponentiate = exponentiate,
+                          round_exposure = round_exposure)
     names(df)[names(df) == "estimate"] <- paste0("est_", cols[i])
     names(df)[names(df) == "pvalues"] <- paste0("signif_", cols[i])
-    rf_list[[paste0("m_", i)]] <- df
+    rf_list[[coef_name]] <- df
   }
 
-  if( model_data_nm != "NULL" & exposure_nm != "NULL" ) {
-    rf_fj <- Reduce(function(dtf1, dtf2)
-      dplyr::full_join(dtf1, dtf2,
-                       by = c("risk_factor", "level", exposure_nm)), rf_list)
-    rf_fj <- rf_fj[,c("risk_factor", "level", paste0("est_", cols),
-                      paste0("signif_", cols), exposure_nm)]
+  if (model_data_nm != "NULL" && exposure_nm != "NULL") {
+    rf_fj <- Reduce(
+      function(dtf1, dtf2) {
+        dplyr::full_join(dtf1, dtf2,
+                         by = c("risk_factor", "level", exposure_nm))
+      },
+      rf_list)
+    rf_fj <- rf_fj[, c("risk_factor", "level", paste0("est_", cols),
+                       paste0("signif_", cols), exposure_nm)]
   } else {
-    rf_fj <- Reduce(function(dtf1, dtf2)
-      dplyr::full_join(dtf1, dtf2, by = c("risk_factor", "level")), rf_list)
-    rf_fj <- rf_fj[,c("risk_factor", "level", paste0("est_", cols),
-                      paste0("signif_", cols))]
+    rf_fj <- Reduce(
+      function(dtf1, dtf2) {
+        dplyr::full_join(dtf1, dtf2, by = c("risk_factor", "level"))
+      },
+      rf_list)
+    rf_fj <- rf_fj[, c("risk_factor", "level", paste0("est_", cols),
+                       paste0("signif_", cols))]
   }
 
-  if ( !isTRUE(signif_stars) ){
-    rf_fj <- rf_fj[ , -which(names(rf_fj) %in% paste0("signif_", cols))]
+  if (!isTRUE(signif_stars)) {
+    rf_fj <- rf_fj[, -which(names(rf_fj) %in% paste0("signif_", cols))]
   }
 
-  if ( !is.null(model_data)){
+  if (!is.null(model_data)) {
     lst_order <- lapply(names(model_data),
-                        function(x) { attributes(model_data[[x]])$xoriginal })
+                        function(x) {
+                          attributes(model_data[[x]])$xoriginal
+                        })
     names(lst_order) <- names(model_data)
     lst_order <- lst_order[lengths(lst_order) != 0]
 
-    if (length(lst_order) > 0){
+    if (length(lst_order) > 0) {
       df_order <- stack(lst_order)
       names(df_order) <- c("level", "risk_factor")
       df_order <- df_order[, 2:1]
-      df_order <- df_order[df_order$risk_factor %in% unique(rf_fj$risk_factor),]
+      df_order <- df_order[df_order$risk_factor %in%
+                             unique(rf_fj$risk_factor), ]
       rf_fj$risk_factor <- as.character(rf_fj$risk_factor)
       df_order$risk_factor <- as.character(df_order$risk_factor)
       uit <- dplyr::full_join(df_order, rf_fj, by = c("risk_factor", "level"))
-      rf_fj <- uit[order(match(uit$risk_factor, rf_fj$risk_factor)),]
+      rf_fj <- uit[order(match(uit$risk_factor, rf_fj$risk_factor)), ]
       rownames(rf_fj) <- NULL
     }
   }
@@ -303,11 +304,11 @@ rating_factors <- function(..., model_data = NULL, exposure = NULL,
   rf_fj_stars <- NULL
   signif_levels <- NULL
 
-  if ( isTRUE(signif_stars) ) {
+  if (isTRUE(signif_stars)) {
     signif_levels <- cat("Significance levels: *** p < 0.001; ** p < 0.01;
     * p < 0.05; . p < 0.1")
     rf_fj_stars <- rf_fj
-    for (i in seq_len(length(cols))){
+    for (i in seq_len(length(cols))) {
       pvalues_num <- round(rf_fj_stars[[paste0("est_", cols[i])]], 6)
       pvalues_char <- format(pvalues_num, digits = 6, nsmall = 2)
       stars_char <- rf_fj_stars[[paste0("signif_", cols[i])]]
@@ -316,8 +317,8 @@ rating_factors <- function(..., model_data = NULL, exposure = NULL,
                                                               stars_char),
                                                        justify = "left")
     }
-    rf_fj_stars <- rf_fj_stars[ , -which(names(rf_fj_stars) %in%
-                                           paste0("signif_", cols))]
+    rf_fj_stars <- rf_fj_stars[, -which(names(rf_fj_stars) %in%
+                                          paste0("signif_", cols))]
   }
 
   return(structure(list(df = rf_fj,
@@ -331,15 +332,16 @@ rating_factors <- function(..., model_data = NULL, exposure = NULL,
                    class = "riskfactor"))
 }
 
+
 #' @export
 print.riskfactor <- function(x, ...) {
 
-  if ( isTRUE( x$signif_stars ) ){
+  if (isTRUE(x$signif_stars)) {
     x1 <- x$signif_levels
     x1[!is.na(x1)] <- paste0("\033[34m", x1[!is.na(x1)], "\033[39m")
     cat(x1)
     print(x$df_stars)
-  } else{
+  } else {
     print(x$df)
   }
 }
@@ -348,13 +350,13 @@ print.riskfactor <- function(x, ...) {
 #' @export
 as.data.frame.riskfactor <- function(x, ...) {
 
-  if ( isTRUE( x$signif_stars ) ){
+  if (isTRUE(x$signif_stars)) {
     df <- x$df_stars
-  } else{
+  } else {
     df <- x$df
   }
 
-  return(as.data.frame(df))
+  as.data.frame(df)
 }
 
 #' Automatically create a ggplot for objects obtained from rating_factors()
@@ -399,9 +401,10 @@ as.data.frame.riskfactor <- function(x, ...) {
 #' autoplot(x)
 #'
 autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
-                                labels = TRUE, dec.mark = ",",
+                                labels = TRUE,
+                                dec.mark = ",",
                                 ylab = "rate", fill = NULL, color = NULL,
-                                linetype = FALSE, ...){
+                                linetype = FALSE, ...) {
 
   df <- object$df
   models <- object$models
@@ -421,23 +424,25 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
 
   df_long$model <- gsub("^est_", "", df_long$model)
 
-  if ( !isTRUE(expon) ){
-    df_long$est = exp(df_long$est)
+  if (!isTRUE(expon)) {
+    df_long$est <- exp(df_long$est)
   }
 
-  if ( dec.mark == "," ){
-    sep_fn <- function(x) format(x, big.mark = ".", decimal.mark = ",",
-                                 scientific = FALSE)
-  } else{
-    sep_fn <- function(x) format(x, big.mark = ",", decimal.mark = ".",
-                                 scientific = FALSE)
+  if (dec.mark == ",") {
+    sep_fn <- function(x) {
+      format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE)
+    }
+  } else {
+    sep_fn <- function(x) {
+      format(x, big.mark = ",", decimal.mark = ".", scientific = FALSE)
+    }
   }
 
-  if ( is.null(risk_factors) ){
+  if (is.null(risk_factors)) {
     rf_names <- unique(df$risk_factor)
-  } else if ( all(risk_factors %in% df$risk_factor)) {
+  } else if (all(risk_factors %in% df$risk_factor)) {
     rf_names <- risk_factors
-  } else{
+  } else {
     rf_diff <- setdiff(risk_factors, unique(df$risk_factor))
     stop(paste(rf_diff, collapse = ", "), " unknown risk_factor(s)",
          call. = FALSE)
@@ -445,9 +450,9 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
 
 
   fig_list <- list()
-  for ( i in seq_len(length(rf_names))){
+  for (i in seq_len(length(rf_names))) {
 
-    df1 <- df_long[df_long$risk_factor == rf_names[i],]
+    df1 <- df_long[df_long$risk_factor == rf_names[i], ]
     df1[["level"]] <- factor(df1[["level"]], levels = unique(df1[["level"]]))
 
     if (exposure_nm != "NULL") {
@@ -455,83 +460,93 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
                                                    na.rm = TRUE) *
         max(df1[["est"]], na.rm = TRUE)
       df1$y_print <- round(df1[[exposure_nm]], 0)
-      df1 <- df1[!is.na(df1$est),]
+      df1 <- df1[!is.na(df1$est), ]
       df1_bar <- unique(df1[, c("risk_factor", "level", exposure_nm,
                                 "s_axis_scale", "y_print")])
     }
 
-    if ( is.null(fill) & is.null(color) ){
+    if (is.null(fill) && is.null(color)) {
       color <- "lightskyblue"
       fill <- lighten_color(color)[2]
     }
 
-    if ( is.null(fill) & !is.null(color) ){
+    if (is.null(fill) && !is.null(color)) {
       color <- color
       fill <- lighten_color(color)[2]
     }
 
-    if ( !is.null(fill) & is.null(color) ){
+    if (!is.null(fill) && is.null(color)) {
       fill <- fill
       color <- darken_color(fill)[3]
     }
 
     fig_list[[paste0("p", i)]] <- ggplot2::ggplot(data = df1) +
-      ggplot2::theme_minimal() +
-      { if (exposure_nm == "NULL")
-        ggplot2::scale_y_continuous(labels = sep_fn, limits = c(0, NA),
-                                    expand = expansion(mult = c(0, 0.02))) } +
-      { if (exposure_nm != "NULL")
-        ggplot2::geom_bar(data = df1_bar,
-                          aes(x = .data[["level"]],
-                              y = .data[["s_axis_scale"]]),
-                          stat = "identity",
-                          color = color,
-                          fill = fill,
-                          alpha = 1) } +
-      { if (exposure_nm != "NULL")
-        ggplot2::scale_y_continuous(
-          labels = sep_fn,
-          limits = c(0, NA),
-          expand = expansion(mult = c(0, 0.02)),
-          sec.axis = sec_axis(~ . * max(df1_bar[[exposure_nm]]) /
-                                max(df1[["est"]]),
-                              name = exposure_nm,
-                              labels = sep_fn)) } +
+      ggplot2::theme_minimal() + {
+        if (exposure_nm == "NULL") {
+          ggplot2::scale_y_continuous(labels = sep_fn, limits = c(0, NA),
+                                      expand = expansion(mult = c(0, 0.02)))
+        }
+      } + {
+        if (exposure_nm != "NULL") {
+          ggplot2::geom_bar(data = df1_bar,
+                            aes(x = .data[["level"]],
+                                y = .data[["s_axis_scale"]]),
+                            stat = "identity",
+                            color = color,
+                            fill = fill,
+                            alpha = 1)
+        }
+      } + {
+        if (exposure_nm != "NULL") {
+          ggplot2::scale_y_continuous(
+            labels = sep_fn,
+            limits = c(0, NA),
+            expand = expansion(mult = c(0, 0.02)),
+            sec.axis = sec_axis(~ . * max(df1_bar[[exposure_nm]]) /
+                                  max(df1[["est"]]),
+                                name = exposure_nm,
+                                labels = sep_fn))
+        }
+      } +
       ggplot2::geom_point(aes(x = .data[["level"]],
                               y = .data[["est"]],
                               group = .data[["model"]],
-                              color = .data[["model"]])) +
-      { if ( length(models) == 1) theme(legend.position = "none") } +
-      { if (isTRUE(linetype))
-        ggplot2::geom_line(aes(x = .data[["level"]],
-                               y = .data[["est"]],
-                               group = .data[["model"]],
-                               color = .data[["model"]],
-                               linetype = .data[["model"]])) } +
-      { if (!isTRUE(linetype))
-        ggplot2::geom_line(aes(x = .data[["level"]],
-                               y = .data[["est"]],
-                               group = .data[["model"]],
-                               color = .data[["model"]])) } +
-      { if ( isTRUE(labels) & exposure_nm != "NULL")
-        ggplot2::geom_text(
-          aes(x = .data[["level"]],
-              y = .data[["s_axis_scale"]],
-              label = sep_fn(.data[["y_print"]])),
-          vjust = "inward",
-          size = 3) } +
-      ggplot2::labs(x = rf_names[i],
-                    y = ylab) +
+                              color = .data[["model"]])) + {
+                                if (length(models) == 1) {
+                                  theme(legend.position = "none")
+                                }
+                              } + {
+                                if (isTRUE(linetype)) {
+                                  ggplot2::geom_line(
+                                    aes(x = .data[["level"]],
+                                        y = .data[["est"]],
+                                        group = .data[["model"]],
+                                        color = .data[["model"]],
+                                        linetype = .data[["model"]])
+                                  )
+                                }
+                              } + {
+                                if (!isTRUE(linetype)) {
+                                  ggplot2::geom_line(
+                                    aes(x = .data[["level"]],
+                                        y = .data[["est"]],
+                                        group = .data[["model"]],
+                                        color = .data[["model"]])
+                                  )
+                                }
+                              } + {
+                                if (isTRUE(labels) && exposure_nm != "NULL") {
+                                  ggplot2::geom_text(
+                                    aes(x = .data[["level"]],
+                                        y = .data[["s_axis_scale"]],
+                                        label = sep_fn(.data[["y_print"]])),
+                                    vjust = "inward",
+                                    size = 3)
+                                }
+                              } +
+      ggplot2::labs(x = rf_names[i], y = ylab) +
       ggplot2::theme(legend.title = element_blank())
   }
 
-  pl <- patchwork::wrap_plots(fig_list, ncol = ncol)
-  return(pl)
+  patchwork::wrap_plots(fig_list, ncol = ncol)
 }
-
-
-
-
-
-
-

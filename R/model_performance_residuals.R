@@ -45,7 +45,7 @@
 #' }
 #'
 #' @export
-check_residuals <- function(object, n_simulations = 30){
+check_residuals <- function(object, n_simulations = 30) {
 
   suppressMessages({
     simout <- DHARMa::simulateResiduals(object, n = n_simulations)
@@ -55,19 +55,27 @@ check_residuals <- function(object, n_simulations = 30){
 
   u <- u[!is.na(u)]
   n <- length(u)
-  m <- (1:n) / (n+1)
+  m <- (1:n) / (n + 1)
   sx <- sort(m)
   sy <- sort(u)
   lenx <- length(sx)
   leny <- length(sy)
-  if (leny < lenx) { sx <- stats::approx(1L:lenx, sx, n = leny)$y }
-  if (leny > lenx) { sy <- stats::approx(1L:leny, sy, n = lenx)$y }
+  if (leny < lenx) {
+    sx <- stats::approx(1L:lenx, sx, n = leny)$y
+  }
+  if (leny > lenx) {
+    sy <- stats::approx(1L:leny, sy, n = lenx)$y
+  }
 
   dat <- data.frame(x = sx, y = sy)
 
   ts <- tryCatch(
-    { stats::ks.test(unique(u), "punif", alternative = "two.sided") },
-    error = function(e) { NULL }
+    {
+      stats::ks.test(unique(u), "punif", alternative = "two.sided")
+    },
+    error = function(e) {
+      NULL
+    }
   )
 
   p.val <- ts$p.value
@@ -81,9 +89,13 @@ check_residuals <- function(object, n_simulations = 30){
 print.check_residuals <- function(x, ...) {
   p.val <- x$p.val
   if (p.val < 0.05) {
-    cat(color_red(sprintf("Warning: deviations from the expected distribution detected (p = %.3f).", p.val)))
+    cat(color_red(sprintf(
+      "Warning: deviations from the expected distribution detected (p = %.3f).",
+      p.val)))
   } else {
-    cat(color_green(sprintf("OK: residuals appear as from the expected distribution (p = %.3f).", p.val)))
+    cat(color_green(sprintf(
+      "OK: residuals appear as from the expected distribution (p = %.3f).",
+      p.val)))
   }
 }
 
@@ -106,17 +118,21 @@ print.check_residuals <- function(x, ...) {
 #' @export
 autoplot.check_residuals <- function(object, show_message = TRUE, ...) {
 
-  if ( isTRUE(show_message) ){
+  if (isTRUE(show_message)) {
     p.val <- object$p.val
     if (p.val < 0.05) {
-      cat(color_red(sprintf("Warning: deviations from the expected distribution detected (p = %.3f).", p.val)))
+      cat(color_red(sprintf(
+        "Warning: deviations from expected distribution detected (p = %.3f).",
+        p.val)))
     } else {
-      cat(color_green(sprintf("OK: residuals appear as from the expected distribution (p = %.3f).", p.val)))
+      cat(color_green(sprintf(
+        "OK: residuals appear as from the expected distribution (p = %.3f).",
+        p.val)))
     }
   }
   dat <- object$df
 
-  if ( nrow(dat) > 1000 ){
+  if (nrow(dat) > 1000) {
     dat <- dat[sample(nrow(dat), 1000), ]
   }
 
@@ -129,8 +145,3 @@ autoplot.check_residuals <- function(object, show_message = TRUE, ...) {
                   subtitle = "Dots should be plotted along the line") +
     ggplot2::theme_minimal()
 }
-
-
-
-
-

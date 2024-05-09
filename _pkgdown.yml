@@ -31,7 +31,6 @@ reference:
       Calculate and plot rating factors obtained from (multiple) (generalized) lineair model objects
     contents:
       - rating_factors
-      - rating_factors1
       - autoplot.riskfactor
   - title: "Data sets"
     contents:

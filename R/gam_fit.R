@@ -74,7 +74,7 @@
 #'
 #' @export
 fit_gam <- function(data, nclaims, x, exposure, amount = NULL,
-                    pure_premium = NULL, model = "frequency", round_x = NULL){
+                    pure_premium = NULL, model = "frequency", round_x = NULL) {
 
   if (nrow(data) < 10)
     stop("At least 10 datapoints are required. The spline smoothers assume a
@@ -90,45 +90,45 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL,
   amount <- deparse(substitute(amount))
   pure_premium <- deparse(substitute(pure_premium))
 
-  if ( !is.numeric(data[[x]]) ) {
-    stop( "x should be numeric", call. = FALSE)
+  if (!is.numeric(data[[x]])) {
+    stop("x should be numeric", call. = FALSE)
   }
 
-  if ( !is.numeric(data[[exposure]]) ) {
-    stop( "exposure should be numeric", call. = FALSE)
+  if (!is.numeric(data[[exposure]])) {
+    stop("exposure should be numeric", call. = FALSE)
   }
 
 
-  if( model == "frequency" ){
+  if (model == "frequency") {
 
-    df <- tryCatch(
-      {
-        df <- data.frame(nclaims = data[[nclaims]],
-                         x = data[[x]],
-                         exposure = data[[exposure]])
+    df <- tryCatch({
+      df <- data.frame(nclaims = data[[nclaims]],
+                       x = data[[x]],
+                       exposure = data[[exposure]])
 
-        if ( is.numeric(round_x) ) { df$x <- round(df$x / round_x) * round_x }
+      if (is.numeric(round_x)) {
+        df$x <- round(df$x / round_x) * round_x
+      }
 
-        df <- aggregate(list(nclaims = df$nclaims,
-                             exposure = df$exposure),
-                        by = list(x = df$x),
-                        FUN = sum,
-                        na.rm = TRUE,
-                        na.action = NULL)
+      df <- aggregate(list(nclaims = df$nclaims,
+                           exposure = df$exposure),
+                      by = list(x = df$x),
+                      FUN = sum,
+                      na.rm = TRUE,
+                      na.action = NULL)
 
-        df$frequency <- df$nclaims / df$exposure
-
-        df
-      },
-      error = function(e) {
-        e$message <- cat("nclaims, x, and exposure must be specified
+      df$frequency <- df$nclaims / df$exposure
+      df
+    },
+    error = function(e) {
+      e$message <- cat("nclaims, x, and exposure must be specified
         for the frequency model.")
-        stop(e)
-      })
+      stop(e)
+    })
 
-
-    if( sum(df$exposure == 0) > 0 )
+    if (sum(df$exposure == 0) > 0) {
       stop("Exposures should be greater than zero.", call. = FALSE)
+    }
 
     # Poisson GAM
     gam_x <- mgcv::gam(nclaims ~ s(x),
@@ -139,51 +139,44 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL,
 
   }
 
-  if( model == "severity" ){
+  if (model == "severity") {
 
-    df <- tryCatch(
-      {
-        df <- data.frame(nclaims = data[[nclaims]],
-                         x = data[[x]],
-                         exposure = data[[exposure]],
-                         amount = data[[amount]])
+    df <- tryCatch({
+      df <- data.frame(nclaims = data[[nclaims]],
+                       x = data[[x]],
+                       exposure = data[[exposure]],
+                       amount = data[[amount]])
 
-        if ( is.numeric(round_x) ) { df$x <- round(df$x / round_x) * round_x }
+      if (is.numeric(round_x)) df$x <- round(df$x / round_x) * round_x
 
-        df <- aggregate(list(nclaims = df$nclaims,
-                             exposure = df$exposure,
-                             amount = df$amount),
-                        by = list(x = df$x),
-                        FUN = sum,
-                        na.rm = TRUE,
-                        na.action = NULL)
+      df <- aggregate(list(nclaims = df$nclaims,
+                           exposure = df$exposure,
+                           amount = df$amount),
+                      by = list(x = df$x),
+                      FUN = sum,
+                      na.rm = TRUE,
+                      na.action = NULL)
 
-        df <- subset(df, nclaims > 0 & amount > 0)
-
-        df$avg_claimsize <- df$amount / df$nclaims
-
-        df
-      },
-      error = function(e) {
-        e$message <- cat("nclaims, x, exposure, and amount should be specified
+      df <- subset(df, nclaims > 0 & amount > 0)
+      df$avg_claimsize <- df$amount / df$nclaims
+      df
+    },
+    error = function(e) {
+      e$message <- cat("nclaims, x, exposure, and amount should be specified
         for the severity model.")
-        stop(e)
-      })
-
+      stop(e)
+    })
 
     # lognormal
     gam_x <- mgcv::gam(log(avg_claimsize) ~ s(x),
                        data = df,
                        family = gaussian,
                        weights = nclaims)
-
-
   }
 
-  if( model == "burning" ){
+  if (model == "burning") {
 
-    df <- tryCatch(
-      {
+    df <- tryCatch({
         df <- data.frame(x = data[[x]],
                          exposure = data[[exposure]],
                          pure_premium = data[[pure_premium]])
@@ -197,10 +190,8 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL,
                         na.action = NULL)
 
         df <- subset(df, pure_premium > 0 & exposure > 0)
-
         # Solve issue 2: df$avg_premium <- df$pure_premium / df$exposure
         df$avg_premium <- df$weighted_premium / df$exposure
-
         df
       },
       error = function(e) {
@@ -208,7 +199,6 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL,
         the burning cost model.")
         stop(e)
       })
-
 
     # lognormal
     gam_x <- mgcv::gam(log(avg_premium) ~ s(x),
@@ -260,7 +250,7 @@ print.fitgam <- function(x, ...) {
 #' @export
 as.data.frame.fitgam <- function(x, ...) {
   prediction <- x$prediction
-  return(as.data.frame(prediction))
+  as.data.frame(prediction)
 }
 
 #' Automatically create a ggplot for objects obtained from fit_gam()
@@ -304,18 +294,19 @@ as.data.frame.fitgam <- function(x, ...) {
 autoplot.fitgam <- function(object, conf_int = FALSE, color_gam = "steelblue",
                             show_observations = FALSE, x_stepsize = NULL,
                             size_points = 1, color_points = "black",
-                            rotate_labels = FALSE, remove_outliers = NULL, ...){
+                            rotate_labels = FALSE,
+                            remove_outliers = NULL, ...) {
 
   prediction <- object[[1]]
   xlab <- object[[2]]
   ylab <- object[[3]]
   points <- object[[4]]
 
-  if(isTRUE(conf_int) & sum(prediction$upr_95 > 1e9) > 0){
+  if (isTRUE(conf_int) && sum(prediction$upr_95 > 1e9) > 0) {
     message("The confidence bounds are too large to show.")
   }
 
-  if(is.numeric(remove_outliers) & isTRUE(show_observations)) {
+  if (is.numeric(remove_outliers) && isTRUE(show_observations)) {
     if (ylab == "frequency") {
       points <- points[points$frequency < remove_outliers, ]
     }
@@ -329,31 +320,42 @@ autoplot.fitgam <- function(object, conf_int = FALSE, color_gam = "steelblue",
     }
   }
 
-  gam_plot <- ggplot(data = prediction, aes(x = x, y = predicted)) +
+  ggplot(data = prediction, aes(x = x, y = predicted)) +
     geom_line(color = color_gam) +
-    theme_bw(base_size = 12) +
-    { if(isTRUE(conf_int) & sum(prediction$upr_95 > 1e9) == 0)
-      geom_ribbon(aes(ymin = lwr_95, ymax = upr_95), alpha = 0.12) } +
-    { if(is.numeric(x_stepsize))
-      scale_x_continuous(breaks = seq(floor(min(prediction$x)),
-                                      ceiling(max(prediction$x)),
-                                      by = x_stepsize)) } +
-    { if(isTRUE(show_observations) & ylab == "frequency")
-      geom_point(data = points, aes(x = x, y = frequency), size = size_points,
-                 color = color_points) } +
-    { if(isTRUE(show_observations) & ylab == "severity")
-      geom_point(data = points, aes(x = x, y = avg_claimsize),
-                 size = size_points, color = color_points) } +
-    { if(isTRUE(show_observations) & ylab == "burning")
-      geom_point(data = points, aes(x = x, y = avg_premium), size = size_points,
-                 color = color_points) } +
-    { if(ylab == "severity") scale_y_continuous(labels = scales::comma)} +
-    { if(isTRUE(rotate_labels)) theme(axis.text.x = element_text(angle = 45,
-                                                                 vjust = 1,
-                                                                 hjust = 1)) } +
+    theme_bw(base_size = 12) + {
+      if (isTRUE(conf_int) && sum(prediction$upr_95 > 1e9) == 0) {
+        geom_ribbon(aes(ymin = lwr_95, ymax = upr_95), alpha = 0.12)
+      }
+    } + {
+      if (is.numeric(x_stepsize)) {
+        scale_x_continuous(breaks = seq(floor(min(prediction$x)),
+                                        ceiling(max(prediction$x)),
+                                        by = x_stepsize))
+      }
+    } + {
+      if (isTRUE(show_observations) && ylab == "frequency") {
+        geom_point(data = points, aes(x = x, y = frequency), size = size_points,
+                   color = color_points)
+      }
+    } + {
+      if (isTRUE(show_observations) && ylab == "severity") {
+        geom_point(data = points, aes(x = x, y = avg_claimsize),
+                   size = size_points, color = color_points)
+      }
+    } + {
+      if (isTRUE(show_observations) && ylab == "burning") {
+        geom_point(data = points, aes(x = x, y = avg_premium),
+                   size = size_points,
+                   color = color_points)
+      }
+    } + {
+      if (ylab == "severity") scale_y_continuous(labels = scales::comma)
+    } + {
+      if (isTRUE(rotate_labels)) {
+        theme(axis.text.x = element_text(angle = 45,
+                                         vjust = 1,
+                                         hjust = 1))
+      }
+    } +
     labs(y = paste0("Predicted ", ylab), x = xlab)
-
-  return(gam_plot)
 }
-
-

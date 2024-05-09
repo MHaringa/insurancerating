@@ -20,7 +20,8 @@ premium_df <- MTPL %>%
   mutate(premium = pred_nclaims_freq * pred_amount_sev)
 
 # Restrictions on risk factors for region (zip)
-zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
+zip_df <- data.frame(zip = c(0, 1, 2, 3),
+                     zip_rst = c(0.8, 0.9, 1, 1.2))
 
 # Fit unrestricted model
 burn <- glm(premium ~ bm + zip, weights = exposure,
@@ -88,10 +89,10 @@ burn_smooth <- burn_unrestricted %>%
 
 # Glm ---------------------------------------------------------------------
 
-MTPL2a <- MTPL2
-MTPL2a$area <- as.factor(MTPL2a$area)
+mtpl2a <- MTPL2
+mtpl2a$area <- as.factor(mtpl2a$area)
 x <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
-         data = MTPL2a)
+         data = mtpl2a)
 
 df <- MTPL2 %>%
   mutate(across(c(area), as.factor)) %>%

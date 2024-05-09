@@ -59,29 +59,32 @@
 #'
 #'
 #' @export
-reduce <- function (df, begin, end, ..., agg_cols = NULL, agg = "sum",
-                    min.gapwidth = 5){
+reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum",
+                   min.gapwidth = 5) {
 
   .begin <- deparse(substitute(begin))
   .end <- deparse(substitute(end))
-  start_dt = end_dt = aggcols0 = NULL
-  if (!inherits(df[[.begin]], c("Date", "POSIXt")) |
+  start_dt <- end_dt <- aggcols0 <- NULL
+  if (!inherits(df[[.begin]], c("Date", "POSIXt")) ||
       !inherits(df[[.end]], c("Date", "POSIXt"))) {
-    stop("Columns begin and end should be Date objects.\n         Use e.g. lubridate::ymd() to create Date object.",
+    stop("Columns begin and end should be Date objects. Use e.g.
+         lubridate::ymd() to create Date object.",
          call. = FALSE)
   }
   if (anyNA(df[[.begin]])) {
     stop("NA values in data.table 'begin' column: '",
-         .begin, "'. All rows with\n         NA values in the range columns must be removed for reduce() to work.",
+         .begin, "'. All rows with NA values in the range columns must be
+         removed for reduce() to work.",
          call. = FALSE)
-  }
-  else if (anyNA(df[[.end]])) {
+  } else if (anyNA(df[[.end]])) {
     stop("NA values in data.table 'end' column: '",
-         .end, "'. All rows with NA\n         values in the range columns must be removed for reduce() to work.",
+         .end, "'. All rows with NA values in the range columns must be removed
+         for reduce() to work.",
          call. = FALSE)
   }
   cols0 <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
-  aggcols0 <- vapply(substitute(agg_cols)[-1], deparse, FUN.VALUE = character(1))
+  aggcols0 <- vapply(substitute(agg_cols)[-1], deparse,
+                     FUN.VALUE = character(1))
   if (length(cols0) == 0) {
     stop("define columns to group date ranges by", call. = FALSE)
   }
@@ -102,7 +105,8 @@ reduce <- function (df, begin, end, ..., agg_cols = NULL, agg = "sum",
                                end_dt = max(end_dt)), by = c(cols0, "index")]
   }
   if (length(aggcols0) > 0) {
-    dt <- dt[, lapply(.SD, get(agg), na.rm = TRUE), by = cols, .SDcols = aggcols0]
+    dt <- dt[, lapply(.SD, get(agg), na.rm = TRUE), by = cols, .SDcols =
+               aggcols0]
     dt_reduce <- dt[, .(start_dt = get(.begin), end_dt = get(.end),
                         index = c(0, cumsum(as.numeric(
                           data.table::shift(get(.begin), 1, type = "lead")) >
@@ -124,7 +128,7 @@ reduce <- function (df, begin, end, ..., agg_cols = NULL, agg = "sum",
   attr(dt_reduce, "end") <- .end
   attr(dt_reduce, "cols") <- cols0
   class(dt_reduce) <- append("reduce", class(dt_reduce))
-  return(dt_reduce)
+  dt_reduce
 }
 
 
@@ -161,42 +165,41 @@ as.data.frame.reduce <- function(x, ...) {
 #' @return data.frame
 #'
 #' @export
-summary.reduce <- function(object, ..., period = "days", name = "count"){
+summary.reduce <- function(object, ..., period = "days", name = "count") {
 
   df <- object
   begin <- attr(object, "begin")
   end <- attr(object, "end")
-  cols <- attr(object, "cols")
 
   by_begin <- begin
   by_end <- end
 
   if (!period %in% c("years", "year", "quarters", "quarter", "months", "month",
-                     "weeks", "week", "day", "days")){
+                     "weeks", "week", "day", "days")) {
     stop("period is not valid: choose 'year', 'quarter', 'month',
          'week', or 'day'", call. = FALSE)
   }
 
   cols0 <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
 
-  if( length(cols0) > 0){
+  if (length(cols0) > 0) {
     by_begin <- c(by_begin, cols0)
     by_end <- c(by_end, cols0)
   }
 
-  type = week = month = quarter = NULL # due to NSE notes in R CMD check
+  type <- week <- month <- quarter <- NULL # due to NSE notes in R CMD check
 
   new <- data.table::data.table(df)[, list(count = .N),
                                     by = c(by_begin)][, type := "in"]
   lost <- data.table::data.table(df)[, list(count = .N),
                                      by = c(by_end)][, type := "out"]
 
-  if (period %in% c("days", "day")){
+  if (period %in% c("days", "day")) {
     new[, date := get(begin)]
     lost[, date := get(end) %m+% lubridate::days(1)]
   }
 
-  if (period %in% c("weeks", "week")){
+  if (period %in% c("weeks", "week")) {
     new[, week := get(begin)]
     new[, week := paste0(data.table::year(week), "W",
                          ifelse(nchar(data.table::week(week)) == 1,
@@ -209,7 +212,7 @@ summary.reduce <- function(object, ..., period = "days", name = "count"){
                                  data.table::week(week)))]
   }
 
-  if ( period %in% c("months", "month")){
+  if (period %in% c("months", "month")) {
     new[, month := get(begin)]
     new[, month := paste0(data.table::year(month), "M",
                           ifelse(nchar(data.table::month(month)) == 1,
@@ -222,14 +225,14 @@ summary.reduce <- function(object, ..., period = "days", name = "count"){
                                   data.table::month(month)))]
   }
 
-  if ( period %in% c("quarters", "quarter")){
+  if (period %in% c("quarters", "quarter")) {
     new[, quarter := paste0(data.table::year(get(begin)), "Q",
                             data.table::quarter(get(begin)))]
     lost[, quarter := paste0(data.table::year(get(end) %m+% months(3)), "Q",
                              data.table::quarter(get(end) %m+% months(3)))]
   }
 
-  if ( period %in% c("years", "year")){
+  if (period %in% c("years", "year")) {
     new[, year := data.table::year(get(begin))]
     lost[, year := data.table::year(get(end))]
   }
@@ -239,14 +242,14 @@ summary.reduce <- function(object, ..., period = "days", name = "count"){
 
   dt <- data.table::rbindlist(list(new, lost))
 
-  if ( length(cols0) == 0){
+  if (length(cols0) == 0) {
     dt <- dt[, .(count = sum(count)), by = c(names(dt)[ncol(dt)], "type")]
     data.table::setorderv(dt, c(names(dt)[ncol(dt)], "type", "count"),
-                          c(-1,1,1))
+                          c(-1, 1, 1))
     df <- as.data.frame(dt)
   }
 
-  if( length(cols0) > 0){
+  if (length(cols0) > 0) {
     dt <- dt[, .(count = sum(count)),
              by = c(names(dt)[ncol(dt)], "type", cols0)]
     data.table::setcolorder(dt, c(names(dt)[1], "type", "count", cols0))
@@ -255,13 +258,11 @@ summary.reduce <- function(object, ..., period = "days", name = "count"){
     df <- as.data.frame(dt)
   }
 
-  if( name != "count" ){
-    if ( !is.character(name) ) stop ( "Column name should be a character",
-                                      call. = FALSE )
-    names(df)[names(df) == 'count'] <- name
+  if (name != "count") {
+    if (!is.character(name)) stop("Column name should be a character",
+                                  call. = FALSE)
+    names(df)[names(df) == "count"] <- name
   }
 
-  return(df)
+  df
 }
-
-

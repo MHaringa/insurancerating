@@ -51,31 +51,31 @@
 bootstrap_rmse <- function(model, data, n = 50, frac = 1, show_progress = TRUE,
                            rmse_model = NULL) {
 
-  if ( frac > 1 | frac <= 0){
+  if (frac > 1 || frac <= 0) {
     stop("frac should be in interval: (0,1]", call. = FALSE)
   }
 
   data <- as.data.frame(data)
   n_sample <- floor(frac * nrow(data))
 
-  if( is.null( rmse_model ) ){
+  if (is.null(rmse_model)) {
     rmse_model <- rmse(model, data)
   }
 
-  if ( is.numeric( rmse_model )){
+  if (is.numeric(rmse_model)) {
     rmse_model <- rmse_model
   }
 
   rmse_vec <- vector(mode = "numeric", length = n)
 
   # Set progress bar
-  if ( isTRUE(show_progress) ){
+  if (isTRUE(show_progress)) {
     pb <- utils::txtProgressBar(max = n, style = 3)
   }
 
-  for ( i in 1:n ){
+  for (i in 1:n){
 
-    if ( isTRUE(show_progress) ){
+    if (isTRUE(show_progress)) {
       utils::setTxtProgressBar(pb, i)
     }
 
@@ -85,13 +85,13 @@ bootstrap_rmse <- function(model, data, n = 50, frac = 1, show_progress = TRUE,
     model_train <- stats::update(model, . ~ ., data = train)
     model_fm <- stats::formula(model_train)[[2L]]
 
-    if ( frac < 1 ){
+    if (frac < 1) {
       resp <- eval(model_fm, as.data.frame(test))
       x <- resp - stats::predict(model_train, test, type = "response")
       rmse_vec[i] <- sqrt(mean(x ^ 2, na.rm = TRUE))
     }
 
-    if ( frac == 1 ){
+    if (frac == 1) {
       resp <- eval(model_fm, as.data.frame(train))
       x <- resp - stats::predict(model_train, train, type = "response")
       rmse_vec[i] <- sqrt(mean(x^2, na.rm = TRUE))
@@ -131,23 +131,23 @@ as.vector.bootstrap_rmse <- function(x, ...) {
 #' @return a ggplot object
 #'
 #' @export
-autoplot.bootstrap_rmse <- function(object, fill = NULL, color = NULL, ...){
+autoplot.bootstrap_rmse <- function(object, fill = NULL, color = NULL, ...) {
 
   rmse_bs <- object$rmse_bs
   rmse_mod <- object$rmse_mod
   dat <- data.frame(x = rmse_bs)
 
-  if ( is.null(fill) & is.null(color) ){
+  if (is.null(fill) && is.null(color)) {
     fill <- "steelblue"
     color <- darken_color(fill)[2]
   }
 
-  if ( is.null(fill) & !is.null(color) ){
+  if (is.null(fill) && !is.null(color)) {
     color <- color
     fill <- lighten_color(color)[2]
   }
 
-  if ( !is.null(fill) & is.null(color) ){
+  if (!is.null(fill) && is.null(color)) {
     fill <- fill
     color <- darken_color(fill)[2]
   }
@@ -170,13 +170,12 @@ autoplot.bootstrap_rmse <- function(object, fill = NULL, color = NULL, ...){
     ggplot2::geom_density(alpha = .4,
                           fill = "antiquewhite3",
                           color = "grey") +
-    ggplot2::geom_vline(xintercept = rmse_mod, linetype = 2) +
-    { if ( !is.null(conf_bounds)){ ggplot2::geom_vline(xintercept = conf_bounds,
-                                                       linetype = 3) }} +
+    ggplot2::geom_vline(xintercept = rmse_mod, linetype = 2) + {
+      if (!is.null(conf_bounds)) {
+        ggplot2::geom_vline(xintercept = conf_bounds, linetype = 3)
+      }
+    } +
     ggplot2::theme_minimal() +
-    ggplot2::labs(title = "Bootstrapped RMSE",
-                  x = "(Simulated) RMSE",
+    ggplot2::labs(title = "Bootstrapped RMSE", x = "(Simulated) RMSE",
                   y = "Density")
 }
-
-

@@ -6,6 +6,8 @@
 #' be helpful to display numerical data over a very wide range of values in a
 #' compact way.
 #'
+#' @author Martin Haringa
+#'
 #' @param data data.frame
 #' @param x variable name in data.frame `data` that should be mapped
 #' @param left numeric indicating the floor of the range
@@ -29,22 +31,21 @@
 #'
 #' @export
 histbin <- function(data, x, left = NULL, right = NULL, line = FALSE, bins = 30,
-                    fill = NULL, color = NULL, fill_outliers = "#a7d1a7"){
-
+                    fill = NULL, color = NULL, fill_outliers = "#a7d1a7") {
 
   xvar00 <- deparse(substitute(x))
 
-  if ( is.null(fill) & is.null(color) ){
+  if (is.null(fill) && is.null(color)) {
     fill <- "steelblue"
     color <- darken_color(fill)[2]
   }
 
-  if ( is.null(fill) & !is.null(color) ){
+  if (is.null(fill) && !is.null(color)) {
     color <- color
     fill <- lighten_color(color)[2]
   }
 
-  if ( !is.null(fill) & is.null(color) ){
+  if (!is.null(fill) && is.null(color)) {
     fill <- fill
     color <- darken_color(fill)[2]
   }
@@ -54,7 +55,7 @@ histbin <- function(data, x, left = NULL, right = NULL, line = FALSE, bins = 30,
 
   obj <- ggplot(data = splitsing[[2]], aes(x = x))
 
-  if ( isTRUE( line )){
+  if (isTRUE(line)) {
     obj <- obj +
       ggplot2::stat_density(geom = "line", aes(y = nbinwidth * ..count..),
                             color = "dodgerblue") +
@@ -68,7 +69,7 @@ histbin <- function(data, x, left = NULL, right = NULL, line = FALSE, bins = 30,
                             binwidth = nbinwidth) +
     ggplot2::scale_y_continuous(expand = expansion(mult = c(0, .1)))
 
-  if ( !is.null(splitsing[[1]]) ){
+  if (!is.null(splitsing[[1]])) {
 
     ticks_for_left <- update_tickmarks_left(
       obj, left, round(min(data[[xvar00]], na.rm = TRUE), 1)
@@ -84,7 +85,7 @@ histbin <- function(data, x, left = NULL, right = NULL, line = FALSE, bins = 30,
                                   labels = ticks_for_left$tick_labels)
   }
 
-  if ( !is.null(splitsing[[3]]) ){
+  if (!is.null(splitsing[[3]])) {
 
     ticks_for_right <- update_tickmarks_right(obj, right,
                                               round(max(data[[xvar00]],
@@ -109,8 +110,3 @@ histbin <- function(data, x, left = NULL, right = NULL, line = FALSE, bins = 30,
 
   return(obj)
 }
-
-
-
-
-

@@ -41,11 +41,10 @@ test_that("check if average premium is calculated", {
 test_that("check if correct attribute for `by` is returned if length > 1", {
   x <- univariate(MTPL, x = zip, nclaims = nclaims, exposure = exposure,
                   by = list(bm, power))
-  expect_equal(as.character(attr(x, "by")), c("bm","power"))
+  expect_equal(as.character(attr(x, "by")), c("bm", "power"))
 })
 
 test_that("check if correct attribute for `by` is returned if length = 0", {
   x <- univariate(MTPL, x = zip, nclaims = nclaims, exposure = exposure)
   expect_equal(attr(x, "by"), "NULL")
 })
-

@@ -14,11 +14,11 @@
 #' @return Object of class GLM
 #'
 #' @export
-refit_glm <- function(x){
+refit_glm <- function(x) {
 
   .Deprecated("update_glm")
 
-  if( !inherits(x, c("restricted", "smooth")) ) {
+  if (!inherits(x, c("restricted", "smooth"))) {
     stop("Input must be of class restricted or of class smooth", call. = FALSE)
   }
 
@@ -29,15 +29,27 @@ refit_glm <- function(x){
   y$call$formula <- lst$formula
   y$call$data <- quote(df_new)
 
-  if ( inherits(x, "smooth")) {
+  if (inherits(x, "smooth")) {
     attr(y, "new_rf") <- x[["new_rf"]]
     attr(y, "class") <- append(class(y), "refitsmooth")
   }
 
-  if ( inherits(x, "restricted")) {
+  if (inherits(x, "restricted")) {
     attr(y, "new_rf_rst") <- x[["rf_restricted_df"]]
     attr(y, "class") <- append(class(y), "refitrestricted")
   }
 
   y
+}
+
+
+#' @noRd
+rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
+                            exponentiate = TRUE, round_exposure = 0) {
+
+  .Deprecated("rating_factors")
+
+  rating_factors(model, model_data = NULL, exposure = NULL,
+                exponentiate = TRUE, signif_stars = TRUE,
+                round_exposure = 0)
 }
