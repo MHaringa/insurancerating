@@ -1,3 +1,5 @@
+# insurancerating 0.7.4
+
 # insurancerating 0.7.3
 
 * `autoplot.univariate()` now generates a plot even when there are missing values in the rows
