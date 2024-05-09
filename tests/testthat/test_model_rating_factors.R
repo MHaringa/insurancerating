@@ -15,8 +15,8 @@ sev <- glm(amount ~ bm + zip, weights = nclaims,
            data = MTPL %>% filter(amount > 0))
 
 # Add predictions for freq and sev to data, and calculate premium
-premium_df <- MTPL %>%
-  add_prediction(freq, sev) %>%
+premium_df <- MTPL |>
+  add_prediction(freq, sev) |>
   mutate(premium = pred_nclaims_freq * pred_amount_sev)
 
 # Restrictions on risk factors for region (zip)
@@ -28,8 +28,7 @@ burn <- glm(premium ~ bm + zip, weights = exposure,
             family = Gamma(link = "log"), data = premium_df)
 
 # Fit restricted model
-burn_rst <- burn %>%
-  restrict_coef(., zip_df) %>%
+burn_rst <- restrict_coef(burn, zip_df) |>
   update_glm()
 
 
@@ -47,20 +46,20 @@ age_policyholder_frequency <- fit_gam(data = MTPL,
 clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
 
 # Add clusters to MTPL portfolio
-dat <- MTPL %>%
-  mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) %>%
-  mutate(across(where(is.character), as.factor)) %>%
+dat <- MTPL |>
+  mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) |>
+  mutate(across(where(is.character), as.factor)) |>
   mutate(across(where(is.factor), ~biggest_reference(., exposure)))
 
 # Fit frequency and severity model
 freq <- glm(nclaims ~ bm + age_policyholder_freq_cat, offset = log(exposure),
             family = poisson(), data = dat)
 sev <- glm(amount ~ bm + zip, weights = nclaims,
-           family = Gamma(link = "log"), data = dat %>% filter(amount > 0))
+           family = Gamma(link = "log"), data = dat |> filter(amount > 0))
 
 # Add predictions for freq and sev to data, and calculate premium
-premium_df <- dat %>%
-  add_prediction(freq, sev) %>%
+premium_df <- dat |>
+  add_prediction(freq, sev) |>
   mutate(premium = pred_nclaims_freq * pred_amount_sev)
 
 # Fit unrestricted model
@@ -69,19 +68,14 @@ burn_unrestricted <- glm(premium ~ zip + bm + age_policyholder_freq_cat,
                          family = Gamma(link = "log"),
                          data = premium_df)
 
-# Impose smoothing and create figure
-burn_unrestricted %>%
-  smooth_coef(x_cut = "age_policyholder_freq_cat",
-              x_org = "age_policyholder",
-              breaks = seq(18, 95, 5)) %>%
-  autoplot()
-
 # Impose smoothing and refit model
-burn_smooth <- burn_unrestricted %>%
-  smooth_coef(x_cut = "age_policyholder_freq_cat",
-              x_org = "age_policyholder",
-              breaks = seq(18, 95, 5)) %>%
-  update_glm()
+suppressWarnings({
+  burn_smooth <- burn_unrestricted |>
+    smooth_coef(x_cut = "age_policyholder_freq_cat",
+                x_org = "age_policyholder",
+                breaks = seq(18, 95, 5)) |>
+    update_glm()
+})
 
 
 
@@ -110,25 +104,26 @@ mod2 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
 
 testthat::test_that(
   "No errors are returned for smoothed glm objects", {
-    testthat::expect_error(rating_factors(burn_smooth), NA)
+    testthat::expect_error(rating_factors(burn_smooth, signif_stars = FALSE), NA)
   }
 )
 
 testthat::test_that(
   "No errors are returned for restricted glm objects", {
-    testthat::expect_error(rating_factors(burn_rst), NA)
+    testthat::expect_error(rating_factors(burn_rst, signif_stars = FALSE), NA)
   }
 )
 
 testthat::test_that(
   "No errors are returned for glm objects", {
-    testthat::expect_error(rating_factors(x), NA)
+    testthat::expect_error(rating_factors(x, signif_stars = FALSE), NA)
   }
 )
 
 testthat::test_that(
   "No errors are returned for multiple glm objects with model_data", {
     testthat::expect_error(rating_factors(mod1, mod2, model_data = df,
-                                          exposure = exposure), NA)
+                                          exposure = exposure,
+                                          signif_stars = FALSE), NA)
   }
 )
