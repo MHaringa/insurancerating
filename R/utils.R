@@ -21,8 +21,8 @@
 #' @examples
 #' \dontrun{
 #' library(dplyr)
-#' df <- chickwts %>%
-#' mutate(across(where(is.character), as.factor)) %>%
+#' df <- chickwts |>
+#' mutate(across(where(is.character), as.factor)) |>
 #' mutate(across(where(is.factor), ~biggest_reference(., weight)))
 #' }
 #'
@@ -134,10 +134,6 @@ get_splits <- function(x) {
 #' @export
 ggplot2::autoplot
 
-
-#' @importFrom magrittr %>%
-#' @export
-magrittr::`%>%`
 
 
 #' @keywords internal

@@ -9,7 +9,7 @@ rating_factors(
   model_data = NULL,
   exposure = NULL,
   exponentiate = TRUE,
-  signif_stars = TRUE,
+  signif_stars = FALSE,
   round_exposure = 0
 )
 }

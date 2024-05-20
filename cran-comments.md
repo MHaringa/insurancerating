@@ -1,10 +1,8 @@
 ## Resubmission
 This is a resubmission. In this version:
 
-* `autoplot.univariate()` now generates a plot even when there are missing 
-values in the rows
-* `rating_factors()` now always returns the correct coefficients when used
-on a 'refitsmooth' or 'refitrestricted' class of GLM. 
+* `bootstrap_rmse()` now uses `after_stat(density)` instead of the deprecated dot-dot notation
+* `custom_theme` in `autoplot.univariate()` is added to customize the theme
 
 ## Test environments
 * local OS X install, R 4.4.0

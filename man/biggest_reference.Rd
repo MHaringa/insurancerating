@@ -24,8 +24,8 @@ the reference level to the level with the largest exposure.
 \examples{
 \dontrun{
 library(dplyr)
-df <- chickwts \%>\%
-mutate(across(where(is.character), as.factor)) \%>\%
+df <- chickwts |>
+mutate(across(where(is.character), as.factor)) |>
 mutate(across(where(is.factor), ~biggest_reference(., weight)))
 }
 

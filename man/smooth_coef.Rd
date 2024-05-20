@@ -49,20 +49,20 @@ age_policyholder_frequency <- fit_gam(data = MTPL,
 clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
 
 # Add clusters to MTPL portfolio
-dat <- MTPL \%>\%
-  mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) \%>\%
-  mutate(across(where(is.character), as.factor)) \%>\%
+dat <- MTPL |>
+  mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) |>
+  mutate(across(where(is.character), as.factor)) |>
   mutate(across(where(is.factor), ~biggest_reference(., exposure)))
 
 # Fit frequency and severity model
 freq <- glm(nclaims ~ bm + age_policyholder_freq_cat, offset = log(exposure),
  family = poisson(), data = dat)
 sev <- glm(amount ~ bm + zip, weights = nclaims,
- family = Gamma(link = "log"), data = dat \%>\% filter(amount > 0))
+ family = Gamma(link = "log"), data = dat |> filter(amount > 0))
 
 # Add predictions for freq and sev to data, and calculate premium
-premium_df <- dat \%>\%
-  add_prediction(freq, sev) \%>\%
+premium_df <- dat |>
+  add_prediction(freq, sev) |>
   mutate(premium = pred_nclaims_freq * pred_amount_sev)
 
 # Fit unrestricted model
@@ -72,17 +72,17 @@ burn_unrestricted <- glm(premium ~ zip + bm + age_policyholder_freq_cat,
                          data = premium_df)
 
 # Impose smoothing and create figure
-burn_unrestricted \%>\%
+burn_unrestricted |>
   smooth_coef(x_cut = "age_policyholder_freq_cat",
               x_org = "age_policyholder",
-              breaks = seq(18, 95, 5)) \%>\%
+              breaks = seq(18, 95, 5)) |>
   autoplot()
 
 # Impose smoothing and refit model
-burn_restricted <- burn_unrestricted \%>\%
+burn_restricted <- burn_unrestricted |>
   smooth_coef(x_cut = "age_policyholder_freq_cat",
               x_org = "age_policyholder",
-              breaks = seq(18, 95, 5)) \%>\%
+              breaks = seq(18, 95, 5)) |>
   update_glm()
 
 # Show new rating factors

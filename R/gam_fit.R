@@ -284,8 +284,8 @@ as.data.frame.fitgam <- function(x, ...) {
 #' library(ggplot2)
 #' library(dplyr)
 #' fit_gam(MTPL, nclaims = nclaims, x = age_policyholder,
-#'         exposure = exposure) %>%
-#'    autoplot(., show_observations = TRUE)
+#'         exposure = exposure) |>
+#'    autoplot(show_observations = TRUE)
 #' }
 #'
 #' @author Martin Haringa

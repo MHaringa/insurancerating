@@ -187,6 +187,7 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' @param total_color change the color for the total line ("black" is default)
 #' @param total_name add legend name for the total line (e.g. "total")
 #' @param rotate_angle numeric value for angle of labels on the x-axis (degrees)
+#' @param custom_theme list with customized theme options
 #' @param ... other plotting parameters to affect the plot
 #'
 #' @import patchwork
@@ -216,7 +217,8 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                                 color_bg = "lightskyblue", label_width = 10,
                                 coord_flip = FALSE, show_total = FALSE,
                                 total_color = NULL, total_name = NULL,
-                                rotate_angle = NULL, ...) {
+                                rotate_angle = NULL,
+                                custom_theme = NULL, ...) {
 
   xvar <- attr(object, "xvar")
   nclaims <- attr(object, "nclaims")
@@ -289,104 +291,88 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
   sep_mark <- separation_mark(dec.mark)
 
   plots_allowed <- show_plots[show_plots < 10 & show_plots > 0]
-  not_allowed <- NULL
 
-  if ("frequency" %in% names(df) && 1 %in% show_plots) {
-    p1 <- ggbarline(background, df, dfby, xvar,
-                    "frequency", "Frequency", exposure,
-                    color_bg, color, sep_mark, by, labels,
-                    sort_manual, label_width,
-                    show_total, total_color, total_name)
-  } else {
-    (not_allowed <- c(not_allowed, 1))
-  }
+  p_plots <- c("frequency", "average_severity", "risk_premium", "loss_ratio",
+               "average_premium", exposure, severity, nclaims, premium)
 
-  if ("average_severity" %in% names(df) && 2 %in% show_plots) {
-    p2 <- ggbarline(background, df, dfby, xvar,
-                    "average_severity", "Average\nseverity", nclaims,
-                    color_bg, color, sep_mark, by, labels,
-                    sort_manual, label_width,
-                    show_total, total_color, total_name)
-    if (!1 %in% not_allowed) p2 <- p2 + theme(legend.position = "none")
-  } else {
-    (not_allowed <- c(not_allowed, 2))
-  }
-
-  if ("risk_premium" %in% names(df) && 3 %in% show_plots) {
-    p3 <- ggbarline(background, df, dfby, xvar,
-                    "risk_premium", "Risk premium", exposure,
-                    color_bg, color, sep_mark, by, labels,
-                    sort_manual, label_width,
-                    show_total, total_color, total_name)
-    if (!all(1:2 %in% not_allowed)) p3 <- p3 + theme(legend.position = "none")
-  } else {
-    (not_allowed <- c(not_allowed, 3))
-  }
-
-  if ("loss_ratio" %in% names(df) && 4 %in% show_plots) {
-    p4 <- ggbarline(background, df, dfby, xvar,
-                    "loss_ratio", "Loss ratio", premium,
-                    color_bg, color, sep_mark, by, labels,
-                    sort_manual, label_width,
-                    show_total, total_color, total_name)
-    if (!all(1:3 %in% not_allowed)) p4 <- p4 + theme(legend.position = "none")
-  } else {
-    (not_allowed <- c(not_allowed, 4))
-  }
-
-  if ("average_premium" %in% names(df) && 5 %in% show_plots) {
-    p5 <- ggbarline(background, df, dfby, xvar,
-                    "average_premium", "Average\npremium", exposure,
-                    color_bg, color, sep_mark, by, labels,
-                    sort_manual, label_width,
-                    show_total, total_color, total_name)
-    if (!all(1:4 %in% not_allowed)) p5 <- p5 + theme(legend.position = "none")
-  } else {
-    (not_allowed <- c(not_allowed, 5))
-  }
-
-  if (exposure %in% names(df) && 6 %in% show_plots) {
-    p6 <- ggbar(df, xvar, exposure, color_bg, sep_mark, coord_flip)
-  } else {
-    (not_allowed <- c(not_allowed, 6))
-  }
-
-  if (severity %in% names(df) && 7 %in% show_plots) {
-    p7 <- ggbar(df, xvar, severity, color_bg, sep_mark, coord_flip)
-  } else {
-    (not_allowed <- c(not_allowed, 7))
-  }
-
-  if (nclaims %in% names(df) && 8 %in% show_plots) {
-    p8 <- ggbar(df, xvar, nclaims, color_bg, sep_mark, coord_flip)
-  } else {
-    (not_allowed <- c(not_allowed, 8))
-  }
-
-  if (premium %in% names(df) && 9 %in% show_plots) {
-    p9 <- ggbar(df, xvar, premium, color_bg, sep_mark, coord_flip)
-  } else {
-    (not_allowed <- c(not_allowed, 9))
-  }
-
-  plots_possible <- setdiff(plots_allowed, not_allowed)
-
-  if (length(plots_possible) == 0) {
-    stop("Ignoring plots: input is unknown", call. = FALSE)
-  }
-
-  diff_plots <- setdiff(show_plots, plots_possible)
-  if (length(diff_plots) > 0) {
-    message(paste0("Ignoring plots ",
-                   paste0(diff_plots, collapse = ", "), ": input is unknown"))
-  }
+  create_plots <- intersect(which(p_plots %in% names(df)), plots_allowed)
 
   if (isTRUE(sort) && exposure == "NULL") {
     message("Ignoring sort: exposure is unknown")
   }
 
-  if (isTRUE(coord_flip) && length(plots_possible) > 1) {
+  if (isTRUE(coord_flip) && length(create_plots) > 1) {
     message("`coord_flip` only works for one bar graph")
+  }
+
+  if (length(create_plots) == 0) {
+    stop("Ignoring plots: input is unknown", call. = FALSE)
+  }
+
+  diff_plots <- setdiff(show_plots, create_plots)
+  if (length(diff_plots) > 0) {
+    message(paste0("Ignoring plots ",
+                   paste0(diff_plots, collapse = ", "), ": input is unknown"))
+  }
+
+  if (1 %in% create_plots) {
+    p1 <- ggbarline(background, df, dfby, xvar,
+                    "frequency", "Frequency", exposure,
+                    color_bg, color, sep_mark, by, labels,
+                    sort_manual, label_width,
+                    show_total, total_color, total_name)
+  }
+
+  if (2 %in% create_plots) {
+    p2 <- ggbarline(background, df, dfby, xvar,
+                    "average_severity", "Average\nseverity", nclaims,
+                    color_bg, color, sep_mark, by, labels,
+                    sort_manual, label_width,
+                    show_total, total_color, total_name)
+  }
+
+  if (3 %in% create_plots) {
+    p3 <- ggbarline(background, df, dfby, xvar,
+                    "risk_premium", "Risk premium", exposure,
+                    color_bg, color, sep_mark, by, labels,
+                    sort_manual, label_width,
+                    show_total, total_color, total_name)
+  }
+
+  if (4 %in% create_plots) {
+    p4 <- ggbarline(background, df, dfby, xvar,
+                    "loss_ratio", "Loss ratio", premium,
+                    color_bg, color, sep_mark, by, labels,
+                    sort_manual, label_width,
+                    show_total, total_color, total_name)
+  }
+
+  if (5 %in% create_plots) {
+    p5 <- ggbarline(background, df, dfby, xvar,
+                    "average_premium", "Average\npremium", exposure,
+                    color_bg, color, sep_mark, by, labels,
+                    sort_manual, label_width,
+                    show_total, total_color, total_name)
+  }
+
+  if (6 %in% create_plots) {
+    p6 <- ggbar(df, xvar, exposure, color_bg, sep_mark,
+                coord_flip)
+  }
+
+  if (7 %in% create_plots) {
+    p7 <- ggbar(df, xvar, severity, color_bg, sep_mark,
+                coord_flip)
+  }
+
+  if (8 %in% create_plots) {
+    p8 <- ggbar(df, xvar, nclaims, color_bg, sep_mark,
+                coord_flip)
+  }
+
+  if (9 %in% create_plots) {
+    p9 <- ggbar(df, xvar, premium, color_bg, sep_mark,
+                coord_flip)
   }
 
   if (ncol == 1) {
@@ -395,22 +381,23 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                               axis.ticks.x = element_blank()))
 
     plot_last <- paste0("p",
-                        plots_possible[length(plots_possible)],
+                        create_plots[length(create_plots)],
+                        " + custom_theme",
                         collapse = " + ")
 
-    if (length(plots_possible) == 1) {
+    if (length(create_plots) == 1) {
       plot_out <- eval(parse(text = plot_last))
     }
 
-    if (length(plots_possible) > 1) {
-      plot_nrs <- paste0("p", plots_possible[-length(plots_possible)],
-                         " + remove_axis", collapse = " + ")
+    if (length(create_plots) > 1) {
+      plot_nrs <- paste0("p", create_plots[-length(create_plots)],
+                         " + custom_theme + remove_axis", collapse = " + ")
       plot_all <- paste0("(", plot_nrs, " + ", plot_last, ")")
       plot_out <- eval(parse(text = plot_all)) +
         patchwork::plot_layout(ncol = 1, guides = "collect")
     }
   } else {
-    plot_all <- paste0("p", plots_possible, collapse = " + ")
+    plot_all <- paste0("p", create_plots, " + custom_theme", collapse = " + ")
     plot_out <- eval(parse(text = plot_all)) +
       patchwork::plot_layout(ncol = ncol, guides = "collect")
   }

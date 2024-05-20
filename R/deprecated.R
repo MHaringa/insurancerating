@@ -50,6 +50,6 @@ rating_factors1 <- function(model, model_data = NULL, exposure = NULL,
   .Deprecated("rating_factors")
 
   rating_factors(model, model_data = NULL, exposure = NULL,
-                exponentiate = TRUE, signif_stars = TRUE,
+                exponentiate = TRUE, signif_stars = FALSE,
                 round_exposure = 0)
 }

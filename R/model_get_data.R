@@ -100,42 +100,42 @@ model_data <- function(x) {
 #' \dontrun{
 #' # With data.frame
 #' library(dplyr)
-#' mtcars %>%
-#'  select(cyl, vs) %>%
+#' mtcars |>
+#'  select(cyl, vs) |>
 #'  construct_model_points()
 #'
-#' mtcars %>%
-#'   select(cyl, vs, disp) %>%
+#' mtcars |>
+#'   select(cyl, vs, disp) |>
 #'   construct_model_points(exposure = disp)
 #'
-#' mtcars %>%
-#'  select(cyl, vs, disp, gear) %>%
+#' mtcars |>
+#'  select(cyl, vs, disp, gear) |>
 #'  construct_model_points(exposure = disp, exposure_by = gear)
 #'
-#' mtcars %>%
-#'  select(cyl, vs, disp, gear, mpg) %>%
+#' mtcars |>
+#'  select(cyl, vs, disp, gear, mpg) |>
 #'  construct_model_points(exposure = disp, exposure_by = gear,
 #'    agg_cols = list(mpg))
 #'
 #' # With glm
 #' library(datasets)
-#' data1 <- warpbreaks %>%
-#'  mutate(jaar = c(rep(2000, 10), rep(2010, 44))) %>%
-#'  mutate(exposure = 1) %>%
+#' data1 <- warpbreaks |>
+#'  mutate(jaar = c(rep(2000, 10), rep(2010, 44))) |>
+#'  mutate(exposure = 1) |>
 #'  mutate(nclaims = 2)
 #'
 #' pmodel <- glm(breaks ~ wool + tension, data1, offset = log(exposure),
 #'  family = poisson(link = "log"))
 #'
-#' model_data(pmodel) %>%
+#' model_data(pmodel) |>
 #'  construct_model_points()
 #'
-#' model_data(pmodel) %>%
+#' model_data(pmodel) |>
 #'  construct_model_points(agg_cols = list(nclaims))
 #'
-#' model_data(pmodel) %>%
-#'  construct_model_points(exposure = exposure, exposure_by = jaar) %>%
-#'  add_prediction(., pmodel)
+#' model_data(pmodel) |>
+#'  construct_model_points(exposure = exposure, exposure_by = jaar) |>
+#'  add_prediction(pmodel)
 #'  }
 #'
 #' @export

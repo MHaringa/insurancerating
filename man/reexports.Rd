@@ -4,7 +4,6 @@
 \name{reexports}
 \alias{reexports}
 \alias{autoplot}
-\alias{\%>\%}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -13,7 +12,5 @@ below to see their documentation.
 
 \describe{
   \item{ggplot2}{\code{\link[ggplot2]{autoplot}}}
-
-  \item{magrittr}{\code{\link[magrittr:pipe]{\%>\%}}}
 }}
 

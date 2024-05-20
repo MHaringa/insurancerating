@@ -41,7 +41,7 @@
 #' \dontrun{
 #' m1 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
 #' data = MTPL2)
-#' check_residuals(m1, n_simulations = 50) %>% autoplot()
+#' check_residuals(m1, n_simulations = 50) |> autoplot()
 #' }
 #'
 #' @export

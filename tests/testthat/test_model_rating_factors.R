@@ -1,7 +1,7 @@
 library(insurancerating)
 library(dplyr)
 
-context("rating_factors")
+testthat::context("rating_factors")
 
 
 
@@ -127,3 +127,40 @@ testthat::test_that(
                                           signif_stars = FALSE), NA)
   }
 )
+
+
+filter_zip <- rating_factors(burn_smooth)$df |>
+  dplyr::filter(risk_factor == "zip")
+
+testthat::test_that(
+  "NA values are set to 1 for smoothed glm", {
+    testthat::expect_gte(sum(filter_zip$est_burn_smooth), 0)
+  }
+)
+
+filter_area <- rating_factors(mod1)$df |>
+  dplyr::filter(risk_factor == "area")
+
+testthat::test_that(
+  "NA values are set to 1 for non smoothed or non restricted glm", {
+    testthat::expect_gte(sum(filter_area$est_burn_smooth), 0)
+  }
+)
+
+
+zip_df <- data.frame(zip = c(0,1,2,3),
+                     zip_restricted = c(0.8, 0.9, 1, 1.2))
+
+burn_restricted2 <- restrict_coef(burn_unrestricted, zip_df) |>
+  update_glm()
+
+filter_zip_rst <- rating_factors(burn_restricted2)$df |>
+  dplyr::filter(risk_factor == "zip_restricted")
+
+testthat::test_that(
+  "Check if all values are not equal to one", {
+    testthat::expect_false(var(filter_zip_rst$est_burn_restricted2) == 0)
+  }
+)
+
+

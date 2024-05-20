@@ -127,6 +127,7 @@ as.vector.bootstrap_rmse <- function(x, ...) {
 #' @author Martin Haringa
 #'
 #' @importFrom stats quantile
+#' @importFrom ggplot2 after_stat
 #'
 #' @return a ggplot object
 #'
@@ -162,7 +163,7 @@ autoplot.bootstrap_rmse <- function(object, fill = NULL, color = NULL, ...) {
   )
 
   ggplot2::ggplot(dat, ggplot2::aes(x = x)) +
-    ggplot2::geom_histogram(ggplot2::aes(y = ..density..),
+    ggplot2::geom_histogram(ggplot2::aes(y = ggplot2::after_stat(density)),
                             fill = fill,
                             alpha = 1,
                             bins = 30,

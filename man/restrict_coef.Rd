@@ -42,11 +42,11 @@ freq <- glm(nclaims ~ bm + zip, offset = log(exposure), family = poisson(),
              data = MTPL)
 sev <- glm(amount ~ bm + zip, weights = nclaims,
             family = Gamma(link = "log"),
-            data = MTPL \%>\% filter(amount > 0))
+            data = MTPL |> filter(amount > 0))
 
 # Add predictions for freq and sev to data, and calculate premium
-premium_df <- MTPL \%>\%
-   add_prediction(freq, sev) \%>\%
+premium_df <- MTPL |>
+   add_prediction(freq, sev) |>
    mutate(premium = pred_nclaims_freq * pred_amount_sev)
 
 # Restrictions on risk factors for region (zip)
@@ -57,8 +57,8 @@ burn <- glm(premium ~ bm + zip, weights = exposure,
             family = Gamma(link = "log"), data = premium_df)
 
 # Fit restricted model
-burn_rst <- burn \%>\%
-  restrict_coef(., zip_df) \%>\%
+burn_rst <- burn |>
+  restrict_coef(restrictions = zip_df) |>
   update_glm()
 
 # Show rating factors

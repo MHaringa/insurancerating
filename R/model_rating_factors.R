@@ -140,6 +140,7 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
   vals$pvalues <- ifelse(is.na(vals$pvalues), -9e9, vals$pvalues)
   vals$ind <- as.character(vals$ind)
 
+  new_col_nm0 <- attr(model, "new_col_nm")
   if (inherits(model, c("refitsmooth", "refitrestricted"))) {
     xc <- x[, c("yhat", "ind_values")]
     colnames(xc)[1] <- "values"
@@ -147,22 +148,27 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
     xc$pvalues <- NA
     xc$values <- log(xc$values)
     vals <- rbind(vals, xc)
+    new_col_nm0 <- attr(model, "new_col_nm")
   }
 
   uit <- dplyr::full_join(xl_df, vals, by = c(ind_values = "ind"))
 
   uit$values <- ifelse(is.na(uit$pvalues) &
-                         !any(endsWith(uit$risk_factor, c("_smooth", "_rst"))),
+                         !(endsWith(uit$risk_factor, c("_smooth")) |
+                             uit$risk_factor %in% new_col_nm0),
                        0, uit$values)
 
   Terms <- terms(model)
   int <- attr(Terms, "intercept")
-  uit$level <- ifelse(int == 1 & uit$ind_values == "(Intercept)",
-                      "(Intercept)", uit$level)
-  uit$risk_factor <- ifelse(int == 1 & uit$ind_values == "(Intercept)",
-                            "(Intercept)", uit$risk_factor)
-  uit$level <- ifelse(is.na(uit$level) & is.na(uit$risk_factor),
-                      uit$ind_values, uit$level)
+
+  # Handle intercept
+  intercept_condition <- int == 1 & uit$ind_values == "(Intercept)"
+  uit$level <- ifelse(intercept_condition, "(Intercept)", uit$level)
+  uit$risk_factor <- ifelse(intercept_condition, "(Intercept)", uit$risk_factor)
+
+  # Handle continuous risk factors
+  level_condition <- is.na(uit$level) & is.na(uit$risk_factor)
+  uit$level <- ifelse(level_condition, uit$ind_values, uit$level)
   uit$risk_factor <- ifelse(is.na(uit$risk_factor), uit$ind_values,
                             uit$risk_factor)
 
@@ -170,18 +176,20 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
     uit$values <- exp(uit$values)
   }
 
+  # Reorder the data frame so that the "(Intercept)" row is the first row
   if (int == 1) {
-    int_row <- uit[uit$risk_factor == "(Intercept)", ]
-    uit1 <- uit[uit$risk_factor != "(Intercept)", ]
-    uit <- rbind(int_row, uit1)
+    intercept_ix <- which(uit$risk_factor == "(Intercept)")
+    uit <- uit[c(intercept_ix, setdiff(seq_len(nrow(uit)), intercept_ix)), ]
   }
 
   row.names(uit) <- NULL
   if (!is.null(model_data) && exposure != "NULL" && length(xl_names_in) > 0) {
-    uit <- uit[, c("risk_factor", "level", "values", exposure, "pvalues")]
+    selected_columns <- c("risk_factor", "level", "values", exposure, "pvalues")
+    uit <- uit[, selected_columns]
     uit[[exposure]] <- round(uit[[exposure]], round_exposure)
   } else {
-    uit <- uit[, c("risk_factor", "level", "values", "pvalues")]
+    selected_columns <- c("risk_factor", "level", "values", "pvalues")
+    uit <- uit[, selected_columns]
   }
   names(uit)[names(uit) == "values"] <- colname
   uit$pvalues <- ifelse(uit$pvalues < 0, NA, uit$pvalues)
@@ -235,8 +243,8 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
 #'
 #' @export
 rating_factors <- function(..., model_data = NULL, exposure = NULL,
-                            exponentiate = TRUE, signif_stars = TRUE,
-                            round_exposure = 0) {
+                           exponentiate = TRUE, signif_stars = FALSE,
+                           round_exposure = 0) {
 
   model_data_nm <- deparse(substitute(model_data))
   exposure_nm <- deparse(substitute(exposure))

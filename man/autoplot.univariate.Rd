@@ -21,6 +21,7 @@
   total_color = NULL,
   total_name = NULL,
   rotate_angle = NULL,
+  custom_theme = NULL,
   ...
 )
 }
@@ -73,6 +74,8 @@ is FALSE)}
 \item{total_name}{add legend name for the total line (e.g. "total")}
 
 \item{rotate_angle}{numeric value for angle of labels on the x-axis (degrees)}
+
+\item{custom_theme}{list with customized theme options}
 
 \item{...}{other plotting parameters to affect the plot}
 }
