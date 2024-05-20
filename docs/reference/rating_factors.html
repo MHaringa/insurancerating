@@ -18,7 +18,7 @@ coefficients rather than the coded variables."><meta property="og:image" content
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.2.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.4</span>
       </span>
     </div>
 
@@ -60,7 +60,7 @@ coefficients rather than the coded variables.</p>
 <span>  model_data <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  exposure <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  exponentiate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  signif_stars <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  signif_stars <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  round_exposure <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -125,15 +125,13 @@ output.</p>
 <span class="r-in"><span>data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">rating_factors</span><span class="op">(</span><span class="va">mod1</span>, <span class="va">mod2</span>, model_data <span class="op">=</span> <span class="va">df</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Significance levels: *** p &lt; 0.001; ** p &lt; 0.01;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     * p &lt; 0.05; . p &lt; 0.1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   risk_factor       level     est_mod1     est_mod2 exposure</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (Intercept) (Intercept) 0.127954 *** 0.136993 ***       NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2        area           0 0.546558     0.548563           13</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3        area           1       NA           NA         1066</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4        area           2 0.872883     0.873953          819</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5        area           3 1.076233     1.078260          765</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6     premium     premium 1.001235           NA           NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   risk_factor       level  est_mod1  est_mod2 exposure</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (Intercept) (Intercept) 0.1279538 0.1369930       NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2        area           0 0.5465581 0.5485629       13</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3        area           1 1.0000000 1.0000000     1066</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4        area           2 0.8728835 0.8739528      819</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5        area           3 1.0762334 1.0782596      765</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6     premium     premium 1.0012348        NA       NA</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

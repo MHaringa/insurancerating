@@ -40,7 +40,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">insurancerating</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.2.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.7.4</span>
       </span>
     </div>
 
@@ -77,7 +77,8 @@
 </h1></div>
 <!-- badges: start -->
 
-<p>The goal of <code>insurancerating</code> is to give analytic techniques that can be used in insurance rating. It helps actuaries to implement GLMs within all relevant steps needed to construct a risk premium from raw data. It provides a data driven strategy for the construction of tariff classes in P&amp;C insurance. The goal is to bin the continuous factors such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way, while being easy to use in a generalized linear model (GLM).</p>
+<p>The goal of <code>insurancerating</code> is to give analytic techniques that can be used in insurance rating. It helps actuaries to implement GLMs within all relevant steps needed to construct a risk premium from raw data.</p>
+<p>It provides a data driven strategy for the construction of tariff classes in P&amp;C insurance. The goal is to bin the continuous factors such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way, while being easy to use in a generalized linear model (GLM).</p>
 <p><code>insurancerating</code> also provides recipes on how to easily perform univariate analyses on an insurance portfolio. In addition it adds functionality to include reference categories in the levels of the coefficients in the output of a generalized linear regression analysis.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -126,16 +127,17 @@
 <p>The figure shows that younger policyholders have a higher risk profile. The fitted GAM is lower than might be expected from the observed claim frequency for policyholders of age 19. This is because there are very few young policyholders of age 19 present in the portfolio.</p>
 <p>The GAM for the claim severity :</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">age_policyholder_severity</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">.</span>, show_observations <span class="op">=</span> <span class="cn">TRUE</span>, remove_outliers <span class="op">=</span> <span class="fl">100000</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">age_policyholder_severity</span>, </span>
+<span>         show_observations <span class="op">=</span> <span class="cn">TRUE</span>, </span>
+<span>         remove_outliers <span class="op">=</span> <span class="fl">100000</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/figsev-1.png"><!-- --></p>
 <p>The second part adds the constructed tariff classes for the variable <code>age_policyholder</code> to the dataset, and sets the base level of the factor <code>age_policyholder</code> to the level with the largest exposure. In this example for claim frequency the class for ages (39,50], which contains the largest exposure.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="va">MTPL</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>age_policyholder_freq_cat <span class="op">=</span> <span class="va">clusters_freq</span><span class="op">$</span><span class="va">tariff_classes</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">as.factor</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="va">MTPL</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>age_policyholder_freq_cat <span class="op">=</span> <span class="va">clusters_freq</span><span class="op">$</span><span class="va">tariff_classes</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">as.factor</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.factor</span><span class="op">)</span>, <span class="op">~</span><span class="fu"><a href="reference/biggest_reference.html">biggest_reference</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">exposure</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span>  </span>
 <span><span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html" class="external-link">glimpse</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
@@ -151,93 +153,93 @@
 <span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="do">## $ age_policyholder_freq_cat &lt;fct&gt; "(39,84]", "(39,84]", "(39,84]", "(39,84]", …</span></span></code></pre></div>
 <p>The last part is to fit a <em>generalized linear model</em>. <code><a href="reference/rating_factors.html">rating_factors()</a></code> prints the output including the reference group.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">model_freq1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">age_policyholder_freq_cat</span>, offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>, </span>
-<span>                  family <span class="op">=</span> <span class="st">"poisson"</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">model_freq1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">age_policyholder_freq_cat</span>, </span>
+<span>                   offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>, </span>
+<span>                   family <span class="op">=</span> <span class="st">"poisson"</span>, </span>
+<span>                   data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">model_freq2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">age_policyholder_freq_cat</span> <span class="op">+</span> <span class="va">age_policyholder</span>, offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>, </span>
-<span>                  family <span class="op">=</span> <span class="st">"poisson"</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
+<span><span class="va">model_freq2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">age_policyholder_freq_cat</span> <span class="op">+</span> <span class="va">age_policyholder</span>, </span>
+<span>                   offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>, </span>
+<span>                   family <span class="op">=</span> <span class="st">"poisson"</span>, </span>
+<span>                   data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span><span class="op">(</span><span class="va">model_freq1</span>, <span class="va">model_freq2</span><span class="op">)</span> </span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="do">## Significance levels: *** p &lt; 0.001; ** p &lt; 0.01;</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="do">##     * p &lt; 0.05; . p &lt; 0.1</span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">x</span></span></code></pre></div>
-<div class="sourceCode" id="cb12"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="do">##                 risk_factor            level est_model_freq1 est_model_freq2</span></span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="do">## 1               (Intercept)      (Intercept)    0.117926 ***    0.245890 ***</span></span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="do">## 2 age_policyholder_freq_cat          (39,84]    1.000000        1.000000    </span></span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="do">## 3 age_policyholder_freq_cat          [18,25]    2.216848 ***    1.453099 ***</span></span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="do">## 4 age_policyholder_freq_cat          (25,32]    1.517625 ***    1.073952    </span></span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="do">## 5 age_policyholder_freq_cat          (32,39]    1.227861 ***    0.952683    </span></span>
-<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="do">## 6 age_policyholder_freq_cat          (84,95]    0.588749        0.901689    </span></span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="do">## 7          age_policyholder age_policyholder          NA        0.986728 ***</span></span></code></pre></div>
+<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span><span class="op">(</span><span class="va">model_freq1</span>, <span class="va">model_freq2</span><span class="op">)</span> </span>
+<span><span class="va">x</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="do">##                 risk_factor            level est_model_freq1 est_model_freq2</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="do">## 1               (Intercept)      (Intercept)       0.1179256       0.2458900</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="do">## 2 age_policyholder_freq_cat          (39,84]       1.0000000       1.0000000</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="do">## 3 age_policyholder_freq_cat          [18,25]       2.2168483       1.4530987</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="do">## 4 age_policyholder_freq_cat          (25,32]       1.5176253       1.0739519</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="do">## 5 age_policyholder_freq_cat          (32,39]       1.2278612       0.9526827</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="do">## 6 age_policyholder_freq_cat          (84,95]       0.5887492       0.9016893</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="do">## 7          age_policyholder age_policyholder              NA       0.9867281</span></span></code></pre></div>
 <p><code><a href="reference/autoplot.riskfactor.html">autoplot.riskfactor()</a></code> creates a figure. The base level of the factor <code>age_policyholder_freq_cat</code> is the group with the largest exposure and is shown first.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example3a1-1.png"><!-- --></p>
 <p>Include <code>model_data</code> to sort the clustering in the original order. Ordering the factor <code>age_policyholder_freq_cat</code> only works when <code><a href="reference/biggest_reference.html">biggest_reference()</a></code> is used to set the base level of the factor to the level with the largest exposure.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span><span class="op">(</span><span class="va">model_freq1</span>, <span class="va">model_freq2</span>, model_data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="do">## Significance levels: *** p &lt; 0.001; ** p &lt; 0.01;</span></span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="do">##     * p &lt; 0.05; . p &lt; 0.1</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">rf</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span><span class="op">(</span><span class="va">model_freq1</span>, <span class="va">model_freq2</span>, </span>
+<span>                     model_data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span> </span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">rf</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example3b-1.png"><!-- --></p>
 <p>The following graph includes the exposure as a bar graph and shows some more options:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span><span class="op">(</span><span class="va">model_freq1</span>, <span class="va">model_freq2</span>, model_data <span class="op">=</span> <span class="va">dat</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">.</span>, linetype <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> </span></code></pre></div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="do">## Significance levels: *** p &lt; 0.001; ** p &lt; 0.01;</span></span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="do">##     * p &lt; 0.05; . p &lt; 0.1</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">rf</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span><span class="op">(</span><span class="va">model_freq1</span>, <span class="va">model_freq2</span>, </span>
+<span>                     model_data <span class="op">=</span> <span class="va">dat</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> </span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">rf</span>, linetype <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> </span></code></pre></div>
 <p><img src="reference/figures/example3c-1.png"><!-- --></p>
 <p>Add predictions to the data set:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat_pred</span> <span class="op">&lt;-</span> <span class="va">dat</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dat_pred</span> <span class="op">&lt;-</span> <span class="va">dat</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/add_prediction.html">add_prediction</a></span><span class="op">(</span><span class="va">model_freq1</span>, <span class="va">model_freq2</span><span class="op">)</span> </span>
 <span></span>
 <span><span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html" class="external-link">glimpse</a></span><span class="op">(</span><span class="va">dat_pred</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb19"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="do">## Rows: 30,000</span></span>
-<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="do">## Columns: 10</span></span>
-<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="do">## $ age_policyholder          &lt;int&gt; 70, 40, 78, 49, 59, 71, 55, 52, 51, 47, 62, …</span></span>
-<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a><span class="do">## $ nclaims                   &lt;int&gt; 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0,…</span></span>
-<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a><span class="do">## $ exposure                  &lt;dbl&gt; 1.0000000, 1.0000000, 1.0000000, 1.0000000, …</span></span>
-<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a><span class="do">## $ amount                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 2607, 0, 0, 0, 0, 2890, 0,…</span></span>
-<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a><span class="do">## $ power                     &lt;int&gt; 106, 74, 65, 64, 29, 66, 43, 55, 100, 66, 44…</span></span>
-<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a><span class="do">## $ bm                        &lt;int&gt; 5, 3, 8, 10, 1, 6, 2, 2, 1, 2, 1, 2, 2, 9, 5…</span></span>
-<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a><span class="do">## $ zip                       &lt;fct&gt; 1, 1, 2, 1, 3, 3, 3, 3, 3, 3, 2, 1, 1, 2, 2,…</span></span>
-<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a><span class="do">## $ age_policyholder_freq_cat &lt;fct&gt; "(39,84]", "(39,84]", "(39,84]", "(39,84]", …</span></span>
-<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a><span class="do">## $ pred_nclaims_model_freq1  &lt;dbl&gt; 0.11792558, 0.11792558, 0.11792558, 0.117925…</span></span>
-<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a><span class="do">## $ pred_nclaims_model_freq2  &lt;dbl&gt; 0.09650865, 0.14409239, 0.08672539, 0.127766…</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="do">## Rows: 30,000</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="do">## Columns: 10</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="do">## $ age_policyholder          &lt;int&gt; 70, 40, 78, 49, 59, 71, 55, 52, 51, 47, 62, …</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="do">## $ nclaims                   &lt;int&gt; 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0,…</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="do">## $ exposure                  &lt;dbl&gt; 1.0000000, 1.0000000, 1.0000000, 1.0000000, …</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="do">## $ amount                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 2607, 0, 0, 0, 0, 2890, 0,…</span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="do">## $ power                     &lt;int&gt; 106, 74, 65, 64, 29, 66, 43, 55, 100, 66, 44…</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="do">## $ bm                        &lt;int&gt; 5, 3, 8, 10, 1, 6, 2, 2, 1, 2, 1, 2, 2, 9, 5…</span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="do">## $ zip                       &lt;fct&gt; 1, 1, 2, 1, 3, 3, 3, 3, 3, 3, 2, 1, 1, 2, 2,…</span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="do">## $ age_policyholder_freq_cat &lt;fct&gt; "(39,84]", "(39,84]", "(39,84]", "(39,84]", …</span></span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="do">## $ pred_nclaims_model_freq1  &lt;dbl&gt; 0.11792558, 0.11792558, 0.11792558, 0.117925…</span></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="do">## $ pred_nclaims_model_freq2  &lt;dbl&gt; 0.09650865, 0.14409239, 0.08672539, 0.127766…</span></span></code></pre></div>
 <p>Compute indices of model performance for GLMs. The RMSE is the square root of the average of squared differences between prediction and actual observation and indicates the absolute fit of the model to the data. It can be interpreted as the standard deviation of the unexplained variance, and is in the same units as the response variable.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/model_performance.html">model_performance</a></span><span class="op">(</span><span class="va">model_freq1</span>, <span class="va">model_freq2</span><span class="op">)</span> </span></code></pre></div>
-<div class="sourceCode" id="cb21"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="do">## # Comparison of Model Performance Indices</span></span>
-<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a><span class="do">## </span></span>
-<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a><span class="do">## Model       |      AIC |      BIC | RMSE</span></span>
-<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a><span class="do">## ----------------------------------------</span></span>
-<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a><span class="do">## model_freq1 | 22983.34 | 23024.88 | 0.36</span></span>
-<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a><span class="do">## model_freq2 | 22943.06 | 22992.92 | 0.36</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="do">## [34m# Comparison of Model Performance Indices</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="do">## </span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="do">## [39mModel       |      AIC |      BIC | RMSE</span></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="do">## ----------------------------------------</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="do">## model_freq1 | 22983.34 | 23024.88 | 0.36</span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="do">## model_freq2 | 22943.06 | 22992.92 | 0.36</span></span></code></pre></div>
 <p>To test the stability of the predictive ability of the fitted model it might be helpful to determine the variation in the computed RMSE. The variation is calculated by computing the root mean squared errors from generated bootstrap replicates.</p>
 <p>For claim severity models it might be helpful to test the variation in the RMSE in case the portfolio contains large claim sizes. The figure below shows that the variation in the RMSE of the frequency model is quite low (as expected). The dashed line shows the RMSE of the fitted (original) model, the other lines represent the 95% confidence interval.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/bootstrap_rmse.html">bootstrap_rmse</a></span><span class="op">(</span><span class="va">model_freq1</span>, <span class="va">dat</span>, n <span class="op">=</span> <span class="fl">100</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">.</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/bootstrap_rmse.html">bootstrap_rmse</a></span><span class="op">(</span><span class="va">model_freq1</span>, <span class="va">dat</span>, n <span class="op">=</span> <span class="fl">100</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/bootstraprmse-1.png"><!-- --></p>
 <p>Check Poisson GLM for overdispersion. A dispersion ratio larger than one indicates overdispersion, this occurs when the observed variance is higher than the variance of the theoretical model. If the dispersion ratio is close to one, a Poisson model fits well to the data. A <em>p</em>-value &lt; .05 indicates overdispersion. Overdispersion &gt; 2 probably means there is a larger problem with the data: check (again) for outliers.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/check_overdispersion.html">check_overdispersion</a></span><span class="op">(</span><span class="va">model_freq1</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb24"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="do">##        dispersion ratio =     1.185</span></span>
-<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a><span class="do">##   Pearson's Chi-Squared = 35554.163</span></span>
-<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a><span class="do">##                 p-value =   &lt; 0.001</span></span>
-<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a></span>
-<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a><span class="do">## Overdispersion detected.</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="do">##        dispersion ratio =     1.185</span></span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="do">##   Pearson's Chi-Squared = 35554.163</span></span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="do">##                 p-value =   &lt; 0.001</span></span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a><span class="do">## Overdispersion detected.</span></span></code></pre></div>
 <p>Misspecifications in GLMs cannot reliably be diagnosed with standard residual plots, and GLMs are thus often not as thoroughly checked as LMs. One reason why GLMs residuals are harder to interpret is that the expected distribution of the data changes with the fitted values. As a result, standard residual plots, when interpreted in the same way as for linear models, seem to show all kind of problems, such as non-normality, heteroscedasticity, even if the model is correctly specified. <code><a href="reference/check_residuals.html">check_residuals()</a></code> aims at solving these problems by creating readily interpretable residuals for GLMs that are standardized to values between 0 and 1, and that can be interpreted as intuitively as residuals for the linear model. This is achieved by a simulation-based approach, similar to the Bayesian p-value or the parametric bootstrap, that transforms the residuals to a standardized scale. This explanation is adopted from the <a href="https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html" class="external-link">vignette for DHARMa</a>.</p>
 <p>Detect deviations from the expected distribution, and produce a uniform quantile-quantile plot. The simulated residuals in the QQ plot below show no clear deviation from a Poisson distribution. Note that formal tests almost always yield significant results for the distribution of residuals and visual inspections (e.g. Q-Q plots) are preferable.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/check_residuals.html">check_residuals</a></span><span class="op">(</span><span class="va">model_freq1</span>, n_simulations <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">.</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb26"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="do">## OK: residuals appear as from the expected</span></span>
-<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a><span class="do">##                                    distribution (p = 0.362).</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/check_residuals.html">check_residuals</a></span><span class="op">(</span><span class="va">model_freq1</span>, n_simulations <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="do">## [32mOK: residuals appear as from the expected distribution (p = 0.362).[39m</span></span></code></pre></div>
 <p><img src="reference/figures/normalitysim-1.png"><!-- --></p>
-<p>It might happen that in the fitted model for a data point all simulations have the same value (e.g. zero), this returns the error message <em>Error in approxfun: need at least two non-NA values to interpolate</em>. If that is the case, it could help to increase the number of simulations (e.g. <em>n</em> = 1000).</p>
+<p>It might happen that in the fitted model for a data point all simulations have the same value (e.g. zero), this returns the error message <em>Error in approxfun: need at least two non-NA values to interpolate</em>. If that is the case, it could help to increase the number of simulations (e.g. <span class="math inline"><em>n</em> = 1000</span>).</p>
 </div>
 <div class="section level2">
 <h2 id="example-2">Example 2<a class="anchor" aria-label="anchor" href="#example-2"></a>
@@ -245,7 +247,7 @@
 <p>This is a basic example which shows how to easily perform an univariate analysis on a MTPL portfolio using <code>insurancerating</code>.</p>
 <p>An univariate analysis consists in the evaluation of overall claim frequency, severity and risk premium. Its main purpose lies in verifying the experience data reasonableness using previous experience comparison and professional judgement.</p>
 <p><code><a href="reference/univariate.html">univariate()</a></code> shows the basic risk indicators split by the levels of the discrete risk factor:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/mharinga/insurancerating" class="external-link">insurancerating</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, </span>
 <span>           x <span class="op">=</span> <span class="va">area</span>, <span class="co"># discrete risk factor</span></span>
@@ -253,16 +255,18 @@
 <span>           exposure <span class="op">=</span> <span class="va">exposure</span>, </span>
 <span>           premium <span class="op">=</span> <span class="va">premium</span>, </span>
 <span>           severity <span class="op">=</span> <span class="va">amount</span><span class="op">)</span> <span class="co"># loss</span></span></code></pre></div>
-<div class="sourceCode" id="cb28"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a><span class="do">##    area  amount nclaims   exposure premium  frequency average_severity</span></span>
-<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a><span class="do">## 1:    2 4063270      98  818.53973   51896 0.11972540         41461.94</span></span>
-<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a><span class="do">## 2:    3 7945311     113  764.99178   49337 0.14771401         70312.49</span></span>
-<span id="cb28-4"><a href="#cb28-4" tabindex="-1"></a><span class="do">## 3:    1 6896187     146 1065.74795   65753 0.13699299         47234.16</span></span>
-<span id="cb28-5"><a href="#cb28-5" tabindex="-1"></a><span class="do">## 4:    0    6922       1   13.30685     902 0.07514927          6922.00</span></span>
-<span id="cb28-6"><a href="#cb28-6" tabindex="-1"></a><span class="do">##    risk_premium loss_ratio average_premium</span></span>
-<span id="cb28-7"><a href="#cb28-7" tabindex="-1"></a><span class="do">## 1:    4964.0474  78.296400        63.40071</span></span>
-<span id="cb28-8"><a href="#cb28-8" tabindex="-1"></a><span class="do">## 2:   10386.1390 161.041632        64.49350</span></span>
-<span id="cb28-9"><a href="#cb28-9" tabindex="-1"></a><span class="do">## 3:    6470.7486 104.880188        61.69658</span></span>
-<span id="cb28-10"><a href="#cb28-10" tabindex="-1"></a><span class="do">## 4:     520.1832   7.674058        67.78464</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="do">##     area  amount nclaims   exposure premium  frequency average_severity</span></span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a><span class="do">##    &lt;int&gt;   &lt;int&gt;   &lt;int&gt;      &lt;num&gt;   &lt;int&gt;      &lt;num&gt;            &lt;num&gt;</span></span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a><span class="do">## 1:     2 4063270      98  818.53973   51896 0.11972540         41461.94</span></span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a><span class="do">## 2:     3 7945311     113  764.99178   49337 0.14771401         70312.49</span></span>
+<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a><span class="do">## 3:     1 6896187     146 1065.74795   65753 0.13699299         47234.16</span></span>
+<span id="cb24-6"><a href="#cb24-6" tabindex="-1"></a><span class="do">## 4:     0    6922       1   13.30685     902 0.07514927          6922.00</span></span>
+<span id="cb24-7"><a href="#cb24-7" tabindex="-1"></a><span class="do">##    risk_premium loss_ratio average_premium</span></span>
+<span id="cb24-8"><a href="#cb24-8" tabindex="-1"></a><span class="do">##           &lt;num&gt;      &lt;num&gt;           &lt;num&gt;</span></span>
+<span id="cb24-9"><a href="#cb24-9" tabindex="-1"></a><span class="do">## 1:    4964.0474  78.296400        63.40071</span></span>
+<span id="cb24-10"><a href="#cb24-10" tabindex="-1"></a><span class="do">## 2:   10386.1390 161.041632        64.49350</span></span>
+<span id="cb24-11"><a href="#cb24-11" tabindex="-1"></a><span class="do">## 3:    6470.7486 104.880188        61.69658</span></span>
+<span id="cb24-12"><a href="#cb24-12" tabindex="-1"></a><span class="do">## 4:     520.1832   7.674058        67.78464</span></span></code></pre></div>
 <p>The following indicators are calculated:</p>
 <ol style="list-style-type: decimal">
 <li>frequency (i.e. frequency = number of claims / exposure)</li>
@@ -273,17 +277,18 @@
 </ol>
 <p>Here the term <em>exposure</em> is a measure of what is being insured. For example, an insured vehicle is an exposure. If the vehicle is insured as of July 1 for a certain year, then during that year, this would represent an exposure of 0.5 to the insurance company. The term risk premium is used here as an equivalent of pure premium and burning cost.</p>
 <p><code><a href="reference/univariate.html">univariate()</a></code> ignores missing input arguments, for instance only the claim frequency is calculated when <code>premium</code> and <code>severity</code> are unknown:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> </span></code></pre></div>
-<div class="sourceCode" id="cb30"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a><span class="do">##    area nclaims   exposure  frequency</span></span>
-<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a><span class="do">## 1:    2      98  818.53973 0.11972540</span></span>
-<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a><span class="do">## 2:    3     113  764.99178 0.14771401</span></span>
-<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a><span class="do">## 3:    1     146 1065.74795 0.13699299</span></span>
-<span id="cb30-5"><a href="#cb30-5" tabindex="-1"></a><span class="do">## 4:    0       1   13.30685 0.07514927</span></span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="do">##     area nclaims   exposure  frequency</span></span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a><span class="do">##    &lt;int&gt;   &lt;int&gt;      &lt;num&gt;      &lt;num&gt;</span></span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a><span class="do">## 1:     2      98  818.53973 0.11972540</span></span>
+<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a><span class="do">## 2:     3     113  764.99178 0.14771401</span></span>
+<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a><span class="do">## 3:     1     146 1065.74795 0.13699299</span></span>
+<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a><span class="do">## 4:     0       1   13.30685 0.07514927</span></span></code></pre></div>
 <p>However, the above table is small and easy to understand, the same information might be presented more effectively with a graph, as shown below.</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">.</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example6-1.png"><!-- --></p>
 <p>In <code><a href="reference/autoplot.univariate.html">autoplot.univariate()</a></code>, <code>show_plots</code> defines the plots to show and also the order of the plots. The following plots are available:</p>
 <ol style="list-style-type: decimal">
@@ -298,50 +303,53 @@
 <li>premium</li>
 </ol>
 <p>For example, to show the exposure and claim frequency plots:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">.</span>, show_plots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">un</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> </span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">un</span>, show_plots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example7-1.png"><!-- --></p>
 <p>To check whether claim frequency is consistent over the years:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">MTPL2</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">2016</span><span class="op">:</span><span class="fl">2019</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">.</span><span class="op">)</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">.</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, </span>
-<span>           exposure <span class="op">=</span> <span class="va">exposure</span>, by <span class="op">=</span> <span class="va">year</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">.</span>, show_plots <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="va">MTPL2</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">2016</span><span class="op">:</span><span class="fl">2019</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">MTPL2</span><span class="op">)</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> </span>
+<span></span>
+<span><span class="va">un</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">df</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, </span>
+<span>           exposure <span class="op">=</span> <span class="va">exposure</span>, by <span class="op">=</span> <span class="va">year</span><span class="op">)</span> </span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">un</span>, show_plots <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/unnamed-chunk-3-1.png"><!-- --></p>
 <p>To remove the bars from the plot with the line graph, add <code>background = FALSE</code>:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">.</span>, show_plots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>,<span class="fl">1</span><span class="op">)</span>, background <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span>show_plots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>,<span class="fl">1</span><span class="op">)</span>, background <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example8-1.png"><!-- --></p>
 <p><code>sort</code> orders the levels of the risk factor into descending order by exposure:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">.</span>, show_plots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>,<span class="fl">1</span><span class="op">)</span>, background <span class="op">=</span> <span class="cn">FALSE</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span>show_plots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>,<span class="fl">1</span><span class="op">)</span>, background <span class="op">=</span> <span class="cn">FALSE</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example9-1.png"><!-- --></p>
 <p><code>sort_manual</code> in <code><a href="reference/autoplot.univariate.html">autoplot.univariate()</a></code> can be used to sort the levels of the discrete risk factor into your own ordering. This makes sense when the levels of the risk factor has a natural order, or when not all levels of the risk factor are desired in the output.</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">.</span>, show_plots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>,<span class="fl">1</span><span class="op">)</span>, background <span class="op">=</span> <span class="cn">FALSE</span>, sort_manual <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"1"</span>, <span class="st">"0"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span>show_plots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>,<span class="fl">1</span><span class="op">)</span>, background <span class="op">=</span> <span class="cn">FALSE</span>, </span>
+<span>           sort_manual <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"1"</span>, <span class="st">"0"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example10-1.png"><!-- --></p>
 <p>The following graph shows some more options:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">.</span>, show_plots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>,<span class="fl">1</span><span class="op">)</span>, background <span class="op">=</span> <span class="cn">FALSE</span>, sort <span class="op">=</span> <span class="cn">TRUE</span>, ncol <span class="op">=</span> <span class="fl">2</span>, </span>
-<span>           color_bg <span class="op">=</span> <span class="st">"dodgerblue"</span>, color <span class="op">=</span> <span class="st">"blue"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span>show_plots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>,<span class="fl">1</span><span class="op">)</span>, background <span class="op">=</span> <span class="cn">FALSE</span>, sort <span class="op">=</span> <span class="cn">TRUE</span>, ncol <span class="op">=</span> <span class="fl">2</span>, </span>
+<span>           color_bg <span class="op">=</span> <span class="st">"dodgerblue"</span>, color <span class="op">=</span> <span class="st">"blue"</span>, </span>
+<span>           custom_theme <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_classic</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example11-1.png"><!-- --></p>
 <p>Or create a bar graph for the number of claims:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">.</span>, show_plots <span class="op">=</span> <span class="fl">8</span>, coord_flip <span class="op">=</span> <span class="cn">TRUE</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>, x <span class="op">=</span> <span class="va">area</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span>show_plots <span class="op">=</span> <span class="fl">8</span>, coord_flip <span class="op">=</span> <span class="cn">TRUE</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example12-1.png"><!-- --></p>
 <p>For continuous variables a histogram can be created:</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/histbin.html">histbin</a></span><span class="op">(</span><span class="va">MTPL2</span>, <span class="va">premium</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example14-1.png"><!-- --></p>
 <p>Two ways of displaying numerical data over a very wide range of values in a compact way are taking the logarithm of the variable, or omitting the outliers. Both do not show the original distribution, however. Another way is to create one bin for all the outliers. This yields both the original distribution, and also gives a feel for the number of outliers.</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/histbin.html">histbin</a></span><span class="op">(</span><span class="va">MTPL2</span>, <span class="va">premium</span>, right <span class="op">=</span> <span class="fl">110</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example15-1.png"><!-- --></p>
 </div>
@@ -350,7 +358,7 @@
 </h2>
 <p>This is a basic example which shows how to easily perform model refinement using <code>insurancerating</code>. <code>insurancerating</code> can be used to impose either smoothing to the parameter estimates or to add restrictions to the parameter estimates. These methods are deduced from the article <em>Third Party Motor Liability Ratemaking with R</em>, by Spedicato, G. (2012).</p>
 <p>Fit (again) a Poisson GLM and a Gamma GLM, and combine them to determine premiums:</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mod_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">zip</span> <span class="op">+</span> <span class="va">age_policyholder_freq_cat</span>, </span>
 <span>                offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>, </span>
 <span>                family <span class="op">=</span> <span class="st">"poisson"</span>, </span>
@@ -361,210 +369,177 @@
 <span>               family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>, </span>
 <span>               data <span class="op">=</span> <span class="va">dat</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">amount</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">MTPL_premium</span> <span class="op">&lt;-</span> <span class="va">dat</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="reference/add_prediction.html">add_prediction</a></span><span class="op">(</span><span class="va">mod_freq</span>, <span class="va">mod_sev</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">MTPL_premium</span> <span class="op">&lt;-</span> <span class="va">dat</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/add_prediction.html">add_prediction</a></span><span class="op">(</span><span class="va">mod_freq</span>, <span class="va">mod_sev</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>premium <span class="op">=</span> <span class="va">pred_nclaims_mod_freq</span> <span class="op">*</span> <span class="va">pred_amount_mod_sev</span><span class="op">)</span></span></code></pre></div>
 <p>Fit a burning model without restrictions. Even though restrictions could be applied to frequency and severity models, it is more appropriate to add restrictions (and smoothing) to the risk premium model.</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">burn_unrestricted</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">premium</span> <span class="op">~</span> <span class="va">zip</span> <span class="op">+</span> <span class="va">bm</span> <span class="op">+</span> <span class="va">age_policyholder_freq_cat</span>, </span>
 <span>                         weights <span class="op">=</span> <span class="va">exposure</span>, </span>
 <span>                         family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>, </span>
 <span>                         data <span class="op">=</span> <span class="va">MTPL_premium</span><span class="op">)</span> </span></code></pre></div>
-<p>Smoothing can be used to reduce the tolerance for rate change. In <code><a href="reference/smooth_coef.html">smooth_coef()</a></code>, <code>x_cut</code> is the name of the risk factor with clusters, <code>x_org</code> is the name of the original risk factor, <code>degree</code> is the order of the polynomial, and <code>breaks</code> is a numerical vector with new clusters for <code>x_org</code>. The smoothed estimates are added as an offset term to the model. An offset is just a fixed term added to the linear predictor, therefore if there is already an offset in the model, the offset terms are added together first (i.e. offset = log (<em>a</em>) + log (<em>b</em>) = log (<em>a</em>⋅<em>b</em>)).</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">burn_unrestricted</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<p>Smoothing can be used to reduce the tolerance for rate change. In <code><a href="reference/smooth_coef.html">smooth_coef()</a></code>, <code>x_cut</code> is the name of the risk factor with clusters, <code>x_org</code> is the name of the original risk factor, <code>degree</code> is the order of the polynomial, and <code>breaks</code> is a numerical vector with new clusters for <code>x_org</code>. The smoothed estimates are added as an offset term to the model. An offset is just a fixed term added to the linear predictor, therefore if there is already an offset in the model, the offset terms are added together first (i.e. <span class="math inline">offset = log (<em>a</em>) + log (<em>b</em>) = log (<em>a</em>⋅<em>b</em>)</span>).</p>
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">burn_unrestricted</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/smooth_coef.html">smooth_coef</a></span><span class="op">(</span>x_cut <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span>, </span>
 <span>              x_org <span class="op">=</span> <span class="st">"age_policyholder"</span>, </span>
-<span>              breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">95</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>              breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">95</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb44"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a><span class="do">## Formula: premium ~ zip + bm + offset(log(age_policyholder_freq_cat_smooth))</span></span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a><span class="do">## Formula: premium ~ zip + bm + offset(log(age_policyholder_freq_cat_smooth))</span></span></code></pre></div>
 <p><code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> creates a figure for the smoothed estimates. The blue segments show the estimates from the unrestricted model. The red segments are the new estimates based on the polynomial.</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">burn_unrestricted</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">burn_unrestricted</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/smooth_coef.html">smooth_coef</a></span><span class="op">(</span>x_cut <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span>, </span>
 <span>              x_org <span class="op">=</span> <span class="st">"age_policyholder"</span>, </span>
-<span>              breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">95</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>              breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">95</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example18a-1.png"><!-- --></p>
 <p><code>degree</code> can be used to change the order of the polynomial:</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">burn_unrestricted</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">burn_unrestricted</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/smooth_coef.html">smooth_coef</a></span><span class="op">(</span>x_cut <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span>, </span>
 <span>              x_org <span class="op">=</span> <span class="st">"age_policyholder"</span>, </span>
 <span>              degree <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>              breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">95</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>              breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">95</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example19-1.png"><!-- --></p>
 <p><code><a href="reference/smooth_coef.html">smooth_coef()</a></code> must always be followed by <code><a href="reference/update_glm.html">update_glm()</a></code> to refit the GLM.</p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">burn_restricted</span> <span class="op">&lt;-</span> <span class="va">burn_unrestricted</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">burn_restricted</span> <span class="op">&lt;-</span> <span class="va">burn_unrestricted</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/smooth_coef.html">smooth_coef</a></span><span class="op">(</span>x_cut <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span>, </span>
 <span>              x_org <span class="op">=</span> <span class="st">"age_policyholder"</span>, </span>
-<span>              breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">95</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>              breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">95</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/update_glm.html">update_glm</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Show rating factors</span></span>
 <span><span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span><span class="op">(</span><span class="va">burn_restricted</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb48"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" tabindex="-1"></a><span class="do">## Significance levels: *** p &lt; 0.001; ** p &lt; 0.01;</span></span>
-<span id="cb48-2"><a href="#cb48-2" tabindex="-1"></a><span class="do">##     * p &lt; 0.05; . p &lt; 0.1</span></span>
-<span id="cb48-3"><a href="#cb48-3" tabindex="-1"></a></span>
-<span id="cb48-4"><a href="#cb48-4" tabindex="-1"></a><span class="do">##                risk_factor       level est_burn_restricted</span></span>
-<span id="cb48-5"><a href="#cb48-5" tabindex="-1"></a><span class="do">## 1              (Intercept) (Intercept)     9184.248396 ***</span></span>
-<span id="cb48-6"><a href="#cb48-6" tabindex="-1"></a><span class="do">## 2                      zip           1        1.000000    </span></span>
-<span id="cb48-7"><a href="#cb48-7" tabindex="-1"></a><span class="do">## 3                      zip           0        0.354033 ***</span></span>
-<span id="cb48-8"><a href="#cb48-8" tabindex="-1"></a><span class="do">## 4                      zip           2        0.731117 ***</span></span>
-<span id="cb48-9"><a href="#cb48-9" tabindex="-1"></a><span class="do">## 5                      zip           3        0.753704 ***</span></span>
-<span id="cb48-10"><a href="#cb48-10" tabindex="-1"></a><span class="do">## 6  age_policyholder_smooth     [18,23]        2.311122    </span></span>
-<span id="cb48-11"><a href="#cb48-11" tabindex="-1"></a><span class="do">## 7  age_policyholder_smooth     (23,28]        1.719606    </span></span>
-<span id="cb48-12"><a href="#cb48-12" tabindex="-1"></a><span class="do">## 8  age_policyholder_smooth     (28,33]        1.377440    </span></span>
-<span id="cb48-13"><a href="#cb48-13" tabindex="-1"></a><span class="do">## 9  age_policyholder_smooth     (33,38]        1.205472    </span></span>
-<span id="cb48-14"><a href="#cb48-14" tabindex="-1"></a><span class="do">## 10 age_policyholder_smooth     (38,43]        1.137252    </span></span>
-<span id="cb48-15"><a href="#cb48-15" tabindex="-1"></a><span class="do">## 11 age_policyholder_smooth     (43,48]        1.119032    </span></span>
-<span id="cb48-16"><a href="#cb48-16" tabindex="-1"></a><span class="do">## 12 age_policyholder_smooth     (48,53]        1.109767    </span></span>
-<span id="cb48-17"><a href="#cb48-17" tabindex="-1"></a><span class="do">## 13 age_policyholder_smooth     (53,58]        1.081112    </span></span>
-<span id="cb48-18"><a href="#cb48-18" tabindex="-1"></a><span class="do">## 14 age_policyholder_smooth     (58,63]        1.017424    </span></span>
-<span id="cb48-19"><a href="#cb48-19" tabindex="-1"></a><span class="do">## 15 age_policyholder_smooth     (63,68]        0.915763    </span></span>
-<span id="cb48-20"><a href="#cb48-20" tabindex="-1"></a><span class="do">## 16 age_policyholder_smooth     (68,73]        0.785889    </span></span>
-<span id="cb48-21"><a href="#cb48-21" tabindex="-1"></a><span class="do">## 17 age_policyholder_smooth     (73,78]        0.650267    </span></span>
-<span id="cb48-22"><a href="#cb48-22" tabindex="-1"></a><span class="do">## 18 age_policyholder_smooth     (78,83]        0.544060    </span></span>
-<span id="cb48-23"><a href="#cb48-23" tabindex="-1"></a><span class="do">## 19 age_policyholder_smooth     (83,88]        0.515136    </span></span>
-<span id="cb48-24"><a href="#cb48-24" tabindex="-1"></a><span class="do">## 20 age_policyholder_smooth     (88,93]        0.624062    </span></span>
-<span id="cb48-25"><a href="#cb48-25" tabindex="-1"></a><span class="do">## 21                      bm          bm        1.037056 ***</span></span></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a><span class="do">##                risk_factor       level est_burn_restricted</span></span>
+<span id="cb44-2"><a href="#cb44-2" tabindex="-1"></a><span class="do">## 1              (Intercept) (Intercept)        9184.0425714</span></span>
+<span id="cb44-3"><a href="#cb44-3" tabindex="-1"></a><span class="do">## 2                      zip           1           1.0000000</span></span>
+<span id="cb44-4"><a href="#cb44-4" tabindex="-1"></a><span class="do">## 3                      zip           0           0.3540330</span></span>
+<span id="cb44-5"><a href="#cb44-5" tabindex="-1"></a><span class="do">## 4                      zip           2           0.7311169</span></span>
+<span id="cb44-6"><a href="#cb44-6" tabindex="-1"></a><span class="do">## 5                      zip           3           0.7537306</span></span>
+<span id="cb44-7"><a href="#cb44-7" tabindex="-1"></a><span class="do">## 6  age_policyholder_smooth     [18,23]           2.3111217</span></span>
+<span id="cb44-8"><a href="#cb44-8" tabindex="-1"></a><span class="do">## 7  age_policyholder_smooth     (23,28]           1.7196059</span></span>
+<span id="cb44-9"><a href="#cb44-9" tabindex="-1"></a><span class="do">## 8  age_policyholder_smooth     (28,33]           1.3774398</span></span>
+<span id="cb44-10"><a href="#cb44-10" tabindex="-1"></a><span class="do">## 9  age_policyholder_smooth     (33,38]           1.2054716</span></span>
+<span id="cb44-11"><a href="#cb44-11" tabindex="-1"></a><span class="do">## 10 age_policyholder_smooth     (38,43]           1.1372518</span></span>
+<span id="cb44-12"><a href="#cb44-12" tabindex="-1"></a><span class="do">## 11 age_policyholder_smooth     (43,48]           1.1190324</span></span>
+<span id="cb44-13"><a href="#cb44-13" tabindex="-1"></a><span class="do">## 12 age_policyholder_smooth     (48,53]           1.1097671</span></span>
+<span id="cb44-14"><a href="#cb44-14" tabindex="-1"></a><span class="do">## 13 age_policyholder_smooth     (53,58]           1.0811117</span></span>
+<span id="cb44-15"><a href="#cb44-15" tabindex="-1"></a><span class="do">## 14 age_policyholder_smooth     (58,63]           1.0174238</span></span>
+<span id="cb44-16"><a href="#cb44-16" tabindex="-1"></a><span class="do">## 15 age_policyholder_smooth     (63,68]           0.9157627</span></span>
+<span id="cb44-17"><a href="#cb44-17" tabindex="-1"></a><span class="do">## 16 age_policyholder_smooth     (68,73]           0.7858894</span></span>
+<span id="cb44-18"><a href="#cb44-18" tabindex="-1"></a><span class="do">## 17 age_policyholder_smooth     (73,78]           0.6502670</span></span>
+<span id="cb44-19"><a href="#cb44-19" tabindex="-1"></a><span class="do">## 18 age_policyholder_smooth     (78,83]           0.5440602</span></span>
+<span id="cb44-20"><a href="#cb44-20" tabindex="-1"></a><span class="do">## 19 age_policyholder_smooth     (83,88]           0.5151356</span></span>
+<span id="cb44-21"><a href="#cb44-21" tabindex="-1"></a><span class="do">## 20 age_policyholder_smooth     (88,93]           0.6240618</span></span>
+<span id="cb44-22"><a href="#cb44-22" tabindex="-1"></a><span class="do">## 21                      bm          bm           1.0370617</span></span></code></pre></div>
 <p>Most insurers have some form of a Bonus-Malus System in vehicle third party liability insurance. <code><a href="reference/restrict_coef.html">restrict_coef()</a></code> can be used to impose such restrictions. <code>restrictions</code> must be a data.frame with in the first column the name of the column for which the restrictions should be applied and in the second column the restricted coefficients. The following example shows restrictions on the risk factor for region <code>zip</code>:</p>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">zip_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>zip <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">3</span><span class="op">)</span>,</span>
 <span>                     zip_restricted <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="fl">0.9</span>, <span class="fl">1</span>, <span class="fl">1.2</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">burn_unrestricted</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="reference/restrict_coef.html">restrict_coef</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">zip_df</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">burn_unrestricted</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/restrict_coef.html">restrict_coef</a></span><span class="op">(</span>restrictions <span class="op">=</span> <span class="va">zip_df</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb50"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" tabindex="-1"></a><span class="do">## Formula: premium ~ bm + age_policyholder_freq_cat + offset(log(zip_restricted))</span></span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" tabindex="-1"></a><span class="do">## Formula: premium ~ bm + age_policyholder_freq_cat + offset(log(zip_restricted))</span></span></code></pre></div>
 <p>To adjust the glm, <code>restict_coef()</code> must always be followed by <code><a href="reference/update_glm.html">update_glm()</a></code>:</p>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">burn_restricted2</span> <span class="op">&lt;-</span> <span class="va">burn_unrestricted</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="reference/restrict_coef.html">restrict_coef</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">zip_df</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">burn_restricted2</span> <span class="op">&lt;-</span> <span class="va">burn_unrestricted</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="reference/restrict_coef.html">restrict_coef</a></span><span class="op">(</span>restrictions <span class="op">=</span> <span class="va">zip_df</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/update_glm.html">update_glm</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span><span class="op">(</span><span class="va">burn_restricted2</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb52"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" tabindex="-1"></a><span class="do">## Significance levels: *** p &lt; 0.001; ** p &lt; 0.01;</span></span>
-<span id="cb52-2"><a href="#cb52-2" tabindex="-1"></a><span class="do">##     * p &lt; 0.05; . p &lt; 0.1</span></span>
-<span id="cb52-3"><a href="#cb52-3" tabindex="-1"></a></span>
-<span id="cb52-4"><a href="#cb52-4" tabindex="-1"></a><span class="do">##                  risk_factor       level est_burn_restricted2</span></span>
-<span id="cb52-5"><a href="#cb52-5" tabindex="-1"></a><span class="do">## 1                (Intercept) (Intercept)      7766.514389 ***</span></span>
-<span id="cb52-6"><a href="#cb52-6" tabindex="-1"></a><span class="do">## 2  age_policyholder_freq_cat     (39,84]         1.000000    </span></span>
-<span id="cb52-7"><a href="#cb52-7" tabindex="-1"></a><span class="do">## 3  age_policyholder_freq_cat     [18,25]         2.172458 ***</span></span>
-<span id="cb52-8"><a href="#cb52-8" tabindex="-1"></a><span class="do">## 4  age_policyholder_freq_cat     (25,32]         1.491470 ***</span></span>
-<span id="cb52-9"><a href="#cb52-9" tabindex="-1"></a><span class="do">## 5  age_policyholder_freq_cat     (32,39]         1.209953 ***</span></span>
-<span id="cb52-10"><a href="#cb52-10" tabindex="-1"></a><span class="do">## 6  age_policyholder_freq_cat     (84,95]         0.574445 ***</span></span>
-<span id="cb52-11"><a href="#cb52-11" tabindex="-1"></a><span class="do">## 7             zip_restricted           0         0.800000    </span></span>
-<span id="cb52-12"><a href="#cb52-12" tabindex="-1"></a><span class="do">## 8             zip_restricted           1         0.900000    </span></span>
-<span id="cb52-13"><a href="#cb52-13" tabindex="-1"></a><span class="do">## 9             zip_restricted           2         1.000000    </span></span>
-<span id="cb52-14"><a href="#cb52-14" tabindex="-1"></a><span class="do">## 10            zip_restricted           3         1.200000    </span></span>
-<span id="cb52-15"><a href="#cb52-15" tabindex="-1"></a><span class="do">## 11                        bm          bm         1.037167 ***</span></span></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" tabindex="-1"></a><span class="do">##                  risk_factor       level est_burn_restricted2</span></span>
+<span id="cb48-2"><a href="#cb48-2" tabindex="-1"></a><span class="do">## 1                (Intercept) (Intercept)         7766.5143894</span></span>
+<span id="cb48-3"><a href="#cb48-3" tabindex="-1"></a><span class="do">## 2  age_policyholder_freq_cat     (39,84]            1.0000000</span></span>
+<span id="cb48-4"><a href="#cb48-4" tabindex="-1"></a><span class="do">## 3  age_policyholder_freq_cat     [18,25]            2.1724584</span></span>
+<span id="cb48-5"><a href="#cb48-5" tabindex="-1"></a><span class="do">## 4  age_policyholder_freq_cat     (25,32]            1.4914700</span></span>
+<span id="cb48-6"><a href="#cb48-6" tabindex="-1"></a><span class="do">## 5  age_policyholder_freq_cat     (32,39]            1.2099529</span></span>
+<span id="cb48-7"><a href="#cb48-7" tabindex="-1"></a><span class="do">## 6  age_policyholder_freq_cat     (84,95]            0.5744446</span></span>
+<span id="cb48-8"><a href="#cb48-8" tabindex="-1"></a><span class="do">## 7             zip_restricted           0            0.8000000</span></span>
+<span id="cb48-9"><a href="#cb48-9" tabindex="-1"></a><span class="do">## 8             zip_restricted           1            0.9000000</span></span>
+<span id="cb48-10"><a href="#cb48-10" tabindex="-1"></a><span class="do">## 9             zip_restricted           2            1.0000000</span></span>
+<span id="cb48-11"><a href="#cb48-11" tabindex="-1"></a><span class="do">## 10            zip_restricted           3            1.2000000</span></span>
+<span id="cb48-12"><a href="#cb48-12" tabindex="-1"></a><span class="do">## 11                        bm          bm            1.0371671</span></span></code></pre></div>
 <p><code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> compares the restricted and the unrestricted estimates:</p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">burn_unrestricted</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="reference/restrict_coef.html">restrict_coef</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">zip_df</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">burn_unrestricted</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/restrict_coef.html">restrict_coef</a></span><span class="op">(</span>restrictions <span class="op">=</span> <span class="va">zip_df</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/example23-1.png"><!-- --></p>
 <p><code>burn_restricted3</code> combines <code><a href="reference/restrict_coef.html">restrict_coef()</a></code> and <code><a href="reference/smooth_coef.html">smooth_coef()</a></code>:</p>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">burn_restricted3</span> <span class="op">&lt;-</span> <span class="va">burn_unrestricted</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="reference/restrict_coef.html">restrict_coef</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">zip_df</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">burn_restricted3</span> <span class="op">&lt;-</span> <span class="va">burn_unrestricted</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/restrict_coef.html">restrict_coef</a></span><span class="op">(</span>restrictions <span class="op">=</span> <span class="va">zip_df</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/smooth_coef.html">smooth_coef</a></span><span class="op">(</span>x_cut <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span>, </span>
 <span>              x_org <span class="op">=</span> <span class="st">"age_policyholder"</span>, </span>
-<span>              breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">95</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>              breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">95</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/update_glm.html">update_glm</a></span><span class="op">(</span><span class="op">)</span> </span>
 <span>  </span>
 <span><span class="co"># Show rating factors</span></span>
 <span><span class="fu"><a href="reference/rating_factors.html">rating_factors</a></span><span class="op">(</span><span class="va">burn_restricted3</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb55"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" tabindex="-1"></a><span class="do">## Significance levels: *** p &lt; 0.001; ** p &lt; 0.01;</span></span>
-<span id="cb55-2"><a href="#cb55-2" tabindex="-1"></a><span class="do">##     * p &lt; 0.05; . p &lt; 0.1</span></span>
-<span id="cb55-3"><a href="#cb55-3" tabindex="-1"></a></span>
-<span id="cb55-4"><a href="#cb55-4" tabindex="-1"></a><span class="do">##                risk_factor       level est_burn_restricted3</span></span>
-<span id="cb55-5"><a href="#cb55-5" tabindex="-1"></a><span class="do">## 1              (Intercept) (Intercept)      7880.289822 ***</span></span>
-<span id="cb55-6"><a href="#cb55-6" tabindex="-1"></a><span class="do">## 2           zip_restricted           0         0.800000    </span></span>
-<span id="cb55-7"><a href="#cb55-7" tabindex="-1"></a><span class="do">## 3           zip_restricted           1         0.900000    </span></span>
-<span id="cb55-8"><a href="#cb55-8" tabindex="-1"></a><span class="do">## 4           zip_restricted           2         1.000000    </span></span>
-<span id="cb55-9"><a href="#cb55-9" tabindex="-1"></a><span class="do">## 5           zip_restricted           3         1.200000    </span></span>
-<span id="cb55-10"><a href="#cb55-10" tabindex="-1"></a><span class="do">## 6  age_policyholder_smooth     [18,23]         2.311122    </span></span>
-<span id="cb55-11"><a href="#cb55-11" tabindex="-1"></a><span class="do">## 7  age_policyholder_smooth     (23,28]         1.719606    </span></span>
-<span id="cb55-12"><a href="#cb55-12" tabindex="-1"></a><span class="do">## 8  age_policyholder_smooth     (28,33]         1.377440    </span></span>
-<span id="cb55-13"><a href="#cb55-13" tabindex="-1"></a><span class="do">## 9  age_policyholder_smooth     (33,38]         1.205472    </span></span>
-<span id="cb55-14"><a href="#cb55-14" tabindex="-1"></a><span class="do">## 10 age_policyholder_smooth     (38,43]         1.137252    </span></span>
-<span id="cb55-15"><a href="#cb55-15" tabindex="-1"></a><span class="do">## 11 age_policyholder_smooth     (43,48]         1.119032    </span></span>
-<span id="cb55-16"><a href="#cb55-16" tabindex="-1"></a><span class="do">## 12 age_policyholder_smooth     (48,53]         1.109767    </span></span>
-<span id="cb55-17"><a href="#cb55-17" tabindex="-1"></a><span class="do">## 13 age_policyholder_smooth     (53,58]         1.081112    </span></span>
-<span id="cb55-18"><a href="#cb55-18" tabindex="-1"></a><span class="do">## 14 age_policyholder_smooth     (58,63]         1.017424    </span></span>
-<span id="cb55-19"><a href="#cb55-19" tabindex="-1"></a><span class="do">## 15 age_policyholder_smooth     (63,68]         0.915763    </span></span>
-<span id="cb55-20"><a href="#cb55-20" tabindex="-1"></a><span class="do">## 16 age_policyholder_smooth     (68,73]         0.785889    </span></span>
-<span id="cb55-21"><a href="#cb55-21" tabindex="-1"></a><span class="do">## 17 age_policyholder_smooth     (73,78]         0.650267    </span></span>
-<span id="cb55-22"><a href="#cb55-22" tabindex="-1"></a><span class="do">## 18 age_policyholder_smooth     (78,83]         0.544060    </span></span>
-<span id="cb55-23"><a href="#cb55-23" tabindex="-1"></a><span class="do">## 19 age_policyholder_smooth     (83,88]         0.515136    </span></span>
-<span id="cb55-24"><a href="#cb55-24" tabindex="-1"></a><span class="do">## 20 age_policyholder_smooth     (88,93]         0.624062    </span></span>
-<span id="cb55-25"><a href="#cb55-25" tabindex="-1"></a><span class="do">## 21                      bm          bm         1.036909 ***</span></span></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" tabindex="-1"></a><span class="do">##                risk_factor       level est_burn_restricted3</span></span>
+<span id="cb51-2"><a href="#cb51-2" tabindex="-1"></a><span class="do">## 1              (Intercept) (Intercept)         7880.1570478</span></span>
+<span id="cb51-3"><a href="#cb51-3" tabindex="-1"></a><span class="do">## 2           zip_restricted           0            0.8000000</span></span>
+<span id="cb51-4"><a href="#cb51-4" tabindex="-1"></a><span class="do">## 3           zip_restricted           1            0.9000000</span></span>
+<span id="cb51-5"><a href="#cb51-5" tabindex="-1"></a><span class="do">## 4           zip_restricted           2            1.0000000</span></span>
+<span id="cb51-6"><a href="#cb51-6" tabindex="-1"></a><span class="do">## 5           zip_restricted           3            1.2000000</span></span>
+<span id="cb51-7"><a href="#cb51-7" tabindex="-1"></a><span class="do">## 6  age_policyholder_smooth     [18,23]            2.3111217</span></span>
+<span id="cb51-8"><a href="#cb51-8" tabindex="-1"></a><span class="do">## 7  age_policyholder_smooth     (23,28]            1.7196059</span></span>
+<span id="cb51-9"><a href="#cb51-9" tabindex="-1"></a><span class="do">## 8  age_policyholder_smooth     (28,33]            1.3774398</span></span>
+<span id="cb51-10"><a href="#cb51-10" tabindex="-1"></a><span class="do">## 9  age_policyholder_smooth     (33,38]            1.2054716</span></span>
+<span id="cb51-11"><a href="#cb51-11" tabindex="-1"></a><span class="do">## 10 age_policyholder_smooth     (38,43]            1.1372518</span></span>
+<span id="cb51-12"><a href="#cb51-12" tabindex="-1"></a><span class="do">## 11 age_policyholder_smooth     (43,48]            1.1190324</span></span>
+<span id="cb51-13"><a href="#cb51-13" tabindex="-1"></a><span class="do">## 12 age_policyholder_smooth     (48,53]            1.1097671</span></span>
+<span id="cb51-14"><a href="#cb51-14" tabindex="-1"></a><span class="do">## 13 age_policyholder_smooth     (53,58]            1.0811117</span></span>
+<span id="cb51-15"><a href="#cb51-15" tabindex="-1"></a><span class="do">## 14 age_policyholder_smooth     (58,63]            1.0174238</span></span>
+<span id="cb51-16"><a href="#cb51-16" tabindex="-1"></a><span class="do">## 15 age_policyholder_smooth     (63,68]            0.9157627</span></span>
+<span id="cb51-17"><a href="#cb51-17" tabindex="-1"></a><span class="do">## 16 age_policyholder_smooth     (68,73]            0.7858894</span></span>
+<span id="cb51-18"><a href="#cb51-18" tabindex="-1"></a><span class="do">## 17 age_policyholder_smooth     (73,78]            0.6502670</span></span>
+<span id="cb51-19"><a href="#cb51-19" tabindex="-1"></a><span class="do">## 18 age_policyholder_smooth     (78,83]            0.5440602</span></span>
+<span id="cb51-20"><a href="#cb51-20" tabindex="-1"></a><span class="do">## 19 age_policyholder_smooth     (83,88]            0.5151356</span></span>
+<span id="cb51-21"><a href="#cb51-21" tabindex="-1"></a><span class="do">## 20 age_policyholder_smooth     (88,93]            0.6240618</span></span>
+<span id="cb51-22"><a href="#cb51-22" tabindex="-1"></a><span class="do">## 21                      bm          bm            1.0369179</span></span></code></pre></div>
 <p>And add refined premiums to the data:</p>
-<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">premiums3</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/model_data.html">model_data</a></span><span class="op">(</span><span class="va">burn_restricted3</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">premiums3</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/model_data.html">model_data</a></span><span class="op">(</span><span class="va">burn_restricted3</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/add_prediction.html">add_prediction</a></span><span class="op">(</span><span class="va">burn_restricted3</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">premiums3</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb57"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" tabindex="-1"></a><span class="do">##   age_policyholder age_policyholder_freq_cat_smooth age_policyholder_smooth</span></span>
-<span id="cb57-2"><a href="#cb57-2" tabindex="-1"></a><span class="do">## 1               70                        0.7858894                 (68,73]</span></span>
-<span id="cb57-3"><a href="#cb57-3" tabindex="-1"></a><span class="do">## 2               40                        1.1372518                 (38,43]</span></span>
-<span id="cb57-4"><a href="#cb57-4" tabindex="-1"></a><span class="do">## 3               78                        0.6502670                 (73,78]</span></span>
-<span id="cb57-5"><a href="#cb57-5" tabindex="-1"></a><span class="do">## 4               49                        1.1097671                 (48,53]</span></span>
-<span id="cb57-6"><a href="#cb57-6" tabindex="-1"></a><span class="do">## 5               59                        1.0174238                 (58,63]</span></span>
-<span id="cb57-7"><a href="#cb57-7" tabindex="-1"></a><span class="do">## 6               71                        0.7858894                 (68,73]</span></span>
-<span id="cb57-8"><a href="#cb57-8" tabindex="-1"></a><span class="do">##   nclaims  exposure amount power bm zip age_policyholder_freq_cat</span></span>
-<span id="cb57-9"><a href="#cb57-9" tabindex="-1"></a><span class="do">## 1       0 1.0000000      0   106  5   1                   (39,84]</span></span>
-<span id="cb57-10"><a href="#cb57-10" tabindex="-1"></a><span class="do">## 2       0 1.0000000      0    74  3   1                   (39,84]</span></span>
-<span id="cb57-11"><a href="#cb57-11" tabindex="-1"></a><span class="do">## 3       0 1.0000000      0    65  8   2                   (39,84]</span></span>
-<span id="cb57-12"><a href="#cb57-12" tabindex="-1"></a><span class="do">## 4       0 1.0000000      0    64 10   1                   (39,84]</span></span>
-<span id="cb57-13"><a href="#cb57-13" tabindex="-1"></a><span class="do">## 5       0 1.0000000      0    29  1   3                   (39,84]</span></span>
-<span id="cb57-14"><a href="#cb57-14" tabindex="-1"></a><span class="do">## 6       0 0.4547945      0    66  6   3                   (39,84]</span></span>
-<span id="cb57-15"><a href="#cb57-15" tabindex="-1"></a><span class="do">##   pred_nclaims_mod_freq pred_amount_mod_sev   premium zip_restricted</span></span>
-<span id="cb57-16"><a href="#cb57-16" tabindex="-1"></a><span class="do">## 1            0.12314843            92178.78 11351.672            0.9</span></span>
-<span id="cb57-17"><a href="#cb57-17" tabindex="-1"></a><span class="do">## 2            0.12314843            85686.38 10552.142            0.9</span></span>
-<span id="cb57-18"><a href="#cb57-18" tabindex="-1"></a><span class="do">## 3            0.11069758            82808.65  9166.717            1.0</span></span>
-<span id="cb57-19"><a href="#cb57-19" tabindex="-1"></a><span class="do">## 4            0.12314843           110644.28 13625.670            0.9</span></span>
-<span id="cb57-20"><a href="#cb57-20" tabindex="-1"></a><span class="do">## 5            0.11751490            62444.85  7338.200            1.2</span></span>
-<span id="cb57-21"><a href="#cb57-21" tabindex="-1"></a><span class="do">## 6            0.05344513            74953.96  4005.925            1.2</span></span>
-<span id="cb57-22"><a href="#cb57-22" tabindex="-1"></a><span class="do">##   pred_premium_burn_restricted3</span></span>
-<span id="cb57-23"><a href="#cb57-23" tabindex="-1"></a><span class="do">## 1                      6681.109</span></span>
-<span id="cb57-24"><a href="#cb57-24" tabindex="-1"></a><span class="do">## 2                      8992.135</span></span>
-<span id="cb57-25"><a href="#cb57-25" tabindex="-1"></a><span class="do">## 3                      6847.906</span></span>
-<span id="cb57-26"><a href="#cb57-26" tabindex="-1"></a><span class="do">## 4                     11308.927</span></span>
-<span id="cb57-27"><a href="#cb57-27" tabindex="-1"></a><span class="do">## 5                      9976.216</span></span>
-<span id="cb57-28"><a href="#cb57-28" tabindex="-1"></a><span class="do">## 6                      9236.933</span></span></code></pre></div>
-<p>Or do the same with model points:</p>
-<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">premiums4</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/model_data.html">model_data</a></span><span class="op">(</span><span class="va">burn_restricted3</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="reference/construct_model_points.html">construct_model_points</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="reference/add_prediction.html">add_prediction</a></span><span class="op">(</span><span class="va">burn_restricted3</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">premiums4</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb59"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" tabindex="-1"></a><span class="do">##   age_policyholder_smooth zip bm zip_restricted</span></span>
-<span id="cb59-2"><a href="#cb59-2" tabindex="-1"></a><span class="do">## 1                 (23,28]   1  1            0.9</span></span>
-<span id="cb59-3"><a href="#cb59-3" tabindex="-1"></a><span class="do">## 2                 (23,28]   1  2            0.9</span></span>
-<span id="cb59-4"><a href="#cb59-4" tabindex="-1"></a><span class="do">## 3                 (23,28]   1  3            0.9</span></span>
-<span id="cb59-5"><a href="#cb59-5" tabindex="-1"></a><span class="do">## 4                 (23,28]   1  4            0.9</span></span>
-<span id="cb59-6"><a href="#cb59-6" tabindex="-1"></a><span class="do">## 5                 (23,28]   1  5            0.9</span></span>
-<span id="cb59-7"><a href="#cb59-7" tabindex="-1"></a><span class="do">## 6                 (23,28]   1  6            0.9</span></span>
-<span id="cb59-8"><a href="#cb59-8" tabindex="-1"></a><span class="do">##   age_policyholder_freq_cat_smooth count  exposure</span></span>
-<span id="cb59-9"><a href="#cb59-9" tabindex="-1"></a><span class="do">## 1                         1.719606   414 342.57808</span></span>
-<span id="cb59-10"><a href="#cb59-10" tabindex="-1"></a><span class="do">## 2                         1.719606   173 145.25753</span></span>
-<span id="cb59-11"><a href="#cb59-11" tabindex="-1"></a><span class="do">## 3                         1.719606    53  46.53699</span></span>
-<span id="cb59-12"><a href="#cb59-12" tabindex="-1"></a><span class="do">## 4                         1.719606    26  22.31507</span></span>
-<span id="cb59-13"><a href="#cb59-13" tabindex="-1"></a><span class="do">## 5                         1.719606    54  46.78630</span></span>
-<span id="cb59-14"><a href="#cb59-14" tabindex="-1"></a><span class="do">## 6                         1.719606    71  65.13699</span></span>
-<span id="cb59-15"><a href="#cb59-15" tabindex="-1"></a><span class="do">##   pred_premium_burn_restricted3</span></span>
-<span id="cb59-16"><a href="#cb59-16" tabindex="-1"></a><span class="do">## 1                      12646.03</span></span>
-<span id="cb59-17"><a href="#cb59-17" tabindex="-1"></a><span class="do">## 2                      13112.77</span></span>
-<span id="cb59-18"><a href="#cb59-18" tabindex="-1"></a><span class="do">## 3                      13596.75</span></span>
-<span id="cb59-19"><a href="#cb59-19" tabindex="-1"></a><span class="do">## 4                      14098.59</span></span>
-<span id="cb59-20"><a href="#cb59-20" tabindex="-1"></a><span class="do">## 5                      14618.95</span></span>
-<span id="cb59-21"><a href="#cb59-21" tabindex="-1"></a><span class="do">## 6                      15158.51</span></span></code></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" tabindex="-1"></a><span class="do">##    age_policyholder age_policyholder_freq_cat_smooth age_policyholder_smooth</span></span>
+<span id="cb53-2"><a href="#cb53-2" tabindex="-1"></a><span class="do">##               &lt;int&gt;                            &lt;num&gt;                  &lt;char&gt;</span></span>
+<span id="cb53-3"><a href="#cb53-3" tabindex="-1"></a><span class="do">## 1:               18                         2.311122                 [18,23]</span></span>
+<span id="cb53-4"><a href="#cb53-4" tabindex="-1"></a><span class="do">## 2:               18                         2.311122                 [18,23]</span></span>
+<span id="cb53-5"><a href="#cb53-5" tabindex="-1"></a><span class="do">## 3:               18                         2.311122                 [18,23]</span></span>
+<span id="cb53-6"><a href="#cb53-6" tabindex="-1"></a><span class="do">## 4:               18                         2.311122                 [18,23]</span></span>
+<span id="cb53-7"><a href="#cb53-7" tabindex="-1"></a><span class="do">## 5:               19                         2.311122                 [18,23]</span></span>
+<span id="cb53-8"><a href="#cb53-8" tabindex="-1"></a><span class="do">## 6:               19                         2.311122                 [18,23]</span></span>
+<span id="cb53-9"><a href="#cb53-9" tabindex="-1"></a><span class="do">##    nclaims   exposure amount power    bm    zip age_policyholder_freq_cat</span></span>
+<span id="cb53-10"><a href="#cb53-10" tabindex="-1"></a><span class="do">##      &lt;int&gt;      &lt;num&gt;  &lt;num&gt; &lt;int&gt; &lt;int&gt; &lt;fctr&gt;                    &lt;fctr&gt;</span></span>
+<span id="cb53-11"><a href="#cb53-11" tabindex="-1"></a><span class="do">## 1:       1 1.00000000 261777    40     3      3                   [18,25]</span></span>
+<span id="cb53-12"><a href="#cb53-12" tabindex="-1"></a><span class="do">## 2:       0 0.09589041      0    68     5      2                   [18,25]</span></span>
+<span id="cb53-13"><a href="#cb53-13" tabindex="-1"></a><span class="do">## 3:       0 0.18630137      0    37     3      2                   [18,25]</span></span>
+<span id="cb53-14"><a href="#cb53-14" tabindex="-1"></a><span class="do">## 4:       0 0.18904110      0    33     1      2                   [18,25]</span></span>
+<span id="cb53-15"><a href="#cb53-15" tabindex="-1"></a><span class="do">## 5:       0 1.00000000      0    47     6      3                   [18,25]</span></span>
+<span id="cb53-16"><a href="#cb53-16" tabindex="-1"></a><span class="do">## 6:       1 0.06849315   6642    68     1      3                   [18,25]</span></span>
+<span id="cb53-17"><a href="#cb53-17" tabindex="-1"></a><span class="do">##    pred_nclaims_mod_freq pred_amount_mod_sev   premium zip_restricted</span></span>
+<span id="cb53-18"><a href="#cb53-18" tabindex="-1"></a><span class="do">##                    &lt;num&gt;               &lt;num&gt;     &lt;num&gt;          &lt;num&gt;</span></span>
+<span id="cb53-19"><a href="#cb53-19" tabindex="-1"></a><span class="do">## 1:            0.26058660            67176.26 17505.233            1.2</span></span>
+<span id="cb53-20"><a href="#cb53-20" tabindex="-1"></a><span class="do">## 2:            0.02353816            74215.89  1746.905            1.0</span></span>
+<span id="cb53-21"><a href="#cb53-21" tabindex="-1"></a><span class="do">## 3:            0.04573127            68988.66  3154.939            1.0</span></span>
+<span id="cb53-22"><a href="#cb53-22" tabindex="-1"></a><span class="do">## 4:            0.04640379            64129.60  2975.857            1.0</span></span>
+<span id="cb53-23"><a href="#cb53-23" tabindex="-1"></a><span class="do">## 5:            0.26058660            74953.96 19531.999            1.2</span></span>
+<span id="cb53-24"><a href="#cb53-24" tabindex="-1"></a><span class="do">## 6:            0.01784840            62444.85  1114.540            1.2</span></span>
+<span id="cb53-25"><a href="#cb53-25" tabindex="-1"></a><span class="do">##    pred_premium_burn_restricted3</span></span>
+<span id="cb53-26"><a href="#cb53-26" tabindex="-1"></a><span class="do">##                            &lt;num&gt;</span></span>
+<span id="cb53-27"><a href="#cb53-27" tabindex="-1"></a><span class="do">## 1:                      24365.31</span></span>
+<span id="cb53-28"><a href="#cb53-28" tabindex="-1"></a><span class="do">## 2:                      21831.29</span></span>
+<span id="cb53-29"><a href="#cb53-29" tabindex="-1"></a><span class="do">## 3:                      20304.43</span></span>
+<span id="cb53-30"><a href="#cb53-30" tabindex="-1"></a><span class="do">## 4:                      18884.35</span></span>
+<span id="cb53-31"><a href="#cb53-31" tabindex="-1"></a><span class="do">## 5:                      27164.71</span></span>
+<span id="cb53-32"><a href="#cb53-32" tabindex="-1"></a><span class="do">## 6:                      22661.22</span></span></code></pre></div>
 </div>
 </div>
   </div>
