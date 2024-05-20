@@ -1,3 +1,5 @@
+# insurancerating (development version)
+
 # insurancerating 0.7.4
 
 * `bootstrap_rmse()` now uses `after_stat(density)` instead of the deprecated dot-dot notation
