@@ -206,13 +206,13 @@ Detect deviations from the expected distribution, and produce a uniform quantile
 
 ```{r normalitysim, message = FALSE, eval = TRUE}
 
-check_residuals(model_freq1, n_simulations = 1000) |>
+check_residuals(model_freq1, n_simulations = 600) |>
   autoplot()
 
 ```
 
 
-It might happen that in the fitted model for a data point all simulations have the same value (e.g. zero), this returns the error message *Error in approxfun: need at least two non-NA values to interpolate*. If that is the case, it could help to increase the number of simulations (e.g. $n = 1000$). 
+It might happen that in the fitted model for a data point all simulations have the same value (e.g. zero), this returns the error message *Error in approxfun: need at least two non-NA values to interpolate*. If that is the case, it could help to increase the number of simulations. 
 
 ## Example 2
 
@@ -277,8 +277,8 @@ For example, to show the exposure and claim frequency plots:
 
 ```{r example7}
 
-un <- univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) 
-autoplot(un, show_plots = c(6,1))
+univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
+  autoplot(show_plots = c(6,1))
 
 ```
 
@@ -287,12 +287,10 @@ To check whether claim frequency is consistent over the years:
 
 ```{r}
 
-df <- MTPL2 |>
-  mutate(year = sample(2016:2019, nrow(MTPL2), replace = TRUE)) 
-
-un <- univariate(df, x = area, nclaims = nclaims, 
-           exposure = exposure, by = year) 
-autoplot(un, show_plots = 1)
+MTPL2 |>
+  mutate(year = sample(2016:2019, nrow(MTPL2), replace = TRUE)) |>
+  univariate(x = area, nclaims = nclaims, exposure = exposure, by = year) |>
+  autoplot(show_plots = 1)
 
 ```
 
@@ -331,7 +329,7 @@ The following graph shows some more options:
 univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
   autoplot(show_plots = c(6,1), background = FALSE, sort = TRUE, ncol = 2, 
            color_bg = "dodgerblue", color = "blue", 
-           custom_theme = ggplot2::theme_classic())
+           custom_theme = ggplot2::theme_bw())
 
 ```
 
@@ -509,11 +507,9 @@ head(premiums3)
 
 ```
 
+Or do the same with model points:
 
-
-```{r, echo = FALSE, eval = FALSE}
-
-# Or do the same with model points:
+```{r}
 
 premiums4 <- model_data(burn_restricted3) |>
   construct_model_points() |>

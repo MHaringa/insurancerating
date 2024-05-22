@@ -70,7 +70,7 @@ model_data <- function(x) {
     attr(out, "offweights") <- attr(x, "offweights")
   }
 
-  attr(out, "class") <- append("model_data", class(out))
+  attr(out, "class") <- append("model_data", class(as.data.frame(out)))
   return(out)
 }
 

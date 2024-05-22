@@ -297,11 +297,11 @@ tests almost always yield significant results for the distribution of
 residuals and visual inspections (e.g. Q-Q plots) are preferable.
 
 ``` r
-check_residuals(model_freq1, n_simulations = 1000) |>
+check_residuals(model_freq1, n_simulations = 600) |>
   autoplot()
 ```
 
-    ## [32mOK: residuals appear as from the expected distribution (p = 0.362).[39m
+    ## [32mOK: residuals appear as from the expected distribution (p = 0.271).[39m
 
 ![](man/figures/normalitysim-1.png)<!-- -->
 
@@ -309,7 +309,7 @@ It might happen that in the fitted model for a data point all
 simulations have the same value (e.g. zero), this returns the error
 message *Error in approxfun: need at least two non-NA values to
 interpolate*. If that is the case, it could help to increase the number
-of simulations (e.g. $n = 1000$).
+of simulations.
 
 ## Example 2
 
@@ -404,8 +404,8 @@ also the order of the plots. The following plots are available:
 For example, to show the exposure and claim frequency plots:
 
 ``` r
-un <- univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) 
-autoplot(un, show_plots = c(6,1))
+univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
+  autoplot(show_plots = c(6,1))
 ```
 
 ![](man/figures/example7-1.png)<!-- -->
@@ -413,12 +413,10 @@ autoplot(un, show_plots = c(6,1))
 To check whether claim frequency is consistent over the years:
 
 ``` r
-df <- MTPL2 |>
-  mutate(year = sample(2016:2019, nrow(MTPL2), replace = TRUE)) 
-
-un <- univariate(df, x = area, nclaims = nclaims, 
-           exposure = exposure, by = year) 
-autoplot(un, show_plots = 1)
+MTPL2 |>
+  mutate(year = sample(2016:2019, nrow(MTPL2), replace = TRUE)) |>
+  univariate(x = area, nclaims = nclaims, exposure = exposure, by = year) |>
+  autoplot(show_plots = 1)
 ```
 
 ![](man/figures/unnamed-chunk-3-1.png)<!-- -->
@@ -462,7 +460,7 @@ The following graph shows some more options:
 univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
   autoplot(show_plots = c(6,1), background = FALSE, sort = TRUE, ncol = 2, 
            color_bg = "dodgerblue", color = "blue", 
-           custom_theme = ggplot2::theme_classic())
+           custom_theme = ggplot2::theme_bw())
 ```
 
 ![](man/figures/example11-1.png)<!-- -->
@@ -719,35 +717,63 @@ premiums3 <- model_data(burn_restricted3) |>
 head(premiums3)
 ```
 
-    ##    age_policyholder age_policyholder_freq_cat_smooth age_policyholder_smooth
-    ##               <int>                            <num>                  <char>
-    ## 1:               18                         2.311122                 [18,23]
-    ## 2:               18                         2.311122                 [18,23]
-    ## 3:               18                         2.311122                 [18,23]
-    ## 4:               18                         2.311122                 [18,23]
-    ## 5:               19                         2.311122                 [18,23]
-    ## 6:               19                         2.311122                 [18,23]
-    ##    nclaims   exposure amount power    bm    zip age_policyholder_freq_cat
-    ##      <int>      <num>  <num> <int> <int> <fctr>                    <fctr>
-    ## 1:       1 1.00000000 261777    40     3      3                   [18,25]
-    ## 2:       0 0.09589041      0    68     5      2                   [18,25]
-    ## 3:       0 0.18630137      0    37     3      2                   [18,25]
-    ## 4:       0 0.18904110      0    33     1      2                   [18,25]
-    ## 5:       0 1.00000000      0    47     6      3                   [18,25]
-    ## 6:       1 0.06849315   6642    68     1      3                   [18,25]
-    ##    pred_nclaims_mod_freq pred_amount_mod_sev   premium zip_restricted
-    ##                    <num>               <num>     <num>          <num>
-    ## 1:            0.26058660            67176.26 17505.233            1.2
-    ## 2:            0.02353816            74215.89  1746.905            1.0
-    ## 3:            0.04573127            68988.66  3154.939            1.0
-    ## 4:            0.04640379            64129.60  2975.857            1.0
-    ## 5:            0.26058660            74953.96 19531.999            1.2
-    ## 6:            0.01784840            62444.85  1114.540            1.2
-    ##    pred_premium_burn_restricted3
-    ##                            <num>
-    ## 1:                      24365.31
-    ## 2:                      21831.29
-    ## 3:                      20304.43
-    ## 4:                      18884.35
-    ## 5:                      27164.71
-    ## 6:                      22661.22
+    ##   age_policyholder age_policyholder_freq_cat_smooth age_policyholder_smooth
+    ## 1               18                         2.311122                 [18,23]
+    ## 2               18                         2.311122                 [18,23]
+    ## 3               18                         2.311122                 [18,23]
+    ## 4               18                         2.311122                 [18,23]
+    ## 5               19                         2.311122                 [18,23]
+    ## 6               19                         2.311122                 [18,23]
+    ##   nclaims   exposure amount power bm zip age_policyholder_freq_cat
+    ## 1       1 1.00000000 261777    40  3   3                   [18,25]
+    ## 2       0 0.09589041      0    68  5   2                   [18,25]
+    ## 3       0 0.18630137      0    37  3   2                   [18,25]
+    ## 4       0 0.18904110      0    33  1   2                   [18,25]
+    ## 5       0 1.00000000      0    47  6   3                   [18,25]
+    ## 6       1 0.06849315   6642    68  1   3                   [18,25]
+    ##   pred_nclaims_mod_freq pred_amount_mod_sev   premium zip_restricted
+    ## 1            0.26058660            67176.26 17505.233            1.2
+    ## 2            0.02353816            74215.89  1746.905            1.0
+    ## 3            0.04573127            68988.66  3154.939            1.0
+    ## 4            0.04640379            64129.60  2975.857            1.0
+    ## 5            0.26058660            74953.96 19531.999            1.2
+    ## 6            0.01784840            62444.85  1114.540            1.2
+    ##   pred_premium_burn_restricted3
+    ## 1                      24365.31
+    ## 2                      21831.29
+    ## 3                      20304.43
+    ## 4                      18884.35
+    ## 5                      27164.71
+    ## 6                      22661.22
+
+Or do the same with model points:
+
+``` r
+premiums4 <- model_data(burn_restricted3) |>
+  construct_model_points() |>
+  add_prediction(burn_restricted3)
+
+head(premiums4)
+```
+
+    ##   age_policyholder_smooth zip bm zip_restricted
+    ## 1                 (23,28]   1  1            0.9
+    ## 2                 (23,28]   1  2            0.9
+    ## 3                 (23,28]   1  3            0.9
+    ## 4                 (23,28]   1  4            0.9
+    ## 5                 (23,28]   1  5            0.9
+    ## 6                 (23,28]   1  6            0.9
+    ##   age_policyholder_freq_cat_smooth count  exposure
+    ## 1                         1.719606   414 342.57808
+    ## 2                         1.719606   173 145.25753
+    ## 3                         1.719606    53  46.53699
+    ## 4                         1.719606    26  22.31507
+    ## 5                         1.719606    54  46.78630
+    ## 6                         1.719606    71  65.13699
+    ##   pred_premium_burn_restricted3
+    ## 1                      12645.93
+    ## 2                      13112.79
+    ## 3                      13596.88
+    ## 4                      14098.85
+    ## 5                      14619.35
+    ## 6                      15159.07
