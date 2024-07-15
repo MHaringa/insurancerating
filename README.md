@@ -121,7 +121,7 @@ dat <- MTPL |>
   mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) |>
   mutate(across(where(is.character), as.factor)) |>
   mutate(across(where(is.factor), ~biggest_reference(., exposure)))
-  
+
 glimpse(dat)
 ```
 
@@ -680,7 +680,7 @@ burn_restricted3 <- burn_unrestricted |>
               x_org = "age_policyholder", 
               breaks = seq(18, 95, 5)) |>
   update_glm() 
-  
+
 # Show rating factors
 rating_factors(burn_restricted3)
 ```

@@ -105,7 +105,7 @@ dat <- MTPL |>
   mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) |>
   mutate(across(where(is.character), as.factor)) |>
   mutate(across(where(is.factor), ~biggest_reference(., exposure)))
-  
+
 glimpse(dat)
 
 ```
@@ -167,7 +167,7 @@ dat_pred <- dat |>
   add_prediction(model_freq1, model_freq2) 
 
 glimpse(dat_pred)
-  
+
 ```
 
 Compute indices of model performance for GLMs. The RMSE is the square root of the average of squared differences between prediction and actual observation and indicates the absolute fit of the model to the data. It can be interpreted as the standard deviation of the unexplained variance, and is in the same units as the response variable.
@@ -490,7 +490,7 @@ burn_restricted3 <- burn_unrestricted |>
               x_org = "age_policyholder", 
               breaks = seq(18, 95, 5)) |>
   update_glm() 
-  
+
 # Show rating factors
 rating_factors(burn_restricted3)
 

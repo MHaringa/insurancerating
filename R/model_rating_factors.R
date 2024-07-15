@@ -255,12 +255,19 @@ rating_factors <- function(..., model_data = NULL, exposure = NULL,
   rf_list <- list()
   for (i in 1:length(list(...))) {
     coef_name <- paste0("m_", i)
-    df <- rating_factors2(list(...)[[i]],
-                          model_data, exposure,
-                          exponentiate = exponentiate,
-                          round_exposure = round_exposure)
+    if (!is.null(model_data)) {
+      names(model_data)[names(model_data) == exposure_nm] <- "exposure"
+    }
+    df <- insurancerating:::rating_factors2(list(...)[[i]],
+                                            model_data,
+                                            exposure,
+                                            exponentiate = exponentiate,
+                                            round_exposure = round_exposure)
     names(df)[names(df) == "estimate"] <- paste0("est_", cols[i])
     names(df)[names(df) == "pvalues"] <- paste0("signif_", cols[i])
+    if (!is.null(model_data)) {
+      names(df)[names(df) == "exposure"] <- exposure_nm
+    }
     rf_list[[coef_name]] <- df
   }
 
