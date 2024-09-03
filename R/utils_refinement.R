@@ -159,10 +159,12 @@ cut_borders_model <- function(model, x_cut) {
 
 #' @noRd
 #'
+#' @importFrom scam scam
 #' @importFrom stats lm
 #'
 #' @keywords internal
-fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL) {
+fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL,
+                           smoothing = "spline", k = NULL, weights) {
 
   if (is.null(breaks)) {
     breaks <- seq(min(borders_model$start_), max(borders_model$end_),
@@ -179,7 +181,40 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL) {
   levels_borders <- levels(cut(breaks_min, breaks = unique_borders,
                                include.lowest = TRUE, dig.lab = 9))
 
-  lm_poly <- lm(estimate ~ poly(avg_, degree = degree), data = borders_model)
+  if (!smoothing %in% c("spline", "mpi", "mpd", "gam", "cx", "cv", "micx",
+                        "micv", "mdcx", "mdcv"))
+    stop("Choose correct smoothing specification: 'spline', 'mpi', 'mpd',
+         'gam', 'cx', 'cv', 'micx', 'micv', 'mdcx', 'mdcv'.", call. = FALSE)
+
+  if (smoothing == "spline") {
+    lm_poly <- lm(estimate ~ poly(avg_, degree = degree), data = borders_model)
+  }
+
+  if (smoothing %in% c("mpd", "mpi", "cx", "cv", "micx",
+                       "mciv", "mdcx", "mdcv")) {  ## monotonic decreasing constraint
+    if (is.null(k)) {
+      lm_poly <- scam::scam(estimate ~ s(avg_, bs = smoothing),
+                            weights = weights,
+                            data = borders_model)
+    } else {
+      lm_poly <- scam::scam(estimate ~ s(avg_, k = k, bs = "mpd"),
+                            weights = weights,
+                            data = borders_model)
+    }
+  }
+
+  if (smoothing == "gam") {  ## gam with no constraint
+    if (is.null(k)) {
+      lm_poly <- mgcv::gam(estimate ~ s(avg_),
+                           weights = weights,
+                           data = borders_model)
+    } else {
+      lm_poly <- mgcv::gam(estimate ~ s(avg_, k = k),
+                           weights = weights,
+                           data = borders_model)
+    }
+  }
+
   new_poly_df <- data.frame(avg_ = breaks_mid)
   poly_line <- data.frame(avg_ = breaks)
   poly_line$yhat <- as.numeric(predict(lm_poly, poly_line))
@@ -325,4 +360,46 @@ restrict_df <- function(restricted_df) {
   colnames(restricted_df)[1] <- "level"
   restricted_df$level <- as.character(restricted_df$level)
   restricted_df
+}
+
+
+#' Create own predict function
+#'
+#' @noRd
+#'
+#' @param md data.frame output from model_data()
+#' @param x model as output from restrict_coef() or smooth_coef()
+#'
+#' @importFrom stats terms.formula
+#'
+#' @keywords internal
+pred_own <- function(md, x){
+  link_function <- x$model_out$family$link
+  vervang <- attr(stats::terms.formula(x$formula_removed), "term.labels")
+  offst <- x$offset
+  vervangoff <- paste0(paste0("log(", vervang, ")", collapse = " + "), " + ",
+                       offst)
+  rfx <- rating_factors(x)$df
+  rf_vervang <- rfx[rfx$risk_factor %in% vervang, ]
+  rf_vervang_lst <- split(rf_vervang, f = rf_vervang$risk_factor)
+  for (name in names(rf_vervang_lst)) {
+    factor_df <- rf_vervang_lst[[name]]
+    md$id_  <- 1:nrow(md)
+    md <- merge(md, factor_df, by.x = name, by.y = "level", all.x = TRUE)
+    md[[name]] <- md$est_x
+    md <- md[, !(names(md) %in% c("risk_factor", "est_x"))]
+    md <- md[order(md$id_), ]
+  }
+  if (rfx$risk_factor[1] == "(Intercept)") {
+    md$intercept <- rfx$est_x[1]
+    vervangoff <- paste0("log(intercept) + ", vervangoff)
+  }
+  md$new_eta <- with(md, eval(parse(text = vervangoff)))
+  switch(link_function,
+         logit = 1 / (1 + exp(-md$new_eta)),
+         log = exp(md$new_eta),
+         identity = md$new_eta,
+         inverse = 1 / md$new_eta,
+         stop("Unsupported link function"))
+
 }

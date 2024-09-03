@@ -4,7 +4,8 @@
 #' is used to get data from glm, and must be preceded by `update_glm()` or
 #' `glm()`.
 #'
-#' @param x Object of class refitsmooth, refitrestricted or glm
+#' @param x Object of class refitsmooth, refitrestricted, smooth, restricted or
+#' glm
 #'
 #' @author Martin Haringa
 #'
@@ -15,7 +16,8 @@
 #' @export
 model_data <- function(x) {
 
-  if (!inherits(x, c("refitsmooth", "refitrestricted", "glm"))) {
+  if (!inherits(x, c("refitsmooth", "refitrestricted", "glm",
+                     "smooth", "restricted"))) {
     stop("Input must be of class refitsmooth, glm or of class refitrestricted",
          call. = FALSE)
   }
@@ -39,6 +41,18 @@ model_data <- function(x) {
 
     attr(out, "offweights") <- offweights
     attr(out, "rf") <- rf2_nm
+  }
+
+  if (inherits(x, c("smooth", "restricted"))) {
+    formula <- x$formula_restricted
+    xdf <- data.table::data.table(x$data_restricted)
+
+    xdf_nm <- names(xdf)
+    rem_nm <- c("breaks_min", "breaks_max", "start_oc",
+                "end_oc", "start_", "end_", "avg_", "risk_factor")
+
+    xrem <- xdf_nm[! xdf_nm %in% rem_nm]
+    out <- xdf[, .SD, .SDcols = xrem]
   }
 
   if (inherits(x, c("refitsmooth", "refitrestricted"))) {

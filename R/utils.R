@@ -62,7 +62,7 @@ biggest_reference <- function(x, weight) {
 #' of the American Statistical Association, 53, pp. 789–798.
 #' doi: 10.1080/01621459.1958.10501479.
 #'
-#' @export fisher
+#' @export
 fisher <- function(vec, n = 7, diglab = 2) {
   cluster <- classInt::classIntervals(vec, n = n, style = "fisher",
                                       intervalClosure = "right")[[2]]

@@ -40,9 +40,17 @@ add_prediction <- function(data, ..., var = NULL, conf_int = FALSE,
   for (i in seq_len(length(object_names))) {
     object <- objects[[i]]
     object_name <- object_names[i]
-    addcol <- as.numeric(stats::predict(object, data, type = "response"))
 
-    response_nm <- as.character(attributes(object$terms)$variables[[2]])
+    if (inherits(object, c("smooth", "restricted"))) {
+      addcol <- pred_own(data, object)
+      response_nm <- all.vars(object$formula_removed)[1]
+    }
+
+    if (inherits(object, c("glm", "lm", "refitsmooth", "refitrestricted"))) {
+      addcol <- as.numeric(stats::predict(object, data, type = "response"))
+      response_nm <- as.character(attributes(object$terms)$variables[[2]])
+    }
+
     if (is.null(var)) {
       var_nm <- paste0("pred_", response_nm, "_", object_name)
     } else {
@@ -52,15 +60,17 @@ add_prediction <- function(data, ..., var = NULL, conf_int = FALSE,
     df <- data.frame(addcol)
     names(df) <- var_nm
 
-    if (isTRUE(conf_int)) {
-      ucb <- paste0(var_nm, "_ucb")
-      lcb <- paste0(var_nm, "_lcb")
-      suppressWarnings({
-        lcbucb <- ciTools::add_ci(data, object, names = c("lcb", "ucb"),
-                                  alpha = alpha)
-      })
-      df[[lcb]] <- lcbucb$lcb
-      df[[ucb]] <- lcbucb$ucb
+    if (inherits(object, c("glm", "lm", "refitsmooth", "refitrestricted"))) {
+      if (isTRUE(conf_int)) {
+        ucb <- paste0(var_nm, "_ucb")
+        lcb <- paste0(var_nm, "_lcb")
+        suppressWarnings({
+          lcbucb <- ciTools::add_ci(data, object, names = c("lcb", "ucb"),
+                                    alpha = alpha)
+        })
+        df[[lcb]] <- lcbucb$lcb
+        df[[ucb]] <- lcbucb$ucb
+      }
     }
 
     listdf[[i]] <- df

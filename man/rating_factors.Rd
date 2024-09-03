@@ -41,7 +41,7 @@ A fitted linear model has coefficients for the contrasts of the
 factor terms, usually one less in number than the number of levels. This
 function re-expresses the coefficients in the original coding. This
 function is adopted from dummy.coef(). Our adoption prints a data.frame as
-output.
+output. Use rating_factors_() for standard evaluation.
 }
 \examples{
 df <- MTPL2 |>

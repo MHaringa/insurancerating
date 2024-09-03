@@ -4,7 +4,16 @@
 \alias{smooth_coef}
 \title{Smooth coefficients in the model}
 \usage{
-smooth_coef(model, x_cut, x_org, degree = NULL, breaks = NULL)
+smooth_coef(
+  model,
+  x_cut,
+  x_org,
+  degree = NULL,
+  breaks = NULL,
+  smoothing = "spline",
+  k = NULL,
+  weights = NULL
+)
 }
 \arguments{
 \item{model}{object of class glm/smooth}
@@ -16,6 +25,28 @@ smooth_coef(model, x_cut, x_org, degree = NULL, breaks = NULL)
 \item{degree}{order of polynomial}
 
 \item{breaks}{numerical vector with new clusters for x}
+
+\item{smoothing}{choose smoothing specification (all the shape
+constrained smooth terms (SCOP-splines) are constructed using the B-splines
+basis proposed by Eilers and Marx (1996) with a discrete penalty on the basis
+coefficients:
+\itemize{
+\item{'spline' (default)}
+\item{'mpi': monotone increasing SCOP-splines}
+\item{'mpd': monotone decreasing SCOP-splines}
+\item{'cx': convex SCOP-splines}
+\item{'cv': concave SCOP-splines}
+\item{'micx': increasing and convex SCOP-splines}
+\item{'micv': increasing and concave SCOP-splines}
+\item{'mdcx': decreasing and convex SCOP-splines}
+\item{'mdcv': decreasing and concave SCOP-splines}
+\item{'gam': spline based smooth (thin plate regression spline)}
+}}
+
+\item{k}{number of basis functions be computed}
+
+\item{weights}{weights used for smoothing, must be equal to the exposure
+(defaults to NULL)}
 }
 \value{
 Object of class smooth

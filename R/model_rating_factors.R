@@ -27,18 +27,34 @@
 rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
                             colname = "estimate",
                             exponentiate = TRUE, round_exposure = 0) {
-  xl <- model$xlevels
+
+  if (inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
+    xl <- model$xlevels
+  }
+
+  if (inherits(model, c("smooth", "restricted"))) {
+    xl <- model$model_out$xlevels
+    col0 <- model$new_col_nm
+    rem <- unique(sub("_smooth$", "", col0))
+    xl[which(names(xl) %in% rem)] <- NULL
+  }
+
   exposure <- deparse(substitute(exposure))
   model_data_name <- deparse(substitute(model_data))
 
-  if (inherits(model, c("restricted", "smooth"))) {
-    stop("Input must be of class glm. Use refit_glm() first.",
+  if (!inherits(model, c("glm", "refitsmooth", "refitrestricted",
+                         "restricted", "smooth"))) {
+    stop("Input must be of class glm.",
          call. = FALSE)
   }
 
-  if (!inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
-    stop("Input must be of class glm.",
-         call. = FALSE)
+
+  if (inherits(model, "smooth")) {
+    x <- model[["new_rf"]]
+  }
+
+  if (inherits(model, "restricted")) {
+    x <- model[["rf_restricted_df"]]
   }
 
   if (inherits(model, "refitsmooth")) {
@@ -66,7 +82,8 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
                         stringsAsFactors = FALSE)
   }
 
-  if (inherits(model, c("refitsmooth", "refitrestricted"))) {
+  if (inherits(model, c("refitsmooth", "refitrestricted",
+                        "smooth", "restricted"))) {
     x$ind <- as.character(x$risk_factor)
     x$values <- as.character(x$level)
     x$ind_values <- paste0(x$ind, x$values)
@@ -124,9 +141,24 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
     }
   }
 
-  ret <- coefficients(summary(model))
+  if (inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
+    ret <- coefficients(summary(model))
+  }
+
+  if (inherits(model, c("smooth", "restricted"))) {
+    ret <- coefficients(summary(model$model_out))
+  }
+
   ret <- cbind(ind = rownames(ret), data.frame(ret, row.names = NULL))
-  coefs <- stats::coef(model)
+
+  if (inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
+    coefs <- stats::coef(model)
+  }
+
+  if (inherits(model, c("smooth", "restricted"))) {
+    coefs <- stats::coef(model$model_out)
+  }
+
 
   if (length(coefs) != nrow(ret)) {
     coefs <- stack(coefs)
@@ -134,14 +166,23 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
     ret <- merge(x = coefs, y = ret, by = c("ind", "Estimate"), all.x = TRUE)
   }
 
-  coef <- coefficients(model)
+
+  if (inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
+    coef <- coefficients(model)
+  }
+
+  if (inherits(model, c("smooth", "restricted"))) {
+    coef <- coefficients(model$model_out)
+  }
+
   vals <- stack(coef)
   vals$pvalues <- as.numeric(ret[, 5])
   vals$pvalues <- ifelse(is.na(vals$pvalues), -9e9, vals$pvalues)
   vals$ind <- as.character(vals$ind)
 
   new_col_nm0 <- attr(model, "new_col_nm")
-  if (inherits(model, c("refitsmooth", "refitrestricted"))) {
+  if (inherits(model, c("refitsmooth", "refitrestricted",
+                        "smooth", "restricted"))) {
     xc <- x[, c("yhat", "ind_values")]
     colnames(xc)[1] <- "values"
     colnames(xc)[2] <- "ind"
@@ -149,16 +190,48 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
     xc$values <- log(xc$values)
     vals <- rbind(vals, xc)
     new_col_nm0 <- attr(model, "new_col_nm")
+    refit <- attr(model, "refit")
   }
 
   uit <- dplyr::full_join(xl_df, vals, by = c(ind_values = "ind"))
 
-  uit$values <- ifelse(is.na(uit$pvalues) &
-                         !(endsWith(uit$risk_factor, c("_smooth")) |
-                             uit$risk_factor %in% new_col_nm0),
-                       0, uit$values)
+  if (inherits(model, c("smooth", "restricted"))) {
+    col0 <- model$new_col_nm
+    col0 <- col0[endsWith(col0, "_smooth")]
+    rem_rst <- unlist(lapply(model$mgd_rst, `[[`, 1))
+    rem_smt <- unique(sub("_smooth$", "", col0))
+    if (length(rem_smt) > 0) {
+      strem <- paste0("^", rem_smt, collapse = "|")
+      uit <- uit[!grepl(strem, uit$ind_values),]
+    }
+    uit <- uit[!uit$risk_factor %in% rem_rst,]
+  }
 
-  Terms <- terms(model)
+  if (inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
+    uit$values <- ifelse(is.na(uit$pvalues) &
+                           !(endsWith(uit$risk_factor, c("_smooth")) |
+                               uit$risk_factor %in% new_col_nm0),
+                         0, uit$values)
+  }
+
+
+  if (inherits(model, c("smooth", "restricted"))) {
+    rst2 <- unlist(lapply(model$mgd_rst, `[[`, 2))
+    uit$values <- ifelse(is.na(uit$pvalues) &
+                           !(endsWith(uit$risk_factor, c("_smooth")) |
+                               uit$risk_factor %in% rst2 |
+                               uit$risk_factor %in% new_col_nm0),
+                         0, uit$values)
+  }
+
+  if (inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
+    Terms <- terms(model)
+  }
+
+  if (inherits(model, c("smooth", "restricted"))) {
+    Terms <- terms(model$model_out)
+  }
+
   int <- attr(Terms, "intercept")
 
   # Handle intercept
@@ -195,9 +268,14 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
   uit$pvalues <- ifelse(uit$pvalues < 0, NA, uit$pvalues)
   uit$pvalues <- vapply(uit$pvalues, function(x) make_stars(x),
                         FUN.VALUE = character(1))
+
+  #if (inherits(model, c("smooth", "restricted"))) {
+  #  col0 <- attr(model$model_out, "new_col_nm")
+  #  rem <- unique(sub("_smooth$", "", col0))
+  #  uit <- uit[!uit$risk_factor %in% rem,]
+  #}
   uit
 }
-
 
 
 #' Include reference group in regression output
@@ -219,7 +297,7 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
 #'   factor terms, usually one less in number than the number of levels. This
 #'   function re-expresses the coefficients in the original coding. This
 #'   function is adopted from dummy.coef(). Our adoption prints a data.frame as
-#'   output.
+#'   output. Use rating_factors_() for standard evaluation.
 #'
 #' @return data.frame
 #'
@@ -258,11 +336,118 @@ rating_factors <- function(..., model_data = NULL, exposure = NULL,
     if (!is.null(model_data)) {
       names(model_data)[names(model_data) == exposure_nm] <- "exposure"
     }
-    df <- insurancerating:::rating_factors2(list(...)[[i]],
-                                            model_data,
-                                            exposure,
-                                            exponentiate = exponentiate,
-                                            round_exposure = round_exposure)
+    df <- rating_factors2(list(...)[[i]],
+                          model_data,
+                          exposure,
+                          exponentiate = exponentiate,
+                          round_exposure = round_exposure)
+    names(df)[names(df) == "estimate"] <- paste0("est_", cols[i])
+    names(df)[names(df) == "pvalues"] <- paste0("signif_", cols[i])
+    if (!is.null(model_data)) {
+      names(df)[names(df) == "exposure"] <- exposure_nm
+    }
+    rf_list[[coef_name]] <- df
+  }
+
+  if (model_data_nm != "NULL" && exposure_nm != "NULL") {
+    rf_fj <- Reduce(
+      function(dtf1, dtf2) {
+        dplyr::full_join(dtf1, dtf2,
+                         by = c("risk_factor", "level", exposure_nm))
+      },
+      rf_list)
+    rf_fj <- rf_fj[, c("risk_factor", "level", paste0("est_", cols),
+                       paste0("signif_", cols), exposure_nm)]
+  } else {
+    rf_fj <- Reduce(
+      function(dtf1, dtf2) {
+        dplyr::full_join(dtf1, dtf2, by = c("risk_factor", "level"))
+      },
+      rf_list)
+    rf_fj <- rf_fj[, c("risk_factor", "level", paste0("est_", cols),
+                       paste0("signif_", cols))]
+  }
+
+  if (!isTRUE(signif_stars)) {
+    rf_fj <- rf_fj[, -which(names(rf_fj) %in% paste0("signif_", cols))]
+  }
+
+  if (!is.null(model_data)) {
+    lst_order <- lapply(names(model_data),
+                        function(x) {
+                          attributes(model_data[[x]])$xoriginal
+                        })
+    names(lst_order) <- names(model_data)
+    lst_order <- lst_order[lengths(lst_order) != 0]
+
+    if (length(lst_order) > 0) {
+      df_order <- stack(lst_order)
+      names(df_order) <- c("level", "risk_factor")
+      df_order <- df_order[, 2:1]
+      df_order <- df_order[df_order$risk_factor %in%
+                             unique(rf_fj$risk_factor), ]
+      rf_fj$risk_factor <- as.character(rf_fj$risk_factor)
+      df_order$risk_factor <- as.character(df_order$risk_factor)
+      uit <- dplyr::full_join(df_order, rf_fj, by = c("risk_factor", "level"))
+      rf_fj <- uit[order(match(uit$risk_factor, rf_fj$risk_factor)), ]
+      rownames(rf_fj) <- NULL
+    }
+  }
+
+  rf_fj_stars <- NULL
+  signif_levels <- NULL
+
+  if (isTRUE(signif_stars)) {
+    signif_levels <- cat("Significance levels: *** p < 0.001; ** p < 0.01;
+    * p < 0.05; . p < 0.1")
+    rf_fj_stars <- rf_fj
+    for (i in seq_len(length(cols))) {
+      pvalues_num <- round(rf_fj_stars[[paste0("est_", cols[i])]], 6)
+      pvalues_char <- format(pvalues_num, digits = 6, nsmall = 2)
+      stars_char <- rf_fj_stars[[paste0("signif_", cols[i])]]
+      stars_char[is.na(stars_char)] <- ""
+      rf_fj_stars[[paste0("est_", cols[i])]] <- format(paste0(pvalues_char, " ",
+                                                              stars_char),
+                                                       justify = "left")
+    }
+    rf_fj_stars <- rf_fj_stars[, -which(names(rf_fj_stars) %in%
+                                          paste0("signif_", cols))]
+  }
+
+  return(structure(list(df = rf_fj,
+                        df_stars = rf_fj_stars,
+                        models = cols,
+                        exposure = exposure_nm,
+                        model_data = model_data_nm,
+                        expon = exponentiate,
+                        signif_stars = signif_stars,
+                        signif_levels = signif_levels),
+                   class = "riskfactor"))
+}
+
+
+#' @noRd
+rating_factors_ <- function(..., model_data = NULL, exposure = NULL,
+                            exponentiate = TRUE, signif_stars = FALSE,
+                            round_exposure = 0) {
+
+  model_data_nm <- deparse(substitute(model_data))
+  exposure_nm <- exposure
+
+  cols <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
+
+  # Loop through each provided GLM model
+  rf_list <- list()
+  for (i in 1:length(list(...))) {
+    coef_name <- paste0("m_", i)
+    if (!is.null(model_data)) {
+      names(model_data)[names(model_data) == exposure_nm] <- "exposure"
+    }
+    df <- rating_factors2(list(...)[[i]],
+                          model_data,
+                          exposure,
+                          exponentiate = exponentiate,
+                          round_exposure = round_exposure)
     names(df)[names(df) == "estimate"] <- paste0("est_", cols[i])
     names(df)[names(df) == "pvalues"] <- paste0("signif_", cols[i])
     if (!is.null(model_data)) {

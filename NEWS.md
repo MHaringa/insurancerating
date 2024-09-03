@@ -1,5 +1,7 @@
 # insurancerating (development version)
 
+* `rating_factors()` now always returns correct output when column with exposure  in data is not named `exposure`
+
 # insurancerating 0.7.4
 
 * `bootstrap_rmse()` now uses `after_stat(density)` instead of the deprecated dot-dot notation

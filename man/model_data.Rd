@@ -7,7 +7,8 @@
 model_data(x)
 }
 \arguments{
-\item{x}{Object of class refitsmooth, refitrestricted or glm}
+\item{x}{Object of class refitsmooth, refitrestricted, smooth, restricted or
+glm}
 }
 \value{
 data.frame

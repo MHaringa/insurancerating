@@ -164,6 +164,25 @@ restrict_coef <- function(model, restrictions) {
 #' @param x_org column name where x_cut is based on
 #' @param degree order of polynomial
 #' @param breaks numerical vector with new clusters for x
+#' @param smoothing choose smoothing specification (all the shape
+#' constrained smooth terms (SCOP-splines) are constructed using the B-splines
+#' basis proposed by Eilers and Marx (1996) with a discrete penalty on the basis
+#' coefficients:
+#'  \itemize{
+#'   \item{'spline' (default)}
+#'   \item{'mpi': monotone increasing SCOP-splines}
+#'   \item{'mpd': monotone decreasing SCOP-splines}
+#'   \item{'cx': convex SCOP-splines}
+#'   \item{'cv': concave SCOP-splines}
+#'   \item{'micx': increasing and convex SCOP-splines}
+#'   \item{'micv': increasing and concave SCOP-splines}
+#'   \item{'mdcx': decreasing and convex SCOP-splines}
+#'   \item{'mdcv': decreasing and concave SCOP-splines}
+#'   \item{'gam': spline based smooth (thin plate regression spline)}
+#' }
+#' @param k number of basis functions be computed
+#' @param weights weights used for smoothing, must be equal to the exposure
+#' (defaults to NULL)
 #'
 #' @family update_glm
 #' @family autoplot.smooth
@@ -228,7 +247,8 @@ restrict_coef <- function(model, restrictions) {
 #' }
 #'
 #' @export
-smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL) {
+smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
+                        smoothing = "spline", k = NULL, weights = NULL) {
 
   if (is.null(breaks) || !is.numeric(breaks)) {
     stop("'breaks' must be a numerical vector", call. = FALSE)
@@ -282,7 +302,27 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL) {
     degree <- nrow(borders_x_cut) - 1
   }
 
-  fit_poly <- fit_polynomial(borders_x_cut, x_org, degree, breaks)
+  if (smoothing %in% c("mpi", "mpd", "cx", "cv", "micx", "micv", "mdcx",
+                       "mdcv", "gam")) {
+    if (is.null(weights)) {
+      exposur0 <- rep(1, length(unique(df_new[[x_cut]])))
+    } else if (!weights %in% colnames(df_new)) {
+      stop("weights column: ", deparse(substitute(weights)),
+           " is not in the model data. Specify column with exposure.",
+           call. = FALSE)
+    } else {
+      exposur0 <- aggregate(list(exposure = df_new[[weights]]),
+                            by = list(x = df_new[[x_cut]]),
+                            FUN = sum,
+                            na.rm = TRUE,
+                            na.action = NULL)[,2]
+    }
+  } else {
+    exposur0 <- NULL
+  }
+
+  fit_poly <- fit_polynomial(borders_x_cut, x_org, degree, breaks, smoothing,
+                             k, exposur0)
   df_poly <- fit_poly[["new_poly_df"]]
   df_poly_line <- fit_poly[["poly_line"]]
   df_new_rf <- fit_poly[["new_rf"]]
@@ -526,14 +566,24 @@ autoplot.smooth <- function(object, ...) {
 #' @export
 update_glm <- function(x) {
 
+  # refit = TRUE
+
   if (!inherits(x, c("restricted", "smooth"))) {
     stop("Input must be of class restricted or of class smooth", call. = FALSE)
   }
 
   lst_call <- as.list(x$model_call)
-  lst <- list(formula = x$formula_restricted, data = x$data_restricted,
-              offset = NULL)
+
+  lst <- list(formula = x$formula_restricted,
+              data = x$data_restricted,
+              offset = NULL) # offset is already in formula with +
+
   y <- eval(as.call(modifyList(lst_call, lst)))
+
+  # if (!isTRUE(refit)) {
+  #  y <- eval(as.call(lst_call))
+  # }
+
   y$call$formula <- lst$formula
   y$call$data <- quote(df_new)
 
@@ -565,5 +615,6 @@ update_glm <- function(x) {
   attr(y, "mgd_smt") <- x$mgd_smt
   attr(y, "mgd_rst") <- x$mgd_rst
   attr(y, "offweights") <- offweights
+  #attr(y, "refit") <- refit
   y
 }
