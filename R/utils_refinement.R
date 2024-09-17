@@ -191,7 +191,7 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL,
   }
 
   if (smoothing %in% c("mpd", "mpi", "cx", "cv", "micx",
-                       "mciv", "mdcx", "mdcv")) {  ## monotonic decreasing constraint
+                       "micv", "mdcx", "mdcv")) {  ## monotonic decreasing constraint
     if (is.null(k)) {
       lm_poly <- scam::scam(estimate ~ s(avg_, bs = smoothing),
                             weights = weights,
