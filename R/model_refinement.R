@@ -305,7 +305,7 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
   if (smoothing %in% c("mpi", "mpd", "cx", "cv", "micx", "micv", "mdcx",
                        "mdcv", "gam")) {
     if (is.null(weights)) {
-      exposur0 <- rep(1, length(unique(df_new[[x_cut]])))
+      exposur0 <- rep(1, nrow(borders_x_cut))
     } else if (!weights %in% colnames(df_new)) {
       stop("weights column: ", deparse(substitute(weights)),
            " is not in the model data. Specify column with exposure.",
@@ -355,7 +355,8 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
              new_col_nm = new_col_nm,
              old_col_nm = old_col_nm,
              mgd_rst = mgd_rst,
-             mgd_smt = mgd_smt)
+             mgd_smt = mgd_smt,
+             smoothing = smoothing)
   attr(st, "class") <- "smooth"
   invisible(st)
 }
@@ -486,7 +487,12 @@ autoplot.smooth <- function(object, ...) {
   new <- object$new
   new_line <- object$new_line
   degree <- scales::ordinal(object$degree)
-  degree_name <- paste0(degree, " order polynomial")
+  smoothing <- object$smoothing
+  if (smoothing == "spline") {
+    degree_name <- paste0(degree, " order polynomial")
+  } else {
+    degree_name <- toupper(smoothing)
+  }
 
   rf2_start_open <- rf2[rf2$start_oc == "open", ]
   rf2_start_closed <- rf2[rf2$start_oc == "closed", ]
