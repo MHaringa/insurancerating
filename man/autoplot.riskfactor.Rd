@@ -45,13 +45,13 @@ between intervals before the decimal point, choose either "," (default) or
 a ggplot2 object
 }
 \description{
-Takes an object produced by \code{univariate()}, and plots the
+Takes an object produced by \code{rating_factors()}, and plots the
 available input.
 }
 \examples{
 library(dplyr)
-df <- MTPL2 \%>\%
-  mutate(across(c(area), as.factor)) \%>\%
+df <- MTPL2 |>
+  mutate(across(c(area), as.factor)) |>
   mutate(across(c(area), ~biggest_reference(., exposure)))
 
 mod1 <- glm(nclaims ~ area + premium, offset = log(exposure),

@@ -28,33 +28,16 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
                             colname = "estimate",
                             exponentiate = TRUE, round_exposure = 0) {
 
-  if (inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
-    xl <- model$xlevels
-  }
-
-  if (inherits(model, c("smooth", "restricted"))) {
-    xl <- model$model_out$xlevels
-    col0 <- model$new_col_nm
-    rem <- unique(sub("_smooth$", "", col0))
-    xl[which(names(xl) %in% rem)] <- NULL
-  }
-
+  xl <- model$xlevels
   exposure <- deparse(substitute(exposure))
   model_data_name <- deparse(substitute(model_data))
 
-  if (!inherits(model, c("glm", "refitsmooth", "refitrestricted",
-                         "restricted", "smooth"))) {
-    stop("Input must be of class glm.",
-         call. = FALSE)
+  if (inherits(model, c("restricted", "smooth"))) {
+    stop("Input must be of class glm. Use update_glm() first.", call. = FALSE)
   }
 
-
-  if (inherits(model, "smooth")) {
-    x <- model[["new_rf"]]
-  }
-
-  if (inherits(model, "restricted")) {
-    x <- model[["rf_restricted_df"]]
+  if (!inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
+    stop("Input must be of class glm.", call. = FALSE)
   }
 
   if (inherits(model, "refitsmooth")) {
@@ -82,8 +65,7 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
                         stringsAsFactors = FALSE)
   }
 
-  if (inherits(model, c("refitsmooth", "refitrestricted",
-                        "smooth", "restricted"))) {
+  if (inherits(model, c("refitsmooth", "refitrestricted"))) {
     x$ind <- as.character(x$risk_factor)
     x$values <- as.character(x$level)
     x$ind_values <- paste0(x$ind, x$values)
@@ -141,24 +123,10 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
     }
   }
 
-  if (inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
-    ret <- coefficients(summary(model))
-  }
-
-  if (inherits(model, c("smooth", "restricted"))) {
-    ret <- coefficients(summary(model$model_out))
-  }
-
+  ret <- coefficients(summary(model))
   ret <- cbind(ind = rownames(ret), data.frame(ret, row.names = NULL))
 
-  if (inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
-    coefs <- stats::coef(model)
-  }
-
-  if (inherits(model, c("smooth", "restricted"))) {
-    coefs <- stats::coef(model$model_out)
-  }
-
+  coefs <- stats::coef(model)
 
   if (length(coefs) != nrow(ret)) {
     coefs <- stack(coefs)
@@ -166,23 +134,14 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
     ret <- merge(x = coefs, y = ret, by = c("ind", "Estimate"), all.x = TRUE)
   }
 
-
-  if (inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
-    coef <- coefficients(model)
-  }
-
-  if (inherits(model, c("smooth", "restricted"))) {
-    coef <- coefficients(model$model_out)
-  }
-
+  coef <- coefficients(model)
   vals <- stack(coef)
   vals$pvalues <- as.numeric(ret[, 5])
   vals$pvalues <- ifelse(is.na(vals$pvalues), -9e9, vals$pvalues)
   vals$ind <- as.character(vals$ind)
 
   new_col_nm0 <- attr(model, "new_col_nm")
-  if (inherits(model, c("refitsmooth", "refitrestricted",
-                        "smooth", "restricted"))) {
+  if (inherits(model, c("refitsmooth", "refitrestricted"))) {
     xc <- x[, c("yhat", "ind_values")]
     colnames(xc)[1] <- "values"
     colnames(xc)[2] <- "ind"
@@ -190,48 +149,15 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
     xc$values <- log(xc$values)
     vals <- rbind(vals, xc)
     new_col_nm0 <- attr(model, "new_col_nm")
-    refit <- attr(model, "refit")
   }
 
   uit <- dplyr::full_join(xl_df, vals, by = c(ind_values = "ind"))
+  uit$values <- ifelse(is.na(uit$pvalues) &
+                         !(endsWith(uit$risk_factor, c("_smooth")) |
+                             uit$risk_factor %in% new_col_nm0),
+                       0, uit$values)
 
-  if (inherits(model, c("smooth", "restricted"))) {
-    col0 <- model$new_col_nm
-    col0 <- col0[endsWith(col0, "_smooth")]
-    rem_rst <- unlist(lapply(model$mgd_rst, `[[`, 1))
-    rem_smt <- unique(sub("_smooth$", "", col0))
-    if (length(rem_smt) > 0) {
-      strem <- paste0("^", rem_smt, collapse = "|")
-      uit <- uit[!grepl(strem, uit$ind_values),]
-    }
-    uit <- uit[!uit$risk_factor %in% rem_rst,]
-  }
-
-  if (inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
-    uit$values <- ifelse(is.na(uit$pvalues) &
-                           !(endsWith(uit$risk_factor, c("_smooth")) |
-                               uit$risk_factor %in% new_col_nm0),
-                         0, uit$values)
-  }
-
-
-  if (inherits(model, c("smooth", "restricted"))) {
-    rst2 <- unlist(lapply(model$mgd_rst, `[[`, 2))
-    uit$values <- ifelse(is.na(uit$pvalues) &
-                           !(endsWith(uit$risk_factor, c("_smooth")) |
-                               uit$risk_factor %in% rst2 |
-                               uit$risk_factor %in% new_col_nm0),
-                         0, uit$values)
-  }
-
-  if (inherits(model, c("glm", "refitsmooth", "refitrestricted"))) {
-    Terms <- terms(model)
-  }
-
-  if (inherits(model, c("smooth", "restricted"))) {
-    Terms <- terms(model$model_out)
-  }
-
+  Terms <- terms(model)
   int <- attr(Terms, "intercept")
 
   # Handle intercept
@@ -268,12 +194,6 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
   uit$pvalues <- ifelse(uit$pvalues < 0, NA, uit$pvalues)
   uit$pvalues <- vapply(uit$pvalues, function(x) make_stars(x),
                         FUN.VALUE = character(1))
-
-  #if (inherits(model, c("smooth", "restricted"))) {
-  #  col0 <- attr(model$model_out, "new_col_nm")
-  #  rem <- unique(sub("_smooth$", "", col0))
-  #  uit <- uit[!uit$risk_factor %in% rem,]
-  #}
   uit
 }
 
@@ -413,6 +333,8 @@ rating_factors <- function(..., model_data = NULL, exposure = NULL,
     rf_fj_stars <- rf_fj_stars[, -which(names(rf_fj_stars) %in%
                                           paste0("signif_", cols))]
   }
+
+  rf_fj$risk_factor <- sub("_rst99$", "", rf_fj$risk_factor)
 
   return(structure(list(df = rf_fj,
                         df_stars = rf_fj_stars,
@@ -561,7 +483,7 @@ as.data.frame.riskfactor <- function(x, ...) {
 
 #' Automatically create a ggplot for objects obtained from rating_factors()
 #'
-#' @description Takes an object produced by `univariate()`, and plots the
+#' @description Takes an object produced by `rating_factors()`, and plots the
 #'   available input.
 #'
 #' @param object riskfactor object produced by `rating_factors()`
@@ -588,8 +510,8 @@ as.data.frame.riskfactor <- function(x, ...) {
 #'
 #' @examples
 #' library(dplyr)
-#' df <- MTPL2 %>%
-#'   mutate(across(c(area), as.factor)) %>%
+#' df <- MTPL2 |>
+#'   mutate(across(c(area), as.factor)) |>
 #'   mutate(across(c(area), ~biggest_reference(., exposure)))
 #'
 #' mod1 <- glm(nclaims ~ area + premium, offset = log(exposure),

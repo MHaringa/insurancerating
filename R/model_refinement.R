@@ -561,6 +561,8 @@ autoplot.smooth <- function(object, ...) {
 #'  preceded by `restrict_coef()`.
 #'
 #' @param x Object of class restricted or of class smooth
+#' @param intercept_only Logical. Default is \code{FALSE}. If \code{TRUE}, only
+#' the intercept is updated, meaning other model coefficients remain unchanged.
 #'
 #' @author Martin Haringa
 #'
@@ -570,12 +572,55 @@ autoplot.smooth <- function(object, ...) {
 #' @return Object of class GLM
 #'
 #' @export
-update_glm <- function(x) {
-
-  # refit = TRUE
+update_glm <- function(x, intercept_only = FALSE) {
 
   if (!inherits(x, c("restricted", "smooth"))) {
-    stop("Input must be of class restricted or of class smooth", call. = FALSE)
+    stop("Input must be of class 'restricted' or 'smooth'.", call. = FALSE)
+  }
+
+  if (isTRUE(intercept_only)) {
+    andere <- attr(terms.formula(x$formula_removed), "term.labels")
+    if (length(andere) > 0) {
+      tot_rf <- x$rating_factors
+      df <- tot_rf[tot_rf$risk_factor %in% andere,]
+      rf_mult <- names(table(df$risk_factor)[table(df$risk_factor) > 1])
+      rf_single <- names(table(df$risk_factor)[table(df$risk_factor) == 1])
+      if (length(rf_mult) > 0) {
+        df1 <- df[df$risk_factor %in% rf_mult]
+        mult_lst <- split(df1, df1$risk_factor)
+
+        for (i in seq_along(mult_lst)) {
+          risk_factor_name <- unique(mult_lst[[i]]$risk_factor)
+          names(x)[names(mult_lst[[i]]) == "level"] <- risk_factor_name
+          names(x)[names(mult_lst[[i]]) == "estimate"] <- paste0(
+            risk_factor_name, "_rst99"
+          )
+          mult_lst[[i]]$risk_factor <- NULL
+          x <- restrict_coef(x, mult_lst[[i]])
+        }
+      }
+
+      if (length(rf_single) > 0) {
+
+        df2 <- df[df$risk_factor %in% rf_single]
+        sng_lst <- split(df2, df2$risk_factor)
+
+        for (i in seq_along(sng_lst)) {
+          formula_removed <- x$formula_removed
+          rf_name <- unique(sng_lst[[i]]$risk_factor)
+          rf_est <- unique(sng_lst[[i]]$estimate)
+          formula_removed <- update(formula_removed, paste("~ . -", rf_name))
+          add_offset <- paste0(rf_name, " * log(", rf_est, ")")
+          newoffset <- paste0(x$offset, " + ", add_offset)
+          newoffsetterm <- paste0("offset(", newoffset, ")")
+          formula_restricted <- update(formula_removed, paste("~ . + ",
+                                                           newoffsetterm))
+          x$offset <- newoffset
+          x$formula_restricted <- formula_restricted
+          x$formula_removed <- formula_removed
+        }
+      }
+    }
   }
 
   lst_call <- as.list(x$model_call)
@@ -585,10 +630,6 @@ update_glm <- function(x) {
               offset = NULL) # offset is already in formula with +
 
   y <- eval(as.call(modifyList(lst_call, lst)))
-
-  # if (!isTRUE(refit)) {
-  #  y <- eval(as.call(lst_call))
-  # }
 
   y$call$formula <- lst$formula
   y$call$data <- quote(df_new)
@@ -621,6 +662,5 @@ update_glm <- function(x) {
   attr(y, "mgd_smt") <- x$mgd_smt
   attr(y, "mgd_rst") <- x$mgd_rst
   attr(y, "offweights") <- offweights
-  #attr(y, "refit") <- refit
   y
 }

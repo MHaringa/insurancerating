@@ -17,11 +17,7 @@ knitr::opts_chunk$set(
 [![Downloads](https://cranlogs.r-pkg.org/badges/insurancerating?color=blue)](https://cran.rstudio.com/package=insurancerating)
 <!-- badges: end -->
 
-The goal of `insurancerating` is to give analytic techniques that can be used in insurance rating. It helps actuaries to implement GLMs within all relevant steps needed to construct a risk premium from raw data. 
-
-It provides a data driven strategy for the construction of tariff classes in P&C insurance. The goal is to bin the continuous factors such that categorical risk factors result which capture the effect of the covariate on the response in an accurate way, while being easy to use in a generalized linear model (GLM).
-
-`insurancerating` also provides recipes on how to easily perform univariate analyses on an insurance portfolio. In addition it adds functionality to include reference categories in the levels of the coefficients in the output of a generalized linear regression analysis. 
+The `insurancerating` package provides functions to build, evaluate, and visualize insurance rating models. `insurancerating` simplifies the process of modeling premiums, and allows to analyze insurance risk factors effectively.
 
 ## Installation
 
@@ -39,182 +35,8 @@ remotes::install_github("MHaringa/insurancerating")
 
 ```
 
-## Example 1
-This is a basic example which shows the techniques provided in insurancerating. 
 
-The first part shows how to fit a GAM for the variable *age_policyholder* in the MTPL dataset: 
-
-```{r example, eval = TRUE, message = FALSE, warning = FALSE}
-library(insurancerating)
-
-# Claim frequency 
-age_policyholder_frequency <- fit_gam(data = MTPL, 
-                                      nclaims = nclaims, 
-                                      x = age_policyholder, 
-                                      exposure = exposure)
-
-# Claim severity 
-age_policyholder_severity <- fit_gam(data = MTPL, 
-                                     nclaims = nclaims, 
-                                     x = age_policyholder, 
-                                     exposure = exposure, 
-                                     amount = amount, 
-                                     model = "severity")
-```
-
-Create plot:
-
-```{r plotgam, eval = TRUE}
-
-autoplot(age_policyholder_frequency, show_observations = TRUE)
-
-```
-
-Determine classes for the claim frequency (the points show the ratio between the observed number of claims and exposure for each age). This method is based on the work by Henckaerts et al. (2018), see `?construct_tariff_classes` for the reference.
-
-```{r figfreq, eval = TRUE}
-
-clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
-clusters_sev <- construct_tariff_classes(age_policyholder_severity)
-
-autoplot(clusters_freq, show_observations = TRUE)
-
-```
-
-In this example the term *exposure* is a measure of what is being insured. Here an insured vehicle is an exposure. If the vehicle is insured as of July 1 for a certain year, then during that year, this would represent an exposure of 0.5 to the insurance company. 
-
-The figure shows that younger policyholders have a higher risk profile. The fitted GAM is lower than might be expected from the observed claim frequency for policyholders of age 19. This is because there are very few young policyholders of age 19 present in the portfolio. 
-
-The GAM for the claim severity : 
-
-```{r figsev, eval = TRUE}
-
-autoplot(age_policyholder_severity, 
-         show_observations = TRUE, 
-         remove_outliers = 100000)
-
-```
-
-The second part adds the constructed tariff classes for the variable `age_policyholder` to the dataset, and sets the base level of the factor `age_policyholder` to the level with the largest exposure. In this example for claim frequency the class for ages (39,50], which contains the largest exposure. 
-
-```{r example2, eval = TRUE, message = FALSE, warning = FALSE}
-
-library(dplyr)
-
-dat <- MTPL |>
-  mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) |>
-  mutate(across(where(is.character), as.factor)) |>
-  mutate(across(where(is.factor), ~biggest_reference(., exposure)))
-
-glimpse(dat)
-
-```
-
-The last part is to fit a *generalized linear model*. `rating_factors()` prints the output including the reference group.
-
-```{r example3, eval = TRUE}
-
-model_freq1 <- glm(nclaims ~ age_policyholder_freq_cat, 
-                   offset = log(exposure), 
-                   family = "poisson", 
-                   data = dat)
-
-model_freq2 <- glm(nclaims ~ age_policyholder_freq_cat + age_policyholder, 
-                   offset = log(exposure), 
-                   family = "poisson", 
-                   data = dat)
-
-x <- rating_factors(model_freq1, model_freq2) 
-x
-
-```
-
-`autoplot.riskfactor()` creates a figure. The base level of the factor `age_policyholder_freq_cat` is the group with the largest exposure and is shown first. 
-
-```{r example3a1, eval = TRUE}
-
-autoplot(x)
-
-```
-
-Include `model_data` to sort the clustering in the original order. Ordering the factor `age_policyholder_freq_cat` only works when `biggest_reference()` is used to set the base level of the factor to the level with the largest exposure. 
-
-```{r example3b, eval = TRUE}
-
-rf <- rating_factors(model_freq1, model_freq2, 
-                     model_data = dat) 
-
-autoplot(rf)
-
-```
-
-The following graph includes the exposure as a bar graph and shows some more options: 
-
-```{r example3c, eval = TRUE}
-
-rf <- rating_factors(model_freq1, model_freq2, 
-                     model_data = dat, exposure = exposure) 
-
-autoplot(rf, linetype = TRUE) 
-
-```
-
-Add predictions to the data set:
-
-```{r addpredictions, eval = TRUE}
-
-dat_pred <- dat |>
-  add_prediction(model_freq1, model_freq2) 
-
-glimpse(dat_pred)
-
-```
-
-Compute indices of model performance for GLMs. The RMSE is the square root of the average of squared differences between prediction and actual observation and indicates the absolute fit of the model to the data. It can be interpreted as the standard deviation of the unexplained variance, and is in the same units as the response variable.
-
-```{r modelperf, eval = TRUE}
-
-model_performance(model_freq1, model_freq2) 
-
-```
-
-
-To test the stability of the predictive ability of the fitted model it might be helpful to determine the variation in the computed RMSE. The variation is calculated by computing the root mean squared errors from \code{n} generated bootstrap replicates. 
-
-For claim severity models it might be helpful to test the variation in the RMSE in case the portfolio contains large claim sizes. The figure below shows that the variation in the RMSE of the frequency model is quite low (as expected). The dashed line shows the RMSE of the fitted (original) model, the other lines represent the 95\% confidence interval. 
-
-
-```{r bootstraprmse, eval = TRUE}
-
-bootstrap_rmse(model_freq1, dat, n = 100, show_progress = FALSE) |> 
-  autoplot()
-
-```
-
-
-Check Poisson GLM for overdispersion. A dispersion ratio larger than one indicates overdispersion, this occurs when the observed variance is higher than the variance of the theoretical model. If the dispersion ratio is close to one, a Poisson model fits well to the data. A *p*-value < .05 indicates overdispersion. Overdispersion > 2 probably means there is a larger problem with the data: check (again) for outliers. 
-
-```{r overdispersion, eval = TRUE}
-
-check_overdispersion(model_freq1)
-
-```
-
-Misspecifications in GLMs cannot reliably be diagnosed with standard residual plots, and GLMs are thus often not as thoroughly checked as LMs. One reason why GLMs residuals are harder to interpret is that the expected distribution of the data changes with the fitted values. As a result, standard residual plots, when interpreted in the same way as for linear models, seem to show all kind of problems, such as non-normality, heteroscedasticity, even if the model is correctly specified. `check_residuals()` aims at solving these problems by creating readily interpretable residuals for GLMs that are standardized to values between 0 and 1, and that can be interpreted as intuitively as residuals for the linear model. This is achieved by a simulation-based approach, similar to the Bayesian p-value or the parametric bootstrap, that transforms the residuals to a standardized scale. This explanation is adopted from the [vignette for DHARMa](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). 
-
-Detect deviations from the expected distribution, and produce a uniform quantile-quantile plot. The simulated residuals in the QQ plot below show no clear deviation from a Poisson distribution. Note that formal tests almost always yield significant results for the distribution of residuals and visual inspections (e.g. Q-Q plots) are preferable.
-
-```{r normalitysim, message = FALSE, eval = TRUE}
-
-check_residuals(model_freq1, n_simulations = 600) |>
-  autoplot()
-
-```
-
-
-It might happen that in the fitted model for a data point all simulations have the same value (e.g. zero), this returns the error message *Error in approxfun: need at least two non-NA values to interpolate*. If that is the case, it could help to increase the number of simulations. 
-
-## Example 2
+## Univariate
 
 This is a basic example which shows how to easily perform an univariate analysis on a MTPL portfolio using `insurancerating`.
 
@@ -350,13 +172,213 @@ histbin(MTPL2, premium)
 
 ```
 
-Two ways of displaying numerical data over a very wide range of values in a compact way are taking the logarithm of the variable, or omitting the outliers. Both do not show the original distribution, however. Another way is to create one bin for all the outliers. This yields both the original distribution, and also gives a feel for the number of outliers.  
+Two common methods for compactly displaying numerical data across a wide range of values are by applying a logarithmic transformation or excluding the outliers. However, both methods obscure the original distribution. An alternative approach is to group all outliers into a single bin, which preserves the original distribution while also providing insight into the number of outliers.
 
 ```{r example15, eval = TRUE, message = FALSE, warning = FALSE}
 
 histbin(MTPL2, premium, right = 110)
 
 ```
+
+
+## Continuous variables
+
+### Method 1 (GAM + evtree)
+
+This section shows how to fit a GAM (Generalized Additive Model) for the variable *age_policyholder* in the MTPL data set: 
+
+```{r example, eval = TRUE, message = FALSE, warning = FALSE}
+library(insurancerating)
+
+# Claim frequency 
+age_policyholder_frequency <- fit_gam(data = MTPL, 
+                                      nclaims = nclaims, 
+                                      x = age_policyholder, 
+                                      exposure = exposure)
+
+# Claim severity 
+age_policyholder_severity <- fit_gam(data = MTPL, 
+                                     nclaims = nclaims, 
+                                     x = age_policyholder, 
+                                     exposure = exposure, 
+                                     amount = amount, 
+                                     model = "severity")
+```
+
+Create plot:
+
+```{r plotgam, eval = TRUE}
+
+autoplot(age_policyholder_frequency, show_observations = TRUE)
+
+```
+
+Determine classes for the claim frequency (the points show the ratio between the observed number of claims and exposure for each age). This method is based on the work by Henckaerts et al. (2018), see `?construct_tariff_classes` for the reference.
+
+```{r figfreq, eval = TRUE}
+
+clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
+clusters_sev <- construct_tariff_classes(age_policyholder_severity)
+
+autoplot(clusters_freq, show_observations = TRUE)
+
+```
+
+In this example, *exposure* refers to the amount of risk being insured. In this case, an insured vehicle counts as an exposure. If the vehicle is insured starting from July 1 of a given year, it would represent an exposure of 0.5 to the insurance company for that year.
+
+The figure indicates that younger policyholders have a higher risk profile. For policyholders aged 19, the fitted GAM is lower than expected based on the observed claim frequency. This is due to the small number of 19-year-old policyholders in the portfolio.
+
+The GAM for the claim severity : 
+
+```{r figsev, eval = TRUE}
+
+autoplot(age_policyholder_severity, 
+         show_observations = TRUE, 
+         remove_outliers = 100000)
+
+```
+
+### Method 2 (manual cuts)
+
+Create manual cuts:
+
+```{r}
+
+policyholder_manual_cat <- seq(18, 95, by = 4)
+
+```
+
+### Add to data 
+
+The second part adds the constructed tariff classes for the variable `age_policyholder` to the dataset, and sets the base level of the factor `age_policyholder` to the level with the largest exposure. In this example for claim frequency the class for ages (39,50], which contains the largest exposure. 
+
+```{r example2, eval = TRUE, message = FALSE, warning = FALSE}
+
+library(dplyr)
+
+dat <- MTPL |>
+  mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) |>
+  mutate(age_policyholder_freq_catm = cut(age_policyholder, 
+                                          breaks = policyholder_manual_cat, 
+                                          include.lowest = TRUE)) |>
+  mutate(across(where(is.character), as.factor)) |>
+  mutate(across(where(is.factor), ~biggest_reference(., exposure)))
+
+glimpse(dat)
+
+```
+
+
+
+
+## Fit GLM
+
+The last part is to fit a *generalized linear model*. `rating_factors()` prints the output including the reference group.
+
+```{r example3, eval = TRUE}
+
+model_freq1 <- glm(nclaims ~ age_policyholder_freq_cat, 
+                   offset = log(exposure), 
+                   family = "poisson", 
+                   data = dat)
+
+model_freq2 <- glm(nclaims ~ age_policyholder_freq_cat + age_policyholder, 
+                   offset = log(exposure), 
+                   family = "poisson", 
+                   data = dat)
+
+x <- rating_factors(model_freq1, model_freq2) 
+x
+
+```
+
+`autoplot.riskfactor()` creates a figure. The base level of the factor `age_policyholder_freq_cat` is the group with the largest exposure and is shown first. 
+
+```{r example3a1, eval = TRUE}
+
+autoplot(x)
+
+```
+
+Include `model_data` to sort the clustering in the original order. Ordering the factor `age_policyholder_freq_cat` only works when `biggest_reference()` is used to set the base level of the factor to the level with the largest exposure. 
+
+```{r example3b, eval = TRUE}
+
+rf <- rating_factors(model_freq1, model_freq2, 
+                     model_data = dat) 
+
+as.data.frame(rf) |> gt::gt()
+autoplot(rf)
+
+```
+
+The following graph includes the exposure as a bar graph and shows some more options: 
+
+```{r example3c, eval = TRUE}
+
+rf <- rating_factors(model_freq1, model_freq2, 
+                     model_data = dat, exposure = exposure) 
+
+autoplot(rf, linetype = TRUE) 
+
+```
+
+Add predictions to the data set:
+
+```{r addpredictions, eval = TRUE}
+
+dat_pred <- dat |>
+  add_prediction(model_freq1, model_freq2) 
+
+glimpse(dat_pred)
+
+```
+
+Compute indices of model performance for GLMs. The RMSE is the square root of the average of squared differences between prediction and actual observation and indicates the absolute fit of the model to the data. It can be interpreted as the standard deviation of the unexplained variance, and is in the same units as the response variable.
+
+```{r modelperf, eval = TRUE}
+
+model_performance(model_freq1, model_freq2) 
+
+```
+
+
+To test the stability of the predictive ability of the fitted model it might be helpful to determine the variation in the computed RMSE. The variation is calculated by computing the root mean squared errors from \code{n} generated bootstrap replicates. 
+
+For claim severity models it might be helpful to test the variation in the RMSE in case the portfolio contains large claim sizes. The figure below shows that the variation in the RMSE of the frequency model is quite low (as expected). The dashed line shows the RMSE of the fitted (original) model, the other lines represent the 95\% confidence interval. 
+
+
+```{r bootstraprmse, eval = TRUE}
+
+bootstrap_rmse(model_freq1, dat, n = 100, show_progress = FALSE) |> 
+  autoplot()
+
+```
+
+
+Check Poisson GLM for overdispersion. A dispersion ratio larger than one indicates overdispersion, this occurs when the observed variance is higher than the variance of the theoretical model. If the dispersion ratio is close to one, a Poisson model fits well to the data. A *p*-value < .05 indicates overdispersion. Overdispersion > 2 probably means there is a larger problem with the data: check (again) for outliers. 
+
+```{r overdispersion, eval = TRUE}
+
+check_overdispersion(model_freq1)
+
+```
+
+Misspecifications in GLMs cannot reliably be diagnosed with standard residual plots, and GLMs are thus often not as thoroughly checked as LMs. One reason why GLMs residuals are harder to interpret is that the expected distribution of the data changes with the fitted values. As a result, standard residual plots, when interpreted in the same way as for linear models, seem to show all kind of problems, such as non-normality, heteroscedasticity, even if the model is correctly specified. `check_residuals()` aims at solving these problems by creating readily interpretable residuals for GLMs that are standardized to values between 0 and 1, and that can be interpreted as intuitively as residuals for the linear model. This is achieved by a simulation-based approach, similar to the Bayesian p-value or the parametric bootstrap, that transforms the residuals to a standardized scale. This explanation is adopted from the [vignette for DHARMa](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). 
+
+Detect deviations from the expected distribution, and produce a uniform quantile-quantile plot. The simulated residuals in the QQ plot below show no clear deviation from a Poisson distribution. Note that formal tests almost always yield significant results for the distribution of residuals and visual inspections (e.g. Q-Q plots) are preferable.
+
+```{r normalitysim, message = FALSE, eval = TRUE}
+
+check_residuals(model_freq1, n_simulations = 600) |>
+  autoplot()
+
+```
+
+
+It might happen that in the fitted model for a data point all simulations have the same value (e.g. zero), this returns the error message *Error in approxfun: need at least two non-NA values to interpolate*. If that is the case, it could help to increase the number of simulations. 
+
+
 
 ## Example 3
 
@@ -371,14 +393,20 @@ mod_freq <- glm(nclaims ~ zip + age_policyholder_freq_cat,
                 family = "poisson", 
                 data = dat)
 
+mod_freqm <- glm(nclaims ~ age_policyholder_freq_catm, 
+                 offset = log(exposure), 
+                 family = "poisson", 
+                 data = dat)
+
 mod_sev <- glm(amount ~ bm + zip, 
                weights = nclaims, 
                family = Gamma(link = "log"), 
                data = dat %>% filter(amount > 0))
 
 MTPL_premium <- dat |>
-  add_prediction(mod_freq, mod_sev) |>
-  mutate(premium = pred_nclaims_mod_freq * pred_amount_mod_sev)
+  add_prediction(mod_freq, mod_freqm, mod_sev) |>
+  mutate(premium = pred_nclaims_mod_freq * pred_amount_mod_sev) |>
+  mutate(premiumm = pred_nclaims_mod_freqm * pred_amount_mod_sev)
 
 ```
 
@@ -387,6 +415,11 @@ Fit a burning model without restrictions. Even though restrictions could be appl
 ```{r example17, eval = TRUE, message = FALSE, warning = FALSE}
 
 burn_unrestricted <- glm(premium ~ zip + bm + age_policyholder_freq_cat, 
+                         weights = exposure, 
+                         family = Gamma(link = "log"), 
+                         data = MTPL_premium) 
+
+burn_unrestrictedm <- glm(premium ~ zip + bm + age_policyholder_freq_catm, 
                          weights = exposure, 
                          family = Gamma(link = "log"), 
                          data = MTPL_premium) 
@@ -445,6 +478,51 @@ rating_factors(burn_restricted)
 
 ```
 
+Or with a gam:
+
+```{r example18a, eval = TRUE, message = FALSE, warning = FALSE}
+
+burn_unrestrictedm |>
+  smooth_coef(x_cut = "age_policyholder_freq_catm", 
+              x_org = "age_policyholder", 
+              smoothing = "gam",
+              breaks = seq(18, 95, 5)) |>
+  autoplot()
+
+```
+
+Other options include scams, make list:
+
+1. mpd
+2. mpi
+
+```{r example18a1, eval = TRUE, message = FALSE, warning = FALSE}
+
+burn_unrestrictedm |>
+  smooth_coef(x_cut = "age_policyholder_freq_catm", 
+              x_org = "age_policyholder", 
+              smoothing = "mpd",
+              #weights = "exposure",
+              breaks = seq(18, 95, 5)) |>
+  autoplot()
+
+```
+
+Or with a gam weighted:
+
+```{r example18a2, eval = TRUE, message = FALSE, warning = FALSE}
+
+burn_unrestrictedm |>
+  smooth_coef(x_cut = "age_policyholder_freq_catm", 
+              x_org = "age_policyholder", 
+              smoothing = "gam",
+              weights = "exposure",
+              breaks = seq(18, 95, 5)) |>
+  autoplot()
+
+```
+
+
 Most insurers have some form of a Bonus-Malus System in vehicle third party liability insurance. `restrict_coef()` can be used to impose such restrictions. `restrictions` must be a data.frame with in the first column the name of the column for which the restrictions should be applied and in the second column the restricted coefficients. The following example shows restrictions on the risk factor for region `zip`:
 
 ```{r example21, eval = TRUE, message = FALSE, warning = FALSE}
@@ -495,6 +573,22 @@ burn_restricted3 <- burn_unrestricted |>
 rating_factors(burn_restricted3)
 
 ```
+
+```{r example24, eval = TRUE, message = FALSE, warning = FALSE}
+
+burn_restricted3m <- burn_unrestrictedm |>
+  restrict_coef(restrictions = zip_df) |>
+  smooth_coef(x_cut = "age_policyholder_freq_catm", 
+              x_org = "age_policyholder", 
+              breaks = seq(18, 95, 5)) |> 
+  update_glm(intercept_only = TRUE) 
+
+# Show rating factors
+rating_factors(burn_restricted3m)
+rating_factors(burn_unrestrictedm)
+
+```
+
 
 And add refined premiums to the data:
 

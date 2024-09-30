@@ -30,6 +30,11 @@ add_prediction <- function(data, ..., var = NULL, conf_int = FALSE,
   objects <- list(...)
   object_names <- match.call(expand.dots = FALSE)$`...`
 
+  if (is.null(object_names)) {
+    stop("No object of class 'glm' found. Please provide at least one 'glm'
+         object to add model predictions.", call. = FALSE)
+  }
+
   if (!is.null(var) && length(var) != length(object_names)) {
     stop("Character vector 'var' should have the same length as number of
          objects", call. = FALSE)
@@ -41,15 +46,8 @@ add_prediction <- function(data, ..., var = NULL, conf_int = FALSE,
     object <- objects[[i]]
     object_name <- object_names[i]
 
-    if (inherits(object, c("smooth", "restricted"))) {
-      addcol <- pred_own(data, object)
-      response_nm <- all.vars(object$formula_removed)[1]
-    }
-
-    if (inherits(object, c("glm", "lm", "refitsmooth", "refitrestricted"))) {
-      addcol <- as.numeric(stats::predict(object, data, type = "response"))
-      response_nm <- as.character(attributes(object$terms)$variables[[2]])
-    }
+    addcol <- as.numeric(stats::predict(object, data, type = "response"))
+    response_nm <- as.character(attributes(object$terms)$variables[[2]])
 
     if (is.null(var)) {
       var_nm <- paste0("pred_", response_nm, "_", object_name)
@@ -60,17 +58,15 @@ add_prediction <- function(data, ..., var = NULL, conf_int = FALSE,
     df <- data.frame(addcol)
     names(df) <- var_nm
 
-    if (inherits(object, c("glm", "lm", "refitsmooth", "refitrestricted"))) {
-      if (isTRUE(conf_int)) {
-        ucb <- paste0(var_nm, "_ucb")
-        lcb <- paste0(var_nm, "_lcb")
-        suppressWarnings({
-          lcbucb <- ciTools::add_ci(data, object, names = c("lcb", "ucb"),
-                                    alpha = alpha)
-        })
-        df[[lcb]] <- lcbucb$lcb
-        df[[ucb]] <- lcbucb$ucb
-      }
+    if (isTRUE(conf_int)) {
+      ucb <- paste0(var_nm, "_ucb")
+      lcb <- paste0(var_nm, "_lcb")
+      suppressWarnings({
+        lcbucb <- ciTools::add_ci(data, object, names = c("lcb", "ucb"),
+                                  alpha = alpha)
+      })
+      df[[lcb]] <- lcbucb$lcb
+      df[[ucb]] <- lcbucb$ucb
     }
 
     listdf[[i]] <- df

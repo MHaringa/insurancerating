@@ -22,6 +22,7 @@
   total_name = NULL,
   rotate_angle = NULL,
   custom_theme = NULL,
+  remove_underscores = FALSE,
   ...
 )
 }
@@ -76,6 +77,9 @@ is FALSE)}
 \item{rotate_angle}{numeric value for angle of labels on the x-axis (degrees)}
 
 \item{custom_theme}{list with customized theme options}
+
+\item{remove_underscores}{logical. Defaults to FALSE. Remove underscores from
+labels}
 
 \item{...}{other plotting parameters to affect the plot}
 }

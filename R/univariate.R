@@ -143,7 +143,7 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
   attr(dt, "premium") <- .premium
   attr(dt, "by") <- .by_out
   attr(dt, "dfby") <- as.data.frame(dt1)
-  class(dt) <- append(class(dt), "univariate")
+  class(dt) <- append(class(df), "univariate")
   return(dt)
 }
 
@@ -188,6 +188,8 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' @param total_name add legend name for the total line (e.g. "total")
 #' @param rotate_angle numeric value for angle of labels on the x-axis (degrees)
 #' @param custom_theme list with customized theme options
+#' @param remove_underscores logical. Defaults to FALSE. Remove underscores from
+#' labels
 #' @param ... other plotting parameters to affect the plot
 #'
 #' @import patchwork
@@ -218,7 +220,8 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                                 coord_flip = FALSE, show_total = FALSE,
                                 total_color = NULL, total_name = NULL,
                                 rotate_angle = NULL,
-                                custom_theme = NULL, ...) {
+                                custom_theme = NULL,
+                                remove_underscores = FALSE, ...) {
 
   xvar <- attr(object, "xvar")
   nclaims <- attr(object, "nclaims")
@@ -320,7 +323,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                     "frequency", "Frequency", exposure,
                     color_bg, color, sep_mark, by, labels,
                     sort_manual, label_width,
-                    show_total, total_color, total_name)
+                    show_total, total_color, total_name, remove_underscores)
   }
 
   if (2 %in% create_plots) {
@@ -328,7 +331,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                     "average_severity", "Average\nseverity", nclaims,
                     color_bg, color, sep_mark, by, labels,
                     sort_manual, label_width,
-                    show_total, total_color, total_name)
+                    show_total, total_color, total_name, remove_underscores)
   }
 
   if (3 %in% create_plots) {
@@ -336,7 +339,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                     "risk_premium", "Risk premium", exposure,
                     color_bg, color, sep_mark, by, labels,
                     sort_manual, label_width,
-                    show_total, total_color, total_name)
+                    show_total, total_color, total_name, remove_underscores)
   }
 
   if (4 %in% create_plots) {
@@ -344,7 +347,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                     "loss_ratio", "Loss ratio", premium,
                     color_bg, color, sep_mark, by, labels,
                     sort_manual, label_width,
-                    show_total, total_color, total_name)
+                    show_total, total_color, total_name, remove_underscores)
   }
 
   if (5 %in% create_plots) {
@@ -352,7 +355,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                     "average_premium", "Average\npremium", exposure,
                     color_bg, color, sep_mark, by, labels,
                     sort_manual, label_width,
-                    show_total, total_color, total_name)
+                    show_total, total_color, total_name, remove_underscores)
   }
 
   if (6 %in% create_plots) {
