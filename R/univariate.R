@@ -143,7 +143,7 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
   attr(dt, "premium") <- .premium
   attr(dt, "by") <- .by_out
   attr(dt, "dfby") <- as.data.frame(dt1)
-  class(dt) <- append(class(df), "univariate")
+  class(dt) <- append("univariate", class(df))
   return(dt)
 }
 
