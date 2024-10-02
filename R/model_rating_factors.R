@@ -194,6 +194,7 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
   uit$pvalues <- ifelse(uit$pvalues < 0, NA, uit$pvalues)
   uit$pvalues <- vapply(uit$pvalues, function(x) make_stars(x),
                         FUN.VALUE = character(1))
+  uit$risk_factor <- sub("_rst99$", "", uit$risk_factor)
   uit
 }
 
@@ -334,7 +335,7 @@ rating_factors <- function(..., model_data = NULL, exposure = NULL,
                                           paste0("signif_", cols))]
   }
 
-  rf_fj$risk_factor <- sub("_rst99$", "", rf_fj$risk_factor)
+
 
   return(structure(list(df = rf_fj,
                         df_stars = rf_fj_stars,
