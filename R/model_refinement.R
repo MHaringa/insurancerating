@@ -591,8 +591,8 @@ update_glm <- function(x, intercept_only = FALSE) {
 
         for (i in seq_along(mult_lst)) {
           risk_factor_name <- unique(mult_lst[[i]]$risk_factor)
-          names(x)[names(mult_lst[[i]]) == "level"] <- risk_factor_name
-          names(x)[names(mult_lst[[i]]) == "estimate"] <- paste0(
+          names(mult_lst[[i]])[names(mult_lst[[i]]) == "level"] <- risk_factor_name
+          names(mult_lst[[i]])[names(mult_lst[[i]]) == "estimate"] <- paste0(
             risk_factor_name, "_rst99"
           )
           mult_lst[[i]]$risk_factor <- NULL
