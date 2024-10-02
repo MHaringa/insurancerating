@@ -347,7 +347,7 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
              new = df_poly,
              new_line = df_poly_line,
              model_call = model_call,
-             rating_factors = rfdf,
+             rating_factors = as.data.frame(rfdf),
              restrictions_lst = rst_lst,
              new_rf = df_new_rf,
              degree = degree,
@@ -586,7 +586,7 @@ update_glm <- function(x, intercept_only = FALSE) {
       rf_mult <- names(table(df$risk_factor)[table(df$risk_factor) > 1])
       rf_single <- names(table(df$risk_factor)[table(df$risk_factor) == 1])
       if (length(rf_mult) > 0) {
-        df1 <- df[df$risk_factor %in% rf_mult]
+        df1 <- df[df$risk_factor %in% rf_mult,]
         mult_lst <- split(df1, df1$risk_factor)
 
         for (i in seq_along(mult_lst)) {
