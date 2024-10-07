@@ -177,30 +177,24 @@ separation_mark <- function(dec.mark) {
   }
 }
 
-
-
 #' @keywords internal
-sort_x_axis <- function(sort_manual, label_width, remove_underscores) {
+sort_x_axis <- function(sort_manual, label_width) {
   if (!is.null(sort_manual)) {
     list(
       ggplot2::scale_x_discrete(
-        labels = function(x) stringr::str_wrap(
-          ifelse(isTRUE(remove_underscores), gsub("_", " ", x), x),
-          width = label_width
-        ),
+        labels = function(x) stringr::str_wrap(x, width = label_width),
         limits = sort_manual
       )
     )
   } else {
     list(
       ggplot2::scale_x_discrete(
-        labels = function(x) stringr::str_wrap(
-          ifelse(isTRUE(remove_underscores), gsub("_", " ", x), x),
-          width = label_width)
+        labels = function(x) stringr::str_wrap(x, width = label_width)
       )
     )
   }
 }
+
 
 #' @importFrom colorspace lighten
 #' @keywords internal
@@ -407,7 +401,7 @@ ggbarline <- function(background, df, dfby, xvar, f_axis,
     ggplot2::labs(y = f_axis_name, x = xvar) +
     gglabels(background, labels, df, xvar, sep_mark) +
     ggyscale(background, sep_mark) +
-    sort_x_axis(sort_manual, label_width, remove_underscores)
+    sort_x_axis(sort_manual, label_width)
 }
 
 

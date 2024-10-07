@@ -1,6 +1,9 @@
 # insurancerating (development version)
 
-* `rating_factors()` now always returns correct output when column with exposure  in data is not named `exposure`
+* `rating_factors()` now always returns correct output when column with exposure in data is not named `exposure`
+* `intercept_only` in `update_glm()` is added to apply the manual changes and refit the intercept, ensuring that the changes have no impact on the other variables.
+* `smoothing` in `smooth_coef()` is added to choose smoothing specification
+* The README has been revised
 
 # insurancerating 0.7.4
 

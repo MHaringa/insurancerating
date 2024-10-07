@@ -1,3 +1,8 @@
+url: https://mharinga.github.io/insurancerating/
+template:
+  bootstrap: 5
+  bslib:
+    base_font: {google: "Open Sans"}
 navbar:
   structure:
     left:  [home, reference, news]

@@ -20,6 +20,11 @@
 #' to a standardized scale. This explanation is adopted from
 #' [DHARMa::simulateResiduals()].
 #'
+#' It might happen that in the fitted model for a data point all simulations
+#' have the same value (e.g. zero), this returns the error message Error in
+#' approxfun: need at least two non-NA values to interpolate*. If that is the
+#' case, it could help to increase the number of simulations.
+#'
 #' @return Invisibly returns the p-value of the test statistics. A
 #' p-value < 0.05 indicates a significant deviation from expected distribution.
 #'

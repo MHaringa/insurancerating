@@ -299,6 +299,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                "average_premium", exposure, severity, nclaims, premium)
 
   create_plots <- intersect(which(p_plots %in% names(df)), plots_allowed)
+  create_plots <- create_plots[order(match(create_plots, plots_allowed))]
 
   if (isTRUE(sort) && exposure == "NULL") {
     message("Ignoring sort: exposure is unknown")

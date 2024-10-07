@@ -33,6 +33,11 @@ linear model. This is achieved by a simulation-based approach, similar to the
 Bayesian p-value or the parametric bootstrap, that transforms the residuals
 to a standardized scale. This explanation is adopted from
 \code{\link[DHARMa:simulateResiduals]{DHARMa::simulateResiduals()}}.
+
+It might happen that in the fitted model for a data point all simulations
+have the same value (e.g. zero), this returns the error message Error in
+approxfun: need at least two non-NA values to interpolate*. If that is the
+case, it could help to increase the number of simulations.
 }
 \examples{
 \dontrun{
