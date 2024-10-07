@@ -10,7 +10,8 @@ update_glm(x, intercept_only = FALSE)
 \item{x}{Object of class restricted or of class smooth}
 
 \item{intercept_only}{Logical. Default is \code{FALSE}. If \code{TRUE}, only
-the intercept is updated, meaning other model coefficients remain unchanged.}
+the intercept is updated, ensuring that the changes have no impact on the
+other variables.}
 }
 \value{
 Object of class GLM

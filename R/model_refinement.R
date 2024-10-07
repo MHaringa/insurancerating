@@ -562,7 +562,8 @@ autoplot.smooth <- function(object, ...) {
 #'
 #' @param x Object of class restricted or of class smooth
 #' @param intercept_only Logical. Default is \code{FALSE}. If \code{TRUE}, only
-#' the intercept is updated, meaning other model coefficients remain unchanged.
+#' the intercept is updated, ensuring that the changes have no impact on the
+#' other variables.
 #'
 #' @author Martin Haringa
 #'
