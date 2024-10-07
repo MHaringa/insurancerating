@@ -567,6 +567,7 @@ autoplot.smooth <- function(object, ...) {
 #' @author Martin Haringa
 #'
 #' @importFrom stats glm
+#' @importFrom stats terms.formula
 #' @importFrom utils modifyList
 #'
 #' @return Object of class GLM
@@ -579,7 +580,7 @@ update_glm <- function(x, intercept_only = FALSE) {
   }
 
   if (isTRUE(intercept_only)) {
-    andere <- attr(terms.formula(x$formula_removed), "term.labels")
+    andere <- attr(stats::terms.formula(x$formula_removed), "term.labels")
     if (length(andere) > 0) {
       tot_rf <- x$rating_factors
       df <- tot_rf[tot_rf$risk_factor %in% andere,]
