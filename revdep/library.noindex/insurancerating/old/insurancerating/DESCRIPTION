@@ -1,0 +1,30 @@
+Package: insurancerating
+Type: Package
+Title: Analytic Insurance Rating Techniques
+Version: 0.7.4
+Authors@R: c(person("Martin", "Haringa", role = c("aut", "cre"), email = "mtharinga@gmail.com"))
+Maintainer: Martin Haringa <mtharinga@gmail.com>
+BugReports: https://github.com/mharinga/insurancerating/issues
+Description: Methods for insurance rating. It helps actuaries to implement GLMs within all relevant steps needed to construct
+ a risk premium from raw data. It provides a data driven strategy for the construction of insurance tariff classes.
+ This strategy is based on the work by Antonio and Valdez (2012) <doi:10.1007/s10182-011-0152-7>. It also provides recipes
+ on how to easily perform one-way, or univariate, analyses on an insurance portfolio. In addition it adds functionality
+ to include reference categories in the levels of the coefficients in the output of a generalized linear regression analysis.
+License: GPL (>= 2)
+URL: https://github.com/mharinga/insurancerating,
+        https://mharinga.github.io/insurancerating/
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.1
+Imports: ciTools, classInt, colorspace, data.table, DHARMa, dplyr,
+        evtree, fitdistrplus, ggplot2, insight, lubridate, mgcv,
+        patchwork, scales, stringr
+Depends: R (>= 3.3)
+Suggests: spelling, knitr, rmarkdown, testthat
+Language: en-US
+NeedsCompilation: no
+Packaged: 2024-05-20 11:18:20 UTC; martin
+Author: Martin Haringa [aut, cre]
+Repository: CRAN
+Date/Publication: 2024-05-20 11:30:03 UTC
+Built: R 4.4.0; ; 2024-05-20 14:53:43 UTC; unix

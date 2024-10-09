@@ -1,0 +1,32 @@
+Package: insurancerating
+Type: Package
+Title: Analytic Insurance Rating Techniques
+Version: 0.7.5
+Authors@R: c(person("Martin", "Haringa", role = c("aut", "cre"), email = "mtharinga@gmail.com"))
+Maintainer: Martin Haringa <mtharinga@gmail.com>
+BugReports: https://github.com/MHaringa/insurancerating/issues
+Description: Functions to build, evaluate, and visualize insurance rating 
+    models. It simplifies the process of modeling premiums, and allows to 
+    analyze insurance risk factors effectively. The package employs a 
+    data-driven strategy for constructing insurance tariff classes, drawing on 
+    the work of Antonio and Valdez (2012) <doi:10.1007/s10182-011-0152-7>.
+License: GPL (>= 2)
+URL: https://mharinga.github.io/insurancerating/,
+        https://github.com/MHaringa/insurancerating
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
+Imports: ciTools, classInt, colorspace, data.table, DHARMa, dplyr,
+        evtree, fitdistrplus, ggplot2, insight, lubridate, mgcv,
+        patchwork, scales, scam, stringr
+Depends: R (>= 3.3)
+Suggests: spelling, knitr, rmarkdown, testthat
+Roxygen: list(markdown = TRUE)
+Language: en-US
+RemoteType: local
+RemoteUrl:
+        /Users/martin/Library/CloudStorage/Dropbox/Werk/AAV/insurancerating
+NeedsCompilation: no
+Packaged: 2024-10-07 18:23:56 UTC; martin
+Author: Martin Haringa [aut, cre]
+Built: R 4.4.1; ; 2024-10-07 18:23:56 UTC; unix

@@ -1,0 +1,60 @@
+MTPL                    Characteristics of 30,000 policyholders in a
+                        Motor Third Party Liability (MTPL) portfolio.
+MTPL2                   Characteristics of 3,000 policyholders in a
+                        Motor Third Party Liability (MTPL) portfolio.
+add_prediction          Add predictions to a data frame
+autoplot.bootstrap_rmse
+                        Automatically create a ggplot for objects
+                        obtained from bootstrap_rmse()
+autoplot.check_residuals
+                        Automatically create a ggplot for objects
+                        obtained from check_residuals()
+autoplot.constructtariffclasses
+                        Automatically create a ggplot for objects
+                        obtained from construct_tariff_classes()
+autoplot.fitgam         Automatically create a ggplot for objects
+                        obtained from fit_gam()
+autoplot.restricted     Automatically create a ggplot for objects
+                        obtained from restrict_coef()
+autoplot.riskfactor     Automatically create a ggplot for objects
+                        obtained from rating_factors()
+autoplot.smooth         Automatically create a ggplot for objects
+                        obtained from smooth_coef()
+autoplot.truncated_dist
+                        Automatically create a ggplot for objects
+                        obtained from fit_truncated_dist()
+autoplot.univariate     Automatically create a ggplot for objects
+                        obtained from univariate()
+biggest_reference       Set reference group to the group with largest
+                        exposure
+bootstrap_rmse          Bootstrapped RMSE
+check_overdispersion    Check overdispersion of Poisson GLM
+check_residuals         Check model residuals
+construct_model_points
+                        Construct model points from Generalized Linear
+                        Model
+construct_tariff_classes
+                        Construct insurance tariff classes
+fisher                  Fisher's natural breaks classification
+fit_gam                 Generalized additive model
+fit_truncated_dist      Fit a distribution to truncated severity (loss)
+                        data
+histbin                 Create a histogram with outlier bins
+model_data              Get model data
+model_performance       Performance of fitted GLMs
+period_to_months        Split period to months
+rating_factors          Include reference group in regression output
+reduce                  Reduce portfolio by merging redundant date
+                        ranges
+refit_glm               Refitting Generalized Linear Models
+restrict_coef           Restrict coefficients in the model
+rgammat                 Generate data from truncated gamma distribution
+rlnormt                 Generate data from truncated lognormal
+                        distribution
+rmse                    Root Mean Squared Error
+rows_per_date           Find active rows per date
+smooth_coef             Smooth coefficients in the model
+summary.reduce          Automatically create a summary for objects
+                        obtained from reduce()
+univariate              Univariate analysis for discrete risk factors
+update_glm              Refitting Generalized Linear Models

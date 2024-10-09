@@ -7,7 +7,7 @@
 
 [![CRAN
 Status](https://www.r-pkg.org/badges/version/insurancerating)](https://cran.r-project.org/package=insurancerating)
-[![Downloads](https://cranlogs.r-pkg.org/badges/insurancerating?color=blue)](https://cran.rstudio.com/package=insurancerating)
+[![Downloads](https://cranlogs.r-pkg.org/badges/insurancerating?color=blue)](https://cran.r-project.org/package=insurancerating)
 
 <!-- badges: end -->
 
@@ -76,13 +76,16 @@ The following indicators are calculated:
 
 **Note on Exposure and Risk Premium**
 
-In the context of insurance:
+In insurance, *exposure* refers to the level of risk an insurer takes on
+when providing coverage for a certain asset, like a vehicle, over a
+period of time. For example, in vehicle insurance, exposure is often
+measured in *vehicle-years*, indicating how long the vehicle is covered
+and the likelihood of a claim being made.
 
-- The term *exposure* refers to the subject or asset that is being
-  insured. For example, an insured vehicle is considered an exposure.
-- If a vehicle is insured as of July 1st for a particular year, the
-  insurance company would record this as an exposure of 0.5 for that
-  year. This means that the vehicle was insured for half the year.
+For example, in vehicle insurance:
+
+- If a car is insured for a full year, its exposure is counted as 1.
+- If a vehicle is insured for six months, its exposure would be 0.5.
 
 Additionally, the term *risk premium* is used interchangeably with *pure
 premium* or *burning cost*. These terms represent the amount of premium
@@ -115,7 +118,7 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
   autoplot()
 ```
 
-![](man/figures/uni3-1.png)<!-- -->
+<img src="man/figures/uni3-1.png" alt="Show all available univariate plots"  />
 
 In `autoplot.univariate()`, `show_plots` specifies both which plots to
 display and the order in which they appear. The available plots include:
@@ -137,7 +140,7 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
   autoplot(show_plots = c(6,1))
 ```
 
-![](man/figures/uni4-1.png)<!-- -->
+<img src="man/figures/uni4-1.png" alt="Show claim frequency and exposure"  />
 
 To check whether claim frequency remains consistent over the years is
 important for identifying trends or irregularities:
@@ -152,7 +155,7 @@ MTPL2 |>
   autoplot(show_plots = 1)
 ```
 
-![](man/figures/uni5-1.png)<!-- -->
+<img src="man/figures/uni5-1.png" alt="Show claim frequency over the years"  />
 
 To remove the bars from the plot and display only the line graph, use
 `background = FALSE`:
@@ -162,7 +165,7 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
   autoplot(show_plots = c(6,1), background = FALSE)
 ```
 
-![](man/figures/uni6-1.png)<!-- -->
+<img src="man/figures/uni6-1.png" alt="Show claim frequency and exposure without histogram"  />
 
 `sort` arranges the levels of the risk factor in descending order based
 on exposure:
@@ -172,7 +175,7 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
   autoplot(show_plots = 1, background = FALSE, sort = TRUE)
 ```
 
-![](man/figures/uni7-1.png)<!-- -->
+<img src="man/figures/uni7-1.png" alt="Show claim frequency and arrange levels in descending order"  />
 
 `sort_manual` allows you to arrange the levels of a discrete risk factor
 according to your preferred order. This is useful when the levels have a
@@ -185,7 +188,7 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
            sort_manual = c("2", "3", "1", "0"))
 ```
 
-![](man/figures/uni8-1.png)<!-- -->
+<img src="man/figures/uni8-1.png" alt="Show claim frequency and arrange levels according to your preferred order"  />
 
 The graph below illustrates additional options:
 
@@ -196,7 +199,7 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
            custom_theme = ggplot2::theme_bw())
 ```
 
-![](man/figures/uni9-1.png)<!-- -->
+<img src="man/figures/uni9-1.png" alt="Show graph with additional options"  />
 
 Alternatively, you can create a bar graph to display the number of
 claims; this is the last `univariate()` plot with options presented
@@ -207,7 +210,7 @@ univariate(MTPL2, x = area, nclaims = nclaims) |>
   autoplot(show_plots = 8, coord_flip = TRUE, sort = TRUE)
 ```
 
-![](man/figures/uni10-1.png)<!-- -->
+<img src="man/figures/uni10-1.png" alt="Show number of claims"  />
 
 In addition to `univariate()`, another option for one-way analysis is
 `histbin()`. This function allows you to create a histogram for
@@ -217,7 +220,7 @@ continuous variables:
 histbin(MTPL2, premium, bins = 20)
 ```
 
-![](man/figures/hist1-1.png)<!-- -->
+<img src="man/figures/hist1-1.png" alt="Histogram for the distribution of the premium"  />
 
 In the context of insurance, it is common to encounter outliers in the
 data, and one way to address this issue is by grouping the outliers into
@@ -227,7 +230,7 @@ a single bin:
 histbin(MTPL2, premium, bins = 10, right = 110)
 ```
 
-![](man/figures/hist2-1.png)<!-- -->
+<img src="man/figures/hist2-1.png" alt="Histogram for the distribution of the premium with grouped outliers"  />
 
 Alternatively, you can apply a logarithmic transformation or remove
 outliers, but these methods can obscure the original distribution.
@@ -262,7 +265,7 @@ autoplot(age_policyholder_frequency, show_observations = TRUE) /
   histbin(MTPL, age_policyholder, bins = 20)
 ```
 
-![](man/figures/cont1-1.png)<!-- -->
+<img src="man/figures/cont1-1.png" alt="Claim frequency for different age groups"  />
 
 The figure shows that younger policyholders have a higher risk profile.
 Since the GAM uses `exposure` as weights, the fitted line for those
@@ -297,7 +300,7 @@ clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
 autoplot(clusters_freq, show_observations = TRUE)
 ```
 
-![](man/figures/cont2-1.png)<!-- -->
+<img src="man/figures/cont2-1.png" alt="Claim frequency for different age groups with bins"  />
 
 The above clearly demonstrates bins with risk-homogeneous categories. It
 shows that the claim frequency for policyholders aged between 39 and 84
@@ -340,11 +343,11 @@ glimpse(dat)
     ## $ age_policyholder_freq_evt <fct> "(39,84]", "(39,84]", "(39,84]", "(39,84]", …
     ## $ age_policyholder_freq_man <fct> "(66,70]", "(38,42]", "(74,78]", "(46,50]", …
 
-The last line above sets the base level of the factors (specifically
-`age_policyholder_freq_evt` and `age_policyholder_freq_man`) to the one
-with the highest exposure. For example, for `age_policyholder_freq_evt`,
-the age group (39, 84\] is chosen as the base level because it has the
-most exposure.
+`biggest_reference()` in the last line above establishes the baseline
+for the factors, specifically `age_policyholder_freq_evt` and
+`age_policyholder_freq_man`, using the one with the highest exposure.
+For instance, for `age_policyholder_freq_evt`, the age group `(39,84]`
+is selected as the baseline since it has the highest exposure.
 
 ## Risk premium models
 
@@ -366,7 +369,6 @@ function in R to facilitate this process.
 ### Example 1
 
 The following code generates two different models for claim frequency.
-`rating_factors()` displays the fitted coefficients:
 
 ``` r
 mod_freq1 <- glm(nclaims ~ age_policyholder_freq_evt, 
@@ -378,7 +380,14 @@ mod_freq2 <- glm(nclaims ~ age_policyholder_freq_evt + age_policyholder,
                  offset = log(exposure), 
                  family = "poisson", 
                  data = dat)
+```
 
+A fitted linear model has coefficients for the different categories of
+the factor terms, usually one less than the total number of categories.
+`rating_factors()` includes the baseline for the factors with a
+coefficient of 1:
+
+``` r
 rating_factors(mod_freq1, mod_freq2) 
 ```
 
@@ -400,7 +409,7 @@ rating_factors(mod_freq1, mod_freq2) |>
   autoplot()
 ```
 
-![](man/figures/rp12-1.png)<!-- -->
+<img src="man/figures/rp12-1.png" alt="Show rating factors"  />
 
 The figure above displays the age groups in a non-natural order, with
 the group aged 39 to 84 appearing before the group aged 18 to 25. To
@@ -415,7 +424,7 @@ rating_factors(mod_freq1, mod_freq2, model_data = dat) |>
   autoplot()
 ```
 
-![](man/figures/rp13-1.png)<!-- -->
+<img src="man/figures/rp13-1.png" alt="Show rating factors in natural order"  />
 
 The following graph presents additional options, for example, including
 the exposure displayed as a bar graph:
@@ -425,7 +434,7 @@ rating_factors(mod_freq1, mod_freq2, model_data = dat, exposure = exposure) |>
   autoplot(linetype = TRUE) 
 ```
 
-![](man/figures/rp14-1.png)<!-- -->
+<img src="man/figures/rp14-1.png" alt="Show rating factors in natural order, including the exposure displayed as a bar graph"  />
 
 ### Example 2
 
@@ -537,7 +546,7 @@ rating_factors(burn_unrestricted, model_data = MTPL_premium, exposure = exposure
   autoplot(risk_factor = "age_policyholder_freq_man")
 ```
 
-![](man/figures/rp33-1.png)<!-- -->
+<img src="man/figures/rp33-1.png" alt="Show coefficients for the age of the policyholder"  />
 
 The figure above displays a pattern similar to the GAM; however, it
 reveals some inconsistencies. For example, the premium for ages 30 to 34
@@ -587,7 +596,7 @@ burn_unrestricted |>
   autoplot()
 ```
 
-![](man/figures/rp35-1.png)<!-- -->
+<img src="man/figures/rp35-1.png" alt="Show smoothed coefficients by means of a polynomial for the age of the policyholder"  />
 
 As illustrated above, the fitted polynomial yields excessively high
 coefficients for those under age 25 and significantly low coefficients
@@ -605,7 +614,7 @@ burn_unrestricted |>
   autoplot()
 ```
 
-![](man/figures/rp36-1.png)<!-- -->
+<img src="man/figures/rp36-1.png" alt="Show smoothed coefficients by means of a lower-order polynomial"  />
 
 In most cases, and particularly in this situation, a better alternative
 is to use a GAM rather than a polynomial:
@@ -619,7 +628,7 @@ burn_unrestricted |>
   autoplot()
 ```
 
-![](man/figures/rp37-1.png)<!-- -->
+<img src="man/figures/rp37-1.png" alt="Show smoothed coefficients by means of a GAM"  />
 
 It is observed that for ages above 80, the fitted line decreases
 rapidly, despite having very little exposure in this age group.
@@ -637,7 +646,7 @@ burn_unrestricted |>
 autoplot(age_policyholder_frequency, show_observations = TRUE)
 ```
 
-![](man/figures/rp38-1.png)<!-- -->
+<img src="man/figures/rp38-1.png" alt="Show smoothed coefficients by means of a weighted GAM"  />
 
 We now observe a pattern that looks quite desirable (especially when
 compared to the GAM in the second plot above). In the first plot, we see
@@ -670,7 +679,7 @@ mpd <- burn_unrestricted |>
 gam / mpd
 ```
 
-![](man/figures/rp39-1.png)<!-- -->
+<img src="man/figures/rp39-1.png" alt="Show smoothed coefficients by means of a gam vs mpd"  />
 
 In addition to smoothing, there is often a need to impose restrictions
 on the coefficients. For instance, many insurers implement some form of
@@ -759,7 +768,7 @@ And visualize them:
 rating_factors(burn_restricted3) |> autoplot()
 ```
 
-![](man/figures/rp312-1.png)<!-- -->
+<img src="man/figures/rp312-1.png" alt="Show rating factors according to the burning model"  />
 
 If you prefer not to refit the coefficients of the other risk
 factors—such as when the exposure for the modified coefficients is very
@@ -855,7 +864,7 @@ bootstrap_rmse(mod_freq1, dat, n = 100, show_progress = FALSE) |>
   autoplot()
 ```
 
-![](man/figures/rp42-1.png)<!-- -->
+<img src="man/figures/rp42-1.png" alt="Show bootstrapped rmse"  />
 
 This analysis is useful for assessing the stability of the fitted
 model’s predictive ability by examining the variation in the computed
@@ -900,7 +909,7 @@ check_residuals(mod_freq1, n_simulations = 600) |>
 
     ## [32mOK: residuals appear as from the expected distribution (p = 0.271).[39m
 
-![](man/figures/rp44-1.png)<!-- -->
+<img src="man/figures/rp44-1.png" alt="Show uniform QQ plot for calculated standardized residuals"  />
 
 `check_residuals()` helps identify deviations from the expected
 distribution and generates a uniform quantile-quantile (QQ) plot. The
@@ -916,4 +925,4 @@ issues like non-normality or heteroscedasticity, even if the model is
 correct. To address this, `check_residuals()` uses a simulation-based
 approach to create standardized residuals that can be intuitively
 understood. This explanation is adopted from the [vignette for
-DHARMa](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html).
+DHARMa](https://cran.r-project.org/package=DHARMa/vignettes/DHARMa.html).

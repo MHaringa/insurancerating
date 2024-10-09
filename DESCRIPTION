@@ -1,7 +1,7 @@
 Package: insurancerating
 Type: Package
 Title: Analytic Insurance Rating Techniques
-Version: 0.7.4.9000
+Version: 0.7.5
 Authors@R: c(person("Martin", "Haringa", role = c("aut", "cre"), email = "mtharinga@gmail.com"))
 Maintainer: Martin Haringa <mtharinga@gmail.com>
 BugReports: https://github.com/MHaringa/insurancerating/issues
@@ -11,7 +11,7 @@ Description: Functions to build, evaluate, and visualize insurance rating
     data-driven strategy for constructing insurance tariff classes, drawing on 
     the work of Antonio and Valdez (2012) <doi:10.1007/s10182-011-0152-7>.
 License: GPL (>= 2)
-URL: https://github.com/mharinga/insurancerating, https://mharinga.github.io/insurancerating/, https://github.com/MHaringa/insurancerating
+URL: https://mharinga.github.io/insurancerating/, https://github.com/MHaringa/insurancerating
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2

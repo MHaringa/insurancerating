@@ -1,11 +1,13 @@
 ## Resubmission
 This is a resubmission. In this version:
 
-* `bootstrap_rmse()` now uses `after_stat(density)` instead of the deprecated dot-dot notation
-* `custom_theme` in `autoplot.univariate()` is added to customize the theme
+* `rating_factors()` now always returns correct output when column with exposure in data is not named `exposure`
+* `intercept_only` in `update_glm()` is added to apply the manual changes and refit the intercept, ensuring that the changes have no impact on the other variables.
+* `smoothing` in `smooth_coef()` is added to choose smoothing specification
+* The README has been revised
 
 ## Test environments
-* local OS X install, R 4.4.0
+* local OS X install, R 4.4.1
 * win-builder (devel and release)
 
 ## R CMD check results

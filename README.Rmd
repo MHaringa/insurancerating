@@ -14,7 +14,8 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 
-[![CRAN Status](https://www.r-pkg.org/badges/version/insurancerating)](https://cran.r-project.org/package=insurancerating) [![Downloads](https://cranlogs.r-pkg.org/badges/insurancerating?color=blue)](https://cran.rstudio.com/package=insurancerating)
+[![CRAN Status](https://www.r-pkg.org/badges/version/insurancerating)](https://cran.r-project.org/package=insurancerating) [![Downloads](https://cranlogs.r-pkg.org/badges/insurancerating?color=blue)](https://cran.r-project.org/package=insurancerating)
+
 
 <!-- badges: end -->
 
@@ -67,10 +68,12 @@ The following indicators are calculated:
 
 **Note on Exposure and Risk Premium**
 
-In the context of insurance:
+In insurance, *exposure* refers to the level of risk an insurer takes on when providing coverage for a certain asset, like a vehicle, over a period of time. For example, in vehicle insurance, exposure is often measured in *vehicle-years*, indicating how long the vehicle is covered and the likelihood of a claim being made.
 
--   The term *exposure* refers to the subject or asset that is being insured. For example, an insured vehicle is considered an exposure.
--   If a vehicle is insured as of July 1st for a particular year, the insurance company would record this as an exposure of 0.5 for that year. This means that the vehicle was insured for half the year.
+For example, in vehicle insurance:
+
+- If a car is insured for a full year, its exposure is counted as 1.
+- If a vehicle is insured for six months, its exposure would be 0.5.
 
 Additionally, the term *risk premium* is used interchangeably with *pure premium* or *burning cost*. These terms represent the amount of premium that is required to cover the expected loss, without including any additional expenses or profit margins.
 
@@ -85,6 +88,8 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure)
 However, the above table is small and easy to understand, the same information might be presented more effectively with a graph, as shown below.
 
 ```{r uni3, eval = TRUE, message = FALSE}
+#| fig.alt: >
+#|   Show all available univariate plots
 
 univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
   autoplot()
@@ -106,6 +111,8 @@ In `autoplot.univariate()`, `show_plots` specifies both which plots to display a
 For instance, to display the exposure and claim frequency plots:
 
 ```{r uni4}
+#| fig.alt: >
+#|   Show claim frequency and exposure
 
 univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
   autoplot(show_plots = c(6,1))
@@ -115,6 +122,8 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
 To check whether claim frequency remains consistent over the years is important for identifying trends or irregularities:
 
 ```{r uni5}
+#| fig.alt: >
+#|   Show claim frequency over the years
 
 set.seed(1)
 sample_years <- sample(2016:2019, nrow(MTPL2), replace = TRUE)
@@ -129,6 +138,8 @@ MTPL2 |>
 To remove the bars from the plot and display only the line graph, use `background = FALSE`:
 
 ```{r uni6}
+#| fig.alt: >
+#|   Show claim frequency and exposure without histogram
 
 univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
   autoplot(show_plots = c(6,1), background = FALSE)
@@ -138,6 +149,8 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
 `sort` arranges the levels of the risk factor in descending order based on exposure:
 
 ```{r uni7}
+#| fig.alt: >
+#|   Show claim frequency and arrange levels in descending order
 
 univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
   autoplot(show_plots = 1, background = FALSE, sort = TRUE)
@@ -147,6 +160,8 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
 `sort_manual` allows you to arrange the levels of a discrete risk factor according to your preferred order. This is useful when the levels have a natural sequence or when you want to exclude certain levels from the output.
 
 ```{r uni8}
+#| fig.alt: >
+#|   Show claim frequency and arrange levels according to your preferred order
 
 univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
   autoplot(show_plots = c(6,1), background = FALSE, 
@@ -157,6 +172,8 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
 The graph below illustrates additional options:
 
 ```{r uni9, fig.width = 10, fig.height = 5}
+#| fig.alt: >
+#|   Show graph with additional options
 
 univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
   autoplot(show_plots = c(6,1), background = FALSE, sort = TRUE, ncol = 2, 
@@ -168,6 +185,8 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
 Alternatively, you can create a bar graph to display the number of claims; this is the last `univariate()` plot with options presented here:
 
 ```{r uni10, eval = TRUE, message = FALSE, warning = FALSE}
+#| fig.alt: >
+#|   Show number of claims
 
 univariate(MTPL2, x = area, nclaims = nclaims) |>
   autoplot(show_plots = 8, coord_flip = TRUE, sort = TRUE)
@@ -177,6 +196,8 @@ univariate(MTPL2, x = area, nclaims = nclaims) |>
 In addition to `univariate()`, another option for one-way analysis is `histbin()`. This function allows you to create a histogram for continuous variables:
 
 ```{r hist1, eval = TRUE, message = FALSE, warning = FALSE}
+#| fig.alt: >
+#|   Histogram for the distribution of the premium
 
 histbin(MTPL2, premium, bins = 20)
 
@@ -185,6 +206,8 @@ histbin(MTPL2, premium, bins = 20)
 In the context of insurance, it is common to encounter outliers in the data, and one way to address this issue is by grouping the outliers into a single bin:
 
 ```{r hist2, eval = TRUE, message = FALSE, warning = FALSE}
+#| fig.alt: >
+#|   Histogram for the distribution of the premium with grouped outliers
 
 histbin(MTPL2, premium, bins = 10, right = 110)
 
@@ -201,6 +224,8 @@ To do this, we fit a Generalized Additive Model (GAM) for *age_policyholder*. A 
 `fit_gam()` below displays the claim frequency (i.e. number of claims / exposure) for different age groups:
 
 ```{r cont1, eval = TRUE, message = FALSE, warning = FALSE}
+#| fig.alt: >
+#|   Claim frequency for different age groups
 
 age_policyholder_frequency <- fit_gam(data = MTPL, 
                                       nclaims = nclaims, 
@@ -223,6 +248,8 @@ The first method is to bin the GAM output using evolutionary trees, which group 
 `construct_tariff_classes()` generates bins using evolutionary trees:
 
 ```{r cont2, eval = TRUE}
+#| fig.alt: >
+#|   Claim frequency for different age groups with bins
 
 clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
 
@@ -254,7 +281,7 @@ glimpse(dat)
 
 ```
 
-The last line above sets the base level of the factors (specifically `age_policyholder_freq_evt` and `age_policyholder_freq_man`) to the one with the highest exposure. For example, for `age_policyholder_freq_evt`, the age group (39, 84] is chosen as the base level because it has the most exposure.
+`biggest_reference()` in the last line above establishes the baseline for the factors, specifically `age_policyholder_freq_evt` and `age_policyholder_freq_man`, using the one with the highest exposure. For instance, for `age_policyholder_freq_evt`, the age group `(39,84]` is selected as the baseline since it has the highest exposure.
 
 ## Risk premium models
 
@@ -264,7 +291,7 @@ GLMs are favored because they allow for the modeling of complex relationships be
 
 ### Example 1
 
-The following code generates two different models for claim frequency. `rating_factors()` displays the fitted coefficients:
+The following code generates two different models for claim frequency. 
 
 ```{r rp11, eval = TRUE}
 
@@ -278,6 +305,12 @@ mod_freq2 <- glm(nclaims ~ age_policyholder_freq_evt + age_policyholder,
                  family = "poisson", 
                  data = dat)
 
+```
+
+A fitted linear model has coefficients for the different categories of the factor terms, usually one less than the total number of categories. `rating_factors()` includes the baseline for the factors with a coefficient of 1:
+
+```{r rp11a}
+
 rating_factors(mod_freq1, mod_freq2) 
 
 ```
@@ -285,6 +318,8 @@ rating_factors(mod_freq1, mod_freq2)
 `autoplot.riskfactor()` generates a figure of the coefficients. The base level for the factor `age_policyholder_freq_cat` is the group with the highest exposure, which is displayed first.
 
 ```{r rp12, eval = TRUE}
+#| fig.alt: >
+#|   Show rating factors
 
 rating_factors(mod_freq1, mod_freq2) |> 
   autoplot()
@@ -294,6 +329,8 @@ rating_factors(mod_freq1, mod_freq2) |>
 The figure above displays the age groups in a non-natural order, with the group aged 39 to 84 appearing before the group aged 18 to 25. To arrange the ages in their natural order, include `model_data` in `rating_factors()` to sort the clustering in the original sequence. Please note that ordering the factor `age_policyholder_freq_evt` will only work if `biggest_reference()` is used to set the base level of the factor to the level with the highest exposure.
 
 ```{r rp13, eval = TRUE}
+#| fig.alt: >
+#|   Show rating factors in natural order
 
 rating_factors(mod_freq1, mod_freq2, model_data = dat) |>
   autoplot()
@@ -303,6 +340,9 @@ rating_factors(mod_freq1, mod_freq2, model_data = dat) |>
 The following graph presents additional options, for example, including the exposure displayed as a bar graph:
 
 ```{r rp14, eval = TRUE}
+#| fig.alt: >
+#|   Show rating factors in natural order, including the exposure displayed
+#|   as a bar graph
 
 rating_factors(mod_freq1, mod_freq2, model_data = dat, exposure = exposure) |>
   autoplot(linetype = TRUE) 
@@ -367,6 +407,8 @@ rating_factors(burn_unrestricted)
 While the table above is concise and easy to interpret, the same information can be presented more effectively through a graph, as shown below. This visualization makes it easier to assess whether the coefficients follow the desired trend:
 
 ```{r rp33, fig.width = 10}
+#| fig.alt: >
+#|   Show coefficients for the age of the policyholder
 
 rating_factors(burn_unrestricted, model_data = MTPL_premium, exposure = exposure) |>
   autoplot(risk_factor = "age_policyholder_freq_man")
@@ -394,6 +436,9 @@ In `smooth_coef()`, `x_cut` refers to the risk factor with clusters, in this cas
 `autoplot()` generates a figure for the smoothed estimates. The blue segments represent the estimates from the unrestricted model, while the black line displays the smoothed coefficients. The red segments indicate the newly estimated coefficients based on the polynomial and the selected age groups. These age groups can be chosen to align with commercial objectives:
 
 ```{r rp35, eval = TRUE, message = FALSE, warning = FALSE}
+#| fig.alt: >
+#|   Show smoothed coefficients by means of a polynomial 
+#|   for the age of the policyholder
 
 burn_unrestricted |>
   smooth_coef(x_cut = "age_policyholder_freq_man", 
@@ -408,6 +453,8 @@ As illustrated above, the fitted polynomial yields excessively high coefficients
 The degree can be adjusted to a lower-order polynomial (in this case, set to 1), resulting in a straight line, which is not ideal:
 
 ```{r rp36, eval = TRUE, message = FALSE, warning = FALSE}
+#| fig.alt: >
+#|   Show smoothed coefficients by means of a lower-order polynomial
 
 burn_unrestricted |>
   smooth_coef(x_cut = "age_policyholder_freq_man", 
@@ -421,6 +468,8 @@ burn_unrestricted |>
 In most cases, and particularly in this situation, a better alternative is to use a GAM rather than a polynomial:
 
 ```{r rp37, eval = TRUE, message = FALSE, warning = FALSE}
+#| fig.alt: >
+#|   Show smoothed coefficients by means of a GAM
 
 burn_unrestricted |>
   smooth_coef(x_cut = "age_policyholder_freq_man", 
@@ -434,6 +483,8 @@ burn_unrestricted |>
 It is observed that for ages above 80, the fitted line decreases rapidly, despite having very little exposure in this age group. Therefore, the GAM should be weighted by the exposure, resulting in a weighted GAM:
 
 ```{r rp38, eval = TRUE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 8}
+#| fig.alt: >
+#|   Show smoothed coefficients by means of a weighted GAM
 
 burn_unrestricted |>
   smooth_coef(x_cut = "age_policyholder_freq_man", 
@@ -450,7 +501,9 @@ We now observe a pattern that looks quite desirable (especially when compared to
 
 To achieve this, `smooth_coef()` offers options for monotonic increasing ("mpi") or monotonic decreasing ("mpd") trends. These are modeled using shape-constrained additive models (SCAMs).
 
-```{r rp39, eval = TRUE, message = FALSE, warning = FALSE, fig.width = 10, fig.height=8}
+```{r rp39, eval = TRUE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 8}
+#| fig.alt: >
+#|   Show smoothed coefficients by means of a gam vs mpd
 
 gam <- burn_unrestricted |>
   smooth_coef(x_cut = "age_policyholder_freq_man", 
@@ -506,6 +559,8 @@ rating_factors(burn_restricted3)
 And visualize them:
 
 ```{r rp312, fig.width = 10}
+#| fig.alt: >
+#|   Show rating factors according to the burning model
 
 # Show rating factors
 rating_factors(burn_restricted3) |> autoplot()
@@ -554,6 +609,8 @@ The RMSE (Root Mean Square Error) is the square root of the average squared diff
 `bootstrap_rmse()` computes the RMSE for bootstrap replicates, conducting this process \code{n} times. Specifically, in each iteration, a sample is drawn with replacement from the dataset, and the model is refitted using this sample. The root mean squared error is then calculated. The following visualizes this:
 
 ```{r rp42, eval = TRUE}
+#| fig.alt: >
+#|   Show bootstrapped rmse
 
 bootstrap_rmse(mod_freq1, dat, n = 100, show_progress = FALSE) |> 
   autoplot()
@@ -575,6 +632,8 @@ check_overdispersion(mod_freq1)
 `check_residuals()` calculates standardized residuals from GLMs, scaling them between 0 and 1, making them easier to interpret, similar to residuals from linear models:
 
 ```{r rp44, message = FALSE, eval = TRUE}
+#| fig.alt: >
+#|   Show uniform QQ plot for calculated standardized residuals
 
 check_residuals(mod_freq1, n_simulations = 600) |>
   autoplot()
@@ -583,4 +642,6 @@ check_residuals(mod_freq1, n_simulations = 600) |>
 
 `check_residuals()` helps identify deviations from the expected distribution and generates a uniform quantile-quantile (QQ) plot. The simulated residuals in the QQ plot above show no significant deviation from a Poisson distribution. Keep in mind that formal tests for residual distribution usually yield significant results, so visual inspections like QQ plots are preferred.
 
-Diagnosing issues in GLMs is challenging because standard residual plots often don't work well. This is due to the expected data distribution changing with fitted values, which can make it seem like there are issues like non-normality or heteroscedasticity, even if the model is correct. To address this, `check_residuals()` uses a simulation-based approach to create standardized residuals that can be intuitively understood. This explanation is adopted from the [vignette for DHARMa](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html).
+Diagnosing issues in GLMs is challenging because standard residual plots often don't work well. This is due to the expected data distribution changing with fitted values, which can make it seem like there are issues like non-normality or heteroscedasticity, even if the model is correct. To address this, `check_residuals()` uses a simulation-based approach to create standardized residuals that can be intuitively understood. This explanation is adopted from the [vignette for DHARMa](https://cran.r-project.org/package=DHARMa/vignettes/DHARMa.html).
+
+

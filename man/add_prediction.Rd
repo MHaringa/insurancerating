@@ -29,9 +29,9 @@ Add model predictions and confidence bounds to a data frame.
 \examples{
 mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
     offset = log(exposure), family = poisson())
-add_prediction(MTPL, mod1)
+mtpl_pred <- add_prediction(MTPL, mod1)
 
 # Include confidence bounds
-add_prediction(MTPL, mod1, conf_int = TRUE)
+mtpl_pred_ci <- add_prediction(MTPL, mod1, conf_int = TRUE)
 
 }
