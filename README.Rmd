@@ -72,7 +72,7 @@ In insurance, *exposure* refers to the level of risk an insurer takes on when pr
 
 For example, in vehicle insurance:
 
-- If a car is insured for a full year, its exposure is counted as 1.
+- If a vehicle is insured for a full year, its exposure is counted as 1.
 - If a vehicle is insured for six months, its exposure would be 0.5.
 
 Additionally, the term *risk premium* is used interchangeably with *pure premium* or *burning cost*. These terms represent the amount of premium that is required to cover the expected loss, without including any additional expenses or profit margins.
