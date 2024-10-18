@@ -1,3 +1,5 @@
+# insurancerating (development version)
+
 # insurancerating 0.7.5
 
 * `rating_factors()` now always returns correct output when column with exposure in data is not named `exposure`
