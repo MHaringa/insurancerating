@@ -604,7 +604,7 @@ update_glm <- function(x, intercept_only = FALSE) {
 
       if (length(rf_single) > 0) {
 
-        df2 <- df[df$risk_factor %in% rf_single]
+        df2 <- df[df$risk_factor %in% rf_single,]
         sng_lst <- split(df2, df2$risk_factor)
 
         for (i in seq_along(sng_lst)) {

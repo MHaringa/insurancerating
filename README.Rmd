@@ -68,7 +68,7 @@ The following indicators are calculated:
 
 **Note on Exposure and Risk Premium**
 
-In insurance, *exposure* refers to the level of risk an insurer takes on when providing coverage for a certain asset, like a vehicle, over a period of time. For example, in vehicle insurance, exposure is often measured in *vehicle-years*, indicating how long the vehicle is covered and the likelihood of a claim being made.
+In insurance, *exposure* refers to the risk an insurer takes on when providing coverage for a certain asset, like a vehicle, over a period of time. For example, in vehicle insurance, exposure is often measured in *vehicle-years*, indicating how long the vehicle is covered and the likelihood of a claim being made.
 
 For example, in vehicle insurance:
 
