@@ -1,68 +1,175 @@
 #' Univariate analysis for discrete risk factors
 #'
-#' @description Univariate analysis for discrete risk factors in an insurance
+#' @description
+#' Performs a univariate analysis for discrete risk factors in an insurance
 #' portfolio. The following summary statistics are calculated:
 #' \itemize{
-#'  \item{frequency (i.e. number of claims / exposure)}
-#'  \item{average severity (i.e. severity / number of claims)}
-#'  \item{risk premium (i.e. severity / exposure)}
-#'  \item{loss ratio (i.e. severity / premium)}
-#'  \item{average premium (i.e. premium / exposure)}
+#'   \item frequency = number of claims / exposure
+#'   \item average severity = severity / number of claims
+#'   \item risk premium = severity / exposure
+#'   \item loss ratio = severity / premium
+#'   \item average premium = premium / exposure
 #' }
-#' If input arguments are not specified, the summary statistics related to
-#' these arguments are ignored.
 #'
-#' @param df data.frame with insurance portfolio
-#' @param x column in `df` with risk factor, or use `vec_ext()` for use with
-#' an external vector (see examples)
-#' @param severity column in `df` with severity (default is NULL)
-#' @param premium column in `df` with premium (default is NULL)
-#' @param exposure column in `df` with exposure (default is NULL)
-#' @param nclaims column in `df` with number of claims (default is NULL)
-#' @param by list of column(s) in `df` to group by
+#' @param df A `data.frame` with the insurance portfolio.
+#' @param x Character vector: column(s) in `df` with the risk factor(s).
+#' @param severity Character, column in `df` with claim amounts (default = NULL).
+#' @param premium Character, column in `df` with premiums (default = NULL).
+#' @param exposure Character, column in `df` with exposures (default = NULL).
+#' @param nclaims Character, column in `df` with number of claims (default = NULL).
+#' @param by Character vector of column(s) in `df` to group by in addition to `x`.
+#'
+#' @details
+#' The function computes univariate statistics for discrete risk factors.
+#'
+#' - **Frequency**: number of claims / exposure
+#' - **Average severity**: severity / number of claims
+#' - **Risk premium**: severity / exposure
+#' - **Loss ratio**: severity / premium
+#' - **Average premium**: premium / exposure
+#'
+#' If one or more input arguments are not specified, the related statistics are
+#' omitted from the results.
+#'
+#' ## Migration from `univariate()`
+#'
+#' The function [univariate()] is deprecated as of version 0.7.6 and replaced by
+#' [univariate_summary()]. In addition to the name change, the interface has also
+#' changed:
+#'
+#' - `univariate()` used **non-standard evaluation (NSE)**, so column names could be
+#'   passed unquoted (e.g. `x = area`).
+#' - `univariate_summary()` uses **standard evaluation (SE)**, so column names must
+#'   be passed as character strings (e.g. `x = "area"`).
+#'
+#' This makes the function easier to use in programmatic workflows.
+#'
+#' `univariate()` is still available for backward compatibility but will emit a
+#' deprecation warning and will be removed in a future release.
+#'
+#'
+#' @return A `data.table` of class `"univariate"` with summary statistics.
 #'
 #' @author Martin Haringa
 #'
-#' @return A data.frame
-#'
 #' @importFrom data.table data.table
 #'
+#' @details
+#' This function supersedes [univariate()], which relied on non-standard
+#' evaluation (NSE). From version 0.7.6 onwards, you must supply column names
+#' as **strings** (SE), which makes the function easier to use in programmatic
+#' workflows.
+#'
 #' @examples
-#' # Summarize by `area`
-#' univariate(MTPL2, x = area, severity = amount, nclaims = nclaims,
-#'            exposure = exposure, premium = premium)
+#' ## --- New usage (SE) ---
+#' univariate_summary(MTPL2,
+#'                    x = "area",
+#'                    severity = "amount",
+#'                    nclaims = "nclaims",
+#'                    exposure = "exposure",
+#'                    premium = "premium")
 #'
-#' # Summarize by `area`, with column name in external vector
-#' xt <- "area"
-#' univariate(MTPL2, x = vec_ext(xt), severity = amount, nclaims = nclaims,
-#'            exposure = exposure, premium = premium)
+#' ## --- Deprecated usage (NSE) ---
+#' univariate(MTPL2,
+#'            x = area,
+#'            severity = amount,
+#'            nclaims = nclaims,
+#'            exposure = exposure,
+#'            premium = premium)
 #'
-#' # Summarize by `zip` and `bm`
-#' univariate(MTPL, x = zip, severity = amount, nclaims = nclaims,
-#'            exposure = exposure, by = bm)
-#'
-#' # Summarize by `zip`, `bm` and `power`
-#' univariate(MTPL, x = zip, severity = amount, nclaims = nclaims,
-#'            exposure = exposure, by = list(bm, power))
+#' @export
+univariate_summary <- function(df, x, severity = NULL, nclaims = NULL,
+                               exposure = NULL, premium = NULL, by = NULL) {
+
+  .xvar <- x
+  .xvar_out <- .xvar
+  .by_out <- by
+
+  if (is.null(severity) && is.null(nclaims) && is.null(exposure) &&
+      is.null(premium)) {
+    stop("You did not supply any of the required arguments.", call. = FALSE)
+  }
+
+  if (!all(.xvar %in% names(df))) {
+    stop("Column(s) ", paste(.xvar, collapse = ", "), " not found in data.frame",
+         call. = FALSE)
+  }
+
+  if (length(.xvar) > 1) {
+    by <- c(.xvar[-1], by)
+    .xvar <- .xvar[1]
+  }
+
+  # only keep the non-null arguments
+  cols_ <- c(severity, nclaims, exposure, premium)
+  cols_ <- cols_[!is.null(cols_)]
+
+  if (length(cols_) == 0) {
+    stop("Define at least one column for severity, nclaims, exposure or premium.",
+         call. = FALSE)
+  }
+
+  BY <- c(.xvar, by)
+
+  dt <- data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
+                                   by = BY, .SDcols = cols_]
+
+  dt1 <- NULL
+  if (!is.null(by)) {
+    dt1 <- data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
+                                      by = .xvar, .SDcols = cols_]
+  }
+
+  dt  <- add_metrics(dt,  cols_, nclaims, exposure, severity, premium)
+  if (!is.null(by)) {
+    dt1 <- add_metrics(dt1, cols_, nclaims, exposure, severity, premium)
+  }
+
+  attr(dt, "xvar") <- .xvar_out
+  attr(dt, "severity") <- severity
+  attr(dt, "nclaims") <- nclaims
+  attr(dt, "exposure") <- exposure
+  attr(dt, "premium") <- premium
+  attr(dt, "by") <- .by_out
+  attr(dt, "dfby") <- as.data.frame(dt1)
+
+  class(dt) <- c("univariate", class(df))
+  return(dt)
+}
+
+
+
+#' @rdname univariate_summary
+#' @description
+#' [univariate()] is deprecated as of version 0.7.6.
+#' Please use [univariate_summary()] instead with **standard evaluation** (SE),
+#' i.e. column names as character strings.
 #'
 #' @export
 univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
                        premium = NULL, by = NULL) {
 
-  nse_se_input <- function(x) {
-    expr <- substitute(x)
-    if (is.call(expr) && expr[[1]] == quote(vec_ext)) {
-      as.character(eval.parent(expr[[2]]))
-    } else if (is.character(expr)) {
-      x
-    } else if (is.call(expr) && (expr[[1]] == quote(list) ||
-                                 expr[[1]] == quote(c) ||
-                                 expr[[1]] == quote(.))) {
-      as.character(expr[-1L])
-    } else {
-      deparse(expr)
+  lifecycle::deprecate_warn("0.7.6", "univariate()", "univariate_summary()")
+
+  nse_se_input <- function(arg) {
+    expr <- substitute(arg)
+    if (missing(arg) || is.null(expr) || deparse(expr) == "NULL") {
+      return(NULL)
     }
+    if (is.call(expr) && expr[[1]] == quote(vec_ext)) {
+      return(as.character(eval.parent(expr[[2]])))
+    }
+    if (is.character(expr)) {
+      return(arg)
+    }
+    if (is.call(expr) && (expr[[1]] == quote(list) ||
+                          expr[[1]] == quote(c) ||
+                          expr[[1]] == quote(.))) {
+      return(as.character(expr[-1L]))
+    }
+    return(deparse(expr))
   }
+
   .xvar <- eval.parent(substitute(nse_se_input(x)))
   .severity <- eval.parent(substitute(nse_se_input(severity)))
   .nclaims <- eval.parent(substitute(nse_se_input(nclaims)))
@@ -70,146 +177,75 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
   .premium <- eval.parent(substitute(nse_se_input(premium)))
   .by <- eval.parent(substitute(nse_se_input(by)))
 
-  .xvar_out <- .xvar
-  .by_out <- .by
-
-  if (!all(.xvar %in% names(df))) {
-    stop("Column(s) ", .xvar, " can't be found in data.frame", call. = FALSE)
-  }
-
-  if (length(.xvar) >  1) {
-    .by <- append(.xvar[-1], .by)
-    .xvar <- .xvar[1]
-  }
-
-  cols_ <- c()
-  if (!missing(severity)) cols_ <- append(cols_, .severity)
-  if (!missing(nclaims)) cols_ <- append(cols_, .nclaims)
-  if (!missing(exposure)) cols_ <- append(cols_, .exposure)
-  if (!missing(premium)) cols_ <- append(cols_, .premium)
-
-  if (length(cols_) == 0) {
-    stop("Define column names.", call. = FALSE)
-  }
-
-  BY <- setdiff(append(.xvar, .by), "NULL")
-  dt <- data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
-                                   by = BY, .SDcols = cols_]
-
-  dt1 <- NULL
-  if (!missing(by)) {
-    dt1 <- data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
-                                      by = .xvar, .SDcols = cols_]
-  }
-
-  frequency <- average_severity <- risk_premium <- loss_ratio <-
-    average_premium <- NULL
-
-  if (all(c(.nclaims, .exposure) %in% cols_)) {
-    dt <- dt[, `:=`(frequency, get(.nclaims) / get(.exposure))]
-    if (!missing(by)) {
-      dt1 <- dt1[, `:=`(frequency, get(.nclaims) / get(.exposure))]
-    }
-  }
-  if (all(c(.severity, .nclaims) %in% cols_)) {
-    dt <- dt[, `:=`(average_severity, get(.severity) / get(.nclaims))]
-    if (!missing(by)) {
-      dt1 <- dt1[, `:=`(average_severity, get(.severity) / get(.nclaims))]
-    }
-  }
-  if (all(c(.severity, .exposure) %in% cols_)) {
-    dt <- dt[, `:=`(risk_premium, get(.severity) / get(.exposure))]
-    if (!missing(by)) {
-      dt1 <- dt1[, `:=`(risk_premium, get(.severity) / get(.exposure))]
-    }
-  }
-  if (all(c(.severity, .premium) %in% cols_)) {
-    dt <- dt[, `:=`(loss_ratio, get(.severity) / get(.premium))]
-    if (!missing(by)) {
-      dt1 <- dt1[, `:=`(loss_ratio, get(.severity) / get(.premium))]
-    }
-  }
-  if (all(c(.premium, .exposure) %in% cols_)) {
-    dt <- dt[, `:=`(average_premium, get(.premium) / get(.exposure))]
-    if (!missing(by)) {
-      dt1 <- dt1[, `:=`(average_premium, get(.premium) / get(.exposure))]
-    }
-  }
-
-  attr(dt, "xvar") <- .xvar_out
-  attr(dt, "severity") <- .severity
-  attr(dt, "nclaims") <- .nclaims
-  attr(dt, "exposure") <- .exposure
-  attr(dt, "premium") <- .premium
-  attr(dt, "by") <- .by_out
-  attr(dt, "dfby") <- as.data.frame(dt1)
-  class(dt) <- append("univariate", class(df))
-  return(dt)
+  univariate_summary(df = df, x = .xvar, severity = .severity,
+                     nclaims = .nclaims, exposure = .exposure,
+                     premium = .premium, by = .by)
 }
 
 
 
-#' Automatically create a ggplot for objects obtained from univariate()
+#' Automatically create a ggplot for objects obtained from univariate analysis
 #'
-#' @description Takes an object produced by `univariate()`, and plots the
-#' available input.
+#' @description
+#' Takes an object produced by [univariate_summary()] (SE) or [univariate()]
+#' (deprecated NSE interface) and plots the available statistics.
 #'
-#' @param object univariate object produced by `univariate()`
-#' @param show_plots numeric vector of plots to be shown (default is
-#' c(1,2,3,4,5,6,7,8,9)), there are nine available plots:
-#'  \itemize{
-#'   \item{1. frequency (i.e. number of claims / exposure)}
-#'   \item{2. average severity (i.e. severity / number of claims)}
-#'   \item{3. risk premium (i.e. severity / exposure)}
-#'   \item{4. loss ratio (i.e. severity / premium)}
-#'   \item{5. average premium (i.e. premium / exposure)}
-#'   \item{6. exposure}
-#'   \item{7. severity}
-#'   \item{8. nclaims}
-#'   \item{9. premium}
+#' @param object A `univariate` object produced by [univariate_summary()] or
+#' [univariate()].
+#' @param show_plots Numeric vector of plots to be shown (default is
+#' `1:9`). There are nine available plots:
+#' \itemize{
+#'   \item{1. Frequency (`nclaims / exposure`)}
+#'   \item{2. Average severity (`severity / nclaims`)}
+#'   \item{3. Risk premium (`severity / exposure`)}
+#'   \item{4. Loss ratio (`severity / premium`)}
+#'   \item{5. Average premium (`premium / exposure`)}
+#'   \item{6. Exposure}
+#'   \item{7. Severity}
+#'   \item{8. Number of claims}
+#'   \item{9. Premium}
 #' }
-#' @param ncol number of columns in output (default is 1)
-#' @param background show exposure as a background histogram (default is TRUE)
-#' @param labels show labels with the exposure (default is TRUE)
-#' @param sort sort (or order) risk factor into descending order by exposure
-#' (default is FALSE)
-#' @param sort_manual sort (or order) risk factor into own ordering; should be
-#' a character vector (default is NULL)
-#' @param dec.mark decimal mark; defaults to ","
-#' @param color change the color of the points and line ("dodgerblue" is
-#' default)
-#' @param color_bg change the color of the histogram ("#f8e6b1" is default)
-#' @param label_width width of labels on the x-axis (10 is default)
-#' @param coord_flip flip cartesian coordinates so that horizontal becomes
-#' vertical, and vertical, horizontal (default is FALSE)
-#' @param show_total show line for total if by is used in univariate (default
-#' is FALSE)
-#' @param total_color change the color for the total line ("black" is default)
-#' @param total_name add legend name for the total line (e.g. "total")
-#' @param rotate_angle numeric value for angle of labels on the x-axis (degrees)
-#' @param custom_theme list with customized theme options
-#' @param remove_underscores logical. Defaults to FALSE. Remove underscores from
-#' labels
-#' @param ... other plotting parameters to affect the plot
+#' @param ncol Number of columns in output (default = 1).
+#' @param background Show exposure as a background histogram (default = TRUE).
+#' @param labels Show labels with the exposure (default = TRUE).
+#' @param sort Sort (order) risk factor into descending order by exposure
+#'   (default = FALSE).
+#' @param sort_manual Sort risk factor into a custom order; character vector
+#'   (default = NULL).
+#' @param dec.mark Decimal mark; defaults to `","`.
+#' @param color Color for points/lines (default = `"dodgerblue"`).
+#' @param color_bg Color of background histogram (default = `"lightskyblue"`).
+#' @param label_width Width of labels on the x-axis (default = 10).
+#' @param coord_flip Flip cartesian coordinates (default = FALSE).
+#' @param show_total Show line for total if `by` is used (default = FALSE).
+#' @param total_color Color for total line (default = `"black"`).
+#' @param total_name Legend name for total line (default = NULL).
+#' @param rotate_angle Numeric value for angle of labels on the x-axis (degrees).
+#' @param custom_theme List with customized theme options.
+#' @param remove_underscores Logical; remove underscores from labels
+#'   (default = FALSE).
+#' @param ... Other plotting parameters.
 #'
 #' @import patchwork
 #' @import ggplot2
 #'
 #' @author Marc Haine, Martin Haringa
 #'
-#' @return a ggplot2 object
+#' @return A `ggplot2` object.
 #'
 #' @examples
-#' library(ggplot2)
-#' x <- univariate(MTPL2, x = area, severity = amount, nclaims = nclaims,
-#' exposure = exposure)
+#' ## --- New usage (SE, recommended) ---
+#' x <- univariate_summary(MTPL2,
+#'                         x = "area",
+#'                         severity = "amount",
+#'                         nclaims = "nclaims",
+#'                         exposure = "exposure")
 #' autoplot(x)
-#' autoplot(x, show_plots = c(6,1), background = FALSE, sort = TRUE)
 #'
-#' # Group by `zip`
-#' xzip <- univariate(MTPL, x = bm, severity = amount, nclaims = nclaims,
-#' exposure = exposure, by = zip)
-#' autoplot(xzip, show_plots = 1:2)
+#' ## --- Deprecated usage (NSE) ---
+#' x_old <- univariate(MTPL2, x = area, severity = amount,
+#'                     nclaims = nclaims, exposure = exposure)
+#' autoplot(x_old)
 #'
 #' @export
 autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
@@ -223,194 +259,106 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                                 custom_theme = NULL,
                                 remove_underscores = FALSE, ...) {
 
-  xvar <- attr(object, "xvar")
-  nclaims <- attr(object, "nclaims")
+  xvar     <- attr(object, "xvar")
+  nclaims  <- attr(object, "nclaims")
   exposure <- attr(object, "exposure")
   severity <- attr(object, "severity")
-  premium <- attr(object, "premium")
-  by <- as.character(attr(object, "by"))
+  premium  <- attr(object, "premium")
+  by       <- as.character(attr(object, "by"))
 
   if (length(xvar) > 1) {
-    message(xvar, "has more than one element. Only the first is shown.")
+    message(xvar, " has more than one element. Only the first is shown.")
     xvar <- xvar[1]
   }
+  if (length(by) == 0) by <- "NULL"
 
-  if (length(by) == 0) {
-    by <- "NULL"
-  }
+  df   <- if (by == "NULL") object else attr(object, "dfby")
+  dfby <- if (by == "NULL") attr(object, "dfby") else object
 
-  dfby0 <- attr(object, "dfby")
+  if (!is.factor(df[[xvar]])) df[[xvar]] <- factor(df[[xvar]])
+  if (by != "NULL" && !is.factor(dfby[[by]])) dfby[[by]] <- factor(dfby[[by]])
 
-  if (length(by) > 1) {
-    stop("length of `by` in `univariate()` must be equal to one", call. = FALSE)
-  }
-
-  if (!is.numeric(show_plots)) {
-    stop("`show_plots` should be numeric", call. = FALSE)
-  }
-
-  if (min(show_plots) < 1 || max(show_plots) > 9) {
-    stop("elements in `show_plots` are unknown", call. = FALSE)
-  }
-
-  if (length(show_plots) > 1 && isTRUE(coord_flip)) {
-    stop("length of `show_plots` must be equal to one in
-         case `coord_flip = TRUE`", call. = FALSE)
-  }
-
-  if (by == "NULL") {
-    df <- object
-    dfby <- dfby0
-  } else {
-    df <- dfby0
-    dfby <- object
-  }
-
-  if (!is.factor(df[[xvar]])) {
-    df[[xvar]] <- as.factor(df[[xvar]])
-    dfby[[xvar]] <- as.factor(dfby[[xvar]])
-    dfby[[by]] <- as.factor(dfby[[by]])
-  }
-
-  if (by != "NULL") {
-    if (!is.factor(dfby[[xvar]])) {
-      dfby[[xvar]] <- as.factor(dfby[[xvar]])
-    }
-
-    if (!is.factor(dfby[[by]])) {
-      dfby[[by]] <- as.factor(dfby[[by]])
-    }
-  }
-
-  if (is.null(total_color)) {
-    total_color <- "black"
-  }
-
-  if (isTRUE(sort) && exposure != "NULL") {
-    df[[xvar]] <- order_factors_exposure(df[[xvar]], df[[exposure]],
-                                         decreasing = coord_flip)
-  }
+  if (is.null(total_color)) total_color <- "black"
 
   sep_mark <- separation_mark(dec.mark)
 
-  plots_allowed <- show_plots[show_plots < 10 & show_plots > 0]
+  # Build mapping (always 9 positions, missing values become NA)
+  p_plots <- c(
+    "frequency",        # 1
+    "average_severity", # 2
+    "risk_premium",     # 3
+    "loss_ratio",       # 4
+    "average_premium",  # 5
+    if (is.null(exposure) || exposure == "") NA_character_ else exposure, # 6
+    if (is.null(severity) || severity == "") NA_character_ else severity, # 7
+    if (is.null(nclaims)  || nclaims  == "") NA_character_ else nclaims,  # 8
+    if (is.null(premium)  || premium  == "") NA_character_ else premium   # 9
+  )
 
-  p_plots <- c("frequency", "average_severity", "risk_premium", "loss_ratio",
-               "average_premium", exposure, severity, nclaims, premium)
+  # Keep only allowed plot indices (1–9)
+  plots_allowed <- show_plots[show_plots %in% 1:9]
 
-  create_plots <- intersect(which(p_plots %in% names(df)), plots_allowed)
-  create_plots <- create_plots[order(match(create_plots, plots_allowed))]
+  # Extract variable names for selected indices
+  valid_vars <- p_plots[plots_allowed]
 
-  if (isTRUE(sort) && exposure == "NULL") {
-    message("Ignoring sort: exposure is unknown")
-  }
+  # Check which variables actually exist in df (and are not NA)
+  vars_exist <- !is.na(valid_vars) & valid_vars %in% names(df)
 
-  if (isTRUE(coord_flip) && length(create_plots) > 1) {
-    message("`coord_flip` only works for one bar graph")
+  # Final list of plots to create
+  create_plots <- plots_allowed[vars_exist]
+
+  # waarschuwing voor ontbrekende
+  if (any(!vars_exist)) {
+    missing_idx <- plots_allowed[!vars_exist]
+    message("Ignoring plots ", paste(missing_idx, collapse = ", "),
+            ": required column(s) not available in object")
   }
 
   if (length(create_plots) == 0) {
-    stop("Ignoring plots: input is unknown", call. = FALSE)
+    stop("No valid plots could be created: required columns not found.",
+         call. = FALSE)
   }
 
-  diff_plots <- setdiff(show_plots, create_plots)
-  if (length(diff_plots) > 0) {
-    message(paste0("Ignoring plots ",
-                   paste0(diff_plots, collapse = ", "), ": input is unknown"))
-  }
+  # plot_defs (zoals in jouw code)
+  plot_defs <- list(
+    "1" = list(var = "frequency", lab = "Frequency", denom = exposure,
+               fun = ggbarline),
+    "2" = list(var = "average_severity", lab = "Average severity",
+               denom = nclaims, fun = ggbarline),
+    "3" = list(var = "risk_premium", lab = "Risk premium",
+               denom = exposure, fun = ggbarline),
+    "4" = list(var = "loss_ratio", lab = "Loss ratio",
+               denom = premium, fun = ggbarline),
+    "5" = list(var = "average_premium", lab = "Average premium",
+               denom = exposure, fun = ggbarline),
+    "6" = list(var = exposure, lab = exposure, denom = NULL, fun = ggbar),
+    "7" = list(var = severity, lab = severity, denom = NULL, fun = ggbar),
+    "8" = list(var = nclaims, lab = nclaims, denom = NULL, fun = ggbar),
+    "9" = list(var = premium, lab = premium, denom = NULL, fun = ggbar)
+  )
 
-  if (1 %in% create_plots) {
-    p1 <- ggbarline(background, df, dfby, xvar,
-                    "frequency", "Frequency", exposure,
-                    color_bg, color, sep_mark, by, labels,
-                    sort_manual, label_width,
-                    show_total, total_color, total_name, remove_underscores)
-  }
-
-  if (2 %in% create_plots) {
-    p2 <- ggbarline(background, df, dfby, xvar,
-                    "average_severity", "Average\nseverity", nclaims,
-                    color_bg, color, sep_mark, by, labels,
-                    sort_manual, label_width,
-                    show_total, total_color, total_name, remove_underscores)
-  }
-
-  if (3 %in% create_plots) {
-    p3 <- ggbarline(background, df, dfby, xvar,
-                    "risk_premium", "Risk premium", exposure,
-                    color_bg, color, sep_mark, by, labels,
-                    sort_manual, label_width,
-                    show_total, total_color, total_name, remove_underscores)
-  }
-
-  if (4 %in% create_plots) {
-    p4 <- ggbarline(background, df, dfby, xvar,
-                    "loss_ratio", "Loss ratio", premium,
-                    color_bg, color, sep_mark, by, labels,
-                    sort_manual, label_width,
-                    show_total, total_color, total_name, remove_underscores)
-  }
-
-  if (5 %in% create_plots) {
-    p5 <- ggbarline(background, df, dfby, xvar,
-                    "average_premium", "Average\npremium", exposure,
-                    color_bg, color, sep_mark, by, labels,
-                    sort_manual, label_width,
-                    show_total, total_color, total_name, remove_underscores)
-  }
-
-  if (6 %in% create_plots) {
-    p6 <- ggbar(df, xvar, exposure, color_bg, sep_mark,
-                coord_flip)
-  }
-
-  if (7 %in% create_plots) {
-    p7 <- ggbar(df, xvar, severity, color_bg, sep_mark,
-                coord_flip)
-  }
-
-  if (8 %in% create_plots) {
-    p8 <- ggbar(df, xvar, nclaims, color_bg, sep_mark,
-                coord_flip)
-  }
-
-  if (9 %in% create_plots) {
-    p9 <- ggbar(df, xvar, premium, color_bg, sep_mark,
-                coord_flip)
-  }
-
-  if (ncol == 1) {
-    remove_axis <- list(theme(axis.title.x = element_blank(),
-                              axis.text.x = element_blank(),
-                              axis.ticks.x = element_blank()))
-
-    plot_last <- paste0("p",
-                        create_plots[length(create_plots)],
-                        " + custom_theme",
-                        collapse = " + ")
-
-    if (length(create_plots) == 1) {
-      plot_out <- eval(parse(text = plot_last))
+  plots <- list()
+  for (i in create_plots) {
+    def <- plot_defs[[as.character(i)]]
+    if (identical(def$fun, ggbarline)) {
+      plots[[paste0("p", i)]] <- def$fun(background, df, dfby, xvar,
+                                         def$var, def$lab, def$denom,
+                                         color_bg, color, sep_mark, by,
+                                         labels, sort_manual, label_width,
+                                         show_total, total_color,
+                                         total_name, remove_underscores)
+    } else {
+      plots[[paste0("p", i)]] <- def$fun(df, xvar, def$var, color_bg,
+                                         sep_mark, coord_flip)
     }
-
-    if (length(create_plots) > 1) {
-      plot_nrs <- paste0("p", create_plots[-length(create_plots)],
-                         " + custom_theme + remove_axis", collapse = " + ")
-      plot_all <- paste0("(", plot_nrs, " + ", plot_last, ")")
-      plot_out <- eval(parse(text = plot_all)) +
-        patchwork::plot_layout(ncol = 1, guides = "collect")
-    }
-  } else {
-    plot_all <- paste0("p", create_plots, " + custom_theme", collapse = " + ")
-    plot_out <- eval(parse(text = plot_all)) +
-      patchwork::plot_layout(ncol = ncol, guides = "collect")
   }
+
+  plot_out <- patchwork::wrap_plots(plots, ncol = ncol, guides = "collect")
 
   if (!is.null(rotate_angle)) {
     plot_out <- plot_out +
       ggplot2::theme(axis.text.x = element_text(angle = rotate_angle,
-                                                vjust = 0.5,
-                                                hjust = 1))
+                                                vjust = 0.5, hjust = 1))
   }
 
   plot_out

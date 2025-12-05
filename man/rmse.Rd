@@ -2,31 +2,32 @@
 % Please edit documentation in R/model_performance.R
 \name{rmse}
 \alias{rmse}
-\title{Root Mean Squared Error}
+\title{Root Mean Squared Error (RMSE)}
 \usage{
-rmse(object, data)
+rmse(object, data = NULL)
 }
 \arguments{
-\item{object}{fitted model}
+\item{object}{A fitted model object (e.g. of class \code{"glm"}).}
 
-\item{data}{data.frame (defaults to NULL)}
+\item{data}{A data frame containing the variables used in the model. Required
+if not already stored in \code{object}.}
 }
 \value{
-numeric value
+A numeric value: the root mean squared error.
 }
 \description{
-Compute root mean squared error.
+Computes the root mean squared error (RMSE) for a fitted model, defined as the
+square root of the mean of squared differences between predictions and observed values.
 }
 \details{
-The RMSE is the square root of the average of squared differences
-between prediction and actual observation and indicates
-the absolute fit of the model to the data. It can be interpreted as the
-standard deviation of the unexplained variance, and is in the same units
-as the response variable. Lower values indicate better model fit.
+The RMSE indicates the absolute fit of the model to the data.
+It can be interpreted as the standard deviation of the unexplained variance,
+and is expressed in the same units as the response variable.
+Lower values indicate better model fit.
 }
 \examples{
-x <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
- data = MTPL2)
+x <- glm(nclaims ~ area, offset = log(exposure),
+         family = poisson(), data = MTPL2)
 rmse(x, MTPL2)
 
 }

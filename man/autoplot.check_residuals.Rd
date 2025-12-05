@@ -2,23 +2,26 @@
 % Please edit documentation in R/model_performance_residuals.R
 \name{autoplot.check_residuals}
 \alias{autoplot.check_residuals}
-\title{Automatically create a ggplot for objects obtained from check_residuals()}
+\title{Autoplot for check_residuals objects}
 \usage{
 \method{autoplot}{check_residuals}(object, show_message = TRUE, ...)
 }
 \arguments{
-\item{object}{check_residuals object produced by \code{check_residuals()}}
+\item{object}{An object of class \code{"check_residuals"}, produced by \code{\link[=check_residuals]{check_residuals()}}.}
 
-\item{show_message}{show output from test (defaults to TRUE)}
+\item{show_message}{Logical. If TRUE (default), prints a short message based on
+the p-value from the KS test.}
 
-\item{...}{other plotting parameters to affect the plot}
+\item{...}{Additional arguments passed to \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}.}
 }
 \value{
-a ggplot object
+A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
 }
 \description{
-Takes an object produced by \code{check_residuals()}, and produces a
-uniform quantile-quantile plot.#'
+\code{autoplot()} method for objects created by \code{\link[=check_residuals]{check_residuals()}}.
+Produces a simulation-based uniform QQ-plot of the residuals, with the
+Kolmogorov-Smirnov p-value shown in the subtitle.
+Optionally prints a message about whether deviations are detected.
 }
 \author{
 Martin Haringa

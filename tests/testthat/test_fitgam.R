@@ -1,4 +1,3 @@
-library(insurancerating)
 context("fitgam")
 
 test_that("check if object is of fitgam class", {

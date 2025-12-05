@@ -2,25 +2,36 @@
 % Please edit documentation in R/model_performance_bootstrap_rmse.R
 \name{autoplot.bootstrap_rmse}
 \alias{autoplot.bootstrap_rmse}
-\title{Automatically create a ggplot for objects obtained from bootstrap_rmse()}
+\title{Autoplot for bootstrap_rmse objects}
 \usage{
-\method{autoplot}{bootstrap_rmse}(object, fill = NULL, color = NULL, ...)
+\method{autoplot}{bootstrap_rmse}(object, fill = "steelblue", color = "black", ...)
 }
 \arguments{
-\item{object}{bootstrap_rmse object produced by \code{bootstrap_rmse()}}
+\item{object}{An object of class \code{"bootstrap_rmse"}, produced by \code{\link[=bootstrap_rmse]{bootstrap_rmse()}}.}
 
-\item{fill}{color to fill histogram (default is "steelblue")}
+\item{fill}{Fill color of the histogram bars. Default = \code{"steelblue"}.}
 
-\item{color}{color to plot line colors of histogram}
+\item{color}{Border color of the histogram bars. Default = \code{"black"}.}
 
-\item{...}{other plotting parameters to affect the plot}
+\item{...}{Additional arguments passed to \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}.}
 }
 \value{
-a ggplot object
+A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
 }
 \description{
-Takes an object produced by \code{bootstrap_rmse()}, and plots the
-simulated RMSE
+\code{autoplot()} method for objects created by \code{\link[=bootstrap_rmse]{bootstrap_rmse()}}.
+Produces a histogram and density plot of the bootstrapped RMSE values,
+with the RMSE of the original fitted model shown as a dashed vertical line.
+Optionally, 95\% quantile bounds are shown as dotted vertical lines.
+}
+\examples{
+\dontrun{
+mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
+            offset = log(exposure), family = poisson())
+x <- bootstrap_rmse(mod1, MTPL, n = 100, show_progress = FALSE)
+autoplot(x)
+}
+
 }
 \author{
 Martin Haringa

@@ -141,15 +141,15 @@ cut_borders_df <- function(df, col) {
 cut_borders_model <- function(model, x_cut) {
 
   if (inherits(model, "glm")) {
-    rf <- rating_factors(model, signif_stars = FALSE)$df
+    rf <- rating_table(model, signif_stars = FALSE)$df
   }
 
   if (inherits(model, "smooth")) {
-    rf <- rating_factors(model$model_out, signif_stars = FALSE)$df
+    rf <- rating_table(model$model_out, signif_stars = FALSE)$df
   }
 
   if (inherits(model, "restricted")) {
-    rf <- rating_factors(model$model_out, signif_stars = FALSE)$df
+    rf <- rating_table(model$model_out, signif_stars = FALSE)$df
   }
 
   colnames(rf)[3] <- c("estimate")
@@ -174,36 +174,23 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL,
   # Take halfway points of breaks to fit polynomial
   breaks_min <- breaks[-length(breaks)]
   breaks_max <- breaks[-1]
-  breaks_mid <- (breaks + c(breaks[-1], NA)) / 2
-  breaks_mid <- breaks_mid[!is.na(breaks_mid)]
+  breaks_mid <- (breaks_min + breaks_max) / 2
 
-  unique_borders <- unique(c(breaks_min, breaks_max))
-  levels_borders <- levels(cut(breaks_min, breaks = unique_borders,
+  levels_borders <- levels(cut(breaks_min, breaks = unique(breaks),
                                include.lowest = TRUE, dig.lab = 9))
 
-  if (!smoothing %in% c("spline", "mpi", "mpd", "gam", "cx", "cv", "micx",
-                        "micv", "mdcx", "mdcv"))
-    stop("Choose correct smoothing specification: 'spline', 'mpi', 'mpd',
-         'gam', 'cx', 'cv', 'micx', 'micv', 'mdcx', 'mdcv'.", call. = FALSE)
+  # Checks
+  valid_methods <- c("spline", "mpi", "mpd", "gam",
+                     "cx","cv","micx","micv","mdcx","mdcv")
+  if (!smoothing %in% valid_methods) {
+    stop("Invalid smoothing: must be one of ",
+         paste(valid_methods, collapse = ", "), call. = FALSE)
+  }
 
+  # Model fitten
   if (smoothing == "spline") {
     lm_poly <- lm(estimate ~ poly(avg_, degree = degree), data = borders_model)
-  }
-
-  if (smoothing %in% c("mpd", "mpi", "cx", "cv", "micx",
-                       "micv", "mdcx", "mdcv")) {  ## monotonic decreasing constraint
-    if (is.null(k)) {
-      lm_poly <- scam::scam(estimate ~ s(avg_, bs = smoothing),
-                            weights = weights,
-                            data = borders_model)
-    } else {
-      lm_poly <- scam::scam(estimate ~ s(avg_, k = k, bs = smoothing),
-                            weights = weights,
-                            data = borders_model)
-    }
-  }
-
-  if (smoothing == "gam") {  ## gam with no constraint
+  } else if (smoothing == "gam") {
     if (is.null(k)) {
       lm_poly <- mgcv::gam(estimate ~ s(avg_),
                            weights = weights,
@@ -212,6 +199,16 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL,
       lm_poly <- mgcv::gam(estimate ~ s(avg_, k = k),
                            weights = weights,
                            data = borders_model)
+    }
+  } else {
+    if (is.null(k)) {
+      lm_poly <- scam::scam(estimate ~ s(avg_, bs = smoothing),
+                            weights = weights,
+                            data = borders_model)
+    } else {
+      lm_poly <- scam::scam(estimate ~ s(avg_, k = k, bs = smoothing),
+                            weights = weights,
+                            data = borders_model)
     }
   }
 

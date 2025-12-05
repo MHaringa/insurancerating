@@ -1,26 +1,39 @@
-#' Add predictions to a data frame
+#' Add Model Predictions to a Data Frame
 #'
-#' @description Add model predictions and confidence bounds to a data frame.
+#' @description
+#' Adds predictions (and optionally confidence intervals) from one or more
+#' `glm` models to a data frame.
 #'
-#' @param data 	a data frame of new data.
-#' @param ... one or more objects of class `glm`.
-#' @param var the name of the output column(s), defaults to NULL
-#' @param alpha a real number between 0 and 1. Controls the confidence level of
-#' the interval estimates (defaults to 0.10, representing 90 percent confidence
-#' interval).
-#' @param conf_int determines whether confidence intervals will be shown.
-#' Defaults to `conf_int = FALSE`.
+#' @param data A `data.frame` containing the new data for which predictions
+#'   should be generated.
+#' @param ... One or more fitted model objects of class `"glm"`.
+#' @param var Optional character vector giving names for the new prediction
+#'   columns. Must have the same length as the number of models supplied. If
+#'   `NULL` (default), names are generated automatically.
+#' @param conf_int Logical. If `TRUE`, add confidence intervals for predictions.
+#'   Default is `FALSE`.
+#' @param alpha Numeric between 0 and 1. Controls the confidence level for
+#'   interval estimates. Default is `0.10`, corresponding to a 90% confidence
+#'   interval.
+#'
+#' @return
+#' A `data.frame` containing the original data along with additional columns for
+#' model predictions (and confidence intervals if requested).
 #'
 #' @importFrom ciTools add_ci
 #'
-#' @return data.frame
+#' @author Martin Haringa
 #'
 #' @examples
-#' mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
-#'     offset = log(exposure), family = poisson())
+#' mod1 <- glm(nclaims ~ age_policyholder,
+#'             data = MTPL,
+#'             offset = log(exposure),
+#'             family = poisson())
+#'
+#' # Add predicted values
 #' mtpl_pred <- add_prediction(MTPL, mod1)
 #'
-#' # Include confidence bounds
+#' # Add predicted values with confidence bounds
 #' mtpl_pred_ci <- add_prediction(MTPL, mod1, conf_int = TRUE)
 #'
 #' @export
@@ -28,26 +41,31 @@ add_prediction <- function(data, ..., var = NULL, conf_int = FALSE,
                            alpha = 0.1) {
 
   objects <- list(...)
-  object_names <- match.call(expand.dots = FALSE)$`...`
+  object_names <- as.character(match.call(expand.dots = FALSE)$`...`)
 
-  if (is.null(object_names)) {
-    stop("No object of class 'glm' found. Please provide at least one 'glm'
-         object to add model predictions.", call. = FALSE)
+  if (length(objects) == 0) {
+    stop("Please provide at least one 'glm' object.", call. = FALSE)
   }
 
-  if (!is.null(var) && length(var) != length(object_names)) {
-    stop("Character vector 'var' should have the same length as number of
-         objects", call. = FALSE)
+  if (!all(sapply(objects, inherits, what = "glm"))) {
+    stop("All objects must be of class 'glm'.", call. = FALSE)
   }
 
-  listdf <- list()
+  if (!is.null(var) && length(var) != length(objects)) {
+    stop("Argument 'var' must have the same length as the number of models.",
+         call. = FALSE)
+  }
 
-  for (i in seq_len(length(object_names))) {
+  listdf <- vector("list", length(objects))
+
+
+  for (i in seq_along(objects)) {
     object <- objects[[i]]
     object_name <- object_names[i]
 
+    # predictions
     addcol <- as.numeric(stats::predict(object, data, type = "response"))
-    response_nm <- as.character(attributes(object$terms)$variables[[2]])
+    response_nm <- all.vars(formula(object))[1]
 
     if (is.null(var)) {
       var_nm <- paste0("pred_", response_nm, "_", object_name)
@@ -59,18 +77,20 @@ add_prediction <- function(data, ..., var = NULL, conf_int = FALSE,
     names(df) <- var_nm
 
     if (isTRUE(conf_int)) {
-      ucb <- paste0(var_nm, "_ucb")
       lcb <- paste0(var_nm, "_lcb")
+      ucb <- paste0(var_nm, "_ucb")
+
       suppressWarnings({
-        lcbucb <- ciTools::add_ci(data, object, names = c("lcb", "ucb"),
-                                  alpha = alpha)
+        ci_df <- ciTools::add_ci(data, object, names = c("lcb", "ucb"),
+                                 alpha = alpha)
       })
-      df[[lcb]] <- lcbucb$lcb
-      df[[ucb]] <- lcbucb$ucb
+
+      df[[lcb]] <- ci_df$lcb
+      df[[ucb]] <- ci_df$ucb
     }
 
     listdf[[i]] <- df
   }
 
-  cbind(data, as.data.frame(listdf))
+  cbind(data, do.call(cbind, listdf))
 }

@@ -4,63 +4,61 @@
 #' new set of date ranges. Ranges separated by a gap of at least `min.gapwidth`
 #' days are not merged.
 #'
-#' @param df data.frame
-#' @param begin name of column `df` with begin dates
-#' @param end name of column in `df` with end dates
-#' @param ... names of columns in `df` used to group date ranges by
-#' @param agg_cols list with columns in `df` to aggregate by (defaults to NULL)
-#' @param agg aggregation type (defaults to "sum")
-#' @param min.gapwidth ranges separated by a gap of at least `min.gapwidth`
-#' days are not merged. Defaults to 5.
+#' @param df A `data.frame` or `data.table`.
+#' @param begin Name of column in `df` with begin dates.
+#' @param end Name of column in `df` with end dates.
+#' @param ... Names of columns in `df` used to group date ranges by.
+#' @param agg_cols List of columns in `df` to aggregate (default = NULL).
+#' @param agg Aggregation function as character string (default = `"sum"`).
+#' @param min.gapwidth Ranges separated by at least `min.gapwidth` days are not
+#' merged (default = 5).
 #'
-#' @import data.table
-#' @importFrom lubridate %m+%
+#' @importFrom data.table setDT
+#' @importFrom data.table setkeyv
+#' @importFrom data.table shift
 #'
 #' @author Martin Haringa
 #'
-#' @details This function is adopted from `IRanges::reduce()`.
+#' @details This function is inspired by `IRanges::reduce()`, adapted for
+#' insurance portfolios.
 #'
-#' @return An object of class `"reduce"`.
-#' The function `summary` is used to obtain and print a summary of the results.
-#' An object of class `"reduce"` is a list usually containing at least the
-#' following elements:
-#' \item{df}{data frame with reduced time periods}
-#' \item{begin}{name of column in `df` with begin dates}
-#' \item{end}{name of column in `df` with end dates}
-#' \item{cols}{names of columns in `df` used to group date ranges by}
+#' @return A `data.table` of class `"reduce"`, with attributes:
+#' \itemize{
+#'   \item `begin` — name of the begin-date column
+#'   \item `end`   — name of the end-date column
+#'   \item `cols`  — grouping columns
+#' }
 #'
 #' @examples
-#' portfolio <- structure(list(policy_nr = c("12345", "12345", "12345", "12345",
-#' "12345", "12345", "12345", "12345", "12345", "12345", "12345"),
-#' productgroup = c("fire", "fire", "fire", "fire", "fire", "fire",
-#' "fire", "fire", "fire", "fire", "fire"), product = c("contents",
-#' "contents", "contents", "contents", "contents", "contents", "contents",
-#' "contents", "contents", "contents", "contents"),
-#' begin_dat = structure(c(16709,16740, 16801, 17410, 17440, 17805, 17897,
-#' 17956, 17987, 18017, 18262), class = "Date"),
-#' end_dat = structure(c(16739, 16800, 16831, 17439, 17531, 17896, 17955,
-#' 17986, 18016, 18261, 18292), class = "Date"),
-#' premium = c(89L, 58L, 83L, 73L, 69L, 94L, 91L, 97L, 57L, 65L, 55L)),
-#' row.names = c(NA, -11L), class = "data.frame")
+#' portfolio <- data.frame(
+#'   policy_nr   = rep("12345", 11),
+#'   productgroup= rep("fire", 11),
+#'   product     = rep("contents", 11),
+#'   begin_dat   = as.Date(c(16709,16740,16801,17410,17440,17805,17897,
+#'                           17956,17987,18017,18262), origin="1970-01-01"),
+#'   end_dat     = as.Date(c(16739,16800,16831,17439,17531,17896,17955,
+#'                           17986,18016,18261,18292), origin="1970-01-01"),
+#'   premium     = c(89,58,83,73,69,94,91,97,57,65,55)
+#' )
 #'
 #' # Merge periods
-#' pt1 <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
-#'     productgroup, product, min.gapwidth = 5)
+#' pt1 <- merge_date_ranges(portfolio, begin = begin_dat, end = end_dat,
+#'     policy_nr, productgroup, product, min.gapwidth = 5)
 #'
 #' # Aggregate per period
 #' summary(pt1, period = "days", policy_nr, productgroup, product)
 #'
 #' # Merge periods and sum premium per period
-#' pt2 <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
-#'     productgroup, product, agg_cols = list(premium), min.gapwidth = 5)
+#' pt2 <- merge_date_ranges(portfolio, begin = begin_dat, end = end_dat,
+#'     policy_nr, productgroup, product, agg_cols = list(premium),
+#'     min.gapwidth = 5)
 #'
 #' # Create summary with aggregation per week
 #' summary(pt2, period = "weeks", policy_nr, productgroup, product)
 #'
-#'
 #' @export
-reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum",
-                   min.gapwidth = 5) {
+merge_date_ranges <- function(df, begin, end, ..., agg_cols = NULL,
+                              agg = "sum", min.gapwidth = 5) {
 
   .begin <- deparse(substitute(begin))
   .end <- deparse(substitute(end))
@@ -131,6 +129,32 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum",
   dt_reduce
 }
 
+#' @importFrom lifecycle deprecate_warn
+#' @rdname merge_date_ranges
+#' @export
+reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum",
+                   min.gapwidth = 5) {
+
+  lifecycle::deprecate_warn("0.7.6", "reduce()", "merge_date_ranges()")
+
+  # capture column names as character
+  begin_sym <- substitute(begin)
+  end_sym   <- substitute(end)
+  dots_syms <- as.list(substitute(list(...))[-1])
+  agg_syms  <- as.list(substitute(agg_cols)[-1])
+
+  do.call(
+    merge_date_ranges,
+    c(list(df = df,
+           begin = begin_sym,
+           end = end_sym,
+           agg_cols = agg_syms,
+           agg = agg,
+           min.gapwidth = min.gapwidth),
+      dots_syms)
+  )
+}
+
 
 #' @export
 print.reduce <- function(x, ...) {
@@ -144,25 +168,36 @@ as.data.frame.reduce <- function(x, ...) {
   return(as.data.frame(x))
 }
 
-#' Automatically create a summary for objects obtained from reduce()
+##' Summarize reduce objects
 #'
-#' @description Takes an object produced by `reduce()`, and counts new and lost
-#' customers.
+#' @description
+#' Method for `summary()` applied to objects of class `"reduce"`, as produced
+#' by [merge_date_ranges()]. It counts how many customers (or policies) are new
+#' or lost within a given period, optionally grouped by other columns.
 #'
-#' @param object reduce object produced by `reduce()`
-#' @param period a character string indicating the period to aggregate on.
-#' Four options are available: "quarters", "months", "weeks", and "days"
-#' (the default option)
-#' @param ... names of columns to aggregate counts by
-#' @param name The name of the new column in the output. If omitted, it will
-#' default to count.
+#' @param object An object of class `"reduce"`, created by [merge_date_ranges()].
+#' @param period Character string indicating the aggregation period. Options are
+#' `"quarters"`, `"months"`, `"weeks"`, or `"days"` (default = `"days"`).
+#' @param ... Names of columns in `object` to aggregate counts by.
+#' @param name Character string: name of the new count column in the output.
+#' Defaults to `"count"`.
 #'
 #' @import data.table
 #' @importFrom lubridate days
 #' @importFrom lubridate weeks
 #' @importFrom lubridate %m+%
 #'
-#' @return data.frame
+#' @return A `data.frame` containing aggregated counts of new (`"in"`) and lost
+#' (`"out"`) records, per chosen period (and per grouping variables if supplied).
+#'
+#' @seealso [merge_date_ranges()]
+#'
+#' @examples
+#' \dontrun{
+#' pt <- merge_date_ranges(portfolio, begin = begin_dat, end = end_dat,
+#'                         policy_nr, productgroup, product)
+#' summary(pt, period = "months", policy_nr, productgroup)
+#' }
 #'
 #' @export
 summary.reduce <- function(object, ..., period = "days", name = "count") {

@@ -7,52 +7,53 @@
 check_residuals(object, n_simulations = 30)
 }
 \arguments{
-\item{object}{a model object}
+\item{object}{A fitted model object (e.g. of class \code{"glm"}).}
 
-\item{n_simulations}{number of simulations (defaults to 30)}
+\item{n_simulations}{Number of simulations to generate residuals. Default = 30.}
 }
 \value{
-Invisibly returns the p-value of the test statistics. A
-p-value < 0.05 indicates a significant deviation from expected distribution.
+An object of class \code{"check_residuals"}, which is a list with:
+\describe{
+\item{df}{Data frame with theoretical quantiles (\code{x}) and observed residuals (\code{y}).}
+\item{p.val}{P-value from Kolmogorov-Smirnov test against uniform(0,1).}
+}
+Invisibly returns the object.
 }
 \description{
-Detect overall deviations from the expected distribution.
+Detect overall deviations of residuals from the expected distribution using
+a simulation-based approach. Provides standardized residuals that are more
+interpretable for GLMs than classical residual plots.
 }
 \details{
 Misspecifications in GLMs cannot reliably be diagnosed with standard
-residual plots, and GLMs are thus often not as thoroughly checked as LMs.
-One reason why GLMs residuals are harder to interpret is that the expected
-distribution of the data changes with the fitted values. As a result,
-standard residual plots, when interpreted in the same way as for linear
-models, seem to show all kind of problems, such as non-normality,
-heteroscedasticity, even if the model is correctly specified.
-\code{check_residuals()} aims at solving these problems by creating readily
-interpretable residuals for GLMs that are standardized to values between
-0 and 1, and that can be interpreted as intuitively as residuals for the
-linear model. This is achieved by a simulation-based approach, similar to the
-Bayesian p-value or the parametric bootstrap, that transforms the residuals
-to a standardized scale. This explanation is adopted from
-\code{\link[DHARMa:simulateResiduals]{DHARMa::simulateResiduals()}}.
+residual plots, because the expected distribution of the data changes with
+fitted values. \code{check_residuals()} uses a simulation-based approach
+(similar to a parametric bootstrap or Bayesian p-value) to generate
+standardized residuals between 0 and 1, which can be interpreted
+intuitively like residuals from linear models.
 
-It might happen that in the fitted model for a data point all simulations
-have the same value (e.g. zero), this returns the error message Error in
-approxfun: need at least two non-NA values to interpolate*. If that is the
-case, it could help to increase the number of simulations.
+This function wraps \code{\link[DHARMa:simulateResiduals]{DHARMa::simulateResiduals()}}, adapted for convenience.
+
+Note: If all simulations for a data point have the same value (e.g. all
+zeros), an error may occur (\verb{Error in approxfun: need at least two non-NA values}).
+Increasing \code{n_simulations} can help in such cases.
 }
 \examples{
 \dontrun{
-m1 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
-data = MTPL2)
-check_residuals(m1, n_simulations = 50) |> autoplot()
+m1 <- glm(nclaims ~ area, offset = log(exposure),
+          family = poisson(), data = MTPL2)
+cr <- check_residuals(m1, n_simulations = 50)
+autoplot(cr)
 }
 
 }
 \references{
-Dunn, K. P., and Smyth, G. K. (1996). Randomized quantile
-residuals. Journal of Computational and Graphical Statistics 5, 1-10.
+Dunn, K. P., & Smyth, G. K. (1996). Randomized quantile residuals.
+\emph{JCGS}, 5, 1–10.
 
-Gelman, A. & Hill, J. Data analysis using regression and
-multilevel/hierarchical models Cambridge University Press, 2006
+Gelman, A., & Hill, J. (2006).
+\emph{Data analysis using regression and multilevel/hierarchical models}.
+Cambridge University Press.
 
 Hartig, F. (2020). DHARMa: Residual Diagnostics for Hierarchical
 (Multi-Level / Mixed) Regression Models. R package version 0.3.0.

@@ -1,154 +1,198 @@
 #' Construct insurance tariff classes
 #'
-#' @description Constructs insurance tariff classes to \code{fitgam} objects
-#' produced by \code{fit_gam}. The goal is to bin the continuous risk factors
-#' such that categorical risk factors result which capture the effect of the
-#' covariate on the response in an accurate way, while being easy to use in a
-#' generalized linear model (GLM).
+#' @description
+#' Constructs insurance tariff classes for objects of class `"fitgam"` produced
+#' by [riskfactor_gam()] (formerly [fit_gam()]). The goal is to bin continuous
+#' risk factors into categorical tariff classes that capture the effect of the
+#' covariate on the response in an accurate way, while remaining easy to use in
+#' a generalized linear model (GLM).
 #'
-#' @param object fitgam object produced by \code{fit_gam}
-#' @param alpha complexity parameter. The complexity parameter (alpha) is used
-#' to control the number of tariff classes. Higher values for \code{alpha}
-#' render less tariff classes. (\code{alpha} = 0 is default).
-#' @param niterations in case the run does not converge, it terminates after a
-#' specified number of iterations defined by niterations.
-#' @param ntrees the number of trees in the population.
-#' @param seed an numeric seed to initialize the random number generator (for
-#' reproducibility).
+#' @param object An object of class `"fitgam"`, produced by [riskfactor_gam()].
+#' @param alpha Complexity parameter passed to [evtree::evtree.control()]. Higher
+#'   values yield fewer tariff classes. Default = 0.
+#' @param niterations Maximum number of iterations before termination. Passed to
+#'   [evtree::evtree.control()]. Default = 10000.
+#' @param ntrees Number of trees in the population. Passed to
+#'   [evtree::evtree.control()]. Default = 200.
+#' @param seed Integer, seed for the random number generator (for reproducibility).
 #'
-#' @details Evolutionary trees are used as a technique to bin the \code{fitgam}
-#' object produced by \code{fit_gam} into risk homogeneous categories.
-#' This method is based on the work by Henckaerts et al. (2018). See Grubinger
-#' et al. (2014) for more details on the various parameters that
-#' control aspects of the evtree fit.
+#' @details
+#' Evolutionary trees (via [evtree::evtree()]) are used as a technique to bin the
+#' fitted GAM object into risk-homogeneous categories.
+#' This method is based on the work by Henckaerts et al. (2018).
+#' See Grubinger et al. (2014) for details on the parameters controlling the
+#' evtree fit.
 #'
-#' @import evtree
-#'
-#' @references Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a
-#' priori and a posteriori risk classification in insurance. Advances in
-#' Statistical Analysis, 96(2):187–224. doi:10.1007/s10182-011-0152-7.
-#' @references Grubinger, T., Zeileis, A., and Pfeiffer, K.-P. (2014). evtree:
-#' Evolutionary learning of globally optimal classification and regression trees
-#' in R. Journal of Statistical Software, 61(1):1–29. doi:10.18637/jss.v061.i01.
-#' @references Henckaerts, R., Antonio, K., Clijsters, M. and Verbelen, R.
-#' (2018). A data driven binning strategy for the construction of insurance
-#' tariff classes. Scandinavian Actuarial Journal, 2018:8, 681-705.
-#' doi:10.1080/03461238.2018.1429300.
-#' @references Wood, S.N. (2011). Fast stable restricted maximum likelihood and
-#' marginal likelihood estimation of semiparametric
-#' generalized linear models. Journal of the Royal Statistical Society (B)
-#' 73(1):3-36. doi:10.1111/j.1467-9868.2010.00749.x.
-#'
-#' @return A list of class \code{constructtariffclasses} with components
-#' \item{prediction}{data frame with predicted values}
-#' \item{x}{name of continuous risk factor for which tariff classes are
-#' constructed}
-#' \item{model}{either 'frequency', 'severity' or 'burning'}
-#' \item{data}{data frame with predicted values and observed values}
-#' \item{x_obs}{observations for continuous risk factor}
-#' \item{splits}{vector with boundaries of the constructed tariff classes}
-#' \item{tariff_classes}{values in vector \code{x} coded according to which
-#' constructed tariff class they fall}
+#' @return A `list` of class `"constructtariffclasses"` with components:
+#' \describe{
+#'   \item{prediction}{Data frame with predicted values.}
+#'   \item{x}{Name of the continuous risk factor for which tariff classes are constructed.}
+#'   \item{model}{Model type: `"frequency"`, `"severity"`, or `"burning"`.}
+#'   \item{data}{Data frame with predicted and observed values.}
+#'   \item{x_obs}{Observed values of the continuous risk factor.}
+#'   \item{splits}{Numeric vector with boundaries of the constructed tariff classes.}
+#'   \item{tariff_classes}{Factor with the tariff class each observation falls into.}
+#' }
 #'
 #' @author Martin Haringa
+#'
+#' @references Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a
+#' priori and a posteriori risk classification in insurance. *Advances in
+#' Statistical Analysis*, 96(2), 187–224. \doi{doi:10.1007/s10182-011-0152-7}
+#'
+#' @references Grubinger, T., Zeileis, A., and Pfeiffer, K.-P. (2014). *evtree:
+#' Evolutionary learning of globally optimal classification and regression trees
+#' in R*. Journal of Statistical Software, 61(1), 1–29.
+#' \doi{doi:10.18637/jss.v061.i01}
+#'
+#' @references Henckaerts, R., Antonio, K., Clijsters, M., & Verbelen, R.
+#' (2018). A data driven binning strategy for the construction of insurance
+#' tariff classes. *Scandinavian Actuarial Journal*, 2018(8), 681–705.
+#' \doi{doi:10.1080/03461238.2018.1429300}
+#'
+#' @references Wood, S.N. (2011). Fast stable restricted maximum likelihood and
+#' marginal likelihood estimation of semiparametric generalized linear models.
+#' *JRSS B*, 73(1), 3–36. \doi{doi:10.1111/j.1467-9868.2010.00749.x}
 #'
 #' @examples
 #' \dontrun{
 #' library(dplyr)
-#' fit_gam(MTPL, nclaims = nclaims,
-#' x = age_policyholder, exposure = exposure) |>
-#'    construct_tariff_classes()
+#'
+#' # Recommended new usage (SE)
+#' riskfactor_gam(MTPL,
+#'                nclaims = "nclaims",
+#'                x = "age_policyholder",
+#'                exposure = "exposure") |>
+#'   construct_tariff_classes()
+#'
+#' # Deprecated usage (NSE, still works with warning)
+#' fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure) |>
+#'   construct_tariff_classes()
 #' }
+#'
+#' @importFrom evtree evtree evtree.control
 #'
 #' @export
 construct_tariff_classes <- function(object, alpha = 0, niterations = 10000,
                                      ntrees = 200, seed = 1) {
 
-  new <- object[[4]]
-  counting <- new$x
+  if (!inherits(object, "fitgam")) {
+    stop("Input must be of class 'fitgam' as returned by riskfactor_gam().",
+         call. = FALSE)
+  }
+
+  data_used <- object$data
+  x_obs <- object$x_obs
 
   split_x <- tryCatch({
     tree_x <- evtree::evtree(
       pred ~ x,
-      data = new,
-      control = evtree::evtree.control(alpha = alpha,
-                                       ntrees = ntrees,
-                                       niterations = niterations,
-                                       seed = seed)
+      data = data_used,
+      control = evtree::evtree.control(
+        alpha = alpha,
+        ntrees = ntrees,
+        niterations = niterations,
+        seed = seed
+      )
     )
     split_obtained <- get_splits(tree_x)
     unique(floor(split_obtained))
-  },
-  error = function(e) {
+  }, error = function(e) {
     NULL
   })
 
   # Add min and max to binning
-  splits <- c(min(counting), split_x, max(counting))
-  cuts <- cut(object[[5]], breaks = splits, include.lowest = TRUE)
+  splits <- c(min(x_obs, na.rm = TRUE), split_x, max(x_obs, na.rm = TRUE))
+  cuts <- cut(x_obs, breaks = splits, include.lowest = TRUE)
 
-  return(structure(list(prediction = object[[1]],
-                        x = object[[2]],
-                        model = object[[3]],
-                        data = object[[4]],
-                        x_obs = object[[5]],
-                        splits = splits,
-                        tariff_classes = cuts),
-                   class = "constructtariffclasses"))
+  structure(
+    list(
+      prediction = object$prediction,
+      x = object$x,
+      model = object$model,
+      data = data_used,
+      x_obs = x_obs,
+      splits = splits,
+      tariff_classes = cuts
+    ),
+    class = "constructtariffclasses"
+  )
 }
 
+#' Print method for constructtariffclasses objects
+#'
+#' @description
+#' Displays the tariff class splits of an object created by
+#' [construct_tariff_classes()].
+#'
+#' @param x An object of class `"constructtariffclasses"`.
+#' @param ... Further arguments passed to or from other methods (ignored).
+#'
+#' @return Invisibly returns `x`.
+#'
 #' @export
 print.constructtariffclasses <- function(x, ...) {
+  cat("Tariff class splits:\n")
   print(x$splits)
+  invisible(x)
 }
 
+#' Coerce constructtariffclasses to a vector
+#'
+#' @description
+#' Extracts the tariff class splits as a numeric vector.
+#'
+#' @param x An object of class `"constructtariffclasses"`.
+#' @param ... Further arguments passed to or from other methods (ignored).
+#'
+#' @return A numeric vector with the split points of the tariff classes.
+#'
 #' @export
 as.vector.constructtariffclasses <- function(x, ...) {
-  splits <- x$splits
-  return(as.vector(splits))
+  as.vector(x$splits)
 }
 
-#' Automatically create a ggplot for objects obtained from
-#' construct_tariff_classes()
+#' Autoplot for tariff class objects
 #'
-#' @description Takes an object produced by \code{construct_tariff_classes()},
-#' and plots the fitted GAM. In addition the constructed tariff classes are
-#' shown.
+#' @description
+#' `autoplot()` method for objects created by [construct_tariff_classes()].
+#' Produces a [ggplot2::ggplot()] of the fitted GAM together with the constructed
+#' tariff class splits. Optionally, confidence intervals and observed data points
+#' can be added.
 #'
-#' @param object constructtariffclasses object produced by
-#' \code{construct_tariff_classes}
-#' @param conf_int determines whether 95\% confidence intervals will be plotted.
-#' The default is \code{conf_int = FALSE}
-#' @param color_gam a color can be specified either by name (e.g.: "red") or by
-#' hexadecimal code (e.g. : "#FF1234") (default is "steelblue")
-#' @param color_splits change the color of the splits in the graph ("grey50" is
-#' default)
-#' @param show_observations add observed frequency/severity points for each
-#' level of the variable for which tariff classes are constructed
-#' @param size_points size for points (1 is default)
-#' @param color_points change the color of the points in the graph ("black" is
-#' default)
-#' @param rotate_labels rotate x-labels 45 degrees (this might be helpful for
-#' overlapping x-labels)
-#' @param remove_outliers do not show observations above this number in the
-#' plot. This might be helpful for outliers.
-#' @param ... other plotting parameters to affect the plot
+#' @param object An object of class `"constructtariffclasses"`, produced by
+#'   [construct_tariff_classes()].
+#' @param conf_int Logical, whether to plot 95% confidence intervals.
+#'   Default = `FALSE`.
+#' @param color_gam Color of the fitted GAM line. Default = `"steelblue"`.
+#' @param color_splits Color of the vertical split lines. Default = `"grey50"`.
+#' @param show_observations Logical, whether to add observed data points for each
+#'   level of the risk factor. Default = `FALSE`.
+#' @param size_points Numeric, size of points if `show_observations = TRUE`.
+#'   Default = 1.
+#' @param color_points Color of observed points. Default = `"black"`.
+#' @param rotate_labels Logical, whether to rotate x-axis labels by 45 degrees.
+#'   Default = `FALSE`.
+#' @param remove_outliers Numeric, exclude observations above this value from
+#'   the plot (helps with extreme outliers). Default = `NULL`.
+#' @param ... Additional arguments passed to [ggplot2::autoplot()].
 #'
-#' @return a ggplot object
+#' @return A [ggplot2::ggplot] object.
 #'
-#' @import ggplot2
+#' @author Martin Haringa
 #'
 #' @examples
 #' \dontrun{
 #' library(ggplot2)
-#' library(dplyr)
-#' x <- fit_gam(MTPL,
-#' nclaims = nclaims, x = age_policyholder, exposure = exposure) |>
-#'    construct_tariff_classes()
-#' autoplot(x, show_observations = TRUE)
+#' riskfactor_gam(MTPL,
+#'                nclaims = "nclaims",
+#'                x = "age_policyholder",
+#'                exposure = "exposure") |>
+#'   construct_tariff_classes() |>
+#'   autoplot(show_observations = TRUE)
 #' }
 #'
-#' @author Martin Haringa
+#' @import ggplot2
 #'
 #' @export
 autoplot.constructtariffclasses <- function(object,
@@ -159,66 +203,56 @@ autoplot.constructtariffclasses <- function(object,
                                             size_points = 1,
                                             color_points = "black",
                                             rotate_labels = FALSE,
-                                            remove_outliers = NULL, ...) {
-
+                                            remove_outliers = NULL,
+                                            ...) {
   if (!inherits(object, "constructtariffclasses")) {
-    stop("autoplot.constructtariffclasses requires a constructtariffclasses
-         object, use object = object")
+    stop("Input must be of class 'constructtariffclasses'.", call. = FALSE)
   }
 
-  prediction <- object[[1]]
-  xlab <- object[[2]]
-  ylab <- object[[3]]
-  points <- object[[4]]
-  gamcluster <- object[[6]]
+  prediction <- object$prediction
+  xlab <- object$x
+  ylab <- object$model
+  points <- object$data
+  splits <- object$splits
 
-  if (isTRUE(conf_int) && sum(prediction$upr_95 > 1e9) > 0) {
-    message("The confidence bounds are too large to show.")
-  }
-
+  # Filter out outliers if requested
   if (is.numeric(remove_outliers) && isTRUE(show_observations)) {
     if (ylab == "frequency") {
       points <- points[points$frequency < remove_outliers, ]
-    }
-    if (ylab == "severity") {
+    } else if (ylab == "severity") {
       points <- points[points$avg_claimsize < remove_outliers, ]
-    }
-    if (ylab == "burning") {
+    } else if (ylab == "burning") {
       points <- points[points$avg_premium < remove_outliers, ]
     }
   }
 
-  ggplot(data = prediction, aes(x = x, y = predicted)) +
+  p <- ggplot(prediction, aes(x = x, y = predicted)) +
     geom_line(color = color_gam) +
     theme_bw(base_size = 12) +
-    geom_vline(xintercept = gamcluster, color = color_splits, linetype = 2) + {
-      if (isTRUE(conf_int) && sum(prediction$upr_95 > 1e9) == 0) {
-        geom_ribbon(aes(ymin = lwr_95, ymax = upr_95), alpha = 0.12)
-      }
-    } +
-    scale_x_continuous(breaks = gamcluster) + {
-      if (isTRUE(show_observations) && ylab == "frequency") {
-        geom_point(data = points,
-                   aes(x = x, y = frequency),
-                   size = size_points,
-                   color = color_points)
-        }
-    } + {
-      if (isTRUE(show_observations) && ylab == "severity") {
-        geom_point(data = points, aes(x = x, y = avg_claimsize),
-                   size = size_points, color = color_points)
-      }
-    } + {
-      if (isTRUE(show_observations) && ylab == "burning") {
-        geom_point(data = points, aes(x = x, y = avg_premium),
-                   size = size_points, color = color_points)
-      }
-    } + {
-      if (ylab == "severity") scale_y_continuous(labels = scales::comma)
-    } + {
-      if (isTRUE(rotate_labels)) {
-        theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-      }
-    } +
+    geom_vline(xintercept = splits, color = color_splits, linetype = 2) +
     labs(y = paste0("Predicted ", ylab), x = xlab)
+
+  if (isTRUE(conf_int) && all(prediction$upr_95 < 1e9)) {
+    p <- p + geom_ribbon(aes(ymin = lwr_95, ymax = upr_95), alpha = 0.12)
+  }
+
+  if (isTRUE(show_observations)) {
+    if (ylab == "frequency") {
+      p <- p + geom_point(data = points, aes(x = x, y = frequency),
+                          size = size_points, color = color_points)
+    } else if (ylab == "severity") {
+      p <- p + geom_point(data = points, aes(x = x, y = avg_claimsize),
+                          size = size_points, color = color_points) +
+        scale_y_continuous(labels = scales::comma)
+    } else if (ylab == "burning") {
+      p <- p + geom_point(data = points, aes(x = x, y = avg_premium),
+                          size = size_points, color = color_points)
+    }
+  }
+
+  if (isTRUE(rotate_labels)) {
+    p <- p + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+  }
+
+  return(p)
 }

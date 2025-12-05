@@ -61,8 +61,14 @@
 #' rating_factors(burn_rst)
 #' }
 #'
+#' @description `r lifecycle::badge('experimental')`
+#'  Add restrictions, like a bonus-malus structure, on the risk factors
+#'  used in the model. Must always be followed by `update_glm()`.
+#'
+#' @return Object of class restricted.
+#'
 #' @export
-restrict_coef <- function(model, restrictions) {
+add_restriction <- function(model, restrictions) {
 
   if (inherits(model, "glm")) {
     fm <- formula(model)
@@ -72,7 +78,7 @@ restrict_coef <- function(model, restrictions) {
     model_call <- model$call
     model_out <- model
 
-    rfdf <- rating_factors(model, signif_stars = FALSE)$df
+    rfdf <- rating_table(model, signif_stars = FALSE)$df
     colnames(rfdf)[3] <- c("estimate")
     rst_lst <- list(restrictions)
     names(rst_lst) <- names(restrictions[1])
@@ -139,6 +145,13 @@ restrict_coef <- function(model, restrictions) {
              mgd_smt = mgd_smt)
   attr(rt, "class") <- "restricted"
   invisible(rt)
+}
+
+#' @rdname add_restriction
+#' @export
+restrict_coef <- function(model, restrictions) {
+  lifecycle::deprecate_warn("0.7.6", "restrict_coef()", "add_restriction()")
+  add_restriction(model, restrictions)
 }
 
 
@@ -247,8 +260,8 @@ restrict_coef <- function(model, restrictions) {
 #' }
 #'
 #' @export
-smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
-                        smoothing = "spline", k = NULL, weights = NULL) {
+add_smoothing <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
+                          smoothing = "spline", k = NULL, weights = NULL) {
 
   if (is.null(breaks) || !is.numeric(breaks)) {
     stop("'breaks' must be a numerical vector", call. = FALSE)
@@ -262,7 +275,7 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
     model_call <- model$call
     model_out <- model
 
-    rfdf <- rating_factors(model, signif_stars = FALSE)$df
+    rfdf <- rating_table(model, signif_stars = FALSE)$df
     colnames(rfdf)[3] <- c("estimate")
     rst_lst <- NULL
     new_col_nm <- NULL
@@ -361,6 +374,13 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
   invisible(st)
 }
 
+#' @rdname add_smoothing
+#' @export
+smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
+                        smoothing = "spline", k = NULL, weights = NULL) {
+  lifecycle::deprecate_warn("0.8.0", "smooth_coef()", "add_smoothing()")
+  add_smoothing(model, x_cut, x_org, degree, breaks, smoothing, k, weights)
+}
 
 
 #' Print for object of class restricted
@@ -554,16 +574,17 @@ autoplot.smooth <- function(object, ...) {
 }
 
 
-#' Refitting Generalized Linear Models
+#' Refit a GLM model
 #'
-#' @description `r lifecycle::badge('experimental')`
-#'  `update_glm()` is used to refit generalized linear models, and must be
-#'  preceded by `restrict_coef()`.
+#' @description `r lifecycle::badge('stable')`
+#'  This is the new version of `update_glm()`. It refits the GLM with
+#'  any restrictions or smoothings that were previously added.
 #'
 #' @param x Object of class restricted or of class smooth
 #' @param intercept_only Logical. Default is \code{FALSE}. If \code{TRUE}, only
 #' the intercept is updated, ensuring that the changes have no impact on the
 #' other variables.
+#' @param ... Other arguments
 #'
 #' @author Martin Haringa
 #'
@@ -574,7 +595,7 @@ autoplot.smooth <- function(object, ...) {
 #' @return Object of class GLM
 #'
 #' @export
-update_glm <- function(x, intercept_only = FALSE) {
+refit_glm <- function(x, intercept_only = FALSE, ...) {
 
   if (!inherits(x, c("restricted", "smooth"))) {
     stop("Input must be of class 'restricted' or 'smooth'.", call. = FALSE)
@@ -616,7 +637,7 @@ update_glm <- function(x, intercept_only = FALSE) {
           newoffset <- paste0(x$offset, " + ", add_offset)
           newoffsetterm <- paste0("offset(", newoffset, ")")
           formula_restricted <- update(formula_removed, paste("~ . + ",
-                                                           newoffsetterm))
+                                                              newoffsetterm))
           x$offset <- newoffset
           x$formula_restricted <- formula_restricted
           x$formula_removed <- formula_removed
@@ -665,4 +686,12 @@ update_glm <- function(x, intercept_only = FALSE) {
   attr(y, "mgd_rst") <- x$mgd_rst
   attr(y, "offweights") <- offweights
   y
+}
+
+#' @rdname refit_glm
+#' @export
+#' @description `r lifecycle::badge('deprecated')`
+update_glm <- function(x, intercept_only = FALSE, ...) {
+  lifecycle::deprecate_warn("0.7.6", "update_glm()", "refit_glm()")
+  refit_glm(x, intercept_only = intercept_only, ...)
 }

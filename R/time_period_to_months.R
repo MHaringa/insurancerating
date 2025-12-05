@@ -1,101 +1,140 @@
-#' Split period to months
+#' Split periods into monthly intervals
 #'
-#' @description The function splits rows with a time period longer than one
-#' month to multiple rows with a time period of exactly one month each. Values
-#' in numeric columns (e.g. exposure or premium) are divided over the months
-#' proportionately.
+#' @description
+#' Splits rows where the time period is longer than one month into multiple rows
+#' with a time period of exactly one month each. Values in numeric columns (e.g.
+#' exposure or premium) are divided proportionally over the months.
 #'
-#' @param df data.frame
-#' @param begin column in `df` with begin dates
-#' @param end column in `df` with end dates
-#' @param ... numeric columns in `df` to split
+#' This function uses **standard evaluation (SE)**: column names must be passed
+#' as **character strings** (e.g. `begin = "begin_date"`).
+#' The older function [period_to_months()] used non-standard evaluation (NSE) and
+#' is deprecated as of version 0.7.6.
 #'
-#' @return data.frame with same columns as in `df`, and one extra column
-#' called `id`
+#' @param df A `data.frame` or `data.table`.
+#' @param begin Character string. Name of column in `df` with begin dates.
+#' @param end Character string. Name of column in `df` with end dates.
+#' @param cols Character vector with names of numeric columns in `df` to split.
 #'
-#' @author Martin Haringa
+#' @return A `data.frame` with the same columns as in `df`, plus an `id` column.
 #'
-#' @import data.table
-#' @importFrom lubridate is.Date
-#' @importFrom lubridate ceiling_date
+#' @details
+#' In insurance portfolios it is common that rows relate to periods longer than
+#' one month. This can be problematic when monthly exposures are needed.
 #'
-#' @details In insurance portfolios it is common that rows relate to periods
-#' longer than one month. This is for example problematic in case exposures per
-#' month are desired.
-#'
-#' Since insurance premiums are constant over the months, and do not depend on
-#' the number of days per month, the function assumes that each month has the
-#' same number of days (i.e. 30).
+#' Since insurance premiums are assumed constant over months (and not depending
+#' on the number of days per month), the function assumes each month has 30 days.
 #'
 #' @examples
 #' library(lubridate)
 #' portfolio <- data.frame(
-#' begin1 = ymd(c("2014-01-01", "2014-01-01")),
-#' end = ymd(c("2014-03-14", "2014-05-10")),
-#' termination = ymd(c("2014-03-14", "2014-05-10")),
-#' exposure = c(0.2025, 0.3583),
-#' premium =  c(125, 150))
-#' period_to_months(portfolio, begin1, end, premium, exposure)
+#'   begin_date = ymd(c("2014-01-01", "2014-01-01")),
+#'   end_date   = ymd(c("2014-03-14", "2014-05-10")),
+#'   exposure   = c(0.2025, 0.3583),
+#'   premium    = c(125, 150)
+#' )
 #'
+#' # New SE interface
+#' split_periods_to_months(portfolio,
+#'   begin = "begin_date", end = "end_date",
+#'   cols = c("premium", "exposure")
+#' )
+#'
+#' # Old NSE interface (deprecated)
+#' \dontrun{
+#' period_to_months(portfolio, begin_date, end_date, premium, exposure)
+#' }
+#'
+#' @author Martin Haringa
+#' @import data.table
+#' @importFrom lubridate is.Date ceiling_date floor_date
 #' @export
-period_to_months <- function(df, begin, end, ...) {
-  begin00 <- deparse(substitute(begin))
-  end00 <- deparse(substitute(end))
-  df00 <- deparse(substitute(df))
-  cols <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
-  column_names <- names(df)
+split_periods_to_months <- function(df, begin, end, cols = NULL) {
 
-  if (!lubridate::is.Date(df[[begin00]]) || !lubridate::is.Date(df[[end00]])) {
-    stop("Columns begin and end should be Date objects. Use e.g.
-         lubridate::ymd() to create Date object.", call. = FALSE)
+  # remember input class
+  input_class <- class(df)
+
+  if (!begin %in% names(df) || !end %in% names(df)) {
+    stop("`begin` and `end` must be column names in `df`.", call. = FALSE)
+  }
+  if (!lubridate::is.Date(df[[begin]]) || !lubridate::is.Date(df[[end]])) {
+    stop("Columns `begin` and `end` must be Date objects.", call. = FALSE)
+  }
+  if (!is.null(cols) && !all(cols %in% names(df))) {
+    stop("Numeric `cols` not found in data.", call. = FALSE)
   }
 
-  if (length(cols) > 0 && !all(cols %in% column_names)) {
-    stop("Numeric column names to split not found in ", df00, call. = FALSE)
-  }
-
-  # Create look up table
-  datum_begin <- seq(min(df[[begin00]]), max(df[[end00]]), by = "months")
-  datum_end <- lubridate::ceiling_date(datum_begin, unit = "months") - 1
+  # Create lookup table of months
+  datum_begin <- seq(min(df[[begin]]), max(df[[end]]), by = "months")
+  datum_end   <- lubridate::ceiling_date(datum_begin, unit = "months") - 1
   datum_begin <- lubridate::floor_date(datum_begin, unit = "months")
   lookup <- data.table::data.table(datum_begin, datum_end)
-  data.table::setnames(lookup, old = c("datum_begin", "datum_end"),
-                       new = c(begin00, end00))
-  data.table::setkeyv(lookup, c(begin00, end00))
+  data.table::setnames(lookup, c("datum_begin", "datum_end"), c(begin, end))
+  data.table::setkeyv(lookup, c(begin, end))
 
-  # due to NSE notes in R CMD check
-  new_end00 <- start_int <- end_int <- end_days <- begin_days <-
+  new_end <- start_int <- end_int <- end_days <- begin_days <-
     overlap_begin_end <- overlap_period <- overlap_total <- NULL
 
   data.table::setDT(df)
-  df[, id := .I][ # Add row id
-    , new_end00 := get(end00) + 1] # Add one day such that day 31
-                                   # equals 0 days in new month
+  df[, id := .I][, new_end := get(end) + 1]
 
-  # Overlap periods
+  # Overlap with months
   ans <- data.table::foverlaps(df, lookup, type = "any", which = FALSE)
 
-  # Divide periods
-  if (length(cols) > 0) {
+  if (!is.null(cols) && length(cols) > 0) {
+    # start_int: whether period starts after lookup begin
     ans[, start_int := data.table::fifelse(
-      get(begin00) < get(paste0("i.", begin00)), 0, 1)][
-      , end_int := data.table::fifelse(
-        get(end00) > get(paste0("i.", end00)), 0, 1)][
-        , end_days := data.table::fifelse(
-          end_int == 0, elapsed_days(new_end00) / 30, 0)][
-          , begin_days := data.table::fifelse(
-            start_int == 0,
-            (30 - elapsed_days(get(paste0("i.", begin00)))) / 30, 0)][
-            , overlap_begin_end := begin_days + end_days][
-              , overlap_period := data.table::fifelse(
-                overlap_begin_end == 0, 1, overlap_begin_end)][
-                , overlap_total := sum(overlap_period, na.rm = TRUE), by = id]
+      get(begin) < get(paste0("i.", begin)), 0, 1
+    )]
 
-    # Divide split columns
-    for (i in seq_len(length(cols))) {
-      ans[, `:=`(cols[i], get(cols[i]) * overlap_period / overlap_total)]
+    # end_int: whether period ends before lookup end
+    ans[, end_int := data.table::fifelse(
+      get(end) > get(paste0("i.", end)), 0, 1
+    )]
+
+    # end_days: fraction for partial last month
+    ans[, end_days := data.table::fifelse(
+      end_int == 0, elapsed_days(new_end) / 30, 0
+    )]
+
+    # begin_days: fraction for partial first month
+    ans[, begin_days := data.table::fifelse(
+      start_int == 0, (30 - elapsed_days(get(paste0("i.", begin)))) / 30, 0
+    )]
+
+    # total fraction for first + last month
+    ans[, overlap_begin_end := begin_days + end_days]
+
+    # overlap_period: 1 for full months, fractional otherwise
+    ans[, overlap_period := data.table::fifelse(
+      overlap_begin_end == 0, 1, overlap_begin_end
+    )]
+
+    # total overlap across same id
+    ans[, overlap_total := sum(overlap_period, na.rm = TRUE), by = id]
+
+    for (col in cols) {
+      ans[, (col) := get(col) * overlap_period / overlap_total]
     }
   }
 
-  ans[, c("id", column_names), with = FALSE]
+  out <- ans[, c("id", names(df)), with = FALSE]
+
+  # restore input class
+  class(out) <- input_class
+  out
+}
+
+
+#' @rdname split_periods_to_months
+#' @param ... Columns in `df` to split. Deprecated, use `cols` instead.
+#' @export
+period_to_months <- function(df, begin, end, ...) {
+  lifecycle::deprecate_warn("0.7.6", "period_to_months()",
+                            "split_periods_to_months()")
+
+  begin_chr <- deparse(substitute(begin))
+  end_chr   <- deparse(substitute(end))
+  cols_chr  <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
+
+  split_periods_to_months(df, begin = begin_chr, end = end_chr, cols = cols_chr)
 }

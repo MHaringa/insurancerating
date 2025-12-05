@@ -2,36 +2,48 @@
 % Please edit documentation in R/model_add_prediction.R
 \name{add_prediction}
 \alias{add_prediction}
-\title{Add predictions to a data frame}
+\title{Add Model Predictions to a Data Frame}
 \usage{
 add_prediction(data, ..., var = NULL, conf_int = FALSE, alpha = 0.1)
 }
 \arguments{
-\item{data}{a data frame of new data.}
+\item{data}{A \code{data.frame} containing the new data for which predictions
+should be generated.}
 
-\item{...}{one or more objects of class \code{glm}.}
+\item{...}{One or more fitted model objects of class \code{"glm"}.}
 
-\item{var}{the name of the output column(s), defaults to NULL}
+\item{var}{Optional character vector giving names for the new prediction
+columns. Must have the same length as the number of models supplied. If
+\code{NULL} (default), names are generated automatically.}
 
-\item{conf_int}{determines whether confidence intervals will be shown.
-Defaults to \code{conf_int = FALSE}.}
+\item{conf_int}{Logical. If \code{TRUE}, add confidence intervals for predictions.
+Default is \code{FALSE}.}
 
-\item{alpha}{a real number between 0 and 1. Controls the confidence level of
-the interval estimates (defaults to 0.10, representing 90 percent confidence
-interval).}
+\item{alpha}{Numeric between 0 and 1. Controls the confidence level for
+interval estimates. Default is \code{0.10}, corresponding to a 90\% confidence
+interval.}
 }
 \value{
-data.frame
+A \code{data.frame} containing the original data along with additional columns for
+model predictions (and confidence intervals if requested).
 }
 \description{
-Add model predictions and confidence bounds to a data frame.
+Adds predictions (and optionally confidence intervals) from one or more
+\code{glm} models to a data frame.
 }
 \examples{
-mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
-    offset = log(exposure), family = poisson())
+mod1 <- glm(nclaims ~ age_policyholder,
+            data = MTPL,
+            offset = log(exposure),
+            family = poisson())
+
+# Add predicted values
 mtpl_pred <- add_prediction(MTPL, mod1)
 
-# Include confidence bounds
+# Add predicted values with confidence bounds
 mtpl_pred_ci <- add_prediction(MTPL, mod1, conf_int = TRUE)
 
+}
+\author{
+Martin Haringa
 }

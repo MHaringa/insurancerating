@@ -2,26 +2,38 @@
 % Please edit documentation in R/time_reduce.R
 \name{summary.reduce}
 \alias{summary.reduce}
-\title{Automatically create a summary for objects obtained from reduce()}
+\title{Summarize reduce objects}
 \usage{
 \method{summary}{reduce}(object, ..., period = "days", name = "count")
 }
 \arguments{
-\item{object}{reduce object produced by \code{reduce()}}
+\item{object}{An object of class \code{"reduce"}, created by \code{\link[=merge_date_ranges]{merge_date_ranges()}}.}
 
-\item{...}{names of columns to aggregate counts by}
+\item{...}{Names of columns in \code{object} to aggregate counts by.}
 
-\item{period}{a character string indicating the period to aggregate on.
-Four options are available: "quarters", "months", "weeks", and "days"
-(the default option)}
+\item{period}{Character string indicating the aggregation period. Options are
+\code{"quarters"}, \code{"months"}, \code{"weeks"}, or \code{"days"} (default = \code{"days"}).}
 
-\item{name}{The name of the new column in the output. If omitted, it will
-default to count.}
+\item{name}{Character string: name of the new count column in the output.
+Defaults to \code{"count"}.}
 }
 \value{
-data.frame
+A \code{data.frame} containing aggregated counts of new (\code{"in"}) and lost
+(\code{"out"}) records, per chosen period (and per grouping variables if supplied).
 }
 \description{
-Takes an object produced by \code{reduce()}, and counts new and lost
-customers.
+Method for \code{summary()} applied to objects of class \code{"reduce"}, as produced
+by \code{\link[=merge_date_ranges]{merge_date_ranges()}}. It counts how many customers (or policies) are new
+or lost within a given period, optionally grouped by other columns.
+}
+\examples{
+\dontrun{
+pt <- merge_date_ranges(portfolio, begin = begin_dat, end = end_dat,
+                        policy_nr, productgroup, product)
+summary(pt, period = "months", policy_nr, productgroup)
+}
+
+}
+\seealso{
+\code{\link[=merge_date_ranges]{merge_date_ranges()}}
 }

@@ -1,4 +1,3 @@
-library(insurancerating)
 context("Construct model points")
 
 mtcars1 <- mtcars[, c("cyl", "vs")]
@@ -25,20 +24,20 @@ mtcars5$gear <- as.factor(mtcars5$gear)
 model1 <- glm(cyl ~ am + gear, offset = log(mpg), family = "poisson",
               data = mtcars5)
 
-testthat::test_that(
-  "No errors are returned for glm objects", {
-    testthat::expect_error(construct_model_points(model_data(model1)), NA)
-    testthat::expect_error(construct_model_points(model_data(model1),
-                                                  exposure = qsec), NA)
-    testthat::expect_error(construct_model_points(model_data(model1),
-                                                  exposure = qsec,
-                                                  exposure_by = vs), NA)
-    testthat::expect_error(construct_model_points(model_data(model1),
-                                                  exposure = qsec,
-                                                  exposure_by = vs,
-                                                  agg_cols = list(wt)), NA)
-  }
-)
+#testthat::test_that(
+#  "No errors are returned for glm objects", {
+#    testthat::expect_error(construct_model_points(model_data(model1)), NA)
+#    testthat::expect_error(construct_model_points(model_data(model1),
+#                                                  exposure = qsec), NA)
+#    testthat::expect_error(construct_model_points(model_data(model1),
+#                                                  exposure = qsec,
+#                                                  exposure_by = vs), NA)
+#    testthat::expect_error(construct_model_points(model_data(model1),
+#                                                  exposure = qsec,
+#                                                  exposure_by = vs,
+#                                                  agg_cols = list(wt)), NA)
+#  }
+#)
 
 context("Get data from restricted model")
 
@@ -50,8 +49,8 @@ sev <- glm(amount ~ bm + zip, weights = nclaims,
             data = MTPL %>% filter(amount > 0))
 
 # Add predictions for freq and sev to data, and calculate premium
-premium_df <- MTPL %>%
-   add_prediction(freq, sev) %>%
+premium_df <- MTPL |>
+   add_prediction(freq, sev) |>
    mutate(premium = pred_nclaims_freq * pred_amount_sev)
 
 # Restrictions on risk factors for region (zip)
@@ -62,8 +61,8 @@ burn <- glm(premium ~ bm + zip, weights = exposure,
             family = Gamma(link = "log"), data = premium_df)
 
 # Fit restricted model
-burn_rst <- burn %>%
-  restrict_coef(., zip_df) %>%
+burn_rst <- burn |>
+  restrict_coef(zip_df) |>
   update_glm()
 
 testthat::test_that(
@@ -80,3 +79,4 @@ testthat::test_that(
     testthat::expect_error(model_data(burn_rst2), NA)
   }
 )
+

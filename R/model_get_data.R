@@ -1,19 +1,48 @@
-#' Get model data
+#' Extract model data
 #'
-#' @description `r lifecycle::badge('experimental')` `model_data()`
-#' is used to get data from glm, and must be preceded by `update_glm()` or
-#' `glm()`.
+#' @description
+#' `r lifecycle::badge('experimental')`
 #'
-#' @param x Object of class refitsmooth, refitrestricted or glm
+#' `extract_model_data()` retrieves underlying data from fitted models. It works
+#' for objects of class `"glm"`, as well as objects produced by refitting
+#' procedures (`"refitsmooth"` or `"refitrestricted"`).
+#'
+#' The wrapper [model_data()] is deprecated as of version 0.7.6; please use
+#' [extract_model_data()] instead.
+#'
+#' @param x An object of class `"glm"`, `"refitsmooth"`, or `"refitrestricted"`.
+#'
+#' @details
+#' For GLM objects, the function:
+#' - returns the original data used in the model,
+#' - attaches attributes with the relevant rating factors and any weights/offsets.
+#'
+#' For refit objects, the function:
+#' - strips out auxiliary columns used for smoothing/restrictions,
+#' - attaches attributes with information about rating factors, merged smooths,
+#'   restrictions, and offsets.
+#'
+#' @return A `data.frame` of class `"model_data"`, containing the cleaned model
+#' data with additional attributes:
+#' \itemize{
+#'   \item `rf` — names of risk factors in the model
+#'   \item `offweights` — weights or offsets if present
+#'   \item `mgd_rst`, `mgd_smt` — merged restrictions/smooths (refit objects only)
+#'   \item `new_nm`, `old_nm` — new and old column names (refit objects only)
+#' }
 #'
 #' @author Martin Haringa
 #'
-#' @import data.table
+#' @importFrom data.table data.table
 #'
-#' @return data.frame
+#' @examples
+#' \dontrun{
+#' fit <- glm(cbind(y, n - y) ~ x, family = binomial(), data = df)
+#' md <- extract_model_data(fit)
+#' }
 #'
 #' @export
-model_data <- function(x) {
+extract_model_data <- function(x) {
 
   if (!inherits(x, c("refitsmooth", "refitrestricted", "glm"))) {
     stop("Input must be of class refitsmooth, glm or of class refitrestricted",
@@ -72,6 +101,14 @@ model_data <- function(x) {
 
   attr(out, "class") <- append("model_data", class(as.data.frame(out)))
   return(out)
+}
+
+
+#' @rdname extract_model_data
+#' @export
+model_data <- function(x) {
+  lifecycle::deprecate_warn("0.7.6", "model_data()", "extract_model_data()")
+  extract_model_data(x)
 }
 
 

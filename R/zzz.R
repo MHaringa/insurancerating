@@ -4,4 +4,5 @@ globalVariables(c("n", "y", "x", "predicted", "lwr_95", "upr_95", "frequency",
                   "id", "..count..", "level", "Coef", "type", "fm_no_offset",
                   "start_", "estimate", "end_", "col1", "yhat", "breaks_min",
                   "breaks_max", "count", "sd", "left", "right", "xvar",
-                  "index_dates", "index_df"))
+                  "index_dates", "index_df", "average_severity", "risk_premium",
+                  "loss_ratio", "average_premium"))

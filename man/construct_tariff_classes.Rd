@@ -13,73 +13,80 @@ construct_tariff_classes(
 )
 }
 \arguments{
-\item{object}{fitgam object produced by \code{fit_gam}}
+\item{object}{An object of class \code{"fitgam"}, produced by \code{\link[=riskfactor_gam]{riskfactor_gam()}}.}
 
-\item{alpha}{complexity parameter. The complexity parameter (alpha) is used
-to control the number of tariff classes. Higher values for \code{alpha}
-render less tariff classes. (\code{alpha} = 0 is default).}
+\item{alpha}{Complexity parameter passed to \code{\link[evtree:evtree.control]{evtree::evtree.control()}}. Higher
+values yield fewer tariff classes. Default = 0.}
 
-\item{niterations}{in case the run does not converge, it terminates after a
-specified number of iterations defined by niterations.}
+\item{niterations}{Maximum number of iterations before termination. Passed to
+\code{\link[evtree:evtree.control]{evtree::evtree.control()}}. Default = 10000.}
 
-\item{ntrees}{the number of trees in the population.}
+\item{ntrees}{Number of trees in the population. Passed to
+\code{\link[evtree:evtree.control]{evtree::evtree.control()}}. Default = 200.}
 
-\item{seed}{an numeric seed to initialize the random number generator (for
-reproducibility).}
+\item{seed}{Integer, seed for the random number generator (for reproducibility).}
 }
 \value{
-A list of class \code{constructtariffclasses} with components
-\item{prediction}{data frame with predicted values}
-\item{x}{name of continuous risk factor for which tariff classes are
-constructed}
-\item{model}{either 'frequency', 'severity' or 'burning'}
-\item{data}{data frame with predicted values and observed values}
-\item{x_obs}{observations for continuous risk factor}
-\item{splits}{vector with boundaries of the constructed tariff classes}
-\item{tariff_classes}{values in vector \code{x} coded according to which
-constructed tariff class they fall}
+A \code{list} of class \code{"constructtariffclasses"} with components:
+\describe{
+\item{prediction}{Data frame with predicted values.}
+\item{x}{Name of the continuous risk factor for which tariff classes are constructed.}
+\item{model}{Model type: \code{"frequency"}, \code{"severity"}, or \code{"burning"}.}
+\item{data}{Data frame with predicted and observed values.}
+\item{x_obs}{Observed values of the continuous risk factor.}
+\item{splits}{Numeric vector with boundaries of the constructed tariff classes.}
+\item{tariff_classes}{Factor with the tariff class each observation falls into.}
+}
 }
 \description{
-Constructs insurance tariff classes to \code{fitgam} objects
-produced by \code{fit_gam}. The goal is to bin the continuous risk factors
-such that categorical risk factors result which capture the effect of the
-covariate on the response in an accurate way, while being easy to use in a
-generalized linear model (GLM).
+Constructs insurance tariff classes for objects of class \code{"fitgam"} produced
+by \code{\link[=riskfactor_gam]{riskfactor_gam()}} (formerly \code{\link[=fit_gam]{fit_gam()}}). The goal is to bin continuous
+risk factors into categorical tariff classes that capture the effect of the
+covariate on the response in an accurate way, while remaining easy to use in
+a generalized linear model (GLM).
 }
 \details{
-Evolutionary trees are used as a technique to bin the \code{fitgam}
-object produced by \code{fit_gam} into risk homogeneous categories.
-This method is based on the work by Henckaerts et al. (2018). See Grubinger
-et al. (2014) for more details on the various parameters that
-control aspects of the evtree fit.
+Evolutionary trees (via \code{\link[evtree:evtree]{evtree::evtree()}}) are used as a technique to bin the
+fitted GAM object into risk-homogeneous categories.
+This method is based on the work by Henckaerts et al. (2018).
+See Grubinger et al. (2014) for details on the parameters controlling the
+evtree fit.
 }
 \examples{
 \dontrun{
 library(dplyr)
-fit_gam(MTPL, nclaims = nclaims,
-x = age_policyholder, exposure = exposure) |>
-   construct_tariff_classes()
+
+# Recommended new usage (SE)
+riskfactor_gam(MTPL,
+               nclaims = "nclaims",
+               x = "age_policyholder",
+               exposure = "exposure") |>
+  construct_tariff_classes()
+
+# Deprecated usage (NSE, still works with warning)
+fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure) |>
+  construct_tariff_classes()
 }
 
 }
 \references{
 Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a
-priori and a posteriori risk classification in insurance. Advances in
-Statistical Analysis, 96(2):187–224. doi:10.1007/s10182-011-0152-7.
+priori and a posteriori risk classification in insurance. \emph{Advances in
+Statistical Analysis}, 96(2), 187–224. \doi{doi:10.1007/s10182-011-0152-7}
 
-Grubinger, T., Zeileis, A., and Pfeiffer, K.-P. (2014). evtree:
+Grubinger, T., Zeileis, A., and Pfeiffer, K.-P. (2014). \emph{evtree:
 Evolutionary learning of globally optimal classification and regression trees
-in R. Journal of Statistical Software, 61(1):1–29. doi:10.18637/jss.v061.i01.
+in R}. Journal of Statistical Software, 61(1), 1–29.
+\doi{doi:10.18637/jss.v061.i01}
 
-Henckaerts, R., Antonio, K., Clijsters, M. and Verbelen, R.
+Henckaerts, R., Antonio, K., Clijsters, M., & Verbelen, R.
 (2018). A data driven binning strategy for the construction of insurance
-tariff classes. Scandinavian Actuarial Journal, 2018:8, 681-705.
-doi:10.1080/03461238.2018.1429300.
+tariff classes. \emph{Scandinavian Actuarial Journal}, 2018(8), 681–705.
+\doi{doi:10.1080/03461238.2018.1429300}
 
 Wood, S.N. (2011). Fast stable restricted maximum likelihood and
-marginal likelihood estimation of semiparametric
-generalized linear models. Journal of the Royal Statistical Society (B)
-73(1):3-36. doi:10.1111/j.1467-9868.2010.00749.x.
+marginal likelihood estimation of semiparametric generalized linear models.
+\emph{JRSS B}, 73(1), 3–36. \doi{doi:10.1111/j.1467-9868.2010.00749.x}
 }
 \author{
 Martin Haringa

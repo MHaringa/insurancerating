@@ -2,8 +2,7 @@
 % Please edit documentation in R/gam_construct_tariff_classes.R
 \name{autoplot.constructtariffclasses}
 \alias{autoplot.constructtariffclasses}
-\title{Automatically create a ggplot for objects obtained from
-construct_tariff_classes()}
+\title{Autoplot for tariff class objects}
 \usage{
 \method{autoplot}{constructtariffclasses}(
   object,
@@ -19,50 +18,50 @@ construct_tariff_classes()}
 )
 }
 \arguments{
-\item{object}{constructtariffclasses object produced by
-\code{construct_tariff_classes}}
+\item{object}{An object of class \code{"constructtariffclasses"}, produced by
+\code{\link[=construct_tariff_classes]{construct_tariff_classes()}}.}
 
-\item{conf_int}{determines whether 95\\% confidence intervals will be plotted.
-The default is \code{conf_int = FALSE}}
+\item{conf_int}{Logical, whether to plot 95\% confidence intervals.
+Default = \code{FALSE}.}
 
-\item{color_gam}{a color can be specified either by name (e.g.: "red") or by
-hexadecimal code (e.g. : "#FF1234") (default is "steelblue")}
+\item{color_gam}{Color of the fitted GAM line. Default = \code{"steelblue"}.}
 
-\item{show_observations}{add observed frequency/severity points for each
-level of the variable for which tariff classes are constructed}
+\item{show_observations}{Logical, whether to add observed data points for each
+level of the risk factor. Default = \code{FALSE}.}
 
-\item{color_splits}{change the color of the splits in the graph ("grey50" is
-default)}
+\item{color_splits}{Color of the vertical split lines. Default = \code{"grey50"}.}
 
-\item{size_points}{size for points (1 is default)}
+\item{size_points}{Numeric, size of points if \code{show_observations = TRUE}.
+Default = 1.}
 
-\item{color_points}{change the color of the points in the graph ("black" is
-default)}
+\item{color_points}{Color of observed points. Default = \code{"black"}.}
 
-\item{rotate_labels}{rotate x-labels 45 degrees (this might be helpful for
-overlapping x-labels)}
+\item{rotate_labels}{Logical, whether to rotate x-axis labels by 45 degrees.
+Default = \code{FALSE}.}
 
-\item{remove_outliers}{do not show observations above this number in the
-plot. This might be helpful for outliers.}
+\item{remove_outliers}{Numeric, exclude observations above this value from
+the plot (helps with extreme outliers). Default = \code{NULL}.}
 
-\item{...}{other plotting parameters to affect the plot}
+\item{...}{Additional arguments passed to \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}.}
 }
 \value{
-a ggplot object
+A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
 }
 \description{
-Takes an object produced by \code{construct_tariff_classes()},
-and plots the fitted GAM. In addition the constructed tariff classes are
-shown.
+\code{autoplot()} method for objects created by \code{\link[=construct_tariff_classes]{construct_tariff_classes()}}.
+Produces a \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} of the fitted GAM together with the constructed
+tariff class splits. Optionally, confidence intervals and observed data points
+can be added.
 }
 \examples{
 \dontrun{
 library(ggplot2)
-library(dplyr)
-x <- fit_gam(MTPL,
-nclaims = nclaims, x = age_policyholder, exposure = exposure) |>
-   construct_tariff_classes()
-autoplot(x, show_observations = TRUE)
+riskfactor_gam(MTPL,
+               nclaims = "nclaims",
+               x = "age_policyholder",
+               exposure = "exposure") |>
+  construct_tariff_classes() |>
+  autoplot(show_observations = TRUE)
 }
 
 }

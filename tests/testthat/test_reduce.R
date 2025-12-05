@@ -1,7 +1,6 @@
-library(insurancerating)
 context("reduce")
 
-test_that("check if object is of reduce class", {
+testthat::test_that("check if object is of reduce class", {
   portfolio <- structure(
     list(policy_nr = c("12345", "12345", "12345", "12345",
                        "12345", "12345", "12345", "12345", "12345",
@@ -25,5 +24,9 @@ test_that("check if object is of reduce class", {
     class = "data.frame")
   x <- reduce(portfolio, begin = begin_dat, end = end_dat, policy_nr,
               productgroup, product, min.gapwidth = 5)
-  expect_is(x, "reduce")
+  testthat::expect_is(x, "reduce")
 })
+
+
+
+

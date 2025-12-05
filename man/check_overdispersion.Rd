@@ -2,38 +2,44 @@
 % Please edit documentation in R/model_performance_overdispersion.R
 \name{check_overdispersion}
 \alias{check_overdispersion}
-\title{Check overdispersion of Poisson GLM}
+\title{Check overdispersion of a Poisson GLM}
 \usage{
 check_overdispersion(object)
 }
 \arguments{
-\item{object}{fitted model of class \code{glm} and family Poisson}
+\item{object}{A fitted model of class \code{"glm"} with family Poisson.}
 }
 \value{
-A list with dispersion ratio, chi-squared statistic, and p-value.
+An object of class \code{"overdispersion"}, which is a list with elements:
+\describe{
+\item{chisq}{Pearson's chi-squared statistic.}
+\item{ratio}{Dispersion ratio (chisq / residual df).}
+\item{rdf}{Residual degrees of freedom.}
+\item{p}{P-value from chi-squared test.}
+}
 }
 \description{
-Check Poisson GLM for overdispersion.
+Tests whether a fitted Poisson regression model is overdispersed using
+Pearson's chi-squared statistic.
 }
 \details{
-A dispersion ratio larger than one indicates overdispersion, this
-occurs when the observed variance is higher than the variance of the
-theoretical model. If the dispersion ratio is close to one, a Poisson model
-fits well to the data. A p-value < .05 indicates overdispersion.
-Overdispersion > 2 probably means there is a larger problem with the data:
-check (again) for outliers, obvious lack of fit. Adopted from
-\code{performance::check_overdispersion()}.
+\itemize{
+\item A dispersion ratio close to 1 indicates a good Poisson fit.
+\item A dispersion ratio > 1 suggests overdispersion.
+\item A p-value < 0.05 indicates significant overdispersion.
+\item A dispersion ratio > 2 usually means a more serious lack of fit (e.g.
+outliers or misspecified model).
+}
 }
 \examples{
-x <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
-  data = MTPL2)
+x <- glm(nclaims ~ area, offset = log(exposure),
+         family = poisson(), data = MTPL2)
 check_overdispersion(x)
 
 }
 \references{
-\itemize{
-\item Bolker B et al. (2017): \href{http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html}{GLMM FAQ.}
-}
+Bolker B. et al. (2017). \href{http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html}{GLMM FAQ}
+See also: \code{performance::check_overdispersion()}.
 }
 \author{
 Martin Haringa

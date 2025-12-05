@@ -3,29 +3,25 @@
 \docType{data}
 \name{MTPL2}
 \alias{MTPL2}
-\title{Characteristics of 3,000 policyholders in a Motor Third Party Liability
-(MTPL) portfolio.}
+\title{Motor Third Party Liability (MTPL) portfolio (3,000 policyholders)}
 \format{
 A data frame with 3,000 rows and 6 variables:
 \describe{
-\item{customer_id}{customer id}
-\item{area}{region where customer lives (0-3)}
-\item{nclaims}{number of claims}
-\item{amount}{claim amount (severity)}
-\item{exposure}{exposure}
-\item{premium}{earned premium}
+\item{customer_id}{Unique customer identifier.}
+\item{area}{Region where the customer lives (0–3).}
+\item{nclaims}{Number of claims.}
+\item{amount}{Claim amount (severity).}
+\item{exposure}{Exposure, expressed in years.}
+\item{premium}{Earned premium.}
 }
-}
-\source{
-The data is derived from the portfolio of a large Dutch motor
-insurance company.
 }
 \usage{
 MTPL2
 }
 \description{
-A dataset containing the area, number of claims, exposure,
-claim amount, exposure, and premium of 3,000 policyholders
+A dataset containing characteristics of 3,000 policyholders in a Dutch Motor
+Third Party Liability (MTPL) insurance portfolio. Includes information on
+region, claims, exposure, and premium.
 }
 \author{
 Martin Haringa

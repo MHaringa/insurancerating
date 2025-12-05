@@ -1,4 +1,3 @@
-library(insurancerating)
 context("bootstrap_rmse")
 
 test_that("check if object is of bootstrap_rmse class", {

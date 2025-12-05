@@ -7,19 +7,22 @@
 biggest_reference(x, weight)
 }
 \arguments{
-\item{x}{an unordered factor}
+\item{x}{A factor (unordered). Character vectors should be converted to
+factor before use.}
 
-\item{weight}{a vector containing weights (e.g. exposure). Should be numeric.}
+\item{weight}{A numeric vector of the same length as \code{x},
+typically representing exposure or frequency weights.}
 }
 \value{
-a factor of the same length as x
+A factor of the same length as \code{x}, with the reference level set
+to the group with the largest weight.
 }
 \description{
-This function specifies the first level of a factor to the level
-with the largest exposure. Levels of factors are sorted using an alphabetic
-ordering. If the factor is used in a regression context, then the first level
-will be the reference. For insurance applications it is common to specify
-the reference level to the level with the largest exposure.
+Relevels a factor so that the category with the highest total
+weight (e.g., exposure) becomes the reference (first) level.
+This is useful in regression settings, where the first level of a factor
+is taken as the baseline. In insurance applications, the group with the
+largest exposure is often chosen as reference.
 }
 \examples{
 \dontrun{
@@ -32,7 +35,8 @@ mutate(across(where(is.factor), ~biggest_reference(., weight)))
 }
 \references{
 Kaas, Rob & Goovaerts, Marc & Dhaene, Jan & Denuit, Michel.
-(2008). Modern Actuarial Risk Theory: Using R. doi:10.1007/978-3-540-70998-5.
+(2008). Modern Actuarial Risk Theory: Using R.
+\doi{doi:10.1007/978-3-540-70998-5.}
 }
 \author{
 Martin Haringa

@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_rating_factors.R
 \name{autoplot.riskfactor}
 \alias{autoplot.riskfactor}
-\title{Automatically create a ggplot for objects obtained from rating_factors()}
+\title{Plot risk factor effects from \code{rating_table()} results}
 \usage{
 \method{autoplot}{riskfactor}(
   object,
@@ -11,57 +11,62 @@
   labels = TRUE,
   dec.mark = ",",
   ylab = "rate",
-  fill = NULL,
-  color = NULL,
+  fill = "lightskyblue",
+  color = "white",
   linetype = FALSE,
   ...
 )
 }
 \arguments{
-\item{object}{riskfactor object produced by \code{rating_factors()}}
+\item{object}{A \code{riskfactor} object returned by \code{\link[=rating_table]{rating_table()}}.}
 
-\item{risk_factors}{character vector to define which factors are included.
+\item{risk_factors}{Character vector specifying which risk factors to plot.
 Defaults to all risk factors.}
 
-\item{ncol}{number of columns in output (default is 1)}
+\item{ncol}{Number of columns in the patchwork layout. Default is 1.}
 
-\item{labels}{show labels with the exposure (default is TRUE)}
+\item{labels}{Logical; if \code{TRUE}, show exposure values as labels on the bars.
+Default is \code{TRUE}.}
 
-\item{dec.mark}{control the format of the decimal point, as well as the mark
-between intervals before the decimal point, choose either "," (default) or
-"."}
+\item{dec.mark}{Character; decimal separator, either \code{","} (default) or \code{"."}.
+Controls formatting of axis labels.}
 
-\item{ylab}{modify label for the y-axis}
+\item{ylab}{Character; label for the y-axis. Default is \code{"rate"}.}
 
-\item{fill}{color to fill histogram}
+\item{fill}{Fill color for the exposure bars. If \code{NULL}, derived from \code{color}.}
 
-\item{color}{color to plot line colors of histogram (default is "skyblue")}
+\item{color}{Line color for model estimates. Defaults to \code{"skyblue"}.}
 
-\item{linetype}{use different linetypes (default is FALSE)}
+\item{linetype}{Logical; if \code{TRUE}, use different line types for models.
+Default is \code{FALSE}.}
 
-\item{...}{other plotting parameters to affect the plot}
+\item{...}{Additional arguments passed to ggplot2 layers.}
 }
 \value{
-a ggplot2 object
+A \code{ggplot}/\code{patchwork} object.
 }
 \description{
-Takes an object produced by \code{rating_factors()}, and plots the
-available input.
+Create a ggplot visualization of a \code{riskfactor} object produced
+by \code{\link[=rating_table]{rating_table()}}. Estimates are plotted per risk factor, with optional
+exposure bars and significance stars if available.
 }
 \examples{
 library(dplyr)
 df <- MTPL2 |>
-  mutate(across(c(area), as.factor)) |>
-  mutate(across(c(area), ~biggest_reference(., exposure)))
+  mutate(area = as.factor(area)) |>
+  mutate(area = biggest_reference(area, exposure))
 
 mod1 <- glm(nclaims ~ area + premium, offset = log(exposure),
- family = poisson(), data = df)
-mod2 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
- data = df)
+            family = poisson(), data = df)
+mod2 <- glm(nclaims ~ area, offset = log(exposure),
+            family = poisson(), data = df)
 
-x <- rating_factors(mod1, mod2, model_data = df, exposure = exposure)
+x <- rating_table(mod1, mod2, model_data = df, exposure = "exposure")
 autoplot(x)
 
+}
+\seealso{
+\code{\link[=rating_table]{rating_table()}}
 }
 \author{
 Martin Haringa

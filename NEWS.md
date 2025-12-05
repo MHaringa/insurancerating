@@ -1,5 +1,42 @@
 # insurancerating (development version)
 
+## Breaking changes
+- The function `fit_gam()` has been **deprecated** and replaced by `riskfactor_gam()`.
+  - `fit_gam()` used **non-standard evaluation (NSE)**, allowing unquoted column names.
+  - `riskfactor_gam()` now uses **standard evaluation (SE)**, requiring column names as **character strings**.  
+    Example migration:
+    ```r
+    # old (NSE, deprecated)
+    fit_gam(df, nclaims = nclaims, x = age_policyholder, exposure = exposure)
+
+    # new (SE)
+    riskfactor_gam(df, nclaims = "nclaims", x = "age_policyholder", exposure = "exposure")
+    ```
+  - The NSE wrapper `fit_gam()` is still available but will show a deprecation warning 
+    and will be removed in a future release.
+    
+- The function `univariate()` has been **deprecated** and replaced by `univariate_summary()`.
+  - `univariate()` used **non-standard evaluation (NSE)**, allowing unquoted column names.
+  - `univariate_summary()` now uses **standard evaluation (SE)**, requiring column names as **character strings**.  
+    Example migration:
+    ```r
+    # old (NSE, deprecated)
+    univariate(df, x = area, severity = amount, nclaims = nclaims, exposure = exposure)
+
+    # new (SE)
+    univariate_summary(df, x = "area", severity = "amount",
+                       nclaims = "nclaims", exposure = "exposure")
+    ```
+  - The NSE wrapper `univariate()` is still available but will show a deprecation warning 
+    and will be removed in a future release.
+
+
+## Minor changes
+- Improved documentation for `riskfactor_gam()`, including clearer examples 
+  and migration guidance from `fit_gam()`.
+  
+  
+
 # insurancerating 0.7.5
 
 * `rating_factors()` now always returns correct output when column with exposure in data is not named `exposure`

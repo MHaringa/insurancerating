@@ -2,7 +2,7 @@
 % Please edit documentation in R/univariate.R
 \name{autoplot.univariate}
 \alias{autoplot.univariate}
-\title{Automatically create a ggplot for objects obtained from univariate()}
+\title{Automatically create a ggplot for objects obtained from univariate analysis}
 \usage{
 \method{autoplot}{univariate}(
   object,
@@ -27,80 +27,80 @@
 )
 }
 \arguments{
-\item{object}{univariate object produced by \code{univariate()}}
+\item{object}{A \code{univariate} object produced by \code{\link[=univariate_summary]{univariate_summary()}} or
+\code{\link[=univariate]{univariate()}}.}
 
-\item{show_plots}{numeric vector of plots to be shown (default is
-c(1,2,3,4,5,6,7,8,9)), there are nine available plots:
+\item{show_plots}{Numeric vector of plots to be shown (default is
+\code{1:9}). There are nine available plots:
 \itemize{
-\item{1. frequency (i.e. number of claims / exposure)}
-\item{2. average severity (i.e. severity / number of claims)}
-\item{3. risk premium (i.e. severity / exposure)}
-\item{4. loss ratio (i.e. severity / premium)}
-\item{5. average premium (i.e. premium / exposure)}
-\item{6. exposure}
-\item{7. severity}
-\item{8. nclaims}
-\item{9. premium}
+\item{1. Frequency (\code{nclaims / exposure})}
+\item{2. Average severity (\code{severity / nclaims})}
+\item{3. Risk premium (\code{severity / exposure})}
+\item{4. Loss ratio (\code{severity / premium})}
+\item{5. Average premium (\code{premium / exposure})}
+\item{6. Exposure}
+\item{7. Severity}
+\item{8. Number of claims}
+\item{9. Premium}
 }}
 
-\item{ncol}{number of columns in output (default is 1)}
+\item{ncol}{Number of columns in output (default = 1).}
 
-\item{background}{show exposure as a background histogram (default is TRUE)}
+\item{background}{Show exposure as a background histogram (default = TRUE).}
 
-\item{labels}{show labels with the exposure (default is TRUE)}
+\item{labels}{Show labels with the exposure (default = TRUE).}
 
-\item{sort}{sort (or order) risk factor into descending order by exposure
-(default is FALSE)}
+\item{sort}{Sort (order) risk factor into descending order by exposure
+(default = FALSE).}
 
-\item{sort_manual}{sort (or order) risk factor into own ordering; should be
-a character vector (default is NULL)}
+\item{sort_manual}{Sort risk factor into a custom order; character vector
+(default = NULL).}
 
-\item{dec.mark}{decimal mark; defaults to ","}
+\item{dec.mark}{Decimal mark; defaults to \code{","}.}
 
-\item{color}{change the color of the points and line ("dodgerblue" is
-default)}
+\item{color}{Color for points/lines (default = \code{"dodgerblue"}).}
 
-\item{color_bg}{change the color of the histogram ("#f8e6b1" is default)}
+\item{color_bg}{Color of background histogram (default = \code{"lightskyblue"}).}
 
-\item{label_width}{width of labels on the x-axis (10 is default)}
+\item{label_width}{Width of labels on the x-axis (default = 10).}
 
-\item{coord_flip}{flip cartesian coordinates so that horizontal becomes
-vertical, and vertical, horizontal (default is FALSE)}
+\item{coord_flip}{Flip cartesian coordinates (default = FALSE).}
 
-\item{show_total}{show line for total if by is used in univariate (default
-is FALSE)}
+\item{show_total}{Show line for total if \code{by} is used (default = FALSE).}
 
-\item{total_color}{change the color for the total line ("black" is default)}
+\item{total_color}{Color for total line (default = \code{"black"}).}
 
-\item{total_name}{add legend name for the total line (e.g. "total")}
+\item{total_name}{Legend name for total line (default = NULL).}
 
-\item{rotate_angle}{numeric value for angle of labels on the x-axis (degrees)}
+\item{rotate_angle}{Numeric value for angle of labels on the x-axis (degrees).}
 
-\item{custom_theme}{list with customized theme options}
+\item{custom_theme}{List with customized theme options.}
 
-\item{remove_underscores}{logical. Defaults to FALSE. Remove underscores from
-labels}
+\item{remove_underscores}{Logical; remove underscores from labels
+(default = FALSE).}
 
-\item{...}{other plotting parameters to affect the plot}
+\item{...}{Other plotting parameters.}
 }
 \value{
-a ggplot2 object
+A \code{ggplot2} object.
 }
 \description{
-Takes an object produced by \code{univariate()}, and plots the
-available input.
+Takes an object produced by \code{\link[=univariate_summary]{univariate_summary()}} (SE) or \code{\link[=univariate]{univariate()}}
+(deprecated NSE interface) and plots the available statistics.
 }
 \examples{
-library(ggplot2)
-x <- univariate(MTPL2, x = area, severity = amount, nclaims = nclaims,
-exposure = exposure)
+## --- New usage (SE, recommended) ---
+x <- univariate_summary(MTPL2,
+                        x = "area",
+                        severity = "amount",
+                        nclaims = "nclaims",
+                        exposure = "exposure")
 autoplot(x)
-autoplot(x, show_plots = c(6,1), background = FALSE, sort = TRUE)
 
-# Group by `zip`
-xzip <- univariate(MTPL, x = bm, severity = amount, nclaims = nclaims,
-exposure = exposure, by = zip)
-autoplot(xzip, show_plots = 1:2)
+## --- Deprecated usage (NSE) ---
+x_old <- univariate(MTPL2, x = area, severity = amount,
+                    nclaims = nclaims, exposure = exposure)
+autoplot(x_old)
 
 }
 \author{

@@ -7,28 +7,34 @@
 model_performance(...)
 }
 \arguments{
-\item{...}{One or more objects of class \code{glm}.}
+\item{...}{One or more objects of class \code{"glm"}.}
 }
 \value{
-data frame
+A data frame of class \code{"model_performance"}, with columns:
+\describe{
+\item{Model}{Name of the model object as passed to the function.}
+\item{AIC}{AIC value.}
+\item{BIC}{BIC value.}
+\item{RMSE}{Root mean squared error.}
+}
 }
 \description{
-Compute indices of model performance for (one or more) GLMs.
+Computes model performance indices for one or more fitted GLMs.
 }
 \details{
-The following indices are computed:
+The following indices are reported:
 \describe{
-\item{AIC}{Akaike's Information Criterion}
-\item{BIC}{Bayesian Information Criterion}
-\item{RMSE}{Root mean squared error}
+\item{AIC}{Akaike's Information Criterion.}
+\item{BIC}{Bayesian Information Criterion.}
+\item{RMSE}{Root mean squared error, computed from observed and predicted values.}
 }
 
-Adopted from \code{performance::model_performance()}.
+This function is adapted from \code{performance::model_performance()}.
 }
 \examples{
 m1 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
           data = MTPL2)
-m2 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
+m2 <- glm(nclaims ~ area + premium, offset = log(exposure), family = poisson(),
           data = MTPL2)
 model_performance(m1, m2)
 

@@ -49,12 +49,12 @@ This section provides a straightforward example of how to perform a univariate a
 library(insurancerating)
 library(dplyr)
 
-univariate(MTPL2, 
-           x = area, # discrete risk factor
-           nclaims = nclaims, # number of claims
-           exposure = exposure, 
-           premium = premium, 
-           severity = amount) # loss
+univariate_summary(MTPL2, 
+                   x = "area", # discrete risk factor
+                   nclaims = "nclaims", # number of claims
+                   exposure = "exposure", 
+                   premium = "premium", 
+                   severity = "amount") # loss
 
 ```
 
@@ -81,7 +81,7 @@ There are additional options available in `univariate()`, and the following expl
 
 ```{r uni2}
 
-univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) 
+univariate_summary(MTPL2, x = "area", nclaims = "nclaims", exposure = "exposure") 
 
 ```
 
@@ -91,7 +91,7 @@ However, the above table is small and easy to understand, the same information m
 #| fig.alt: >
 #|   Show all available univariate plots
 
-univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
+univariate_summary(MTPL2, x = "area", nclaims = "nclaims", exposure = "exposure") |>
   autoplot()
 
 ```
@@ -114,7 +114,7 @@ For instance, to display the exposure and claim frequency plots:
 #| fig.alt: >
 #|   Show claim frequency and exposure
 
-univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
+univariate_summary(MTPL2, x = "area", nclaims = "nclaims", exposure = "exposure") |>
   autoplot(show_plots = c(6,1))
 
 ```
@@ -130,7 +130,7 @@ sample_years <- sample(2016:2019, nrow(MTPL2), replace = TRUE)
 
 MTPL2 |>
   mutate(year = sample_years) |>
-  univariate(x = area, nclaims = nclaims, exposure = exposure, by = year) |>
+  univariate_summary(x = "area", nclaims = "nclaims", exposure = "exposure", by = "year") |>
   autoplot(show_plots = 1)
 
 ```
@@ -141,7 +141,7 @@ To remove the bars from the plot and display only the line graph, use `backgroun
 #| fig.alt: >
 #|   Show claim frequency and exposure without histogram
 
-univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
+univariate_summary(MTPL2, x = "area", nclaims = "nclaims", exposure = "exposure") |>
   autoplot(show_plots = c(6,1), background = FALSE)
 
 ```
@@ -152,7 +152,7 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
 #| fig.alt: >
 #|   Show claim frequency and arrange levels in descending order
 
-univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
+univariate_summary(MTPL2, x = "area", nclaims = "nclaims", exposure = "exposure") |>
   autoplot(show_plots = 1, background = FALSE, sort = TRUE)
 
 ```
@@ -163,7 +163,7 @@ univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
 #| fig.alt: >
 #|   Show claim frequency and arrange levels according to your preferred order
 
-univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
+univariate_summary(MTPL2, x = "area", nclaims = "nclaims", exposure = "exposure") |>
   autoplot(show_plots = c(6,1), background = FALSE, 
            sort_manual = c("2", "3", "1", "0"))
 
@@ -175,7 +175,7 @@ The graph below illustrates additional options:
 #| fig.alt: >
 #|   Show graph with additional options
 
-univariate(MTPL2, x = area, nclaims = nclaims, exposure = exposure) |>
+univariate_summary(MTPL2, x = "area", nclaims = "nclaims", exposure = "exposure") |>
   autoplot(show_plots = c(6,1), background = FALSE, sort = TRUE, ncol = 2, 
            color_bg = "dodgerblue", color = "blue", 
            custom_theme = ggplot2::theme_bw())
@@ -188,18 +188,18 @@ Alternatively, you can create a bar graph to display the number of claims; this 
 #| fig.alt: >
 #|   Show number of claims
 
-univariate(MTPL2, x = area, nclaims = nclaims) |>
+univariate_summary(MTPL2, x = "area", nclaims = "nclaims") |>
   autoplot(show_plots = 8, coord_flip = TRUE, sort = TRUE)
 
 ```
 
-In addition to `univariate()`, another option for one-way analysis is `histbin()`. This function allows you to create a histogram for continuous variables:
+In addition to `univariate_summary()`, another option for one-way analysis is `outlier_histogram()`. This function allows you to create a histogram for continuous variables:
 
 ```{r hist1, eval = TRUE, message = FALSE, warning = FALSE}
 #| fig.alt: >
 #|   Histogram for the distribution of the premium
 
-histbin(MTPL2, premium, bins = 20)
+outlier_histogram(MTPL2, premium, bins = 20)
 
 ```
 
@@ -209,7 +209,7 @@ In the context of insurance, it is common to encounter outliers in the data, and
 #| fig.alt: >
 #|   Histogram for the distribution of the premium with grouped outliers
 
-histbin(MTPL2, premium, bins = 10, right = 110)
+outlier_histogram(MTPL2, premium, bins = 10, right = 110)
 
 ```
 
@@ -221,21 +221,21 @@ This section explains how to get an understanding of the claim frequency and cla
 
 To do this, we fit a Generalized Additive Model (GAM) for *age_policyholder*. A GAM is a flexible regression model that allows the relationship between the predictors and the response variable to be nonlinear by using smooth functions of the predictors. This makes it easier to capture more complex patterns in the data compared to simpler models that assume a straight-line relationship.
 
-`fit_gam()` below displays the claim frequency (i.e. number of claims / exposure) for different age groups:
+`riskfactor_gam()` below displays the claim frequency (i.e. number of claims / exposure) for different age groups:
 
 ```{r cont1, eval = TRUE, message = FALSE, warning = FALSE}
 #| fig.alt: >
 #|   Claim frequency for different age groups
 
-age_policyholder_frequency <- fit_gam(data = MTPL, 
-                                      nclaims = nclaims, 
-                                      x = age_policyholder, 
-                                      exposure = exposure, 
-                                      model = "frequency")
+age_policyholder_frequency <- riskfactor_gam(data = MTPL, 
+                                             nclaims = "nclaims", 
+                                             x = "age_policyholder", 
+                                             exposure = "exposure", 
+                                             model = "frequency")
 
 # Create plot
 autoplot(age_policyholder_frequency, show_observations = TRUE) /
-  histbin(MTPL, age_policyholder, bins = 20)
+  outlier_histogram(MTPL, age_policyholder, bins = 20)
 
 ```
 
@@ -260,7 +260,7 @@ autoplot(clusters_freq, show_observations = TRUE)
 
 The above clearly demonstrates bins with risk-homogeneous categories. It shows that the claim frequency for policyholders aged between 39 and 84 is almost identical. For those over 84, the claim frequency is slightly higher, while young policyholders aged 18 to 25 have the highest claim frequency. The groups aged 25 to 32 and 32 to 39 have slightly lower claim frequencies than the youngest drivers but represent a higher risk than the main group of policyholders aged 39 to 84.
 
-You can follow the same steps for severity by specifying `model = "severity"` in `fit_gam()`.
+You can follow the same steps for severity by specifying `model = "severity"` in `riskfactor_gam()`.
 
 The final step is to add new columns to the MTPL data set that translate the age of the policyholders into the corresponding bin(s):
 
@@ -311,7 +311,7 @@ A fitted linear model has coefficients for the different categories of the facto
 
 ```{r rp11a}
 
-rating_factors(mod_freq1, mod_freq2) 
+rating_table(mod_freq1, mod_freq2) 
 
 ```
 
@@ -321,7 +321,7 @@ rating_factors(mod_freq1, mod_freq2)
 #| fig.alt: >
 #|   Show rating factors
 
-rating_factors(mod_freq1, mod_freq2) |> 
+rating_table(mod_freq1, mod_freq2) |> 
   autoplot()
 
 ```
@@ -332,7 +332,7 @@ The figure above displays the age groups in a non-natural order, with the group 
 #| fig.alt: >
 #|   Show rating factors in natural order
 
-rating_factors(mod_freq1, mod_freq2, model_data = dat) |>
+rating_table(mod_freq1, mod_freq2, model_data = dat) |>
   autoplot()
 
 ```
@@ -344,7 +344,7 @@ The following graph presents additional options, for example, including the expo
 #|   Show rating factors in natural order, including the exposure displayed
 #|   as a bar graph
 
-rating_factors(mod_freq1, mod_freq2, model_data = dat, exposure = exposure) |>
+rating_table(mod_freq1, mod_freq2, model_data = dat, exposure = exposure) |>
   autoplot(linetype = TRUE) 
 
 ```
@@ -400,7 +400,7 @@ This results in the following coefficients:
 
 ```{r rp32}
 
-rating_factors(burn_unrestricted) 
+rating_table(burn_unrestricted) 
 
 ```
 
@@ -410,7 +410,7 @@ While the table above is concise and easy to interpret, the same information can
 #| fig.alt: >
 #|   Show coefficients for the age of the policyholder
 
-rating_factors(burn_unrestricted, model_data = MTPL_premium, exposure = exposure) |>
+rating_table(burn_unrestricted, model_data = MTPL_premium, exposure = exposure) |>
   autoplot(risk_factor = "age_policyholder_freq_man")
 
 ```
@@ -424,9 +424,9 @@ The simplest approach for `smooth_coef()` is to fit a polynomial, which is the d
 ```{r rp34, eval = TRUE, message = FALSE, warning = FALSE}
 
 burn_unrestricted |>
-  smooth_coef(x_cut = "age_policyholder_freq_man", 
-              x_org = "age_policyholder", 
-              breaks = seq(18, 99, 3)) |>
+  add_smoothing(x_cut = "age_policyholder_freq_man", 
+                x_org = "age_policyholder", 
+                breaks = seq(18, 99, 3)) |>
   print()
 
 ```
@@ -441,9 +441,9 @@ In `smooth_coef()`, `x_cut` refers to the risk factor with clusters, in this cas
 #|   for the age of the policyholder
 
 burn_unrestricted |>
-  smooth_coef(x_cut = "age_policyholder_freq_man", 
-              x_org = "age_policyholder", 
-              breaks = seq(18, 93, 5)) |>
+  add_smoothing(x_cut = "age_policyholder_freq_man", 
+                x_org = "age_policyholder", 
+                breaks = seq(18, 93, 5)) |>
   autoplot()
 
 ```
@@ -457,10 +457,10 @@ The degree can be adjusted to a lower-order polynomial (in this case, set to 1),
 #|   Show smoothed coefficients by means of a lower-order polynomial
 
 burn_unrestricted |>
-  smooth_coef(x_cut = "age_policyholder_freq_man", 
-              x_org = "age_policyholder", 
-              degree = 1,
-              breaks = seq(18, 93, 5)) |>
+  add_smoothing(x_cut = "age_policyholder_freq_man", 
+                x_org = "age_policyholder", 
+                degree = 1,
+                breaks = seq(18, 93, 5)) |>
   autoplot()
 
 ```
@@ -472,10 +472,10 @@ In most cases, and particularly in this situation, a better alternative is to us
 #|   Show smoothed coefficients by means of a GAM
 
 burn_unrestricted |>
-  smooth_coef(x_cut = "age_policyholder_freq_man", 
-              x_org = "age_policyholder", 
-              smoothing = "gam",
-              breaks = seq(18, 99, 3)) |>
+  add_smoothing(x_cut = "age_policyholder_freq_man", 
+                x_org = "age_policyholder", 
+                smoothing = "gam",
+                breaks = seq(18, 99, 3)) |>
   autoplot()
 
 ```
@@ -487,13 +487,13 @@ It is observed that for ages above 80, the fitted line decreases rapidly, despit
 #|   Show smoothed coefficients by means of a weighted GAM
 
 burn_unrestricted |>
-  smooth_coef(x_cut = "age_policyholder_freq_man", 
-              x_org = "age_policyholder", 
-              smoothing = "gam",
-              weights = "exposure",
-              breaks = seq(18, 99, 5)) |>
+  add_smoothing(x_cut = "age_policyholder_freq_man", 
+                x_org = "age_policyholder", 
+                smoothing = "gam",
+                weights = "exposure",
+                breaks = seq(18, 99, 5)) |>
   autoplot() /
-autoplot(age_policyholder_frequency, show_observations = TRUE)
+  autoplot(age_policyholder_frequency, show_observations = TRUE)
 
 ```
 
@@ -506,17 +506,17 @@ To achieve this, `smooth_coef()` offers options for monotonic increasing ("mpi")
 #|   Show smoothed coefficients by means of a gam vs mpd
 
 gam <- burn_unrestricted |>
-  smooth_coef(x_cut = "age_policyholder_freq_man", 
-              x_org = "age_policyholder", 
-              smoothing = "gam",
-              breaks = seq(18, 99, 3)) |>
+  add_smoothing(x_cut = "age_policyholder_freq_man", 
+                x_org = "age_policyholder", 
+                smoothing = "gam",
+                breaks = seq(18, 99, 3)) |>
   autoplot()
 
 mpd <- burn_unrestricted |>
-  smooth_coef(x_cut = "age_policyholder_freq_man", 
-              x_org = "age_policyholder", 
-              smoothing = "mpd",
-              breaks = seq(18, 99, 3)) |>
+  add_smoothing(x_cut = "age_policyholder_freq_man", 
+                x_org = "age_policyholder", 
+                smoothing = "mpd",
+                breaks = seq(18, 99, 3)) |>
   autoplot()
 
 gam / mpd
@@ -533,7 +533,7 @@ zip_df <- data.frame(zip = c(0,1,2,3),
                      zip_restricted = c(0.8, 0.9, 1, 1.2))
 
 burn_unrestricted |>
-  restrict_coef(restrictions = zip_df) |>
+  add_restriction(restrictions = zip_df) |>
   print()
 
 ```
@@ -543,16 +543,16 @@ The examples above illustrate how to use `smooth_coef()` and `restrict_coef()`. 
 ```{r rp311, eval = TRUE, message = FALSE, warning = FALSE}
 
 burn_restricted3 <- burn_unrestricted |>
-  restrict_coef(restrictions = zip_df) |>
-  smooth_coef(x_cut = "age_policyholder_freq_man", 
-              x_org = "age_policyholder", 
-              smoothing = "gam",
-              weights = "exposure",
-              breaks = seq(18, 99, 3)) |>
-  update_glm() 
+  add_restriction(restrictions = zip_df) |>
+  add_smoothing(x_cut = "age_policyholder_freq_man", 
+                x_org = "age_policyholder", 
+                smoothing = "gam",
+                weights = "exposure",
+                breaks = seq(18, 99, 3)) |>
+  refit_glm() 
 
 # Show rating factors
-rating_factors(burn_restricted3)
+rating_table(burn_restricted3)
 
 ```
 
@@ -563,7 +563,7 @@ And visualize them:
 #|   Show rating factors according to the burning model
 
 # Show rating factors
-rating_factors(burn_restricted3) |> autoplot()
+rating_table(burn_restricted3) |> autoplot()
 
 ```
 
@@ -573,7 +573,7 @@ As the final step, incorporate the refined premiums into the portfolio:
 
 ```{r rp313}
 
-premiums3 <- model_data(burn_restricted3) |>
+premiums3 <- extract_model_data(burn_restricted3) |>
   add_prediction(burn_restricted3)
 
 glimpse(premiums3)
@@ -584,7 +584,7 @@ Alternatively, you can use model points, which are unique combinations of factor
 
 ```{r rp314}
 
-premiums4 <- model_data(burn_restricted3) |>
+premiums4 <- extract_model_data(burn_restricted3) |>
   construct_model_points() |>
   add_prediction(burn_restricted3)
 

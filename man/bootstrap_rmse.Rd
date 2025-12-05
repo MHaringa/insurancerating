@@ -14,53 +14,55 @@ bootstrap_rmse(
 )
 }
 \arguments{
-\item{model}{a model object}
+\item{model}{A fitted model object.}
 
-\item{data}{data used to fit model object}
+\item{data}{Data used to fit the model object.}
 
-\item{n}{number of bootstrap replicates (defaults to 50)}
+\item{n}{Integer. Number of bootstrap replicates. Default = 50.}
 
-\item{frac}{fraction used in training set if cross-validation is applied
-(defaults to 1)}
+\item{frac}{Fraction of the data used in the training set if cross-validation
+is applied. Must be in (0, 1]. Default = 1 (use all data).}
 
-\item{show_progress}{show progress bar (defaults to TRUE)}
+\item{show_progress}{Logical. Show progress bar during bootstrap iterations.
+Default = TRUE.}
 
-\item{rmse_model}{numeric RMSE to show as vertical dashed line in autoplot()
-(defaults to NULL)}
+\item{rmse_model}{Optional numeric RMSE of the fitted (original) model.
+If NULL (default), it is computed automatically.}
 }
 \value{
-A list with components
-\item{rmse_bs}{numerical vector with \code{n} root mean squared errors}
-\item{rmse_mod}{root mean squared error for fitted (i.e. original) model}
+An object of class \code{"bootstrap_rmse"}, which is a list with components:
+\describe{
+\item{rmse_bs}{Numeric vector with \code{n} bootstrap RMSE values.}
+\item{rmse_mod}{Root mean squared error for the original fitted model.}
+}
 }
 \description{
-Generate \code{n} bootstrap replicates to compute \code{n} root mean
-squared errors.
+Generate \code{n} bootstrap replicates to compute \code{n} root mean squared errors (RMSE).
+This can be used to evaluate the predictive stability of a fitted model.
 }
 \details{
-To test the predictive ability of the fitted model it might be
-helpful to determine the variation in the computed RMSE. The variation is
-calculated by computing the root mean squared errors from \code{n} generated
-bootstrap replicates. More precisely, for each iteration a sample with
-replacement is taken from the data set and the model is refitted using
-this sample. Then, the root mean squared error is calculated.
+To test the predictive ability of a fitted model it can be helpful to assess
+the variation in the computed RMSE. The variation is calculated by refitting
+the model on \code{n} bootstrap replicates and storing the resulting RMSE values.
+\itemize{
+\item If \code{frac = 1}, each bootstrap sample has the same size as the dataset.
+\item If \code{frac < 1}, a subset of the data is used as training, and the remainder
+as test set (cross-validation).
+}
 }
 \examples{
 \dontrun{
 mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
-    offset = log(exposure), family = poisson())
+            offset = log(exposure), family = poisson())
 
-# Use all records in MTPL
+# Use all records
 x <- bootstrap_rmse(mod1, MTPL, n = 80, show_progress = FALSE)
 print(x)
 autoplot(x)
 
-# Use 80\% of records to test whether predictive ability depends on which 80\%
-# is used. This might for example be useful in case portfolio contains large
-# claim sizes
-x_frac <- bootstrap_rmse(mod1, MTPL, n = 50, frac = .8,
- show_progress = FALSE)
-autoplot(x_frac) # Variation is quite small for Poisson GLM
+# Use 80\% of records (cross-validation style)
+x_frac <- bootstrap_rmse(mod1, MTPL, n = 50, frac = .8, show_progress = FALSE)
+autoplot(x_frac)
 }
 
 }
