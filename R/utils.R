@@ -45,7 +45,7 @@ biggest_reference <- function(x, weight) {
 }
 
 
-' Convert p-values into significance stars
+#' Convert p-values into significance stars
 #'
 #' @param pval Numeric vector of p-values.
 #'
@@ -173,7 +173,15 @@ overlap_left <- function(positions, cut_off) {
 split_x_fn <- function(data, x, left = NULL, right = NULL) {
 
   vec <- data[[x]]
-  vec_new <- pmin(pmax(vec, left), right)
+  vec_new <- vec
+
+  if (!is.null(right)) {
+    vec_new[vec_new > right] <- right
+  }
+
+  if (!is.null(left)) {
+    vec_new[vec_new < left] <- left
+  }
 
   if (!is.null(left)) {
     if (left <= min(vec, na.rm = TRUE)) {
