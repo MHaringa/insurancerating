@@ -102,11 +102,19 @@ outlier_histogram <- function(data, x, left = NULL, right = NULL,
 
 
 #' @rdname outlier_histogram
+#'
+#' @description
+#' [histbin()] is deprecated as of version 0.8.0.
+#' Please use [outlier_histogram()] instead.
+#'
+#' In addition, note that `x` must now be passed as **string**
+#' (standard evaluation).
+#'
 #' @export
 histbin <- function(data, x, left = NULL, right = NULL, line = FALSE, bins = 30,
                     fill = "steelblue", color = "white",
                     fill_outliers = "#a7d1a7") {
-  lifecycle::deprecate_warn("0.7.6", "histbin()", "outlier_histogram()")
+  lifecycle::deprecate_warn("0.8.0", "histbin()", "outlier_histogram()")
   x <- deparse(substitute(x))
   outlier_histogram(data = data, x = x, left = left, right = right,
                     line = line, bins = bins, fill = fill,

@@ -60,7 +60,7 @@ A \code{list} of class \code{"fitgam"} with the following elements:
 Fits a generalized additive model (GAM) to a continuous risk factor in one of
 three contexts: claim frequency, claim severity, or burning cost (pure premium).
 
-\code{\link[=fit_gam]{fit_gam()}} is deprecated as of version 0.7.6.
+\code{\link[=fit_gam]{fit_gam()}} is deprecated as of version 0.8.0.
 Please use \code{\link[=riskfactor_gam]{riskfactor_gam()}} instead.
 
 In addition, note that column arguments must now be passed as \strong{strings}
@@ -80,7 +80,7 @@ functionality is still experimental.
 }
 \subsection{Migration from \code{fit_gam()}}{
 
-The function \code{\link[=fit_gam]{fit_gam()}} is deprecated as of version 0.7.6 and replaced by
+The function \code{\link[=fit_gam]{fit_gam()}} is deprecated as of version 0.8.0 and replaced by
 \code{\link[=riskfactor_gam]{riskfactor_gam()}}. In addition to the name change, the interface has also
 changed:
 \itemize{

@@ -135,7 +135,7 @@ merge_date_ranges <- function(df, begin, end, ..., agg_cols = NULL,
 reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum",
                    min.gapwidth = 5) {
 
-  lifecycle::deprecate_warn("0.7.6", "reduce()", "merge_date_ranges()")
+  lifecycle::deprecate_warn("0.8.0", "reduce()", "merge_date_ranges()")
 
   # capture column names as character
   begin_sym <- substitute(begin)

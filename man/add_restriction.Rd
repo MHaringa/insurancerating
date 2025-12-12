@@ -25,12 +25,12 @@ Object of class restricted.
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Add restrictions, like a bonus-malus structure, on the risk
-factors used in the model. \code{restrict_coef()} must always be followed
-by \code{update_glm()}.
+factors used in the model. \code{add_restriction()} must always be followed
+by \code{refit_glm()}.
 
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Add restrictions, like a bonus-malus structure, on the risk factors
-used in the model. Must always be followed by \code{update_glm()}.
+used in the model. Must always be followed by \code{refit_glm()}.
 }
 \details{
 Although restrictions could be applied either to the frequency or
@@ -67,16 +67,16 @@ burn <- glm(premium ~ bm + zip, weights = exposure,
 
 # Fit restricted model
 burn_rst <- burn |>
-  restrict_coef(restrictions = zip_df) |>
-  update_glm()
+  add_restriction(restrictions = zip_df) |>
+  refit_glm()
 
 # Show rating factors
-rating_factors(burn_rst)
+rating_table(burn_rst)
 }
 
 }
 \seealso{
-\code{\link[=update_glm]{update_glm()}} for refitting the restricted model,
+\code{\link[=refit_glm]{refit_glm()}} for refitting the restricted model,
 and \code{\link[=autoplot.restricted]{autoplot.restricted()}}.
 
 Other update_glm: 

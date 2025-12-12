@@ -2,12 +2,12 @@
 % Please edit documentation in R/model_refinement.R
 \name{autoplot.smooth}
 \alias{autoplot.smooth}
-\title{Automatically create a ggplot for objects obtained from smooth_coef()}
+\title{Automatically create a ggplot for objects obtained from add_smoothing()}
 \usage{
 \method{autoplot}{smooth}(object, ...)
 }
 \arguments{
-\item{object}{object produced by \code{smooth_coef()}}
+\item{object}{object produced by \code{add_smoothing()}}
 
 \item{...}{other plotting parameters to affect the plot}
 }
@@ -16,7 +16,7 @@ Object of class ggplot2
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Takes an object produced by \code{smooth_coef()}, and produces
+Takes an object produced by \code{add_smoothing()}, and produces
 a plot with a comparison between the smoothed coefficients and
 estimated coefficients obtained from the model.
 }

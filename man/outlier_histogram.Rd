@@ -57,6 +57,12 @@ A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
 Visualize the distribution of a continuous variable using bins.
 Values below \code{left} or above \code{right} can be grouped into outlier bins
 for compact display when the range of values is wide.
+
+\code{\link[=histbin]{histbin()}} is deprecated as of version 0.8.0.
+Please use \code{\link[=outlier_histogram]{outlier_histogram()}} instead.
+
+In addition, note that \code{x} must now be passed as \strong{string}
+(standard evaluation).
 }
 \details{
 This is a wrapper around \code{\link[ggplot2:geom_histogram]{ggplot2::geom_histogram()}}.

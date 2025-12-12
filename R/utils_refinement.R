@@ -329,6 +329,35 @@ add_restrictions_df <- function(model_data, restrictions_df) {
          call. = FALSE)
   }
 
+  # bestaande (unieke) levels/waarden in de modeldata
+  existing_levels  <- unique(model_data[[rcol1]])
+  # levels/waarden in de restrictie-tabel
+  restricted_levels <- unique(restrictions_df[[1]])
+
+  # levels in data zonder restrictie
+  levels_not_restricted <- setdiff(existing_levels, restricted_levels)
+  # levels in restrictiedata die niet in de modeldata voorkomen
+  restricted_not_present <- setdiff(restricted_levels, existing_levels)
+
+  if (length(levels_not_restricted) > 0) {
+    warning(
+      "Levels in '", rcol1,
+      "' in model data without restriction: ",
+      paste(levels_not_restricted, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  if (length(restricted_not_present) > 0) {
+    warning(
+      "Levels in restriction data for '", rcol1,
+      "' not present in model data: ",
+      paste(restricted_not_present, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+
   if (is.factor(model_data[[rcol1]])) {
     restrictions_df[[rcol1]] <- as.factor(restrictions_df[[rcol1]])
   }

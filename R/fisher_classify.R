@@ -48,6 +48,6 @@ fisher_classify <- function(vec, n = 7, diglab = 2) {
 #' @rdname fisher_classify
 #' @export
 fisher <- function(vec, n = 7, diglab = 2) {
-  lifecycle::deprecate_warn("0.7.6", "fisher()", "fisher_classify()")
+  lifecycle::deprecate_warn("0.8.0", "fisher()", "fisher_classify()")
   fisher_classify(vec, n = n, diglab = diglab)
 }

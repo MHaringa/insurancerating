@@ -2,12 +2,12 @@
 % Please edit documentation in R/model_refinement.R
 \name{autoplot.restricted}
 \alias{autoplot.restricted}
-\title{Automatically create a ggplot for objects obtained from restrict_coef()}
+\title{Automatically create a ggplot for objects obtained from add_restriction()}
 \usage{
 \method{autoplot}{restricted}(object, ...)
 }
 \arguments{
-\item{object}{object produced by \code{restrict_coef()}}
+\item{object}{object produced by \code{add_restriction()}}
 
 \item{...}{other plotting parameters to affect the plot}
 }
@@ -16,7 +16,7 @@ Object of class ggplot2
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Takes an object produced by \code{restrict_coef()}, and produces
+Takes an object produced by \code{add_restriction()}, and produces
 a line plot with a comparison between the restricted coefficients and
 estimated coefficients obtained from the model.
 }
@@ -25,7 +25,7 @@ freq <- glm(nclaims ~ bm + zip, weights = power, family = poisson(),
  data = MTPL)
 zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
 freq |>
-  restrict_coef(restrictions = zip_df) |>
+  add_restriction(restrictions = zip_df) |>
   autoplot()
 
 }

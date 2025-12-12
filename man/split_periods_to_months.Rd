@@ -31,7 +31,7 @@ exposure or premium) are divided proportionally over the months.
 This function uses \strong{standard evaluation (SE)}: column names must be passed
 as \strong{character strings} (e.g. \code{begin = "begin_date"}).
 The older function \code{\link[=period_to_months]{period_to_months()}} used non-standard evaluation (NSE) and
-is deprecated as of version 0.7.6.
+is deprecated as of version 0.8.0.
 }
 \details{
 In insurance portfolios it is common that rows relate to periods longer than

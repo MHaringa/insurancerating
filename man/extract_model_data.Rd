@@ -29,7 +29,7 @@ data with additional attributes:
 for objects of class \code{"glm"}, as well as objects produced by refitting
 procedures (\code{"refitsmooth"} or \code{"refitrestricted"}).
 
-The wrapper \code{\link[=model_data]{model_data()}} is deprecated as of version 0.7.6; please use
+The wrapper \code{\link[=model_data]{model_data()}} is deprecated as of version 0.8.0; please use
 \code{\link[=extract_model_data]{extract_model_data()}} instead.
 }
 \details{

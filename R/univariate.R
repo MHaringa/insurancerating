@@ -33,7 +33,7 @@
 #'
 #' ## Migration from `univariate()`
 #'
-#' The function [univariate()] is deprecated as of version 0.7.6 and replaced by
+#' The function [univariate()] is deprecated as of version 0.8.0 and replaced by
 #' [univariate_summary()]. In addition to the name change, the interface has also
 #' changed:
 #'
@@ -56,7 +56,7 @@
 #'
 #' @details
 #' This function supersedes [univariate()], which relied on non-standard
-#' evaluation (NSE). From version 0.7.6 onwards, you must supply column names
+#' evaluation (NSE). From version 0.8.0 onwards, you must supply column names
 #' as **strings** (SE), which makes the function easier to use in programmatic
 #' workflows.
 #'
@@ -141,7 +141,7 @@ univariate_summary <- function(df, x, severity = NULL, nclaims = NULL,
 
 #' @rdname univariate_summary
 #' @description
-#' [univariate()] is deprecated as of version 0.7.6.
+#' [univariate()] is deprecated as of version 0.8.0.
 #' Please use [univariate_summary()] instead with **standard evaluation** (SE),
 #' i.e. column names as character strings.
 #'
@@ -149,7 +149,7 @@ univariate_summary <- function(df, x, severity = NULL, nclaims = NULL,
 univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
                        premium = NULL, by = NULL) {
 
-  lifecycle::deprecate_warn("0.7.6", "univariate()", "univariate_summary()")
+  lifecycle::deprecate_warn("0.8.0", "univariate()", "univariate_summary()")
 
   nse_se_input <- function(arg) {
     expr <- substitute(arg)

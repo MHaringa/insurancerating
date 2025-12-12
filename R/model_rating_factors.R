@@ -181,6 +181,14 @@ rating_table_simple <- function(model, model_data = NULL, exposure = NULL,
   # Opruimen
   uit$risk_factor <- sub("_rst99$", "", uit$risk_factor)
 
+  io <- attr(model, "intercept_only")
+  cf <- attr(model, "continuous_factors")
+  if (isTRUE(io)) {
+    cf$pvalues <- NA
+    names(cf) <- names(uit)
+    uit <- rbind(uit, cf)
+  }
+
   uit
 }
 
@@ -203,7 +211,7 @@ rating_table_simple <- function(model, model_data = NULL, exposure = NULL,
 rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
                             colname = "estimate",
                             exponentiate = TRUE, round_exposure = 0) {
-  lifecycle::deprecate_warn("0.7.6", "rating_factors2()", "rating_table2()")
+  lifecycle::deprecate_warn("0.8.0", "rating_factors2()", "rating_table2()")
   if (!is.null(substitute(exposure))) {
     exposure <- deparse(substitute(exposure))
   }
@@ -372,7 +380,7 @@ rating_table <- function(..., model_data = NULL, exposure = NULL,
 rating_factors <- function(..., model_data = NULL, exposure = NULL,
                            signif_stars = FALSE,
                            exponentiate = TRUE, round_exposure = 0) {
-  lifecycle::deprecate_warn("0.7.6", "rating_factors()", "rating_table()")
+  lifecycle::deprecate_warn("0.8.0", "rating_factors()", "rating_table()")
   if (!is.null(substitute(exposure))) {
     exposure <- deparse(substitute(exposure))
   }

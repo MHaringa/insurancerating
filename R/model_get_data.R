@@ -7,7 +7,7 @@
 #' for objects of class `"glm"`, as well as objects produced by refitting
 #' procedures (`"refitsmooth"` or `"refitrestricted"`).
 #'
-#' The wrapper [model_data()] is deprecated as of version 0.7.6; please use
+#' The wrapper [model_data()] is deprecated as of version 0.8.0; please use
 #' [extract_model_data()] instead.
 #'
 #' @param x An object of class `"glm"`, `"refitsmooth"`, or `"refitrestricted"`.
@@ -107,7 +107,7 @@ extract_model_data <- function(x) {
 #' @rdname extract_model_data
 #' @export
 model_data <- function(x) {
-  lifecycle::deprecate_warn("0.7.6", "model_data()", "extract_model_data()")
+  lifecycle::deprecate_warn("0.8.0", "model_data()", "extract_model_data()")
   extract_model_data(x)
 }
 

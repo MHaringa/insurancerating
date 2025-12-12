@@ -2,8 +2,8 @@
 #'
 #' @description `r lifecycle::badge('experimental')`
 #'  Add restrictions, like a bonus-malus structure, on the risk
-#'  factors used in the model. `restrict_coef()` must always be followed
-#'  by `update_glm()`.
+#'  factors used in the model. `add_restriction()` must always be followed
+#'  by `refit_glm()`.
 #'
 #' @author Martin Haringa
 #'
@@ -23,7 +23,7 @@
 #'
 #' @family update_glm
 #' @family autoplot.restricted
-#' @seealso [update_glm()] for refitting the restricted model,
+#' @seealso [refit_glm()] for refitting the restricted model,
 #' and [autoplot.restricted()].
 #'
 #' @return Object of class restricted.
@@ -54,16 +54,16 @@
 #'
 #' # Fit restricted model
 #' burn_rst <- burn |>
-#'   restrict_coef(restrictions = zip_df) |>
-#'   update_glm()
+#'   add_restriction(restrictions = zip_df) |>
+#'   refit_glm()
 #'
 #' # Show rating factors
-#' rating_factors(burn_rst)
+#' rating_table(burn_rst)
 #' }
 #'
 #' @description `r lifecycle::badge('experimental')`
 #'  Add restrictions, like a bonus-malus structure, on the risk factors
-#'  used in the model. Must always be followed by `update_glm()`.
+#'  used in the model. Must always be followed by `refit_glm()`.
 #'
 #' @return Object of class restricted.
 #'
@@ -150,7 +150,7 @@ add_restriction <- function(model, restrictions) {
 #' @rdname add_restriction
 #' @export
 restrict_coef <- function(model, restrictions) {
-  lifecycle::deprecate_warn("0.7.6", "restrict_coef()", "add_restriction()")
+  lifecycle::deprecate_warn("0.8.0", "restrict_coef()", "add_restriction()")
   add_restriction(model, restrictions)
 }
 
@@ -159,8 +159,8 @@ restrict_coef <- function(model, restrictions) {
 #' Smooth coefficients in the model
 #'
 #' @description `r lifecycle::badge('experimental')`
-#'  Apply smoothing on the risk factors used in the model. `smooth_coef()`
-#'  must always be followed by `update_glm()`.
+#'  Apply smoothing on the risk factors used in the model. `add_smoothing()`
+#'  must always be followed by `refit_glm()`.
 #'
 #' @author Martin Haringa
 #'
@@ -243,20 +243,20 @@ restrict_coef <- function(model, restrictions) {
 #'
 #' # Impose smoothing and create figure
 #' burn_unrestricted |>
-#'   smooth_coef(x_cut = "age_policyholder_freq_cat",
-#'               x_org = "age_policyholder",
-#'               breaks = seq(18, 95, 5)) |>
+#'   add_smoothing(x_cut = "age_policyholder_freq_cat",
+#'                 x_org = "age_policyholder",
+#'                 breaks = seq(18, 95, 5)) |>
 #'   autoplot()
 #'
 #' # Impose smoothing and refit model
 #' burn_restricted <- burn_unrestricted |>
-#'   smooth_coef(x_cut = "age_policyholder_freq_cat",
-#'               x_org = "age_policyholder",
-#'               breaks = seq(18, 95, 5)) |>
-#'   update_glm()
+#'   add_smoothing(x_cut = "age_policyholder_freq_cat",
+#'                 x_org = "age_policyholder",
+#'                 breaks = seq(18, 95, 5)) |>
+#'   refit_glm()
 #'
 #' # Show new rating factors
-#' rating_factors(burn_restricted)
+#' rating_table(burn_restricted)
 #' }
 #'
 #' @export
@@ -415,14 +415,14 @@ print.smooth <- function(x, ...) {
   print(x$formula_restricted)
 }
 
-#' Automatically create a ggplot for objects obtained from restrict_coef()
+#' Automatically create a ggplot for objects obtained from add_restriction()
 #'
 #' @description `r lifecycle::badge('experimental')`
-#'  Takes an object produced by `restrict_coef()`, and produces
+#'  Takes an object produced by `add_restriction()`, and produces
 #'  a line plot with a comparison between the restricted coefficients and
 #'  estimated coefficients obtained from the model.
 #'
-#' @param object object produced by `restrict_coef()`
+#' @param object object produced by `add_restriction()`
 #' @param ... other plotting parameters to affect the plot
 #'
 #' @author Martin Haringa
@@ -440,7 +440,7 @@ print.smooth <- function(x, ...) {
 #'  data = MTPL)
 #' zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
 #' freq |>
-#'   restrict_coef(restrictions = zip_df) |>
+#'   add_restriction(restrictions = zip_df) |>
 #'   autoplot()
 #'
 #' @export
@@ -483,14 +483,14 @@ autoplot.restricted <- function(object, ...) {
     ggplot2::labs(x = name, color = NULL)
 }
 
-#' Automatically create a ggplot for objects obtained from smooth_coef()
+#' Automatically create a ggplot for objects obtained from add_smoothing()
 #'
 #' @description `r lifecycle::badge('experimental')`
-#'  Takes an object produced by `smooth_coef()`, and produces
+#'  Takes an object produced by `add_smoothing()`, and produces
 #'  a plot with a comparison between the smoothed coefficients and
 #'  estimated coefficients obtained from the model.
 #'
-#' @param object object produced by `smooth_coef()`
+#' @param object object produced by `add_smoothing()`
 #' @param ... other plotting parameters to affect the plot
 #'
 #' @author Martin Haringa
@@ -577,7 +577,7 @@ autoplot.smooth <- function(object, ...) {
 #' Refit a GLM model
 #'
 #' @description `r lifecycle::badge('stable')`
-#'  This is the new version of `update_glm()`. It refits the GLM with
+#'  This is the new version of `refit_glm()`. It refits the GLM with
 #'  any restrictions or smoothings that were previously added.
 #'
 #' @param x Object of class restricted or of class smooth
@@ -619,7 +619,7 @@ refit_glm <- function(x, intercept_only = FALSE, ...) {
             risk_factor_name, "_rst99"
           )
           mult_lst[[i]]$risk_factor <- NULL
-          x <- restrict_coef(x, mult_lst[[i]])
+          x <- add_restriction(x, mult_lst[[i]])
         }
       }
 
@@ -679,12 +679,19 @@ refit_glm <- function(x, intercept_only = FALSE, ...) {
   rf <- x$rating_factors
   rf2 <- unique(rf$risk_factor[rf$risk_factor != "(Intercept)"])
 
+  # Continuous variables
+  rf_single <- names(which(table(rf$risk_factor) == 1))
+  rf_single <- setdiff(rf_single, "(Intercept)")
+  rf_single_rows <- rf[rf$risk_factor %in% rf_single, ]
+
   attr(y, "new_col_nm") <- x$new_col_nm
   attr(y, "old_col_nm") <- x$old_col_nm
   attr(y, "rf") <- rf2
   attr(y, "mgd_smt") <- x$mgd_smt
   attr(y, "mgd_rst") <- x$mgd_rst
   attr(y, "offweights") <- offweights
+  attr(y, "continuous_factors") <- rf_single_rows
+  attr(y, "intercept_only") <- isTRUE(intercept_only)
   y
 }
 
@@ -692,6 +699,6 @@ refit_glm <- function(x, intercept_only = FALSE, ...) {
 #' @export
 #' @description `r lifecycle::badge('deprecated')`
 update_glm <- function(x, intercept_only = FALSE, ...) {
-  lifecycle::deprecate_warn("0.7.6", "update_glm()", "refit_glm()")
+  lifecycle::deprecate_warn("0.8.0", "update_glm()", "refit_glm()")
   refit_glm(x, intercept_only = intercept_only, ...)
 }

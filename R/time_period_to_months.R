@@ -8,7 +8,7 @@
 #' This function uses **standard evaluation (SE)**: column names must be passed
 #' as **character strings** (e.g. `begin = "begin_date"`).
 #' The older function [period_to_months()] used non-standard evaluation (NSE) and
-#' is deprecated as of version 0.7.6.
+#' is deprecated as of version 0.8.0.
 #'
 #' @param df A `data.frame` or `data.table`.
 #' @param begin Character string. Name of column in `df` with begin dates.
@@ -129,7 +129,7 @@ split_periods_to_months <- function(df, begin, end, cols = NULL) {
 #' @param ... Columns in `df` to split. Deprecated, use `cols` instead.
 #' @export
 period_to_months <- function(df, begin, end, ...) {
-  lifecycle::deprecate_warn("0.7.6", "period_to_months()",
+  lifecycle::deprecate_warn("0.8.0", "period_to_months()",
                             "split_periods_to_months()")
 
   begin_chr <- deparse(substitute(begin))

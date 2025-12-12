@@ -65,8 +65,8 @@ Object of class smooth
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Apply smoothing on the risk factors used in the model. \code{smooth_coef()}
-must always be followed by \code{update_glm()}.
+Apply smoothing on the risk factors used in the model. \code{add_smoothing()}
+must always be followed by \code{refit_glm()}.
 }
 \details{
 Although smoothing could be applied either to the frequency or
@@ -116,20 +116,20 @@ burn_unrestricted <- glm(premium ~ zip + bm + age_policyholder_freq_cat,
 
 # Impose smoothing and create figure
 burn_unrestricted |>
-  smooth_coef(x_cut = "age_policyholder_freq_cat",
-              x_org = "age_policyholder",
-              breaks = seq(18, 95, 5)) |>
+  add_smoothing(x_cut = "age_policyholder_freq_cat",
+                x_org = "age_policyholder",
+                breaks = seq(18, 95, 5)) |>
   autoplot()
 
 # Impose smoothing and refit model
 burn_restricted <- burn_unrestricted |>
-  smooth_coef(x_cut = "age_policyholder_freq_cat",
-              x_org = "age_policyholder",
-              breaks = seq(18, 95, 5)) |>
-  update_glm()
+  add_smoothing(x_cut = "age_policyholder_freq_cat",
+                x_org = "age_policyholder",
+                breaks = seq(18, 95, 5)) |>
+  refit_glm()
 
 # Show new rating factors
-rating_factors(burn_restricted)
+rating_table(burn_restricted)
 }
 
 }

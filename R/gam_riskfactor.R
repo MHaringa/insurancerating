@@ -32,7 +32,7 @@
 #'
 #' ## Migration from `fit_gam()`
 #'
-#' The function [fit_gam()] is deprecated as of version 0.7.6 and replaced by
+#' The function [fit_gam()] is deprecated as of version 0.8.0 and replaced by
 #' [riskfactor_gam()]. In addition to the name change, the interface has also
 #' changed:
 #'
@@ -196,7 +196,7 @@ riskfactor_gam <- function(data, nclaims, x, exposure, amount = NULL,
 
 #' @rdname riskfactor_gam
 #' @description
-#' [fit_gam()] is deprecated as of version 0.7.6.
+#' [fit_gam()] is deprecated as of version 0.8.0.
 #' Please use [riskfactor_gam()] instead.
 #'
 #' In addition, note that column arguments must now be passed as **strings**
@@ -207,7 +207,7 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL,
                     pure_premium = NULL, model = "frequency", round_x = NULL) {
 
   lifecycle::deprecate_warn(
-    when = "0.7.6",
+    when = "0.8.0",
     what = "fit_gam()",
     with = "riskfactor_gam()",
     details =

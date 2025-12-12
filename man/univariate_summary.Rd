@@ -54,7 +54,7 @@ portfolio. The following summary statistics are calculated:
 \item average premium = premium / exposure
 }
 
-\code{\link[=univariate]{univariate()}} is deprecated as of version 0.7.6.
+\code{\link[=univariate]{univariate()}} is deprecated as of version 0.8.0.
 Please use \code{\link[=univariate_summary]{univariate_summary()}} instead with \strong{standard evaluation} (SE),
 i.e. column names as character strings.
 }
@@ -72,7 +72,7 @@ If one or more input arguments are not specified, the related statistics are
 omitted from the results.
 \subsection{Migration from \code{univariate()}}{
 
-The function \code{\link[=univariate]{univariate()}} is deprecated as of version 0.7.6 and replaced by
+The function \code{\link[=univariate]{univariate()}} is deprecated as of version 0.8.0 and replaced by
 \code{\link[=univariate_summary]{univariate_summary()}}. In addition to the name change, the interface has also
 changed:
 \itemize{
@@ -89,7 +89,7 @@ deprecation warning and will be removed in a future release.
 }
 
 This function supersedes \code{\link[=univariate]{univariate()}}, which relied on non-standard
-evaluation (NSE). From version 0.7.6 onwards, you must supply column names
+evaluation (NSE). From version 0.8.0 onwards, you must supply column names
 as \strong{strings} (SE), which makes the function easier to use in programmatic
 workflows.
 }
