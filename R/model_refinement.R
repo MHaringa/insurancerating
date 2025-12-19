@@ -210,10 +210,10 @@ restrict_coef <- function(model, restrictions) {
 #' library(dplyr)
 #'
 #' # Fit GAM for claim frequency
-#' age_policyholder_frequency <- fit_gam(data = MTPL,
-#'                                       nclaims = nclaims,
-#'                                       x = age_policyholder,
-#'                                       exposure = exposure)
+#' age_policyholder_frequency <- riskfactor_gam(data = MTPL,
+#'                                              nclaims = "nclaims",
+#'.                                             x = "age_policyholder",
+#'                                              exposure = "exposure")
 #'
 #' # Determine clusters
 #' clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
@@ -701,4 +701,187 @@ refit_glm <- function(x, intercept_only = FALSE, ...) {
 update_glm <- function(x, intercept_only = FALSE, ...) {
   lifecycle::deprecate_warn("0.8.0", "update_glm()", "refit_glm()")
   refit_glm(x, intercept_only = intercept_only, ...)
+}
+
+#' Update an existing smoothing curve
+#'
+#' @description
+#' `update_smoothing()` modifies the most recent smoothing created with
+#' [`add_smoothing()`] on a `"smooth"` or `"restricted"` object.
+#'
+#' It retrieves the original continuous factor and the corresponding tariff
+#' factor (i.e. `x_org` and `x_cut`) from the model object itself, so it must be
+#' called *after* at least one call to [`add_smoothing()`].
+#'
+#' @param model A model object of class `"smooth"` or `"restricted"`, typically
+#'   returned by [`add_smoothing()`] (possibly combined with
+#'   [`add_restriction()`]).
+#' @param x1,x2 Numeric. Start and end of the interval over which the smoothing
+#'   should be modified. Must satisfy `x1 < x2`.
+#' @param overwrite_y1,overwrite_y2 Optional numeric. Overrides for the smoothed
+#'   values at `x1` and `x2`. If `NULL`, existing smoothed values are used.
+#' @param knots_x,knots_y Optional numeric vectors of equal length specifying
+#'   intermediate knot points through which the modified curve should pass.
+#' @param allow_extrapolation Logical. If `TRUE`, the smoothing curve may be
+#'   extended beyond its original range. Setting `x1` or `x2` outside the
+#'   original range is only allowed when `allow_extrapolation = TRUE`; this
+#'   explicit flag acts as a safeguard against unintended extrapolation in
+#'   pricing models.
+#' @param extrapolation_break_size Numeric scalar (> 0) or `NULL`. Width of
+#'   synthetic break intervals used to discretize the extrapolated part of the
+#'   smoothing curve. If `NULL`, it defaults to the median width of the existing
+#'   tariff breaks (scale-aware default).
+#'
+#' @return
+#' A modified object of class `"smooth"` with an updated smoothing curve for the
+#' most recently smoothed risk factor.
+#'
+#' @export
+update_smoothing <- function(model,
+                             x1, x2,
+                             overwrite_y1 = NULL, overwrite_y2 = NULL,
+                             knots_x = NULL, knots_y = NULL,
+                             allow_extrapolation = FALSE,
+                             extrapolation_break_size = NULL) {
+
+  if (is.null(knots_x)) knots_x <- numeric()
+  if (is.null(knots_y)) knots_y <- numeric()
+
+  if (length(knots_x) != length(knots_y)) {
+    stop("Lengths of 'knots_x' and 'knots_y' must be equal.", call. = FALSE)
+  }
+
+  middle_x <- knots_x
+  middle_y <- knots_y
+
+  if (!inherits(model, c("smooth", "restricted"))) {
+    stop(
+      sprintf(
+        "Input must be of class 'smooth' or 'restricted', not '%s'. Precede this function with add_smoothing().",
+        paste(class(model), collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+
+  # -- read x_org / x_cut from last smoothing metadata
+  mgd_smt <- model$mgd_smt
+  if (is.null(mgd_smt) || length(mgd_smt) == 0) {
+    stop("No smoothing metadata found in 'model$mgd_smt'. Call add_smoothing() before update_smoothing().",
+         call. = FALSE)
+  }
+
+  last_pair <- mgd_smt[[length(mgd_smt)]]
+  if (length(last_pair) != 2L) {
+    stop("Last element of 'model$mgd_smt' is malformed. Expected length 2.", call. = FALSE)
+  }
+
+  x_org <- sub("_smooth$", "", last_pair[1])
+  x_cut <- sub("_smooth$", "", last_pair[2])
+
+  # pull required fields
+  fm           <- model$formula_restricted
+  offset_term  <- model$offset
+  fm_no_offset <- model$formula_removed
+  df_new       <- model$data_restricted
+  model_call   <- model$model_call
+  model_out    <- model$model_out
+  rfdf         <- model$rating_factors
+  rst_lst      <- model$restrictions_lst
+  new_col_nm   <- model$new_col_nm
+  old_col_nm   <- model$old_col_nm
+  mgd_rst      <- model$mgd_rst
+  new          <- model$new
+  degree       <- model$degree
+  smoothing    <- model$smoothing
+
+  borders_x_cut <- cut_borders_model(model, x_cut)
+
+  # ---- NEW: scale-aware default for extrapolation_break_size
+  if (is.null(extrapolation_break_size)) {
+    extrapolation_break_size <- default_extrapolation_break_size(new,
+                                                                 factor = 1)
+  } else {
+    if (!is.numeric(extrapolation_break_size) ||
+        length(extrapolation_break_size) != 1 ||
+        !is.finite(extrapolation_break_size) ||
+        extrapolation_break_size <= 0) {
+      stop("'extrapolation_break_size' must be a single positive numeric value or NULL.",
+           call. = FALSE)
+    }
+  }
+
+  fit_poly <- change_xy(
+    borders_model           = new,
+    x_org                   = x_org,
+    x1                      = x1,
+    x2                      = x2,
+    overwrite_y1            = overwrite_y1,
+    overwrite_y2            = overwrite_y2,
+    middle_x                = middle_x,
+    middle_y                = middle_y,
+    allow_extrapolation     = allow_extrapolation,
+    extrapolation_break_size= extrapolation_break_size
+  )
+
+  df_poly      <- fit_poly[["new_poly_df"]]
+  df_poly_line <- fit_poly[["poly_line"]]
+  df_new_rf    <- fit_poly[["new_rf"]]
+
+  if (inherits(model, "smooth")) {
+    keep <- model$new_rf$risk_factor != paste0(x_org, "_smooth")
+    model$new_rf <- model$new_rf[keep, , drop = FALSE]
+    df_new_rf <- rbind(model$new_rf, df_new_rf)
+  }
+
+
+  if (inherits(model, "restricted")) {
+    df_new_rf <- rbind(model$rf_restricted_df, df_new_rf)
+  }
+
+  double_variable <- paste0(x_cut, "_smooth")
+
+  cn <- colnames(df_new)
+
+  drop <- cn %in% double_variable |
+    startsWith(cn, "i.") |
+    grepl("avg_", cn, fixed = TRUE) |
+    grepl("breaks_max", cn, fixed = TRUE) |
+    grepl("breaks_min", cn, fixed = TRUE) |
+    grepl("end_", cn, fixed = TRUE) |
+    grepl("end_oc", cn, fixed = TRUE) |
+    endsWith(cn, "_smooth") |
+    grepl("risk_factor", cn, fixed = TRUE) |
+    grepl("start_", cn, fixed = TRUE) |
+    grepl("start_oc", cn, fixed = TRUE)
+
+  df_new <- df_new[, !drop, drop = FALSE]
+
+  df_smooth <- join_to_nearest(df_new, df_poly, x_org)
+  names(df_smooth)[names(df_smooth) == "yhat"] <- paste0(x_cut, "_smooth")
+
+  st <- list(
+    formula_restricted = fm,
+    formula_removed    = fm_no_offset,
+    data_restricted    = df_smooth,
+    fm_no_offset       = fm_no_offset,
+    offset             = offset_term,
+    borders            = borders_x_cut,
+    new                = df_poly,
+    new_line           = df_poly_line,
+    model_call         = model_call,
+    rating_factors     = as.data.frame(rfdf),
+    restrictions_lst   = rst_lst,
+    new_rf             = df_new_rf,
+    degree             = degree,
+    model_out          = model_out,
+    new_col_nm         = new_col_nm,
+    old_col_nm         = old_col_nm,
+    mgd_rst            = mgd_rst,
+    mgd_smt            = model$mgd_smt,
+    smoothing          = smoothing
+  )
+
+  attr(st, "class") <- "smooth"
+  invisible(st)
 }

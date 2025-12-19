@@ -62,8 +62,8 @@ burn <- glm(premium ~ bm + zip, weights = exposure,
 
 # Fit restricted model
 burn_rst <- burn |>
-  restrict_coef(zip_df) |>
-  update_glm()
+  add_restriction(zip_df) |>
+  refit_glm()
 
 testthat::test_that(
   "No errors are returned for updated glm objects with data.frame", {

@@ -29,7 +29,7 @@ burn <- glm(premium ~ bm + zip, weights = exposure,
 
 # Fit restricted model
 burn_rst <- restrict_coef(burn, zip_df) |>
-  update_glm()
+  refit_glm()
 
 
 
@@ -71,10 +71,10 @@ burn_unrestricted <- glm(premium ~ zip + bm + age_policyholder_freq_cat,
 # Impose smoothing and refit model
 suppressWarnings({
   burn_smooth <- burn_unrestricted |>
-    smooth_coef(x_cut = "age_policyholder_freq_cat",
-                x_org = "age_policyholder",
-                breaks = seq(18, 95, 5)) |>
-    update_glm()
+    add_smoothing(x_cut = "age_policyholder_freq_cat",
+                  x_org = "age_policyholder",
+                  breaks = seq(18, 95, 5)) |>
+    refit_glm()
 })
 
 
@@ -104,32 +104,32 @@ mod2 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
 
 testthat::test_that(
   "No errors are returned for smoothed glm objects", {
-    testthat::expect_error(rating_factors(burn_smooth, signif_stars = FALSE), NA)
+    testthat::expect_error(rating_table(burn_smooth, signif_stars = FALSE), NA)
   }
 )
 
 testthat::test_that(
   "No errors are returned for restricted glm objects", {
-    testthat::expect_error(rating_factors(burn_rst, signif_stars = FALSE), NA)
+    testthat::expect_error(rating_table(burn_rst, signif_stars = FALSE), NA)
   }
 )
 
 testthat::test_that(
   "No errors are returned for glm objects", {
-    testthat::expect_error(rating_factors(x, signif_stars = FALSE), NA)
+    testthat::expect_error(rating_table(x, signif_stars = FALSE), NA)
   }
 )
 
 testthat::test_that(
   "No errors are returned for multiple glm objects with model_data", {
-    testthat::expect_error(rating_factors(mod1, mod2, model_data = df,
-                                          exposure = exposure,
-                                          signif_stars = FALSE), NA)
+    testthat::expect_error(rating_table(mod1, mod2, model_data = df,
+                                        exposure = "exposure",
+                                        signif_stars = FALSE), NA)
   }
 )
 
 
-filter_zip <- rating_factors(burn_smooth)$df |>
+filter_zip <- rating_table(burn_smooth)$df |>
   dplyr::filter(risk_factor == "zip")
 
 testthat::test_that(
@@ -138,7 +138,7 @@ testthat::test_that(
   }
 )
 
-filter_area <- rating_factors(mod1)$df |>
+filter_area <- rating_table(mod1)$df |>
   dplyr::filter(risk_factor == "area")
 
 testthat::test_that(
@@ -151,10 +151,10 @@ testthat::test_that(
 zip_df <- data.frame(zip = c(0,1,2,3),
                      zip_restricted = c(0.8, 0.9, 1, 1.2))
 
-burn_restricted2 <- restrict_coef(burn_unrestricted, zip_df) |>
-  update_glm()
+burn_restricted2 <- add_restriction(burn_unrestricted, zip_df) |>
+  refit_glm()
 
-filter_zip_rst <- rating_factors(burn_restricted2)$df |>
+filter_zip_rst <- rating_table(burn_restricted2)$df |>
   dplyr::filter(risk_factor == "zip_restricted")
 
 testthat::test_that(

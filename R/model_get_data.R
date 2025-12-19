@@ -33,26 +33,74 @@
 #'
 #' @author Martin Haringa
 #'
-#' @importFrom data.table data.table
-#'
 #' @examples
 #' \dontrun{
-#' fit <- glm(cbind(y, n - y) ~ x, family = binomial(), data = df)
-#' md <- extract_model_data(fit)
+#' library(insurancerating)
+#' library(dplyr)
+#'
+#' # Fit GAM for claim frequency
+#' age_policyholder_frequency <- riskfactor_gam(data = MTPL,
+#'                                              nclaims = "nclaims",
+#'                                              x = "age_policyholder",
+#'                                              exposure = "exposure")
+#'
+#' # Determine clusters
+#' clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
+#'
+#' # Add clusters to MTPL portfolio
+#' dat <- MTPL |>
+#' mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) |>
+#' mutate(across(where(is.character), as.factor)) |>
+#' mutate(across(where(is.factor), ~biggest_reference(., exposure)))
+#'
+#' # Fit frequency and severity model
+#' freq <- glm(nclaims ~ bm + age_policyholder_freq_cat, offset = log(exposure),
+#'             family = poisson(), data = dat)
+#' sev <- glm(amount ~ bm + zip, weights = nclaims,
+#'            family = Gamma(link = "log"), data = dat |> filter(amount > 0))
+#'
+#' # Add predictions for freq and sev to data, and calculate premium
+#' premium_df <- dat |>
+#' add_prediction(freq, sev) |>
+#' mutate(premium = pred_nclaims_freq * pred_amount_sev)
+#'
+#' # Fit unrestricted model
+#' burn_unrestricted <- glm(premium ~ zip + bm + age_policyholder_freq_cat,
+#' weights = exposure, family = Gamma(link = "log"), data = premium_df)
+#'
+#' # Impose smoothing and refit model
+#' burn_restricted <- burn_unrestricted |>
+#' add_smoothing(x_cut = "age_policyholder_freq_cat",
+#' x_org = "age_policyholder",
+#' breaks = seq(18, 95, 5)) |>
+#' refit_glm()
+#'
+#' # Extract model data
+#' extract_model_data(burn_restricted)
 #' }
 #'
 #' @export
 extract_model_data <- function(x) {
 
   if (!inherits(x, c("refitsmooth", "refitrestricted", "glm"))) {
-    stop("Input must be of class refitsmooth, glm or of class refitrestricted",
-         call. = FALSE)
+    stop(
+      "Input must be of class refitsmooth, glm or of class refitrestricted",
+      call. = FALSE
+    )
+  }
+
+  as_df <- function(z) {
+    if (inherits(z, "data.table")) z <- as.data.frame(z)
+    as.data.frame(z, stringsAsFactors = FALSE)
   }
 
   if (inherits(x, "glm")) {
-    out <- x$data
-    rf <- rating_factors(x, signif_stars = FALSE)$df
-    colnames(rf)[3] <- c("estimate")
+    out <- as_df(x$data)
+
+    rf <- rating_table(x, signif_stars = FALSE)$df
+    rf <- as_df(rf)
+    colnames(rf)[3] <- "estimate"
+
     rf2_nm <- unique(rf$risk_factor[rf$risk_factor != "(Intercept)"])
 
     lst_call <- as.list(x$call)
@@ -61,7 +109,6 @@ extract_model_data <- function(x) {
     if (!is.null(lst_call$weights)) {
       offweights <- append(offweights, as.character(lst_call$weights))
     }
-
     if (!is.null(lst_call$offset)) {
       offweights <- append(offweights, as.character(lst_call$offset)[2])
     }
@@ -72,15 +119,17 @@ extract_model_data <- function(x) {
 
   if (inherits(x, c("refitsmooth", "refitrestricted"))) {
 
-    xdf <- data.table::data.table(x$data)
-
+    xdf <- as_df(x$data)
     xdf_nm <- names(xdf)
-    rem_nm <- c("breaks_min", "breaks_max", "start_oc",
-                "end_oc", "start_", "end_", "avg_", "risk_factor")
 
-    xrem <- xdf_nm[! xdf_nm %in% rem_nm]
+    rem_nm <- c(
+      "breaks_min", "breaks_max", "start_oc", "end_oc",
+      "start_", "end_", "avg_", "risk_factor"
+    )
 
-    out <- xdf[, .SD, .SDcols = xrem]
+    keep_nm <- xdf_nm[!xdf_nm %in% rem_nm]
+    out <- xdf[, keep_nm, drop = FALSE]
+    out <- as_df(out)
 
     attr(out, "new_nm") <- attr(x, "new_col_nm")
     attr(out, "old_nm") <- attr(x, "old_col_nm")
@@ -88,7 +137,7 @@ extract_model_data <- function(x) {
     rf <- attr(x, "rf")
     mgd_smt <- attr(x, "mgd_smt")
 
-    for (i in seq_len(length(mgd_smt))) {
+    for (i in seq_along(mgd_smt)) {
       zsm <- gsub("_smooth$", "", mgd_smt[[i]][2])
       rf[rf == zsm] <- mgd_smt[[i]][1]
     }
@@ -99,9 +148,11 @@ extract_model_data <- function(x) {
     attr(out, "offweights") <- attr(x, "offweights")
   }
 
-  attr(out, "class") <- append("model_data", class(as.data.frame(out)))
-  return(out)
+  out <- as_df(out)
+  class(out) <- c("model_data", class(out))
+  out
 }
+
 
 
 #' @rdname extract_model_data

@@ -331,11 +331,13 @@ add_restrictions_df <- function(model_data, restrictions_df) {
 
   # bestaande (unieke) levels/waarden in de modeldata
   existing_levels  <- unique(model_data[[rcol1]])
+
   # levels/waarden in de restrictie-tabel
   restricted_levels <- unique(restrictions_df[[1]])
 
   # levels in data zonder restrictie
   levels_not_restricted <- setdiff(existing_levels, restricted_levels)
+
   # levels in restrictiedata die niet in de modeldata voorkomen
   restricted_not_present <- setdiff(restricted_levels, existing_levels)
 
@@ -387,3 +389,281 @@ restrict_df <- function(restricted_df) {
   restricted_df$level <- as.character(restricted_df$level)
   restricted_df
 }
+
+
+#' Default extrapolation break size based on existing tariff breaks
+#'
+#' Uses the median width of existing break intervals as a robust scale-aware
+#' default for extrapolation discretisation.
+#'
+#' @param borders_model A data.frame with columns `breaks_min` and `breaks_max`.
+#' @param factor Numeric scalar > 0. Multiplier applied to the median break width.
+#'
+#' @return Numeric scalar (> 0).
+#'
+#' @keywords internal
+default_extrapolation_break_size <- function(borders_model, factor = 1) {
+  if (!is.numeric(factor) || length(factor) != 1 || factor <= 0) {
+    stop("'factor' must be a single positive numeric value.", call. = FALSE)
+  }
+
+  if (!all(c("breaks_min", "breaks_max") %in% names(borders_model))) {
+    stop("borders_model must contain 'breaks_min' and 'breaks_max'.", call. = FALSE)
+  }
+
+  w <- borders_model$breaks_max - borders_model$breaks_min
+  w <- w[is.finite(w) & w > 0]
+
+  if (length(w) == 0) return(1)  # safe fallback
+
+  as.numeric(stats::median(w) * factor)
+}
+
+
+#' Modify an existing smoothing curve by linear adjustments and extrapolation
+#'
+#' @description
+#' Internal helper used by [`update_smoothing()`] to locally modify an already
+#' fitted smoothing curve.
+#'
+#' The function operates directly on the discretised representation of a
+#' smoothing curve (break intervals and fitted values) and allows:
+#' \itemize{
+#'   \item linear reshaping of the curve between two x-values (`x1`, `x2`);
+#'   \item optional overriding of the curve at the interval boundaries;
+#'   \item insertion of intermediate knot points through which the curve must pass;
+#'   \item optional extrapolation beyond the original range using synthetic
+#'         break intervals.
+#' }
+#'
+#' This function does not refit any statistical model; it purely transforms the
+#' smoothed curve deterministically and returns updated break-level
+#' representations.
+#'
+#' @param borders_model A data.frame representing the discretised smoothing
+#'   curve, typically `model$new` from a `"smooth"` object. Must contain at least
+#'   the columns `breaks_min`, `breaks_max`, `avg_` and `yhat`.
+#' @param x_org Character. Name of the original continuous risk factor (without
+#'   the `"_smooth"` suffix).
+#' @param x1,x2 Numeric. Start and end of the interval over which the smoothing
+#'   curve should be modified. Must satisfy `x1 < x2`.
+#' @param overwrite_y1,overwrite_y2 Optional numeric. If supplied, these values
+#'   replace the smoothed values at `x1` and `x2`, respectively. If `NULL`, the
+#'   existing smoothed values are used.
+#' @param middle_x,middle_y Optional numeric vectors of equal length specifying
+#'   intermediate knot points through which the modified curve must pass.
+#' @param allow_extrapolation Logical. If `TRUE`, allows the smoothing curve to
+#'   be extrapolated beyond its original range.
+#' @param extrapolation_break_size Numeric scalar (> 0). Width of synthetic
+#'   break intervals created when extrapolating. Must be a single positive
+#'   value.
+#'
+#' @return
+#' A list with the following components:
+#' \describe{
+#'   \item{new_poly_df}{Data frame with updated discretised smoothing curve,
+#'   including break intervals and fitted values.}
+#'   \item{poly_line}{Data frame suitable for plotting the updated curve.}
+#'   \item{new_rf}{Data frame of updated smoothing coefficients in
+#'   `rating_factors` format.}
+#' }
+#'
+#' @keywords internal
+#' @noRd
+change_xy <- function(borders_model, x_org,
+                      x1, x2,
+                      overwrite_y1 = NULL, overwrite_y2 = NULL,
+                      middle_x = c(), middle_y = c(),
+                      allow_extrapolation,
+                      extrapolation_break_size = NULL) {
+
+  if (!is.numeric(extrapolation_break_size) ||
+      length(extrapolation_break_size) != 1 ||
+      !is.finite(extrapolation_break_size) ||
+      extrapolation_break_size <= 0) {
+    stop("'extrapolation_break_size' must be a single positive numeric value.",
+         call. = FALSE)
+  }
+
+  breaks_min <- borders_model$breaks_min
+  breaks_max <- borders_model$breaks_max
+  breaks_mid <- borders_model$avg_
+  breaks_mid <- breaks_mid[!is.na(breaks_mid)]
+  yhat <- borders_model$yhat
+
+  if (x1 >= x2) {
+    stop("'x1' must be smaller than 'x2'.", call. = FALSE)
+  }
+
+  if (length(middle_x) != length(middle_y)) {
+    stop("Lengths of 'middle_x' and 'middle_y' must be equal.", call. = FALSE)
+  }
+
+  if (x1 < min(breaks_min) && !allow_extrapolation) {
+    stop(
+      sprintf(
+        "x1 (%s) is below minimum break (%s); set allow_extrapolation = TRUE if you want to extrapolate.",
+        x1, min(breaks_min)
+      ),
+      call. = FALSE
+    )
+  }
+
+  if (x2 > max(breaks_max) && !allow_extrapolation) {
+    stop(
+      sprintf(
+        "x2 (%s) is above maximum break (%s); set allow_extrapolation = TRUE if you want to extrapolate.",
+        x2, max(breaks_max)
+      ),
+      call. = FALSE
+    )
+  }
+
+  ab_line <- function(x, x1, y1, x2, y2) {
+    (y2 - y1) / (x2 - x1) * (x - x1) + y1
+  }
+
+  ## Linker staart extrapoleren
+  if (allow_extrapolation && x1 < min(breaks_min)) {
+    extra_breaks_min <- rev(seq(
+      from = min(breaks_min) - extrapolation_break_size,
+      to   = x1 - extrapolation_break_size,
+      by   = -extrapolation_break_size
+    ))
+
+    if (length(extra_breaks_min) > 0 && min(extra_breaks_min) == x1 - extrapolation_break_size) {
+      extra_breaks_min <- extra_breaks_min[-1]
+    }
+
+    extra_breaks_max <- extra_breaks_min + extrapolation_break_size
+    extra_breaks_mid <- extra_breaks_min + extrapolation_break_size / 2
+
+    # index die we gebruiken om de lijn te bepalen
+    idx_max <- which(breaks_max >= x2)
+    if (length(idx_max) == 0) {
+      idx_max <- length(breaks_mid)
+    } else {
+      idx_max <- min(idx_max)
+    }
+    extrapolate_max_index <- max(min(idx_max, length(breaks_mid)), 2)
+
+    extra_yhat <- vapply(
+      extra_breaks_mid,
+      ab_line,
+      numeric(1),
+      x1 = breaks_mid[1], y1 = yhat[1],
+      x2 = breaks_mid[extrapolate_max_index], y2 = yhat[extrapolate_max_index]
+    )
+
+    breaks_min <- c(extra_breaks_min, breaks_min)
+    breaks_max <- c(extra_breaks_max, breaks_max)
+    breaks_mid <- c(extra_breaks_mid, breaks_mid)
+    yhat       <- c(extra_yhat, yhat)
+  }
+
+  ## Rechter staart extrapoleren
+  if (allow_extrapolation && x2 > max(breaks_max)) {
+    extra_breaks_min <- seq(from = max(breaks_max), to = x2, by = extrapolation_break_size)
+    if (length(extra_breaks_min) > 0 && max(extra_breaks_min) == x2) {
+      extra_breaks_min <- extra_breaks_min[-length(extra_breaks_min)]
+    }
+    extra_breaks_max <- extra_breaks_min + extrapolation_break_size
+    extra_breaks_mid <- extra_breaks_min + extrapolation_break_size / 2
+
+    idx_min <- which(breaks_max >= x1)
+    if (length(idx_min) == 0) {
+      idx_min <- length(breaks_mid) - 1
+    } else {
+      idx_min <- min(idx_min)
+    }
+    extrapolate_min_index <- min(max(idx_min, 1), length(breaks_mid) - 1)
+
+    extra_yhat <- vapply(
+      extra_breaks_mid,
+      ab_line,
+      numeric(1),
+      x1 = breaks_mid[extrapolate_min_index],     y1 = yhat[extrapolate_min_index],
+      x2 = breaks_mid[length(breaks_mid)],        y2 = yhat[length(yhat)]
+    )
+
+    breaks_min <- c(breaks_min, extra_breaks_min)
+    breaks_max <- c(breaks_max, extra_breaks_max)
+    breaks_mid <- c(breaks_mid, extra_breaks_mid)
+    yhat       <- c(yhat, extra_yhat)
+  }
+
+  unique_borders  <- unique(c(breaks_min, breaks_max))
+  levels_borders  <- levels(cut(breaks_min, breaks = unique_borders,
+                                include.lowest = TRUE, dig.lab = 9))
+
+  min_index <- which(breaks_max >= x1)[1]
+  max_index <- which(breaks_max >= x2)[1]
+
+  if (is.na(min_index) || is.na(max_index)) {
+    stop("x1/x2 not within the breaks after extrapolation.", call. = FALSE)
+  }
+
+  if (is.null(overwrite_y1)) {
+    y1 <- yhat[min_index]
+  } else {
+    y1 <- overwrite_y1
+    yhat[min_index] <- overwrite_y1
+  }
+
+  if (is.null(overwrite_y2)) {
+    y2 <- yhat[max_index]
+  } else {
+    y2 <- overwrite_y2
+    yhat[max_index] <- overwrite_y2
+  }
+
+  x_coord <- c(breaks_mid[min_index], middle_x, breaks_mid[max_index])
+  y_coord <- c(y1,                 middle_y, y2)
+  indices <- c(min_index, rep(NA_integer_, length(middle_x)), max_index)
+
+  # bepaal in welke interval-index elke middle_x valt
+  if (length(middle_x) > 0) {
+    for (i in seq_along(middle_x)) {
+      indices[i + 1] <- max(which(breaks_mid <= middle_x[i]))
+    }
+  }
+
+  # nu alle segmenten lineair invullen
+  for (i in seq_len(length(x_coord) - 1)) {
+    from_idx <- indices[i] + 1
+    to_idx   <- indices[i + 1]
+    if (from_idx <= to_idx) {
+      for (j in from_idx:to_idx) {
+        yhat[j] <- ab_line(
+          x  = breaks_mid[j],
+          x1 = x_coord[i],     y1 = y_coord[i],
+          x2 = x_coord[i + 1], y2 = y_coord[i + 1]
+        )
+      }
+    }
+  }
+
+  new_poly_df <- data.frame(avg_ = breaks_mid)
+  poly_line   <- data.frame(avg_ = breaks_mid, yhat = as.numeric(yhat))
+
+  new_poly_df$yhat       <- as.numeric(yhat)
+  new_poly_df$breaks_min <- breaks_min
+  new_poly_df$breaks_max <- breaks_max
+  new_poly_df$cuts       <- levels_borders
+  new_poly_df$risk_factor <- paste0(x_org, "_smooth")
+  colnames(new_poly_df)[1] <- x_org
+
+  new_colname_cat <- paste0(x_org, "_smooth")
+  colnames(new_poly_df)[5] <- new_colname_cat
+
+  new_poly_df <- cut_borders_df(new_poly_df, new_colname_cat)
+  colnames(poly_line)[1] <- x_org
+
+  new_rf <- new_poly_df[, c("risk_factor", new_colname_cat, "yhat")]
+  colnames(new_rf)[2] <- "level"
+
+  list(new_poly_df = new_poly_df, poly_line = poly_line, new_rf = new_rf)
+}
+
+
+

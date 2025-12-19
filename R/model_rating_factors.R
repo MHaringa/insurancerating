@@ -270,18 +270,21 @@ rating_table <- function(..., model_data = NULL, exposure = NULL,
                          exponentiate = TRUE, signif_stars = FALSE,
                          round_exposure = 0) {
 
-  cols <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
+  mc <- match.call(expand.dots = FALSE)
   models <- list(...)
+
+  cols <- .rating_table_model_names(models, mc)
 
   rf_list <- list()
   for (i in seq_along(models)) {
-    coef_name <- paste0("m_", i)   # lijstnaam: m_1, m_2, ...
+    coef_name <- paste0("m_", i)
 
     df <- rating_table_simple(models[[i]],
                               model_data,
                               exposure = exposure,
                               exponentiate = exponentiate,
                               round_exposure = round_exposure)
+
     names(df)[names(df) == "estimate"] <- paste0("est_", cols[i])
     names(df)[names(df) == "pvalues"]  <- paste0("signif_", cols[i])
 

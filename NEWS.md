@@ -1,5 +1,10 @@
 # insurancerating (development version)
 
+## update_smoothing()
+
+- Introduces a dedicated helper to update existing smoothing specifications without refitting the full model from scratch.
+- Enables faster, more transparent iteration when fine-tuning smoothing curves.
+
 ## Breaking changes
 - The function `fit_gam()` has been **deprecated** and replaced by `riskfactor_gam()`.
   - `fit_gam()` used **non-standard evaluation (NSE)**, allowing unquoted column names.

@@ -83,10 +83,10 @@ library(insurancerating)
 library(dplyr)
 
 # Fit GAM for claim frequency
-age_policyholder_frequency <- fit_gam(data = MTPL,
-                                      nclaims = nclaims,
-                                      x = age_policyholder,
-                                      exposure = exposure)
+age_policyholder_frequency <- riskfactor_gam(data = MTPL,
+                                             nclaims = "nclaims",
+.                                             x = "age_policyholder",
+                                             exposure = "exposure")
 
 # Determine clusters
 clusters_freq <- construct_tariff_classes(age_policyholder_frequency)

@@ -264,3 +264,38 @@ exposure_by_factor <- function(var1, model_data, exposure) {
   df$risk_factor <- var1
   df
 }
+
+#' @keywords internal
+.rating_table_model_names <- function(models, mc) {
+  # mc = match.call(expand.dots = FALSE)
+  dots <- mc$...
+  if (is.null(dots)) return(character(0))
+
+  # 1) Prefer explicit names in ...
+  nms <- names(dots)
+  if (!is.null(nms) && any(nzchar(nms))) {
+    out <- nms
+    if (any(!nzchar(out))) out[!nzchar(out)] <- paste0("m_", which(!nzchar(out)))
+    return(out)
+  }
+
+  # 2) Otherwise: use symbol names when possible; fall back for calls (pipe etc.)
+  exprs <- as.list(dots)
+  out <- vapply(exprs, function(e) {
+    if (is.name(e)) {
+      as.character(e)
+    } else {
+      NA_character_
+    }
+  }, FUN.VALUE = character(1))
+
+  # fallback names for non-symbols (calls, constants, etc.)
+  if (length(out) == 1L && is.na(out[1L])) {
+    out[1L] <- "model"
+  } else {
+    idx <- which(is.na(out))
+    if (length(idx)) out[idx] <- paste0("m_", idx)
+  }
+
+  out
+}
