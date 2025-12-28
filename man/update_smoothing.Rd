@@ -53,3 +53,6 @@ It retrieves the original continuous factor and the corresponding tariff
 factor (i.e. \code{x_org} and \code{x_cut}) from the model object itself, so it must be
 called \emph{after} at least one call to \code{\link[=add_smoothing]{add_smoothing()}}.
 }
+\author{
+Rik Dommerholt, Martin Haringa
+}

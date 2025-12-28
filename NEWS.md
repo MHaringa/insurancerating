@@ -1,9 +1,22 @@
 # insurancerating (development version)
 
-## update_smoothing()
+### Model data extraction (`extract_model_data()` / `model_data()`)
+- Added `extract_model_data()` to retrieve cleaned model data from `glm`, `refitsmooth`, and `refitrestricted` objects.
+- `model_data()` is deprecated as of 0.8.0 and now emits a lifecycle warning; it remains as a wrapper.
 
+### update_smoothing()
 - Introduces a dedicated helper to update existing smoothing specifications without refitting the full model from scratch.
 - Enables faster, more transparent iteration when fine-tuning smoothing curves.
+
+### Rating table output (`rating_table()` / `rating_factors*()`)
+- Renamed `rating_factors()` to `rating_table()` as the primary user-facing API.
+- `rating_factors()` and `rating_factors2()` are deprecated as of 0.8.0 and now emit lifecycle warnings; they remain as wrappers.
+
+### Histogram functions (`outlier_histogram()` / `histbin()`)
+- Added `outlier_histogram()` as the new name for histograms with outlier bins.
+- `histbin()` is deprecated as of 0.8.0 and now warns; it remains as a wrapper.
+- The `x` argument must now be provided as a **string** (standard evaluation).
+- No functional changes to binning or outlier handling.
 
 ## Breaking changes
 - The function `fit_gam()` has been **deprecated** and replaced by `riskfactor_gam()`.

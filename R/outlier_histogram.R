@@ -92,12 +92,10 @@ outlier_histogram <- function(data, x, left = NULL, right = NULL,
     )
   }
 
-  obj <- obj +
+  obj +
     ggplot2::theme_minimal() +
     ggplot2::xlab(x) +
     ggplot2::geom_hline(yintercept = 0, color = "white")
-
-  obj
 }
 
 

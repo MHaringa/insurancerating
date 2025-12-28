@@ -144,6 +144,8 @@ add_restriction <- function(model, restrictions) {
              mgd_rst = mgd_rst,
              mgd_smt = mgd_smt)
   attr(rt, "class") <- "restricted"
+  attr(rt, "has_smoothing") <- FALSE
+  attr(rt, "last_smoothing_step") <- NULL
   invisible(rt)
 }
 
@@ -371,6 +373,8 @@ add_smoothing <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
              mgd_smt = mgd_smt,
              smoothing = smoothing)
   attr(st, "class") <- "smooth"
+  attr(st, "has_smoothing") <- TRUE
+  attr(st, "last_smoothing_step") <- "add_smoothing"
   invisible(st)
 }
 
@@ -732,6 +736,8 @@ update_glm <- function(x, intercept_only = FALSE, ...) {
 #'   smoothing curve. If `NULL`, it defaults to the median width of the existing
 #'   tariff breaks (scale-aware default).
 #'
+#' @author Rik Dommerholt, Martin Haringa
+#'
 #' @return
 #' A modified object of class `"smooth"` with an updated smoothing curve for the
 #' most recently smoothed risk factor.
@@ -743,6 +749,16 @@ update_smoothing <- function(model,
                              knots_x = NULL, knots_y = NULL,
                              allow_extrapolation = FALSE,
                              extrapolation_break_size = NULL) {
+
+  has_smoothing <- isTRUE(attr(model, "has_smoothing"))
+
+  if (!has_smoothing) {
+    stop(
+      "update_smoothing() must be preceded by add_smoothing() or update_smoothing().\n",
+      "Smoothing context was not found (possibly broken by add_restriction() or refit_glm()).",
+      call. = FALSE
+    )
+  }
 
   if (is.null(knots_x)) knots_x <- numeric()
   if (is.null(knots_y)) knots_y <- numeric()
@@ -883,5 +899,10 @@ update_smoothing <- function(model,
   )
 
   attr(st, "class") <- "smooth"
+
+  # markeer dat smoothing is geüpdatet
+  attr(st, "has_smoothing") <- TRUE
+  attr(st, "last_smoothing_step") <- "update_smoothing"
+
   invisible(st)
 }
