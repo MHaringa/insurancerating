@@ -94,7 +94,9 @@ extract_model_data <- function(x) {
     as.data.frame(z, stringsAsFactors = FALSE)
   }
 
-  if (inherits(x, "glm")) {
+  cls <- class(x)
+
+  if (cls[length(cls)] == "glm") {
     out <- as_df(x$data)
 
     rf <- rating_table(x, signif_stars = FALSE)$df
@@ -115,9 +117,7 @@ extract_model_data <- function(x) {
 
     attr(out, "offweights") <- offweights
     attr(out, "rf") <- rf2_nm
-  }
-
-  if (inherits(x, c("refitsmooth", "refitrestricted"))) {
+  } else {
 
     xdf <- as_df(x$data)
     xdf_nm <- names(xdf)
@@ -158,7 +158,8 @@ extract_model_data <- function(x) {
 #' @rdname extract_model_data
 #' @export
 model_data <- function(x) {
-  lifecycle::deprecate_warn("0.8.0", "model_data()", "extract_model_data()")
+  lifecycle::deprecate_warn("0.7.5.9000", "model_data()",
+                            "extract_model_data()")
   extract_model_data(x)
 }
 
