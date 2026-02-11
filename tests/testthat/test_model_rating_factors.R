@@ -28,10 +28,16 @@ burn <- glm(premium ~ bm + zip, weights = exposure,
             family = Gamma(link = "log"), data = premium_df)
 
 # Fit restricted model
-burn_rst <- restrict_coef(burn, zip_df) |>
+burn_rst <- add_restriction(burn, zip_df) |>
   refit_glm()
 
+# Fit unrestricted model with only one risk factor
+burn2 <- glm(premium ~ zip, weights = exposure,
+             family = Gamma(link = "log"), data = premium_df)
 
+# Fit restricted model with intercept only
+burn2_rst <- add_restriction(burn2, zip_df) |>
+  refit_glm()
 
 
 # Smoothed glm ------------------------------------------------------------
@@ -77,7 +83,20 @@ suppressWarnings({
     refit_glm()
 })
 
+# Fit unrestricted model with intercept only
+burn2_unrestricted <- glm(premium ~ age_policyholder_freq_cat,
+                         weights = exposure,
+                         family = Gamma(link = "log"),
+                         data = premium_df)
 
+# Impose smoothing and refit model with intercept only
+suppressWarnings({
+  burn2_smooth <- burn2_unrestricted |>
+    add_smoothing(x_cut = "age_policyholder_freq_cat",
+                  x_org = "age_policyholder",
+                  breaks = seq(18, 95, 5)) |>
+    refit_glm()
+})
 
 
 
@@ -111,6 +130,18 @@ testthat::test_that(
 testthat::test_that(
   "No errors are returned for restricted glm objects", {
     testthat::expect_error(rating_table(burn_rst, signif_stars = FALSE), NA)
+  }
+)
+
+testthat::test_that(
+  "No errors are returned for restricted glm objects with intercept only", {
+    testthat::expect_error(rating_table(burn2_rst, signif_stars = FALSE), NA)
+  }
+)
+
+testthat::test_that(
+  "No errors are returned for smoothed glm objects with intercept only", {
+    testthat::expect_error(rating_table(burn2_smooth, signif_stars = FALSE), NA)
   }
 )
 

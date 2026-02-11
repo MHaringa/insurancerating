@@ -184,7 +184,7 @@ rating_table_simple <- function(model, model_data = NULL, exposure = NULL,
   io <- attr(model, "intercept_only")
   cf <- attr(model, "continuous_factors")
   if (isTRUE(io)) {
-    cf$pvalues <- NA
+    cf$pvalues <- numeric(0)
     names(cf) <- names(uit)
     uit <- rbind(uit, cf)
   }
