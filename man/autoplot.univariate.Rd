@@ -23,6 +23,7 @@
   rotate_angle = NULL,
   custom_theme = NULL,
   remove_underscores = FALSE,
+  remove_x_elements = TRUE,
   ...
 )
 }
@@ -78,6 +79,17 @@
 
 \item{remove_underscores}{Logical; remove underscores from labels
 (default = FALSE).}
+
+\item{remove_x_elements}{Logical. When \code{TRUE} and \code{ncol == 1},
+x-axis components are removed from all plots except the last one.
+The following elements are suppressed:
+\itemize{
+\item \code{axis.title.x}
+\item \code{axis.text.x}
+\item \code{axis.ticks.x}
+}
+This prevents duplicated x-axes in vertically stacked patchwork plots.
+Defaults to \code{TRUE}.}
 
 \item{...}{Other plotting parameters.}
 }

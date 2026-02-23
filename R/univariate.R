@@ -224,6 +224,16 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' @param custom_theme List with customized theme options.
 #' @param remove_underscores Logical; remove underscores from labels
 #'   (default = FALSE).
+#' @param remove_x_elements Logical. When \code{TRUE} and \code{ncol == 1},
+#'   x-axis components are removed from all plots except the last one.
+#'   The following elements are suppressed:
+#'   \itemize{
+#'     \item \code{axis.title.x}
+#'     \item \code{axis.text.x}
+#'     \item \code{axis.ticks.x}
+#'   }
+#'   This prevents duplicated x-axes in vertically stacked patchwork plots.
+#'   Defaults to \code{TRUE}.
 #' @param ... Other plotting parameters.
 #'
 #' @import patchwork
@@ -257,7 +267,9 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                                 total_color = NULL, total_name = NULL,
                                 rotate_angle = NULL,
                                 custom_theme = NULL,
-                                remove_underscores = FALSE, ...) {
+                                remove_underscores = FALSE,
+                                remove_x_elements = TRUE,
+                                ...) {
 
   xvar     <- attr(object, "xvar")
   nclaims  <- attr(object, "nclaims")
@@ -319,7 +331,6 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
          call. = FALSE)
   }
 
-  # plot_defs (zoals in jouw code)
   plot_defs <- list(
     "1" = list(var = "frequency", lab = "Frequency", denom = exposure,
                fun = ggbarline),
@@ -351,6 +362,19 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
       plots[[paste0("p", i)]] <- def$fun(df, xvar, def$var, color_bg,
                                          sep_mark, coord_flip)
     }
+  }
+
+  if (isTRUE(remove_x_elements) && isTRUE(ncol == 1) && length(plots) > 1) {
+    strip_x <- function(p) {
+      p + ggplot2::theme(
+        axis.title.x = ggplot2::element_blank(),
+        axis.text.x  = ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank()
+      )
+    }
+
+    last_idx <- length(plots)
+    plots[-last_idx] <- lapply(plots[-last_idx], strip_x)
   }
 
   plot_out <- patchwork::wrap_plots(plots, ncol = ncol, guides = "collect")
