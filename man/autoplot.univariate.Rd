@@ -15,7 +15,7 @@
   dec.mark = ",",
   color = NULL,
   color_bg = NULL,
-  label_width = 10,
+  label_width = 50,
   coord_flip = FALSE,
   show_total = FALSE,
   total_color = NULL,

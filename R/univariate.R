@@ -268,7 +268,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                                 dec.mark = ",",
                                 color = NULL,
                                 color_bg = NULL,
-                                label_width = 10,
+                                label_width = 50,
                                 coord_flip = FALSE, show_total = FALSE,
                                 total_color = NULL, total_name = NULL,
                                 rotate_angle = NULL,
@@ -417,7 +417,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
   if (!is.null(rotate_angle)) {
     plot_out <- plot_out +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = rotate_angle,
-                                                         vjust = 0.5, hjust = 1))
+                                                         hjust = 1))
   }
 
   plot_out
