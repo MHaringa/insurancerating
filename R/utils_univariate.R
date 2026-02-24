@@ -176,12 +176,14 @@ ggpointline <- function(df, dfby, xvar, y, color, by,
       ggplot2::geom_point(data = df,
                           aes(x = .data[[xvar]],
                               y = .data[[y]]),
-                          color = color),
+                          color = color,
+                          size = 2.2),
       ggplot2::geom_line(data = df,
                          aes(x = .data[[xvar]],
                              y = .data[[y]],
                              group = 1),
-                         color = color),
+                         color = color,
+                         size = .8),
       ggplot2::theme_minimal()
     )
   } else {
