@@ -322,7 +322,7 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
     panel.grid.major = ggplot2::element_line(color = "#F2F2F2", linewidth = 0.4),
     panel.grid.minor = ggplot2::element_blank(),
     panel.border     = ggplot2::element_blank(),
-    axis.text.y.right  = ggplot2::element_text(color = "#9E9E9E"),
+    axis.text.y.right  = ggplot2::element_text(color = "#9E9E9E", size = 8),
     axis.title.y.right = ggplot2::element_text(color = "#9E9E9E", size = 9),
     axis.title.y = ggplot2::element_text(size = 10)
   )

@@ -238,7 +238,7 @@ gglabels <- function(background, labels, df, xvar, sep_mark) {
                              label = sep_mark(.data[["s_axis_print"]])),
                          vjust = "inward",
                          color = "#6B6B6B",
-                         size = 3)
+                         size = 2.6)
     )
   } else {
     NULL
@@ -263,7 +263,7 @@ ggbarlabels <- function(df, xvar, y, coord_flip, sep_mark) {
                              label = sep_mark(.data[["y_print"]])),
                          hjust = "inward",
                          color = "#6B6B6B",
-                         size = 3)
+                         size = 2.6)
     )
   } else if (!isTRUE(coord_flip)) {
     list(
@@ -273,7 +273,7 @@ ggbarlabels <- function(df, xvar, y, coord_flip, sep_mark) {
                              label = sep_mark(.data[["y_print"]])),
                          vjust = "inward",
                          color = "#6B6B6B",
-                         size = 3)
+                         size = 2.6)
     )
   }
 }
