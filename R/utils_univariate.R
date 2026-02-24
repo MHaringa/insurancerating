@@ -173,17 +173,20 @@ ggpointline <- function(df, dfby, xvar, y, color, by,
                         show_total, total_color, total_name) {
   if (by == "NULL") {
     list(
-      ggplot2::geom_point(data = df,
-                          aes(x = .data[[xvar]],
-                              y = .data[[y]]),
-                          color = color,
-                          size = 2.2),
       ggplot2::geom_line(data = df,
                          aes(x = .data[[xvar]],
                              y = .data[[y]],
                              group = 1),
                          color = color,
-                         size = .8),
+                         linewidth = .7),
+      ggplot2::geom_point(data = df,
+                          aes(x = .data[[xvar]],
+                              y = .data[[y]]),
+                          color = color,
+                          shape = 21,
+                          stroke = .7,
+                          fill = "white",
+                          size = 2.2),
       ggplot2::theme_minimal()
     )
   } else {
