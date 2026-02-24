@@ -140,7 +140,7 @@ ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg,
       ),
       labels = sep_mark,
       limits = c(0, NA),
-      expand = expansion(mult = c(0, 0.01))
+      expand = expansion(mult = c(0, 0.08))
       )
     )
   } else if (isTRUE(background) && by != "NULL") {
@@ -237,6 +237,7 @@ gglabels <- function(background, labels, df, xvar, sep_mark) {
                              y = .data[["s_axis_scale"]],
                              label = sep_mark(.data[["s_axis_print"]])),
                          vjust = "inward",
+                         color = "#6B6B6B",
                          size = 3)
     )
   } else {
@@ -261,6 +262,7 @@ ggbarlabels <- function(df, xvar, y, coord_flip, sep_mark) {
                              y = .data[[y]],
                              label = sep_mark(.data[["y_print"]])),
                          hjust = "inward",
+                         color = "#6B6B6B",
                          size = 3)
     )
   } else if (!isTRUE(coord_flip)) {
@@ -270,6 +272,7 @@ ggbarlabels <- function(df, xvar, y, coord_flip, sep_mark) {
                              y = .data[[y]],
                              label = sep_mark(.data[["y_print"]])),
                          vjust = "inward",
+                         color = "#6B6B6B",
                          size = 3)
     )
   }
@@ -306,7 +309,6 @@ ggbarline <- function(background, df, dfby, xvar, f_axis,
 
 #' @keywords internal
 ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip) {
-  #fill_bg <- lighten_color(color_bg)[2]
   ggplot2::ggplot(data = df) +
     ggplot2::geom_bar(data = df, aes(x = .data[[xvar]], y = .data[[f_axis]]),
                       stat = "identity",

@@ -213,8 +213,12 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' @param sort_manual Sort risk factor into a custom order; character vector
 #'   (default = NULL).
 #' @param dec.mark Decimal mark; defaults to `","`.
-#' @param color Color for points/lines (default = `"dodgerblue"`).
-#' @param color_bg Color of background histogram (default = `"lightskyblue"`).
+#' @param color Optional override for line/point color.
+#'   If NULL (default), colors are taken from the internal palette.
+#'   If specified, the chosen color is applied to all line-based plots.
+#' @param color_bg Optional override for background bar color.
+#'   If NULL (default), the background color is taken from the internal palette.
+#'   If specified, the chosen color is applied to all background bars.
 #' @param label_width Width of labels on the x-axis (default = 10).
 #' @param coord_flip Flip cartesian coordinates (default = FALSE).
 #' @param show_total Show line for total if `by` is used (default = FALSE).
@@ -261,8 +265,10 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
                                 background = TRUE, labels = TRUE,
                                 sort = FALSE, sort_manual = NULL,
-                                dec.mark = ",", color = "dodgerblue",
-                                color_bg = "lightskyblue", label_width = 10,
+                                dec.mark = ",",
+                                color = NULL,
+                                color_bg = NULL,
+                                label_width = 10,
                                 coord_flip = FALSE, show_total = FALSE,
                                 total_color = NULL, total_name = NULL,
                                 rotate_angle = NULL,
@@ -294,6 +300,36 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
 
   sep_mark <- separation_mark(dec.mark)
 
+  pal <- list(
+    frequency        = "#2C7FB8",
+    average_severity = "#41AB5D",
+    risk_premium     = "#F28E2B",
+    loss_ratio       = "#8C6BB1",
+    average_premium  = "#2CB1A1",
+    bg_bar           = "#E6E6E6"
+  )
+
+  final_bg <- if (!is.null(color_bg)) color_bg else pal$bg_bar
+
+  resolve_line_color <- function(varname) {
+    if (!is.null(color)) return(color)
+    if (!is.null(pal[[varname]])) return(pal[[varname]])
+    "#2C7FB8"
+  }
+
+  grid_theme <- ggplot2::theme(
+    panel.background = ggplot2::element_rect(fill = "white", color = NA),
+    panel.grid.major = ggplot2::element_line(color = "#F2F2F2", linewidth = 0.4),
+    panel.grid.minor = ggplot2::element_blank(),
+    panel.border     = ggplot2::element_blank(),
+    axis.text.y.right  = ggplot2::element_text(color = "#9E9E9E"),
+    axis.title.y.right = ggplot2::element_text(color = "#9E9E9E", size = 9),
+    axis.title.y = ggplot2::element_text(size = 10)
+  )
+
+  # Force background bars to light grey across all plot variants
+  color_bg <- pal$bg_bar
+
   # Build mapping (always 9 positions, missing values become NA)
   p_plots <- c(
     "frequency",        # 1
@@ -307,19 +343,11 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
     if (is.null(premium)  || premium  == "") NA_character_ else premium   # 9
   )
 
-  # Keep only allowed plot indices (1–9)
   plots_allowed <- show_plots[show_plots %in% 1:9]
-
-  # Extract variable names for selected indices
   valid_vars <- p_plots[plots_allowed]
-
-  # Check which variables actually exist in df (and are not NA)
   vars_exist <- !is.na(valid_vars) & valid_vars %in% names(df)
-
-  # Final list of plots to create
   create_plots <- plots_allowed[vars_exist]
 
-  # waarschuwing voor ontbrekende
   if (any(!vars_exist)) {
     missing_idx <- plots_allowed[!vars_exist]
     message("Ignoring plots ", paste(missing_idx, collapse = ", "),
@@ -351,17 +379,24 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
   plots <- list()
   for (i in create_plots) {
     def <- plot_defs[[as.character(i)]]
+
     if (identical(def$fun, ggbarline)) {
-      plots[[paste0("p", i)]] <- def$fun(background, df, dfby, xvar,
-                                         def$var, def$lab, def$denom,
-                                         color_bg, color, sep_mark, by,
-                                         labels, sort_manual, label_width,
-                                         show_total, total_color,
-                                         total_name, remove_underscores)
+      this_line_color <- resolve_line_color(def$var)
+
+      p <- def$fun(
+        background, df, dfby, xvar,
+        def$var, def$lab, def$denom,
+        final_bg, this_line_color, sep_mark, by,
+        labels, sort_manual, label_width,
+        show_total, total_color,
+        total_name, remove_underscores
+      )
     } else {
-      plots[[paste0("p", i)]] <- def$fun(df, xvar, def$var, color_bg,
-                                         sep_mark, coord_flip)
+      p <- def$fun(df, xvar, def$var, final_bg, sep_mark, coord_flip)
     }
+
+    p <- p + grid_theme
+    plots[[paste0("p", i)]] <- p
   }
 
   if (isTRUE(remove_x_elements) && isTRUE(ncol == 1) && length(plots) > 1) {
@@ -381,8 +416,8 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
 
   if (!is.null(rotate_angle)) {
     plot_out <- plot_out +
-      ggplot2::theme(axis.text.x = element_text(angle = rotate_angle,
-                                                vjust = 0.5, hjust = 1))
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = rotate_angle,
+                                                         vjust = 0.5, hjust = 1))
   }
 
   plot_out

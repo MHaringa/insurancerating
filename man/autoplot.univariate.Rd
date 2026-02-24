@@ -13,8 +13,8 @@
   sort = FALSE,
   sort_manual = NULL,
   dec.mark = ",",
-  color = "dodgerblue",
-  color_bg = "lightskyblue",
+  color = NULL,
+  color_bg = NULL,
   label_width = 10,
   coord_flip = FALSE,
   show_total = FALSE,
@@ -59,9 +59,13 @@
 
 \item{dec.mark}{Decimal mark; defaults to \code{","}.}
 
-\item{color}{Color for points/lines (default = \code{"dodgerblue"}).}
+\item{color}{Optional override for line/point color.
+If NULL (default), colors are taken from the internal palette.
+If specified, the chosen color is applied to all line-based plots.}
 
-\item{color_bg}{Color of background histogram (default = \code{"lightskyblue"}).}
+\item{color_bg}{Optional override for background bar color.
+If NULL (default), the background color is taken from the internal palette.
+If specified, the chosen color is applied to all background bars.}
 
 \item{label_width}{Width of labels on the x-axis (default = 10).}
 
