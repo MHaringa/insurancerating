@@ -1,3 +1,72 @@
+#' @keywords internal
+fit_frequency_model <- function(df) {
+  mgcv::gam(
+    nclaims ~ s(x),
+    data = df,
+    family = poisson(),
+    offset = log(exposure)
+  )
+}
+
+#' @keywords internal
+fit_severity_model <- function(df) {
+  mgcv::gam(
+    avg_claimsize ~ s(x),
+    data = df,
+    family = Gamma(link = "log"),
+    weights = nclaims
+  )
+}
+
+#' @keywords internal
+fit_burning_model <- function(df) {
+  mgcv::gam(
+    avg_premium ~ s(x),
+    data = df,
+    family = Gamma(link = "log"),
+    weights = exposure
+  )
+}
+
+#' @keywords internal
+round_x_values <- function(x, round_x = NULL) {
+
+  if (is.null(round_x)) {
+    return(x)
+  }
+
+  if (!is.numeric(round_x) || length(round_x) != 1L || round_x <= 0) {
+    stop("'round_x' must be a single positive numeric value.", call. = FALSE)
+  }
+
+  round(x / round_x) * round_x
+}
+
+#' @keywords internal
+check_required_columns <- function(data, ...) {
+
+  cols <- c(...)
+
+  if (any(is.null(cols))) {
+    stop("Required column arguments are missing.", call. = FALSE)
+  }
+
+  missing_cols <- setdiff(cols, names(data))
+
+  if (length(missing_cols) > 0) {
+    stop(
+      sprintf(
+        "The following columns are missing in 'data': %s",
+        paste(missing_cols, collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
+
 #' Generalized Additive Model for Insurance Risk Factors
 #'
 #' @description
@@ -90,7 +159,8 @@
 #'
 #' @export
 riskfactor_gam <- function(data, nclaims, x, exposure, amount = NULL,
-                           pure_premium = NULL, model = "frequency", round_x = NULL) {
+                           pure_premium = NULL, model = "frequency",
+                           round_x = NULL) {
 
   if (nrow(data) < 10) {
     stop("At least 10 datapoints are required. The spline smoothers assume a
@@ -102,94 +172,103 @@ riskfactor_gam <- function(data, nclaims, x, exposure, amount = NULL,
          call. = FALSE)
   }
 
-  # kolomnamen als strings
-  nclaims_col <- nclaims
-  x_col <- x
-  exposure_col <- exposure
-  amount_col <- amount
-  pure_col <- pure_premium
+  if (!is.numeric(data[[x]])) stop("x should be numeric", call. = FALSE)
+  if (!is.numeric(data[[exposure]])) stop("exposure should be numeric", call. = FALSE)
 
-  if (!is.numeric(data[[x_col]])) stop("x should be numeric", call. = FALSE)
-  if (!is.numeric(data[[exposure_col]])) stop("exposure should be numeric", call. = FALSE)
+  x_vals <- round_x_values(data[[x]], round_x)
 
   if (model == "frequency") {
-    df <- data.frame(
-      nclaims = data[[nclaims_col]],
-      x = data[[x_col]],
-      exposure = data[[exposure_col]]
+
+    check_required_columns(data, nclaims, exposure)
+
+    df <- aggregate(
+      list(
+        nclaims  = data[[nclaims]],
+        exposure = data[[exposure]]
+      ),
+      by = list(x = x_vals),
+      FUN = sum,
+      na.rm = TRUE
     )
-    if (is.numeric(round_x)) df$x <- round(df$x / round_x) * round_x
 
-    df <- aggregate(list(nclaims = df$nclaims,
-                         exposure = df$exposure),
-                    by = list(x = df$x), FUN = sum, na.rm = TRUE)
-    df$frequency <- df$nclaims / df$exposure
-
-    if (any(df$exposure == 0)) {
+    if (any(df$exposure <= 0)) {
       stop("Exposures should be greater than zero.", call. = FALSE)
     }
 
-    gam_x <- mgcv::gam(nclaims ~ s(x),
-                       data = df,
-                       family = poisson(),
-                       offset = log(exposure))
+    df$frequency <- df$nclaims / df$exposure
+
+    gam_x <- fit_frequency_model(df)
   }
 
   if (model == "severity") {
-    df <- data.frame(
-      nclaims = data[[nclaims_col]],
-      x = data[[x_col]],
-      exposure = data[[exposure_col]],
-      amount = data[[amount_col]]
-    )
-    if (is.numeric(round_x)) df$x <- round(df$x / round_x) * round_x
 
-    df <- aggregate(list(nclaims = df$nclaims,
-                         exposure = df$exposure,
-                         amount = df$amount),
-                    by = list(x = df$x), FUN = sum, na.rm = TRUE)
+    check_required_columns(data, nclaims, exposure, amount)
+
+    df <- aggregate(
+      list(
+        nclaims = data[[nclaims]],
+        exposure = data[[exposure]],
+        amount = data[[amount]]
+      ),
+      by = list(x = x_vals),
+      FUN = sum,
+      na.rm = TRUE
+    )
+
     df <- subset(df, nclaims > 0 & amount > 0)
     df$avg_claimsize <- df$amount / df$nclaims
 
-    gam_x <- mgcv::gam(log(avg_claimsize) ~ s(x),
-                       data = df,
-                       family = gaussian,
-                       weights = nclaims)
+    gam_x <- fit_severity_model(df)
   }
 
   if (model == "burning") {
-    df <- data.frame(
-      x = data[[x_col]],
-      exposure = data[[exposure_col]],
-      pure_premium = data[[pure_col]]
+
+    check_required_columns(data, nclaims, exposure, amount)
+
+    df <- aggregate(
+      list(
+        exposure = data[[exposure]],
+        pure_premium = data[[pure_premium]],
+        weighted_premium = data[[exposure]] * data[[pure_premium]]
+      ),
+      by = list(x = x_vals),
+      FUN = sum,
+      na.rm = TRUE
     )
-    df <- aggregate(list(exposure = df$exposure,
-                         pure_premium = df$pure_premium,
-                         weighted_premium = df$exposure * df$pure_premium),
-                    by = list(x = df$x), FUN = sum, na.rm = TRUE)
-    df <- subset(df, pure_premium > 0 & exposure > 0)
+
+    df <- subset(df, exposure > 0 & weighted_premium > 0)
     df$avg_premium <- df$weighted_premium / df$exposure
 
-    gam_x <- mgcv::gam(log(avg_premium) ~ s(x),
-                       data = df,
-                       family = gaussian,
-                       weights = exposure)
+    gam_x <- fit_burning_model(df)
   }
 
-  newx <- data.frame(x = seq(min(data[[x_col]]), max(data[[x_col]]), length.out = 100))
-  out <- confint_gam(gam_x, newx)
+  prediction_grid <- data.frame(
+    x = seq(min(data[[x]], na.rm = TRUE),
+            max(data[[x]], na.rm = TRUE),
+            length.out = 100)
+  )
 
-  counting <- sort(model.frame(gam_x)[["x"]])
-  df_new <- data.frame(x = counting,
-                       pred = as.numeric(mgcv::predict.gam(gam_x, data.frame(x = counting),
-                                                           type = "response")))
-  new <- merge(df_new, df, by = "x")
+  out <- confint_gam(gam_x, prediction_grid)
+
+  model_x <- sort(model.frame(gam_x)[["x"]])
+  pred_x <- predict(gam_x,
+                    newdata = data.frame(x = model_x),
+                    type = "response")
+
+  new <- merge(
+    data.frame(
+      x = model_x,
+      pred = as.numeric(pred_x)
+    ),
+    df,
+    by = "x"
+  )
 
   return(structure(list(prediction = out,
-                        x = x_col,
+                        x = x,
                         model = model,
                         data = new,
-                        x_obs = data[[x_col]]),
+                        x_obs = x_vals),
                    class = "fitgam"))
 }
 
@@ -211,7 +290,7 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL,
     what = "fit_gam()",
     with = "riskfactor_gam()",
     details =
-"Please note that `riskfactor_gam()` requires **standard evaluation** (SE):
+      "Please note that `riskfactor_gam()` requires **standard evaluation** (SE):
 column names must be supplied as character strings, e.g.
 `riskfactor_gam(df, nclaims = \"nclaims\", x = \"age\", exposure = \"exposure\")`.
 The old NSE-style (`fit_gam(df, nclaims = nclaims, x = age, exposure = exposure)`)
@@ -360,7 +439,7 @@ autoplot.fitgam <- function(object, conf_int = FALSE, color_gam = "steelblue",
   ylab <- object[[3]]
   points <- object[[4]]
 
-  if (isTRUE(conf_int) && any(prediction$upr_95 > 1e9)) {
+  if (isTRUE(conf_int) && any(prediction$conf_high > 1e9)) {
     message("Confidence intervals exceed 1e9 and will not be displayed.")
   }
 
@@ -376,12 +455,12 @@ autoplot.fitgam <- function(object, conf_int = FALSE, color_gam = "steelblue",
     )
   }
 
-  p <- ggplot(prediction, aes(x = x, y = predicted)) +
+  p <- ggplot(prediction, aes(x = x, y = fitted)) +
     geom_line(color = color_gam) +
     theme_bw(base_size = 12) +
     labs(y = paste0("Predicted ", ylab), x = xlab)
 
-  if (isTRUE(conf_int) && !any(prediction$upr_95 > 1e9)) {
+  if (isTRUE(conf_int) && !any(prediction$conf_high > 1e9)) {
     p <- p + geom_ribbon(aes(ymin = lwr_95, ymax = upr_95), alpha = 0.12)
   }
 

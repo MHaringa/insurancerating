@@ -228,27 +228,27 @@ construct_fm <- function(lhs, rhs) {
 #' @keywords internal
 confint_gam <- function(model, newdata, level = 0.95) {
 
-  # predict on link scale
-  pred <- mgcv::predict.gam(model, newdata = newdata, type = "link",
-                            se.fit = TRUE)
+  pred <- mgcv::predict.gam(
+    model,
+    newdata = newdata,
+    type = "link",
+    se.fit = TRUE
+  )
 
-  # critical value
   alpha <- 1 - level
-  z <- qnorm(1 - alpha/2)
+  z_value <- stats::qnorm(1 - alpha / 2)
 
-  # intervals on link scale
-  lwr_link <- pred$fit - z * pred$se.fit
-  upr_link <- pred$fit + z * pred$se.fit
+  fit_link <- pred$fit
+  se_link <- pred$se.fit
 
   # inverse link function (family-specific)
   linkinv <- model$family$linkinv
 
-  # transform to response scale
   data.frame(
-    x = newdata[,1, drop=FALSE],
-    predicted = linkinv(pred$fit),
-    lwr_95 = linkinv(lwr_link),
-    upr_95 = linkinv(upr_link)
+    x = newdata$x,
+    fitted = linkinv(fit_link), # predicted
+    conf_low = linkinv(fit_link - z_value * se_link), #lwr_95
+    conf_high = linkinv(fit_link + z_value * se_link) #upr_95
   )
 }
 
