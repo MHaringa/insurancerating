@@ -461,7 +461,7 @@ autoplot.fitgam <- function(object, conf_int = FALSE, color_gam = "steelblue",
     labs(y = paste0("Predicted ", ylab), x = xlab)
 
   if (isTRUE(conf_int) && !any(prediction$conf_high > 1e9)) {
-    p <- p + geom_ribbon(aes(ymin = lwr_95, ymax = upr_95), alpha = 0.12)
+    p <- p + geom_ribbon(aes(ymin = conf_low, ymax = conf_high), alpha = 0.12)
   }
 
   if (is.numeric(x_stepsize)) {

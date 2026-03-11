@@ -6,4 +6,5 @@ globalVariables(c("n", "y", "x", "predicted", "lwr_95", "upr_95", "frequency",
                   "breaks_max", "count", "sd", "left", "right", "xvar",
                   "index_dates", "index_df", "average_severity", "risk_premium",
                   "loss_ratio", "average_premium", "fitted", "Gamma",
-                  "exposure", "nclaims", "weighted_premium"))
+                  "exposure", "nclaims", "weighted_premium", "conf_low",
+                  "conf_high"))
