@@ -61,12 +61,6 @@
 #' rating_table(burn_rst)
 #' }
 #'
-#' @description `r lifecycle::badge('experimental')`
-#'  Add restrictions, like a bonus-malus structure, on the risk factors
-#'  used in the model. Must always be followed by `refit_glm()`.
-#'
-#' @return Object of class restricted.
-#'
 #' @export
 add_restriction <- function(model, restrictions) {
 
@@ -214,7 +208,7 @@ restrict_coef <- function(model, restrictions) {
 #' # Fit GAM for claim frequency
 #' age_policyholder_frequency <- riskfactor_gam(data = MTPL,
 #'                                              nclaims = "nclaims",
-#'.                                             x = "age_policyholder",
+#'                                              x = "age_policyholder",
 #'                                              exposure = "exposure")
 #'
 #' # Determine clusters
@@ -419,162 +413,552 @@ print.smooth <- function(x, ...) {
   print(x$formula_restricted)
 }
 
+
 #' Automatically create a ggplot for objects obtained from add_restriction()
 #'
-#' @description `r lifecycle::badge('experimental')`
-#'  Takes an object produced by `add_restriction()`, and produces
-#'  a line plot with a comparison between the restricted coefficients and
-#'  estimated coefficients obtained from the model.
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' Takes an object produced by `add_restriction()` or `add_relativities()`
+#' and creates a plot comparing the adjusted coefficients with the original
+#' coefficients obtained from the model.
 #'
-#' @param object object produced by `add_restriction()`
-#' @param ... other plotting parameters to affect the plot
+#' For objects produced by `add_relativities()`, original levels that are split
+#' into new levels are removed from the connected original line and from the
+#' x-axis. Instead, the original level is shown as a horizontal blue segment
+#' spanning all child categories, with the original level label centred above
+#' the segment.
+#'
+#' @param object Object produced by `add_restriction()` or `add_relativities()`.
+#' @param remove_underscores Logical; if `TRUE`, underscores are replaced by
+#'   spaces in the x-axis label. Default is `FALSE`.
+#' @param rotate_angle Optional numeric value for the angle of x-axis labels.
+#' @param custom_theme Optional list passed to `ggplot2::theme()`.
+#' @param ... Additional plotting arguments passed to ggplot2 geoms.
+#'
+#' @return A `ggplot2` object.
 #'
 #' @author Martin Haringa
 #'
-#' @importFrom dplyr left_join
-#' @importFrom data.table melt
-#' @importFrom data.table setDT
-#' @importFrom data.table setDF
 #' @import ggplot2
-#'
-#' @return Object of class ggplot2
-#'
-#' @examples
-#' freq <- glm(nclaims ~ bm + zip, weights = power, family = poisson(),
-#'  data = MTPL)
-#' zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
-#' freq |>
-#'   add_restriction(restrictions = zip_df) |>
-#'   autoplot()
+#' @importFrom dplyr left_join
 #'
 #' @export
-autoplot.restricted <- function(object, ...) {
+autoplot.restricted <- function(object,
+                                remove_underscores = FALSE,
+                                rotate_angle = NULL,
+                                custom_theme = NULL,
+                                ...) {
 
+  plot_palette <- function() {
+    list(
+      frequency        = "#2C7FB8",
+      average_severity = "#41AB5D",
+      risk_premium     = "#F28E2B",
+      loss_ratio       = "#8C6BB1",
+      average_premium  = "#2CB1A1",
+      bg_bar           = "#E6E6E6"
+    )
+  }
+
+  plot_grid_theme <- function() {
+    ggplot2::theme(
+      panel.background = ggplot2::element_rect(fill = "white", color = NA),
+      panel.grid.major = ggplot2::element_line(color = "#F2F2F2", linewidth = 0.4),
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.border     = ggplot2::element_blank(),
+      axis.text.y.right  = ggplot2::element_text(color = "#9E9E9E", size = 8),
+      axis.title.y.right = ggplot2::element_text(color = "#9E9E9E", size = 9),
+      axis.title.y       = ggplot2::element_text(size = 10)
+    )
+  }
+
+  pal <- plot_palette()
+  grid_theme <- plot_grid_theme()
+
+  # ---- Case 1: add_relativities() ------------------------------------------
+  if (!is.null(object$relativities_df)) {
+
+    rel_df <- as.data.frame(object$relativities_df)
+    rf <- as.data.frame(object$rating_factors)
+    base_rf <- object$base_risk_factor
+    display_rf <- object$display_risk_factor
+
+    rf_base <- rf[rf$risk_factor == base_rf, c("level", "estimate"), drop = FALSE]
+    names(rf_base)[2] <- "Coef"
+    rf_base$type <- "Original fit"
+
+    rel_plot <- rel_df[, c("new_level", "estimate"), drop = FALSE]
+    names(rel_plot) <- c("level", "Coef")
+    rel_plot$type <- "New relativities"
+
+    # original levels that were replaced by split levels
+    replaced_levels <- unique(rel_df$level)
+
+    # original line should only use levels that were not replaced
+    rf_base_line <- rf_base[!rf_base$level %in% replaced_levels, , drop = FALSE]
+
+    # add unsplit original levels to the new relativities so the orange line
+    # remains complete over non-adjusted levels
+    unsplit_levels <- setdiff(rf_base$level, unique(rel_df$level))
+    if (length(unsplit_levels) > 0) {
+      unsplit_plot <- rf_base[rf_base$level %in% unsplit_levels, c("level", "Coef"), drop = FALSE]
+      unsplit_plot$type <- "New relativities"
+      rel_plot <- rbind(rel_plot, unsplit_plot)
+    }
+
+    # IMPORTANT:
+    # x-axis order should NOT contain replaced parent levels like "0"
+    lvl_order <- unique(c(
+      as.character(rf_base_line$level),
+      as.character(rel_plot$level)
+    ))
+
+    # numeric x positions for reliable spanning segments
+    x_lookup <- data.frame(
+      level = lvl_order,
+      x_num = seq_along(lvl_order),
+      stringsAsFactors = FALSE
+    )
+
+    rf_base_line$level <- as.character(rf_base_line$level)
+    rel_plot$level <- as.character(rel_plot$level)
+
+    rf_base_line <- dplyr::left_join(rf_base_line, x_lookup, by = "level")
+    rel_plot <- dplyr::left_join(rel_plot, x_lookup, by = "level")
+
+    # construct horizontal blue segments for split original levels
+    segments_list <- list()
+
+    for (lvl in replaced_levels) {
+      child_lvls <- as.character(rel_df$new_level[rel_df$level == lvl])
+      child_lvls <- child_lvls[child_lvls %in% lvl_order]
+
+      if (length(child_lvls) == 0) next
+
+      child_pos <- x_lookup$x_num[match(child_lvls, x_lookup$level)]
+      child_pos <- child_pos[!is.na(child_pos)]
+
+      if (length(child_pos) == 0) next
+
+      y_val <- rf_base$Coef[rf_base$level == lvl][1]
+
+      segments_list[[as.character(lvl)]] <- data.frame(
+        x_start = min(child_pos),
+        x_end   = max(child_pos),
+        y       = y_val,
+        label   = as.character(lvl),
+        stringsAsFactors = FALSE
+      )
+    }
+
+    segments_df <- NULL
+    if (length(segments_list) > 0) {
+      segments_df <- do.call(rbind, segments_list)
+    }
+
+    x_lab <- display_rf
+    if (remove_underscores) {
+      x_lab <- gsub("_", " ", x_lab)
+    }
+
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_line(
+        data = rf_base_line,
+        ggplot2::aes(x = x_num, y = Coef, color = type, group = type),
+        linewidth = 0.8,
+        ...
+      ) +
+      ggplot2::geom_point(
+        data = rf_base_line,
+        ggplot2::aes(x = x_num, y = Coef, color = type),
+        shape = 21,
+        fill = "white",
+        stroke = 0.7,
+        size = 2.4,
+        ...
+      ) +
+      ggplot2::geom_line(
+        data = rel_plot,
+        ggplot2::aes(x = x_num, y = Coef, color = type, group = type),
+        linewidth = 0.8,
+        ...
+      ) +
+      ggplot2::geom_point(
+        data = rel_plot,
+        ggplot2::aes(x = x_num, y = Coef, color = type),
+        shape = 21,
+        fill = "white",
+        stroke = 0.7,
+        size = 2.4,
+        ...
+      )
+
+    if (!is.null(segments_df) && nrow(segments_df) > 0) {
+      p <- p +
+        ggplot2::geom_segment(
+          data = segments_df,
+          ggplot2::aes(
+            x = x_start,
+            xend = x_end,
+            y = y,
+            yend = y
+          ),
+          color = pal$frequency,
+          linewidth = 0.9
+        ) +
+        ggplot2::geom_segment(
+          data = segments_df,
+          ggplot2::aes(
+            x = x_start,
+            xend = x_start,
+            y = y,
+            yend = y - 0.012
+          ),
+          color = pal$frequency,
+          linewidth = 0.8
+        ) +
+        ggplot2::geom_segment(
+          data = segments_df,
+          ggplot2::aes(
+            x = x_end,
+            xend = x_end,
+            y = y,
+            yend = y - 0.012
+          ),
+          color = pal$frequency,
+          linewidth = 0.8
+        ) +
+        ggplot2::geom_text(
+          data = segments_df,
+          ggplot2::aes(
+            x = (x_start + x_end) / 2,
+            y = y,
+            label = label
+          ),
+          vjust = -0.7,
+          color = pal$frequency,
+          size = 3.2
+        )
+    }
+
+    p <- p +
+      ggplot2::scale_x_continuous(
+        breaks = x_lookup$x_num,
+        labels = x_lookup$level
+      ) +
+      ggplot2::scale_colour_manual(
+        values = c(
+          "Original fit" = pal$frequency,
+          "New relativities" = pal$risk_premium
+        ),
+        name = NULL
+      ) +
+      ggplot2::labs(
+        x = x_lab,
+        y = "Relativity"
+      ) +
+      ggplot2::theme_minimal() +
+      grid_theme
+
+    if (!is.null(rotate_angle)) {
+      p <- p +
+        ggplot2::theme(
+          axis.text.x = ggplot2::element_text(angle = rotate_angle, hjust = 1)
+        )
+    }
+
+    if (!is.null(custom_theme)) {
+      p <- p + do.call(ggplot2::theme, custom_theme)
+    }
+
+    return(p)
+  }
+
+  # ---- Case 2: add_restriction() -------------------------------------------
   names_rf <- names(object$restrictions_lst)
   name <- names_rf[length(names_rf)]
   naam_rst <- object$restrictions_lst[[name]]
 
   rf <- object$rating_factors
-  naam_rf <- rf[rf$risk_factor == name, ]
-  naam_rf <- naam_rf[, 2:3]
+  naam_rf <- rf[rf$risk_factor == name, , drop = FALSE]
+  naam_rf <- naam_rf[, 2:3, drop = FALSE]
   names(naam_rst)[names(naam_rst) == name] <- "level"
 
   naam_rf <- matchColClasses(naam_rst, naam_rf)
 
   koppel <- dplyr::left_join(naam_rst, naam_rf, by = "level")
-  meas_vars <- c(names(naam_rst)[2], names(rf)[3])
 
-  koppel_dt <- data.table::setDT(koppel)
-  koppel_ldt <- data.table::melt(koppel_dt,
-                                 id.vars = names(koppel_dt)[!names(
-                                   koppel_dt) %in% meas_vars],
-                                 measure.vars = meas_vars,
-                                 variable.name = "type",
-                                 value.name = "Coef")
-  koppel <- data.table::setDF(koppel_ldt)
-  koppel$level <- as.factor(koppel$level)
-  koppel$type <- as.character(koppel$type)
+  restricted_name <- names(naam_rst)[2]
+  unrestricted_name <- names(naam_rf)[2]
 
-  koppel$type[koppel$type == names(naam_rst)[2]] <- "restricted"
-  koppel$type[koppel$type == names(rf)[3]] <- "unrestricted"
+  koppel_restricted <- data.frame(
+    level = koppel$level,
+    type = "Adjusted fit",
+    Coef = koppel[[restricted_name]],
+    stringsAsFactors = FALSE
+  )
 
-  ggplot2::ggplot(data = koppel, aes(x = level,
-                                     y = Coef,
-                                     color = type, group = type)) +
-    ggplot2::geom_point() +
-    ggplot2::geom_line() +
+  koppel_unrestricted <- data.frame(
+    level = koppel$level,
+    type = "Original fit",
+    Coef = koppel[[unrestricted_name]],
+    stringsAsFactors = FALSE
+  )
+
+  koppel_long <- rbind(koppel_unrestricted, koppel_restricted)
+  lvl_order <- unique(koppel$level)
+
+  x_lookup <- data.frame(
+    level = lvl_order,
+    x_num = seq_along(lvl_order),
+    stringsAsFactors = FALSE
+  )
+
+  koppel_long <- dplyr::left_join(koppel_long, x_lookup, by = "level")
+
+  x_lab <- name
+  if (remove_underscores) {
+    x_lab <- gsub("_", " ", x_lab)
+  }
+
+  p <- ggplot2::ggplot(
+    data = koppel_long,
+    ggplot2::aes(x = x_num, y = Coef, color = type, group = type)
+  ) +
+    ggplot2::geom_line(linewidth = 0.8, ...) +
+    ggplot2::geom_point(
+      shape = 21,
+      fill = "white",
+      stroke = 0.7,
+      size = 2.4,
+      ...
+    ) +
+    ggplot2::scale_x_continuous(
+      breaks = x_lookup$x_num,
+      labels = x_lookup$level
+    ) +
+    ggplot2::scale_colour_manual(
+      values = c(
+        "Original fit" = pal$frequency,
+        "Adjusted fit" = pal$risk_premium
+      ),
+      name = NULL
+    ) +
+    ggplot2::labs(
+      x = x_lab,
+      y = "Relativity"
+    ) +
     ggplot2::theme_minimal() +
-    ggplot2::labs(x = name, color = NULL)
+    grid_theme
+
+  if (!is.null(rotate_angle)) {
+    p <- p +
+      ggplot2::theme(
+        axis.text.x = ggplot2::element_text(angle = rotate_angle, hjust = 1)
+      )
+  }
+
+  if (!is.null(custom_theme)) {
+    p <- p + do.call(ggplot2::theme, custom_theme)
+  }
+
+  p
 }
+
 
 #' Automatically create a ggplot for objects obtained from add_smoothing()
 #'
-#' @description `r lifecycle::badge('experimental')`
-#'  Takes an object produced by `add_smoothing()`, and produces
-#'  a plot with a comparison between the smoothed coefficients and
-#'  estimated coefficients obtained from the model.
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' Takes an object produced by `add_smoothing()` and creates a plot comparing
+#' the original model fit, the new clustered values, and the resulting smooth.
 #'
-#' @param object object produced by `add_smoothing()`
-#' @param ... other plotting parameters to affect the plot
+#' @param object Object produced by `add_smoothing()`.
+#' @param ... Additional plotting arguments passed to ggplot2 geoms.
+#'
+#' @return A `ggplot2` object.
 #'
 #' @author Martin Haringa
 #'
-#' @importFrom dplyr left_join
 #' @import ggplot2
 #' @importFrom scales ordinal
 #'
-#' @return Object of class ggplot2
-#'
 #' @export
 autoplot.smooth <- function(object, ...) {
+
   rf2 <- object$borders
   new <- object$new
   new_line <- object$new_line
   degree <- scales::ordinal(object$degree)
   smoothing <- object$smoothing
+
   if (smoothing == "spline") {
     degree_name <- paste0(degree, " order polynomial")
   } else {
     degree_name <- toupper(smoothing)
   }
 
-  rf2_start_open <- rf2[rf2$start_oc == "open", ]
-  rf2_start_closed <- rf2[rf2$start_oc == "closed", ]
-  rf2_end_open <- rf2[rf2$end_oc == "open", ]
-  rf2_end_closed <- rf2[rf2$end_oc == "closed", ]
+  # internal style helpers ---------------------------------------------------
+  plot_palette <- function() {
+    list(
+      frequency        = "#2C7FB8",
+      average_severity = "#41AB5D",
+      risk_premium     = "#F28E2B",
+      loss_ratio       = "#8C6BB1",
+      average_premium  = "#2CB1A1",
+      bg_bar           = "#E6E6E6"
+    )
+  }
 
-  new_start_open <- new[new$start_oc == "open", ]
-  new_start_closed <- new[new$start_oc == "closed", ]
-  new_end_open <- new[new$end_oc == "open", ]
-  new_end_closed <- new[new$end_oc == "closed", ]
+  plot_grid_theme <- function() {
+    ggplot2::theme(
+      panel.background = ggplot2::element_rect(fill = "white", color = NA),
+      panel.grid.major = ggplot2::element_line(color = "#F2F2F2", linewidth = 0.4),
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.border     = ggplot2::element_blank(),
+      axis.text.y.right  = ggplot2::element_text(color = "#9E9E9E", size = 8),
+      axis.title.y.right = ggplot2::element_text(color = "#9E9E9E", size = 9),
+      axis.title.y       = ggplot2::element_text(size = 10)
+    )
+  }
+
+  pal <- plot_palette()
+  grid_theme <- plot_grid_theme()
+
+  rf2_start_open   <- rf2[rf2$start_oc == "open", , drop = FALSE]
+  rf2_start_closed <- rf2[rf2$start_oc == "closed", , drop = FALSE]
+  rf2_end_open     <- rf2[rf2$end_oc == "open", , drop = FALSE]
+  rf2_end_closed   <- rf2[rf2$end_oc == "closed", , drop = FALSE]
+
+  new_start_open   <- new[new$start_oc == "open", , drop = FALSE]
+  new_start_closed <- new[new$start_oc == "closed", , drop = FALSE]
+  new_end_open     <- new[new$end_oc == "open", , drop = FALSE]
+  new_end_closed   <- new[new$end_oc == "closed", , drop = FALSE]
 
   x_name <- names(new_line)[1]
   names(new_line)[names(new_line) == x_name] <- "col1"
 
   ggplot2::ggplot(data = rf2) +
-    ggplot2::geom_segment(ggplot2::aes(x = start_, y = estimate, xend = end_,
-                                       yend = estimate, color = "Model fit"),
-                          group = 1) +
-    ggplot2::geom_segment(data = new, ggplot2::aes(x = breaks_min, y = yhat,
-                                                   xend = breaks_max,
-                                                   yend = yhat,
-                                                   color = "New cluster"),
-                          group = 2) +
-    ggplot2::geom_point(data = rf2_start_closed, ggplot2::aes(x = start_,
-                                                              y = estimate),
-                        color = "dodgerblue") +
-    ggplot2::geom_point(data = rf2_end_closed, ggplot2::aes(x = end_,
-                                                            y = estimate),
-                        color = "dodgerblue") +
-    ggplot2::geom_point(data = rf2_start_open, ggplot2::aes(x = start_,
-                                                            y = estimate),
-                        color = "dodgerblue", shape = 21, fill = "white") +
-    ggplot2::geom_point(data = rf2_end_open, ggplot2::aes(x = end_,
-                                                          y = estimate),
-                        color = "dodgerblue", shape = 21, fill = "white") +
-    ggplot2::geom_point(data = new_start_closed, ggplot2::aes(x = start_,
-                                                              y = yhat),
-                        color = "red") +
-    ggplot2::geom_point(data = new_end_closed, ggplot2::aes(x = end_,
-                                                            y = yhat),
-                        color = "red") +
-    ggplot2::geom_point(data = new_start_open, ggplot2::aes(x = start_,
-                                                            y = yhat),
-                        color = "red", shape = 21, fill = "white") +
-    ggplot2::geom_point(data = new_end_open, ggplot2::aes(x = end_,
-                                                          y = yhat),
-                        color = "red", shape = 21, fill = "white") +
-    ggplot2::labs(x = x_name, y = "Estimated coefficient") +
-    ggplot2::geom_line(data = new_line, ggplot2::aes(x = col1, y = yhat,
-                                                     color = "Smooth"),
-                       group = 3) +
-    ggplot2::scale_colour_manual(name = "Risk factor",
-                                 values = c("Model fit" = "dodgerblue",
-                                            "New cluster" = "red",
-                                            "Smooth" = "black"),
-                                 labels = c("Model fit", "New cluster",
-                                            degree_name)) +
-    ggplot2::theme_minimal()
+    ggplot2::geom_segment(
+      ggplot2::aes(
+        x = start_,
+        y = estimate,
+        xend = end_,
+        yend = estimate,
+        color = "Model fit"
+      ),
+      linewidth = 0.8,
+      ...
+    ) +
+    ggplot2::geom_segment(
+      data = new,
+      ggplot2::aes(
+        x = breaks_min,
+        y = yhat,
+        xend = breaks_max,
+        yend = yhat,
+        color = "New cluster"
+      ),
+      linewidth = 0.8,
+      ...
+    ) +
+    ggplot2::geom_line(
+      data = new_line,
+      ggplot2::aes(
+        x = col1,
+        y = yhat
+      ),
+      linewidth = 0.5,
+      linetype = "dashed", # of "dashed"
+      color = "#4D4D4D",
+      ...
+    ) +
+
+    # model fit points
+    ggplot2::geom_point(
+      data = rf2_start_closed,
+      ggplot2::aes(x = start_, y = estimate, color = "Model fit"),
+      shape = 16,
+      size = 2.2,
+      ...
+    ) +
+    ggplot2::geom_point(
+      data = rf2_end_closed,
+      ggplot2::aes(x = end_, y = estimate, color = "Model fit"),
+      shape = 16,
+      size = 2.2,
+      ...
+    ) +
+    ggplot2::geom_point(
+      data = rf2_start_open,
+      ggplot2::aes(x = start_, y = estimate, color = "Model fit"),
+      shape = 21,
+      fill = "white",
+      stroke = 0.7,
+      size = 2.2,
+      ...
+    ) +
+    ggplot2::geom_point(
+      data = rf2_end_open,
+      ggplot2::aes(x = end_, y = estimate, color = "Model fit"),
+      shape = 21,
+      fill = "white",
+      stroke = 0.7,
+      size = 2.2,
+      ...
+    ) +
+
+    # new cluster points
+    ggplot2::geom_point(
+      data = new_start_closed,
+      ggplot2::aes(x = start_, y = yhat, color = "New cluster"),
+      shape = 16,
+      size = 2.2,
+      ...
+    ) +
+    ggplot2::geom_point(
+      data = new_end_closed,
+      ggplot2::aes(x = end_, y = yhat, color = "New cluster"),
+      shape = 16,
+      size = 2.2,
+      ...
+    ) +
+    ggplot2::geom_point(
+      data = new_start_open,
+      ggplot2::aes(x = start_, y = yhat, color = "New cluster"),
+      shape = 21,
+      fill = "white",
+      stroke = 0.7,
+      size = 2.2,
+      ...
+    ) +
+    ggplot2::geom_point(
+      data = new_end_open,
+      ggplot2::aes(x = end_, y = yhat, color = "New cluster"),
+      shape = 21,
+      fill = "white",
+      stroke = 0.7,
+      size = 2.2,
+      ...
+    ) +
+
+    ggplot2::labs(
+      x = x_name,
+      y = "Estimated relativity"
+    ) +
+    ggplot2::scale_colour_manual(
+      name = NULL,
+      values = c(
+        "Model fit" = pal$frequency,
+        "New cluster" = pal$risk_premium
+      ),
+      labels = c(
+        "Model fit" = "Original fit",
+        "New cluster" = "Clustered fit"
+      )
+    ) +
+    ggplot2::theme_minimal() +
+    grid_theme
 }
 
 
@@ -906,3 +1290,377 @@ update_smoothing <- function(model,
 
   invisible(st)
 }
+
+
+
+
+#' Add expert-based relativities to the model
+#'
+#' @description `r lifecycle::badge('experimental')`
+#' Add expert-based relativities to one or more levels of a risk factor by
+#' splitting these levels into more granular sublevels. `add_relativities()`
+#' must always be followed by `refit_glm()`.
+#'
+#' @author Martin Haringa
+#'
+#' @details
+#' This function is useful when the model is estimated on a relatively broad
+#' risk factor level, while expert judgement indicates that meaningful
+#' differences exist within that level.
+#'
+#' A typical use case occurs when a subgroup has insufficient exposure or too
+#' little claims experience to estimate a stable coefficient directly in the GLM.
+#' In that case, the GLM can first be estimated on a broader level, and then
+#' refined afterwards by splitting that level into more granular subgroups.
+#'
+#' For example, a GLM may estimate a single coefficient for the business
+#' activity group `"industry"` based on the full industry portfolio. In practice,
+#' however, it may still be desirable to distinguish between `"heavy_industry"`
+#' and `"light_industry"` based on expert judgement. The user can then specify
+#' relativities such as 1.1 for heavy industry and 1.0 for light industry.
+#'
+#' If `normalize = TRUE`, these relativities are rescaled such that their
+#' exposure-weighted average remains equal to 1 within the original level.
+#' As a result, the weighted average of the refined subgroup coefficients
+#' remains equal to the original GLM coefficient for the full group. This makes
+#' it possible to follow the model output while applying a transparent and
+#' explainable adjustment to improve pricing differentiation.
+#'
+#' This is especially useful when the portfolio contains only a small amount of
+#' exposure for a higher-risk subgroup, for example heavy industry with little
+#' or no observed claims, but where business knowledge still supports a higher
+#' premium than for lower-risk subgroups.
+#'
+#' This method preserves the original model structure while allowing controlled,
+#' transparent adjustments to pricing based on expert insight.
+#'
+#' @param model object of class glm/restricted/smooth
+#' @param risk_factor Character string. Name of the existing risk factor in the
+#'   model that should be refined.
+#' @param risk_factor_split Character string. Column name in the underlying
+#'   portfolio data containing the more granular split of `risk_factor`.
+#' @param relativities Named list of data.frames. Each list name must correspond
+#'   to an existing level of `risk_factor` to be split. Each data.frame must
+#'   contain the columns:
+#'   \describe{
+#'     \item{new_level}{Character. Name of the new sublevel.}
+#'     \item{relativity}{Numeric. Relativity relative to the original model
+#'     factor of the corresponding level.}
+#'   }
+#' @param exposure Character string. Column name in the portfolio data
+#'   containing exposure weights used for optional normalization.
+#' @param normalize Logical. If `TRUE` (default), relativities are normalized
+#'   such that the exposure-weighted average equals 1 within each split level.
+#'
+#' @family update_glm
+#' @seealso [refit_glm()] for refitting the model after adding relativities.
+#'
+#' @return Object of class restricted.
+#'
+#' @examples
+#' \dontrun{
+#' relativities_activity <- relativities_list(
+#' split_level("construction",
+#'            c("residential_construction",
+#'              "commercial_construction",
+#'              "civil_engineering"),
+#'            c(1.00, 1.10, 1.25))
+#' )
+#'
+#' burn_rel <- burn_unrestricted |>
+#'   add_relativities(
+#'     risk_factor = "business_activity",
+#'     risk_factor_split = "business_activity_split",
+#'     relativities = relativities_activity,
+#'     exposure = "exposure",
+#'     normalize = TRUE
+#'   ) |>
+#'   refit_glm()
+#'
+#' rating_table(burn_rel)
+#' }
+#'
+#' @export
+add_relativities <- function(model,
+                             risk_factor,
+                             risk_factor_split,
+                             relativities,
+                             exposure,
+                             normalize = TRUE) {
+
+  if (!inherits(model, c("glm", "restricted", "smooth"))) {
+    stop("'model' must be of class glm, restricted or smooth.", call. = FALSE)
+  }
+
+  if (!is.character(risk_factor) || length(risk_factor) != 1) {
+    stop("'risk_factor' must be a single character string.", call. = FALSE)
+  }
+
+  if (!is.character(risk_factor_split) || length(risk_factor_split) != 1) {
+    stop("'risk_factor_split' must be a single character string.", call. = FALSE)
+  }
+
+  if (!is.character(exposure) || length(exposure) != 1) {
+    stop("'exposure' must be a single character string.", call. = FALSE)
+  }
+
+  if (!is.logical(normalize) || length(normalize) != 1) {
+    stop("'normalize' must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.list(relativities) || is.null(names(relativities)) ||
+      any(names(relativities) == "")) {
+    stop(
+      "'relativities' must be a named list of data.frames, with list names ",
+      "corresponding to levels of 'risk_factor'.",
+      call. = FALSE
+    )
+  }
+
+  .check_relativities_list(relativities)
+
+  if (inherits(model, "glm")) {
+    fm <- formula(model)
+    offset_term <- get_offset(model)
+    fm_no_offset <- remove_offset_formula(fm)
+    df_new <- model$data
+    model_call <- model$call
+    model_out <- model
+
+    rfdf <- rating_table(model, signif_stars = FALSE)$df
+    colnames(rfdf)[3] <- "estimate"
+    rst_lst <- NULL
+    new_col_nm <- NULL
+    old_col_nm <- NULL
+    mgd_rst <- NULL
+    mgd_smt <- NULL
+  }
+
+  if (inherits(model, c("smooth", "restricted"))) {
+    fm <- model$formula_restricted
+    offset_term <- model$offset
+    fm_no_offset <- model$formula_removed
+    df_new <- model$data_restricted
+    model_call <- model$model_call
+    model_out <- model$model_out
+
+    rfdf <- model$rating_factors
+    rst_lst <- model$restrictions_lst
+    new_col_nm <- model$new_col_nm
+    old_col_nm <- model$old_col_nm
+    mgd_rst <- model$mgd_rst
+    mgd_smt <- model$mgd_smt
+  }
+
+  if (!risk_factor %in% names(df_new)) {
+    stop("risk_factor column: ", risk_factor, " is not in the model data.",
+         call. = FALSE)
+  }
+
+  if (!risk_factor_split %in% names(df_new)) {
+    stop("risk_factor_split column: ", risk_factor_split,
+         " is not in the model data.", call. = FALSE)
+  }
+
+  if (!exposure %in% names(df_new)) {
+    stop("exposure column: ", exposure, " is not in the model data.",
+         call. = FALSE)
+  }
+
+  if (!risk_factor %in% unique(rfdf$risk_factor)) {
+    stop("'", risk_factor, "' is not present as a risk factor in the model.",
+         call. = FALSE)
+  }
+
+  rel_levels <- names(relativities)
+  model_levels <- rfdf$level[rfdf$risk_factor == risk_factor]
+
+  missing_levels <- setdiff(rel_levels, model_levels)
+  if (length(missing_levels) > 0) {
+    stop(
+      "The following levels in 'relativities' are not present in risk_factor '",
+      risk_factor, "': ", paste(missing_levels, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  rel_df <- .build_relativities_df(relativities)
+
+  exposure_df <- stats::aggregate(
+    df_new[[exposure]],
+    by = list(
+      level = df_new[[risk_factor]],
+      new_level = df_new[[risk_factor_split]]
+    ),
+    FUN = sum,
+    na.rm = TRUE
+  )
+  names(exposure_df)[3] <- "exposure"
+
+  rel_df <- merge(
+    rel_df,
+    exposure_df,
+    by = c("level", "new_level"),
+    all.x = TRUE,
+    sort = FALSE
+  )
+
+  if (any(is.na(rel_df$exposure))) {
+    miss <- unique(rel_df$new_level[is.na(rel_df$exposure)])
+    stop(
+      "No matching exposure found in model data for the following new levels in '",
+      risk_factor_split, "': ", paste(miss, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  if (normalize) {
+    rel_df <- .normalize_relativities(rel_df)
+  } else {
+    rel_df$relativity_final <- rel_df$relativity
+  }
+
+  base_df <- rfdf[rfdf$risk_factor == risk_factor, c("level", "estimate")]
+  names(base_df)[2] <- "estimate_base"
+
+  rel_df <- merge(
+    rel_df,
+    base_df,
+    by = "level",
+    all.x = TRUE,
+    sort = FALSE
+  )
+
+  rel_df$estimate <- rel_df$estimate_base * rel_df$relativity_final
+
+  new_rf_name <- paste0(risk_factor, "_rel")
+  display_rf_name <- risk_factor_split
+
+  map_unsplit <- rfdf[rfdf$risk_factor == risk_factor, c("level", "estimate")]
+  names(map_unsplit) <- c(risk_factor, "estimate_base")
+
+  map_split <- rel_df[, c("level", "new_level", "estimate")]
+  names(map_split)[names(map_split) == "new_level"] <- risk_factor_split
+
+  df_restricted <- df_new
+  df_restricted$row_id__tmp <- seq_len(nrow(df_restricted))
+
+  df_restricted <- merge(
+    df_restricted,
+    map_unsplit,
+    by = risk_factor,
+    all.x = TRUE,
+    sort = FALSE
+  )
+
+  df_restricted <- merge(
+    df_restricted,
+    map_split,
+    by.x = c(risk_factor, risk_factor_split),
+    by.y = c("level", risk_factor_split),
+    all.x = TRUE,
+    sort = FALSE
+  )
+
+  df_restricted[[new_rf_name]] <- ifelse(
+    !is.na(df_restricted$estimate),
+    df_restricted$estimate,
+    df_restricted$estimate_base
+  )
+
+  df_restricted <- df_restricted[order(df_restricted$row_id__tmp), ]
+  rownames(df_restricted) <- NULL
+
+  df_restricted$estimate <- NULL
+  df_restricted$estimate_base <- NULL
+  df_restricted$row_id__tmp <- NULL
+
+  unsplit_levels <- setdiff(
+    unique(as.character(df_restricted[[risk_factor]])),
+    names(relativities)
+  )
+
+  if (length(unsplit_levels) > 0) {
+    unsplit_df <- data.frame(
+      level = unsplit_levels,
+      yhat = map_unsplit$estimate_base[
+        match(unsplit_levels, map_unsplit[[risk_factor]])
+      ],
+      risk_factor = rep(display_rf_name, length(unsplit_levels)),
+      stringsAsFactors = FALSE
+    )
+  } else {
+    unsplit_df <- data.frame(
+      level = character(0),
+      yhat = numeric(0),
+      risk_factor = character(0),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  split_df_display <- rel_df[, c("new_level", "estimate")]
+  names(split_df_display) <- c("level", "yhat")
+  split_df_display$risk_factor <- rep(display_rf_name, nrow(split_df_display))
+  split_df_display$level <- as.character(split_df_display$level)
+
+  restricted_df_new <- rbind(
+    unsplit_df[, c("level", "yhat", "risk_factor")],
+    split_df_display[, c("level", "yhat", "risk_factor")]
+  )
+
+  restricted_df_new <- unique(restricted_df_new)
+  rownames(restricted_df_new) <- NULL
+
+  if (inherits(model, "restricted")) {
+    restricted_df <- rbind(model$rf_restricted_df, restricted_df_new)
+  } else if (inherits(model, "smooth")) {
+    restricted_df <- rbind(model$new_rf, restricted_df_new)
+  } else {
+    restricted_df <- restricted_df_new
+  }
+
+  restricted_df <- unique(restricted_df)
+  rownames(restricted_df) <- NULL
+
+  fm_remove <- update_formula_remove(fm_no_offset, risk_factor)
+  fm_add <- update_formula_add(offset_term, fm_remove, new_rf_name)
+
+  rst_lst <- append(rst_lst, list(relativities))
+  names(rst_lst)[length(rst_lst)] <- new_rf_name
+
+  mgd_rst <- append(mgd_rst, list(c(risk_factor, new_rf_name)))
+  new_col_nm <- unique(append(new_col_nm, c(new_rf_name, display_rf_name)))
+  old_col_nm <- unique(append(old_col_nm, risk_factor))
+
+  rt <- list(
+    formula_restricted = fm_add[[1]],
+    formula_removed = fm_remove,
+    data_restricted = df_restricted,
+    fm_no_offset = fm_no_offset,
+    offset = fm_add[[2]],
+    rating_factors = rfdf,
+    restrictions_lst = rst_lst,
+    rf_restricted_df = restricted_df,
+    model_call = model_call,
+    model_out = model_out,
+    new_col_nm = new_col_nm,
+    old_col_nm = old_col_nm,
+    mgd_rst = mgd_rst,
+    mgd_smt = mgd_smt,
+    relativities_df = rel_df,
+    normalize = normalize,
+    exposure = exposure,
+    base_risk_factor = risk_factor,
+    risk_factor_split = risk_factor_split,
+    display_risk_factor = display_rf_name,
+    model_risk_factor = new_rf_name
+  )
+
+  attr(rt, "class") <- "restricted"
+  attr(rt, "has_smoothing") <- FALSE
+  attr(rt, "last_smoothing_step") <- NULL
+
+  invisible(rt)
+}
+
+

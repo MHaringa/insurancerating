@@ -10,10 +10,18 @@
   ncol = 1,
   labels = TRUE,
   dec.mark = ",",
-  ylab = "rate",
-  fill = "lightskyblue",
-  color = "white",
+  ylab = "Relativity",
+  fill = NULL,
+  color = NULL,
   linetype = FALSE,
+  univariate = NULL,
+  univariate_var = "risk_premium",
+  univariate_name = "Univariate",
+  univariate_color = NULL,
+  univariate_scale = c("reference", "mean"),
+  rotate_angle = NULL,
+  custom_theme = NULL,
+  remove_underscores = FALSE,
   ...
 )
 }
@@ -28,17 +36,40 @@ Defaults to all risk factors.}
 \item{labels}{Logical; if \code{TRUE}, show exposure values as labels on the bars.
 Default is \code{TRUE}.}
 
-\item{dec.mark}{Character; decimal separator, either \code{","} (default) or \code{"."}.
-Controls formatting of axis labels.}
+\item{dec.mark}{Character; decimal separator, either \code{","} (default) or \code{"."}.}
 
-\item{ylab}{Character; label for the y-axis. Default is \code{"rate"}.}
+\item{ylab}{Character; label for the y-axis. Default is \code{"Relativity"}.}
 
-\item{fill}{Fill color for the exposure bars. If \code{NULL}, derived from \code{color}.}
+\item{fill}{Fill color for the exposure bars. If \code{NULL}, taken from the
+internal palette.}
 
-\item{color}{Line color for model estimates. Defaults to \code{"skyblue"}.}
+\item{color}{Optional override for model line colors. If \code{NULL}, colors are
+taken from the internal discrete palette.}
 
 \item{linetype}{Logical; if \code{TRUE}, use different line types for models.
 Default is \code{FALSE}.}
+
+\item{univariate}{Optional \code{univariate} object returned by
+\code{\link[=univariate_summary]{univariate_summary()}}. If supplied, the selected univariate statistic is
+added as an extra line.}
+
+\item{univariate_var}{Character; statistic from \code{univariate} to plot.
+Default is \code{"risk_premium"}.}
+
+\item{univariate_name}{Character; legend label for the univariate line.
+Default is \code{"Univariate"}.}
+
+\item{univariate_color}{Optional override for the univariate line color.
+If \code{NULL}, the internal risk premium color is used.}
+
+\item{univariate_scale}{Character; scaling applied to the univariate line.
+One of \code{"reference"} (default) or \code{"mean"}.}
+
+\item{rotate_angle}{Numeric value for angle of labels on the x-axis (degrees).}
+
+\item{custom_theme}{List with customised theme options.}
+
+\item{remove_underscores}{Logical; remove underscores from labels.}
 
 \item{...}{Additional arguments passed to ggplot2 layers.}
 }
@@ -46,28 +77,12 @@ Default is \code{FALSE}.}
 A \code{ggplot}/\code{patchwork} object.
 }
 \description{
-Create a ggplot visualization of a \code{riskfactor} object produced
-by \code{\link[=rating_table]{rating_table()}}. Estimates are plotted per risk factor, with optional
-exposure bars and significance stars if available.
-}
-\examples{
-library(dplyr)
-df <- MTPL2 |>
-  mutate(area = as.factor(area)) |>
-  mutate(area = biggest_reference(area, exposure))
+Create a ggplot visualisation of a \code{riskfactor} object produced by
+\code{\link[=rating_table]{rating_table()}}. Estimates are plotted per risk factor, with optional
+exposure bars and, optionally, an additional univariate line.
 
-mod1 <- glm(nclaims ~ area + premium, offset = log(exposure),
-            family = poisson(), data = df)
-mod2 <- glm(nclaims ~ area, offset = log(exposure),
-            family = poisson(), data = df)
-
-x <- rating_table(mod1, mod2, model_data = df, exposure = "exposure")
-autoplot(x)
-
-}
-\seealso{
-\code{\link[=rating_table]{rating_table()}}
-}
-\author{
-Martin Haringa
+When \code{univariate_scale = "reference"}, the univariate line is scaled to the
+model reference group. The reference group is determined as the level with
+model coefficient equal to 1. If no level is exactly equal to 1, the level
+with coefficient closest to 1 is used.
 }

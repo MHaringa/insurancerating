@@ -4,30 +4,40 @@
 \alias{autoplot.restricted}
 \title{Automatically create a ggplot for objects obtained from add_restriction()}
 \usage{
-\method{autoplot}{restricted}(object, ...)
+\method{autoplot}{restricted}(
+  object,
+  remove_underscores = FALSE,
+  rotate_angle = NULL,
+  custom_theme = NULL,
+  ...
+)
 }
 \arguments{
-\item{object}{object produced by \code{add_restriction()}}
+\item{object}{Object produced by \code{add_restriction()} or \code{add_relativities()}.}
 
-\item{...}{other plotting parameters to affect the plot}
+\item{remove_underscores}{Logical; if \code{TRUE}, underscores are replaced by
+spaces in the x-axis label. Default is \code{FALSE}.}
+
+\item{rotate_angle}{Optional numeric value for the angle of x-axis labels.}
+
+\item{custom_theme}{Optional list passed to \code{ggplot2::theme()}.}
+
+\item{...}{Additional plotting arguments passed to ggplot2 geoms.}
 }
 \value{
-Object of class ggplot2
+A \code{ggplot2} object.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Takes an object produced by \code{add_restriction()}, and produces
-a line plot with a comparison between the restricted coefficients and
-estimated coefficients obtained from the model.
-}
-\examples{
-freq <- glm(nclaims ~ bm + zip, weights = power, family = poisson(),
- data = MTPL)
-zip_df <- data.frame(zip = c(0,1,2,3), zip_rst = c(0.8, 0.9, 1, 1.2))
-freq |>
-  add_restriction(restrictions = zip_df) |>
-  autoplot()
+Takes an object produced by \code{add_restriction()} or \code{add_relativities()}
+and creates a plot comparing the adjusted coefficients with the original
+coefficients obtained from the model.
 
+For objects produced by \code{add_relativities()}, original levels that are split
+into new levels are removed from the connected original line and from the
+x-axis. Instead, the original level is shown as a horizontal blue segment
+spanning all child categories, with the original level label centred above
+the segment.
 }
 \author{
 Martin Haringa

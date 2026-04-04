@@ -49,7 +49,7 @@ testthat::test_that(
                 family = poisson(), data = MTPL)
     zip_df <- data.frame(zip = c(0, 1, 2, 3),
                          zip_rst = c(0.8, 0.9, 1, 1.2))
-    x <- restrict_coef(freq, zip_df)
+    x <- add_restriction(freq, zip_df)
     names_rf <- names(x$restrictions_lst)
     name <- names_rf[length(names_rf)]
     naam_rst <- x$restrictions_lst[[name]]

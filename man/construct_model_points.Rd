@@ -2,10 +2,11 @@
 % Please edit documentation in R/model_get_data.R
 \name{construct_model_points}
 \alias{construct_model_points}
-\title{Construct model points from Generalized Linear Model}
+\title{Construct observed model points from extracted model data or a data frame}
 \usage{
 construct_model_points(
   x,
+  group_vars = NULL,
   exposure = NULL,
   exposure_by = NULL,
   agg_cols = NULL,
@@ -13,66 +14,123 @@ construct_model_points(
 )
 }
 \arguments{
-\item{x}{Object of class model_data or of class data.frame}
+\item{x}{A \code{data.frame} or an object of class \code{"model_data"} returned by
+\code{\link[=extract_model_data]{extract_model_data()}}.}
 
-\item{exposure}{column with exposure}
+\item{group_vars}{Optional character vector with the variables that define the
+model points. If \code{NULL} and \code{x} is a \code{"model_data"} object, the risk-factor
+variables stored in the object are used. If \code{NULL} and \code{x} is a plain
+\code{data.frame}, all columns except those listed in \code{exposure},
+\code{exposure_by}, and \code{agg_cols} are used.}
 
-\item{exposure_by}{split column exposure by (e.g. year)}
+\item{exposure}{Optional character; name of the exposure column to aggregate.}
 
-\item{agg_cols}{list of columns to aggregate (sum) by, e.g. number of claims}
+\item{exposure_by}{Optional character; name of a column used to split
+exposure or counts, for example a year variable.}
 
-\item{drop_na}{drop na values (default to FALSE)}
+\item{agg_cols}{Optional character vector with additional numeric columns to
+aggregate using \code{sum(na.rm = TRUE)}.}
+
+\item{drop_na}{Logical; if \code{TRUE}, rows with missing values in \code{group_vars}
+are removed before aggregation. Default is \code{FALSE}.}
 }
 \value{
-data.frame
+A \code{data.frame} with one row per observed model point.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} \code{construct_model_points()}
-is used to construct model points from generalized linear models, and must
-be preceded by \code{model_data()}. \code{construct_model_points()} can also be used
-in combination with a data.frame.
+\code{construct_model_points()} constructs model points by collapsing rows with
+identical combinations of grouping variables to a single row.
+
+The function is intended for analytical use cases where it is convenient to
+work with one row per observed combination of risk factors or model
+variables. In many raw datasets, the same combination occurs multiple times.
+For model diagnostics, portfolio summaries, and prediction analysis, it is
+often more useful to aggregate these repeated combinations than to keep all
+original rows.
+
+By default, the function returns only combinations that are actually observed
+in the input data. It does \strong{not} create the full Cartesian product of all
+unique values, because that can become very large and is often not needed for
+analysis.
+
+In other words, the function:
+\itemize{
+\item identifies the model-point dimensions;
+\item groups rows with identical combinations of these variables;
+\item aggregates exposure and optional numeric columns to one row per
+observed combination.
+}
+
+This is especially useful for:
+\itemize{
+\item analysing model structure,
+\item summarising portfolios at model-point level,
+\item comparing observed and fitted values,
+\item creating compact input for further analysis or plotting.
+}
+
+When \code{x} is an object returned by \code{\link[=extract_model_data]{extract_model_data()}}, the function uses
+the extracted model metadata to determine the grouping variables if
+\code{group_vars} is not supplied. When \code{x} is a plain \code{data.frame}, it is
+recommended to supply \code{group_vars} explicitly.
+}
+\details{
+The function does \strong{not} construct all theoretically possible model-point
+combinations. Instead, it only keeps combinations that actually occur in the
+input data and aggregates duplicates.
+
+If \code{exposure_by} is supplied, exposure or row counts are split across levels
+of that variable and returned in wide format, for example
+\code{"exposure_2020"} or \code{"count_2020"}.
+
+For objects returned by \code{\link[=extract_model_data]{extract_model_data()}}, additional refinement
+variables stored in the object attributes may be retained when they are not
+already part of the regular grouping variables.
 }
 \examples{
 \dontrun{
-# With data.frame
 library(dplyr)
-mtcars |>
- select(cyl, vs) |>
- construct_model_points()
 
+# With a data.frame
 mtcars |>
-  select(cyl, vs, disp) |>
-  construct_model_points(exposure = disp)
+  dplyr::select(cyl, vs) |>
+  construct_model_points(group_vars = c("cyl", "vs"))
 
 mtcars |>
- select(cyl, vs, disp, gear) |>
- construct_model_points(exposure = disp, exposure_by = gear)
+  dplyr::select(cyl, vs, disp) |>
+  construct_model_points(
+    group_vars = c("cyl", "vs"),
+    exposure = "disp"
+  )
 
 mtcars |>
- select(cyl, vs, disp, gear, mpg) |>
- construct_model_points(exposure = disp, exposure_by = gear,
-   agg_cols = list(mpg))
+  dplyr::select(cyl, vs, disp, gear) |>
+  construct_model_points(
+    group_vars = c("cyl", "vs"),
+    exposure = "disp",
+    exposure_by = "gear"
+  )
 
-# With glm
-library(datasets)
-data1 <- warpbreaks |>
- mutate(jaar = c(rep(2000, 10), rep(2010, 44))) |>
- mutate(exposure = 1) |>
- mutate(nclaims = 2)
+mtcars |>
+  dplyr::select(cyl, vs, disp, gear, mpg) |>
+  construct_model_points(
+    group_vars = c("cyl", "vs"),
+    exposure = "disp",
+    exposure_by = "gear",
+    agg_cols = c("mpg")
+  )
 
-pmodel <- glm(breaks ~ wool + tension, data1, offset = log(exposure),
- family = poisson(link = "log"))
+# With extracted model data
+pmodel <- glm(
+  breaks ~ wool + tension,
+  data = warpbreaks,
+  family = poisson(link = "log")
+)
 
-model_data(pmodel) |>
- construct_model_points()
-
-model_data(pmodel) |>
- construct_model_points(agg_cols = list(nclaims))
-
-model_data(pmodel) |>
- construct_model_points(exposure = exposure, exposure_by = jaar) |>
- add_prediction(pmodel)
- }
+pmodel |>
+  extract_model_data() |>
+  construct_model_points()
+}
 
 }
 \author{

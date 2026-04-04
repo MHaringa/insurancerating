@@ -85,7 +85,7 @@ library(dplyr)
 # Fit GAM for claim frequency
 age_policyholder_frequency <- riskfactor_gam(data = MTPL,
                                              nclaims = "nclaims",
-.                                             x = "age_policyholder",
+                                             x = "age_policyholder",
                                              exposure = "exposure")
 
 # Determine clusters
@@ -138,6 +138,7 @@ rating_table(burn_restricted)
 and \code{\link[=autoplot.smooth]{autoplot.smooth()}}.
 
 Other update_glm: 
+\code{\link{add_relativities}()},
 \code{\link{add_restriction}()}
 }
 \author{

@@ -30,7 +30,8 @@ Imports:
     rlang,
     scales,
     scam,
-    stringr
+    stringr, 
+    tidyr
 Depends: R (>= 4.1.0)
 Suggests: 
     spelling,

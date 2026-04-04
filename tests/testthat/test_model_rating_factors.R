@@ -43,10 +43,10 @@ burn2_rst <- add_restriction(burn2, zip_df) |>
 # Smoothed glm ------------------------------------------------------------
 
 # Fit GAM for claim frequency
-age_policyholder_frequency <- fit_gam(data = MTPL,
-                                      nclaims = nclaims,
-                                      x = age_policyholder,
-                                      exposure = exposure)
+age_policyholder_frequency <- riskfactor_gam(data = MTPL,
+                                             nclaims = "nclaims",
+                                             x = "age_policyholder",
+                                             exposure = "exposure")
 
 # Determine clusters
 clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
@@ -85,9 +85,9 @@ suppressWarnings({
 
 # Fit unrestricted model with intercept only
 burn2_unrestricted <- glm(premium ~ age_policyholder_freq_cat,
-                         weights = exposure,
-                         family = Gamma(link = "log"),
-                         data = premium_df)
+                          weights = exposure,
+                          family = Gamma(link = "log"),
+                          data = premium_df)
 
 # Impose smoothing and refit model with intercept only
 suppressWarnings({

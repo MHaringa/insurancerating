@@ -164,254 +164,417 @@ model_data <- function(x) {
 }
 
 
-#' Construct model points from Generalized Linear Model
+#' Construct observed model points from extracted model data or a data frame
 #'
-#' @description `r lifecycle::badge('experimental')` `construct_model_points()`
-#' is used to construct model points from generalized linear models, and must
-#' be preceded by `model_data()`. `construct_model_points()` can also be used
-#' in combination with a data.frame.
+#' @description
+#' `construct_model_points()` constructs model points by collapsing rows with
+#' identical combinations of grouping variables to a single row.
 #'
-#' @param x Object of class model_data or of class data.frame
-#' @param exposure column with exposure
-#' @param exposure_by split column exposure by (e.g. year)
-#' @param agg_cols list of columns to aggregate (sum) by, e.g. number of claims
-#' @param drop_na drop na values (default to FALSE)
+#' The function is intended for analytical use cases where it is convenient to
+#' work with one row per observed combination of risk factors or model
+#' variables. In many raw datasets, the same combination occurs multiple times.
+#' For model diagnostics, portfolio summaries, and prediction analysis, it is
+#' often more useful to aggregate these repeated combinations than to keep all
+#' original rows.
+#'
+#' By default, the function returns only combinations that are actually observed
+#' in the input data. It does **not** create the full Cartesian product of all
+#' unique values, because that can become very large and is often not needed for
+#' analysis.
+#'
+#' In other words, the function:
+#' \itemize{
+#'   \item identifies the model-point dimensions;
+#'   \item groups rows with identical combinations of these variables;
+#'   \item aggregates exposure and optional numeric columns to one row per
+#'   observed combination.
+#' }
+#'
+#' This is especially useful for:
+#' \itemize{
+#'   \item analysing model structure,
+#'   \item summarising portfolios at model-point level,
+#'   \item comparing observed and fitted values,
+#'   \item creating compact input for further analysis or plotting.
+#' }
+#'
+#' When `x` is an object returned by [extract_model_data()], the function uses
+#' the extracted model metadata to determine the grouping variables if
+#' `group_vars` is not supplied. When `x` is a plain `data.frame`, it is
+#' recommended to supply `group_vars` explicitly.
+#'
+#' @param x A `data.frame` or an object of class `"model_data"` returned by
+#'   [extract_model_data()].
+#' @param group_vars Optional character vector with the variables that define the
+#'   model points. If `NULL` and `x` is a `"model_data"` object, the risk-factor
+#'   variables stored in the object are used. If `NULL` and `x` is a plain
+#'   `data.frame`, all columns except those listed in `exposure`,
+#'   `exposure_by`, and `agg_cols` are used.
+#' @param exposure Optional character; name of the exposure column to aggregate.
+#' @param exposure_by Optional character; name of a column used to split
+#'   exposure or counts, for example a year variable.
+#' @param agg_cols Optional character vector with additional numeric columns to
+#'   aggregate using `sum(na.rm = TRUE)`.
+#' @param drop_na Logical; if `TRUE`, rows with missing values in `group_vars`
+#'   are removed before aggregation. Default is `FALSE`.
+#'
+#' @details
+#' The function does **not** construct all theoretically possible model-point
+#' combinations. Instead, it only keeps combinations that actually occur in the
+#' input data and aggregates duplicates.
+#'
+#' If `exposure_by` is supplied, exposure or row counts are split across levels
+#' of that variable and returned in wide format, for example
+#' `"exposure_2020"` or `"count_2020"`.
+#'
+#' For objects returned by [extract_model_data()], additional refinement
+#' variables stored in the object attributes may be retained when they are not
+#' already part of the regular grouping variables.
+#'
+#' @return
+#' A `data.frame` with one row per observed model point.
 #'
 #' @author Martin Haringa
 #'
-#' @importFrom stats na.omit
-#' @importFrom stats as.formula
-#' @import data.table
-#'
-#' @return data.frame
-#'
 #' @examples
 #' \dontrun{
-#' # With data.frame
 #' library(dplyr)
-#' mtcars |>
-#'  select(cyl, vs) |>
-#'  construct_model_points()
 #'
+#' # With a data.frame
 #' mtcars |>
-#'   select(cyl, vs, disp) |>
-#'   construct_model_points(exposure = disp)
+#'   dplyr::select(cyl, vs) |>
+#'   construct_model_points(group_vars = c("cyl", "vs"))
 #'
 #' mtcars |>
-#'  select(cyl, vs, disp, gear) |>
-#'  construct_model_points(exposure = disp, exposure_by = gear)
+#'   dplyr::select(cyl, vs, disp) |>
+#'   construct_model_points(
+#'     group_vars = c("cyl", "vs"),
+#'     exposure = "disp"
+#'   )
 #'
 #' mtcars |>
-#'  select(cyl, vs, disp, gear, mpg) |>
-#'  construct_model_points(exposure = disp, exposure_by = gear,
-#'    agg_cols = list(mpg))
+#'   dplyr::select(cyl, vs, disp, gear) |>
+#'   construct_model_points(
+#'     group_vars = c("cyl", "vs"),
+#'     exposure = "disp",
+#'     exposure_by = "gear"
+#'   )
 #'
-#' # With glm
-#' library(datasets)
-#' data1 <- warpbreaks |>
-#'  mutate(jaar = c(rep(2000, 10), rep(2010, 44))) |>
-#'  mutate(exposure = 1) |>
-#'  mutate(nclaims = 2)
+#' mtcars |>
+#'   dplyr::select(cyl, vs, disp, gear, mpg) |>
+#'   construct_model_points(
+#'     group_vars = c("cyl", "vs"),
+#'     exposure = "disp",
+#'     exposure_by = "gear",
+#'     agg_cols = c("mpg")
+#'   )
 #'
-#' pmodel <- glm(breaks ~ wool + tension, data1, offset = log(exposure),
-#'  family = poisson(link = "log"))
+#' # With extracted model data
+#' pmodel <- glm(
+#'   breaks ~ wool + tension,
+#'   data = warpbreaks,
+#'   family = poisson(link = "log")
+#' )
 #'
-#' model_data(pmodel) |>
-#'  construct_model_points()
+#' pmodel |>
+#'   extract_model_data() |>
+#'   construct_model_points()
+#' }
 #'
-#' model_data(pmodel) |>
-#'  construct_model_points(agg_cols = list(nclaims))
-#'
-#' model_data(pmodel) |>
-#'  construct_model_points(exposure = exposure, exposure_by = jaar) |>
-#'  add_prediction(pmodel)
-#'  }
+#' @importFrom tidyr pivot_wider drop_na
+#' @importFrom dplyr all_of
 #'
 #' @export
-construct_model_points <- function(x, exposure = NULL, exposure_by = NULL,
-                                   agg_cols = NULL, drop_na = FALSE) {
+construct_model_points <- function(x,
+                                   group_vars = NULL,
+                                   exposure = NULL,
+                                   exposure_by = NULL,
+                                   agg_cols = NULL,
+                                   drop_na = FALSE) {
 
-  aggcols0 <- tryCatch(
-    vapply(substitute(agg_cols)[-1], deparse, FUN.VALUE = character(1)),
-    error = function(e) {
-      stop("agg_cols must be a list, use agg_cols = list(var1, var2, var3)",
-           call. = FALSE)
-    })
-
-  exposure_nm <- deparse(substitute(exposure))
-  exposure_by_nm <- deparse(substitute(exposure_by))
-
-  xdf <- x
-
-  if (!inherits(x, c("model_data"))) {
-    if (!inherits(x, "data.frame")) {
-      stop("Input must be of class model_data, use model_data() to create data",
-           call. = FALSE)
-    }
-    offweights <- NULL
-    xdf <- data.frame(xdf)
-    premium_nm <- setdiff(names(xdf), c(aggcols0, exposure_nm, exposure_by_nm))
-    premium_df <- xdf[, premium_nm, drop = FALSE]
-    premium_df <- unique(premium_df)
+  if (!inherits(x, "model_data") && !inherits(x, "data.frame")) {
+    stop(
+      "Input must be a data.frame or an object returned by extract_model_data().",
+      call. = FALSE
+    )
   }
 
-  if (inherits(x, c("model_data"))) {
-    premium_nm <- attr(x, "rf")
-    if (isTRUE(exposure_nm %in% premium_nm)) {
-      stop("Column exposure is already used as covariate in model.",
-           call. = FALSE)
-    }
+  if (!is.null(group_vars) && !is.character(group_vars)) {
+    stop("`group_vars` must be NULL or a character vector.", call. = FALSE)
+  }
+
+  if (!is.null(exposure) && (!is.character(exposure) || length(exposure) != 1)) {
+    stop("`exposure` must be NULL or a single character string.", call. = FALSE)
+  }
+
+  if (!is.null(exposure_by) &&
+      (!is.character(exposure_by) || length(exposure_by) != 1)) {
+    stop("`exposure_by` must be NULL or a single character string.", call. = FALSE)
+  }
+
+  if (!is.null(agg_cols) && !is.character(agg_cols)) {
+    stop("`agg_cols` must be NULL or a character vector.", call. = FALSE)
+  }
+
+  xdf <- as.data.frame(x)
+  offweights <- NULL
+
+  xdf <- as.data.frame(x)
+  offweights <- NULL
+
+  if (inherits(x, "model_data")) {
 
     offweights <- unique(attr(x, "offweights"))
+    default_group_vars <- attr(x, "rf")
 
-    if (isTRUE(exposure_nm %in% c(premium_nm, offweights)) &&
-        exposure_by_nm == "NULL") {
-      warning("Column exposure is already used in model.",
-              call. = FALSE)
-    }
-
-    if (isTRUE(any(aggcols0 %in% offweights))) {
-      stop("Column in list agg_cols is already used in model.",
-           call. = FALSE)
-    }
-
-    if (isTRUE(exposure_by_nm %in% premium_nm)) {
-      stop("Column exposure_by is already used as covariate in model.",
-           call. = FALSE)
-    }
-
-    if (identical(offweights, exposure_nm)) {
-      offweights <- paste0(offweights, "_99")
-      xdf[[offweights]] <- xdf[[exposure_nm]]
-    }
-    if (isTRUE(offweights %in% aggcols0)) {
-      offweights <- NULL
-    }
-    aggcols0 <- append(aggcols0, offweights)
-    premium_df <- xdf[, premium_nm, drop = FALSE]
-    premium_df <- unique(premium_df)
-  }
-
-  if (exposure_nm == "NULL") {
-
-    xdf <- data.table::data.table(xdf)
-
-    if (exposure_by_nm == "NULL") {
-
-      if (length(aggcols0) == 0) {
-        xdt_agg <- xdf[, .(count = .N), by = premium_nm]
-      }
-
-      if (length(aggcols0) > 0) {
-        xdt_agg <- xdf[, c(.N, lapply(.SD, sum, na.rm = TRUE)),
-                       by = premium_nm, .SDcols = aggcols0]
-        data.table::setnames(xdt_agg, old = "N", new = "count")
+    # fallback 1: explicit term labels
+    if (is.null(default_group_vars) || length(default_group_vars) == 0) {
+      term_labels <- attr(x, "term.labels")
+      if (!is.null(term_labels)) {
+        default_group_vars <- intersect(term_labels, names(xdf))
       }
     }
 
-    if (exposure_by_nm != "NULL") {
-
-      if (length(aggcols0) == 0) {
-
-        xdt_agg0 <- xdf[
-          , .(count = .N), by = c(premium_nm, exposure_by_nm)][
-            , (exposure_by_nm) := paste0("count_", get(exposure_by_nm))]
-
-        f <- construct_fm(premium_nm, exposure_by_nm)
-        xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = "count")
-      }
-
-      if (length(aggcols0) > 0) {
-        xdt_agg0 <- xdf[
-          , c(.N, lapply(.SD, sum, na.rm = TRUE)), by =
-            c(premium_nm, exposure_by_nm), .SDcols = aggcols0][
-              , (exposure_by_nm) := paste0("count_", get(exposure_by_nm))]
-
-        f <- construct_fm(c(premium_nm, aggcols0), exposure_by_nm)
-        xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = "N")
-      }
-    }
-
-    xdt_agg <- data.frame(xdt_agg)
-  }
-
-  if (exposure_nm != "NULL") {
-    xdf <- data.table::data.table(xdf)
-
-    if (exposure_by_nm == "NULL") {
-
-      if (length(aggcols0) == 0) {
-        xdt_agg <- xdf[, lapply(.SD, sum, na.rm = TRUE), by = premium_nm,
-                       .SDcols = exposure_nm]
-      }
-
-      if (length(aggcols0) > 0) {
-        xdt_agg <- xdf[, lapply(.SD, sum, na.rm = TRUE), by = premium_nm,
-                       .SDcols = c(aggcols0, exposure_nm)]
-      }
-    }
-
-    if (exposure_by_nm != "NULL") {
-
-      if (length(aggcols0) == 0) {
-
-        xdt_agg0 <- xdf[
-          , lapply(.SD, sum, na.rm = TRUE), by =
-            c(premium_nm, exposure_by_nm), .SDcols = exposure_nm][
-              , (exposure_by_nm) := paste0(exposure_nm, "_",
-                                           get(exposure_by_nm))]
-
-        f <- construct_fm(premium_nm, exposure_by_nm)
-        xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = exposure_nm)
-      }
-
-      if (length(aggcols0) > 0) {
-
-        xdt_agg0 <- xdf[
-          , lapply(.SD, sum, na.rm = TRUE), by = c(premium_nm, exposure_by_nm),
-          .SDcols = c(aggcols0, exposure_nm)][
-            , (exposure_by_nm) := paste0(exposure_nm, "_", get(exposure_by_nm))]
-
-        f <- construct_fm(premium_nm, exposure_by_nm)
-        xdt_agg <- data.table::dcast(xdt_agg0, f, value.var = exposure_nm)
-
-        if (isTRUE(offweights %in% aggcols0)) {
-          xdt_ext <- xdt_agg0[, lapply(.SD, sum, na.rm = TRUE), by = premium_nm,
-                              .SDcols = aggcols0]
-          xdt_agg <- merge(xdt_agg, xdt_ext, all.x = TRUE)
+    # fallback 2: terms object
+    if (is.null(default_group_vars) || length(default_group_vars) == 0) {
+      terms_obj <- attr(x, "terms")
+      if (!is.null(terms_obj)) {
+        term_labels <- attr(terms_obj, "term.labels")
+        if (!is.null(term_labels)) {
+          default_group_vars <- intersect(term_labels, names(xdf))
         }
       }
     }
 
-    if (inherits(x, c("model_data"))) {
-      data.table::setnames(xdt_agg, old = offweights,
-                           new = gsub("_99$", "", offweights))
+    # fallback 3: infer from available columns
+    if (is.null(default_group_vars) || length(default_group_vars) == 0) {
+      response_var <- attr(x, "response")
+      cols_excluded <- unique(c(
+        response_var,
+        offweights,
+        exposure,
+        exposure_by,
+        agg_cols
+      ))
+      default_group_vars <- setdiff(names(xdf), cols_excluded)
     }
-    xdt_agg <- data.frame(xdt_agg)
+
+    if (length(default_group_vars) == 0) {
+      stop(
+        "Could not determine grouping variables from `model_data`. Supply `group_vars` explicitly.",
+        call. = FALSE
+      )
+    }
+
+    if (is.null(group_vars)) {
+      group_vars <- default_group_vars
+    }
+
+    if (!is.null(exposure) && exposure %in% group_vars) {
+      stop("Column in `exposure` is already used as grouping variable.", call. = FALSE)
+    }
+
+    if (!is.null(exposure_by) && exposure_by %in% group_vars) {
+      stop("Column in `exposure_by` is already used as grouping variable.", call. = FALSE)
+    }
+
+    if (!is.null(agg_cols) && any(agg_cols %in% offweights)) {
+      stop("Column in `agg_cols` is already used in model.", call. = FALSE)
+    }
+
+    if (!is.null(exposure) &&
+        !is.null(offweights) &&
+        exposure %in% c(group_vars, offweights) &&
+        is.null(exposure_by)) {
+      warning("Column in `exposure` is already used in model.", call. = FALSE)
+    }
+
+    if (!is.null(exposure) &&
+        !is.null(offweights) &&
+        identical(offweights, exposure)) {
+      offweights_tmp <- paste0(offweights, "_99")
+      xdf[[offweights_tmp]] <- xdf[[exposure]]
+      offweights <- offweights_tmp
+    }
+
+    if (!is.null(offweights) && !is.null(agg_cols) && offweights %in% agg_cols) {
+      offweights <- NULL
+    }
+
+    agg_cols_all <- unique(c(agg_cols, offweights))
+
+  } else {
+    if (is.null(group_vars)) {
+      cols_excluded <- c(agg_cols, exposure, exposure_by)
+      group_vars <- setdiff(names(xdf), cols_excluded)
+    }
+    agg_cols_all <- agg_cols
   }
 
-  if (isTRUE(drop_na)) {
-    premium_vec <- sapply(premium_df, function(x) unique(na.omit(x)))
+  if (!all(group_vars %in% names(xdf))) {
+    missing_cols <- setdiff(group_vars, names(xdf))
+    stop(
+      "The following `group_vars` are not present in `x`: ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
   }
 
-  if (!isTRUE(drop_na)) {
-    premium_vec <- sapply(premium_df, unique)
+  if (!is.null(exposure) && !exposure %in% names(xdf)) {
+    stop("Column in `exposure` not found in `x`.", call. = FALSE)
   }
 
-  premium_complete <- Reduce(function(...) merge(..., by = NULL), premium_vec)
-  names(premium_complete) <- names(premium_df)
+  if (!is.null(exposure_by) && !exposure_by %in% names(xdf)) {
+    stop("Column in `exposure_by` not found in `x`.", call. = FALSE)
+  }
 
-  refinement_df <- NULL
-  if (inherits(x, c("model_data"))) {
+  if (!is.null(agg_cols_all) && !all(agg_cols_all %in% names(xdf))) {
+    missing_cols <- setdiff(agg_cols_all, names(xdf))
+    stop(
+      "The following `agg_cols` are not present in `x`: ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  if (drop_na) {
+    xdf <- xdf |>
+      tidyr::drop_na(dplyr::all_of(group_vars))
+  }
+
+  aggregate_base <- function(df, by_vars, sum_vars = NULL) {
+    if (length(sum_vars) == 0 || is.null(sum_vars)) {
+      df |>
+        dplyr::group_by(dplyr::across(dplyr::all_of(by_vars))) |>
+        dplyr::summarise(count = dplyr::n(), .groups = "drop")
+    } else {
+      df |>
+        dplyr::group_by(dplyr::across(dplyr::all_of(by_vars))) |>
+        dplyr::summarise(
+          dplyr::across(dplyr::all_of(sum_vars), ~ sum(.x, na.rm = TRUE)),
+          .groups = "drop"
+        )
+    }
+  }
+
+  if (is.null(exposure)) {
+
+    if (is.null(exposure_by)) {
+
+      if (length(agg_cols_all) == 0) {
+        out <- aggregate_base(xdf, group_vars, NULL)
+      } else {
+        out <- aggregate_base(xdf, group_vars, agg_cols_all) |>
+          dplyr::left_join(
+            aggregate_base(xdf, group_vars, NULL),
+            by = group_vars
+          )
+      }
+
+    } else {
+
+      agg0 <- aggregate_base(
+        xdf,
+        c(group_vars, exposure_by),
+        if (length(agg_cols_all) == 0) NULL else agg_cols_all
+      )
+
+      counts_df <- xdf |>
+        dplyr::group_by(dplyr::across(dplyr::all_of(c(group_vars, exposure_by)))) |>
+        dplyr::summarise(count = dplyr::n(), .groups = "drop")
+
+      if (length(agg_cols_all) > 0) {
+        agg0 <- dplyr::left_join(
+          agg0,
+          counts_df,
+          by = c(group_vars, exposure_by)
+        )
+      } else {
+        agg0 <- counts_df
+      }
+
+      out_wide <- agg0 |>
+        dplyr::mutate(name = paste0("count_", .data[[exposure_by]])) |>
+        dplyr::select(dplyr::all_of(group_vars), name, count) |>
+        tidyr::pivot_wider(names_from = name, values_from = count)
+
+      if (length(agg_cols_all) > 0) {
+        extra <- aggregate_base(xdf, group_vars, agg_cols_all)
+        out <- dplyr::left_join(out_wide, extra, by = group_vars)
+      } else {
+        out <- out_wide
+      }
+    }
+
+  } else {
+
+    sum_vars <- unique(c(agg_cols_all, exposure))
+
+    if (is.null(exposure_by)) {
+
+      out <- aggregate_base(xdf, group_vars, sum_vars)
+
+    } else {
+
+      agg0 <- aggregate_base(xdf, c(group_vars, exposure_by), sum_vars)
+
+      out_wide <- agg0 |>
+        dplyr::mutate(name = paste0(exposure, "_", .data[[exposure_by]])) |>
+        dplyr::select(dplyr::all_of(group_vars), name, dplyr::all_of(exposure)) |>
+        tidyr::pivot_wider(names_from = name, values_from = dplyr::all_of(exposure))
+
+      if (length(agg_cols_all) > 0) {
+        extra <- aggregate_base(xdf, group_vars, agg_cols_all)
+        out <- dplyr::left_join(out_wide, extra, by = group_vars)
+      } else {
+        out <- out_wide
+      }
+    }
+
+    if (inherits(x, "model_data") && !is.null(offweights)) {
+      names(out) <- gsub("_99$", "", names(out))
+    }
+  }
+
+  if (inherits(x, "model_data")) {
     mgd_rst <- attr(x, "mgd_rst")
     mgd_smt <- attr(x, "mgd_smt")
-    refinement_nm <- append(mgd_rst, mgd_smt)
-    refinement_df <- lapply(refinement_nm, function(y) x[, y, drop = FALSE])
-    refinement_df <- lapply(refinement_df, unique)
+    refinement_nm <- unique(c(mgd_rst, mgd_smt))
+    refinement_nm <- refinement_nm[!is.na(refinement_nm)]
+
+    if (length(refinement_nm) > 0) {
+      refinement_df <- lapply(refinement_nm, function(y) {
+        cols <- intersect(y, names(xdf))
+        cols <- setdiff(cols, names(out))
+
+        if (length(cols) == 0) {
+          return(NULL)
+        }
+
+        unique(xdf[, cols, drop = FALSE])
+      })
+
+      refinement_df <- refinement_df[!vapply(refinement_df, is.null, logical(1))]
+
+      if (length(refinement_df) > 0) {
+        refinement_grid <- refinement_df[[1]]
+
+        if (length(refinement_df) > 1) {
+          for (j in 2:length(refinement_df)) {
+            refinement_grid <- merge(refinement_grid, refinement_df[[j]], by = NULL)
+          }
+        }
+
+        new_cols <- setdiff(names(refinement_grid), names(out))
+
+        if (length(new_cols) > 0) {
+          refinement_grid <- unique(refinement_grid[, new_cols, drop = FALSE])
+          out <- merge(out, refinement_grid, by = NULL)
+        }
+      }
+    }
   }
 
-  premium_refinement_lst <- c(list(premium_complete), refinement_df)
-  premium_join <- Reduce(function(...) merge(..., all.x = TRUE),
-                         premium_refinement_lst)
-  merge(premium_join, xdt_agg, all.x = TRUE)
+  rownames(out) <- NULL
+  out
 }

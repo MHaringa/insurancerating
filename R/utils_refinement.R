@@ -383,6 +383,12 @@ add_restrictions_df <- function(model_data, restrictions_df) {
 #'
 #' @keywords internal
 restrict_df <- function(restricted_df) {
+  if (!is.data.frame(restricted_df)) {
+    stop("'restricted_df' must be a data.frame.", call. = FALSE)
+  }
+  if (ncol(restricted_df) != 2) {
+    stop("'restricted_df' must have exactly two columns.", call. = FALSE)
+  }
   restricted_df$risk_factor <- colnames(restricted_df)[2]
   colnames(restricted_df)[2] <- "yhat"
   colnames(restricted_df)[1] <- "level"
@@ -666,4 +672,206 @@ change_xy <- function(borders_model, x_org,
 }
 
 
+#' @noRd
+.check_relativities_list <- function(relativities) {
+  ok <- vapply(relativities, is.data.frame, logical(1))
+  if (!all(ok)) {
+    stop("Each element of 'relativities' must be a data.frame.", call. = FALSE)
+  }
 
+  for (i in seq_along(relativities)) {
+    x <- relativities[[i]]
+
+    if (!all(c("new_level", "relativity") %in% names(x))) {
+      stop(
+        "Each data.frame in 'relativities' must contain columns ",
+        "'new_level' and 'relativity'.",
+        call. = FALSE
+      )
+    }
+
+    if (anyDuplicated(x$new_level) > 0) {
+      stop(
+        "Duplicate 'new_level' values found in relativities for level '",
+        names(relativities)[i], "'.",
+        call. = FALSE
+      )
+    }
+
+    if (!is.numeric(x$relativity)) {
+      stop(
+        "'relativity' must be numeric for level '",
+        names(relativities)[i], "'.",
+        call. = FALSE
+      )
+    }
+  }
+
+  invisible(TRUE)
+}
+
+#' @noRd
+.build_relativities_df <- function(relativities) {
+  out <- lapply(seq_along(relativities), function(i) {
+    x <- relativities[[i]]
+    x$level <- names(relativities)[i]
+    x[, c("level", "new_level", "relativity")]
+  })
+
+  out <- do.call(rbind, out)
+  rownames(out) <- NULL
+  out
+}
+
+#' @noRd
+.normalize_relativities <- function(rel_df) {
+  split_list <- split(rel_df, rel_df$level)
+
+  split_list <- lapply(split_list, function(x) {
+    c_norm <- sum(x$exposure) / sum(x$exposure * x$relativity)
+    x$relativity_final <- x$relativity * c_norm
+    x
+  })
+
+  out <- do.call(rbind, split_list)
+  rownames(out) <- NULL
+  out
+}
+
+
+#' Define a level split with relativities
+#'
+#' @description
+#' Helper function to define how one level of a risk factor should be split
+#' into sublevels with corresponding relativities. Intended for use inside
+#' \code{relativities_list()} and \code{add_relativities()}.
+#'
+#' @param level Character string. Existing level of the risk factor to split.
+#' @param new_levels Character vector. Names of the new sublevels.
+#' @param relativities Numeric vector. Relativities corresponding to each
+#'   sublevel. Must have the same length as \code{new_levels}.
+#'
+#' @return A named list of length 1, where the name is \code{level} and the
+#'   value is a data.frame with columns \code{new_level} and \code{relativity}.
+#'
+#' @examples
+#' split_level(
+#'   level = "construction",
+#'   new_levels = c("residential", "commercial", "civil"),
+#'   relativities = c(1.00, 1.10, 1.25)
+#' )
+#'
+#' @export
+split_level <- function(level, new_levels, relativities) {
+  if (!is.character(level) || length(level) != 1) {
+    stop("`level` must be a single character string.", call. = FALSE)
+  }
+
+  out <- split_relativities(
+    new_levels = new_levels,
+    relativities = relativities
+  )
+
+  stats::setNames(list(out), level)
+}
+
+
+#' Combine multiple level splits into a relativities list
+#'
+#' @description
+#' Helper function to combine multiple level split definitions into a single
+#' named list suitable for use in \code{add_relativities()}.
+#'
+#' @param ... One or more objects created by \code{split_level()}.
+#'
+#' @return A named list of data.frames suitable for the \code{relativities}
+#'   argument in \code{add_relativities()}.
+#'
+#' @examples
+#' relativities_list(
+#'   split_level("construction",
+#'               c("residential", "commercial", "civil"),
+#'               c(1.00, 1.10, 1.25))
+#' )
+#'
+#' @export
+relativities_list <- function(...) {
+  x <- list(...)
+
+  if (length(x) == 0) {
+    return(list())
+  }
+
+  ok <- vapply(x, is.list, logical(1))
+  if (!all(ok)) {
+    stop("All inputs must be created with `split_level()`.", call. = FALSE)
+  }
+
+  out <- do.call(c, x)
+
+  if (is.null(names(out)) || any(names(out) == "")) {
+    stop("All inputs must be named level splits.", call. = FALSE)
+  }
+
+  if (anyDuplicated(names(out)) > 0) {
+    stop("Duplicate level names found in `relativities_list()`.", call. = FALSE)
+  }
+
+  out
+}
+
+
+#' Construct a relativities mapping for level splitting
+#'
+#' @description
+#' Helper function to create a standardized data.frame defining relativities
+#' for sublevels within a risk factor level. This function is intended to be
+#' used as input for \code{add_relativities()}.
+#'
+#' @param new_levels Character vector. Names of the new sublevels.
+#' @param relativities Numeric vector. Relativities corresponding to each
+#'   sublevel. Must have the same length as \code{new_levels}.
+#'
+#' @return A data.frame with columns:
+#'   \describe{
+#'     \item{new_level}{Character. Name of the new sublevel.}
+#'     \item{relativity}{Numeric. Multiplicative factor relative to the base level.}
+#'   }
+#'
+#' @details
+#' This function provides a convenient and safe way to construct the required
+#' input structure for \code{add_relativities()}. Each call defines how a single
+#' level of a risk factor is split into multiple sublevels with corresponding
+#' relativities.
+#'
+#' @examples
+#' split_relativities(
+#'   new_levels = c("residential", "commercial", "civil"),
+#'   relativities = c(1.00, 1.10, 1.25)
+#' )
+#'
+#' @export
+split_relativities <- function(new_levels, relativities) {
+  if (!is.character(new_levels)) {
+    stop("`new_levels` must be a character vector.", call. = FALSE)
+  }
+
+  if (!is.numeric(relativities)) {
+    stop("`relativities` must be numeric.", call. = FALSE)
+  }
+
+  if (length(new_levels) != length(relativities)) {
+    stop("`new_levels` and `relativities` must have the same length.",
+         call. = FALSE)
+  }
+
+  if (anyDuplicated(new_levels) > 0) {
+    stop("`new_levels` contains duplicate values.", call. = FALSE)
+  }
+
+  data.frame(
+    new_level = new_levels,
+    relativity = relativities,
+    stringsAsFactors = FALSE
+  )
+}

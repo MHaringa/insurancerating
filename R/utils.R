@@ -218,9 +218,10 @@ split_x_fn <- function(data, x, left = NULL, right = NULL) {
   l1
 }
 
+#' @importFrom stats as.formula
 #' @keywords internal
 construct_fm <- function(lhs, rhs) {
-  as.formula(paste0(paste0(lhs, collapse = " + "), "~ ", rhs))
+  stats::as.formula(paste0(paste0(lhs, collapse = " + "), "~ ", rhs))
 }
 
 
@@ -264,6 +265,7 @@ exposure_by_factor <- function(var1, model_data, exposure) {
   df$risk_factor <- var1
   df
 }
+
 
 #' @keywords internal
 .rating_table_model_names <- function(models, mc) {
