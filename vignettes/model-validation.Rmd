@@ -255,13 +255,13 @@ whether the fitted model is:
 
 For the standard modelling workflow, see:
 
-- [Getting started](articles/getting-started.html)
+- [Getting started](getting-started.html)
 
 For the refinement step after validation, see:
 
-- [Refinement workflow](articles/refinement-workflow.html).
+- [Refinement workflow](refinement-workflow.html).
 
 For the conceptual background to exposure, risk premium, and tariff structure,
 see:
 
-- [Pricing principles](articles/pricing-principles.html)
+- [Pricing principles](pricing-principles.html)

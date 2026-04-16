@@ -414,10 +414,10 @@ is:
 The following vignette covers the refinement step in more detail:
 
 - [Refinement
-  workflow](https://mharinga.github.io/insurancerating/articles/articles/refinement-workflow.md).
+  workflow](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md)
 
 For the conceptual background to exposure, risk premium, and tariff
 design, see:
 
 - [Pricing
-  principles](https://mharinga.github.io/insurancerating/articles/articles/pricing-principles.md)
+  principles](https://mharinga.github.io/insurancerating/articles/pricing-principles.md)

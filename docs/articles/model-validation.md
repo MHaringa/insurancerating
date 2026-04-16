@@ -265,15 +265,15 @@ determine whether the fitted model is:
 For the standard modelling workflow, see:
 
 - [Getting
-  started](https://mharinga.github.io/insurancerating/articles/articles/getting-started.md)
+  started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
 
 For the refinement step after validation, see:
 
 - [Refinement
-  workflow](https://mharinga.github.io/insurancerating/articles/articles/refinement-workflow.md).
+  workflow](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md).
 
 For the conceptual background to exposure, risk premium, and tariff
 structure, see:
 
 - [Pricing
-  principles](https://mharinga.github.io/insurancerating/articles/articles/pricing-principles.md)
+  principles](https://mharinga.github.io/insurancerating/articles/pricing-principles.md)

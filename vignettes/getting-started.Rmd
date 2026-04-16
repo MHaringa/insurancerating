@@ -384,9 +384,9 @@ The aim is to move from raw portfolio data to a tariff structure that is:
 
 The following vignette covers the refinement step in more detail:
 
-- [Refinement workflow](articles/refinement-workflow.html).
+- [Refinement workflow](refinement-workflow.html)
 
 For the conceptual background to exposure, risk premium, and tariff design, see:
 
-- [Pricing principles](articles/pricing-principles.html)
+- [Pricing principles](pricing-principles.html)
 

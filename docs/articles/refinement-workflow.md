@@ -585,9 +585,9 @@ is:
 For the underlying pricing concepts, see:
 
 - [Pricing
-  principles](https://mharinga.github.io/insurancerating/articles/articles/pricing-principles.md)
+  principles](https://mharinga.github.io/insurancerating/articles/pricing-principles.md)
 
 For the standard workflow from portfolio analysis to fitted tariff, see:
 
 - [Getting
-  started](https://mharinga.github.io/insurancerating/articles/articles/getting-started.md)
+  started](https://mharinga.github.io/insurancerating/articles/getting-started.md)

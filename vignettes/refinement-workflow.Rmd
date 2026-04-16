@@ -508,8 +508,8 @@ This makes it possible to move from a raw GLM to a tariff structure that is:
 
 For the underlying pricing concepts, see:
 
-- [Pricing principles](articles/pricing-principles.html)
+- [Pricing principles](pricing-principles.html)
 
 For the standard workflow from portfolio analysis to fitted tariff, see:
 
-- [Getting started](articles/getting-started.html)
+- [Getting started](getting-started.html)
