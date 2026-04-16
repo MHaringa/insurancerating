@@ -126,9 +126,8 @@ whether the factor behaves in a way that is suitable for pricing.
 
 ### Why continuous variables are treated separately
 
-Continuous variables are typically not used directly in a tariff.
-
-In pricing practice, they are usually:
+Continuous variables are typically not used directly in a tariff. In
+pricing practice, they are usually:
 
 1.  analysed as continuous variables
 2.  translated into tariff classes

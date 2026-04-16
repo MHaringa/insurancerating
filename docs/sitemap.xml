@@ -18,14 +18,11 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/as.vector.bootstrap_performance.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/as.vector.constructtariffclasses.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.html</loc></url>
-<url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_rmse.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.check_residuals.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.constructtariffclasses.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.fitgam.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.html</loc></url>
-<url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.restricted.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.riskfactor.html</loc></url>
-<url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.smooth.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.truncated_dist.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.univariate.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/biggest_reference.html</loc></url>
@@ -35,8 +32,6 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/construct_tariff_classes.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/default_extrapolation_break_size.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/dtrunc.html</loc></url>
-<url><loc>https://mharinga.github.io/insurancerating/reference/edit_relativities.html</loc></url>
-<url><loc>https://mharinga.github.io/insurancerating/reference/edit_restriction.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/edit_smoothing.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/factor_analysis.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/fisher_classify.html</loc></url>
@@ -59,7 +54,6 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/refit.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/refit_glm.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/relativities_list.html</loc></url>
-<url><loc>https://mharinga.github.io/insurancerating/reference/remove_refinement_step.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/rgammat.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/riskfactor_gam.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/rlnormt.html</loc></url>

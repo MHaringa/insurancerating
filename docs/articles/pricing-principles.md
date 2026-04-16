@@ -52,7 +52,10 @@ or equivalently:
 
 - risk premium = total loss / exposure
 
-The risk premium is also referred to as: - pure premium - burning cost
+The risk premium is also referred to as:
+
+- pure premium
+- burning cost
 
 It represents the expected cost of claims, excluding expenses and
 margins.

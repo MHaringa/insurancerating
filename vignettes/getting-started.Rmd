@@ -113,17 +113,14 @@ This provides a direct view of:
 -	the variation in claim frequency
 -	the variation in risk premium
 
-At this stage, the purpose is not yet to fit a model, but to understand whether
-the factor behaves in a way that is suitable for pricing.
+At this stage, the purpose is not yet to fit a model, but to understand whether the factor behaves in a way that is suitable for pricing.
 	
 
 ## Step 2 — Continuous variables
 
 ### Why continuous variables are treated separately
 
-Continuous variables are typically not used directly in a tariff.
-
-In pricing practice, they are usually:
+Continuous variables are typically not used directly in a tariff. In pricing practice, they are usually:
 
 1.	analysed as continuous variables
 2.	translated into tariff classes

@@ -1,0 +1,126 @@
+url: https://mharinga.github.io/insurancerating/
+
+template:
+  bootstrap: 5
+  bslib:
+    base_font: {google: "Raleway"}
+    heading_font: {google: "Montserrat"}
+    code_font: {google: "Google Sans Code"}
+
+navbar:
+  structure:
+    left:  [home, articles, reference, news]
+    right: [github]
+
+articles:
+  - title: "Workflow"
+    contents:
+      - getting-started
+      - refinement-workflow
+      - model-validation
+  - title: "Background"
+    contents:
+      - pricing-principles
+
+reference:
+  - title: "Portfolio analysis"
+    desc: >
+      Analyse portfolio behaviour and inspect risk factors before model estimation.
+    contents:
+      - factor_analysis
+      - autoplot.univariate
+      - outlier_histogram
+      - biggest_reference
+
+  - title: "Tariff classes"
+    desc: >
+      Analyse continuous risk factors and convert them to tariff classes.
+    contents:
+      - riskfactor_gam
+      - fit_gam
+      - summary.fitgam
+      - print.fitgam
+      - autoplot.fitgam
+      - as.data.frame.fitgam
+      - construct_tariff_classes
+      - print.constructtariffclasses
+      - as.vector.constructtariffclasses
+      - autoplot.constructtariffclasses
+
+  - title: "Modelling and interpretation"
+    desc: >
+      Estimate pricing models and interpret fitted coefficients in tariff terms.
+    contents:
+      - rating_table
+      - rating_factors
+      - autoplot.riskfactor
+      - add_prediction
+
+  - title: "Refinement workflow"
+    desc: >
+      Apply structured tariff adjustments such as smoothing, restrictions, and relativities.
+    contents:
+      - prepare_refinement
+      - autoplot.rating_refinement
+      - add_smoothing
+      - edit_smoothing
+      - add_restriction
+      - add_relativities
+      - relativities_list
+      - split_level
+      - split_relativities
+      - refit
+      - refit_glm
+
+  - title: "Validation"
+    desc: >
+      Assess model fit, predictive stability, dispersion, and residual behaviour.
+    contents:
+      - model_performance
+      - print.model_performance
+      - rmse
+      - bootstrap_performance
+      - as.vector.bootstrap_performance
+      - autoplot.bootstrap_performance
+      - check_overdispersion
+      - check_residuals
+      - autoplot.check_residuals
+
+  - title: "Model structure"
+    desc: >
+      Extract model data and analyse observed rating-grid combinations.
+    contents:
+      - model_data
+      - rating_grid
+
+  - title: "Distribution helpers"
+    desc: >
+      Helper functions for truncated and actuarial distribution workflows.
+    contents:
+      - fit_truncated_dist
+      - autoplot.truncated_dist
+      - rlnormt
+      - rgammat
+
+  - title: "Utilities"
+    desc: >
+      Supporting functions used across pricing workflows.
+    contents:
+      - fisher
+      - period_to_months
+      - rows_per_date
+      - reduce
+      - summary.reduce
+
+  - title: "Data"
+    contents:
+      - MTPL
+      - MTPL2
+
+  - title: "Deprecated"
+    desc: >
+      Legacy functions retained for backward compatibility. New code should use the updated API.
+    contents:
+      - rating_factors2
+      - extract_model_data
+

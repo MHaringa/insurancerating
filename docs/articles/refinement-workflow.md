@@ -394,8 +394,12 @@ adjustments. It represents the **final fitted coefficient structure**.
 
 The distinction is:
 
-- `before refit()` –\> inspect the refinement plan
-- `after refit()` –\> inspect the fitted tariff structure
+- before
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+  –\> inspect the refinement plan
+- after
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+  –\> inspect the fitted tariff structure
 
 If smoothing, restrictions, and relativities have been applied, they are
 now embedded in the fitted model output.

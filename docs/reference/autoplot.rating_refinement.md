@@ -38,6 +38,31 @@ autoplot(
   or
   [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).
 
+- variable:
+
+  Optional character string specifying the risk factor to plot. If
+  `NULL` (default), all available variables in the refinement object are
+  shown. If specified, only the selected risk factor is plotted.
+
+- step:
+
+  Optional integer specifying which refinement step to plot. This is
+  mainly relevant when multiple refinement steps have been applied (e.g.
+  multiple calls to
+  [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
+  [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
+  or
+  [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)).
+
+  - If `NULL` (default), the latest refinement step is shown.
+
+  - If specified, the corresponding step in the refinement sequence is
+    used.
+
+  This makes it possible to inspect intermediate refinement stages
+  before calling
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+
 - remove_underscores:
 
   Logical; if `TRUE`, underscores are replaced by spaces in the x-axis
