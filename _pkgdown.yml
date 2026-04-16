@@ -1,70 +1,124 @@
 url: https://mharinga.github.io/insurancerating/
+
 template:
   bootstrap: 5
   bslib:
     base_font: {google: "Open Sans"}
+
 navbar:
   structure:
-    left:  [home, reference, news]
+    left:  [home, articles, reference, news]
     right: [github]
+
+articles:
+  - title: "Workflow"
+    contents:
+      - getting-started
+      - refinement-workflow
+      - model-validation
+  - title: "Background"
+    contents:
+      - pricing-principles
+
 reference:
-  - title: "Construct tariff classes"
-    contents:
-      - fit_gam
-      - construct_tariff_classes
-      - autoplot.fitgam
-      - autoplot.constructtariffclasses
-  - title: "Univariate analysis"
+  - title: "Portfolio analysis"
     desc: >
-      Calculate and plot basic risk indicators split by the levels of a discrete risk factor in an insurance portfolio
+      Analyse portfolio behaviour and inspect risk factors before model estimation.
     contents:
-      - univariate
+      - factor_analysis
       - autoplot.univariate
-      - histbin
-  - title: "Model refinement"
-    contents:
-      - restrict_coef
-      - smooth_coef
-      - update_glm
-      - refit_glm
-      - model_data
-      - construct_model_points
-      - autoplot.restricted
-      - autoplot.smooth
-  - title: "Rating factors"
+      - outlier_histogram
+      - biggest_reference
+
+  - title: "Tariff classes"
     desc: >
-      Calculate and plot rating factors obtained from (multiple) (generalized) lineair model objects
+      Analyse continuous risk factors and convert them to tariff classes.
     contents:
+      - riskfactor_gam
+      - fit_gam
+      - summary.fitgam
+      - print.fitgam
+      - autoplot.fitgam
+      - as.data.frame.fitgam
+      - construct_tariff_classes
+      - print.constructtariffclasses
+      - as.vector.constructtariffclasses
+      - autoplot.constructtariffclasses
+
+  - title: "Modelling and interpretation"
+    desc: >
+      Estimate pricing models and interpret fitted coefficients in tariff terms.
+    contents:
+      - rating_table
       - rating_factors
       - autoplot.riskfactor
-  - title: "Data sets"
-    contents:
-      - MTPL
-      - MTPL2
-  - title: "Performance and validation"
+      - add_prediction
+
+  - title: "Refinement workflow"
     desc: >
-      Model quality and performance metrics
+      Apply structured tariff adjustments such as smoothing, restrictions, and relativities.
     contents:
+      - prepare_refinement
+      - autoplot.rating_refinement
+      - add_smoothing
+      - edit_smoothing
+      - add_restriction
+      - add_relativities
+      - relativities_list
+      - split_level
+      - split_relativities
+      - refit
+      - refit_glm
+
+  - title: "Validation"
+    desc: >
+      Assess model fit, predictive stability, dispersion, and residual behaviour.
+    contents:
+      - model_performance
+      - print.model_performance
+      - rmse
+      - bootstrap_performance
+      - as.vector.bootstrap_performance
+      - autoplot.bootstrap_performance
+      - check_overdispersion
       - check_residuals
       - autoplot.check_residuals
-      - check_overdispersion
-      - model_performance
-      - rmse
-      - bootstrap_rmse
-      - autoplot.bootstrap_rmse
-  - title: "Additional"
+
+  - title: "Model structure"
     desc: >
-      Often used in insurance ratings
+      Extract model data and analyse observed rating-grid combinations.
     contents:
-      - biggest_reference
-      - add_prediction
+      - model_data
+      - rating_grid
+
+  - title: "Distribution helpers"
+    desc: >
+      Helper functions for truncated and actuarial distribution workflows.
+    contents:
+      - fit_truncated_dist
+      - autoplot.truncated_dist
+      - rlnormt
+      - rgammat
+
+  - title: "Utilities"
+    desc: >
+      Supporting functions used across pricing workflows.
+    contents:
       - fisher
       - period_to_months
       - rows_per_date
       - reduce
       - summary.reduce
-      - fit_truncated_dist
-      - autoplot.truncated_dist
-      - rlnormt
-      - rgammat
+
+  - title: "Data"
+    contents:
+      - MTPL
+      - MTPL2
+
+  - title: "Deprecated"
+    desc: >
+      Legacy functions retained for backward compatibility. New code should use the updated API.
+    contents:
+      - rating_factors2
+      - extract_model_data
 

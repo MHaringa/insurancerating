@@ -3,7 +3,7 @@
 \name{add_smoothing}
 \alias{add_smoothing}
 \alias{smooth_coef}
-\title{Smooth coefficients in the model}
+\title{Add smoothing to a refinement workflow}
 \usage{
 add_smoothing(
   model,
@@ -28,7 +28,7 @@ smooth_coef(
 )
 }
 \arguments{
-\item{model}{object of class glm/smooth}
+\item{model}{Object of class \code{rating_refinement}.}
 
 \item{x_cut}{column name with breaks/cut}
 
@@ -38,111 +38,22 @@ smooth_coef(
 
 \item{breaks}{numerical vector with new clusters for x}
 
-\item{smoothing}{choose smoothing specification (all the shape
-constrained smooth terms (SCOP-splines) are constructed using the B-splines
-basis proposed by Eilers and Marx (1996) with a discrete penalty on the basis
-coefficients:
-\itemize{
-\item{'spline' (default)}
-\item{'mpi': monotone increasing SCOP-splines}
-\item{'mpd': monotone decreasing SCOP-splines}
-\item{'cx': convex SCOP-splines}
-\item{'cv': concave SCOP-splines}
-\item{'micx': increasing and convex SCOP-splines}
-\item{'micv': increasing and concave SCOP-splines}
-\item{'mdcx': decreasing and convex SCOP-splines}
-\item{'mdcv': decreasing and concave SCOP-splines}
-\item{'gam': spline based smooth (thin plate regression spline)}
-}}
+\item{smoothing}{smoothing specification}
 
-\item{k}{number of basis functions be computed}
+\item{k}{number of basis functions}
 
-\item{weights}{weights used for smoothing, must be equal to the exposure
-(defaults to NULL)}
+\item{weights}{weights column name, usually exposure}
 }
 \value{
-Object of class smooth
+Object of class \code{rating_refinement}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Apply smoothing on the risk factors used in the model. \code{add_smoothing()}
-must always be followed by \code{refit_glm()}.
+Adds a smoothing step to a \code{rating_refinement} object.
 }
 \details{
-Although smoothing could be applied either to the frequency or
-the severity model, it is more appropriate to impose the smoothing
-on the premium model. This can be achieved by calculating the pure
-premium for each record (i.e. expected number of claims times the expected
-claim amount), then fitting an "unrestricted" Gamma GLM to the pure
-premium, and then imposing the restrictions in a final "restricted"
-Gamma GLM.
+\code{add_smoothing()} is part of the new refinement workflow and is intended
+to be used in combination with \code{prepare_refinement()} and \code{refit()}.
+
+The legacy function \code{smooth_coef()} remains the only function that should
+be applied directly to a model object.
 }
-\examples{
-\dontrun{
-library(insurancerating)
-library(dplyr)
-
-# Fit GAM for claim frequency
-age_policyholder_frequency <- riskfactor_gam(data = MTPL,
-                                             nclaims = "nclaims",
-                                             x = "age_policyholder",
-                                             exposure = "exposure")
-
-# Determine clusters
-clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
-
-# Add clusters to MTPL portfolio
-dat <- MTPL |>
-  mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) |>
-  mutate(across(where(is.character), as.factor)) |>
-  mutate(across(where(is.factor), ~biggest_reference(., exposure)))
-
-# Fit frequency and severity model
-freq <- glm(nclaims ~ bm + age_policyholder_freq_cat, offset = log(exposure),
- family = poisson(), data = dat)
-sev <- glm(amount ~ bm + zip, weights = nclaims,
- family = Gamma(link = "log"), data = dat |> filter(amount > 0))
-
-# Add predictions for freq and sev to data, and calculate premium
-premium_df <- dat |>
-  add_prediction(freq, sev) |>
-  mutate(premium = pred_nclaims_freq * pred_amount_sev)
-
-# Fit unrestricted model
-burn_unrestricted <- glm(premium ~ zip + bm + age_policyholder_freq_cat,
-                         weights = exposure,
-                         family = Gamma(link = "log"),
-                         data = premium_df)
-
-# Impose smoothing and create figure
-burn_unrestricted |>
-  add_smoothing(x_cut = "age_policyholder_freq_cat",
-                x_org = "age_policyholder",
-                breaks = seq(18, 95, 5)) |>
-  autoplot()
-
-# Impose smoothing and refit model
-burn_restricted <- burn_unrestricted |>
-  add_smoothing(x_cut = "age_policyholder_freq_cat",
-                x_org = "age_policyholder",
-                breaks = seq(18, 95, 5)) |>
-  refit_glm()
-
-# Show new rating factors
-rating_table(burn_restricted)
-}
-
-}
-\seealso{
-\code{\link[=update_glm]{update_glm()}} for refitting the smoothed model,
-and \code{\link[=autoplot.smooth]{autoplot.smooth()}}.
-
-Other update_glm: 
-\code{\link{add_relativities}()},
-\code{\link{add_restriction}()}
-}
-\author{
-Martin Haringa
-}
-\concept{autoplot.smooth}
-\concept{update_glm}

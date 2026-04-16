@@ -15,7 +15,8 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/MHaringa/insurancerating/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
@@ -31,22 +32,83 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="insurancerating-development-version">insurancerating (development version)<a class="anchor" aria-label="anchor" href="#insurancerating-development-version"></a></h2>
+<div class="section level4">
+<h4 id="model-data-extraction-extract_model_data--model_data-development-version">Model data extraction (<code>extract_model_data()</code> / <code>model_data()</code>)<a class="anchor" aria-label="anchor" href="#model-data-extraction-extract_model_data--model_data-development-version"></a></h4>
+<ul><li>Added <code><a href="../reference/model_data.html">extract_model_data()</a></code> to retrieve cleaned model data from <code>glm</code>, <code>refitsmooth</code>, and <code>refitrestricted</code> objects.</li>
+<li>
+<code><a href="../reference/model_data.html">model_data()</a></code> is deprecated as of 0.8.0 and now emits a lifecycle warning; it remains as a wrapper.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="update_smoothing-development-version">update_smoothing()<a class="anchor" aria-label="anchor" href="#update_smoothing-development-version"></a></h4>
+<ul><li>Introduces a dedicated helper to update existing smoothing specifications without refitting the full model from scratch.</li>
+<li>Enables faster, more transparent iteration when fine-tuning smoothing curves.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="rating-table-output-rating_table--rating_factors-development-version">Rating table output (<code>rating_table()</code> / <code>rating_factors*()</code>)<a class="anchor" aria-label="anchor" href="#rating-table-output-rating_table--rating_factors-development-version"></a></h4>
+<ul><li>Renamed <code><a href="../reference/rating_table.html">rating_factors()</a></code> to <code><a href="../reference/rating_table.html">rating_table()</a></code> as the primary user-facing API.</li>
+<li>
+<code><a href="../reference/rating_table.html">rating_factors()</a></code> and <code><a href="../reference/rating_factors2.html">rating_factors2()</a></code> are deprecated as of 0.8.0 and now emit lifecycle warnings; they remain as wrappers.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="histogram-functions-outlier_histogram--histbin-development-version">Histogram functions (<code>outlier_histogram()</code> / <code>histbin()</code>)<a class="anchor" aria-label="anchor" href="#histogram-functions-outlier_histogram--histbin-development-version"></a></h4>
+<ul><li>Added <code><a href="../reference/outlier_histogram.html">outlier_histogram()</a></code> as the new name for histograms with outlier bins.</li>
+<li>
+<code><a href="../reference/outlier_histogram.html">histbin()</a></code> is deprecated as of 0.8.0 and now warns; it remains as a wrapper.</li>
+<li>The <code>x</code> argument must now be provided as a <strong>string</strong> (standard evaluation).</li>
+<li>No functional changes to binning or outlier handling.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="breaking-changes-development-version">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-development-version"></a></h3>
+<ul><li>The function <code><a href="../reference/riskfactor_gam.html">fit_gam()</a></code> has been <strong>deprecated</strong> and replaced by <code><a href="../reference/riskfactor_gam.html">riskfactor_gam()</a></code>.
+<ul><li><p><code><a href="../reference/riskfactor_gam.html">fit_gam()</a></code> used <strong>non-standard evaluation (NSE)</strong>, allowing unquoted column names.</p></li>
+<li>
+<p><code><a href="../reference/riskfactor_gam.html">riskfactor_gam()</a></code> now uses <strong>standard evaluation (SE)</strong>, requiring column names as <strong>character strings</strong>.<br>
+Example migration:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># old (NSE, deprecated)</span></span>
+<span><span class="fu"><a href="../reference/riskfactor_gam.html">fit_gam</a></span><span class="op">(</span><span class="va">df</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, x <span class="op">=</span> <span class="va">age_policyholder</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># new (SE)</span></span>
+<span><span class="fu"><a href="../reference/riskfactor_gam.html">riskfactor_gam</a></span><span class="op">(</span><span class="va">df</span>, nclaims <span class="op">=</span> <span class="st">"nclaims"</span>, x <span class="op">=</span> <span class="st">"age_policyholder"</span>, exposure <span class="op">=</span> <span class="st">"exposure"</span><span class="op">)</span></span></code></pre></div>
+</li>
+<li><p>The NSE wrapper <code><a href="../reference/riskfactor_gam.html">fit_gam()</a></code> is still available but will show a deprecation warning and will be removed in a future release.</p></li>
+</ul></li>
+<li>The function <code><a href="../reference/factor_analysis.html">univariate()</a></code> has been <strong>deprecated</strong> and replaced by <code><a href="../reference/factor_analysis.html">univariate_summary()</a></code>.
+<ul><li><p><code><a href="../reference/factor_analysis.html">univariate()</a></code> used <strong>non-standard evaluation (NSE)</strong>, allowing unquoted column names.</p></li>
+<li>
+<p><code><a href="../reference/factor_analysis.html">univariate_summary()</a></code> now uses <strong>standard evaluation (SE)</strong>, requiring column names as <strong>character strings</strong>.<br>
+Example migration:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># old (NSE, deprecated)</span></span>
+<span><span class="fu"><a href="../reference/factor_analysis.html">univariate</a></span><span class="op">(</span><span class="va">df</span>, x <span class="op">=</span> <span class="va">area</span>, severity <span class="op">=</span> <span class="va">amount</span>, nclaims <span class="op">=</span> <span class="va">nclaims</span>, exposure <span class="op">=</span> <span class="va">exposure</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># new (SE)</span></span>
+<span><span class="fu"><a href="../reference/factor_analysis.html">univariate_summary</a></span><span class="op">(</span><span class="va">df</span>, x <span class="op">=</span> <span class="st">"area"</span>, severity <span class="op">=</span> <span class="st">"amount"</span>,</span>
+<span>                   nclaims <span class="op">=</span> <span class="st">"nclaims"</span>, exposure <span class="op">=</span> <span class="st">"exposure"</span><span class="op">)</span></span></code></pre></div>
+</li>
+<li><p>The NSE wrapper <code><a href="../reference/factor_analysis.html">univariate()</a></code> is still available but will show a deprecation warning and will be removed in a future release.</p></li>
+</ul></li>
+</ul></div>
+<div class="section level3">
+<h3 id="minor-changes-development-version">Minor changes<a class="anchor" aria-label="anchor" href="#minor-changes-development-version"></a></h3>
+<ul><li>Improved documentation for <code><a href="../reference/riskfactor_gam.html">riskfactor_gam()</a></code>, including clearer examples and migration guidance from <code><a href="../reference/riskfactor_gam.html">fit_gam()</a></code>.</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.5" id="insurancerating-075">insurancerating 0.7.5<a class="anchor" aria-label="anchor" href="#insurancerating-075"></a></h2><p class="text-muted">CRAN release: 2024-10-09</p>
 <ul><li>
-<code><a href="../reference/rating_factors.html">rating_factors()</a></code> now always returns correct output when column with exposure in data is not named <code>exposure</code>
+<code><a href="../reference/rating_table.html">rating_factors()</a></code> now always returns correct output when column with exposure in data is not named <code>exposure</code>
 </li>
 <li>
-<code>intercept_only</code> in <code><a href="../reference/update_glm.html">update_glm()</a></code> is added to apply the manual changes and refit the intercept, ensuring that the changes have no impact on the other variables.</li>
+<code>intercept_only</code> in <code><a href="../reference/refit_glm.html">update_glm()</a></code> is added to apply the manual changes and refit the intercept, ensuring that the changes have no impact on the other variables.</li>
 <li>
-<code>smoothing</code> in <code><a href="../reference/smooth_coef.html">smooth_coef()</a></code> is added to choose smoothing specification</li>
+<code>smoothing</code> in <code><a href="../reference/add_smoothing.html">smooth_coef()</a></code> is added to choose smoothing specification</li>
 <li>The README has been revised</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.4" id="insurancerating-074">insurancerating 0.7.4<a class="anchor" aria-label="anchor" href="#insurancerating-074"></a></h2><p class="text-muted">CRAN release: 2024-05-20</p>
 <ul><li>
-<code><a href="../reference/bootstrap_rmse.html">bootstrap_rmse()</a></code> now uses <code>after_stat(density)</code> instead of the deprecated dot-dot notation</li>
+<code><a href="../reference/bootstrap_performance.html">bootstrap_rmse()</a></code> now uses <code>after_stat(density)</code> instead of the deprecated dot-dot notation</li>
 <li>
 <code>custom_theme</code> in <code><a href="../reference/autoplot.univariate.html">autoplot.univariate()</a></code> is added to customize the theme</li>
 </ul></div>
@@ -55,12 +117,12 @@
 <ul><li>
 <code><a href="../reference/autoplot.univariate.html">autoplot.univariate()</a></code> now generates a plot even when there are missing values in the rows</li>
 <li>
-<code><a href="../reference/rating_factors.html">rating_factors()</a></code> now always returns the correct coefficients when used on a ‘refitsmooth’ or ‘refitrestricted’ class of GLM.</li>
+<code><a href="../reference/rating_table.html">rating_factors()</a></code> now always returns the correct coefficients when used on a ‘refitsmooth’ or ‘refitrestricted’ class of GLM.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.2" id="insurancerating-072">insurancerating 0.7.2<a class="anchor" aria-label="anchor" href="#insurancerating-072"></a></h2><p class="text-muted">CRAN release: 2022-12-20</p>
 <ul><li>
-<code><a href="../reference/update_glm.html">update_glm()</a></code> now always returns the correct interval in case the function is used in combination with <code><a href="../reference/smooth_coef.html">smooth_coef()</a></code>
+<code><a href="../reference/refit_glm.html">update_glm()</a></code> now always returns the correct interval in case the function is used in combination with <code><a href="../reference/add_smoothing.html">smooth_coef()</a></code>
 </li>
 </ul></div>
     <div class="section level2">
@@ -68,29 +130,29 @@
 <ul><li>
 <code>rotate_angle</code> in <code><a href="../reference/autoplot.univariate.html">autoplot.univariate()</a></code> is added to rotate x-labels</li>
 <li>
-<code><a href="../reference/univariate.html">univariate()</a></code> now accepts external vectors for <code>x</code>; <code>vec_ext()</code> must be used</li>
+<code><a href="../reference/factor_analysis.html">univariate()</a></code> now accepts external vectors for <code>x</code>; <code>vec_ext()</code> must be used</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.0" id="insurancerating-070">insurancerating 0.7.0<a class="anchor" aria-label="anchor" href="#insurancerating-070"></a></h2><p class="text-muted">CRAN release: 2022-07-08</p>
 <ul><li>
-<code><a href="../reference/smooth_coef.html">smooth_coef()</a></code> now gives correct results for intervals with scientific notation</li>
+<code><a href="../reference/add_smoothing.html">smooth_coef()</a></code> now gives correct results for intervals with scientific notation</li>
 <li>
-<code><a href="../reference/reduce.html">reduce()</a></code> now returns no errors anymore for columns with dates in POSIXt format</li>
+<code><a href="../reference/merge_date_ranges.html">reduce()</a></code> now returns no errors anymore for columns with dates in POSIXt format</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.9" id="insurancerating-069">insurancerating 0.6.9<a class="anchor" aria-label="anchor" href="#insurancerating-069"></a></h2><p class="text-muted">CRAN release: 2021-12-11</p>
 <ul><li>
-<code><a href="../reference/refit_glm.html">refit_glm()</a></code> is renamed to <code><a href="../reference/update_glm.html">update_glm()</a></code>
+<code><a href="../reference/refit_glm.html">refit_glm()</a></code> is renamed to <code><a href="../reference/refit_glm.html">update_glm()</a></code>
 </li>
 <li>
-<code><a href="../reference/construct_model_points.html">construct_model_points()</a></code> and <code><a href="../reference/model_data.html">model_data()</a></code> are added to create model points</li>
+<code><a href="../reference/rating_grid.html">construct_model_points()</a></code> and <code><a href="../reference/model_data.html">model_data()</a></code> are added to create model points</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.8" id="insurancerating-068">insurancerating 0.6.8<a class="anchor" aria-label="anchor" href="#insurancerating-068"></a></h2><p class="text-muted">CRAN release: 2021-11-10</p>
 <ul><li>
-<code>show_total</code> in <code><a href="../reference/autoplot.univariate.html">autoplot.univariate()</a></code> is added to add line for total of groups in case <code>by</code> is used in <code><a href="../reference/univariate.html">univariate()</a></code>; <code>total_color</code> can be used to change the color of the line, and <code>total_name</code> is added to change the name of the legend for the line</li>
+<code>show_total</code> in <code><a href="../reference/autoplot.univariate.html">autoplot.univariate()</a></code> is added to add line for total of groups in case <code>by</code> is used in <code><a href="../reference/factor_analysis.html">univariate()</a></code>; <code>total_color</code> can be used to change the color of the line, and <code>total_name</code> is added to change the name of the legend for the line</li>
 <li>
-<code><a href="../reference/rating_factors.html">rating_factors()</a></code> now accepts GLMs with an intercept only</li>
+<code><a href="../reference/rating_table.html">rating_factors()</a></code> now accepts GLMs with an intercept only</li>
 <li>
 <code><a href="../reference/fit_truncated_dist.html">fit_truncated_dist()</a></code> is added to fit the original distribution (gamma, lognormal) from truncated severity data</li>
 <li>
@@ -99,7 +161,7 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.7" id="insurancerating-067">insurancerating 0.6.7<a class="anchor" aria-label="anchor" href="#insurancerating-067"></a></h2><p class="text-muted">CRAN release: 2021-07-28</p>
 <ul><li>
-<code><a href="../reference/smooth_coef.html">smooth_coef()</a></code> now returns an error message when intervals are not obtained by cut()</li>
+<code><a href="../reference/add_smoothing.html">smooth_coef()</a></code> now returns an error message when intervals are not obtained by cut()</li>
 <li>
 <code>get_data()</code> is added to return the data used in <code><a href="../reference/refit_glm.html">refit_glm()</a></code>
 </li>
@@ -114,9 +176,9 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.5" id="insurancerating-065">insurancerating 0.6.5<a class="anchor" aria-label="anchor" href="#insurancerating-065"></a></h2><p class="text-muted">CRAN release: 2021-03-22</p>
 <ul><li>
-<code><a href="../reference/smooth_coef.html">smooth_coef()</a></code> and <code><a href="../reference/restrict_coef.html">restrict_coef()</a></code> are added for model refinement</li>
+<code><a href="../reference/add_smoothing.html">smooth_coef()</a></code> and <code><a href="../reference/add_restriction.html">restrict_coef()</a></code> are added for model refinement</li>
 <li>
-<code><a href="../reference/histbin.html">histbin()</a></code> now uses darkblue as default fill color</li>
+<code><a href="../reference/outlier_histogram.html">histbin()</a></code> now uses darkblue as default fill color</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.4" id="insurancerating-064">insurancerating 0.6.4<a class="anchor" aria-label="anchor" href="#insurancerating-064"></a></h2><p class="text-muted">CRAN release: 2021-01-12</p>
@@ -127,9 +189,9 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.3" id="insurancerating-063">insurancerating 0.6.3<a class="anchor" aria-label="anchor" href="#insurancerating-063"></a></h2><p class="text-muted">CRAN release: 2020-10-28</p>
 <ul><li>
-<code><a href="../reference/fit_gam.html">fit_gam()</a></code> for pure premium is now using average premium for each x calculated as sum(pure_premium * exposure) / sum(exposure) instead of sum(pure_premium) / sum(exposure) (<a href="https://github.com/MHaringa/insurancerating/issues/2" class="external-link">#2</a>).</li>
+<code><a href="../reference/riskfactor_gam.html">fit_gam()</a></code> for pure premium is now using average premium for each x calculated as sum(pure_premium * exposure) / sum(exposure) instead of sum(pure_premium) / sum(exposure) (<a href="https://github.com/MHaringa/insurancerating/issues/2" class="external-link">#2</a>).</li>
 <li>
-<code><a href="../reference/histbin.html">histbin()</a></code> is added to create histograms with outliers</li>
+<code><a href="../reference/outlier_histogram.html">histbin()</a></code> is added to create histograms with outliers</li>
 <li>
 <code>reduce</code> now returns a data.frame as output</li>
 </ul></div>
@@ -138,20 +200,20 @@
 <ul><li>
 <code>check_normality()</code> is now depreciated; use <code><a href="../reference/check_residuals.html">check_residuals()</a></code> instead to detect overall deviations from the expected distribution</li>
 <li>
-<code><a href="../reference/rating_factors.html">rating_factors()</a></code> now shows significance stars for p-values</li>
+<code><a href="../reference/rating_table.html">rating_factors()</a></code> now shows significance stars for p-values</li>
 <li>
-<code><a href="../reference/period_to_months.html">period_to_months()</a></code> arithmetic operations with dates are rewritten; much faster</li>
+<code><a href="../reference/split_periods_to_months.html">period_to_months()</a></code> arithmetic operations with dates are rewritten; much faster</li>
 <li>
-<code><a href="../reference/univariate.html">univariate()</a></code> now has argument <code>by</code> to determine summary statistics for different subgroups</li>
+<code><a href="../reference/factor_analysis.html">univariate()</a></code> now has argument <code>by</code> to determine summary statistics for different subgroups</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.1" id="insurancerating-061">insurancerating 0.6.1<a class="anchor" aria-label="anchor" href="#insurancerating-061"></a></h2><p class="text-muted">CRAN release: 2020-04-29</p>
 <ul><li>
-<code>univariate_all()</code> and <code>autoplot.univ_all()</code> are now depreciated; use <code><a href="../reference/univariate.html">univariate()</a></code> and <code><a href="../reference/autoplot.univariate.html">autoplot.univariate()</a></code> instead</li>
+<code>univariate_all()</code> and <code>autoplot.univ_all()</code> are now depreciated; use <code><a href="../reference/factor_analysis.html">univariate()</a></code> and <code><a href="../reference/autoplot.univariate.html">autoplot.univariate()</a></code> instead</li>
 <li>
-<code><a href="../reference/check_overdispersion.html">check_overdispersion()</a></code>, <code>check_normality()</code>, <code><a href="../reference/model_performance.html">model_performance()</a></code>, <code><a href="../reference/bootstrap_rmse.html">bootstrap_rmse()</a></code>, and <code><a href="../reference/add_prediction.html">add_prediction()</a></code> are added to test model quality and return performance metrics</li>
+<code><a href="../reference/check_overdispersion.html">check_overdispersion()</a></code>, <code>check_normality()</code>, <code><a href="../reference/model_performance.html">model_performance()</a></code>, <code><a href="../reference/bootstrap_performance.html">bootstrap_rmse()</a></code>, and <code><a href="../reference/add_prediction.html">add_prediction()</a></code> are added to test model quality and return performance metrics</li>
 <li>
-<code><a href="../reference/reduce.html">reduce()</a></code> is added to reduce an insurance portfolio by merging redundant date ranges</li>
+<code><a href="../reference/merge_date_ranges.html">reduce()</a></code> is added to reduce an insurance portfolio by merging redundant date ranges</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.0" id="insurancerating-060">insurancerating 0.6.0<a class="anchor" aria-label="anchor" href="#insurancerating-060"></a></h2><p class="text-muted">CRAN release: 2020-04-10</p>
@@ -162,10 +224,10 @@
 <li>
 <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> now works without manually loading package <code>ggplot2</code> and <code>patchwork</code> first</li>
 <li>
-<code><a href="../reference/rating_factors.html">rating_factors()</a></code> now returns an object of class <code>riskfactor</code>
+<code><a href="../reference/rating_table.html">rating_factors()</a></code> now returns an object of class <code>riskfactor</code>
 </li>
 <li>
-<code><a href="../reference/autoplot.riskfactor.html">autoplot.riskfactor()</a></code> is added to create the corresponding plots to the output given by <code><a href="../reference/rating_factors.html">rating_factors()</a></code>
+<code><a href="../reference/autoplot.riskfactor.html">autoplot.riskfactor()</a></code> is added to create the corresponding plots to the output given by <code><a href="../reference/rating_table.html">rating_factors()</a></code>
 </li>
 </ul></div>
     <div class="section level2">
@@ -177,7 +239,7 @@
 <h2 class="pkg-version" data-toc-text="0.5.1" id="insurancerating-051">insurancerating 0.5.1<a class="anchor" aria-label="anchor" href="#insurancerating-051"></a></h2><p class="text-muted">CRAN release: 2020-03-29</p>
 <ul><li>A package website is added using pkgdown.</li>
 <li>
-<code><a href="../reference/construct_tariff_classes.html">construct_tariff_classes()</a></code> and <code><a href="../reference/fit_gam.html">fit_gam()</a></code> now only returns tariff classes and fitted gam respectively; other items are stored as attributes.</li>
+<code><a href="../reference/construct_tariff_classes.html">construct_tariff_classes()</a></code> and <code><a href="../reference/riskfactor_gam.html">fit_gam()</a></code> now only returns tariff classes and fitted gam respectively; other items are stored as attributes.</li>
 <li>
 <code>univariate_frequency()</code>, <code>univariate_average_severity()</code>, <code>univariate_risk_premium()</code>, <code>univariate_loss_ratio()</code>, <code>univariate_average_premium()</code>, <code>univariate_exposure()</code>, and <code>univariate_all()</code> are added to perform an univariate analysis on an insurance portfolio.</li>
 <li>
@@ -186,13 +248,13 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.0" id="insurancerating-050">insurancerating 0.5.0<a class="anchor" aria-label="anchor" href="#insurancerating-050"></a></h2><p class="text-muted">CRAN release: 2020-03-12</p>
 <ul><li>
-<code><a href="../reference/construct_tariff_classes.html">construct_tariff_classes()</a></code> is now split in <code><a href="../reference/fit_gam.html">fit_gam()</a></code> and <code><a href="../reference/construct_tariff_classes.html">construct_tariff_classes()</a></code>.</li>
+<code><a href="../reference/construct_tariff_classes.html">construct_tariff_classes()</a></code> is now split in <code><a href="../reference/riskfactor_gam.html">fit_gam()</a></code> and <code><a href="../reference/construct_tariff_classes.html">construct_tariff_classes()</a></code>.</li>
 <li>A vignette is added on how to use the package.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.3" id="insurancerating-043">insurancerating 0.4.3<a class="anchor" aria-label="anchor" href="#insurancerating-043"></a></h2><p class="text-muted">CRAN release: 2019-11-01</p>
 <ul><li>
-<code><a href="../reference/period_to_months.html">period_to_months()</a></code> is added to split rows with a time period longer than one month to multiple rows with a time period of exactly one month each.</li>
+<code><a href="../reference/split_periods_to_months.html">period_to_months()</a></code> is added to split rows with a time period longer than one month to multiple rows with a time period of exactly one month each.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.2" id="insurancerating-042">insurancerating 0.4.2<a class="anchor" aria-label="anchor" href="#insurancerating-042"></a></h2><p class="text-muted">CRAN release: 2019-05-31</p>
@@ -207,7 +269,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer></div>

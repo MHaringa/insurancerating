@@ -4,9 +4,9 @@ mtcars3 <- mtcars[, c("cyl", "vs", "disp", "gear")]
 mtcars4 <- mtcars[, c("cyl", "vs", "disp", "gear", "mpg")]
 
 testthat::test_that(
-  "construct_model_points works and aggregates correctly for data.frames", {
+  "rating_grid works and aggregates correctly for data.frames", {
 
-    res1 <- construct_model_points(
+    res1 <- rating_grid(
       mtcars1,
       group_vars = c("cyl", "vs")
     )
@@ -18,7 +18,7 @@ testthat::test_that(
       nrow(unique(mtcars1))
     )
 
-    res2 <- construct_model_points(
+    res2 <- rating_grid(
       mtcars2,
       group_vars = c("cyl", "vs"),
       exposure = "disp"
@@ -33,7 +33,7 @@ testthat::test_that(
       sum(mtcars2$disp, na.rm = TRUE)
     )
 
-    res3 <- construct_model_points(
+    res3 <- rating_grid(
       mtcars3,
       group_vars = c("cyl", "vs"),
       exposure = "disp",
@@ -43,7 +43,7 @@ testthat::test_that(
     testthat::expect_s3_class(res3, "data.frame")
     testthat::expect_true(any(grepl("^disp_", names(res3))))
 
-    res4 <- construct_model_points(
+    res4 <- rating_grid(
       mtcars4,
       group_vars = c("cyl", "vs"),
       exposure = "disp",
@@ -68,10 +68,9 @@ model1 <- glm(
 )
 
 testthat::test_that(
-  "construct_model_points infers group_vars from model_data when rf is missing", {
+  "rating_grid infers group_vars from model_data when rf is missing", {
     res <- model1 |>
-      extract_model_data() |>
-      construct_model_points()
+      rating_grid()
 
     testthat::expect_s3_class(res, "data.frame")
     testthat::expect_true(all(c("am", "gear") %in% names(res)))
@@ -79,11 +78,11 @@ testthat::test_that(
 )
 
 testthat::test_that(
-  "construct_model_points works for extract_model_data objects", {
+  "rating_grid works for extract_model_data objects", {
 
     res <- model1 |>
-      extract_model_data() |>
-      construct_model_points()
+      model_data() |>
+      rating_grid()
 
     testthat::expect_s3_class(res, "data.frame")
 
@@ -125,9 +124,9 @@ burn <- glm(
   data = premium_df
 )
 
-burn_rst <- burn |>
+burn_rst <- prepare_refinement(burn) |>
   add_restriction(zip_df) |>
-  refit_glm()
+  refit()
 
 testthat::test_that(
   "extract_model_data works for restricted glm objects", {
@@ -140,11 +139,11 @@ testthat::test_that(
 )
 
 testthat::test_that(
-  "construct_model_points works for restricted model_data", {
+  "rating_grid works for restricted model_data", {
 
     res <- burn_rst |>
-      extract_model_data() |>
-      construct_model_points()
+      model_data() |>
+      rating_grid()
 
     testthat::expect_s3_class(res, "data.frame")
 

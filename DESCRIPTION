@@ -1,13 +1,15 @@
 Package: insurancerating
 Type: Package
-Title: Analytic Techniques for Insurance Rating Models
+Title: Actuarial Workflow for Insurance Pricing Models
 Version: 0.7.5.9000
 Authors@R: c(person("Martin", "Haringa", role = c("aut", "cre"), email = "mtharinga@gmail.com"))
 Maintainer: Martin Haringa <mtharinga@gmail.com>
 BugReports: https://github.com/MHaringa/insurancerating/issues
-Description: Provides functions to build, evaluate, and visualize insurance rating 
-    models. The package supports the construction of insurance tariff classes 
-    using a data-driven approach, based on the methodology of Antonio and Valdez 
+Description: Provides a structured workflow for analysing, modelling, refining,
+    and validating insurance rating models. Designed to bridge statistical 
+    modelling and practical tariff construction.The package supports the 
+    construction of insurance tariff classes using a data-driven approach, based 
+    on the methodology of Antonio and Valdez 
     (2012) <doi:10.1007/s10182-011-0152-7>.
 License: GPL (>= 2)
 URL: https://mharinga.github.io/insurancerating/, https://github.com/MHaringa/insurancerating
@@ -40,3 +42,4 @@ Suggests:
     testthat
 Roxygen: list(markdown = TRUE)
 Language: en-US
+VignetteBuilder: knitr

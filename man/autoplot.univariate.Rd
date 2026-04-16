@@ -2,7 +2,7 @@
 % Please edit documentation in R/univariate.R
 \name{autoplot.univariate}
 \alias{autoplot.univariate}
-\title{Automatically create a ggplot for objects obtained from univariate analysis}
+\title{Automatically create a ggplot for objects obtained from factor analysis}
 \usage{
 \method{autoplot}{univariate}(
   object,
@@ -28,8 +28,8 @@
 )
 }
 \arguments{
-\item{object}{A \code{univariate} object produced by \code{\link[=univariate_summary]{univariate_summary()}} or
-\code{\link[=univariate]{univariate()}}.}
+\item{object}{A \code{univariate} object produced by \code{\link[=factor_analysis]{factor_analysis()}},
+\code{\link[=univariate_summary]{univariate_summary()}} or \code{\link[=univariate]{univariate()}}.}
 
 \item{show_plots}{Numeric vector of plots to be shown (default is
 \code{1:9}). There are nine available plots:
@@ -101,17 +101,26 @@ Defaults to \code{TRUE}.}
 A \code{ggplot2} object.
 }
 \description{
-Takes an object produced by \code{\link[=univariate_summary]{univariate_summary()}} (SE) or \code{\link[=univariate]{univariate()}}
-(deprecated NSE interface) and plots the available statistics.
+Takes an object produced by \code{\link[=factor_analysis]{factor_analysis()}}, \code{\link[=univariate_summary]{univariate_summary()}}
+(compatibility alias) or \code{\link[=univariate]{univariate()}} (deprecated NSE interface) and plots
+the available statistics.
 }
 \examples{
 ## --- New usage (SE, recommended) ---
-x <- univariate_summary(MTPL2,
-                        x = "area",
-                        severity = "amount",
-                        nclaims = "nclaims",
-                        exposure = "exposure")
+x <- factor_analysis(MTPL2,
+                     x = "area",
+                     severity = "amount",
+                     nclaims = "nclaims",
+                     exposure = "exposure")
 autoplot(x)
+
+## --- Compatibility alias ---
+x2 <- univariate_summary(MTPL2,
+                         x = "area",
+                         severity = "amount",
+                         nclaims = "nclaims",
+                         exposure = "exposure")
+autoplot(x2)
 
 ## --- Deprecated usage (NSE) ---
 x_old <- univariate(MTPL2, x = area, severity = amount,

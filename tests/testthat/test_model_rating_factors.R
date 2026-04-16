@@ -4,7 +4,6 @@ library(dplyr)
 testthat::context("rating_factors")
 
 
-
 # Restricted glm ----------------------------------------------------------
 
 # Fit frequency and severity model
@@ -28,16 +27,18 @@ burn <- glm(premium ~ bm + zip, weights = exposure,
             family = Gamma(link = "log"), data = premium_df)
 
 # Fit restricted model
-burn_rst <- add_restriction(burn, zip_df) |>
-  refit_glm()
+burn_rst <- prepare_refinement(burn) |>
+  add_restriction(zip_df) |>
+  refit()
 
 # Fit unrestricted model with only one risk factor
 burn2 <- glm(premium ~ zip, weights = exposure,
              family = Gamma(link = "log"), data = premium_df)
 
 # Fit restricted model with intercept only
-burn2_rst <- add_restriction(burn2, zip_df) |>
-  refit_glm()
+burn2_rst <- prepare_refinement(burn2) |>
+  add_restriction(zip_df) |>
+  refit()
 
 
 # Smoothed glm ------------------------------------------------------------
@@ -76,11 +77,11 @@ burn_unrestricted <- glm(premium ~ zip + bm + age_policyholder_freq_cat,
 
 # Impose smoothing and refit model
 suppressWarnings({
-  burn_smooth <- burn_unrestricted |>
+  burn_smooth <- prepare_refinement(burn_unrestricted) |>
     add_smoothing(x_cut = "age_policyholder_freq_cat",
                   x_org = "age_policyholder",
                   breaks = seq(18, 95, 5)) |>
-    refit_glm()
+    refit()
 })
 
 # Fit unrestricted model with intercept only
@@ -91,11 +92,11 @@ burn2_unrestricted <- glm(premium ~ age_policyholder_freq_cat,
 
 # Impose smoothing and refit model with intercept only
 suppressWarnings({
-  burn2_smooth <- burn2_unrestricted |>
+  burn2_smooth <- prepare_refinement(burn2_unrestricted) |>
     add_smoothing(x_cut = "age_policyholder_freq_cat",
                   x_org = "age_policyholder",
                   breaks = seq(18, 95, 5)) |>
-    refit_glm()
+    refit()
 })
 
 
@@ -182,8 +183,9 @@ testthat::test_that(
 zip_df <- data.frame(zip = c(0,1,2,3),
                      zip_restricted = c(0.8, 0.9, 1, 1.2))
 
-burn_restricted2 <- add_restriction(burn_unrestricted, zip_df) |>
-  refit_glm()
+burn_restricted2 <- prepare_refinement(burn_unrestricted) |>
+  add_restriction(zip_df) |>
+  refit()
 
 filter_zip_rst <- rating_table(burn_restricted2)$df |>
   dplyr::filter(risk_factor == "zip_restricted")

@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_refinement.R
 \name{add_relativities}
 \alias{add_relativities}
-\title{Add expert-based relativities to the model}
+\title{Add expert-based relativities to a refinement workflow}
 \usage{
 add_relativities(
   model,
@@ -14,101 +14,25 @@ add_relativities(
 )
 }
 \arguments{
-\item{model}{object of class glm/restricted/smooth}
+\item{model}{Object of class \code{rating_refinement}.}
 
-\item{risk_factor}{Character string. Name of the existing risk factor in the
-model that should be refined.}
+\item{risk_factor}{Character string. Name of existing risk factor in the model.}
 
-\item{risk_factor_split}{Character string. Column name in the underlying
-portfolio data containing the more granular split of \code{risk_factor}.}
+\item{risk_factor_split}{Character string. More granular split column.}
 
-\item{relativities}{Named list of data.frames. Each list name must correspond
-to an existing level of \code{risk_factor} to be split. Each data.frame must
-contain the columns:
-\describe{
-\item{new_level}{Character. Name of the new sublevel.}
-\item{relativity}{Numeric. Relativity relative to the original model
-factor of the corresponding level.}
-}}
+\item{relativities}{Named list of data.frames.}
 
-\item{exposure}{Character string. Column name in the portfolio data
-containing exposure weights used for optional normalization.}
+\item{exposure}{Character string. Exposure column.}
 
-\item{normalize}{Logical. If \code{TRUE} (default), relativities are normalized
-such that the exposure-weighted average equals 1 within each split level.}
+\item{normalize}{Logical.}
 }
 \value{
-Object of class restricted.
+Object of class \code{rating_refinement}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Add expert-based relativities to one or more levels of a risk factor by
-splitting these levels into more granular sublevels. \code{add_relativities()}
-must always be followed by \code{refit_glm()}.
+Adds a relativities step to a \code{rating_refinement} object.
 }
 \details{
-This function is useful when the model is estimated on a relatively broad
-risk factor level, while expert judgement indicates that meaningful
-differences exist within that level.
-
-A typical use case occurs when a subgroup has insufficient exposure or too
-little claims experience to estimate a stable coefficient directly in the GLM.
-In that case, the GLM can first be estimated on a broader level, and then
-refined afterwards by splitting that level into more granular subgroups.
-
-For example, a GLM may estimate a single coefficient for the business
-activity group \code{"industry"} based on the full industry portfolio. In practice,
-however, it may still be desirable to distinguish between \code{"heavy_industry"}
-and \code{"light_industry"} based on expert judgement. The user can then specify
-relativities such as 1.1 for heavy industry and 1.0 for light industry.
-
-If \code{normalize = TRUE}, these relativities are rescaled such that their
-exposure-weighted average remains equal to 1 within the original level.
-As a result, the weighted average of the refined subgroup coefficients
-remains equal to the original GLM coefficient for the full group. This makes
-it possible to follow the model output while applying a transparent and
-explainable adjustment to improve pricing differentiation.
-
-This is especially useful when the portfolio contains only a small amount of
-exposure for a higher-risk subgroup, for example heavy industry with little
-or no observed claims, but where business knowledge still supports a higher
-premium than for lower-risk subgroups.
-
-This method preserves the original model structure while allowing controlled,
-transparent adjustments to pricing based on expert insight.
+\code{add_relativities()} is only available within the new refinement workflow
+and should be used in combination with \code{prepare_refinement()} and \code{refit()}.
 }
-\examples{
-\dontrun{
-relativities_activity <- relativities_list(
-split_level("construction",
-           c("residential_construction",
-             "commercial_construction",
-             "civil_engineering"),
-           c(1.00, 1.10, 1.25))
-)
-
-burn_rel <- burn_unrestricted |>
-  add_relativities(
-    risk_factor = "business_activity",
-    risk_factor_split = "business_activity_split",
-    relativities = relativities_activity,
-    exposure = "exposure",
-    normalize = TRUE
-  ) |>
-  refit_glm()
-
-rating_table(burn_rel)
-}
-
-}
-\seealso{
-\code{\link[=refit_glm]{refit_glm()}} for refitting the model after adding relativities.
-
-Other update_glm: 
-\code{\link{add_restriction}()},
-\code{\link{add_smoothing}()}
-}
-\author{
-Martin Haringa
-}
-\concept{update_glm}

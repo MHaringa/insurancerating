@@ -152,6 +152,7 @@ as.vector.constructtariffclasses <- function(x, ...) {
   as.vector(x$splits)
 }
 
+
 #' Autoplot for tariff class objects
 #'
 #' @description
@@ -181,17 +182,6 @@ as.vector.constructtariffclasses <- function(x, ...) {
 #'
 #' @author Martin Haringa
 #'
-#' @examples
-#' \dontrun{
-#' library(ggplot2)
-#' riskfactor_gam(MTPL,
-#'                nclaims = "nclaims",
-#'                x = "age_policyholder",
-#'                exposure = "exposure") |>
-#'   construct_tariff_classes() |>
-#'   autoplot(show_observations = TRUE)
-#' }
-#'
 #' @import ggplot2
 #'
 #' @export
@@ -215,43 +205,98 @@ autoplot.constructtariffclasses <- function(object,
   points <- object$data
   splits <- object$splits
 
+  # determine fitted-value column robustly
+  y_pred_col <- "fitted"
+  y_pred_col <- y_pred_col[y_pred_col %in% names(prediction)]
+
+  if (length(y_pred_col) == 0) {
+    stop(
+      "Could not find a fitted-value column in `object$prediction`. ",
+      "Expected one of: predicted, pred, fit, yhat.",
+      call. = FALSE
+    )
+  }
+
+  y_pred_col <- y_pred_col[1]
+
+  # confidence interval column names
+  lwr_col <- c("lwr_95", "lower_95", "lwr", "lower")
+  upr_col <- c("upr_95", "upper_95", "upr", "upper")
+
+  lwr_col <- lwr_col[lwr_col %in% names(prediction)]
+  upr_col <- upr_col[upr_col %in% names(prediction)]
+
+  has_conf <- length(lwr_col) > 0 && length(upr_col) > 0
+  if (has_conf) {
+    lwr_col <- lwr_col[1]
+    upr_col <- upr_col[1]
+  }
+
   # Filter out outliers if requested
   if (is.numeric(remove_outliers) && isTRUE(show_observations)) {
-    if (ylab == "frequency") {
-      points <- points[points$frequency < remove_outliers, ]
-    } else if (ylab == "severity") {
-      points <- points[points$avg_claimsize < remove_outliers, ]
-    } else if (ylab == "burning") {
-      points <- points[points$avg_premium < remove_outliers, ]
+    if (ylab == "frequency" && "frequency" %in% names(points)) {
+      points <- points[points$frequency < remove_outliers, , drop = FALSE]
+    } else if (ylab == "severity" && "avg_claimsize" %in% names(points)) {
+      points <- points[points$avg_claimsize < remove_outliers, , drop = FALSE]
+    } else if (ylab == "burning" && "avg_premium" %in% names(points)) {
+      points <- points[points$avg_premium < remove_outliers, , drop = FALSE]
     }
   }
 
-  p <- ggplot(prediction, aes(x = x, y = predicted)) +
+  p <- ggplot(
+    prediction,
+    aes(x = .data[["x"]], y = .data[[y_pred_col]])
+  ) +
     geom_line(color = color_gam) +
     theme_bw(base_size = 12) +
     geom_vline(xintercept = splits, color = color_splits, linetype = 2) +
     labs(y = paste0("Predicted ", ylab), x = xlab)
 
-  if (isTRUE(conf_int) && all(prediction$upr_95 < 1e9)) {
-    p <- p + geom_ribbon(aes(ymin = lwr_95, ymax = upr_95), alpha = 0.12)
+  if (isTRUE(conf_int) && has_conf) {
+    ok_ci <- all(is.finite(prediction[[upr_col]])) &&
+      all(prediction[[upr_col]] < 1e9, na.rm = TRUE)
+
+    if (ok_ci) {
+      p <- p + geom_ribbon(
+        aes(
+          ymin = .data[[lwr_col]],
+          ymax = .data[[upr_col]]
+        ),
+        alpha = 0.12
+      )
+    }
   }
 
   if (isTRUE(show_observations)) {
-    if (ylab == "frequency") {
-      p <- p + geom_point(data = points, aes(x = x, y = frequency),
-                          size = size_points, color = color_points)
-    } else if (ylab == "severity") {
-      p <- p + geom_point(data = points, aes(x = x, y = avg_claimsize),
-                          size = size_points, color = color_points) +
+    if (ylab == "frequency" && "frequency" %in% names(points)) {
+      p <- p + geom_point(
+        data = points,
+        aes(x = .data[["x"]], y = .data[["frequency"]]),
+        size = size_points,
+        color = color_points
+      )
+    } else if (ylab == "severity" && "avg_claimsize" %in% names(points)) {
+      p <- p + geom_point(
+        data = points,
+        aes(x = .data[["x"]], y = .data[["avg_claimsize"]]),
+        size = size_points,
+        color = color_points
+      ) +
         scale_y_continuous(labels = scales::comma)
-    } else if (ylab == "burning") {
-      p <- p + geom_point(data = points, aes(x = x, y = avg_premium),
-                          size = size_points, color = color_points)
+    } else if (ylab == "burning" && "avg_premium" %in% names(points)) {
+      p <- p + geom_point(
+        data = points,
+        aes(x = .data[["x"]], y = .data[["avg_premium"]]),
+        size = size_points,
+        color = color_points
+      )
     }
   }
 
   if (isTRUE(rotate_labels)) {
-    p <- p + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+    p <- p + theme(
+      axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
+    )
   }
 
   p

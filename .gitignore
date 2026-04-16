@@ -4,3 +4,6 @@ doc
 Meta
 ^model_refinement\.html$
 ^model_refinement\.Rmd$
+inst/doc
+/doc/
+/Meta/

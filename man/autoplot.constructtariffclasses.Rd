@@ -53,18 +53,6 @@ Produces a \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} of the fitted GAM tog
 tariff class splits. Optionally, confidence intervals and observed data points
 can be added.
 }
-\examples{
-\dontrun{
-library(ggplot2)
-riskfactor_gam(MTPL,
-               nclaims = "nclaims",
-               x = "age_policyholder",
-               exposure = "exposure") |>
-  construct_tariff_classes() |>
-  autoplot(show_observations = TRUE)
-}
-
-}
 \author{
 Martin Haringa
 }

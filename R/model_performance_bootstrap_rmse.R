@@ -1,4 +1,4 @@
-#' Bootstrapped RMSE
+#' Bootstrapped model performance
 #'
 #' @description
 #' Generate `n` bootstrap replicates to compute `n` root mean squared errors (RMSE).
@@ -23,7 +23,7 @@
 #' - If `frac < 1`, a subset of the data is used as training, and the remainder
 #'   as test set (cross-validation).
 #'
-#' @return An object of class `"bootstrap_rmse"`, which is a list with components:
+#' @return An object of class `"bootstrap_performance"`, which is a list with components:
 #' \describe{
 #'   \item{rmse_bs}{Numeric vector with `n` bootstrap RMSE values.}
 #'   \item{rmse_mod}{Root mean squared error for the original fitted model.}
@@ -39,18 +39,19 @@
 #'             offset = log(exposure), family = poisson())
 #'
 #' # Use all records
-#' x <- bootstrap_rmse(mod1, MTPL, n = 80, show_progress = FALSE)
+#' x <- bootstrap_performance(mod1, MTPL, n = 80, show_progress = FALSE)
 #' print(x)
 #' autoplot(x)
 #'
 #' # Use 80% of records (cross-validation style)
-#' x_frac <- bootstrap_rmse(mod1, MTPL, n = 50, frac = .8, show_progress = FALSE)
+#' x_frac <- bootstrap_performance(mod1, MTPL, n = 50, frac = .8, show_progress = FALSE)
 #' autoplot(x_frac)
 #' }
 #'
 #' @export
-bootstrap_rmse <- function(model, data, n = 50, frac = 1, show_progress = TRUE,
-                           rmse_model = NULL) {
+bootstrap_performance <- function(model, data, n = 50, frac = 1,
+                                  show_progress = TRUE,
+                                  rmse_model = NULL) {
   if (frac > 1 || frac <= 0) {
     stop("frac should be in interval (0, 1].", call. = FALSE)
   }
@@ -64,17 +65,18 @@ bootstrap_rmse <- function(model, data, n = 50, frac = 1, show_progress = TRUE,
 
   rmse_vec <- numeric(n)
 
-  # Set progress bar
   if (isTRUE(show_progress)) {
     pb <- utils::txtProgressBar(max = n, style = 3)
     on.exit(close(pb), add = TRUE)
   }
 
   for (i in seq_len(n)) {
-    if (isTRUE(show_progress)) utils::setTxtProgressBar(pb, i)
+    if (isTRUE(show_progress)) {
+      utils::setTxtProgressBar(pb, i)
+    }
 
     train_rows <- sample(seq_len(nrow(data)), size = n_sample, replace = TRUE)
-    train <- data[train_rows, ]
+    train <- data[train_rows, , drop = FALSE]
     test <- data[-train_rows, , drop = FALSE]
 
     model_train <- stats::update(model, . ~ ., data = train)
@@ -92,42 +94,71 @@ bootstrap_rmse <- function(model, data, n = 50, frac = 1, show_progress = TRUE,
   }
 
   structure(
-    list(rmse_bs = rmse_vec, rmse_mod = rmse_model),
-    class = "bootstrap_rmse"
+    list(
+      rmse_bs = rmse_vec,
+      rmse_mod = rmse_model
+    ),
+    class = "bootstrap_performance"
+  )
+}
+
+#' @rdname bootstrap_performance
+#' @description
+#' `bootstrap_rmse()` is deprecated in favour of [bootstrap_performance()].
+#'
+#' @export
+bootstrap_rmse <- function(model, data, n = 50, frac = 1, show_progress = TRUE,
+                           rmse_model = NULL) {
+  lifecycle::deprecate_warn(
+    "0.9.0",
+    "bootstrap_rmse()",
+    "bootstrap_performance()"
+  )
+
+  bootstrap_performance(
+    model = model,
+    data = data,
+    n = n,
+    frac = frac,
+    show_progress = show_progress,
+    rmse_model = rmse_model
   )
 }
 
 
 #' @export
-print.bootstrap_rmse <- function(x, ...) {
+print.bootstrap_performance <- function(x, ...) {
   print(x$rmse_bs)
+  invisible(x)
 }
 
-#' Coerce bootstrap_rmse objects to a vector
+
+#' Coerce bootstrap_performance objects to a vector
 #'
 #' @description
 #' Extracts the bootstrap RMSE values as a numeric vector.
 #'
-#' @param x An object of class `"bootstrap_rmse"`.
+#' @param x An object of class `"bootstrap_performance"`.
 #' @param ... Further arguments passed to [as.vector()].
 #'
 #' @return A numeric vector with the bootstrap RMSE values.
 #'
 #' @export
-as.vector.bootstrap_rmse <- function(x, ...) {
+as.vector.bootstrap_performance <- function(x, ...) {
   as.vector(x$rmse_bs, ...)
 }
 
 
-#' Autoplot for bootstrap_rmse objects
+#' Autoplot for bootstrap_performance objects
 #'
 #' @description
-#' `autoplot()` method for objects created by [bootstrap_rmse()].
+#' `autoplot()` method for objects created by [bootstrap_performance()].
 #' Produces a histogram and density plot of the bootstrapped RMSE values,
 #' with the RMSE of the original fitted model shown as a dashed vertical line.
 #' Optionally, 95% quantile bounds are shown as dotted vertical lines.
 #'
-#' @param object An object of class `"bootstrap_rmse"`, produced by [bootstrap_rmse()].
+#' @param object An object of class `"bootstrap_performance"`, produced by
+#'   [bootstrap_performance()].
 #' @param fill Fill color of the histogram bars. Default = `"steelblue"`.
 #' @param color Border color of the histogram bars. Default = `"black"`.
 #' @param ... Additional arguments passed to [ggplot2::autoplot()].
@@ -144,17 +175,17 @@ as.vector.bootstrap_rmse <- function(x, ...) {
 #' \dontrun{
 #' mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
 #'             offset = log(exposure), family = poisson())
-#' x <- bootstrap_rmse(mod1, MTPL, n = 100, show_progress = FALSE)
+#' x <- bootstrap_performance(mod1, MTPL, n = 100, show_progress = FALSE)
 #' autoplot(x)
 #' }
 #'
 #' @export
-autoplot.bootstrap_rmse <- function(object,
-                                    fill = "steelblue",
-                                    color = "black",
-                                    ...) {
-  if (!inherits(object, "bootstrap_rmse")) {
-    stop("Input must be of class 'bootstrap_rmse'.", call. = FALSE)
+autoplot.bootstrap_performance <- function(object,
+                                           fill = "steelblue",
+                                           color = "black",
+                                           ...) {
+  if (!inherits(object, "bootstrap_performance")) {
+    stop("Input must be of class 'bootstrap_performance'.", call. = FALSE)
   }
 
   rmse_bs <- object$rmse_bs
@@ -173,17 +204,46 @@ autoplot.bootstrap_rmse <- function(object,
       color = color,
       bins = 30
     ) +
-    ggplot2::geom_density(alpha = .3, fill = "antiquewhite3",
-                          color = "grey40") +
+    ggplot2::geom_density(
+      alpha = .3,
+      fill = "antiquewhite3",
+      color = "grey40"
+    ) +
     ggplot2::geom_vline(xintercept = rmse_mod, linetype = 2) +
     ggplot2::theme_minimal() +
-    ggplot2::labs(title = "Bootstrapped RMSE",
-                  x = "(Simulated) RMSE",
-                  y = "Density")
+    ggplot2::labs(
+      title = "Bootstrapped model performance",
+      x = "(Simulated) RMSE",
+      y = "Density"
+    )
 
   if (!is.null(conf_bounds)) {
     p <- p + ggplot2::geom_vline(xintercept = conf_bounds, linetype = 3)
   }
 
-  return(p)
+  p
+}
+
+
+#' @export
+print.bootstrap_rmse <- function(x, ...) {
+  print.bootstrap_performance(x, ...)
+}
+
+#' @export
+as.vector.bootstrap_rmse <- function(x, ...) {
+  as.vector.bootstrap_performance(x, ...)
+}
+
+#' @export
+autoplot.bootstrap_rmse <- function(object,
+                                    fill = "steelblue",
+                                    color = "black",
+                                    ...) {
+  autoplot.bootstrap_performance(
+    object = object,
+    fill = fill,
+    color = color,
+    ...
+  )
 }

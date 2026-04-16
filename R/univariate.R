@@ -1,7 +1,7 @@
-#' Univariate analysis for discrete risk factors
+#' Factor analysis for discrete risk factors
 #'
 #' @description
-#' Performs a univariate analysis for discrete risk factors in an insurance
+#' Performs a factor analysis for discrete risk factors in an insurance
 #' portfolio. The following summary statistics are calculated:
 #' \itemize{
 #'   \item frequency = number of claims / exposure
@@ -20,7 +20,7 @@
 #' @param by Character vector of column(s) in `df` to group by in addition to `x`.
 #'
 #' @details
-#' The function computes univariate statistics for discrete risk factors.
+#' The function computes summary statistics for discrete risk factors.
 #'
 #' - **Frequency**: number of claims / exposure
 #' - **Average severity**: severity / number of claims
@@ -34,12 +34,12 @@
 #' ## Migration from `univariate()`
 #'
 #' The function [univariate()] is deprecated as of version 0.8.0 and replaced by
-#' [univariate_summary()]. In addition to the name change, the interface has also
+#' [factor_analysis()]. In addition to the name change, the interface has also
 #' changed:
 #'
 #' - `univariate()` used **non-standard evaluation (NSE)**, so column names could be
 #'   passed unquoted (e.g. `x = area`).
-#' - `univariate_summary()` uses **standard evaluation (SE)**, so column names must
+#' - `factor_analysis()` uses **standard evaluation (SE)**, so column names must
 #'   be passed as character strings (e.g. `x = "area"`).
 #'
 #' This makes the function easier to use in programmatic workflows.
@@ -47,27 +47,20 @@
 #' `univariate()` is still available for backward compatibility but will emit a
 #' deprecation warning and will be removed in a future release.
 #'
-#'
 #' @return A `data.table` of class `"univariate"` with summary statistics.
 #'
 #' @author Martin Haringa
 #'
 #' @importFrom data.table data.table
 #'
-#' @details
-#' This function supersedes [univariate()], which relied on non-standard
-#' evaluation (NSE). From version 0.8.0 onwards, you must supply column names
-#' as **strings** (SE), which makes the function easier to use in programmatic
-#' workflows.
-#'
 #' @examples
 #' ## --- New usage (SE) ---
-#' univariate_summary(MTPL2,
-#'                    x = "area",
-#'                    severity = "amount",
-#'                    nclaims = "nclaims",
-#'                    exposure = "exposure",
-#'                    premium = "premium")
+#' factor_analysis(MTPL2,
+#'                 x = "area",
+#'                 severity = "amount",
+#'                 nclaims = "nclaims",
+#'                 exposure = "exposure",
+#'                 premium = "premium")
 #'
 #' ## --- Deprecated usage (NSE) ---
 #' univariate(MTPL2,
@@ -78,8 +71,8 @@
 #'            premium = premium)
 #'
 #' @export
-univariate_summary <- function(df, x, severity = NULL, nclaims = NULL,
-                               exposure = NULL, premium = NULL, by = NULL) {
+factor_analysis <- function(df, x, severity = NULL, nclaims = NULL,
+                            exposure = NULL, premium = NULL, by = NULL) {
 
   .xvar <- x
   .xvar_out <- .xvar
@@ -100,7 +93,6 @@ univariate_summary <- function(df, x, severity = NULL, nclaims = NULL,
     .xvar <- .xvar[1]
   }
 
-  # only keep the non-null arguments
   cols_ <- c(severity, nclaims, exposure, premium)
   cols_ <- cols_[!is.null(cols_)]
 
@@ -137,19 +129,38 @@ univariate_summary <- function(df, x, severity = NULL, nclaims = NULL,
   return(dt)
 }
 
+#' @rdname factor_analysis
+#' @description
+#' `univariate_summary()` is kept as a compatibility alias for [factor_analysis()].
+#' It uses the same standard-evaluation interface and is **not** deprecated.
+#'
+#' @export
+univariate_summary <- function(df, x, severity = NULL, nclaims = NULL,
+                               exposure = NULL, premium = NULL, by = NULL) {
+  factor_analysis(
+    df = df,
+    x = x,
+    severity = severity,
+    nclaims = nclaims,
+    exposure = exposure,
+    premium = premium,
+    by = by
+  )
+}
 
 
-#' @rdname univariate_summary
+
+#' @rdname factor_analysis
 #' @description
 #' [univariate()] is deprecated as of version 0.8.0.
-#' Please use [univariate_summary()] instead with **standard evaluation** (SE),
+#' Please use [factor_analysis()] instead with **standard evaluation** (SE),
 #' i.e. column names as character strings.
 #'
 #' @export
 univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
                        premium = NULL, by = NULL) {
 
-  lifecycle::deprecate_warn("0.8.0", "univariate()", "univariate_summary()")
+  lifecycle::deprecate_warn("0.8.0", "univariate()", "factor_analysis()")
 
   nse_se_input <- function(arg) {
     expr <- substitute(arg)
@@ -177,21 +188,28 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
   .premium <- eval.parent(substitute(nse_se_input(premium)))
   .by <- eval.parent(substitute(nse_se_input(by)))
 
-  univariate_summary(df = df, x = .xvar, severity = .severity,
-                     nclaims = .nclaims, exposure = .exposure,
-                     premium = .premium, by = .by)
+  factor_analysis(
+    df = df,
+    x = .xvar,
+    severity = .severity,
+    nclaims = .nclaims,
+    exposure = .exposure,
+    premium = .premium,
+    by = .by
+  )
 }
 
 
 
-#' Automatically create a ggplot for objects obtained from univariate analysis
+#' Automatically create a ggplot for objects obtained from factor analysis
 #'
 #' @description
-#' Takes an object produced by [univariate_summary()] (SE) or [univariate()]
-#' (deprecated NSE interface) and plots the available statistics.
+#' Takes an object produced by [factor_analysis()], [univariate_summary()]
+#' (compatibility alias) or [univariate()] (deprecated NSE interface) and plots
+#' the available statistics.
 #'
-#' @param object A `univariate` object produced by [univariate_summary()] or
-#' [univariate()].
+#' @param object A `univariate` object produced by [factor_analysis()],
+#' [univariate_summary()] or [univariate()].
 #' @param show_plots Numeric vector of plots to be shown (default is
 #' `1:9`). There are nine available plots:
 #' \itemize{
@@ -249,12 +267,20 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #'
 #' @examples
 #' ## --- New usage (SE, recommended) ---
-#' x <- univariate_summary(MTPL2,
-#'                         x = "area",
-#'                         severity = "amount",
-#'                         nclaims = "nclaims",
-#'                         exposure = "exposure")
+#' x <- factor_analysis(MTPL2,
+#'                      x = "area",
+#'                      severity = "amount",
+#'                      nclaims = "nclaims",
+#'                      exposure = "exposure")
 #' autoplot(x)
+#'
+#' ## --- Compatibility alias ---
+#' x2 <- univariate_summary(MTPL2,
+#'                          x = "area",
+#'                          severity = "amount",
+#'                          nclaims = "nclaims",
+#'                          exposure = "exposure")
+#' autoplot(x2)
 #'
 #' ## --- Deprecated usage (NSE) ---
 #' x_old <- univariate(MTPL2, x = area, severity = amount,

@@ -3,31 +3,23 @@
 \name{refit_glm}
 \alias{refit_glm}
 \alias{update_glm}
-\title{Refit a GLM model}
+\title{Refit a GLM model or refinement workflow}
 \usage{
 refit_glm(x, intercept_only = FALSE, ...)
 
 update_glm(x, intercept_only = FALSE, ...)
 }
 \arguments{
-\item{x}{Object of class restricted or of class smooth}
+\item{x}{Object of class \code{rating_refinement}, \code{restricted} or \code{smooth}.}
 
-\item{intercept_only}{Logical. Default is \code{FALSE}. If \code{TRUE}, only
-the intercept is updated, ensuring that the changes have no impact on the
-other variables.}
+\item{intercept_only}{Logical.}
 
-\item{...}{Other arguments}
+\item{...}{Other arguments.}
 }
 \value{
-Object of class GLM
+Object of class \code{glm}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
-This is the new version of \code{refit_glm()}. It refits the GLM with
-any restrictions or smoothings that were previously added.
-
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
-}
-\author{
-Martin Haringa
+Backwards-compatible wrapper. Prefer using \code{\link[=refit]{refit()}} for the new
+refinement workflow.
 }

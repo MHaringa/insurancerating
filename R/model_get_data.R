@@ -3,12 +3,12 @@
 #' @description
 #' `r lifecycle::badge('experimental')`
 #'
-#' `extract_model_data()` retrieves underlying data from fitted models. It works
+#' `model_data()` retrieves underlying data from fitted models. It works
 #' for objects of class `"glm"`, as well as objects produced by refitting
 #' procedures (`"refitsmooth"` or `"refitrestricted"`).
 #'
-#' The wrapper [model_data()] is deprecated as of version 0.8.0; please use
-#' [extract_model_data()] instead.
+#' The compatibility wrapper [extract_model_data()] remains available and is
+#' **not** deprecated.
 #'
 #' @param x An object of class `"glm"`, `"refitsmooth"`, or `"refitrestricted"`.
 #'
@@ -76,11 +76,11 @@
 #' refit_glm()
 #'
 #' # Extract model data
-#' extract_model_data(burn_restricted)
+#' model_data(burn_restricted)
 #' }
 #'
 #' @export
-extract_model_data <- function(x) {
+model_data <- function(x) {
 
   if (!inherits(x, c("refitsmooth", "refitrestricted", "glm"))) {
     stop(
@@ -155,19 +155,21 @@ extract_model_data <- function(x) {
 
 
 
-#' @rdname extract_model_data
+#' @rdname model_data
+#' @description
+#' `extract_model_data()` is kept as a compatibility alias for [model_data()].
+#' It is **not** deprecated.
+#'
 #' @export
-model_data <- function(x) {
-  lifecycle::deprecate_warn("0.7.5.9000", "model_data()",
-                            "extract_model_data()")
-  extract_model_data(x)
+extract_model_data <- function(x) {
+  model_data(x)
 }
 
 
-#' Construct observed model points from extracted model data or a data frame
+#' Construct observed rating-grid points from model data or a data frame
 #'
 #' @description
-#' `construct_model_points()` constructs model points by collapsing rows with
+#' `rating_grid()` constructs rating-grid points by collapsing rows with
 #' identical combinations of grouping variables to a single row.
 #'
 #' The function is intended for analytical use cases where it is convenient to
@@ -184,7 +186,7 @@ model_data <- function(x) {
 #'
 #' In other words, the function:
 #' \itemize{
-#'   \item identifies the model-point dimensions;
+#'   \item identifies the rating-grid dimensions;
 #'   \item groups rows with identical combinations of these variables;
 #'   \item aggregates exposure and optional numeric columns to one row per
 #'   observed combination.
@@ -193,20 +195,20 @@ model_data <- function(x) {
 #' This is especially useful for:
 #' \itemize{
 #'   \item analysing model structure,
-#'   \item summarising portfolios at model-point level,
+#'   \item summarising portfolios at rating-grid level,
 #'   \item comparing observed and fitted values,
 #'   \item creating compact input for further analysis or plotting.
 #' }
 #'
-#' When `x` is an object returned by [extract_model_data()], the function uses
+#' When `x` is an object returned by [model_data()], the function uses
 #' the extracted model metadata to determine the grouping variables if
 #' `group_vars` is not supplied. When `x` is a plain `data.frame`, it is
 #' recommended to supply `group_vars` explicitly.
 #'
 #' @param x A `data.frame` or an object of class `"model_data"` returned by
-#'   [extract_model_data()].
+#'   [model_data()].
 #' @param group_vars Optional character vector with the variables that define the
-#'   model points. If `NULL` and `x` is a `"model_data"` object, the risk-factor
+#'   rating-grid points. If `NULL` and `x` is a `"model_data"` object, the risk-factor
 #'   variables stored in the object are used. If `NULL` and `x` is a plain
 #'   `data.frame`, all columns except those listed in `exposure`,
 #'   `exposure_by`, and `agg_cols` are used.
@@ -219,7 +221,7 @@ model_data <- function(x) {
 #'   are removed before aggregation. Default is `FALSE`.
 #'
 #' @details
-#' The function does **not** construct all theoretically possible model-point
+#' The function does **not** construct all theoretically possible rating-grid
 #' combinations. Instead, it only keeps combinations that actually occur in the
 #' input data and aggregates duplicates.
 #'
@@ -227,12 +229,12 @@ model_data <- function(x) {
 #' of that variable and returned in wide format, for example
 #' `"exposure_2020"` or `"count_2020"`.
 #'
-#' For objects returned by [extract_model_data()], additional refinement
+#' For objects returned by [model_data()], additional refinement
 #' variables stored in the object attributes may be retained when they are not
 #' already part of the regular grouping variables.
 #'
 #' @return
-#' A `data.frame` with one row per observed model point.
+#' A `data.frame` with one row per observed rating-grid point.
 #'
 #' @author Martin Haringa
 #'
@@ -243,18 +245,18 @@ model_data <- function(x) {
 #' # With a data.frame
 #' mtcars |>
 #'   dplyr::select(cyl, vs) |>
-#'   construct_model_points(group_vars = c("cyl", "vs"))
+#'   rating_grid(group_vars = c("cyl", "vs"))
 #'
 #' mtcars |>
 #'   dplyr::select(cyl, vs, disp) |>
-#'   construct_model_points(
+#'   rating_grid(
 #'     group_vars = c("cyl", "vs"),
 #'     exposure = "disp"
 #'   )
 #'
 #' mtcars |>
 #'   dplyr::select(cyl, vs, disp, gear) |>
-#'   construct_model_points(
+#'   rating_grid(
 #'     group_vars = c("cyl", "vs"),
 #'     exposure = "disp",
 #'     exposure_by = "gear"
@@ -262,7 +264,7 @@ model_data <- function(x) {
 #'
 #' mtcars |>
 #'   dplyr::select(cyl, vs, disp, gear, mpg) |>
-#'   construct_model_points(
+#'   rating_grid(
 #'     group_vars = c("cyl", "vs"),
 #'     exposure = "disp",
 #'     exposure_by = "gear",
@@ -277,24 +279,36 @@ model_data <- function(x) {
 #' )
 #'
 #' pmodel |>
-#'   extract_model_data() |>
-#'   construct_model_points()
+#'   model_data() |>
+#'   rating_grid()
 #' }
 #'
 #' @importFrom tidyr pivot_wider drop_na
 #' @importFrom dplyr all_of
 #'
 #' @export
-construct_model_points <- function(x,
-                                   group_vars = NULL,
-                                   exposure = NULL,
-                                   exposure_by = NULL,
-                                   agg_cols = NULL,
-                                   drop_na = FALSE) {
+rating_grid <- function(x,
+                        group_vars = NULL,
+                        exposure = NULL,
+                        exposure_by = NULL,
+                        agg_cols = NULL,
+                        drop_na = FALSE) {
+
+  # allow direct use on fitted model objects
+  if (inherits(x, c("glm", "refitsmooth", "refitrestricted"))) {
+    x <- model_data(x)
+  }
+
+  if (inherits(x, "rating_refinement")) {
+    stop(
+      "Input is a 'rating_refinement' object. Call refit() first, then use rating_grid().",
+      call. = FALSE
+    )
+  }
 
   if (!inherits(x, "model_data") && !inherits(x, "data.frame")) {
     stop(
-      "Input must be a data.frame or an object returned by extract_model_data().",
+      "Input must be a data.frame, an object returned by model_data(), or a fitted model.",
       call. = FALSE
     )
   }
@@ -319,15 +333,11 @@ construct_model_points <- function(x,
   xdf <- as.data.frame(x)
   offweights <- NULL
 
-  xdf <- as.data.frame(x)
-  offweights <- NULL
-
   if (inherits(x, "model_data")) {
 
     offweights <- unique(attr(x, "offweights"))
     default_group_vars <- attr(x, "rf")
 
-    # fallback 1: explicit term labels
     if (is.null(default_group_vars) || length(default_group_vars) == 0) {
       term_labels <- attr(x, "term.labels")
       if (!is.null(term_labels)) {
@@ -335,7 +345,6 @@ construct_model_points <- function(x,
       }
     }
 
-    # fallback 2: terms object
     if (is.null(default_group_vars) || length(default_group_vars) == 0) {
       terms_obj <- attr(x, "terms")
       if (!is.null(terms_obj)) {
@@ -346,7 +355,6 @@ construct_model_points <- function(x,
       }
     }
 
-    # fallback 3: infer from available columns
     if (is.null(default_group_vars) || length(default_group_vars) == 0) {
       response_var <- attr(x, "response")
       cols_excluded <- unique(c(
@@ -577,4 +585,32 @@ construct_model_points <- function(x,
 
   rownames(out) <- NULL
   out
+}
+
+
+#' @rdname rating_grid
+#' @description
+#' `construct_model_points()` is deprecated in favour of [rating_grid()].
+#'
+#' @export
+construct_model_points <- function(x,
+                                   group_vars = NULL,
+                                   exposure = NULL,
+                                   exposure_by = NULL,
+                                   agg_cols = NULL,
+                                   drop_na = FALSE) {
+  lifecycle::deprecate_warn(
+    "0.9.0",
+    "construct_model_points()",
+    "rating_grid()"
+  )
+
+  rating_grid(
+    x = x,
+    group_vars = group_vars,
+    exposure = exposure,
+    exposure_by = exposure_by,
+    agg_cols = agg_cols,
+    drop_na = drop_na
+  )
 }
