@@ -21,18 +21,6 @@ edit_smoothing(
   allow_extrapolation = FALSE,
   extrapolation_break_size = NULL
 )
-
-update_smoothing(
-  model,
-  x1,
-  x2,
-  overwrite_y1 = NULL,
-  overwrite_y2 = NULL,
-  knots_x = NULL,
-  knots_y = NULL,
-  allow_extrapolation = FALSE,
-  extrapolation_break_size = NULL
-)
 ```
 
 ## Arguments

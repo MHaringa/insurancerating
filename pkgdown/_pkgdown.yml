@@ -3,8 +3,8 @@ url: https://mharinga.github.io/insurancerating/
 template:
   bootstrap: 5
   bslib:
-    base_font: {google: "Raleway"}
-    heading_font: {google: "Montserrat"}
+    base_font: {google: "Inter"}
+    heading_font: {google: "Inter"}
     code_font: {google: "Google Sans Code"}
 
 navbar:
@@ -39,9 +39,7 @@ reference:
       - riskfactor_gam
       - fit_gam
       - summary.fitgam
-      - print.fitgam
       - autoplot.fitgam
-      - as.data.frame.fitgam
       - construct_tariff_classes
       - print.constructtariffclasses
       - as.vector.constructtariffclasses

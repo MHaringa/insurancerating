@@ -429,7 +429,7 @@ default_extrapolation_break_size <- function(borders_model, factor = 1) {
 #' Modify an existing smoothing curve by linear adjustments and extrapolation
 #'
 #' @description
-#' Internal helper used by [`update_smoothing()`] to locally modify an already
+#' Internal helper used by [`edit_smoothing()`] to locally modify an already
 #' fitted smoothing curve.
 #'
 #' The function operates directly on the discretised representation of a

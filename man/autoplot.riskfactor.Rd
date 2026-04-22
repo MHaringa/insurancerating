@@ -50,7 +50,7 @@ taken from the internal discrete palette.}
 Default is \code{FALSE}.}
 
 \item{univariate}{Optional \code{univariate} object returned by
-\code{\link[=univariate_summary]{univariate_summary()}}. If supplied, the selected univariate statistic is
+\code{\link[=factor_analysis]{factor_analysis()}}. If supplied, the selected univariate statistic is
 added as an extra line.}
 
 \item{univariate_var}{Character; statistic from \code{univariate} to plot.

@@ -83,7 +83,7 @@ autoplot(
 - univariate:
 
   Optional `univariate` object returned by
-  [`univariate_summary()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md).
+  [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md).
   If supplied, the selected univariate statistic is added as an extra
   line.
 

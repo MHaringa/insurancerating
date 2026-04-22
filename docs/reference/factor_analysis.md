@@ -13,10 +13,6 @@ portfolio. The following summary statistics are calculated:
 
 - average premium = premium / exposure
 
-`univariate_summary()` is kept as a compatibility alias for
-`factor_analysis()`. It uses the same standard-evaluation interface and
-is **not** deprecated.
-
 `univariate()` is deprecated as of version 0.8.0. Please use
 `factor_analysis()` instead with **standard evaluation** (SE), i.e.
 column names as character strings.
@@ -25,16 +21,6 @@ column names as character strings.
 
 ``` r
 factor_analysis(
-  df,
-  x,
-  severity = NULL,
-  nclaims = NULL,
-  exposure = NULL,
-  premium = NULL,
-  by = NULL
-)
-
-univariate_summary(
   df,
   x,
   severity = NULL,
@@ -87,7 +73,7 @@ univariate(
 
 ## Value
 
-A `data.table` of class `"univariate"` with summary statistics.
+An object of class `"univariate"` with summary statistics.
 
 ## Details
 

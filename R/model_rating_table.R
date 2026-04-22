@@ -2,7 +2,6 @@
 # Rating table helpers
 # -----------------------------------------------------------------------------
 
-#' @importFrom data.table data.table
 #' @importFrom dplyr full_join
 #' @importFrom dplyr left_join
 #' @importFrom stats terms
@@ -35,14 +34,244 @@
 }
 
 
-#' @importFrom data.table data.table
+#' @keywords internal
+.normalize_level_key <- function(x) {
+  if (is.factor(x)) {
+    x <- as.character(x)
+  }
+
+  if (is.numeric(x)) {
+    x <- format(x, trim = TRUE, scientific = FALSE, digits = 15)
+    x <- sub("\\.?0+$", "", x)
+    x[x == ""] <- "0"
+    return(x)
+  }
+
+  trimws(as.character(x))
+}
+
+
+#' @keywords internal
+.get_restriction_map <- function(model) {
+  out <- attr(model, "restriction_map")
+  if (is.null(out)) {
+    return(NULL)
+  }
+
+  if (!is.data.frame(out)) {
+    return(NULL)
+  }
+
+  needed <- c("source_var", "risk_factor")
+  if (!all(needed %in% names(out))) {
+    return(NULL)
+  }
+
+  out$source_var <- as.character(out$source_var)
+  out$risk_factor <- as.character(out$risk_factor)
+  unique(out[, needed, drop = FALSE])
+}
+
+
+#' @keywords internal
+.map_exposure_source_var <- function(model, risk_factor, model_data_names) {
+
+  rf <- as.character(risk_factor)
+
+  # 1. explicit restriction map from refit object
+  # IMPORTANT: this must come before exact-match lookup, because the refit
+  # data often also contains the restricted column itself (e.g. zip_rst),
+  # while exposure should still be aggregated on the original source variable
+  # (e.g. zip).
+  rst_map <- .get_restriction_map(model)
+  if (!is.null(rst_map)) {
+    hit <- rst_map[rst_map$risk_factor == rf, , drop = FALSE]
+    if (nrow(hit) > 0) {
+      src <- hit$source_var[1]
+      if (!is.na(src) && src %in% model_data_names) {
+        return(src)
+      }
+    }
+  }
+
+  # 2. exact match
+  if (rf %in% model_data_names) {
+    return(rf)
+  }
+
+  # 3. fallback for legacy naming conventions
+  rf_base <- sub("_rst99$", "", rf)
+  rf_base <- sub("_rst$", "", rf_base)
+  if (rf_base %in% model_data_names) {
+    return(rf_base)
+  }
+
+  # 4. smoothing fallback
+  rf_base <- sub("_smooth$", "", rf)
+  if (rf_base %in% model_data_names) {
+    return(rf_base)
+  }
+
+  NULL
+}
+
+
+#' @keywords internal
+.resolve_rating_table_model_data <- function(model, model_data = NULL) {
+  if (!is.null(model_data)) {
+    return(as.data.frame(model_data))
+  }
+
+  if (!is.null(model$data)) {
+    return(as.data.frame(model$data))
+  }
+
+  NULL
+}
+
+
+#' @keywords internal
+.resolve_rating_table_model_data_name <- function(model, model_data = NULL) {
+  if (!is.null(model_data)) {
+    return(deparse(substitute(model_data)))
+  }
+
+  if (!is.null(model$data)) {
+    return("model$data")
+  }
+
+  NULL
+}
+
+
+#' @keywords internal
+.infer_exposure_col <- function(model, model_data) {
+
+  if (is.null(model_data)) {
+    return(NULL)
+  }
+
+  candidates <- character(0)
+
+  # 1. weights from model call
+  w_call <- tryCatch(model$call$weights, error = function(e) NULL)
+
+  if (!is.null(w_call)) {
+    w_chr <- deparse(w_call)
+    if (length(w_chr) == 1 && w_chr %in% names(model_data)) {
+      candidates <- c(candidates, w_chr)
+    }
+  }
+
+  # 2. refit metadata
+  offweights <- attr(model, "offweights")
+
+  if (!is.null(offweights)) {
+    offweights <- offweights[offweights %in% names(model_data)]
+    if (length(offweights) > 0) {
+      candidates <- c(candidates, offweights)
+    }
+  }
+
+  candidates <- unique(candidates)
+
+  if (length(candidates) == 0) {
+    return(NULL)
+  }
+
+  # keep only numeric columns
+  candidates <- candidates[vapply(
+    candidates,
+    function(nm) is.numeric(model_data[[nm]]),
+    logical(1)
+  )]
+
+  if (length(candidates) == 0) {
+    return(NULL)
+  }
+
+  # strong preference for a column literally called "exposure"
+  if ("exposure" %in% candidates) {
+    return("exposure")
+  }
+
+  candidates[1]
+}
+
+
+#' @keywords internal
+.resolve_exposure_spec <- function(model, model_data, exposure = TRUE,
+                                   exposure_name = NULL) {
+
+  if (isFALSE(exposure)) {
+    return(list(
+      use_exposure = FALSE,
+      exposure_col = NULL,
+      exposure_out = NULL
+    ))
+  }
+
+  if (isTRUE(exposure)) {
+    exposure_col <- .infer_exposure_col(model, model_data)
+  } else if (is.character(exposure) && length(exposure) == 1) {
+    exposure_col <- exposure
+  } else {
+    stop(
+      "`exposure` must be TRUE, FALSE, or a single character string.",
+      call. = FALSE
+    )
+  }
+
+  if (is.null(exposure_col)) {
+    return(list(
+      use_exposure = FALSE,
+      exposure_col = NULL,
+      exposure_out = NULL
+    ))
+  }
+
+  if (is.null(model_data)) {
+    return(list(
+      use_exposure = FALSE,
+      exposure_col = NULL,
+      exposure_out = NULL
+    ))
+  }
+
+  if (!exposure_col %in% names(model_data)) {
+    stop(
+      "Exposure column '", exposure_col, "' is not present in model data.",
+      call. = FALSE
+    )
+  }
+
+  if (!is.numeric(model_data[[exposure_col]])) {
+    stop(
+      "Exposure column '", exposure_col, "' must be numeric.",
+      call. = FALSE
+    )
+  }
+
+  exposure_out <- if (is.null(exposure_name)) exposure_col else exposure_name
+
+  list(
+    use_exposure = TRUE,
+    exposure_col = exposure_col,
+    exposure_out = exposure_out
+  )
+}
+
+
 #' @importFrom dplyr full_join
 #' @importFrom dplyr left_join
 #' @importFrom stats terms
 #' @importFrom utils stack
 #'
 #' @keywords internal
-rating_table_simple <- function(model, model_data = NULL, exposure = NULL,
+rating_table_simple <- function(model,
+                                model_data = NULL,
+                                exposure = TRUE,
+                                exposure_name = NULL,
                                 colname = "estimate",
                                 exponentiate = TRUE,
                                 round_exposure = 0) {
@@ -71,15 +300,19 @@ rating_table_simple <- function(model, model_data = NULL, exposure = NULL,
     stop("Input must be a glm or a refit_glm()/refit() object.", call. = FALSE)
   }
 
-  # ---------------------------------------------------------------------------
-  # Exposure requires model_data
-  # ---------------------------------------------------------------------------
-  if (!is.null(exposure) && is.null(model_data)) {
-    warning(
-      "Argument 'exposure' was provided, but 'model_data' is missing. ",
-      "Exposure cannot be determined without 'model_data'."
-    )
-  }
+  model_data_use <- .resolve_rating_table_model_data(model, model_data)
+  model_data_name <- .resolve_rating_table_model_data_name(model, model_data)
+
+  exposure_info <- .resolve_exposure_spec(
+    model = model,
+    model_data = model_data_use,
+    exposure = exposure,
+    exposure_name = exposure_name
+  )
+
+  use_exposure <- exposure_info$use_exposure
+  exposure_col <- exposure_info$exposure_col
+  exposure_out <- exposure_info$exposure_out
 
   # ---------------------------------------------------------------------------
   # Extract original xlevels from glm
@@ -107,61 +340,90 @@ rating_table_simple <- function(model, model_data = NULL, exposure = NULL,
   # Add refit() / refit_glm() attributes
   # IMPORTANT: collect BOTH new_rf_rst and new_rf
   # ---------------------------------------------------------------------------
-  x <- NULL
+  x_new <- NULL
 
   if (inherits(model, c("refitsmooth", "refitrestricted"))) {
-    x <- .collect_refit_new_rf(model)
+    x_new <- .collect_refit_new_rf(model)
 
-    if (!is.null(x) && nrow(x) > 0) {
-      x$risk_factor <- as.character(x$risk_factor)
-      x$level <- as.character(x$level)
-      x$ind_values <- paste0(x$risk_factor, x$level)
+    if (!is.null(x_new) && nrow(x_new) > 0) {
+      x_new$risk_factor <- as.character(x_new$risk_factor)
+      x_new$level <- as.character(x_new$level)
+      x_new$ind_values <- paste0(x_new$risk_factor, x_new$level)
 
-      x2 <- x[, c("risk_factor", "level", "ind_values"), drop = FALSE]
+      x2 <- x_new[, c("risk_factor", "level", "ind_values"), drop = FALSE]
       xl_df <- rbind(xl_df, x2)
-      xl_names <- c(xl_names, unique(x$risk_factor))
+      xl_names <- c(xl_names, unique(x_new$risk_factor))
     }
   }
 
   # ---------------------------------------------------------------------------
   # Exposure by factor level
   # ---------------------------------------------------------------------------
-  model_data_name <- deparse(substitute(model_data))
+  if (isTRUE(use_exposure) && !is.null(model_data_use)) {
 
-  if (!is.null(model_data)) {
-    xl_names_in  <- intersect(xl_names, names(model_data))
-    xl_names_out <- setdiff(xl_names, xl_names_in)
-  } else {
-    xl_names_in  <- character(0)
-    xl_names_out <- xl_names
-  }
+    model_data_use <- as.data.frame(model_data_use)
 
-  if (!is.null(model_data) && !is.null(exposure)) {
+    rf_all <- unique(xl_df$risk_factor)
 
-    if (!exposure %in% names(model_data)) {
-      stop(exposure, " is unknown in ", model_data_name, call. = FALSE)
+    rf_map <- data.frame(
+      risk_factor = rf_all,
+      source_var = vapply(
+        rf_all,
+        function(rf) {
+          out <- .map_exposure_source_var(model, rf, names(model_data_use))
+          if (is.null(out)) "" else out
+        },
+        character(1)
+      ),
+      stringsAsFactors = FALSE
+    )
+
+    rf_map_in  <- rf_map[rf_map$source_var != "", , drop = FALSE]
+    rf_map_out <- rf_map[rf_map$source_var == "", , drop = FALSE]
+
+    if (nrow(rf_map_out) > 0 && !is.null(model_data_name)) {
+      message(
+        paste(rf_map_out$risk_factor, collapse = ", "),
+        " not in ",
+        model_data_name
+      )
     }
 
-    if (!is.numeric(model_data[[exposure]])) {
-      stop(exposure, " should be numeric", call. = FALSE)
-    }
+    if (nrow(rf_map_in) > 0) {
+      listexp <- lapply(seq_len(nrow(rf_map_in)), function(i) {
+        rf_i  <- rf_map_in$risk_factor[i]
+        src_i <- rf_map_in$source_var[i]
 
-    if (length(xl_names_out) > 0) {
-      message(paste(xl_names_out, collapse = ", "), " not in ", model_data_name)
-    }
+        tmp <- stats::aggregate(
+          model_data_use[[exposure_col]],
+          by = list(level = as.character(model_data_use[[src_i]])),
+          FUN = sum,
+          na.rm = TRUE
+        )
 
-    if (length(xl_names_in) > 0) {
-      model_data <- as.data.frame(model_data)
-
-      listexp <- lapply(xl_names_in, function(v) {
-        exposure_by_factor(v, model_data, exposure)
+        names(tmp)[names(tmp) == "x"] <- exposure_col
+        tmp$risk_factor <- rf_i
+        tmp
       })
 
       dfexp <- if (length(listexp) > 0) do.call(rbind, listexp) else NULL
 
       if (!is.null(dfexp)) {
         dfexp$level <- as.character(dfexp$level)
-        xl_df <- dplyr::left_join(xl_df, dfexp, by = c("level", "risk_factor"))
+        dfexp$risk_factor <- as.character(dfexp$risk_factor)
+
+        if (!identical(exposure_col, exposure_out)) {
+          names(dfexp)[names(dfexp) == exposure_col] <- exposure_out
+        }
+
+        xl_df$level <- as.character(xl_df$level)
+        xl_df$risk_factor <- as.character(xl_df$risk_factor)
+
+        xl_df <- dplyr::left_join(
+          xl_df,
+          dfexp,
+          by = c("level", "risk_factor")
+        )
       }
     }
   }
@@ -189,13 +451,15 @@ rating_table_simple <- function(model, model_data = NULL, exposure = NULL,
 
   new_col_nm0 <- attr(model, "new_col_nm")
 
-  if (inherits(model, c("refitsmooth", "refitrestricted")) && !is.null(x) && nrow(x) > 0) {
-    x_rf_names <- unique(x$risk_factor)
+  if (inherits(model, c("refitsmooth", "refitrestricted")) &&
+      !is.null(x_new) && nrow(x_new) > 0) {
+    x_rf_names <- unique(x_new$risk_factor)
     new_col_nm0 <- unique(c(new_col_nm0, x_rf_names))
   }
 
-  if (inherits(model, c("refitsmooth", "refitrestricted")) && !is.null(x) && nrow(x) > 0) {
-    x2 <- x[, c("yhat", "ind_values"), drop = FALSE]
+  if (inherits(model, c("refitsmooth", "refitrestricted")) &&
+      !is.null(x_new) && nrow(x_new) > 0) {
+    x2 <- x_new[, c("yhat", "ind_values"), drop = FALSE]
     colnames(x2) <- c("values", "ind")
     x2$pvalues <- NA
     x2$values <- log(x2$values)
@@ -238,11 +502,13 @@ rating_table_simple <- function(model, model_data = NULL, exposure = NULL,
   row.names(uit) <- NULL
 
   # Select columns
-  if (!is.null(model_data) && !is.null(exposure) && length(xl_names_in) > 0) {
-    selected_columns <- c("risk_factor", "level", "values", exposure, "pvalues")
+  if (isTRUE(use_exposure) &&
+      !is.null(exposure_out) &&
+      exposure_out %in% names(uit)) {
+    selected_columns <- c("risk_factor", "level", "values", exposure_out, "pvalues")
     selected_columns <- intersect(selected_columns, names(uit))
     uit <- uit[, selected_columns, drop = FALSE]
-    uit[[exposure]] <- round(uit[[exposure]], round_exposure)
+    uit[[exposure_out]] <- round(uit[[exposure_out]], round_exposure)
   } else {
     selected_columns <- c("risk_factor", "level", "values", "pvalues")
     selected_columns <- intersect(selected_columns, names(uit))
@@ -276,6 +542,9 @@ rating_table_simple <- function(model, model_data = NULL, exposure = NULL,
     uit <- rbind(uit, cf)
   }
 
+  attr(uit, "exposure_out") <- exposure_out
+  attr(uit, "model_data_name") <- model_data_name
+
   uit
 }
 
@@ -283,8 +552,13 @@ rating_table_simple <- function(model, model_data = NULL, exposure = NULL,
 #' Include reference group in regression output
 #'
 #' @param model glm object produced by `glm()`
-#' @param model_data data.frame used to create glm object
-#' @param exposure column in `model_data` with exposure
+#' @param model_data Optional data.frame used to create glm object. If `NULL`,
+#'   the function tries to use `model$data`.
+#' @param exposure Logical or character. If `TRUE` (default), exposure is added
+#'   if it can be inferred from the model. If `FALSE`, no exposure is added.
+#'   If a character string is supplied, it is interpreted as the exposure column
+#'   name.
+#' @param exposure_name Optional name for the exposure column in the output.
 #' @param colname name of coefficient column
 #' @param exponentiate logical indicating whether or not to exponentiate the
 #'   coefficient estimates. Defaults to TRUE.
@@ -296,12 +570,13 @@ rating_table_simple <- function(model, model_data = NULL, exposure = NULL,
 #' workflow, but this function remains available.
 #'
 #' @export
-rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
+rating_factors2 <- function(model, model_data = NULL, exposure = TRUE,
+                            exposure_name = NULL,
                             colname = "estimate",
                             exponentiate = TRUE, round_exposure = 0) {
-  lifecycle::deprecate_warn("0.8.0", "rating_factors2()", "rating_table2()")
+  lifecycle::deprecate_warn("0.8.0", "rating_factors2()", "rating_table()")
 
-  if (!is.null(substitute(exposure))) {
+  if (!missing(exposure) && is.symbol(substitute(exposure))) {
     exposure <- deparse(substitute(exposure))
   }
 
@@ -309,6 +584,7 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
     model,
     model_data = model_data,
     exposure = exposure,
+    exposure_name = exposure_name,
     colname = colname,
     exponentiate = exponentiate,
     round_exposure = round_exposure
@@ -330,10 +606,14 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
 #' `print()`, `summary()` and `autoplot()` instead.
 #'
 #' @param ... glm object(s) produced by `glm()`, `refit()` or `refit_glm()`
-#' @param model_data data.frame used to create glm object(s), this should only
-#'   be specified in case the exposure is desired in the output, default value
-#'   is NULL
-#' @param exposure column in `model_data` with exposure, default value is NULL
+#' @param model_data Optional data.frame used to create the model(s). If `NULL`,
+#'   the function tries to use `model$data` for each supplied model.
+#' @param exposure Logical or character. If `TRUE` (default), exposure is added
+#'   if it can be inferred from the model. If `FALSE`, no exposure is added.
+#'   If a character string is supplied, it is interpreted as the exposure column
+#'   name.
+#' @param exposure_name Optional name for the exposure column in the output.
+#'   If `NULL`, the original exposure column name is used.
 #' @param exponentiate logical indicating whether or not to exponentiate the
 #'   coefficient estimates. Defaults to TRUE.
 #' @param signif_stars show significance stars for p-values (defaults to FALSE)
@@ -346,7 +626,8 @@ rating_factors2 <- function(model, model_data = NULL, exposure = NULL,
 #' @importFrom stats coefficients
 #'
 #' @export
-rating_table <- function(..., model_data = NULL, exposure = NULL,
+rating_table <- function(..., model_data = NULL, exposure = TRUE,
+                         exposure_name = NULL,
                          exponentiate = TRUE, signif_stars = FALSE,
                          round_exposure = 0) {
 
@@ -373,8 +654,11 @@ rating_table <- function(..., model_data = NULL, exposure = NULL,
     )
   }
 
-  # This should work for glm as well
-  ok_classes <- vapply(models, function(x) inherits(x, c("glm", "refitsmooth", "refitrestricted")), logical(1))
+  ok_classes <- vapply(
+    models,
+    function(x) inherits(x, c("glm", "refitsmooth", "refitrestricted")),
+    logical(1)
+  )
   if (!all(ok_classes)) {
     stop(
       "All inputs to rating_table() must be glm, refitsmooth or refitrestricted objects.",
@@ -385,15 +669,25 @@ rating_table <- function(..., model_data = NULL, exposure = NULL,
   cols <- .rating_table_model_names(models, mc)
 
   rf_list <- vector("list", length(models))
+  exposure_out_nm <- NULL
+  model_data_name_out <- NULL
 
   for (i in seq_along(models)) {
     df <- rating_table_simple(
       models[[i]],
       model_data = model_data,
       exposure = exposure,
+      exposure_name = exposure_name,
       exponentiate = exponentiate,
       round_exposure = round_exposure
     )
+
+    if (is.null(exposure_out_nm)) {
+      exposure_out_nm <- attr(df, "exposure_out")
+    }
+    if (is.null(model_data_name_out)) {
+      model_data_name_out <- attr(df, "model_data_name")
+    }
 
     names(df)[names(df) == "estimate"] <- paste0("est_", cols[i])
     names(df)[names(df) == "pvalues"]  <- paste0("signif_", cols[i])
@@ -403,16 +697,16 @@ rating_table <- function(..., model_data = NULL, exposure = NULL,
 
   if (length(rf_list) == 1) {
     rf_fj <- rf_list[[1]]
-  } else if (!is.null(model_data) && !is.null(exposure)) {
+  } else if (!is.null(exposure_out_nm)) {
     rf_fj <- Reduce(function(d1, d2) {
-      dplyr::full_join(d1, d2, by = c("risk_factor", "level", exposure))
+      dplyr::full_join(d1, d2, by = c("risk_factor", "level", exposure_out_nm))
     }, rf_list)
 
     keep_cols <- c(
       "risk_factor", "level",
       paste0("est_", cols),
       paste0("signif_", cols),
-      exposure
+      exposure_out_nm
     )
     rf_fj <- rf_fj[, intersect(keep_cols, names(rf_fj)), drop = FALSE]
 
@@ -434,11 +728,19 @@ rating_table <- function(..., model_data = NULL, exposure = NULL,
     rf_fj <- rf_fj[, !(names(rf_fj) %in% drop_cols), drop = FALSE]
   }
 
-  if (!is.null(model_data)) {
-    lst_order <- lapply(names(model_data), function(x) {
-      attributes(model_data[[x]])$xoriginal
+  model_data_use <- if (!is.null(model_data)) {
+    as.data.frame(model_data)
+  } else if (!is.null(models[[1]]$data)) {
+    as.data.frame(models[[1]]$data)
+  } else {
+    NULL
+  }
+
+  if (!is.null(model_data_use)) {
+    lst_order <- lapply(names(model_data_use), function(x) {
+      attributes(model_data_use[[x]])$xoriginal
     })
-    names(lst_order) <- names(model_data)
+    names(lst_order) <- names(model_data_use)
     lst_order <- lst_order[lengths(lst_order) != 0]
 
     if (length(lst_order) > 0) {
@@ -452,6 +754,14 @@ rating_table <- function(..., model_data = NULL, exposure = NULL,
       uit <- dplyr::full_join(df_order, rf_fj, by = c("risk_factor", "level"))
       rf_fj <- uit[order(match(uit$risk_factor, df_order$risk_factor)), , drop = FALSE]
       rownames(rf_fj) <- NULL
+
+      # Put intercept first
+      if ("(Intercept)" %in% rf_fj$risk_factor) {
+        intercept_ix <- which(rf_fj$risk_factor == "(Intercept)")
+        rf_fj <- rf_fj[c(intercept_ix, setdiff(seq_len(nrow(rf_fj)),
+                                               intercept_ix)), , drop = FALSE]
+        rownames(rf_fj) <- NULL
+      }
     }
   }
 
@@ -484,8 +794,8 @@ rating_table <- function(..., model_data = NULL, exposure = NULL,
       df = rf_fj,
       df_stars = rf_fj_stars,
       models = cols,
-      exposure = exposure,
-      model_data = deparse(substitute(model_data)),
+      exposure = exposure_out_nm,
+      model_data = model_data_name_out,
       expon = exponentiate,
       signif_stars = signif_stars,
       signif_levels = signif_levels
@@ -497,12 +807,13 @@ rating_table <- function(..., model_data = NULL, exposure = NULL,
 
 #' @rdname rating_table
 #' @export
-rating_factors <- function(..., model_data = NULL, exposure = NULL,
+rating_factors <- function(..., model_data = NULL, exposure = TRUE,
+                           exposure_name = NULL,
                            signif_stars = FALSE,
                            exponentiate = TRUE, round_exposure = 0) {
   lifecycle::deprecate_warn("0.8.0", "rating_factors()", "rating_table()")
 
-  if (!is.null(substitute(exposure))) {
+  if (!missing(exposure) && is.symbol(substitute(exposure))) {
     exposure <- deparse(substitute(exposure))
   }
 
@@ -510,6 +821,7 @@ rating_factors <- function(..., model_data = NULL, exposure = NULL,
     ...,
     model_data = model_data,
     exposure = exposure,
+    exposure_name = exposure_name,
     exponentiate = exponentiate,
     signif_stars = signif_stars,
     round_exposure = round_exposure
@@ -562,8 +874,8 @@ summary.riskfactor <- function(object, ...) {
 print.summary.riskfactor <- function(x, ...) {
   cat("riskfactor summary\n\n")
   cat("Models: ", paste(x$models, collapse = ", "), "\n", sep = "")
-  cat("Exposure column: ", x$exposure %||% "none", "\n", sep = "")
-  cat("Model data: ", x$model_data, "\n", sep = "")
+  cat("Exposure column: ", if (is.null(x$exposure)) "none" else x$exposure, "\n", sep = "")
+  cat("Model data: ", if (is.null(x$model_data)) "none" else x$model_data, "\n", sep = "")
   cat("Exponentiate: ", x$exponentiate, "\n", sep = "")
   cat("Significance stars: ", x$signif_stars, "\n", sep = "")
   cat("Rows: ", x$n_rows, "\n", sep = "")
@@ -598,7 +910,7 @@ print.summary.riskfactor <- function(x, ...) {
 #' @param linetype Logical; if `TRUE`, use different line types for models.
 #'   Default is `FALSE`.
 #' @param univariate Optional `univariate` object returned by
-#'   [univariate_summary()]. If supplied, the selected univariate statistic is
+#'   [factor_analysis()]. If supplied, the selected univariate statistic is
 #'   added as an extra line.
 #' @param univariate_var Character; statistic from `univariate` to plot.
 #'   Default is `"risk_premium"`.
@@ -725,14 +1037,16 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
   # remove reference categories from plotted model lines
   df <- df_full[df_full$risk_factor != df_full$level, , drop = FALSE]
 
-  df_long <- data.table::melt(
-    data.table::setDT(df),
-    id.vars = names(df)[!names(df) %in% models_nm],
-    measure.vars = models_nm,
-    variable.name = "model",
-    value.name = "est"
-  ) |>
-    data.table::setDF()
+  df_long <- reshape(
+    df,
+    varying = models_nm,
+    v.names = "est",
+    timevar = "model",
+    times = models_nm,
+    direction = "long"
+  )
+
+  rownames(df_long) <- NULL
 
   df_long$model <- gsub("^est_", "", df_long$model)
 

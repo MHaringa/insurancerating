@@ -72,15 +72,13 @@
     removed in a future release.
 - The function
   [`univariate()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-  has been **deprecated** and replaced by
-  [`univariate_summary()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md).
+  has been **deprecated** and replaced by `univariate_summary()`.
   - [`univariate()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
     used **non-standard evaluation (NSE)**, allowing unquoted column
     names.
 
-  - [`univariate_summary()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-    now uses **standard evaluation (SE)**, requiring column names as
-    **character strings**.  
+  - `univariate_summary()` now uses **standard evaluation (SE)**,
+    requiring column names as **character strings**.  
     Example migration:
 
     ``` r

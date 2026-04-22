@@ -25,7 +25,8 @@ instead.
 rating_table(
   ...,
   model_data = NULL,
-  exposure = NULL,
+  exposure = TRUE,
+  exposure_name = NULL,
   exponentiate = TRUE,
   signif_stars = FALSE,
   round_exposure = 0
@@ -34,7 +35,8 @@ rating_table(
 rating_factors(
   ...,
   model_data = NULL,
-  exposure = NULL,
+  exposure = TRUE,
+  exposure_name = NULL,
   signif_stars = FALSE,
   exponentiate = TRUE,
   round_exposure = 0
@@ -52,12 +54,20 @@ rating_factors(
 
 - model_data:
 
-  data.frame used to create glm object(s), this should only be specified
-  in case the exposure is desired in the output, default value is NULL
+  Optional data.frame used to create the model(s). If `NULL`, the
+  function tries to use `model$data` for each supplied model.
 
 - exposure:
 
-  column in `model_data` with exposure, default value is NULL
+  Logical or character. If `TRUE` (default), exposure is added if it can
+  be inferred from the model. If `FALSE`, no exposure is added. If a
+  character string is supplied, it is interpreted as the exposure column
+  name.
+
+- exposure_name:
+
+  Optional name for the exposure column in the output. If `NULL`, the
+  original exposure column name is used.
 
 - exponentiate:
 

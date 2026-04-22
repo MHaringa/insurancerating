@@ -4,17 +4,20 @@ Classifies a continuous numeric vector into intervals using Fisher-Jenks
 natural breaks. Useful for choropleth mapping or other applications
 where grouped ranges are required.
 
+`fisher()` is deprecated as of version 0.8.0. Please use
+`fisher_classify()` instead.
+
 ## Usage
 
 ``` r
-fisher_classify(vec, n = 7, diglab = 2)
+fisher_classify(x, n = 7, dig.lab = NULL, diglab = NULL)
 
-fisher(vec, n = 7, diglab = 2)
+fisher(x, n = 7, diglab = 2)
 ```
 
 ## Arguments
 
-- vec:
+- x:
 
   A numeric vector to be classified.
 
@@ -22,19 +25,28 @@ fisher(vec, n = 7, diglab = 2)
 
   Integer. Number of classes to generate (default = 7).
 
+- dig.lab:
+
+  Integer. Number of significant digits to use for interval labels
+  (default = 2).
+
 - diglab:
 
-  Integer. Number of significant digits to use for labels (default = 2).
+  Deprecated. Use `dig.lab` instead.
 
 ## Value
 
-A factor with class intervals as levels.
+A factor indicating the interval to which each element of `x` belongs.
 
 ## Details
 
-The "fisher" style uses the algorithm proposed by W. D. Fisher (1958)
-and discussed by Slocum et al. (2005) as the Fisher-Jenks algorithm.
-This function is a wrapper around the classInt package.
+The `"fisher"` style uses the algorithm proposed by Fisher (1958),
+commonly referred to as the Fisher-Jenks algorithm. This function is a
+thin wrapper around
+[`classInt::classIntervals()`](https://r-spatial.github.io/classInt/reference/classIntervals.html).
+
+The argument `diglab` is deprecated and will be removed in a future
+version.
 
 ## References
 

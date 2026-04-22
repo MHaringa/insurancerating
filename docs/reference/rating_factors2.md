@@ -13,7 +13,8 @@ available.
 rating_factors2(
   model,
   model_data = NULL,
-  exposure = NULL,
+  exposure = TRUE,
+  exposure_name = NULL,
   colname = "estimate",
   exponentiate = TRUE,
   round_exposure = 0
@@ -28,11 +29,19 @@ rating_factors2(
 
 - model_data:
 
-  data.frame used to create glm object
+  Optional data.frame used to create glm object. If `NULL`, the function
+  tries to use `model$data`.
 
 - exposure:
 
-  column in `model_data` with exposure
+  Logical or character. If `TRUE` (default), exposure is added if it can
+  be inferred from the model. If `FALSE`, no exposure is added. If a
+  character string is supplied, it is interpreted as the exposure column
+  name.
+
+- exposure_name:
+
+  Optional name for the exposure column in the output.
 
 - colname:
 

@@ -5,8 +5,9 @@
 \title{Automatically create a ggplot for objects obtained from factor analysis}
 \usage{
 \method{autoplot}{univariate}(
-  object,
-  show_plots = 1:9,
+  x,
+  metrics = NULL,
+  show_plots = NULL,
   ncol = 1,
   background = TRUE,
   labels = TRUE,
@@ -28,11 +29,11 @@
 )
 }
 \arguments{
-\item{object}{A \code{univariate} object produced by \code{\link[=factor_analysis]{factor_analysis()}},
-\code{\link[=univariate_summary]{univariate_summary()}} or \code{\link[=univariate]{univariate()}}.}
+\item{x}{A \code{univariate} object produced by \code{\link[=factor_analysis]{factor_analysis()}}
+or \code{\link[=univariate]{univariate()}}.}
 
-\item{show_plots}{Numeric vector of plots to be shown (default is
-\code{1:9}). There are nine available plots:
+\item{metrics}{Numeric vector specifying which metrics to plot (default is
+\code{1:9}). There are nine available metrics:
 \itemize{
 \item{1. Frequency (\code{nclaims / exposure})}
 \item{2. Average severity (\code{severity / nclaims})}
@@ -44,6 +45,8 @@
 \item{8. Number of claims}
 \item{9. Premium}
 }}
+
+\item{show_plots}{Deprecated. Use \code{metrics} instead.}
 
 \item{ncol}{Number of columns in output (default = 1).}
 
@@ -69,7 +72,9 @@ If specified, the chosen color is applied to all background bars.}
 
 \item{label_width}{Width of labels on the x-axis (default = 10).}
 
-\item{coord_flip}{Flip cartesian coordinates (default = FALSE).}
+\item{coord_flip}{Logical. If \code{TRUE}, flip cartesian coordinates for bar plots
+(metrics 6 to 9). This option does not affect the line-based plots for
+metrics 1 to 5.}
 
 \item{show_total}{Show line for total if \code{by} is used (default = FALSE).}
 
@@ -101,9 +106,8 @@ Defaults to \code{TRUE}.}
 A \code{ggplot2} object.
 }
 \description{
-Takes an object produced by \code{\link[=factor_analysis]{factor_analysis()}}, \code{\link[=univariate_summary]{univariate_summary()}}
-(compatibility alias) or \code{\link[=univariate]{univariate()}} (deprecated NSE interface) and plots
-the available statistics.
+Takes an object produced by \code{\link[=factor_analysis]{factor_analysis()}} or \code{\link[=univariate]{univariate()}}
+(deprecated NSE interface) and plots the available statistics.
 }
 \examples{
 ## --- New usage (SE, recommended) ---
@@ -113,14 +117,6 @@ x <- factor_analysis(MTPL2,
                      nclaims = "nclaims",
                      exposure = "exposure")
 autoplot(x)
-
-## --- Compatibility alias ---
-x2 <- univariate_summary(MTPL2,
-                         x = "area",
-                         severity = "amount",
-                         nclaims = "nclaims",
-                         exposure = "exposure")
-autoplot(x2)
 
 ## --- Deprecated usage (NSE) ---
 x_old <- univariate(MTPL2, x = area, severity = amount,

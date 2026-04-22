@@ -2,21 +2,10 @@
 % Please edit documentation in R/univariate.R
 \name{factor_analysis}
 \alias{factor_analysis}
-\alias{univariate_summary}
 \alias{univariate}
 \title{Factor analysis for discrete risk factors}
 \usage{
 factor_analysis(
-  df,
-  x,
-  severity = NULL,
-  nclaims = NULL,
-  exposure = NULL,
-  premium = NULL,
-  by = NULL
-)
-
-univariate_summary(
   df,
   x,
   severity = NULL,
@@ -52,7 +41,7 @@ univariate(
 \item{by}{Character vector of column(s) in \code{df} to group by in addition to \code{x}.}
 }
 \value{
-A \code{data.table} of class \code{"univariate"} with summary statistics.
+An object of class \code{"univariate"} with summary statistics.
 }
 \description{
 Performs a factor analysis for discrete risk factors in an insurance
@@ -64,9 +53,6 @@ portfolio. The following summary statistics are calculated:
 \item loss ratio = severity / premium
 \item average premium = premium / exposure
 }
-
-\code{univariate_summary()} is kept as a compatibility alias for \code{\link[=factor_analysis]{factor_analysis()}}.
-It uses the same standard-evaluation interface and is \strong{not} deprecated.
 
 \code{\link[=univariate]{univariate()}} is deprecated as of version 0.8.0.
 Please use \code{\link[=factor_analysis]{factor_analysis()}} instead with \strong{standard evaluation} (SE),

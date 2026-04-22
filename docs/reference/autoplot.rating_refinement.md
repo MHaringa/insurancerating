@@ -19,7 +19,7 @@ with the original level label centred above the segment.
 ``` r
 # S3 method for class 'rating_refinement'
 autoplot(
-  object,
+  x,
   variable = NULL,
   step = NULL,
   remove_underscores = FALSE,
@@ -31,7 +31,7 @@ autoplot(
 
 ## Arguments
 
-- object:
+- x:
 
   Object produced by
   [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)

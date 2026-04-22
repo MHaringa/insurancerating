@@ -129,9 +129,7 @@ Before refinement, inspect the unrestricted coefficient structure:
 
 rating_table(burn_unrestricted)
 
-rating_table(burn_unrestricted, 
-             model_data = premium_df, 
-             exposure = "exposure") |>
+rating_table(burn_unrestricted) |>
   autoplot()
 
 ```
@@ -384,11 +382,7 @@ embedded in the fitted model output.
 
 ```{r}
 
-rating_table(
-  burn_refined,
-  model_data = premium_df,
-  exposure = "exposure"
-) |>
+rating_table(burn_refined) |>
   autoplot()
 
 ```
@@ -446,11 +440,7 @@ burn_refined <- prepare_refinement(burn_unrestricted) |>
 
 rating_table(burn_refined)
 
-rating_table(
-  burn_refined,
-  model_data = premium_df,
-  exposure = "exposure"
-) |>
+rating_table(burn_refined) |>
   autoplot()
 
 ```

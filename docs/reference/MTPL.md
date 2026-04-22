@@ -2,7 +2,8 @@
 
 A dataset containing the characteristics of 30,000 policyholders in a
 Dutch Motor Third Party Liability (MTPL) insurance portfolio. Includes
-information on demographics, vehicle, and claims.
+information on policyholder characteristics, vehicle attributes, and
+claims.
 
 ## Usage
 
@@ -12,7 +13,7 @@ MTPL
 
 ## Format
 
-A data frame with 30,000 rows and 7 variables:
+A data frame containing 30,000 rows and 7 variables:
 
 - age_policyholder:
 
@@ -24,12 +25,12 @@ A data frame with 30,000 rows and 7 variables:
 
 - exposure:
 
-  Exposure. For example, if a vehicle is insured as of July 1 for a
-  given year, the exposure equals 0.5 for that year.
+  Exposure, expressed in years. For example, if a vehicle is insured
+  from July 1, the exposure equals 0.5 for that year.
 
 - amount:
 
-  Claim amount in euros.
+  Claim severity (in euros).
 
 - power:
 
@@ -37,8 +38,7 @@ A data frame with 30,000 rows and 7 variables:
 
 - bm:
 
-  Level on the 23-level (0–22) bonus-malus scale (the higher the level,
-  the worse the claim history).
+  Bonus-malus level (0–22). Higher levels indicate worse claim history.
 
 - zip:
 

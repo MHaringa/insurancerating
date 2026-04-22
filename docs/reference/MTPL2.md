@@ -1,7 +1,7 @@
 # Motor Third Party Liability (MTPL) portfolio (3,000 policyholders)
 
-A dataset containing characteristics of 3,000 policyholders in a Dutch
-Motor Third Party Liability (MTPL) insurance portfolio. Includes
+A dataset containing the characteristics of 3,000 policyholders in a
+Dutch Motor Third Party Liability (MTPL) insurance portfolio. Includes
 information on region, claims, exposure, and premium.
 
 ## Usage
@@ -12,7 +12,7 @@ MTPL2
 
 ## Format
 
-A data frame with 3,000 rows and 6 variables:
+A data frame containing 3,000 rows and 6 variables:
 
 - customer_id:
 
@@ -28,7 +28,7 @@ A data frame with 3,000 rows and 6 variables:
 
 - amount:
 
-  Claim amount (severity).
+  Claim severity (in euros).
 
 - exposure:
 

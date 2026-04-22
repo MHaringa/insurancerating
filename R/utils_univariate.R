@@ -2,27 +2,27 @@
 add_metrics <- function(dt, cols, .nclaims, .exposure, .severity, .premium) {
   if (!is.null(.nclaims) && !is.null(.exposure) &&
       all(c(.nclaims, .exposure) %in% cols)) {
-    dt[, frequency := get(.nclaims) / get(.exposure)]
+    dt[["frequency"]] <- dt[[.nclaims]] / dt[[.exposure]]
   }
 
   if (!is.null(.severity) && !is.null(.nclaims) &&
       all(c(.severity, .nclaims) %in% cols)) {
-    dt[, average_severity := get(.severity) / get(.nclaims)]
+    dt[["average_severity"]] <- dt[[.severity]] / dt[[.nclaims]]
   }
 
   if (!is.null(.severity) && !is.null(.exposure) &&
       all(c(.severity, .exposure) %in% cols)) {
-    dt[, risk_premium := get(.severity) / get(.exposure)]
+    dt[["risk_premium"]] <- dt[[.severity]] / dt[[.exposure]]
   }
 
   if (!is.null(.severity) && !is.null(.premium) &&
       all(c(.severity, .premium) %in% cols)) {
-    dt[, loss_ratio := get(.severity) / get(.premium)]
+    dt[["loss_ratio"]] <- dt[[.severity]] / dt[[.premium]]
   }
 
   if (!is.null(.premium) && !is.null(.exposure) &&
       all(c(.premium, .exposure) %in% cols)) {
-    dt[, average_premium := get(.premium) / get(.exposure)]
+    dt[["average_premium"]] <- dt[[.premium]] / dt[[.exposure]]
   }
 
   dt
@@ -97,21 +97,18 @@ separation_mark <- function(dec.mark) {
 }
 
 #' @keywords internal
-sort_x_axis <- function(sort_manual, label_width) {
+sort_x_axis <- function(sort_manual = NULL, label_width = 10) {
+
   if (!is.null(sort_manual)) {
-    list(
-      ggplot2::scale_x_discrete(
-        labels = function(x) stringr::str_wrap(x, width = label_width),
-        limits = sort_manual
-      )
-    )
-  } else {
-    list(
-      ggplot2::scale_x_discrete(
-        labels = function(x) stringr::str_wrap(x, width = label_width)
-      )
-    )
+    sort_manual <- as.character(sort_manual)
   }
+
+  list(
+    ggplot2::scale_x_discrete(
+      labels = function(x) stringr::str_wrap(x, width = label_width),
+      limits = sort_manual
+    )
+  )
 }
 
 
@@ -237,16 +234,20 @@ ggpointline <- function(df, dfby, xvar, y, color, by,
 gglabels <- function(background, labels, df, xvar, sep_mark) {
   if (isTRUE(background) && isTRUE(labels)) {
     list(
-      ggplot2::geom_text(data = df,
-                         aes(x = .data[[xvar]],
-                             y = .data[["s_axis_scale"]],
-                             label = sep_mark(.data[["s_axis_print"]])),
-                         vjust = "inward",
-                         color = "#6B6B6B",
-                         size = 2.6)
+      ggplot2::geom_text(
+        data = df,
+        mapping = ggplot2::aes(
+          x = .data[[xvar]],
+          y = .data[["s_axis_scale"]],
+          label = sep_mark(.data[["s_axis_print"]])
+        ),
+        vjust = "inward",
+        color = "#6B6B6B",
+        size = 2.6
+      )
     )
   } else {
-    NULL
+    list()
   }
 }
 
@@ -260,27 +261,30 @@ ggbarlabels <- function(df, xvar, y, coord_flip, sep_mark) {
 
   df$y_print <- round(df[[y]], 0)
 
-  if (isTRUE(coord_flip)) {
-    list(
-      ggplot2::geom_text(data = df,
-                         aes(x = .data[[xvar]],
-                             y = .data[[y]],
-                             label = sep_mark(.data[["y_print"]])),
-                         hjust = "inward",
-                         color = "#6B6B6B",
-                         size = 2.6)
-    )
-  } else if (!isTRUE(coord_flip)) {
-    list(
-      ggplot2::geom_text(data = df,
-                         aes(x = .data[[xvar]],
-                             y = .data[[y]],
-                             label = sep_mark(.data[["y_print"]])),
-                         vjust = "inward",
-                         color = "#6B6B6B",
-                         size = 2.6)
-    )
+  text_args <- if (isTRUE(coord_flip)) {
+    list(hjust = "inward")
+  } else {
+    list(vjust = "inward")
   }
+
+  list(
+    do.call(
+      ggplot2::geom_text,
+      c(
+        list(
+          data = df,
+          mapping = ggplot2::aes(
+            x = .data[[xvar]],
+            y = .data[[y]],
+            label = sep_mark(.data[["y_print"]])
+          ),
+          color = "#6B6B6B",
+          size = 2.6
+        ),
+        text_args
+      )
+    )
+  )
 }
 
 
@@ -330,13 +334,7 @@ ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip) {
 
 #' @keywords internal
 ggcoordflip <- function(coord_flip) {
-  if (isTRUE(coord_flip)) {
-    list(
-      ggplot2::coord_flip()
-    )
-  } else {
-    NULL
-  }
+  if (isTRUE(coord_flip)) list(ggplot2::coord_flip()) else list()
 }
 
 

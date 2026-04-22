@@ -3,11 +3,11 @@
 ================================================= */
 
 body {
-  font-size: 17px;
-  line-height: 1.8;
+  font-size: 16.5px;
+  line-height: 1.7;
   color: #1f2937;
+  font-family: "Inter", sans-serif;
   font-weight: 400;
-  font-family: "Raleway", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -16,111 +16,111 @@ body {
   max-width: 860px;
 }
 
-/* meer ruimte tussen navbar en body */
 .contents {
   padding-top: 2.6rem;
 }
 
-/* page header compacter */
 .page-header {
-  margin-bottom: 2rem;
+  margin-bottom: 2.2rem;
   border-bottom: none !important;
 }
 
 
 /* =================================================
-   TYPOGRAPHY
+   TYPOGRAPHY (KEY DIFFERENCE)
 ================================================= */
 
 h1, h2, h3, h4 {
-  font-family: "Montserrat", sans-serif;
-  letter-spacing: -0.02em;
+  font-family: "Inter", sans-serif;
+  letter-spacing: -0.028em;
   color: #111827;
 }
 
+/* HERO */
 h1 {
   font-size: 3.2rem;
   font-weight: 700;
-  line-height: 1.04;
-  margin-top: 0.25rem;
+  line-height: 1.02;
+  margin-top: 0.2rem;
   margin-bottom: 1.8rem;
 }
 
+/* SECTION TITLES (more authority) */
 h2 {
   font-size: 2.05rem;
-  font-weight: 600;
-  line-height: 1.18;
-  margin-top: 3rem;
+  font-weight: 650;
+  line-height: 1.12;
+  margin-top: 3.6rem;
   margin-bottom: 1rem;
 }
 
-/* eerste h2 iets compacter */
+/* first section tighter */
 .section.level2:first-of-type h2,
 h1 + h2 {
-  margin-top: 2.4rem;
+  margin-top: 2.5rem;
 }
 
+/* SUBSECTIONS */
 h3 {
-  font-size: 1.45rem;
+  font-size: 1.42rem;
   font-weight: 600;
-  line-height: 1.25;
-  margin-top: 2.2rem;
+  line-height: 1.2;
+  margin-top: 2.4rem;
   margin-bottom: 0.7rem;
 }
 
 h4 {
-  font-size: 1.12rem;
+  font-size: 1.08rem;
   font-weight: 600;
+  line-height: 1.3;
   margin-top: 1.8rem;
-  margin-bottom: 0.7rem;
+  margin-bottom: 0.6rem;
 }
 
+/* BODY TEXT */
 p {
-  font-size: 1.16rem;
-  line-height: 1.82;
+  font-size: 1.05rem;
+  line-height: 1.72;
   color: #374151;
-  margin-top: 0;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.1rem;
 }
 
+/* LISTS */
 ul, ol {
-  margin-top: 0.8rem;
-  margin-bottom: 1.4rem;
+  margin-top: 0.7rem;
+  margin-bottom: 1.3rem;
   padding-left: 1.5rem;
 }
 
 li {
-  font-size: 1.13rem;
-  line-height: 1.75;
-  margin-bottom: 0.15rem;
+  font-size: 1.03rem;
+  line-height: 1.65;
+  margin-bottom: 0.12rem;
   color: #374151;
 }
 
 
 /* =================================================
-   SECTION FLOW
+   SECTION FLOW (IMPORTANT)
 ================================================= */
 
 .section.level2 {
-  margin-top: 0;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
 }
 
 .section.level3 {
-  margin-top: 0;
   margin-bottom: 0.25rem;
 }
 
 
 /* =================================================
-   CODE
+   CODE (more refined)
 ================================================= */
 
 code {
-  font-size: 0.93em;
-  line-height: 1.35;
-  padding: 0.16em 0.36em;
-  border-radius: 8px;
+  font-size: 0.92em;
+  padding: 0.14em 0.34em;
+  border-radius: 6px;
   background: #f3f4f6;
   color: #111827;
 }
@@ -128,33 +128,32 @@ code {
 pre {
   background: #fafafa;
   border: 1px solid #ececec;
-  border-radius: 14px;
-  padding: 1rem 1.15rem;
-  margin-top: 1.4rem;
-  margin-bottom: 1.8rem;
-  line-height: 1.45;
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  margin-top: 1.3rem;
+  margin-bottom: 1.7rem;
+  line-height: 1.32;
 }
 
 pre code {
   background: transparent;
   padding: 0;
-  line-height: 1.45;
 }
 
 
 /* =================================================
-   BLOCKQUOTE
+   BLOCKQUOTE (clean callout)
 ================================================= */
 
 blockquote {
-  border-left: 4px solid #e5e7eb;
-  padding-left: 1rem;
-  margin: 2rem 0;
+  border-left: 3px solid #e5e7eb;
+  padding-left: 0.9rem;
+  margin: 1.9rem 0;
   color: #374151;
 }
 
 blockquote p {
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.3rem;
 }
 
 
@@ -169,8 +168,8 @@ blockquote p {
 }
 
 .navbar-brand {
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 650;
+  letter-spacing: -0.015em;
 }
 
 .navbar-nav .nav-link {
@@ -184,60 +183,53 @@ blockquote p {
 
 
 /* =================================================
-   RIGHT SIDEBAR
+   SIDEBAR (much cleaner)
 ================================================= */
 
 .pkgdown-sidebar {
-  padding-top: 2.8rem;
+  padding-top: 2.6rem;
 }
 
 .pkgdown-sidebar h2,
 .pkgdown-sidebar h3,
 .pkgdown-sidebar h4 {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  margin-top: 0;
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.75rem;
 }
 
 .pkgdown-sidebar p,
 .pkgdown-sidebar li {
-  font-size: 1rem;
-  line-height: 1.55;
-  margin-bottom: 0.45rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  margin-bottom: 0.3rem;
 }
 
 .pkgdown-sidebar section {
-  margin-bottom: 2rem;
-}
-
-.pkgdown-sidebar .links,
-.pkgdown-sidebar .license,
-.pkgdown-sidebar .citation,
-.pkgdown-sidebar .developers,
-.pkgdown-sidebar .dev-status {
-  margin-bottom: 2rem;
+  margin-bottom: 1.6rem;
 }
 
 
 /* =================================================
-   TOC
+   TOC (Stripe style)
 ================================================= */
 
 #toc {
-  font-size: 0.88rem;
-  line-height: 1.25;
+  font-size: 0.84rem;
+  line-height: 1.2;
 }
 
 #toc .nav-link {
-  color: #6b7280;
-  padding-top: 0.02rem;
-  padding-bottom: 0.02rem;
-  line-height: 1.22;
+  color: #9ca3af;
+  padding: 0.05rem 0;
 }
 
-#toc .nav-link.active,
+#toc .nav-link.active {
+  color: #111827;
+  font-weight: 500;
+}
+
 #toc .nav-link:hover {
   color: #111827;
 }
@@ -248,14 +240,14 @@ blockquote p {
 ================================================= */
 
 table {
-  margin-top: 1.6rem;
-  margin-bottom: 2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.9rem;
 }
 
 img,
 .figure {
   margin-top: 1.2rem;
-  margin-bottom: 1.6rem;
+  margin-bottom: 1.5rem;
 }
 
 
@@ -273,12 +265,8 @@ hr {
 ================================================= */
 
 @media (max-width: 768px) {
-  .main-container {
-    max-width: 100%;
-  }
-
   .contents {
-    padding-top: 1.5rem;
+    padding-top: 1.6rem;
   }
 
   h1 {
@@ -287,27 +275,19 @@ hr {
 
   h2 {
     font-size: 1.75rem;
-    margin-top: 2.8rem;
+    margin-top: 2.6rem;
   }
 
   h3 {
-    font-size: 1.28rem;
-    margin-top: 2rem;
+    font-size: 1.25rem;
   }
 
-  p,
-  li {
-    font-size: 1.04rem;
+  p, li {
+    font-size: 1rem;
   }
 }
 
 .navbar + .container,
 .navbar + .container-fluid {
-  padding-top: 1.5rem;
-}
-
-.template-home .page-header,
-.template-article .page-header,
-.template-reference .page-header {
-  margin-top: 0.75rem;
+  padding-top: 1.4rem;
 }

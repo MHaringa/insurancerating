@@ -49,6 +49,15 @@ Object of class \code{rating_refinement}.
 }
 \description{
 Adds a smoothing step to a \code{rating_refinement} object.
+
+\code{smooth_coef()} is deprecated as of version 0.9.0.
+Please use the refinement workflow instead:
+
+\preformatted{
+prepare_refinement(model) |>
+  add_smoothing(...) |>
+  refit()
+}
 }
 \details{
 \code{add_smoothing()} is part of the new refinement workflow and is intended
@@ -56,4 +65,7 @@ to be used in combination with \code{prepare_refinement()} and \code{refit()}.
 
 The legacy function \code{smooth_coef()} remains the only function that should
 be applied directly to a model object.
+}
+\seealso{
+\code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=refit]{refit()}}
 }

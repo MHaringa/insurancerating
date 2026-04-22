@@ -5,30 +5,38 @@
 \alias{fisher}
 \title{Fisher's natural breaks classification}
 \usage{
-fisher_classify(vec, n = 7, diglab = 2)
+fisher_classify(x, n = 7, dig.lab = NULL, diglab = NULL)
 
-fisher(vec, n = 7, diglab = 2)
+fisher(x, n = 7, diglab = 2)
 }
 \arguments{
-\item{vec}{A numeric vector to be classified.}
+\item{x}{A numeric vector to be classified.}
 
 \item{n}{Integer. Number of classes to generate (default = 7).}
 
-\item{diglab}{Integer. Number of significant digits to use for labels
-(default = 2).}
+\item{dig.lab}{Integer. Number of significant digits to use for interval
+labels (default = 2).}
+
+\item{diglab}{Deprecated. Use \code{dig.lab} instead.}
 }
 \value{
-A factor with class intervals as levels.
+A factor indicating the interval to which each element of \code{x}
+belongs.
 }
 \description{
 Classifies a continuous numeric vector into intervals using
 Fisher-Jenks natural breaks. Useful for choropleth mapping or
 other applications where grouped ranges are required.
+
+\code{fisher()} is deprecated as of version 0.8.0.
+Please use \code{\link[=fisher_classify]{fisher_classify()}} instead.
 }
 \details{
-The "fisher" style uses the algorithm proposed by W. D. Fisher (1958)
-and discussed by Slocum et al. (2005) as the Fisher-Jenks algorithm.
-This function is a wrapper around the \pkg{classInt} package.
+The \code{"fisher"} style uses the algorithm proposed by Fisher (1958), commonly
+referred to as the Fisher-Jenks algorithm. This function is a thin wrapper
+around \code{\link[classInt:classIntervals]{classInt::classIntervals()}}.
+
+The argument \code{diglab} is deprecated and will be removed in a future version.
 }
 \examples{
 set.seed(1)

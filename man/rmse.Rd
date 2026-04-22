@@ -4,10 +4,10 @@
 \alias{rmse}
 \title{Root Mean Squared Error (RMSE)}
 \usage{
-rmse(object, data = NULL)
+rmse(x, data = NULL)
 }
 \arguments{
-\item{object}{A fitted model object (e.g. of class \code{"glm"}).}
+\item{x}{A fitted model object (e.g. of class \code{"glm"}).}
 
 \item{data}{A data frame containing the variables used in the model. Required
 if not already stored in \code{object}.}

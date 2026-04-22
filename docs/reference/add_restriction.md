@@ -2,6 +2,13 @@
 
 Adds a restriction step to a `rating_refinement` object.
 
+`restrict_coef()` is deprecated as of version 0.9.0. Please use the
+refinement workflow instead:
+
+    prepare_refinement(model) |>
+      add_restriction(...) |>
+      refit()
+
 ## Usage
 
 ``` r

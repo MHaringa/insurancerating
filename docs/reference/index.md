@@ -6,7 +6,6 @@ Analyse portfolio behaviour and inspect risk factors before model
 estimation.
 
 - [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-  [`univariate_summary()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
   [`univariate()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
   : Factor analysis for discrete risk factors
 - [`autoplot(`*`<univariate>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.univariate.md)
@@ -29,17 +28,11 @@ Analyse continuous risk factors and convert them to tariff classes.
 - [`summary(`*`<fitgam>`*`)`](https://mharinga.github.io/insurancerating/reference/summary.fitgam.md)
   : Summary method for fitgam objects
 
-- [`print(`*`<fitgam>`*`)`](https://mharinga.github.io/insurancerating/reference/print.fitgam.md)
-  : Print method for fitgam objects
-
 - [`autoplot(`*`<fitgam>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.fitgam.md)
   :
 
   Autoplot for GAM Objects from
   [`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/riskfactor_gam.md)
-
-- [`as.data.frame(`*`<fitgam>`*`)`](https://mharinga.github.io/insurancerating/reference/as.data.frame.fitgam.md)
-  : Coerce fitgam objects to a data frame
 
 - [`construct_tariff_classes()`](https://mharinga.github.io/insurancerating/reference/construct_tariff_classes.md)
   : Construct insurance tariff classes
@@ -86,7 +79,6 @@ relativities.
   [`smooth_coef()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   : Add smoothing to a refinement workflow
 - [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
-  [`update_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
   : Edit an existing smoothing step in a refinement workflow
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   [`restrict_coef()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)

@@ -7,12 +7,12 @@ predictions and observed values.
 ## Usage
 
 ``` r
-rmse(object, data = NULL)
+rmse(x, data = NULL)
 ```
 
 ## Arguments
 
-- object:
+- x:
 
   A fitted model object (e.g. of class `"glm"`).
 

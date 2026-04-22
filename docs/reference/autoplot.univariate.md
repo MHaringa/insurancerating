@@ -1,9 +1,8 @@
 # Automatically create a ggplot for objects obtained from factor analysis
 
 Takes an object produced by
-[`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md),
-[`univariate_summary()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-(compatibility alias) or
+[`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
+or
 [`univariate()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
 (deprecated NSE interface) and plots the available statistics.
 
@@ -12,8 +11,9 @@ Takes an object produced by
 ``` r
 # S3 method for class 'univariate'
 autoplot(
-  object,
-  show_plots = 1:9,
+  x,
+  metrics = NULL,
+  show_plots = NULL,
   ncol = 1,
   background = TRUE,
   labels = TRUE,
@@ -37,18 +37,17 @@ autoplot(
 
 ## Arguments
 
-- object:
+- x:
 
   A `univariate` object produced by
-  [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md),
-  [`univariate_summary()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
+  [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
   or
   [`univariate()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md).
 
-- show_plots:
+- metrics:
 
-  Numeric vector of plots to be shown (default is `1:9`). There are nine
-  available plots:
+  Numeric vector specifying which metrics to plot (default is `1:9`).
+  There are nine available metrics:
 
   - 1\. Frequency (`nclaims / exposure`)
 
@@ -67,6 +66,10 @@ autoplot(
   - 8\. Number of claims
 
   - 9\. Premium
+
+- show_plots:
+
+  Deprecated. Use `metrics` instead.
 
 - ncol:
 
@@ -112,7 +115,9 @@ autoplot(
 
 - coord_flip:
 
-  Flip cartesian coordinates (default = FALSE).
+  Logical. If `TRUE`, flip cartesian coordinates for bar plots (metrics
+  6 to 9). This option does not affect the line-based plots for metrics
+  1 to 5.
 
 - show_total:
 
@@ -175,16 +180,6 @@ x <- factor_analysis(MTPL2,
                      nclaims = "nclaims",
                      exposure = "exposure")
 autoplot(x)
-#> Ignoring plots 4, 5, 9: required column(s) not available in object
-
-
-## --- Compatibility alias ---
-x2 <- univariate_summary(MTPL2,
-                         x = "area",
-                         severity = "amount",
-                         nclaims = "nclaims",
-                         exposure = "exposure")
-autoplot(x2)
 #> Ignoring plots 4, 5, 9: required column(s) not available in object
 
 

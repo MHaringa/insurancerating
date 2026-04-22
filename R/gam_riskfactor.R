@@ -312,17 +312,7 @@ is no longer supported."
 }
 
 
-#' Print method for fitgam objects
-#'
-#' @description
-#' Prints the prediction component of a `fitgam` object created by
-#' [riskfactor_gam()].
-#'
-#' @param x An object of class `"fitgam"`.
-#' @param ... Further arguments passed to or from other methods (ignored).
-#'
-#' @return Invisibly returns `x`.
-#'
+#' @keywords internal
 #' @export
 print.fitgam <- function(x, ...) {
   cat("Predictions from fitgam object:\n")
@@ -330,17 +320,8 @@ print.fitgam <- function(x, ...) {
   invisible(x)
 }
 
-#' Coerce fitgam objects to a data frame
-#'
-#' @description
-#' Extracts the prediction component of a `fitgam` object and returns it
-#' as a data frame.
-#'
-#' @param x An object of class `"fitgam"`.
-#' @param ... Further arguments passed to [as.data.frame()].
-#'
-#' @return A `data.frame` containing the predictions.
-#'
+
+#' @keywords internal
 #' @export
 as.data.frame.fitgam <- function(x, ...) {
   as.data.frame(x$prediction, ...)

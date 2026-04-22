@@ -7,7 +7,8 @@
 rating_factors2(
   model,
   model_data = NULL,
-  exposure = NULL,
+  exposure = TRUE,
+  exposure_name = NULL,
   colname = "estimate",
   exponentiate = TRUE,
   round_exposure = 0
@@ -16,9 +17,15 @@ rating_factors2(
 \arguments{
 \item{model}{glm object produced by \code{glm()}}
 
-\item{model_data}{data.frame used to create glm object}
+\item{model_data}{Optional data.frame used to create glm object. If \code{NULL},
+the function tries to use \code{model$data}.}
 
-\item{exposure}{column in \code{model_data} with exposure}
+\item{exposure}{Logical or character. If \code{TRUE} (default), exposure is added
+if it can be inferred from the model. If \code{FALSE}, no exposure is added.
+If a character string is supplied, it is interpreted as the exposure column
+name.}
+
+\item{exposure_name}{Optional name for the exposure column in the output.}
 
 \item{colname}{name of coefficient column}
 

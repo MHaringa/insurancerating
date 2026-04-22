@@ -102,7 +102,8 @@ construct_tariff_classes <- function(object, alpha = 0, niterations = 10000,
   })
 
   # Add min and max to binning
-  splits <- c(min(x_obs, na.rm = TRUE), split_x, max(x_obs, na.rm = TRUE))
+  splits <- sort(unique(c(min(x_obs, na.rm = TRUE), split_x,
+                          max(x_obs, na.rm = TRUE))))
   cuts <- cut(x_obs, breaks = splits, include.lowest = TRUE)
 
   structure(

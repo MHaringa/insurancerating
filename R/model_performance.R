@@ -4,7 +4,7 @@
 #' Computes the root mean squared error (RMSE) for a fitted model, defined as the
 #' square root of the mean of squared differences between predictions and observed values.
 #'
-#' @param object A fitted model object (e.g. of class `"glm"`).
+#' @param x A fitted model object (e.g. of class `"glm"`).
 #' @param data A data frame containing the variables used in the model. Required
 #'   if not already stored in `object`.
 #'
@@ -26,10 +26,10 @@
 #' rmse(x, MTPL2)
 #'
 #' @export
-rmse <- function(object, data = NULL) {
-  res_var <- stats::formula(object)[[2L]]
+rmse <- function(x, data = NULL) {
+  res_var <- stats::formula(x)[[2L]]
   resp <- eval(res_var, as.data.frame(data))
-  res <- resp - stats::predict(object, data, type = "response")
+  res <- resp - stats::predict(x, data, type = "response")
   sqrt(mean(res^2, na.rm = TRUE))
 }
 

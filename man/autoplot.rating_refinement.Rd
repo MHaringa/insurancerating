@@ -5,7 +5,7 @@
 \title{Automatically create a ggplot for objects obtained from refinement}
 \usage{
 \method{autoplot}{rating_refinement}(
-  object,
+  x,
   variable = NULL,
   step = NULL,
   remove_underscores = FALSE,
@@ -15,7 +15,7 @@
 )
 }
 \arguments{
-\item{object}{Object produced by \code{add_restriction()} or \code{add_relativities()}.}
+\item{x}{Object produced by \code{add_restriction()} or \code{add_relativities()}.}
 
 \item{variable}{Optional character string specifying the risk factor to plot.
 If \code{NULL} (default), all available variables in the refinement object are

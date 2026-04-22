@@ -109,6 +109,12 @@ The output provides standard portfolio metrics such as:
 ``` r
 
 autoplot(fa, show_plots = c(6, 1, 3))
+#> Warning: The `show_plots` argument of `autoplot()` is deprecated as of insurancerating
+#> 0.9.0.
+#> ℹ Please use the `metrics` argument instead.
+#> This warning is displayed once per session.
+#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+#> generated.
 ```
 
 ![](getting-started_files/figure-html/unnamed-chunk-4-1.png)
@@ -288,17 +294,17 @@ model components such as frequency or severity.
 
 rt <- rating_table(burn_unrestricted)
 rt
-#>    risk_factor       level est_burn_unrestricted
-#> 1  (Intercept) (Intercept)          7384.1234460
-#> 2      age_cat     (39,84]             1.0000000
-#> 3      age_cat     [18,25]             2.9237368
-#> 4      age_cat     (25,32]             3.1485339
-#> 5      age_cat     (32,39]             1.1733372
-#> 6      age_cat     (84,95]             0.6585964
-#> 7          zip           1             1.0000000
-#> 8          zip           0             0.9951378
-#> 9          zip           2             1.0051384
-#> 10         zip           3             1.0029159
+#>          level risk_factor est_burn_unrestricted exposure
+#> 1  (Intercept) (Intercept)          7384.1234460       NA
+#> 2            0         zip             0.9951378      207
+#> 3            1         zip             1.0000000    11081
+#> 4            2         zip             1.0051384     7783
+#> 5            3         zip             1.0029159     7588
+#> 6      [18,25]     age_cat             2.9237368     1331
+#> 7      (25,32]     age_cat             3.1485339     3649
+#> 8      (32,39]     age_cat             1.1733372     4247
+#> 9      (39,84]     age_cat             1.0000000    17358
+#> 10     (84,95]     age_cat             0.6585964       72
 ```
 
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)

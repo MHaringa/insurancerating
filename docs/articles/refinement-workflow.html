@@ -13,9 +13,8 @@
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Raleway-0.4.10/font.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet">
-<link href="../deps/Montserrat-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
@@ -181,22 +180,20 @@ structure:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                  risk_factor       level est_burn_unrestricted</span></span>
-<span><span class="co">#&gt; 1                (Intercept) (Intercept)          1.073720e+04</span></span>
-<span><span class="co">#&gt; 2                        zip           1          1.000000e+00</span></span>
-<span><span class="co">#&gt; 3                        zip           0          3.739250e-01</span></span>
-<span><span class="co">#&gt; 4                        zip           2          7.575359e-01</span></span>
-<span><span class="co">#&gt; 5                        zip           3          7.325754e-01</span></span>
-<span><span class="co">#&gt; 6  age_policyholder_freq_cat     (39,84]          1.000000e+00</span></span>
-<span><span class="co">#&gt; 7  age_policyholder_freq_cat     [18,25]          2.167946e+00</span></span>
-<span><span class="co">#&gt; 8  age_policyholder_freq_cat     (25,32]          1.488489e+00</span></span>
-<span><span class="co">#&gt; 9  age_policyholder_freq_cat     (32,39]          1.205259e+00</span></span>
-<span><span class="co">#&gt; 10 age_policyholder_freq_cat     (84,95]          5.868964e-01</span></span>
-<span><span class="co">#&gt; 11                        bm          bm          9.980489e-01</span></span>
+<span><span class="co">#&gt;          level               risk_factor est_burn_unrestricted exposure</span></span>
+<span><span class="co">#&gt; 1  (Intercept)               (Intercept)          1.073720e+04       NA</span></span>
+<span><span class="co">#&gt; 2            0                       zip          3.739250e-01      207</span></span>
+<span><span class="co">#&gt; 3            1                       zip          1.000000e+00    11081</span></span>
+<span><span class="co">#&gt; 4            2                       zip          7.575359e-01     7783</span></span>
+<span><span class="co">#&gt; 5            3                       zip          7.325754e-01     7588</span></span>
+<span><span class="co">#&gt; 6      [18,25] age_policyholder_freq_cat          2.167946e+00     1331</span></span>
+<span><span class="co">#&gt; 7      (25,32] age_policyholder_freq_cat          1.488489e+00     3649</span></span>
+<span><span class="co">#&gt; 8      (32,39] age_policyholder_freq_cat          1.205259e+00     4247</span></span>
+<span><span class="co">#&gt; 9      (39,84] age_policyholder_freq_cat          1.000000e+00    17358</span></span>
+<span><span class="co">#&gt; 10     (84,95] age_policyholder_freq_cat          5.868964e-01       72</span></span>
+<span><span class="co">#&gt; 11          bm                        bm          9.980489e-01       NA</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_unrestricted</span>, </span>
-<span>             model_data <span class="op">=</span> <span class="va">premium_df</span>, </span>
-<span>             exposure <span class="op">=</span> <span class="st">"exposure"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="refinement-workflow_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="700"></p>
 <p>At this stage, the coefficients reflect the unrestricted model fit.
@@ -434,28 +431,28 @@ final step is:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_refined</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                risk_factor       level est_burn_refined</span></span>
-<span><span class="co">#&gt; 1              (Intercept) (Intercept)     9376.5777003</span></span>
-<span><span class="co">#&gt; 2                  zip_adj           0        0.8000000</span></span>
-<span><span class="co">#&gt; 3                  zip_adj           1        0.9000000</span></span>
-<span><span class="co">#&gt; 4                  zip_adj           2        1.0000000</span></span>
-<span><span class="co">#&gt; 5                  zip_adj           3        1.2000000</span></span>
-<span><span class="co">#&gt; 6  age_policyholder_smooth     [18,23]        2.3107319</span></span>
-<span><span class="co">#&gt; 7  age_policyholder_smooth     (23,28]        1.7183044</span></span>
-<span><span class="co">#&gt; 8  age_policyholder_smooth     (28,33]        1.3763971</span></span>
-<span><span class="co">#&gt; 9  age_policyholder_smooth     (33,38]        1.2052590</span></span>
-<span><span class="co">#&gt; 10 age_policyholder_smooth     (38,43]        1.1379656</span></span>
-<span><span class="co">#&gt; 11 age_policyholder_smooth     (43,48]        1.1204187</span></span>
-<span><span class="co">#&gt; 12 age_policyholder_smooth     (48,53]        1.1113464</span></span>
-<span><span class="co">#&gt; 13 age_policyholder_smooth     (53,58]        1.0823030</span></span>
-<span><span class="co">#&gt; 14 age_policyholder_smooth     (58,63]        1.0176692</span></span>
-<span><span class="co">#&gt; 15 age_policyholder_smooth     (63,68]        0.9146517</span></span>
-<span><span class="co">#&gt; 16 age_policyholder_smooth     (68,73]        0.7832839</span></span>
-<span><span class="co">#&gt; 17 age_policyholder_smooth     (73,78]        0.6464252</span></span>
-<span><span class="co">#&gt; 18 age_policyholder_smooth     (78,83]        0.5397614</span></span>
-<span><span class="co">#&gt; 19 age_policyholder_smooth     (83,88]        0.5118045</span></span>
-<span><span class="co">#&gt; 20 age_policyholder_smooth     (88,93]        0.6238929</span></span>
-<span><span class="co">#&gt; 21                      bm          bm        0.9976439</span></span></code></pre></div>
+<span><span class="co">#&gt;          level             risk_factor est_burn_refined exposure</span></span>
+<span><span class="co">#&gt; 1  (Intercept)             (Intercept)     9376.5777003       NA</span></span>
+<span><span class="co">#&gt; 2            0                 zip_adj        0.8000000      207</span></span>
+<span><span class="co">#&gt; 3            1                 zip_adj        0.9000000    11081</span></span>
+<span><span class="co">#&gt; 4            2                 zip_adj        1.0000000     7783</span></span>
+<span><span class="co">#&gt; 5            3                 zip_adj        1.2000000     7586</span></span>
+<span><span class="co">#&gt; 6      [18,23] age_policyholder_smooth        2.3107319      586</span></span>
+<span><span class="co">#&gt; 7      (23,28] age_policyholder_smooth        1.7183044     2204</span></span>
+<span><span class="co">#&gt; 8      (28,33] age_policyholder_smooth        1.3763971     2790</span></span>
+<span><span class="co">#&gt; 9      (33,38] age_policyholder_smooth        1.2052590     3021</span></span>
+<span><span class="co">#&gt; 10     (38,43] age_policyholder_smooth        1.1379656     3089</span></span>
+<span><span class="co">#&gt; 11     (43,48] age_policyholder_smooth        1.1204187     3041</span></span>
+<span><span class="co">#&gt; 12     (48,53] age_policyholder_smooth        1.1113464     2978</span></span>
+<span><span class="co">#&gt; 13     (53,58] age_policyholder_smooth        1.0823030     2186</span></span>
+<span><span class="co">#&gt; 14     (58,63] age_policyholder_smooth        1.0176692     1974</span></span>
+<span><span class="co">#&gt; 15     (63,68] age_policyholder_smooth        0.9146517     1973</span></span>
+<span><span class="co">#&gt; 16     (68,73] age_policyholder_smooth        0.7832839     1558</span></span>
+<span><span class="co">#&gt; 17     (73,78] age_policyholder_smooth        0.6464252      907</span></span>
+<span><span class="co">#&gt; 18     (78,83] age_policyholder_smooth        0.5397614      246</span></span>
+<span><span class="co">#&gt; 19     (83,88] age_policyholder_smooth        0.5118045       93</span></span>
+<span><span class="co">#&gt; 20     (88,93] age_policyholder_smooth        0.6238929       11</span></span>
+<span><span class="co">#&gt; 21          bm                      bm        0.9976439       NA</span></span></code></pre></div>
 <p>At this point, the output no longer represents proposed manual
 adjustments. It represents the <strong>final fitted coefficient
 structure</strong>.</p>
@@ -473,13 +470,8 @@ are now embedded in the fitted model output.</p>
 </h3>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span></span>
-<span>  <span class="va">burn_refined</span>,</span>
-<span>  model_data <span class="op">=</span> <span class="va">premium_df</span>,</span>
-<span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
-<span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; zip_adj, age_policyholder_smooth not in model_data</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_refined</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="refinement-workflow_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="700"></p>
 </div>
 </div>
@@ -563,36 +555,31 @@ are now embedded in the fitted model output.</p>
 <span>  <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_refined</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                risk_factor       level est_burn_refined</span></span>
-<span><span class="co">#&gt; 1              (Intercept) (Intercept)     9376.5777003</span></span>
-<span><span class="co">#&gt; 2                  zip_adj           0        0.8000000</span></span>
-<span><span class="co">#&gt; 3                  zip_adj           1        0.9000000</span></span>
-<span><span class="co">#&gt; 4                  zip_adj           2        1.0000000</span></span>
-<span><span class="co">#&gt; 5                  zip_adj           3        1.2000000</span></span>
-<span><span class="co">#&gt; 6  age_policyholder_smooth     [18,23]        2.3107319</span></span>
-<span><span class="co">#&gt; 7  age_policyholder_smooth     (23,28]        1.7183044</span></span>
-<span><span class="co">#&gt; 8  age_policyholder_smooth     (28,33]        1.3763971</span></span>
-<span><span class="co">#&gt; 9  age_policyholder_smooth     (33,38]        1.2052590</span></span>
-<span><span class="co">#&gt; 10 age_policyholder_smooth     (38,43]        1.1379656</span></span>
-<span><span class="co">#&gt; 11 age_policyholder_smooth     (43,48]        1.1204187</span></span>
-<span><span class="co">#&gt; 12 age_policyholder_smooth     (48,53]        1.1113464</span></span>
-<span><span class="co">#&gt; 13 age_policyholder_smooth     (53,58]        1.0823030</span></span>
-<span><span class="co">#&gt; 14 age_policyholder_smooth     (58,63]        1.0176692</span></span>
-<span><span class="co">#&gt; 15 age_policyholder_smooth     (63,68]        0.9146517</span></span>
-<span><span class="co">#&gt; 16 age_policyholder_smooth     (68,73]        0.7832839</span></span>
-<span><span class="co">#&gt; 17 age_policyholder_smooth     (73,78]        0.6464252</span></span>
-<span><span class="co">#&gt; 18 age_policyholder_smooth     (78,83]        0.5397614</span></span>
-<span><span class="co">#&gt; 19 age_policyholder_smooth     (83,88]        0.5118045</span></span>
-<span><span class="co">#&gt; 20 age_policyholder_smooth     (88,93]        0.6238929</span></span>
-<span><span class="co">#&gt; 21                      bm          bm        0.9976439</span></span>
+<span><span class="co">#&gt;          level             risk_factor est_burn_refined exposure</span></span>
+<span><span class="co">#&gt; 1  (Intercept)             (Intercept)     9376.5777003       NA</span></span>
+<span><span class="co">#&gt; 2            0                 zip_adj        0.8000000      207</span></span>
+<span><span class="co">#&gt; 3            1                 zip_adj        0.9000000    11081</span></span>
+<span><span class="co">#&gt; 4            2                 zip_adj        1.0000000     7783</span></span>
+<span><span class="co">#&gt; 5            3                 zip_adj        1.2000000     7586</span></span>
+<span><span class="co">#&gt; 6      [18,23] age_policyholder_smooth        2.3107319      586</span></span>
+<span><span class="co">#&gt; 7      (23,28] age_policyholder_smooth        1.7183044     2204</span></span>
+<span><span class="co">#&gt; 8      (28,33] age_policyholder_smooth        1.3763971     2790</span></span>
+<span><span class="co">#&gt; 9      (33,38] age_policyholder_smooth        1.2052590     3021</span></span>
+<span><span class="co">#&gt; 10     (38,43] age_policyholder_smooth        1.1379656     3089</span></span>
+<span><span class="co">#&gt; 11     (43,48] age_policyholder_smooth        1.1204187     3041</span></span>
+<span><span class="co">#&gt; 12     (48,53] age_policyholder_smooth        1.1113464     2978</span></span>
+<span><span class="co">#&gt; 13     (53,58] age_policyholder_smooth        1.0823030     2186</span></span>
+<span><span class="co">#&gt; 14     (58,63] age_policyholder_smooth        1.0176692     1974</span></span>
+<span><span class="co">#&gt; 15     (63,68] age_policyholder_smooth        0.9146517     1973</span></span>
+<span><span class="co">#&gt; 16     (68,73] age_policyholder_smooth        0.7832839     1558</span></span>
+<span><span class="co">#&gt; 17     (73,78] age_policyholder_smooth        0.6464252      907</span></span>
+<span><span class="co">#&gt; 18     (78,83] age_policyholder_smooth        0.5397614      246</span></span>
+<span><span class="co">#&gt; 19     (83,88] age_policyholder_smooth        0.5118045       93</span></span>
+<span><span class="co">#&gt; 20     (88,93] age_policyholder_smooth        0.6238929       11</span></span>
+<span><span class="co">#&gt; 21          bm                      bm        0.9976439       NA</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span></span>
-<span>  <span class="va">burn_refined</span>,</span>
-<span>  model_data <span class="op">=</span> <span class="va">premium_df</span>,</span>
-<span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
-<span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; zip_adj, age_policyholder_smooth not in model_data</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_refined</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="refinement-workflow_files/figure-html/unnamed-chunk-15-1.png" class="r-plt" alt="" width="700"></p>
 </div>
 <div class="section level2">

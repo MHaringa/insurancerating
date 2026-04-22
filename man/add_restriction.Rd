@@ -19,6 +19,15 @@ Object of class \code{rating_refinement}.
 }
 \description{
 Adds a restriction step to a \code{rating_refinement} object.
+
+\code{restrict_coef()} is deprecated as of version 0.9.0.
+Please use the refinement workflow instead:
+
+\preformatted{
+prepare_refinement(model) |>
+  add_restriction(...) |>
+  refit()
+}
 }
 \details{
 \code{add_restriction()} is part of the new refinement workflow and is intended

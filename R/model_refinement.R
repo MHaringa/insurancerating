@@ -1,6 +1,3 @@
-# -----------------------------------------------------------------------------
-# refinement_api.R
-# -----------------------------------------------------------------------------
 
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
@@ -286,6 +283,7 @@ prepare_refinement <- function(model, data = NULL) {
   as_refinement(model, data = data)
 }
 
+#' @keywords internal
 #' @export
 print.rating_refinement <- function(x, ...) {
   cat("<rating_refinement>\n")
@@ -320,6 +318,8 @@ summary.rating_refinement <- function(object, ...) {
   out
 }
 
+
+#' @keywords internal
 #' @export
 print.summary.rating_refinement <- function(x, ...) {
   cat("Refinement summary\n\n")
@@ -378,7 +378,18 @@ add_restriction <- function(model, restrictions) {
   ))
 }
 
+
 #' @rdname add_restriction
+#' @description
+#' `restrict_coef()` is deprecated as of version 0.9.0.
+#' Please use the refinement workflow instead:
+#'
+#' \preformatted{
+#' prepare_refinement(model) |>
+#'   add_restriction(...) |>
+#'   refit()
+#' }
+#'
 #' @export
 restrict_coef <- function(model, restrictions) {
   lifecycle::deprecate_warn(
@@ -394,6 +405,7 @@ restrict_coef <- function(model, restrictions) {
   ref <- add_restriction(ref, restrictions)
   ref
 }
+
 
 #' Add smoothing to a refinement workflow
 #'
@@ -451,7 +463,20 @@ add_smoothing <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
   ))
 }
 
+
 #' @rdname add_smoothing
+#' @description
+#' `smooth_coef()` is deprecated as of version 0.9.0.
+#' Please use the refinement workflow instead:
+#'
+#' \preformatted{
+#' prepare_refinement(model) |>
+#'   add_smoothing(...) |>
+#'   refit()
+#' }
+#'
+#' @seealso [add_smoothing()], [prepare_refinement()], [refit()]
+#'
 #' @export
 smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
                         smoothing = "spline", k = NULL, weights = NULL) {
@@ -544,47 +569,6 @@ edit_smoothing <- function(model,
   model
 }
 
-#' @rdname edit_smoothing
-#' @importFrom utils tail
-#' @export
-update_smoothing <- function(model,
-                             x1, x2,
-                             overwrite_y1 = NULL, overwrite_y2 = NULL,
-                             knots_x = NULL, knots_y = NULL,
-                             allow_extrapolation = FALSE,
-                             extrapolation_break_size = NULL) {
-  lifecycle::deprecate_warn(
-    when = "0.9.0",
-    what = "update_smoothing()",
-    with = "edit_smoothing()"
-  )
-
-  ref <- if (.is_refinement(model)) model else as_refinement(model)
-
-  smooth_steps <- which(vapply(
-    ref$steps,
-    function(s) identical(s$type, "smoothing"),
-    logical(1)
-  ))
-
-  if (length(smooth_steps) == 0) {
-    stop("No smoothing step found. Precede update_smoothing() with smooth_coef() or add_smoothing().",
-         call. = FALSE)
-  }
-
-  edit_smoothing(
-    model = ref,
-    step = tail(smooth_steps, 1),
-    x1 = x1,
-    x2 = x2,
-    overwrite_y1 = overwrite_y1,
-    overwrite_y2 = overwrite_y2,
-    knots_x = knots_x,
-    knots_y = knots_y,
-    allow_extrapolation = allow_extrapolation,
-    extrapolation_break_size = extrapolation_break_size
-  )
-}
 
 #' Add expert-based relativities to a refinement workflow
 #'
@@ -1304,11 +1288,36 @@ preview_refinement <- function(ref) {
   rf_single <- setdiff(rf_single, "(Intercept)")
   rf_single_rows <- rf[rf$risk_factor %in% rf_single, ]
 
+  restriction_map <- NULL
+
+  if (!is.null(x$mgd_rst) && length(x$mgd_rst) > 0) {
+    rst_pairs <- lapply(x$mgd_rst, function(z) {
+      z <- unique(as.character(z))
+      if (length(z) < 2) {
+        return(NULL)
+      }
+
+      data.frame(
+        source_var = z[1],
+        risk_factor = z[2],
+        stringsAsFactors = FALSE
+      )
+    })
+
+    rst_pairs <- rst_pairs[!vapply(rst_pairs, is.null, logical(1))]
+
+    if (length(rst_pairs) > 0) {
+      restriction_map <- unique(do.call(rbind, rst_pairs))
+      rownames(restriction_map) <- NULL
+    }
+  }
+
   attr(y, "new_col_nm") <- x$new_col_nm
   attr(y, "old_col_nm") <- x$old_col_nm
   attr(y, "rf") <- rf2
   attr(y, "mgd_smt") <- x$mgd_smt
   attr(y, "mgd_rst") <- x$mgd_rst
+  attr(y, "restriction_map") <- restriction_map
   attr(y, "offweights") <- offweights
   attr(y, "continuous_factors") <- rf_single_rows
   attr(y, "intercept_only") <- isTRUE(intercept_only)
@@ -1494,7 +1503,7 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #' spanning all child categories, with the original level label centred above
 #' the segment.
 #'
-#' @param object Object produced by `add_restriction()` or `add_relativities()`.
+#' @param x Object produced by `add_restriction()` or `add_relativities()`.
 #' @param variable Optional character string specifying the risk factor to plot.
 #'   If `NULL` (default), all available variables in the refinement object are
 #'   shown. If specified, only the selected risk factor is plotted.
@@ -1523,21 +1532,21 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #' @importFrom dplyr left_join
 #'
 #' @export
-autoplot.rating_refinement <- function(object,
+autoplot.rating_refinement <- function(x,
                                        variable = NULL,
                                        step = NULL,
                                        remove_underscores = FALSE,
                                        rotate_angle = NULL,
                                        custom_theme = NULL,
                                        ...) {
-  .assert_refinement(object)
+  .assert_refinement(x)
 
-  if (length(object$steps) == 0) {
+  if (length(x$steps) == 0) {
     stop("No refinement steps available to plot.", call. = FALSE)
   }
 
-  idx <- .select_plot_step(object, variable = variable, step = step)
-  preview <- preview_refinement(object, upto = idx)
+  idx <- .select_plot_step(x, variable = variable, step = step)
+  preview <- preview_refinement(x, upto = idx)
 
   selected_step <- preview$step
   state <- preview$state

@@ -47,7 +47,7 @@
 #' `univariate()` is still available for backward compatibility but will emit a
 #' deprecation warning and will be removed in a future release.
 #'
-#' @return A `data.table` of class `"univariate"` with summary statistics.
+#' @return An object of class `"univariate"` with summary statistics.
 #'
 #' @author Martin Haringa
 #'
@@ -129,26 +129,6 @@ factor_analysis <- function(df, x, severity = NULL, nclaims = NULL,
   return(dt)
 }
 
-#' @rdname factor_analysis
-#' @description
-#' `univariate_summary()` is kept as a compatibility alias for [factor_analysis()].
-#' It uses the same standard-evaluation interface and is **not** deprecated.
-#'
-#' @export
-univariate_summary <- function(df, x, severity = NULL, nclaims = NULL,
-                               exposure = NULL, premium = NULL, by = NULL) {
-  factor_analysis(
-    df = df,
-    x = x,
-    severity = severity,
-    nclaims = nclaims,
-    exposure = exposure,
-    premium = premium,
-    by = by
-  )
-}
-
-
 
 #' @rdname factor_analysis
 #' @description
@@ -204,14 +184,13 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' Automatically create a ggplot for objects obtained from factor analysis
 #'
 #' @description
-#' Takes an object produced by [factor_analysis()], [univariate_summary()]
-#' (compatibility alias) or [univariate()] (deprecated NSE interface) and plots
-#' the available statistics.
+#' Takes an object produced by [factor_analysis()] or [univariate()]
+#' (deprecated NSE interface) and plots the available statistics.
 #'
-#' @param object A `univariate` object produced by [factor_analysis()],
-#' [univariate_summary()] or [univariate()].
-#' @param show_plots Numeric vector of plots to be shown (default is
-#' `1:9`). There are nine available plots:
+#' @param x A `univariate` object produced by [factor_analysis()]
+#' or [univariate()].
+#' @param metrics Numeric vector specifying which metrics to plot (default is
+#' `1:9`). There are nine available metrics:
 #' \itemize{
 #'   \item{1. Frequency (`nclaims / exposure`)}
 #'   \item{2. Average severity (`severity / nclaims`)}
@@ -223,6 +202,7 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #'   \item{8. Number of claims}
 #'   \item{9. Premium}
 #' }
+#' @param show_plots Deprecated. Use `metrics` instead.
 #' @param ncol Number of columns in output (default = 1).
 #' @param background Show exposure as a background histogram (default = TRUE).
 #' @param labels Show labels with the exposure (default = TRUE).
@@ -238,7 +218,9 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #'   If NULL (default), the background color is taken from the internal palette.
 #'   If specified, the chosen color is applied to all background bars.
 #' @param label_width Width of labels on the x-axis (default = 10).
-#' @param coord_flip Flip cartesian coordinates (default = FALSE).
+#' @param coord_flip Logical. If `TRUE`, flip cartesian coordinates for bar plots
+#'   (metrics 6 to 9). This option does not affect the line-based plots for
+#'   metrics 1 to 5.
 #' @param show_total Show line for total if `by` is used (default = FALSE).
 #' @param total_color Color for total line (default = `"black"`).
 #' @param total_name Legend name for total line (default = NULL).
@@ -274,41 +256,60 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #'                      exposure = "exposure")
 #' autoplot(x)
 #'
-#' ## --- Compatibility alias ---
-#' x2 <- univariate_summary(MTPL2,
-#'                          x = "area",
-#'                          severity = "amount",
-#'                          nclaims = "nclaims",
-#'                          exposure = "exposure")
-#' autoplot(x2)
-#'
 #' ## --- Deprecated usage (NSE) ---
 #' x_old <- univariate(MTPL2, x = area, severity = amount,
 #'                     nclaims = nclaims, exposure = exposure)
 #' autoplot(x_old)
 #'
 #' @export
-autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
-                                background = TRUE, labels = TRUE,
-                                sort = FALSE, sort_manual = NULL,
+autoplot.univariate <- function(x,
+                                metrics = NULL,
+                                show_plots = NULL,
+                                ncol = 1,
+                                background = TRUE,
+                                labels = TRUE,
+                                sort = FALSE,
+                                sort_manual = NULL,
                                 dec.mark = ",",
                                 color = NULL,
                                 color_bg = NULL,
                                 label_width = 50,
-                                coord_flip = FALSE, show_total = FALSE,
-                                total_color = NULL, total_name = NULL,
+                                coord_flip = FALSE,
+                                show_total = FALSE,
+                                total_color = NULL,
+                                total_name = NULL,
                                 rotate_angle = NULL,
                                 custom_theme = NULL,
                                 remove_underscores = FALSE,
                                 remove_x_elements = TRUE,
                                 ...) {
 
-  xvar     <- attr(object, "xvar")
-  nclaims  <- attr(object, "nclaims")
-  exposure <- attr(object, "exposure")
-  severity <- attr(object, "severity")
-  premium  <- attr(object, "premium")
-  by       <- as.character(attr(object, "by"))
+  xvar     <- attr(x, "xvar")
+  nclaims  <- attr(x, "nclaims")
+  exposure <- attr(x, "exposure")
+  severity <- attr(x, "severity")
+  premium  <- attr(x, "premium")
+  by       <- as.character(attr(x, "by"))
+
+  # backward compatibility
+  if (!is.null(show_plots) && !is.null(metrics)) {
+    stop("Use either `metrics` or `show_plots`, not both.", call. = FALSE)
+  }
+
+  if (!is.null(show_plots)) {
+    lifecycle::deprecate_warn(
+      when = "0.9.0",
+      what = "autoplot(show_plots = )",
+      with = "autoplot(metrics = )"
+    )
+    metrics <- show_plots
+  }
+
+  if (is.null(metrics)) {
+    metrics <- 1:9
+  }
+
+  plots_allowed <- metrics[metrics %in% 1:9]
 
   if (length(xvar) > 1) {
     message(xvar, " has more than one element. Only the first is shown.")
@@ -316,8 +317,8 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
   }
   if (length(by) == 0) by <- "NULL"
 
-  df   <- if (by == "NULL") object else attr(object, "dfby")
-  dfby <- if (by == "NULL") attr(object, "dfby") else object
+  df   <- if (by == "NULL") x else attr(x, "dfby")
+  dfby <- if (by == "NULL") attr(x, "dfby") else x
 
   if (!is.factor(df[[xvar]])) df[[xvar]] <- factor(df[[xvar]])
   if (by != "NULL" && !is.factor(dfby[[by]])) dfby[[by]] <- factor(dfby[[by]])
@@ -353,23 +354,20 @@ autoplot.univariate <- function(object, show_plots = 1:9, ncol = 1,
     axis.title.y = ggplot2::element_text(size = 10)
   )
 
-  # Force background bars to light grey across all plot variants
   color_bg <- pal$bg_bar
 
-  # Build mapping (always 9 positions, missing values become NA)
   p_plots <- c(
-    "frequency",        # 1
-    "average_severity", # 2
-    "risk_premium",     # 3
-    "loss_ratio",       # 4
-    "average_premium",  # 5
-    if (is.null(exposure) || exposure == "") NA_character_ else exposure, # 6
-    if (is.null(severity) || severity == "") NA_character_ else severity, # 7
-    if (is.null(nclaims)  || nclaims  == "") NA_character_ else nclaims,  # 8
-    if (is.null(premium)  || premium  == "") NA_character_ else premium   # 9
+    "frequency",
+    "average_severity",
+    "risk_premium",
+    "loss_ratio",
+    "average_premium",
+    if (is.null(exposure) || exposure == "") NA_character_ else exposure,
+    if (is.null(severity) || severity == "") NA_character_ else severity,
+    if (is.null(nclaims)  || nclaims  == "") NA_character_ else nclaims,
+    if (is.null(premium)  || premium  == "") NA_character_ else premium
   )
 
-  plots_allowed <- show_plots[show_plots %in% 1:9]
   valid_vars <- p_plots[plots_allowed]
   vars_exist <- !is.na(valid_vars) & valid_vars %in% names(df)
   create_plots <- plots_allowed[vars_exist]

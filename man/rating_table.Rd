@@ -8,7 +8,8 @@
 rating_table(
   ...,
   model_data = NULL,
-  exposure = NULL,
+  exposure = TRUE,
+  exposure_name = NULL,
   exponentiate = TRUE,
   signif_stars = FALSE,
   round_exposure = 0
@@ -17,7 +18,8 @@ rating_table(
 rating_factors(
   ...,
   model_data = NULL,
-  exposure = NULL,
+  exposure = TRUE,
+  exposure_name = NULL,
   signif_stars = FALSE,
   exponentiate = TRUE,
   round_exposure = 0
@@ -26,11 +28,16 @@ rating_factors(
 \arguments{
 \item{...}{glm object(s) produced by \code{glm()}, \code{refit()} or \code{refit_glm()}}
 
-\item{model_data}{data.frame used to create glm object(s), this should only
-be specified in case the exposure is desired in the output, default value
-is NULL}
+\item{model_data}{Optional data.frame used to create the model(s). If \code{NULL},
+the function tries to use \code{model$data} for each supplied model.}
 
-\item{exposure}{column in \code{model_data} with exposure, default value is NULL}
+\item{exposure}{Logical or character. If \code{TRUE} (default), exposure is added
+if it can be inferred from the model. If \code{FALSE}, no exposure is added.
+If a character string is supplied, it is interpreted as the exposure column
+name.}
+
+\item{exposure_name}{Optional name for the exposure column in the output.
+If \code{NULL}, the original exposure column name is used.}
 
 \item{exponentiate}{logical indicating whether or not to exponentiate the
 coefficient estimates. Defaults to TRUE.}

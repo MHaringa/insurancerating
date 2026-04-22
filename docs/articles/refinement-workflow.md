@@ -115,22 +115,20 @@ Before refinement, inspect the unrestricted coefficient structure:
 ``` r
 
 rating_table(burn_unrestricted)
-#>                  risk_factor       level est_burn_unrestricted
-#> 1                (Intercept) (Intercept)          1.073720e+04
-#> 2                        zip           1          1.000000e+00
-#> 3                        zip           0          3.739250e-01
-#> 4                        zip           2          7.575359e-01
-#> 5                        zip           3          7.325754e-01
-#> 6  age_policyholder_freq_cat     (39,84]          1.000000e+00
-#> 7  age_policyholder_freq_cat     [18,25]          2.167946e+00
-#> 8  age_policyholder_freq_cat     (25,32]          1.488489e+00
-#> 9  age_policyholder_freq_cat     (32,39]          1.205259e+00
-#> 10 age_policyholder_freq_cat     (84,95]          5.868964e-01
-#> 11                        bm          bm          9.980489e-01
+#>          level               risk_factor est_burn_unrestricted exposure
+#> 1  (Intercept)               (Intercept)          1.073720e+04       NA
+#> 2            0                       zip          3.739250e-01      207
+#> 3            1                       zip          1.000000e+00    11081
+#> 4            2                       zip          7.575359e-01     7783
+#> 5            3                       zip          7.325754e-01     7588
+#> 6      [18,25] age_policyholder_freq_cat          2.167946e+00     1331
+#> 7      (25,32] age_policyholder_freq_cat          1.488489e+00     3649
+#> 8      (32,39] age_policyholder_freq_cat          1.205259e+00     4247
+#> 9      (39,84] age_policyholder_freq_cat          1.000000e+00    17358
+#> 10     (84,95] age_policyholder_freq_cat          5.868964e-01       72
+#> 11          bm                        bm          9.980489e-01       NA
 
-rating_table(burn_unrestricted, 
-             model_data = premium_df, 
-             exposure = "exposure") |>
+rating_table(burn_unrestricted) |>
   autoplot()
 ```
 
@@ -365,28 +363,28 @@ After refit, use
 ``` r
 
 rating_table(burn_refined)
-#>                risk_factor       level est_burn_refined
-#> 1              (Intercept) (Intercept)     9376.5777003
-#> 2                  zip_adj           0        0.8000000
-#> 3                  zip_adj           1        0.9000000
-#> 4                  zip_adj           2        1.0000000
-#> 5                  zip_adj           3        1.2000000
-#> 6  age_policyholder_smooth     [18,23]        2.3107319
-#> 7  age_policyholder_smooth     (23,28]        1.7183044
-#> 8  age_policyholder_smooth     (28,33]        1.3763971
-#> 9  age_policyholder_smooth     (33,38]        1.2052590
-#> 10 age_policyholder_smooth     (38,43]        1.1379656
-#> 11 age_policyholder_smooth     (43,48]        1.1204187
-#> 12 age_policyholder_smooth     (48,53]        1.1113464
-#> 13 age_policyholder_smooth     (53,58]        1.0823030
-#> 14 age_policyholder_smooth     (58,63]        1.0176692
-#> 15 age_policyholder_smooth     (63,68]        0.9146517
-#> 16 age_policyholder_smooth     (68,73]        0.7832839
-#> 17 age_policyholder_smooth     (73,78]        0.6464252
-#> 18 age_policyholder_smooth     (78,83]        0.5397614
-#> 19 age_policyholder_smooth     (83,88]        0.5118045
-#> 20 age_policyholder_smooth     (88,93]        0.6238929
-#> 21                      bm          bm        0.9976439
+#>          level             risk_factor est_burn_refined exposure
+#> 1  (Intercept)             (Intercept)     9376.5777003       NA
+#> 2            0                 zip_adj        0.8000000      207
+#> 3            1                 zip_adj        0.9000000    11081
+#> 4            2                 zip_adj        1.0000000     7783
+#> 5            3                 zip_adj        1.2000000     7586
+#> 6      [18,23] age_policyholder_smooth        2.3107319      586
+#> 7      (23,28] age_policyholder_smooth        1.7183044     2204
+#> 8      (28,33] age_policyholder_smooth        1.3763971     2790
+#> 9      (33,38] age_policyholder_smooth        1.2052590     3021
+#> 10     (38,43] age_policyholder_smooth        1.1379656     3089
+#> 11     (43,48] age_policyholder_smooth        1.1204187     3041
+#> 12     (48,53] age_policyholder_smooth        1.1113464     2978
+#> 13     (53,58] age_policyholder_smooth        1.0823030     2186
+#> 14     (58,63] age_policyholder_smooth        1.0176692     1974
+#> 15     (63,68] age_policyholder_smooth        0.9146517     1973
+#> 16     (68,73] age_policyholder_smooth        0.7832839     1558
+#> 17     (73,78] age_policyholder_smooth        0.6464252      907
+#> 18     (78,83] age_policyholder_smooth        0.5397614      246
+#> 19     (83,88] age_policyholder_smooth        0.5118045       93
+#> 20     (88,93] age_policyholder_smooth        0.6238929       11
+#> 21          bm                      bm        0.9976439       NA
 ```
 
 At this point, the output no longer represents proposed manual
@@ -408,13 +406,8 @@ now embedded in the fitted model output.
 
 ``` r
 
-rating_table(
-  burn_refined,
-  model_data = premium_df,
-  exposure = "exposure"
-) |>
+rating_table(burn_refined) |>
   autoplot()
-#> zip_adj, age_policyholder_smooth not in model_data
 ```
 
 ![](refinement-workflow_files/figure-html/unnamed-chunk-12-1.png)
@@ -503,36 +496,31 @@ burn_refined <- prepare_refinement(burn_unrestricted) |>
   refit()
 
 rating_table(burn_refined)
-#>                risk_factor       level est_burn_refined
-#> 1              (Intercept) (Intercept)     9376.5777003
-#> 2                  zip_adj           0        0.8000000
-#> 3                  zip_adj           1        0.9000000
-#> 4                  zip_adj           2        1.0000000
-#> 5                  zip_adj           3        1.2000000
-#> 6  age_policyholder_smooth     [18,23]        2.3107319
-#> 7  age_policyholder_smooth     (23,28]        1.7183044
-#> 8  age_policyholder_smooth     (28,33]        1.3763971
-#> 9  age_policyholder_smooth     (33,38]        1.2052590
-#> 10 age_policyholder_smooth     (38,43]        1.1379656
-#> 11 age_policyholder_smooth     (43,48]        1.1204187
-#> 12 age_policyholder_smooth     (48,53]        1.1113464
-#> 13 age_policyholder_smooth     (53,58]        1.0823030
-#> 14 age_policyholder_smooth     (58,63]        1.0176692
-#> 15 age_policyholder_smooth     (63,68]        0.9146517
-#> 16 age_policyholder_smooth     (68,73]        0.7832839
-#> 17 age_policyholder_smooth     (73,78]        0.6464252
-#> 18 age_policyholder_smooth     (78,83]        0.5397614
-#> 19 age_policyholder_smooth     (83,88]        0.5118045
-#> 20 age_policyholder_smooth     (88,93]        0.6238929
-#> 21                      bm          bm        0.9976439
+#>          level             risk_factor est_burn_refined exposure
+#> 1  (Intercept)             (Intercept)     9376.5777003       NA
+#> 2            0                 zip_adj        0.8000000      207
+#> 3            1                 zip_adj        0.9000000    11081
+#> 4            2                 zip_adj        1.0000000     7783
+#> 5            3                 zip_adj        1.2000000     7586
+#> 6      [18,23] age_policyholder_smooth        2.3107319      586
+#> 7      (23,28] age_policyholder_smooth        1.7183044     2204
+#> 8      (28,33] age_policyholder_smooth        1.3763971     2790
+#> 9      (33,38] age_policyholder_smooth        1.2052590     3021
+#> 10     (38,43] age_policyholder_smooth        1.1379656     3089
+#> 11     (43,48] age_policyholder_smooth        1.1204187     3041
+#> 12     (48,53] age_policyholder_smooth        1.1113464     2978
+#> 13     (53,58] age_policyholder_smooth        1.0823030     2186
+#> 14     (58,63] age_policyholder_smooth        1.0176692     1974
+#> 15     (63,68] age_policyholder_smooth        0.9146517     1973
+#> 16     (68,73] age_policyholder_smooth        0.7832839     1558
+#> 17     (73,78] age_policyholder_smooth        0.6464252      907
+#> 18     (78,83] age_policyholder_smooth        0.5397614      246
+#> 19     (83,88] age_policyholder_smooth        0.5118045       93
+#> 20     (88,93] age_policyholder_smooth        0.6238929       11
+#> 21          bm                      bm        0.9976439       NA
 
-rating_table(
-  burn_refined,
-  model_data = premium_df,
-  exposure = "exposure"
-) |>
+rating_table(burn_refined) |>
   autoplot()
-#> zip_adj, age_policyholder_smooth not in model_data
 ```
 
 ![](refinement-workflow_files/figure-html/unnamed-chunk-15-1.png)
