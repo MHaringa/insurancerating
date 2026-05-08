@@ -3,42 +3,16 @@
 `rating_grid()` constructs rating-grid points by collapsing rows with
 identical combinations of grouping variables to a single row.
 
-The function is intended for analytical use cases where it is convenient
-to work with one row per observed combination of risk factors or model
-variables. In many raw datasets, the same combination occurs multiple
-times. For model diagnostics, portfolio summaries, and prediction
-analysis, it is often more useful to aggregate these repeated
-combinations than to keep all original rows.
-
-By default, the function returns only combinations that are actually
-observed in the input data. It does **not** create the full Cartesian
-product of all unique values, because that can become very large and is
-often not needed for analysis.
-
-In other words, the function:
-
-- identifies the rating-grid dimensions;
-
-- groups rows with identical combinations of these variables;
-
-- aggregates exposure and optional numeric columns to one row per
-  observed combination.
-
-This is especially useful for:
-
-- analysing model structure,
-
-- summarising portfolios at rating-grid level,
-
-- comparing observed and fitted values,
-
-- creating compact input for further analysis or plotting.
+The function returns only combinations that are actually observed in the
+input data. It does **not** create the full Cartesian product of all
+unique values. This keeps the output compact and suitable for model
+diagnostics, portfolio summaries, and prediction analysis.
 
 When `x` is an object returned by
-[`model_data()`](https://mharinga.github.io/insurancerating/reference/model_data.md),
+[`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md),
 the function uses the extracted model metadata to determine the grouping
-variables if `group_vars` is not supplied. When `x` is a plain
-`data.frame`, it is recommended to supply `group_vars` explicitly.
+variables if `group_by` is not supplied. When `x` is a plain
+`data.frame`, it is recommended to supply `group_by` explicitly.
 
 `construct_model_points()` is deprecated in favour of `rating_grid()`.
 
@@ -47,20 +21,24 @@ variables if `group_vars` is not supplied. When `x` is a plain
 ``` r
 rating_grid(
   x,
-  group_vars = NULL,
+  group_by = NULL,
   exposure = NULL,
   exposure_by = NULL,
-  agg_cols = NULL,
-  drop_na = FALSE
+  aggregate_cols = NULL,
+  drop_na = FALSE,
+  group_vars = NULL,
+  agg_cols = NULL
 )
 
 construct_model_points(
   x,
-  group_vars = NULL,
+  group_by = NULL,
   exposure = NULL,
   exposure_by = NULL,
-  agg_cols = NULL,
-  drop_na = FALSE
+  aggregate_cols = NULL,
+  drop_na = FALSE,
+  group_vars = NULL,
+  agg_cols = NULL
 )
 ```
 
@@ -68,16 +46,18 @@ construct_model_points(
 
 - x:
 
-  A `data.frame` or an object of class `"model_data"` returned by
-  [`model_data()`](https://mharinga.github.io/insurancerating/reference/model_data.md).
+  A `data.frame`, an object of class `"model_data"` returned by
+  [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md),
+  or a fitted model that can be passed to
+  [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md).
 
-- group_vars:
+- group_by:
 
   Optional character vector with the variables that define the
   rating-grid points. If `NULL` and `x` is a `"model_data"` object, the
   risk-factor variables stored in the object are used. If `NULL` and `x`
   is a plain `data.frame`, all columns except those listed in
-  `exposure`, `exposure_by`, and `agg_cols` are used.
+  `exposure`, `exposure_by`, and `aggregate_cols` are used.
 
 - exposure:
 
@@ -88,15 +68,20 @@ construct_model_points(
   Optional character; name of a column used to split exposure or counts,
   for example a year variable.
 
-- agg_cols:
+- aggregate_cols:
 
   Optional character vector with additional numeric columns to aggregate
   using `sum(na.rm = TRUE)`.
 
 - drop_na:
 
-  Logical; if `TRUE`, rows with missing values in `group_vars` are
-  removed before aggregation. Default is `FALSE`.
+  Logical; if `TRUE`, rows with missing values in `group_by` are removed
+  before aggregation. Default is `FALSE`.
+
+- group_vars, agg_cols:
+
+  Deprecated argument names. Use `group_by` and `aggregate_cols`
+  instead.
 
 ## Value
 
@@ -104,19 +89,17 @@ A `data.frame` with one row per observed rating-grid point.
 
 ## Details
 
-The function does **not** construct all theoretically possible
-rating-grid combinations. Instead, it only keeps combinations that
-actually occur in the input data and aggregates duplicates.
+The implementation uses base R only. Output is always a regular
+`data.frame`, not a tibble or data.table.
 
 If `exposure_by` is supplied, exposure or row counts are split across
 levels of that variable and returned in wide format, for example
 `"exposure_2020"` or `"count_2020"`.
 
 For objects returned by
-[`model_data()`](https://mharinga.github.io/insurancerating/reference/model_data.md),
-additional refinement variables stored in the object attributes may be
-retained when they are not already part of the regular grouping
-variables.
+[`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md),
+refinement mappings are joined by their original factor column. They are
+not cross-joined onto every row.
 
 ## Author
 
@@ -126,38 +109,16 @@ Martin Haringa
 
 ``` r
 if (FALSE) { # \dontrun{
-library(dplyr)
+rating_grid(mtcars, group_by = c("cyl", "vs"))
 
-# With a data.frame
-mtcars |>
-  dplyr::select(cyl, vs) |>
-  rating_grid(group_vars = c("cyl", "vs"))
+rating_grid(
+  mtcars,
+  group_by = c("cyl", "vs"),
+  exposure = "disp",
+  exposure_by = "gear",
+  aggregate_cols = "mpg"
+)
 
-mtcars |>
-  dplyr::select(cyl, vs, disp) |>
-  rating_grid(
-    group_vars = c("cyl", "vs"),
-    exposure = "disp"
-  )
-
-mtcars |>
-  dplyr::select(cyl, vs, disp, gear) |>
-  rating_grid(
-    group_vars = c("cyl", "vs"),
-    exposure = "disp",
-    exposure_by = "gear"
-  )
-
-mtcars |>
-  dplyr::select(cyl, vs, disp, gear, mpg) |>
-  rating_grid(
-    group_vars = c("cyl", "vs"),
-    exposure = "disp",
-    exposure_by = "gear",
-    agg_cols = c("mpg")
-  )
-
-# With extracted model data
 pmodel <- glm(
   breaks ~ wool + tension,
   data = warpbreaks,
@@ -165,7 +126,7 @@ pmodel <- glm(
 )
 
 pmodel |>
-  model_data() |>
+  extract_model_data() |>
   rating_grid()
 } # }
 ```

@@ -1,6 +1,6 @@
 # Plot risk factor effects from `rating_table()` results
 
-Create a ggplot visualisation of a `riskfactor` object produced by
+Create a ggplot visualisation of a `rating_table` object produced by
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
 Estimates are plotted per risk factor, with optional exposure bars and,
 optionally, an additional univariate line.
@@ -40,7 +40,7 @@ autoplot(
 
 - object:
 
-  A `riskfactor` object returned by
+  A `rating_table` object returned by
   [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
 
 - risk_factors:

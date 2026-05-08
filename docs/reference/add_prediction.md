@@ -6,7 +6,17 @@ Adds predictions (and optionally confidence intervals) from one or more
 ## Usage
 
 ``` r
-add_prediction(data, ..., var = NULL, conf_int = FALSE, alpha = 0.1)
+add_prediction(
+  data,
+  ...,
+  predictions = NULL,
+  prefix = "pred",
+  confidence = FALSE,
+  interval_names = c("lower", "upper"),
+  alpha = 0.1,
+  var = NULL,
+  conf_int = NULL
+)
 ```
 
 ## Arguments
@@ -20,22 +30,42 @@ add_prediction(data, ..., var = NULL, conf_int = FALSE, alpha = 0.1)
 
   One or more fitted model objects of class `"glm"`.
 
-- var:
+- predictions:
 
   Optional character vector giving names for the new prediction columns.
   Must have the same length as the number of models supplied. If `NULL`
-  (default), names are generated automatically.
+  (default), names are generated automatically using `prefix`, the model
+  response, and the model object name.
 
-- conf_int:
+- prefix:
+
+  Character. Prefix used for automatically generated prediction column
+  names. Default is `"pred"`.
+
+- confidence:
 
   Logical. If `TRUE`, add confidence intervals for predictions. Default
   is `FALSE`.
 
+- interval_names:
+
+  Character vector of length two. Names appended to the prediction
+  column name for lower and upper confidence interval bounds. Default is
+  `c("lower", "upper")`.
+
 - alpha:
 
-  Numeric between 0 and 1. Controls the confidence level for interval
+  Numeric between 0 and 1. Controls the miscoverage level for interval
   estimates. Default is `0.10`, corresponding to a 90% confidence
   interval.
+
+- var:
+
+  Deprecated. Use `predictions` instead.
+
+- conf_int:
+
+  Deprecated. Use `confidence` instead.
 
 ## Value
 
@@ -58,5 +88,5 @@ mod1 <- glm(nclaims ~ age_policyholder,
 mtpl_pred <- add_prediction(MTPL, mod1)
 
 # Add predicted values with confidence bounds
-mtpl_pred_ci <- add_prediction(MTPL, mod1, conf_int = TRUE)
+mtpl_pred_ci <- add_prediction(MTPL, mod1, confidence = TRUE)
 ```

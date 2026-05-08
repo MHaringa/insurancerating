@@ -48,7 +48,7 @@
 
         <dt>
 
-          <code><a href="autoplot.univariate.html">autoplot(<i>&lt;univariate&gt;</i>)</a></code>
+          <code><a href="autoplot.factor_analysis.html">autoplot(<i>&lt;factor_analysis&gt;</i>)</a></code>
 
         </dt>
         <dd>Automatically create a ggplot for objects obtained from factor analysis</dd>
@@ -58,14 +58,7 @@
           <code><a href="outlier_histogram.html">outlier_histogram()</a></code> <code><a href="outlier_histogram.html">histbin()</a></code>
 
         </dt>
-        <dd>Histogram with outlier bins</dd>
-
-        <dt>
-
-          <code><a href="biggest_reference.html">biggest_reference()</a></code>
-
-        </dt>
-        <dd>Set reference group to the group with largest exposure</dd>
+        <dd>Portfolio histogram with tail bins</dd>
       </dl></div><div class="section level2">
       <h2 id="tariff-classes">Tariff classes<a class="anchor" aria-label="anchor" href="#tariff-classes"></a></h2>
 
@@ -78,24 +71,17 @@
 
       <dl><dt>
 
-          <code><a href="riskfactor_gam.html">riskfactor_gam()</a></code> <code><a href="riskfactor_gam.html">fit_gam()</a></code>
+          <code><a href="risk_factor_gam.html">risk_factor_gam()</a></code> <code><a href="risk_factor_gam.html">riskfactor_gam()</a></code> <code><a href="risk_factor_gam.html">fit_gam()</a></code>
 
         </dt>
-        <dd>Generalized Additive Model for Insurance Risk Factors</dd>
+        <dd>Fit a GAM for a continuous risk factor</dd>
 
         <dt>
 
-          <code><a href="summary.fitgam.html">summary(<i>&lt;fitgam&gt;</i>)</a></code>
+          <code><a href="autoplot.riskfactor_gam.html">autoplot(<i>&lt;riskfactor_gam&gt;</i>)</a></code>
 
         </dt>
-        <dd>Summary method for fitgam objects</dd>
-
-        <dt>
-
-          <code><a href="autoplot.fitgam.html">autoplot(<i>&lt;fitgam&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Autoplot for GAM Objects from <code><a href="../reference/riskfactor_gam.html">riskfactor_gam()</a></code></dd>
+        <dd>Autoplot for GAM objects from <code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code></dd>
 
         <dt>
 
@@ -106,21 +92,7 @@
 
         <dt>
 
-          <code><a href="print.constructtariffclasses.html">print(<i>&lt;constructtariffclasses&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Print method for constructtariffclasses objects</dd>
-
-        <dt>
-
-          <code><a href="as.vector.constructtariffclasses.html">as.vector(<i>&lt;constructtariffclasses&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Coerce constructtariffclasses to a vector</dd>
-
-        <dt>
-
-          <code><a href="autoplot.constructtariffclasses.html">autoplot(<i>&lt;constructtariffclasses&gt;</i>)</a></code>
+          <code><a href="autoplot.tariff_classes.html">autoplot(<i>&lt;tariff_classes&gt;</i>)</a></code>
 
         </dt>
         <dd>Autoplot for tariff class objects</dd>
@@ -139,7 +111,7 @@
           <code><a href="rating_table.html">rating_table()</a></code> <code><a href="rating_table.html">rating_factors()</a></code>
 
         </dt>
-        <dd>Include reference group in regression output</dd>
+        <dd>Build rating tables from fitted pricing models</dd>
 
         <dt>
 
@@ -176,7 +148,7 @@
           <code><a href="autoplot.rating_refinement.html">autoplot(<i>&lt;rating_refinement&gt;</i>)</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
-        <dd>Automatically create a ggplot for objects obtained from refinement</dd>
+        <dd>Plot a model refinement step</dd>
 
         <dt>
 
@@ -233,13 +205,6 @@
 
         </dt>
         <dd>Refit a prepared refinement workflow</dd>
-
-        <dt>
-
-          <code><a href="refit_glm.html">refit_glm()</a></code> <code><a href="refit_glm.html">update_glm()</a></code>
-
-        </dt>
-        <dd>Refit a GLM model or refinement workflow</dd>
       </dl></div><div class="section level2">
       <h2 id="validation">Validation<a class="anchor" aria-label="anchor" href="#validation"></a></h2>
 
@@ -259,13 +224,6 @@
 
         <dt>
 
-          <code><a href="print.model_performance.html">print(<i>&lt;model_performance&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Print method for model_performance objects</dd>
-
-        <dt>
-
           <code><a href="rmse.html">rmse()</a></code>
 
         </dt>
@@ -280,13 +238,6 @@
 
         <dt>
 
-          <code><a href="as.vector.bootstrap_performance.html">as.vector(<i>&lt;bootstrap_performance&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Coerce bootstrap_performance objects to a vector</dd>
-
-        <dt>
-
           <code><a href="autoplot.bootstrap_performance.html">autoplot(<i>&lt;bootstrap_performance&gt;</i>)</a></code>
 
         </dt>
@@ -297,14 +248,14 @@
           <code><a href="check_overdispersion.html">check_overdispersion()</a></code>
 
         </dt>
-        <dd>Check overdispersion of a Poisson GLM</dd>
+        <dd>Check overdispersion of a Poisson claim frequency model</dd>
 
         <dt>
 
           <code><a href="check_residuals.html">check_residuals()</a></code>
 
         </dt>
-        <dd>Check model residuals</dd>
+        <dd>Check simulation-based model residuals</dd>
 
         <dt>
 
@@ -324,7 +275,7 @@
 
       <dl><dt>
 
-          <code><a href="model_data.html">model_data()</a></code> <code><a href="model_data.html">extract_model_data()</a></code>
+          <code><a href="extract_model_data.html">extract_model_data()</a></code> <code><a href="extract_model_data.html">model_data()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Extract model data</dd>
@@ -350,14 +301,14 @@
           <code><a href="fit_truncated_dist.html">fit_truncated_dist()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
-        <dd>Fit a distribution to truncated severity (loss) data</dd>
+        <dd>Fit severity distributions to truncated claim data</dd>
 
         <dt>
 
           <code><a href="autoplot.truncated_dist.html">autoplot(<i>&lt;truncated_dist&gt;</i>)</a></code>
 
         </dt>
-        <dd>Automatically create a ggplot for objects obtained from fit_truncated_dist()</dd>
+        <dd>Plot a fitted truncated severity distribution</dd>
 
         <dt>
 
@@ -384,38 +335,31 @@
 
       <dl><dt>
 
-          <code><a href="fisher_classify.html">fisher_classify()</a></code> <code><a href="fisher_classify.html">fisher()</a></code>
+          <code><a href="biggest_reference.html">biggest_reference()</a></code>
 
         </dt>
-        <dd>Fisher's natural breaks classification</dd>
+        <dd>Set reference group to the group with largest exposure</dd>
 
         <dt>
 
           <code><a href="split_periods_to_months.html">split_periods_to_months()</a></code> <code><a href="split_periods_to_months.html">period_to_months()</a></code>
 
         </dt>
-        <dd>Split periods into monthly intervals</dd>
+        <dd>Split policy periods into monthly rows</dd>
 
         <dt>
 
-          <code><a href="rows_per_date.html">rows_per_date()</a></code>
+          <code><a href="active_rows_by_date.html">active_rows_by_date()</a></code> <code><a href="active_rows_by_date.html">rows_per_date()</a></code>
 
         </dt>
-        <dd>Find active rows per date</dd>
+        <dd>Find active portfolio rows for event dates</dd>
 
         <dt>
 
           <code><a href="merge_date_ranges.html">merge_date_ranges()</a></code> <code><a href="merge_date_ranges.html">reduce()</a></code>
 
         </dt>
-        <dd>Reduce portfolio by merging redundant date ranges</dd>
-
-        <dt>
-
-          <code><a href="summary.reduce.html">summary(<i>&lt;reduce&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Summarize reduce objects</dd>
+        <dd>Reduce portfolio periods by merging adjacent date ranges</dd>
       </dl></div><div class="section level2">
       <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a></h2>
 
@@ -451,6 +395,27 @@
 
       <dl><dt>
 
+          <code><a href="factor_analysis.html">factor_analysis()</a></code> <code><a href="factor_analysis.html">univariate()</a></code>
+
+        </dt>
+        <dd>Factor analysis for discrete risk factors</dd>
+
+        <dt>
+
+          <code><a href="risk_factor_gam.html">risk_factor_gam()</a></code> <code><a href="risk_factor_gam.html">riskfactor_gam()</a></code> <code><a href="risk_factor_gam.html">fit_gam()</a></code>
+
+        </dt>
+        <dd>Fit a GAM for a continuous risk factor</dd>
+
+        <dt>
+
+          <code><a href="rating_table.html">rating_table()</a></code> <code><a href="rating_table.html">rating_factors()</a></code>
+
+        </dt>
+        <dd>Build rating tables from fitted pricing models</dd>
+
+        <dt>
+
           <code><a href="rating_factors2.html">rating_factors2()</a></code>
           <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
         </dt>
@@ -458,10 +423,80 @@
 
         <dt>
 
-          <code><a href="model_data.html">model_data()</a></code> <code><a href="model_data.html">extract_model_data()</a></code>
+          <code><a href="extract_model_data.html">extract_model_data()</a></code> <code><a href="extract_model_data.html">model_data()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Extract model data</dd>
+
+        <dt>
+
+          <code><a href="rating_grid.html">rating_grid()</a></code> <code><a href="rating_grid.html">construct_model_points()</a></code>
+
+        </dt>
+        <dd>Construct observed rating-grid points from model data or a data frame</dd>
+
+        <dt>
+
+          <code><a href="bootstrap_performance.html">bootstrap_performance()</a></code> <code><a href="bootstrap_performance.html">bootstrap_rmse()</a></code>
+
+        </dt>
+        <dd>Bootstrapped model performance</dd>
+
+        <dt>
+
+          <code><a href="fisher_classify.html">fisher_classify()</a></code> <code><a href="fisher_classify.html">fisher()</a></code>
+
+        </dt>
+        <dd>Fisher's natural breaks classification</dd>
+
+        <dt>
+
+          <code><a href="outlier_histogram.html">outlier_histogram()</a></code> <code><a href="outlier_histogram.html">histbin()</a></code>
+
+        </dt>
+        <dd>Portfolio histogram with tail bins</dd>
+
+        <dt>
+
+          <code><a href="add_restriction.html">add_restriction()</a></code> <code><a href="add_restriction.html">restrict_coef()</a></code>
+
+        </dt>
+        <dd>Add coefficient restrictions to a refinement workflow</dd>
+
+        <dt>
+
+          <code><a href="add_smoothing.html">add_smoothing()</a></code> <code><a href="add_smoothing.html">smooth_coef()</a></code>
+
+        </dt>
+        <dd>Add smoothing to a refinement workflow</dd>
+
+        <dt>
+
+          <code><a href="refit_glm.html">refit_glm()</a></code> <code><a href="refit_glm.html">update_glm()</a></code>
+
+        </dt>
+        <dd>Refit a GLM model or refinement workflow</dd>
+
+        <dt>
+
+          <code><a href="split_periods_to_months.html">split_periods_to_months()</a></code> <code><a href="split_periods_to_months.html">period_to_months()</a></code>
+
+        </dt>
+        <dd>Split policy periods into monthly rows</dd>
+
+        <dt>
+
+          <code><a href="active_rows_by_date.html">active_rows_by_date()</a></code> <code><a href="active_rows_by_date.html">rows_per_date()</a></code>
+
+        </dt>
+        <dd>Find active portfolio rows for event dates</dd>
+
+        <dt>
+
+          <code><a href="merge_date_ranges.html">merge_date_ranges()</a></code> <code><a href="merge_date_ranges.html">reduce()</a></code>
+
+        </dt>
+        <dd>Reduce portfolio periods by merging adjacent date ranges</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

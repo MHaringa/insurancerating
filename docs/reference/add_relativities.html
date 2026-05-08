@@ -39,8 +39,8 @@
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">add_relativities</span><span class="op">(</span></span>
 <span>  <span class="va">model</span>,</span>
-<span>  <span class="va">risk_factor</span>,</span>
-<span>  <span class="va">risk_factor_split</span>,</span>
+<span>  <span class="va">model_variable</span>,</span>
+<span>  <span class="va">split_variable</span>,</span>
 <span>  <span class="va">relativities</span>,</span>
 <span>  <span class="va">exposure</span>,</span>
 <span>  normalize <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -52,19 +52,23 @@
 
 
 <dl><dt id="arg-model">model<a class="anchor" aria-label="anchor" href="#arg-model"></a></dt>
-<dd><p>Object of class <code>rating_refinement</code>.</p></dd>
+<dd><p>Object of class <code>rating_refinement</code>, usually created with
+<code><a href="prepare_refinement.html">prepare_refinement()</a></code>.</p></dd>
 
 
-<dt id="arg-risk-factor">risk_factor<a class="anchor" aria-label="anchor" href="#arg-risk-factor"></a></dt>
-<dd><p>Character string. Name of existing risk factor in the model.</p></dd>
+<dt id="arg-model-variable">model_variable<a class="anchor" aria-label="anchor" href="#arg-model-variable"></a></dt>
+<dd><p>Character string. Existing variable in the GLM. Levels
+of this variable can be split into more detailed groups.</p></dd>
 
 
-<dt id="arg-risk-factor-split">risk_factor_split<a class="anchor" aria-label="anchor" href="#arg-risk-factor-split"></a></dt>
-<dd><p>Character string. More granular split column.</p></dd>
+<dt id="arg-split-variable">split_variable<a class="anchor" aria-label="anchor" href="#arg-split-variable"></a></dt>
+<dd><p>Character string. More granular portfolio variable that
+defines the split groups.</p></dd>
 
 
 <dt id="arg-relativities">relativities<a class="anchor" aria-label="anchor" href="#arg-relativities"></a></dt>
-<dd><p>Named list of data.frames.</p></dd>
+<dd><p>Named list of data.frames, usually created with
+<code><a href="relativities_list.html">relativities_list()</a></code> and <code><a href="split_level.html">split_level()</a></code>.</p></dd>
 
 
 <dt id="arg-exposure">exposure<a class="anchor" aria-label="anchor" href="#arg-exposure"></a></dt>

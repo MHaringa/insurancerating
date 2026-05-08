@@ -47,7 +47,7 @@ Optionally prints a message about whether deviations are detected.</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'check_residuals'</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">object</span>, show_message <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">object</span>, show_message <span class="op">=</span> <span class="cn">TRUE</span>, max_points <span class="op">=</span> <span class="fl">1000</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -61,6 +61,12 @@ Optionally prints a message about whether deviations are detected.</p>
 <dt id="arg-show-message">show_message<a class="anchor" aria-label="anchor" href="#arg-show-message"></a></dt>
 <dd><p>Logical. If TRUE (default), prints a short message based on
 the p-value from the KS test.</p></dd>
+
+
+<dt id="arg-max-points">max_points<a class="anchor" aria-label="anchor" href="#arg-max-points"></a></dt>
+<dd><p>Maximum number of QQ-plot points to display. If the
+residual check contains more points, an evenly spaced subset is shown. Use
+<code>Inf</code> to plot all points.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

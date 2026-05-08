@@ -20,8 +20,8 @@ prepare_refinement(model, data = NULL)
 
 - data:
 
-  Optional data.frame. If `NULL`, the data are retrieved from the model
-  object.
+  Optional data.frame with the same rows and model variables as the
+  fitted GLM. If `NULL`, the data are retrieved from the model object.
 
 ## Value
 

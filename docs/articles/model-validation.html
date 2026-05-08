@@ -67,7 +67,7 @@
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>Model validation is part of the standard pricing workflow.</p>
+<p>Model validation is a common part of actuarial pricing work.</p>
 <p>After model estimation and coefficient interpretation, it is
 necessary to assess whether the model performs adequately and behaves in
 a stable and interpretable way.</p>
@@ -80,8 +80,8 @@ dimensions:</p>
 <li>distributional diagnostics</li>
 <li>portfolio-level behaviour</li>
 </ul>
-<p><code>insurancerating</code> provides tools for each of these
-steps.</p>
+<p><code>insurancerating</code> provides tools for several of these
+validation tasks.</p>
 <p>The purpose of validation is not only to assess statistical fit, but
 also to determine whether a model is suitable for use in a pricing
 context.</p>
@@ -136,7 +136,7 @@ specifications.</p>
 <span><span class="co">#&gt; ------+----------+----------+------ </span></span>
 <span><span class="co">#&gt;  mod1 |  2287.25 | 2311.275 | 0.356 </span></span>
 <span><span class="co">#&gt;  mod2 | 2289.054 | 2319.086 | 0.356</span></span></code></pre></div>
-<p>This provides standard summary measures of model fit, such as
+<p>This provides commonly used summary measures of model fit, such as
 RMSE.</p>
 <p>The purpose of this step is to assess whether the addition or removal
 of model terms leads to a materially different fit.</p>
@@ -160,7 +160,7 @@ coefficient structure also needs to be reviewed.</p>
 <li>the exposure behind each level</li>
 <li>whether differences are plausible and stable</li>
 </ul>
-<p>In pricing practice, this is a standard part of validation, because a
+<p>In pricing practice, this is often part of validation, because a
 model with slightly better fit may still be less suitable if its
 coefficient structure is difficult to interpret or unstable in
 low-exposure segments.</p>
@@ -173,7 +173,7 @@ pricing contexts, it is also relevant to assess how stable that
 performance is under small variations in the data.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span><span class="va">mod1</span>, <span class="va">df</span>, n <span class="op">=</span> <span class="fl">100</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span><span class="va">mod1</span>, <span class="va">df</span>, n_resamples <span class="op">=</span> <span class="fl">100</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="model-validation_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="700"></p>
 <p>This evaluates predictive stability by repeatedly refitting the model
@@ -191,7 +191,7 @@ or large claim volatility.</p>
 <div class="section level2">
 <h2 id="step-4-dispersion-checks">Step 4 — Dispersion checks<a class="anchor" aria-label="anchor" href="#step-4-dispersion-checks"></a>
 </h2>
-<p>For Poisson models, it is standard practice to check whether the
+<p>For Poisson models, it is common practice to check whether the
 variance assumption is broadly appropriate.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
@@ -221,7 +221,7 @@ adequacy.</p>
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="../reference/check_residuals.html">check_residuals</a></span><span class="op">(</span><span class="va">mod1</span>, n_simulations <span class="op">=</span> <span class="fl">600</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ✅ Residuals consistent with expected distribution (p = 0.934)</span></span></code></pre></div>
+<span><span class="co">#&gt; Residuals consistent with expected distribution (p = 0.934)</span></span></code></pre></div>
 <p><img src="model-validation_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="700"></p>
 <p>This step is used to assess whether the residual behaviour is broadly
 consistent with the fitted model assumptions.</p>
@@ -240,15 +240,11 @@ pricing.</p>
 <code class="sourceCode R"><span></span>
 <span><span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span><span class="va">mod1</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">grid</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
-<span><span class="co">#&gt;   customer_id area  nclaims amount exposure premium count</span></span>
-<span><span class="co">#&gt;         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>          54 3           0      0    0.452      84     1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>          60 3           0      0    0.879      65     1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>         108 3           0      0    1          76     1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>         174 2           0      0    1          66     1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>         220 2           1     33    1          58     1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>         296 3           0      0    1          65     1</span></span></code></pre></div>
+<span><span class="co">#&gt;   area count   exposure</span></span>
+<span><span class="co">#&gt; 1    1  1194 1065.74795</span></span>
+<span><span class="co">#&gt; 2    0    15   13.30685</span></span>
+<span><span class="co">#&gt; 3    2   921  818.53973</span></span>
+<span><span class="co">#&gt; 4    3   870  764.99178</span></span></code></pre></div>
 <p><code><a href="../reference/rating_grid.html">rating_grid()</a></code> aggregates the fitted model to observed
 model-point combinations. This is useful when validation requires a more
 structured view of:</p>
@@ -266,7 +262,7 @@ to tariff review or implementation support.</p>
 </h2>
 <p>In practice, model validation is rarely based on a single
 statistic.</p>
-<p>A standard validation workflow combines:</p>
+<p>A validation exercise often combines:</p>
 <ul>
 <li>comparative performance measures</li>
 <li>coefficient inspection</li>
@@ -288,7 +284,7 @@ a model is suitable for pricing use.</p>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
-<p>A standard validation workflow in <code>insurancerating</code>
+<p>One possible validation sequence in <code>insurancerating</code>
 is:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
@@ -310,14 +306,15 @@ determine whether the fitted model is:</p>
 <div class="section level2">
 <h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
-<p>For the standard modelling workflow, see:</p>
+<p>For a modelling example, see:</p>
 <ul>
 <li><a href="getting-started.html">Getting started</a></li>
 </ul>
 <p>For the refinement step after validation, see:</p>
 <ul>
 <li>
-<a href="refinement-workflow.html">Refinement workflow</a>.</li>
+<a href="refinement-workflow.html">Refinement building
+blocks</a>.</li>
 </ul>
 <p>For the conceptual background to exposure, risk premium, and tariff
 structure, see:</p>

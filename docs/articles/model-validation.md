@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Model validation is part of the standard pricing workflow.
+Model validation is a common part of actuarial pricing work.
 
 After model estimation and coefficient interpretation, it is necessary
 to assess whether the model performs adequately and behaves in a stable
@@ -16,7 +16,7 @@ In practice, model validation typically considers several dimensions:
 - distributional diagnostics
 - portfolio-level behaviour
 
-`insurancerating` provides tools for each of these steps.
+`insurancerating` provides tools for several of these validation tasks.
 
 The purpose of validation is not only to assess statistical fit, but
 also to determine whether a model is suitable for use in a pricing
@@ -28,6 +28,7 @@ The examples below use a simple frequency modelling setup based on
 `MTPL2`.
 
 ``` r
+
 
 library(insurancerating)
 library(dplyr)
@@ -65,6 +66,7 @@ A first validation step is to compare alternative model specifications.
 
 ``` r
 
+
 model_performance(mod1, mod2)
 #> # Comparison of Model Performance Indices
 #> 
@@ -74,7 +76,7 @@ model_performance(mod1, mod2)
 #>  mod2 | 2289.054 | 2319.086 | 0.356
 ```
 
-This provides standard summary measures of model fit, such as RMSE.
+This provides commonly used summary measures of model fit, such as RMSE.
 
 The purpose of this step is to assess whether the addition or removal of
 model terms leads to a materially different fit.
@@ -89,6 +91,7 @@ coefficient structure also needs to be reviewed.
 
 ``` r
 
+
 rating_table(mod1, mod2, model_data = df, exposure = "exposure") |>
   autoplot()
 ```
@@ -102,10 +105,10 @@ This is used to assess:
 - the exposure behind each level
 - whether differences are plausible and stable
 
-In pricing practice, this is a standard part of validation, because a
-model with slightly better fit may still be less suitable if its
-coefficient structure is difficult to interpret or unstable in
-low-exposure segments.
+In pricing practice, this is often part of validation, because a model
+with slightly better fit may still be less suitable if its coefficient
+structure is difficult to interpret or unstable in low-exposure
+segments.
 
 ## Step 3 — Predictive stability
 
@@ -115,7 +118,8 @@ performance is under small variations in the data.
 
 ``` r
 
-bootstrap_performance(mod1, df, n = 100, show_progress = FALSE) |>
+
+bootstrap_performance(mod1, df, n_resamples = 100, show_progress = FALSE) |>
   autoplot()
 ```
 
@@ -136,10 +140,11 @@ large claim volatility.
 
 ## Step 4 — Dispersion checks
 
-For Poisson models, it is standard practice to check whether the
-variance assumption is broadly appropriate.
+For Poisson models, it is common practice to check whether the variance
+assumption is broadly appropriate.
 
 ``` r
+
 
 check_overdispersion(mod1)
 #> Dispersion ratio =    1.220
@@ -166,9 +171,10 @@ Residual diagnostics provide an additional view of model adequacy.
 
 ``` r
 
+
 check_residuals(mod1, n_simulations = 600) |>
   autoplot()
-#> ✅ Residuals consistent with expected distribution (p = 0.934)
+#> Residuals consistent with expected distribution (p = 0.934)
 ```
 
 ![](model-validation_files/figure-html/unnamed-chunk-7-1.png)
@@ -190,17 +196,14 @@ Validation is also performed at portfolio or model-point level.
 
 ``` r
 
+
 grid <- rating_grid(mod1)
 head(grid)
-#> # A tibble: 6 × 7
-#>   customer_id area  nclaims amount exposure premium count
-#>         <int> <fct>   <int>  <int>    <dbl>   <int> <int>
-#> 1          54 3           0      0    0.452      84     1
-#> 2          60 3           0      0    0.879      65     1
-#> 3         108 3           0      0    1          76     1
-#> 4         174 2           0      0    1          66     1
-#> 5         220 2           1     33    1          58     1
-#> 6         296 3           0      0    1          65     1
+#>   area count   exposure
+#> 1    1  1194 1065.74795
+#> 2    0    15   13.30685
+#> 3    2   921  818.53973
+#> 4    3   870  764.99178
 ```
 
 [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
@@ -219,7 +222,7 @@ tariff review or implementation support.
 
 In practice, model validation is rarely based on a single statistic.
 
-A standard validation workflow combines:
+A validation exercise often combines:
 
 - comparative performance measures
 - coefficient inspection
@@ -240,9 +243,10 @@ model is suitable for pricing use.
 
 ## Summary
 
-A standard validation workflow in `insurancerating` is:
+One possible validation sequence in `insurancerating` is:
 
 ``` r
+
 
 model_performance(...)        # compare fitted models
 rating_table(...) |> autoplot()   # inspect coefficient structure
@@ -262,15 +266,15 @@ determine whether the fitted model is:
 
 ## Next steps
 
-For the standard modelling workflow, see:
+For a modelling example, see:
 
 - [Getting
   started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
 
 For the refinement step after validation, see:
 
-- [Refinement
-  workflow](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md).
+- [Refinement building
+  blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md).
 
 For the conceptual background to exposure, risk premium, and tariff
 structure, see:

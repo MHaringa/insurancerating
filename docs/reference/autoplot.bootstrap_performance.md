@@ -50,7 +50,8 @@ Martin Haringa
 if (FALSE) { # \dontrun{
 mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
             offset = log(exposure), family = poisson())
-x <- bootstrap_performance(mod1, MTPL, n = 100, show_progress = FALSE)
+x <- bootstrap_performance(mod1, MTPL, n_resamples = 100,
+                           show_progress = FALSE)
 autoplot(x)
 } # }
 ```

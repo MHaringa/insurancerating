@@ -67,16 +67,17 @@
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p><code>insurancerating</code> provides a structured workflow for
+<p><code>insurancerating</code> provides actuarial building blocks for
 insurance pricing in R.</p>
-<p>A typical pricing workflow consists of four steps:</p>
+<p>A common GLM-based pricing exercise often combines several tasks:</p>
 <ol style="list-style-type: decimal">
 <li>portfolio analysis</li>
 <li>model estimation</li>
 <li>interpretation of fitted coefficients</li>
 <li>refinement of tariff structure</li>
 </ol>
-<p>This vignette introduces the standard workflow:</p>
+<p>This vignette illustrates one way to combine the main building
+blocks:</p>
 <ul>
 <li>analyse risk factors with <code><a href="../reference/factor_analysis.html">factor_analysis()</a></code>
 </li>
@@ -125,7 +126,8 @@ portfolio with:</p>
 <div class="section level3">
 <h3 id="factor-analysis">Factor analysis<a class="anchor" aria-label="anchor" href="#factor-analysis"></a>
 </h3>
-<p>A pricing workflow starts with an analysis of the portfolio.</p>
+<p>A pricing analysis often starts with an analysis of the
+portfolio.</p>
 <p>Before fitting a model, it is necessary to understand:</p>
 <ul>
 <li>how experience differs across factor levels</li>
@@ -143,21 +145,19 @@ portfolio with:</p>
 <code class="sourceCode R"><span></span>
 <span><span class="va">fa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/factor_analysis.html">factor_analysis</a></span><span class="op">(</span></span>
 <span>  <span class="va">MTPL</span>,</span>
-<span>  x <span class="op">=</span> <span class="st">"zip"</span>,</span>
-<span>  nclaims <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
+<span>  risk_factors <span class="op">=</span> <span class="st">"zip"</span>,</span>
+<span>  claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
 <span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
-<span>  severity <span class="op">=</span> <span class="st">"amount"</span></span>
+<span>  claim_amount <span class="op">=</span> <span class="st">"amount"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fa</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 7</span></span></span>
-<span><span class="co">#&gt;   zip      amount nclaims exposure frequency average_severity risk_premium</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 1     116<span style="text-decoration: underline;">178</span>669    <span style="text-decoration: underline;">1</span>593   <span style="text-decoration: underline;">11</span>081.     0.144           <span style="text-decoration: underline;">72</span>931.       <span style="text-decoration: underline;">10</span>485.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2      59<span style="text-decoration: underline;">751</span>985    <span style="text-decoration: underline;">1</span>008    <span style="text-decoration: underline;">7</span>783.     0.130           <span style="text-decoration: underline;">59</span>278.        <span style="text-decoration: underline;">7</span>678.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 3      58<span style="text-decoration: underline;">988</span>962    <span style="text-decoration: underline;">1</span>038    <span style="text-decoration: underline;">7</span>588.     0.137           <span style="text-decoration: underline;">56</span>829.        <span style="text-decoration: underline;">7</span>774.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 0        <span style="text-decoration: underline;">821</span>510      29     207.     0.140           <span style="text-decoration: underline;">28</span>328.        <span style="text-decoration: underline;">3</span>972.</span></span></code></pre></div>
-<p>The output provides standard portfolio metrics such as:</p>
+<span><span class="co">#&gt;   zip    amount nclaims   exposure frequency average_severity risk_premium</span></span>
+<span><span class="co">#&gt; 1   1 116178669    1593 11080.6274 0.1437644         72930.74    10484.846</span></span>
+<span><span class="co">#&gt; 2   2  59751985    1008  7782.6301 0.1295192         59277.76     7677.608</span></span>
+<span><span class="co">#&gt; 3   3  58988962    1038  7587.5644 0.1368028         56829.44     7774.427</span></span>
+<span><span class="co">#&gt; 4   0    821510      29   206.8438 0.1402024         28327.93     3971.644</span></span></code></pre></div>
+<p>The output provides commonly used portfolio metrics such as:</p>
 <ul>
 <li>frequency = claims / exposure</li>
 <li>average severity = loss / claims</li>
@@ -171,13 +171,7 @@ portfolio with:</p>
 </h3>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fa</span>, show_plots <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: The `show_plots` argument of `autoplot()` is deprecated as of insurancerating</span></span>
-<span><span class="co">#&gt; 0.9.0.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Please use the `metrics` argument instead.</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">This warning is displayed once per session.</span></span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">Call `lifecycle::last_lifecycle_warnings()` to see where this warning was</span></span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">generated.</span></span></span></code></pre></div>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fa</span>, metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="700"></p>
 <p>This provides a direct view of:</p>
 <ul>
@@ -211,10 +205,10 @@ implementable.</p>
 </h3>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="va">age_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/riskfactor_gam.html">riskfactor_gam</a></span><span class="op">(</span></span>
+<span><span class="va">age_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/risk_factor_gam.html">risk_factor_gam</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">MTPL</span>,</span>
-<span>  x <span class="op">=</span> <span class="st">"age_policyholder"</span>,</span>
-<span>  nclaims <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
+<span>  risk_factor <span class="op">=</span> <span class="st">"age_policyholder"</span>,</span>
+<span>  claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
 <span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -261,8 +255,8 @@ most stable and interpretable baseline.</p>
 <div class="section level3">
 <h3 id="why-glms-are-used">Why GLMs are used<a class="anchor" aria-label="anchor" href="#why-glms-are-used"></a>
 </h3>
-<p>Generalized linear models form the standard basis of many insurance
-pricing workflows because they:</p>
+<p>Generalized linear models are widely used in insurance pricing
+because they:</p>
 <ul>
 <li>accommodate non-normal response distributions</li>
 <li>produce interpretable multiplicative effects</li>
@@ -311,19 +305,19 @@ different aspects of the loss process.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">premium_df</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   age_policyholder nclaims  exposure amount power bm zip age_cat</span></span>
-<span><span class="co">#&gt; 1               70       0 1.0000000      0   106  5   1 (39,84]</span></span>
-<span><span class="co">#&gt; 2               40       0 1.0000000      0    74  3   1 (39,84]</span></span>
-<span><span class="co">#&gt; 3               78       0 1.0000000      0    65  8   2 (39,84]</span></span>
-<span><span class="co">#&gt; 4               49       0 1.0000000      0    64 10   1 (39,84]</span></span>
-<span><span class="co">#&gt; 5               59       0 1.0000000      0    29  1   3 (39,84]</span></span>
-<span><span class="co">#&gt; 6               71       0 0.4547945      0    66  6   3 (39,84]</span></span>
+<span><span class="co">#&gt; 1               70       0 1.0000000      0   106  5   1 (65,84]</span></span>
+<span><span class="co">#&gt; 2               40       0 1.0000000      0    74  3   1 (39,51]</span></span>
+<span><span class="co">#&gt; 3               78       0 1.0000000      0    65  8   2 (65,84]</span></span>
+<span><span class="co">#&gt; 4               49       0 1.0000000      0    64 10   1 (39,51]</span></span>
+<span><span class="co">#&gt; 5               59       0 1.0000000      0    29  1   3 (58,65]</span></span>
+<span><span class="co">#&gt; 6               71       0 0.4547945      0    66  6   3 (65,84]</span></span>
 <span><span class="co">#&gt;   pred_nclaims_mod_freq pred_amount_mod_sev  premium</span></span>
-<span><span class="co">#&gt; 1            0.11792558            65192.75 7687.892</span></span>
-<span><span class="co">#&gt; 2            0.11792558            65192.75 7687.892</span></span>
-<span><span class="co">#&gt; 3            0.11792558            65192.75 7687.892</span></span>
-<span><span class="co">#&gt; 4            0.11792558            65192.75 7687.892</span></span>
-<span><span class="co">#&gt; 5            0.11792558            65192.75 7687.892</span></span>
-<span><span class="co">#&gt; 6            0.05363191            65192.75 3496.411</span></span></code></pre></div>
+<span><span class="co">#&gt; 1            0.10100599            67736.95 6841.837</span></span>
+<span><span class="co">#&gt; 2            0.13595893            72328.67 9833.729</span></span>
+<span><span class="co">#&gt; 3            0.10100599            67736.95 6841.837</span></span>
+<span><span class="co">#&gt; 4            0.13595893            72328.67 9833.729</span></span>
+<span><span class="co">#&gt; 5            0.09746194            57782.98 5631.642</span></span>
+<span><span class="co">#&gt; 6            0.04593697            67736.95 3111.630</span></span></code></pre></div>
 <p>This produces a pure premium estimate, i.e. expected loss per unit of
 exposure.</p>
 </div>
@@ -360,19 +354,22 @@ individual model components such as frequency or severity.</p>
 <span><span class="va">rt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span></span>
 <span><span class="va">rt</span></span>
 <span><span class="co">#&gt;          level risk_factor est_burn_unrestricted exposure</span></span>
-<span><span class="co">#&gt; 1  (Intercept) (Intercept)          7384.1234460       NA</span></span>
-<span><span class="co">#&gt; 2            0         zip             0.9951378      207</span></span>
+<span><span class="co">#&gt; 1  (Intercept) (Intercept)          9370.4023322       NA</span></span>
+<span><span class="co">#&gt; 2            0         zip             0.9946246      207</span></span>
 <span><span class="co">#&gt; 3            1         zip             1.0000000    11081</span></span>
-<span><span class="co">#&gt; 4            2         zip             1.0051384     7783</span></span>
-<span><span class="co">#&gt; 5            3         zip             1.0029159     7588</span></span>
-<span><span class="co">#&gt; 6      [18,25]     age_cat             2.9237368     1331</span></span>
-<span><span class="co">#&gt; 7      (25,32]     age_cat             3.1485339     3649</span></span>
-<span><span class="co">#&gt; 8      (32,39]     age_cat             1.1733372     4247</span></span>
-<span><span class="co">#&gt; 9      (39,84]     age_cat             1.0000000    17358</span></span>
-<span><span class="co">#&gt; 10     (84,95]     age_cat             0.6585964       72</span></span></code></pre></div>
+<span><span class="co">#&gt; 4            2         zip             1.0049888     7783</span></span>
+<span><span class="co">#&gt; 5            3         zip             1.0028308     7588</span></span>
+<span><span class="co">#&gt; 6      [18,25]     age_cat             2.3041459     1331</span></span>
+<span><span class="co">#&gt; 7      (25,32]     age_cat             2.4813038     3649</span></span>
+<span><span class="co">#&gt; 8      (32,39]     age_cat             0.9246871     4247</span></span>
+<span><span class="co">#&gt; 9      (39,51]     age_cat             1.0000000     7421</span></span>
+<span><span class="co">#&gt; 10     (51,58]     age_cat             0.5699965     3245</span></span>
+<span><span class="co">#&gt; 11     (58,65]     age_cat             0.5798450     2791</span></span>
+<span><span class="co">#&gt; 12     (65,84]     age_cat             0.7103948     3901</span></span>
+<span><span class="co">#&gt; 13     (84,95]     age_cat             0.5190330       72</span></span></code></pre></div>
 <p><code><a href="../reference/rating_table.html">rating_table()</a></code> expresses fitted coefficients in terms of
 the original factor levels, including the reference level.</p>
-<p>This is the standard output used to inspect tariff relativities.</p>
+<p>This output is commonly used to inspect tariff relativities.</p>
 </div>
 <div class="section level3">
 <h3 id="visualising-coefficients">Visualising coefficients<a class="anchor" aria-label="anchor" href="#visualising-coefficients"></a>
@@ -410,9 +407,9 @@ the original factor levels, including the reference level.</p>
 <span><span class="fu"><a href="../reference/model_performance.html">model_performance</a></span><span class="op">(</span><span class="va">mod_freq</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Comparison of Model Performance Indices</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  Model   |    AIC    |    BIC    | RMSE  </span></span>
-<span><span class="co">#&gt; ---------+-----------+-----------+------ </span></span>
-<span><span class="co">#&gt; mod_freq | 22983.336 | 23024.881 | 0.362</span></span></code></pre></div>
+<span><span class="co">#&gt;  Model   |   AIC    |    BIC    | RMSE  </span></span>
+<span><span class="co">#&gt; ---------+----------+-----------+------ </span></span>
+<span><span class="co">#&gt; mod_freq | 22949.04 | 23015.512 | 0.362</span></span></code></pre></div>
 <p>This provides summary measures of model fit, such as RMSE.</p>
 </div>
 <div class="section level3">
@@ -420,7 +417,7 @@ the original factor levels, including the reference level.</p>
 </h3>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="va">bp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span><span class="va">mod_freq</span>, <span class="va">dat</span>, n <span class="op">=</span> <span class="fl">50</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">bp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span><span class="va">mod_freq</span>, <span class="va">dat</span>, n_resamples <span class="op">=</span> <span class="fl">50</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">bp</span><span class="op">)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/unnamed-chunk-15-1.png" class="r-plt" alt="" width="700"></p>
 <p>This provides a view of predictive stability by evaluating how
@@ -433,7 +430,7 @@ consistently under small data perturbations.</p>
 <div class="section level2">
 <h2 id="step-7-from-model-to-tariff">Step 7 — From model to tariff<a class="anchor" aria-label="anchor" href="#step-7-from-model-to-tariff"></a>
 </h2>
-<p>At this point, the workflow has produced:</p>
+<p>At this point, the example has produced:</p>
 <ul>
 <li>portfolio-level insight</li>
 <li>fitted pricing models</li>
@@ -449,16 +446,17 @@ be used as a tariff.</p>
 <li>externally imposed restrictions</li>
 <li>expert-driven adjustments</li>
 </ul>
-<p>This is handled through the refinement workflow described in <a href="articles/refinement-workflow.html">Refinement workflow</a>.</p>
+<p>This can be handled with the refinement tools described in <a href="articles/refinement-workflow.html">Refinement building
+blocks</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
-<p>A standard workflow in <code>insurancerating</code> is:</p>
+<p>A possible sequence in <code>insurancerating</code> is:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="../reference/factor_analysis.html">factor_analysis</a></span><span class="op">(</span><span class="op">)</span>             <span class="co"># analyse portfolio behaviour</span></span>
-<span><span class="fu"><a href="../reference/riskfactor_gam.html">riskfactor_gam</a></span><span class="op">(</span><span class="op">)</span>              <span class="co"># analyse continuous variables</span></span>
+<span><span class="fu"><a href="../reference/risk_factor_gam.html">risk_factor_gam</a></span><span class="op">(</span><span class="op">)</span>              <span class="co"># analyse continuous variables</span></span>
 <span><span class="fu"><a href="../reference/construct_tariff_classes.html">construct_tariff_classes</a></span><span class="op">(</span><span class="op">)</span>    <span class="co"># derive tariff classes</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="op">)</span>                         <span class="co"># estimate pricing models</span></span>
 <span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="op">)</span>                <span class="co"># interpret fitted coefficients</span></span>
@@ -477,7 +475,8 @@ is:</p>
 </h2>
 <p>The following vignette covers the refinement step in more detail:</p>
 <ul>
-<li><a href="refinement-workflow.html">Refinement workflow</a></li>
+<li><a href="refinement-workflow.html">Refinement building
+blocks</a></li>
 </ul>
 <p>For the conceptual background to exposure, risk premium, and tariff
 design, see:</p>

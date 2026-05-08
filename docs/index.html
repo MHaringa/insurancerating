@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Actuarial Workflow for Insurance Pricing Models • insurancerating</title>
+<title>Actuarial Tools for Insurance Pricing Models • insurancerating</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -18,9 +18,9 @@
 <link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
-<meta property="og:title" content="Actuarial Workflow for Insurance Pricing Models">
-<meta name="description" content="Provides a structured workflow for analysing, modelling, refining, and validating insurance rating models. Designed to bridge statistical modelling and practical tariff construction.The package supports the construction of insurance tariff classes using a data-driven approach, based on the methodology of Antonio and Valdez (2012) &lt;doi:10.1007/s10182-011-0152-7&gt;.">
-<meta property="og:description" content="Provides a structured workflow for analysing, modelling, refining, and validating insurance rating models. Designed to bridge statistical modelling and practical tariff construction.The package supports the construction of insurance tariff classes using a data-driven approach, based on the methodology of Antonio and Valdez (2012) &lt;doi:10.1007/s10182-011-0152-7&gt;.">
+<meta property="og:title" content="Actuarial Tools for Insurance Pricing Models">
+<meta name="description" content="Provides actuarial tools and building blocks for analysing, modelling, refining, and validating insurance rating models. Designed to support common GLM-based pricing tasks and the translation of statistical model output into practical tariff structures. The package supports the construction of insurance tariff classes using a data-driven approach, based on the methodology of Antonio and Valdez (2012) &lt;doi:10.1007/s10182-011-0152-7&gt;.">
+<meta property="og:description" content="Provides actuarial tools and building blocks for analysing, modelling, refining, and validating insurance rating models. Designed to support common GLM-based pricing tasks and the translation of statistical model output into practical tariff structures. The package supports the construction of insurance tariff classes using a data-driven approach, based on the methodology of Antonio and Valdez (2012) &lt;doi:10.1007/s10182-011-0152-7&gt;.">
 <meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png">
 </head>
 <body>
@@ -61,12 +61,12 @@
 <!-- badges: start -->
 
 <!-- badges: end -->
-<p><code>insurancerating</code> provides a structured workflow for analysing, modelling, refining, and validating insurance rating models in R.</p>
-<p>The package is designed around common actuarial pricing practice and focuses on the translation of statistical models into interpretable and controllable tariff structures.</p>
+<p><code>insurancerating</code> provides actuarial tools and building blocks for analysing, modelling, refining, and validating insurance rating models in R.</p>
+<p>The package is designed around common GLM-based pricing tasks and focuses on the translation of statistical model output into interpretable and controllable tariff structures.</p>
 <div class="section level2">
 <h2 id="scope">Scope<a class="anchor" aria-label="anchor" href="#scope"></a>
 </h2>
-<p>The package supports the following steps in a typical pricing workflow:</p>
+<p>The package supports common tasks that often occur in actuarial pricing work:</p>
 <ul>
 <li>exploratory analysis of risk factors</li>
 <li>estimation of GLM-based pricing models</li>
@@ -96,13 +96,13 @@
 <span><span class="co"># Factor analysis</span></span>
 <span><span class="va">fa</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/factor_analysis.html">factor_analysis</a></span><span class="op">(</span></span>
 <span>  <span class="va">MTPL</span>,</span>
-<span>  x <span class="op">=</span> <span class="st">"zip"</span>,</span>
-<span>  nclaims <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
+<span>  risk_factors <span class="op">=</span> <span class="st">"zip"</span>,</span>
+<span>  claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
 <span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
-<span>  severity <span class="op">=</span> <span class="st">"amount"</span></span>
+<span>  claim_amount <span class="op">=</span> <span class="st">"amount"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fa</span>, show_plots <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fa</span>, metrics <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/unnamed-chunk-3-1.png"><!-- --></p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit model</span></span>
@@ -140,9 +140,9 @@
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="do">## 5     zip_adj           3        1.100000</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="workflow">Workflow<a class="anchor" aria-label="anchor" href="#workflow"></a>
+<h2 id="combining-building-blocks">Combining Building Blocks<a class="anchor" aria-label="anchor" href="#combining-building-blocks"></a>
 </h2>
-<p>A typical workflow consists of:</p>
+<p>A possible sequence of steps is:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/factor_analysis.html">factor_analysis</a></span><span class="op">(</span><span class="op">)</span>      <span class="co"># analyse portfolio</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="op">)</span>                  <span class="co"># estimate model</span></span>
@@ -167,7 +167,7 @@
 <div class="section level3">
 <h3 id="rating-models">Rating models<a class="anchor" aria-label="anchor" href="#rating-models"></a>
 </h3>
-<p>Models are estimated using standard GLMs:</p>
+<p>Models are estimated using widely used GLM specifications:</p>
 <ul>
 <li>Poisson for frequency</li>
 <li>Gamma for severity</li>
@@ -191,7 +191,7 @@
 <h3 id="model-structure">Model structure<a class="anchor" aria-label="anchor" href="#model-structure"></a>
 </h3>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/model_data.html">model_data</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/extract_model_data.html">extract_model_data</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/rating_grid.html">rating_grid</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></code></pre></div>
 <p>These functions expose the underlying model structure and allow aggregation at model-point level.</p>
 </div>
@@ -208,7 +208,7 @@
 <div class="section level2">
 <h2 id="notes">Notes<a class="anchor" aria-label="anchor" href="#notes"></a>
 </h2>
-<p>This package is intended to reflect general actuarial pricing methodology. It does not contain proprietary models, data, or business logic.</p>
+<p>This package is intended for general actuarial pricing work. It does not contain proprietary models, data, or business logic.</p>
 </div>
 <div class="section level2">
 <h2 id="learn-more">Learn more<a class="anchor" aria-label="anchor" href="#learn-more"></a>
@@ -216,7 +216,7 @@
 <p>Full documentation and examples are available in the articles:</p>
 <ul>
 <li><a href="articles/getting-started.html">Getting started</a></li>
-<li><a href="articles/refinement-workflow.html">Refinement workflow</a></li>
+<li><a href="articles/refinement-workflow.html">Refinement building blocks</a></li>
 <li><a href="articles/model-validation.html">Model validation</a></li>
 <li><a href="articles/pricing-principles.html">Pricing principles</a></li>
 </ul>

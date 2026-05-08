@@ -28,6 +28,7 @@ reference:
       Analyse portfolio behaviour and inspect risk factors before model estimation.
     contents:
       - factor_analysis
+      - autoplot.factor_analysis
       - outlier_histogram
 
   - title: "Tariff classes"

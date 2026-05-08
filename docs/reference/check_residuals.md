@@ -1,8 +1,11 @@
-# Check model residuals
+# Check simulation-based model residuals
 
-Detect overall deviations of residuals from the expected distribution
-using a simulation-based approach. Provides standardized residuals that
-are more interpretable for GLMs than classical residual plots.
+Checks whether a fitted model shows systematic residual deviations from
+the distribution implied by the model. The function uses
+simulation-based residuals from
+[`DHARMa::simulateResiduals()`](https://rdrr.io/pkg/DHARMa/man/simulateResiduals.html),
+which are especially useful for GLMs where classical residual plots can
+be hard to interpret.
 
 ## Usage
 
@@ -14,44 +17,57 @@ check_residuals(object, n_simulations = 30)
 
 - object:
 
-  A fitted model object (e.g. of class `"glm"`).
+  A fitted `"glm"` object supported by
+  [`DHARMa::simulateResiduals()`](https://rdrr.io/pkg/DHARMa/man/simulateResiduals.html).
 
 - n_simulations:
 
-  Number of simulations to generate residuals. Default = 30.
+  Number of simulations used to generate residuals. Must be a positive
+  whole number. Default is 30.
 
 ## Value
 
-An object of class `"check_residuals"`, which is a list with:
+An object of class `"residual_check"` and `"check_residuals"`, which is
+a list with:
 
-- df:
+- qq_data:
 
-  Data frame with theoretical quantiles (`x`) and observed residuals
-  (`y`).
+  Data frame with theoretical quantiles (`x`) and observed scaled
+  residuals (`y`).
 
-- p.val:
+- scaled_residuals:
 
-  P-value from Kolmogorov-Smirnov test against uniform(0,1).
+  Numeric vector of DHARMa scaled residuals.
 
-Invisibly returns the object.
+- p_value:
+
+  P-value from a Kolmogorov-Smirnov test against `uniform(0, 1)`.
+
+For backwards compatibility the object also contains the aliases `df`
+and `p.val`.
 
 ## Details
 
-Misspecifications in GLMs cannot reliably be diagnosed with standard
-residual plots, because the expected distribution of the data changes
-with fitted values. `check_residuals()` uses a simulation-based approach
-(similar to a parametric bootstrap or Bayesian p-value) to generate
-standardized residuals between 0 and 1, which can be interpreted
-intuitively like residuals from linear models.
+In insurance pricing, residual checks are used to assess whether a model
+is behaving consistently across the portfolio. For example, a Poisson
+frequency model may fit the average claim count well but still show
+structure in the residuals because of omitted rating factors, unmodelled
+heterogeneity, clustering, outliers, or an unsuitable distributional
+assumption.
 
-This function wraps
-[`DHARMa::simulateResiduals()`](https://rdrr.io/pkg/DHARMa/man/simulateResiduals.html),
-adapted for convenience.
+DHARMa simulates new responses from the fitted model and compares the
+observed response with those simulations. The resulting scaled residuals
+are approximately uniformly distributed on `[0, 1]` when the model is
+correctly specified. This gives a common diagnostic scale for GLMs and
+related models, where raw residuals are otherwise difficult to compare
+across different fitted values, exposures, or expected claim amounts.
 
-Note: If all simulations for a data point have the same value (e.g. all
-zeros), an error may occur
-(`Error in approxfun: need at least two non-NA values`). Increasing
-`n_simulations` can help in such cases.
+`check_residuals()` returns the scaled residuals, QQ-plot data, and a
+Kolmogorov-Smirnov p-value for a simple uniformity check. The p-value
+should be read as a diagnostic signal, not as a pricing decision rule. A
+low p-value indicates that the residual distribution differs from what
+the fitted model implies and that the model specification may need
+review.
 
 ## References
 

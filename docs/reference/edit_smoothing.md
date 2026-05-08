@@ -31,7 +31,8 @@ edit_smoothing(
 
 - variable:
 
-  Character. The `x_cut` variable of the smoothing step to edit.
+  Character. The `model_variable` variable of the smoothing step to
+  edit.
 
 - step:
 

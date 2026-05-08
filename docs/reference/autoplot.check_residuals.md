@@ -11,7 +11,7 @@ message about whether deviations are detected.
 
 ``` r
 # S3 method for class 'check_residuals'
-autoplot(object, show_message = TRUE, ...)
+autoplot(object, show_message = TRUE, max_points = 1000, ...)
 ```
 
 ## Arguments
@@ -25,6 +25,12 @@ autoplot(object, show_message = TRUE, ...)
 
   Logical. If TRUE (default), prints a short message based on the
   p-value from the KS test.
+
+- max_points:
+
+  Maximum number of QQ-plot points to display. If the residual check
+  contains more points, an evenly spaced subset is shown. Use `Inf` to
+  plot all points.
 
 - ...:
 

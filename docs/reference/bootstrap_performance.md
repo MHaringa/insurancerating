@@ -1,10 +1,11 @@
 # Bootstrapped model performance
 
-Generate `n` bootstrap replicates to compute `n` root mean squared
-errors (RMSE). This can be used to evaluate the predictive stability of
-a fitted model.
+Generate repeated train/evaluation samples to compute model performance.
+Currently, the supported metric is root mean squared error (RMSE).
 
 `bootstrap_rmse()` is deprecated in favour of `bootstrap_performance()`.
+Objects returned by `bootstrap_rmse()` keep class `"bootstrap_rmse"` for
+backward compatibility and also inherit from `"bootstrap_performance"`.
 
 ## Usage
 
@@ -12,10 +13,14 @@ a fitted model.
 bootstrap_performance(
   model,
   data,
-  n = 50,
-  frac = 1,
+  n_resamples = 50,
+  sample_fraction = 1,
+  metric = "rmse",
+  sampling = c("bootstrap", "split"),
   show_progress = TRUE,
-  rmse_model = NULL
+  rmse_model = NULL,
+  n = NULL,
+  frac = NULL
 )
 
 bootstrap_rmse(
@@ -23,6 +28,8 @@ bootstrap_rmse(
   data,
   n = 50,
   frac = 1,
+  metric = "rmse",
+  sampling = c("bootstrap", "split"),
   show_progress = TRUE,
   rmse_model = NULL
 )
@@ -38,14 +45,27 @@ bootstrap_rmse(
 
   Data used to fit the model object.
 
-- n:
+- n_resamples:
 
-  Integer. Number of bootstrap replicates. Default = 50.
+  Integer. Number of resampling replicates. Default = 50.
 
-- frac:
+- sample_fraction:
 
-  Fraction of the data used in the training set if cross-validation is
-  applied. Must be in (0, 1\]. Default = 1 (use all data).
+  Fraction of the data used in the training sample. Must be in `(0, 1]`.
+  Default = 1.
+
+- metric:
+
+  Character. Performance metric to compute. Currently only `"rmse"` is
+  supported.
+
+- sampling:
+
+  Character. Sampling scheme. `"bootstrap"` samples training rows with
+  replacement and evaluates on out-of-bag rows when
+  `sample_fraction < 1`. `"split"` samples training rows without
+  replacement and evaluates on the remaining rows when
+  `sample_fraction < 1`.
 
 - show_progress:
 
@@ -57,6 +77,11 @@ bootstrap_rmse(
   Optional numeric RMSE of the fitted (original) model. If NULL
   (default), it is computed automatically.
 
+- n, frac:
+
+  Deprecated argument names. Use `n_resamples` and `sample_fraction`
+  instead.
+
 ## Value
 
 An object of class `"bootstrap_performance"`, which is a list with
@@ -64,23 +89,39 @@ components:
 
 - rmse_bs:
 
-  Numeric vector with `n` bootstrap RMSE values.
+  Numeric vector with `n_resamples` bootstrap RMSE values.
 
 - rmse_mod:
 
   Root mean squared error for the original fitted model.
 
+- metric:
+
+  Metric name.
+
+- sampling:
+
+  Sampling scheme.
+
 ## Details
 
-To test the predictive ability of a fitted model it can be helpful to
-assess the variation in the computed RMSE. The variation is calculated
-by refitting the model on `n` bootstrap replicates and storing the
-resulting RMSE values.
+To test the predictive stability of a fitted model it can be helpful to
+assess the variation in a performance metric. The variation is
+calculated by refitting the model on repeated samples and storing the
+resulting metric values.
 
-- If `frac = 1`, each bootstrap sample has the same size as the dataset.
+- If `sample_fraction = 1`, the metric is evaluated on the sampled
+  training data.
 
-- If `frac < 1`, a subset of the data is used as training, and the
-  remainder as test set (cross-validation).
+- If `sample_fraction < 1`, the metric is evaluated on rows that were
+  not used for training.
+
+Character columns and factor columns are converted to factors with
+levels taken from the full input data before resampling. For factor
+variables used in the model, the training sample is augmented when
+needed so every observed level is represented at least once. This
+prevents prediction failures when a level is present in the evaluation
+data but absent from a particular training sample.
 
 ## Author
 
@@ -94,12 +135,15 @@ mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
             offset = log(exposure), family = poisson())
 
 # Use all records
-x <- bootstrap_performance(mod1, MTPL, n = 80, show_progress = FALSE)
+x <- bootstrap_performance(mod1, MTPL, n_resamples = 80,
+                           show_progress = FALSE)
 print(x)
 autoplot(x)
 
-# Use 80% of records (cross-validation style)
-x_frac <- bootstrap_performance(mod1, MTPL, n = 50, frac = .8, show_progress = FALSE)
+# Use 80% of records and evaluate on the remaining records
+x_frac <- bootstrap_performance(mod1, MTPL, n_resamples = 50,
+                                sample_fraction = .8, sampling = "split",
+                                show_progress = FALSE)
 autoplot(x_frac)
 } # }
 ```

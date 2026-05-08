@@ -8,8 +8,8 @@ the process of translating observed experience into a tariff that is:
 - stable over time
 - interpretable and explainable
 
-This vignette outlines the key concepts that underpin pricing workflows
-in `insurancerating`.
+This vignette outlines key concepts that are commonly used with the
+building blocks in `insurancerating`.
 
 ------------------------------------------------------------------------
 
@@ -111,7 +111,7 @@ typically consists of four steps:
 
 ### The role of factor analysis
 
-Before fitting models, it is essential to understand the data.
+Before fitting models, it is usually useful to understand the data.
 [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
 provides a structured way to analyse:
 
@@ -124,24 +124,23 @@ Example:
 
 ``` r
 
+
 library(insurancerating)
 
 fa <- factor_analysis(
   MTPL,
-  x = "zip",
-  nclaims = "nclaims",
+  risk_factors = "zip",
+  claim_count = "nclaims",
   exposure = "exposure",
-  severity = "amount"
+  claim_amount = "amount"
 )
 
 head(fa)
-#> # A tibble: 4 × 7
-#>   zip      amount nclaims exposure frequency average_severity risk_premium
-#>   <fct>     <dbl>   <int>    <dbl>     <dbl>            <dbl>        <dbl>
-#> 1 1     116178669    1593   11081.     0.144           72931.       10485.
-#> 2 2      59751985    1008    7783.     0.130           59278.        7678.
-#> 3 3      58988962    1038    7588.     0.137           56829.        7774.
-#> 4 0        821510      29     207.     0.140           28328.        3972.
+#>   zip    amount nclaims   exposure frequency average_severity risk_premium
+#> 1   1 116178669    1593 11080.6274 0.1437644         72930.74    10484.846
+#> 2   2  59751985    1008  7782.6301 0.1295192         59277.76     7677.608
+#> 3   3  58988962    1038  7587.5644 0.1368028         56829.44     7774.427
+#> 4   0    821510      29   206.8438 0.1402024         28327.93     3971.644
 ```
 
 This helps to answer questions such as:
@@ -168,7 +167,7 @@ Typical issues include:
 - volatility in low-exposure segments
 - overly granular differences
 
-This is why refinement is essential.
+This is why refinement is often useful.
 
 ------------------------------------------------------------------------
 
@@ -178,11 +177,11 @@ Refinement includes:
 
 - smoothing coefficients
 - imposing monotonic trends
-- applying business constraints
+- applying practical constraints
 - incorporating expert judgement
 
-The goal is not to improve statistical fit, but to create a tariff that
-is:
+The goal is not necessarily to improve statistical fit, but to support a
+tariff structure that is:
 
 - stable
 - explainable
@@ -191,6 +190,7 @@ is:
 In `insurancerating`, this is done through:
 
 ``` r
+
 
 prepare_refinement(model) |>
   add_smoothing(...) |>
@@ -247,8 +247,8 @@ For a practical introduction, see:
 
 For coefficient refinement:
 
-- [Refinement
-  workflow](https://mharinga.github.io/insurancerating/articles/articles/refinement-workflow.md)
+- [Refinement building
+  blocks](https://mharinga.github.io/insurancerating/articles/articles/refinement-workflow.md)
 
 ------------------------------------------------------------------------
 
@@ -275,8 +275,7 @@ As a result, pricing decisions directly affect:
 - future claims experience  
 - overall profitability
 
-This means pricing should always be considered in a **forward-looking
-context**.
+This means pricing is often considered in a **forward-looking context**.
 
 ------------------------------------------------------------------------
 
@@ -301,7 +300,7 @@ Poor differentiation leads to:
 
 ------------------------------------------------------------------------
 
-### Why refinement is essential
+### Why refinement is often useful
 
 Pure statistical output is rarely suitable for direct use in tariffs.
 
@@ -315,9 +314,10 @@ Refinement introduces structure:
 
 - smoothing reduces volatility  
 - monotonicity enforces logical consistency  
-- restrictions incorporate business rules
+- restrictions incorporate practical constraints
 
-The goal is not to “improve the model”, but to ensure:
+The goal is not necessarily to “improve the model”, but to support a
+tariff structure where:
 
 > the tariff behaves in a predictable and explainable way.
 
@@ -367,8 +367,8 @@ Pricing involves multiple, often competing objectives:
 - interpretability  
 - operational simplicity
 
-No single model optimises all dimensions. The role of the pricing
-framework is to make these trade-offs:
+No single model optimises all dimensions. A useful pricing framework
+makes these trade-offs:
 
 - explicit  
 - consistent  
@@ -378,13 +378,13 @@ framework is to make these trade-offs:
 
 ### Pricing as a controlled process
 
-A structured workflow helps ensure that pricing decisions are:
+A structured set of tools can help make pricing decisions:
 
 - transparent  
 - auditable  
 - consistent across portfolios
 
-In `insurancerating`, this is reflected in:
+In `insurancerating`, this is supported through:
 
 - separation of analysis, modelling, and refinement  
 - explicit transformation steps  

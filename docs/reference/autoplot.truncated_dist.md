@@ -1,7 +1,8 @@
-# Automatically create a ggplot for objects obtained from fit_truncated_dist()
+# Plot a fitted truncated severity distribution
 
 Creates a plot of the empirical cumulative distribution function (ECDF)
-of the observed truncated data together with the fitted truncated CDF.
+of the observed truncated claim amounts together with the fitted
+truncated CDF.
 
 ## Usage
 
@@ -9,14 +10,22 @@ of the observed truncated data together with the fitted truncated CDF.
 # S3 method for class 'truncated_dist'
 autoplot(
   object,
-  geom_ecdf = c("point", "step"),
+  ecdf_geom = c("point", "step"),
+  x_label = NULL,
+  y_label = NULL,
+  y_limits = c(0, 1),
+  x_limits = NULL,
+  show_title = TRUE,
+  digits = 2,
+  truncation_digits = 2,
+  geom_ecdf = NULL,
   xlab = NULL,
   ylab = NULL,
-  ylim = c(0, 1),
+  ylim = NULL,
   xlim = NULL,
-  print_title = TRUE,
-  print_dig = 2,
-  print_trunc = 2,
+  print_title = NULL,
+  print_dig = NULL,
+  print_trunc = NULL,
   ...
 )
 ```
@@ -28,38 +37,43 @@ autoplot(
   An object produced by
   [`fit_truncated_dist()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_dist.md).
 
-- geom_ecdf:
+- ecdf_geom:
 
-  Character string indicating how to display the ECDF. Must be one of
-  `"point"` or `"step"`.
+  Character string indicating how to display the empirical CDF. Must be
+  one of `"point"` or `"step"`.
 
-- xlab:
+- x_label:
 
   Title of the x axis. Defaults to `"severity"`.
 
-- ylab:
+- y_label:
 
   Title of the y axis. Defaults to `"cumulative proportion"`.
 
-- ylim:
+- y_limits:
 
   Numeric vector of length 2 specifying y-axis limits.
 
-- xlim:
+- x_limits:
 
-  Numeric vector of length 2 specifying x-axis limits.
+  Optional numeric vector of length 2 specifying x-axis limits.
 
-- print_title:
+- show_title:
 
   Logical. If `TRUE`, print title and subtitle.
 
-- print_dig:
+- digits:
 
   Integer. Number of digits for parameter estimates in the subtitle.
 
-- print_trunc:
+- truncation_digits:
 
   Integer. Number of digits used for truncation bounds.
+
+- geom_ecdf, xlab, ylab, ylim, xlim, print_title, print_dig,
+  print_trunc:
+
+  Deprecated argument names kept for backward compatibility.
 
 - ...:
 
@@ -68,6 +82,14 @@ autoplot(
 ## Value
 
 A `ggplot2` object.
+
+## Details
+
+The plot compares the empirical distribution of the observed, truncated
+claim severities with the fitted distribution conditional on the same
+truncation interval. This is a visual check of whether the selected
+severity distribution is plausible for the part of the portfolio that is
+actually observed.
 
 ## Author
 

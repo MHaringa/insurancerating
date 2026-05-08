@@ -1,13 +1,16 @@
 # Construct insurance tariff classes
 
-Constructs insurance tariff classes for objects of class `"fitgam"`
-produced by
-[`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/riskfactor_gam.md)
+Constructs insurance tariff classes for objects of class
+`"riskfactor_gam"` produced by
+[`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
 (formerly
-[`fit_gam()`](https://mharinga.github.io/insurancerating/reference/riskfactor_gam.md)).
-The goal is to bin continuous risk factors into categorical tariff
-classes that capture the effect of the covariate on the response in an
-accurate way, while remaining easy to use in a generalized linear model
+[`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
+and
+[`fit_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)).
+The function derives data-driven candidate tariff classes from the
+fitted GAM response pattern. These classes are intended to help
+translate continuous risk factors into categorical rating factors that
+remain interpretable and practical for use in a generalized linear model
 (GLM).
 
 ## Usage
@@ -15,10 +18,13 @@ accurate way, while remaining easy to use in a generalized linear model
 ``` r
 construct_tariff_classes(
   object,
-  alpha = 0,
-  niterations = 10000,
-  ntrees = 200,
-  seed = 1
+  complexity = 0,
+  max_iterations = 10000,
+  population_size = 200,
+  seed = 1,
+  alpha = NULL,
+  niterations = NULL,
+  ntrees = NULL
 )
 ```
 
@@ -26,34 +32,45 @@ construct_tariff_classes(
 
 - object:
 
-  An object of class `"fitgam"`, produced by
-  [`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/riskfactor_gam.md).
+  An object of class `"riskfactor_gam"`, produced by
+  [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md).
+  Objects with the old `"fitgam"` class are still supported for backward
+  compatibility.
 
-- alpha:
+- complexity:
 
-  Complexity parameter passed to
-  [`evtree::evtree.control()`](https://rdrr.io/pkg/evtree/man/evtree.control.html).
-  Higher values yield fewer tariff classes. Default = 0.
+  Numeric. Controls the complexity penalty used when deriving classes.
+  Higher values generally yield fewer tariff classes. Default = 0.
 
-- niterations:
+- max_iterations:
 
-  Maximum number of iterations before termination. Passed to
-  [`evtree::evtree.control()`](https://rdrr.io/pkg/evtree/man/evtree.control.html).
-  Default = 10000.
+  Integer. Maximum number of search iterations used by the underlying
+  class construction algorithm. Default = 10000.
 
-- ntrees:
+- population_size:
 
-  Number of trees in the population. Passed to
-  [`evtree::evtree.control()`](https://rdrr.io/pkg/evtree/man/evtree.control.html).
-  Default = 200.
+  Integer. Number of candidate trees used by the underlying class
+  construction algorithm. Default = 200.
 
 - seed:
 
   Integer, seed for the random number generator (for reproducibility).
 
+- alpha:
+
+  Deprecated. Use `complexity` instead.
+
+- niterations:
+
+  Deprecated. Use `max_iterations` instead.
+
+- ntrees:
+
+  Deprecated. Use `population_size` instead.
+
 ## Value
 
-A `list` of class `"constructtariffclasses"` with components:
+A `list` of class `"tariff_classes"` with components:
 
 - prediction:
 
@@ -66,7 +83,7 @@ A `list` of class `"constructtariffclasses"` with components:
 
 - model:
 
-  Model type: `"frequency"`, `"severity"`, or `"burning"`.
+  Model type: `"frequency"`, `"severity"`, or `"pure_premium"`.
 
 - data:
 
@@ -88,10 +105,10 @@ A `list` of class `"constructtariffclasses"` with components:
 
 Evolutionary trees (via
 [`evtree::evtree()`](https://rdrr.io/pkg/evtree/man/evtree.html)) are
-used as a technique to bin the fitted GAM object into risk-homogeneous
-categories. This method is based on the work by Henckaerts et al.
-(2018). See Grubinger et al. (2014) for details on the parameters
-controlling the evtree fit.
+used as a technique to bin the fitted GAM object into candidate tariff
+classes. This method is based on the work by Henckaerts et al. (2018).
+See Grubinger et al. (2014) for details on the parameters controlling
+the evtree fit.
 
 ## References
 
@@ -126,10 +143,10 @@ if (FALSE) { # \dontrun{
 library(dplyr)
 
 # Recommended new usage (SE)
-riskfactor_gam(MTPL,
-               nclaims = "nclaims",
-               x = "age_policyholder",
-               exposure = "exposure") |>
+risk_factor_gam(MTPL,
+                risk_factor = "age_policyholder",
+                claim_count = "nclaims",
+                exposure = "exposure") |>
   construct_tariff_classes()
 
 # Deprecated usage (NSE, still works with warning)

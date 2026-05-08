@@ -1,7 +1,9 @@
-# Include reference group in regression output
+# Build rating tables from fitted pricing models
 
-Extract coefficients in terms of the original levels of the coefficients
-rather than the coded variables.
+`rating_table()` extracts model coefficients in tariff-table form. It
+adds the reference level for factor variables, can exponentiate GLM
+coefficients into relativities, and can add exposure by risk-factor
+level when the model data are available.
 
 `rating_table()` is intended for fitted models:
 
@@ -26,10 +28,12 @@ rating_table(
   ...,
   model_data = NULL,
   exposure = TRUE,
-  exposure_name = NULL,
+  exposure_output = NULL,
   exponentiate = TRUE,
-  signif_stars = FALSE,
-  round_exposure = 0
+  significance = FALSE,
+  round_exposure = 0,
+  exposure_name = NULL,
+  signif_stars = NULL
 )
 
 rating_factors(
@@ -64,7 +68,7 @@ rating_factors(
   character string is supplied, it is interpreted as the exposure column
   name.
 
-- exposure_name:
+- exposure_output:
 
   Optional name for the exposure column in the output. If `NULL`, the
   original exposure column name is used.
@@ -74,14 +78,22 @@ rating_factors(
   logical indicating whether or not to exponentiate the coefficient
   estimates. Defaults to TRUE.
 
-- signif_stars:
+- significance:
 
-  show significance stars for p-values (defaults to FALSE)
+  Logical; if `TRUE`, show significance stars for p-values.
 
 - round_exposure:
 
   number of digits for exposure (defaults to 0)
 
+- exposure_name:
+
+  Deprecated. Use `exposure_output` instead.
+
+- signif_stars:
+
+  Deprecated. Use `significance` instead.
+
 ## Value
 
-Object of class `riskfactor`
+Object of class `"rating_table"` and legacy class `"riskfactor"`.

@@ -1,4 +1,4 @@
-# Refinement workflow
+# Refinement building blocks
 
 ## Introduction
 
@@ -16,13 +16,13 @@ Common reasons include:
 - expert judgement not directly represented in the model
 - implementation constraints in policy administration systems
 
-For this reason, pricing workflows typically distinguish between:
+For this reason, actuarial pricing work often distinguishes between:
 
 1.  model estimation
 2.  tariff refinement
 3.  final refit of the pricing structure
 
-`insurancerating` formalises this through a staged refinement workflow:
+`insurancerating` provides a staged refinement interface:
 
 1.  fit an unrestricted model
 2.  initialise a refinement object with
@@ -33,8 +33,8 @@ For this reason, pricing workflows typically distinguish between:
     [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
     to obtain the final fitted model
 
-This separation makes the workflow easier to understand, reproduce, and
-audit.
+This separation can make tariff adjustments easier to understand,
+reproduce, and audit.
 
 ## When refinement is used
 
@@ -57,7 +57,7 @@ tariff.
 
 ## Example setup
 
-The workflow below starts from a standard premium modelling setup:
+The example below starts from one common premium modelling setup:
 
 - analyse a continuous variable with a GAM
 - convert it to tariff classes
@@ -67,13 +67,14 @@ The workflow below starts from a standard premium modelling setup:
 
 ``` r
 
+
 library(insurancerating)
 library(dplyr)
 
-age_policyholder_frequency <- riskfactor_gam(
+age_policyholder_frequency <- risk_factor_gam(
   data = MTPL,
-  nclaims = "nclaims",
-  x = "age_policyholder",
+  claim_count = "nclaims",
+  risk_factor = "age_policyholder",
   exposure = "exposure"
 )
 
@@ -114,19 +115,23 @@ Before refinement, inspect the unrestricted coefficient structure:
 
 ``` r
 
+
 rating_table(burn_unrestricted)
 #>          level               risk_factor est_burn_unrestricted exposure
-#> 1  (Intercept)               (Intercept)          1.073720e+04       NA
-#> 2            0                       zip          3.739250e-01      207
+#> 1  (Intercept)               (Intercept)          1.228041e+04       NA
+#> 2            0                       zip          3.737317e-01      207
 #> 3            1                       zip          1.000000e+00    11081
-#> 4            2                       zip          7.575359e-01     7783
-#> 5            3                       zip          7.325754e-01     7588
-#> 6      [18,25] age_policyholder_freq_cat          2.167946e+00     1331
-#> 7      (25,32] age_policyholder_freq_cat          1.488489e+00     3649
-#> 8      (32,39] age_policyholder_freq_cat          1.205259e+00     4247
-#> 9      (39,84] age_policyholder_freq_cat          1.000000e+00    17358
-#> 10     (84,95] age_policyholder_freq_cat          5.868964e-01       72
-#> 11          bm                        bm          9.980489e-01       NA
+#> 4            2                       zip          7.574226e-01     7783
+#> 5            3                       zip          7.325129e-01     7588
+#> 6      [18,25] age_policyholder_freq_cat          1.895596e+00     1331
+#> 7      (25,32] age_policyholder_freq_cat          1.301496e+00     3649
+#> 8      (32,39] age_policyholder_freq_cat          1.053848e+00     4247
+#> 9      (39,51] age_policyholder_freq_cat          1.000000e+00     7421
+#> 10     (51,58] age_policyholder_freq_cat          8.491823e-01     3245
+#> 11     (58,65] age_policyholder_freq_cat          7.258652e-01     2791
+#> 12     (65,84] age_policyholder_freq_cat          7.584714e-01     3901
+#> 13     (84,95] age_policyholder_freq_cat          5.131699e-01       72
+#> 14          bm                        bm          9.980551e-01       NA
 
 rating_table(burn_unrestricted) |>
   autoplot()
@@ -144,6 +149,7 @@ Refinement begins with:
 
 ``` r
 
+
 ref <- prepare_refinement(burn_unrestricted)
 ref
 #> <rating_refinement>
@@ -155,7 +161,7 @@ A `rating_refinement` object stores:
 
 - the fitted base model
 - the underlying model data
-- the refinement steps added to the workflow
+- the refinement steps added through the refinement interface
 
 At this point, the model itself has not been refitted. The refinement
 object represents a proposed tariff adjustment structure, not yet the
@@ -184,10 +190,11 @@ imposes a more stable structure on the rating factor.
 
 ``` r
 
+
 ref <- ref |>
   add_smoothing(
-    x_cut = "age_policyholder_freq_cat",
-    x_org = "age_policyholder",
+    model_variable = "age_policyholder_freq_cat",
+    source_variable = "age_policyholder",
     breaks = seq(18, 95, 5),
     weights = "exposure"
   )
@@ -195,8 +202,8 @@ ref <- ref |>
 
 The key arguments are:
 
-- `x_cut`: the binned factor present in the GLM
-- `x_org`: the original continuous variable
+- `model_variable`: the grouped variable present in the GLM
+- `source_variable`: the original continuous portfolio variable
 - `breaks`: the preferred commercial cut points
 - `smoothing`: the smoothing specification
 - `weights`: optional weighting, typically exposure
@@ -204,6 +211,7 @@ The key arguments are:
 ### Inspecting smoothing before refit
 
 ``` r
+
 
 print(ref)
 #> <rating_refinement>
@@ -215,7 +223,7 @@ autoplot(ref, variable = "age_policyholder_freq_cat")
 
 ![](refinement-workflow_files/figure-html/unnamed-chunk-6-1.png)
 
-This plot belongs to the **pre-refit workflow**. It shows:
+This plot belongs to the **pre-refit stage**. It shows:
 
 - the original fitted coefficients
 - the proposed smoothed structure
@@ -263,6 +271,7 @@ Restrictions differ from smoothing:
 
 ``` r
 
+
 zip_df <- data.frame(
   zip = c(0, 1, 2, 3),
   zip_adj = c(0.8, 0.9, 1.0, 1.2)
@@ -280,6 +289,7 @@ The restriction table must contain exactly two columns:
 ### Inspecting restrictions before refit
 
 ``` r
+
 
 autoplot(ref, variable = "zip")
 ```
@@ -311,6 +321,7 @@ estimate stable coefficients directly.
 
 ``` r
 
+
 relativities_activity <- relativities_list(
   split_level(
     "construction",
@@ -321,8 +332,8 @@ relativities_activity <- relativities_list(
 
 ref <- ref |>
   add_relativities(
-    risk_factor = "business_activity",
-    risk_factor_split = "business_activity_split",
+    model_variable = "business_activity",
+    split_variable = "business_activity_split",
     relativities = relativities_activity,
     exposure = "exposure",
     normalize = TRUE
@@ -342,13 +353,14 @@ structure.
 Refinement steps alter part of the model structure. Once these changes
 are applied, the remaining coefficients may also need to adjust.
 
-For that reason, the workflow does not end with
+For that reason, the sequence does not end with
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
 or
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md).
 The final step is:
 
 ``` r
+
 
 burn_refined <- refit(ref)
 ```
@@ -362,29 +374,30 @@ After refit, use
 
 ``` r
 
+
 rating_table(burn_refined)
 #>          level             risk_factor est_burn_refined exposure
-#> 1  (Intercept)             (Intercept)     9376.5777003       NA
-#> 2            0                 zip_adj        0.8000000      207
-#> 3            1                 zip_adj        0.9000000    11081
-#> 4            2                 zip_adj        1.0000000     7783
-#> 5            3                 zip_adj        1.2000000     7586
-#> 6      [18,23] age_policyholder_smooth        2.3107319      586
-#> 7      (23,28] age_policyholder_smooth        1.7183044     2204
-#> 8      (28,33] age_policyholder_smooth        1.3763971     2790
-#> 9      (33,38] age_policyholder_smooth        1.2052590     3021
-#> 10     (38,43] age_policyholder_smooth        1.1379656     3089
-#> 11     (43,48] age_policyholder_smooth        1.1204187     3041
-#> 12     (48,53] age_policyholder_smooth        1.1113464     2978
-#> 13     (53,58] age_policyholder_smooth        1.0823030     2186
-#> 14     (58,63] age_policyholder_smooth        1.0176692     1974
-#> 15     (63,68] age_policyholder_smooth        0.9146517     1973
-#> 16     (68,73] age_policyholder_smooth        0.7832839     1558
-#> 17     (73,78] age_policyholder_smooth        0.6464252      907
-#> 18     (78,83] age_policyholder_smooth        0.5397614      246
-#> 19     (83,88] age_policyholder_smooth        0.5118045       93
-#> 20     (88,93] age_policyholder_smooth        0.6238929       11
-#> 21          bm                      bm        0.9976439       NA
+#> 1  (Intercept)             (Intercept)     1.070848e+04       NA
+#> 2            0                 zip_adj     8.000000e-01      207
+#> 3            1                 zip_adj     9.000000e-01    11081
+#> 4            2                 zip_adj     1.000000e+00     7783
+#> 5            3                 zip_adj     1.200000e+00     7586
+#> 6      [18,23] age_policyholder_smooth     1.985214e+00      586
+#> 7      (23,28] age_policyholder_smooth     1.524645e+00     2204
+#> 8      (28,33] age_policyholder_smooth     1.193787e+00     2790
+#> 9      (33,38] age_policyholder_smooth     1.053848e+00     3021
+#> 10     (38,43] age_policyholder_smooth     1.020715e+00     3089
+#> 11     (43,48] age_policyholder_smooth     9.959711e-01     3041
+#> 12     (48,53] age_policyholder_smooth     9.290435e-01     2978
+#> 13     (53,58] age_policyholder_smooth     8.282178e-01     2186
+#> 14     (58,63] age_policyholder_smooth     7.382691e-01     1974
+#> 15     (63,68] age_policyholder_smooth     7.024490e-01     1973
+#> 16     (68,73] age_policyholder_smooth     7.265697e-01     1558
+#> 17     (73,78] age_policyholder_smooth     7.629301e-01      907
+#> 18     (78,83] age_policyholder_smooth     7.318230e-01      246
+#> 19     (83,88] age_policyholder_smooth     5.983689e-01       93
+#> 20     (88,93] age_policyholder_smooth     5.224158e-01       11
+#> 21          bm                      bm     9.977213e-01       NA
 ```
 
 At this point, the output no longer represents proposed manual
@@ -406,6 +419,7 @@ now embedded in the fitted model output.
 
 ``` r
 
+
 rating_table(burn_refined) |>
   autoplot()
 ```
@@ -415,19 +429,20 @@ rating_table(burn_refined) |>
 ## Model data and rating grids
 
 After refit, model structure can be extracted with
-[`model_data()`](https://mharinga.github.io/insurancerating/reference/model_data.md):
+[`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md):
 
 ``` r
 
-md <- model_data(burn_refined)
+
+md <- extract_model_data(burn_refined)
 head(md)
 #>   age_policyholder age_policyholder_freq_cat_smooth age_policyholder_smooth
-#> 1               18                         2.310732                 [18,23]
-#> 2               18                         2.310732                 [18,23]
-#> 3               18                         2.310732                 [18,23]
-#> 4               18                         2.310732                 [18,23]
-#> 5               19                         2.310732                 [18,23]
-#> 6               19                         2.310732                 [18,23]
+#> 1               18                         1.985214                 [18,23]
+#> 2               18                         1.985214                 [18,23]
+#> 3               18                         1.985214                 [18,23]
+#> 4               18                         1.985214                 [18,23]
+#> 5               19                         1.985214                 [18,23]
+#> 6               19                         1.985214                 [18,23]
 #>   nclaims   exposure amount power bm zip age_policyholder_freq_cat
 #> 1       1 1.00000000 261777    40  3   3                   [18,25]
 #> 2       0 0.09589041      0    68  5   2                   [18,25]
@@ -436,12 +451,12 @@ head(md)
 #> 5       0 1.00000000      0    47  6   3                   [18,25]
 #> 6       1 0.06849315   6642    68  1   3                   [18,25]
 #>   pred_nclaims_freq pred_amount_sev   premium zip_adj
-#> 1        0.26210740        68671.20 17999.229     1.2
-#> 2        0.02502715        70854.51  1773.286     1.0
-#> 3        0.04883097        70854.51  3459.894     1.0
-#> 4        0.04975980        70854.51  3525.706     1.0
-#> 5        0.26044415        68671.20 17885.011     1.2
-#> 6        0.01802891        68671.20  1238.067     1.2
+#> 1        0.26210773        68671.20 17999.251     1.2
+#> 2        0.02502713        70854.51  1773.285     1.0
+#> 3        0.04883103        70854.51  3459.898     1.0
+#> 4        0.04975996        70854.51  3525.718     1.0
+#> 5        0.26044368        68671.20 17884.979     1.2
+#> 6        0.01802897        68671.20  1238.071     1.2
 ```
 
 Observed model-point combinations can be obtained with
@@ -449,22 +464,23 @@ Observed model-point combinations can be obtained with
 
 ``` r
 
+
 grid <- rating_grid(burn_refined)
 head(grid)
-#>   zip age_policyholder_smooth bm  exposure count zip_adj
-#> 1   1                 (23,28]  1 342.57808   414     1.2
-#> 2   1                 (23,28]  2 145.25753   173     1.2
-#> 3   1                 (23,28]  3  46.53699    53     1.2
-#> 4   1                 (23,28]  4  22.31507    26     1.2
-#> 5   1                 (23,28]  5  46.78630    54     1.2
-#> 6   1                 (23,28]  6  65.13699    71     1.2
+#>   age_policyholder_smooth zip bm count   exposure zip_adj
+#> 1                 (23,28]   1  1   414 342.578082     0.9
+#> 2                 (23,28]   1  4    26  22.315068     0.9
+#> 3                 (23,28]   0  4     1   1.000000     0.8
+#> 4                 (23,28]   0  1     7   5.268493     0.8
+#> 5                 (23,28]   1  7    33  28.334247     0.9
+#> 6                 (23,28]   2 13     5   4.041096     1.0
 #>   age_policyholder_freq_cat_smooth
-#> 1                         2.310732
-#> 2                         2.310732
-#> 3                         2.310732
-#> 4                         2.310732
-#> 5                         2.310732
-#> 6                         2.310732
+#> 1                         1.524645
+#> 2                         1.524645
+#> 3                         1.524645
+#> 4                         1.524645
+#> 5                         1.524645
+#> 6                         1.524645
 ```
 
 This is typically used for:
@@ -476,9 +492,10 @@ This is typically used for:
 
 ## Complete example
 
-A full refinement workflow typically looks as follows:
+One possible refinement sequence is:
 
 ``` r
+
 
 zip_df <- data.frame(
   zip = c(0, 1, 2, 3),
@@ -487,8 +504,8 @@ zip_df <- data.frame(
 
 burn_refined <- prepare_refinement(burn_unrestricted) |>
   add_smoothing(
-    x_cut = "age_policyholder_freq_cat",
-    x_org = "age_policyholder",
+    model_variable = "age_policyholder_freq_cat",
+    source_variable = "age_policyholder",
     breaks = seq(18, 95, 5),
     weights = "exposure"
   ) |>
@@ -497,27 +514,27 @@ burn_refined <- prepare_refinement(burn_unrestricted) |>
 
 rating_table(burn_refined)
 #>          level             risk_factor est_burn_refined exposure
-#> 1  (Intercept)             (Intercept)     9376.5777003       NA
-#> 2            0                 zip_adj        0.8000000      207
-#> 3            1                 zip_adj        0.9000000    11081
-#> 4            2                 zip_adj        1.0000000     7783
-#> 5            3                 zip_adj        1.2000000     7586
-#> 6      [18,23] age_policyholder_smooth        2.3107319      586
-#> 7      (23,28] age_policyholder_smooth        1.7183044     2204
-#> 8      (28,33] age_policyholder_smooth        1.3763971     2790
-#> 9      (33,38] age_policyholder_smooth        1.2052590     3021
-#> 10     (38,43] age_policyholder_smooth        1.1379656     3089
-#> 11     (43,48] age_policyholder_smooth        1.1204187     3041
-#> 12     (48,53] age_policyholder_smooth        1.1113464     2978
-#> 13     (53,58] age_policyholder_smooth        1.0823030     2186
-#> 14     (58,63] age_policyholder_smooth        1.0176692     1974
-#> 15     (63,68] age_policyholder_smooth        0.9146517     1973
-#> 16     (68,73] age_policyholder_smooth        0.7832839     1558
-#> 17     (73,78] age_policyholder_smooth        0.6464252      907
-#> 18     (78,83] age_policyholder_smooth        0.5397614      246
-#> 19     (83,88] age_policyholder_smooth        0.5118045       93
-#> 20     (88,93] age_policyholder_smooth        0.6238929       11
-#> 21          bm                      bm        0.9976439       NA
+#> 1  (Intercept)             (Intercept)     1.070848e+04       NA
+#> 2            0                 zip_adj     8.000000e-01      207
+#> 3            1                 zip_adj     9.000000e-01    11081
+#> 4            2                 zip_adj     1.000000e+00     7783
+#> 5            3                 zip_adj     1.200000e+00     7586
+#> 6      [18,23] age_policyholder_smooth     1.985214e+00      586
+#> 7      (23,28] age_policyholder_smooth     1.524645e+00     2204
+#> 8      (28,33] age_policyholder_smooth     1.193787e+00     2790
+#> 9      (33,38] age_policyholder_smooth     1.053848e+00     3021
+#> 10     (38,43] age_policyholder_smooth     1.020715e+00     3089
+#> 11     (43,48] age_policyholder_smooth     9.959711e-01     3041
+#> 12     (48,53] age_policyholder_smooth     9.290435e-01     2978
+#> 13     (53,58] age_policyholder_smooth     8.282178e-01     2186
+#> 14     (58,63] age_policyholder_smooth     7.382691e-01     1974
+#> 15     (63,68] age_policyholder_smooth     7.024490e-01     1973
+#> 16     (68,73] age_policyholder_smooth     7.265697e-01     1558
+#> 17     (73,78] age_policyholder_smooth     7.629301e-01      907
+#> 18     (78,83] age_policyholder_smooth     7.318230e-01      246
+#> 19     (83,88] age_policyholder_smooth     5.983689e-01       93
+#> 20     (88,93] age_policyholder_smooth     5.224158e-01       11
+#> 21          bm                      bm     9.977213e-01       NA
 
 rating_table(burn_refined) |>
   autoplot()
@@ -525,11 +542,12 @@ rating_table(burn_refined) |>
 
 ![](refinement-workflow_files/figure-html/unnamed-chunk-15-1.png)
 
-## Legacy workflow
+## Legacy interface
 
 Legacy entry points remain available:
 
 ``` r
+
 
 burn_refined_old <- burn_unrestricted |>
   smooth_coef(
@@ -543,9 +561,10 @@ burn_refined_old <- burn_unrestricted |>
 
 These are primarily maintained for backward compatibility.
 
-For new code, the standard workflow is:
+For new code, the recommended interface is:
 
 ``` r
+
 prepare_refinement() |> add_*() |> refit()
 ```
 
@@ -554,7 +573,7 @@ interpretability, governance, and auditability.
 
 ## Summary
 
-The refinement workflow separates:
+The refinement interface separates:
 
 - model estimation
 - tariff adjustments
@@ -575,7 +594,7 @@ For the underlying pricing concepts, see:
 - [Pricing
   principles](https://mharinga.github.io/insurancerating/articles/pricing-principles.md)
 
-For the standard workflow from portfolio analysis to fitted tariff, see:
+For an example sequence from portfolio analysis to fitted tariff, see:
 
 - [Getting
   started](https://mharinga.github.io/insurancerating/articles/getting-started.md)

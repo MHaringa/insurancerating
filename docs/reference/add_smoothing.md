@@ -5,6 +5,7 @@ Adds a smoothing step to a `rating_refinement` object.
 `smooth_coef()` is deprecated as of version 0.9.0. Please use the
 refinement workflow instead:
 
+
     prepare_refinement(model) |>
       add_smoothing(...) |>
       refit()
@@ -14,13 +15,17 @@ refinement workflow instead:
 ``` r
 add_smoothing(
   model,
-  x_cut,
-  x_org,
+  model_variable = NULL,
+  source_variable = NULL,
   degree = NULL,
   breaks = NULL,
   smoothing = "spline",
   k = NULL,
-  weights = NULL
+  weights = NULL,
+  tariff_class = NULL,
+  rating_variable = NULL,
+  x_cut = NULL,
+  x_org = NULL
 )
 
 smooth_coef(
@@ -39,35 +44,47 @@ smooth_coef(
 
 - model:
 
-  Object of class `rating_refinement`.
+  Object of class `rating_refinement`, usually created with
+  [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md).
 
-- x_cut:
+- model_variable:
 
-  column name with breaks/cut
+  Character string. Existing grouped or binned variable in the GLM. This
+  is the model term that will be replaced by a smoothed tariff factor.
 
-- x_org:
+- source_variable:
 
-  column name where x_cut is based on
+  Character string. Original numeric portfolio variable underlying
+  `model_variable`.
 
 - degree:
 
-  order of polynomial
+  Optional single whole number. Polynomial degree.
 
 - breaks:
 
-  numerical vector with new clusters for x
+  Numeric vector with the new tariff class boundaries.
 
 - smoothing:
 
-  smoothing specification
+  Character string with the smoothing method.
 
 - k:
 
-  number of basis functions
+  Optional single positive whole number. Number of basis functions for
+  smoothing methods that use a basis dimension.
 
 - weights:
 
-  weights column name, usually exposure
+  Optional character string. Weights column, usually exposure.
+
+- tariff_class, rating_variable:
+
+  Deprecated. Use `model_variable` and `source_variable` instead.
+
+- x_cut, x_org:
+
+  Deprecated. Use `model_variable` and `source_variable` instead.
 
 ## Value
 

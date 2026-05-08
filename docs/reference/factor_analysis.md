@@ -21,12 +21,17 @@ column names as character strings.
 
 ``` r
 factor_analysis(
-  df,
-  x,
-  severity = NULL,
-  nclaims = NULL,
+  data = NULL,
+  risk_factors = NULL,
+  claim_amount = NULL,
+  claim_count = NULL,
   exposure = NULL,
   premium = NULL,
+  group_by = NULL,
+  df = NULL,
+  x = NULL,
+  severity = NULL,
+  nclaims = NULL,
   by = NULL
 )
 
@@ -43,37 +48,44 @@ univariate(
 
 ## Arguments
 
-- df:
+- data:
 
   A `data.frame` with the insurance portfolio.
 
-- x:
+- risk_factors:
 
-  Character vector: column(s) in `df` with the risk factor(s).
+  Character vector: column(s) in `data` with the risk factor(s).
 
-- severity:
+- claim_amount:
 
-  Character, column in `df` with claim amounts (default = NULL).
+  Character, column in `data` with claim amounts (default = NULL).
 
-- nclaims:
+- claim_count:
 
-  Character, column in `df` with number of claims (default = NULL).
+  Character, column in `data` with number of claims (default = NULL).
 
 - exposure:
 
-  Character, column in `df` with exposures (default = NULL).
+  Character, column in `data` with exposures (default = NULL).
 
 - premium:
 
-  Character, column in `df` with premiums (default = NULL).
+  Character, column in `data` with premiums (default = NULL).
 
-- by:
+- group_by:
 
-  Character vector of column(s) in `df` to group by in addition to `x`.
+  Character vector of column(s) in `data` to group by in addition to
+  `risk_factors`.
+
+- df, x, severity, nclaims, by:
+
+  Deprecated argument names. Use `data`, `risk_factors`, `claim_amount`,
+  `claim_count`, and `group_by` instead.
 
 ## Value
 
-An object of class `"univariate"` with summary statistics.
+An object of class `"factor_analysis"` and `"univariate"` with summary
+statistics.
 
 ## Details
 
@@ -118,19 +130,21 @@ Martin Haringa
 ``` r
 ## --- New usage (SE) ---
 factor_analysis(MTPL2,
-                x = "area",
-                severity = "amount",
-                nclaims = "nclaims",
+                risk_factors = "area",
+                claim_amount = "amount",
+                claim_count = "nclaims",
                 exposure = "exposure",
                 premium = "premium")
-#> # A tibble: 4 × 10
-#>    area  amount nclaims exposure premium frequency average_severity risk_premium
-#>   <int>   <int>   <int>    <dbl>   <int>     <dbl>            <dbl>        <dbl>
-#> 1     2 4063270      98    819.    51896    0.120            41462.        4964.
-#> 2     3 7945311     113    765.    49337    0.148            70312.       10386.
-#> 3     1 6896187     146   1066.    65753    0.137            47234.        6471.
-#> 4     0    6922       1     13.3     902    0.0751            6922          520.
-#> # ℹ 2 more variables: loss_ratio <dbl>, average_premium <dbl>
+#>   area  amount nclaims   exposure premium  frequency average_severity
+#> 1    2 4063270      98  818.53973   51896 0.11972540         41461.94
+#> 2    3 7945311     113  764.99178   49337 0.14771401         70312.49
+#> 3    1 6896187     146 1065.74795   65753 0.13699299         47234.16
+#> 4    0    6922       1   13.30685     902 0.07514927          6922.00
+#>   risk_premium loss_ratio average_premium
+#> 1    4964.0474  78.296400        63.40071
+#> 2   10386.1390 161.041632        64.49350
+#> 3    6470.7486 104.880188        61.69658
+#> 4     520.1832   7.674058        67.78464
 
 ## --- Deprecated usage (NSE) ---
 univariate(MTPL2,
@@ -139,12 +153,14 @@ univariate(MTPL2,
            nclaims = nclaims,
            exposure = exposure,
            premium = premium)
-#> # A tibble: 4 × 10
-#>    area  amount nclaims exposure premium frequency average_severity risk_premium
-#>   <int>   <int>   <int>    <dbl>   <int>     <dbl>            <dbl>        <dbl>
-#> 1     2 4063270      98    819.    51896    0.120            41462.        4964.
-#> 2     3 7945311     113    765.    49337    0.148            70312.       10386.
-#> 3     1 6896187     146   1066.    65753    0.137            47234.        6471.
-#> 4     0    6922       1     13.3     902    0.0751            6922          520.
-#> # ℹ 2 more variables: loss_ratio <dbl>, average_premium <dbl>
+#>   area  amount nclaims   exposure premium  frequency average_severity
+#> 1    2 4063270      98  818.53973   51896 0.11972540         41461.94
+#> 2    3 7945311     113  764.99178   49337 0.14771401         70312.49
+#> 3    1 6896187     146 1065.74795   65753 0.13699299         47234.16
+#> 4    0    6922       1   13.30685     902 0.07514927          6922.00
+#>   risk_premium loss_ratio average_premium
+#> 1    4964.0474  78.296400        63.40071
+#> 2   10386.1390 161.041632        64.49350
+#> 3    6470.7486 104.880188        61.69658
+#> 4     520.1832   7.674058        67.78464
 ```

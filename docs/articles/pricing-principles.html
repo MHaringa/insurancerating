@@ -73,8 +73,8 @@ is:</p>
 <li>stable over time</li>
 <li>interpretable and explainable</li>
 </ul>
-<p>This vignette outlines the key concepts that underpin pricing
-workflows in <code>insurancerating</code>.</p>
+<p>This vignette outlines key concepts that are commonly used with the
+building blocks in <code>insurancerating</code>.</p>
 <hr>
 <div class="section level3">
 <h3 id="exposure">Exposure<a class="anchor" aria-label="anchor" href="#exposure"></a>
@@ -184,7 +184,7 @@ The refinement step is where actuarial judgement plays a key role.</p>
 <div class="section level3">
 <h3 id="the-role-of-factor-analysis">The role of factor analysis<a class="anchor" aria-label="anchor" href="#the-role-of-factor-analysis"></a>
 </h3>
-<p>Before fitting models, it is essential to understand the data.
+<p>Before fitting models, it is usually useful to understand the data.
 <code><a href="../reference/factor_analysis.html">factor_analysis()</a></code> provides a structured way to analyse:</p>
 <ul>
 <li>frequency</li>
@@ -199,20 +199,18 @@ The refinement step is where actuarial judgement plays a key role.</p>
 <span></span>
 <span><span class="va">fa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/factor_analysis.html">factor_analysis</a></span><span class="op">(</span></span>
 <span>  <span class="va">MTPL</span>,</span>
-<span>  x <span class="op">=</span> <span class="st">"zip"</span>,</span>
-<span>  nclaims <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
+<span>  risk_factors <span class="op">=</span> <span class="st">"zip"</span>,</span>
+<span>  claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
 <span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
-<span>  severity <span class="op">=</span> <span class="st">"amount"</span></span>
+<span>  claim_amount <span class="op">=</span> <span class="st">"amount"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">fa</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 7</span></span></span>
-<span><span class="co">#&gt;   zip      amount nclaims exposure frequency average_severity risk_premium</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 1     116<span style="text-decoration: underline;">178</span>669    <span style="text-decoration: underline;">1</span>593   <span style="text-decoration: underline;">11</span>081.     0.144           <span style="text-decoration: underline;">72</span>931.       <span style="text-decoration: underline;">10</span>485.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2      59<span style="text-decoration: underline;">751</span>985    <span style="text-decoration: underline;">1</span>008    <span style="text-decoration: underline;">7</span>783.     0.130           <span style="text-decoration: underline;">59</span>278.        <span style="text-decoration: underline;">7</span>678.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 3      58<span style="text-decoration: underline;">988</span>962    <span style="text-decoration: underline;">1</span>038    <span style="text-decoration: underline;">7</span>588.     0.137           <span style="text-decoration: underline;">56</span>829.        <span style="text-decoration: underline;">7</span>774.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 0        <span style="text-decoration: underline;">821</span>510      29     207.     0.140           <span style="text-decoration: underline;">28</span>328.        <span style="text-decoration: underline;">3</span>972.</span></span></code></pre></div>
+<span><span class="co">#&gt;   zip    amount nclaims   exposure frequency average_severity risk_premium</span></span>
+<span><span class="co">#&gt; 1   1 116178669    1593 11080.6274 0.1437644         72930.74    10484.846</span></span>
+<span><span class="co">#&gt; 2   2  59751985    1008  7782.6301 0.1295192         59277.76     7677.608</span></span>
+<span><span class="co">#&gt; 3   3  58988962    1038  7587.5644 0.1368028         56829.44     7774.427</span></span>
+<span><span class="co">#&gt; 4   0    821510      29   206.8438 0.1402024         28327.93     3971.644</span></span></code></pre></div>
 <p>This helps to answer questions such as:</p>
 <ul>
 <li>Are differences between segments credible?</li>
@@ -237,7 +235,7 @@ The refinement step is where actuarial judgement plays a key role.</p>
 <li>volatility in low-exposure segments</li>
 <li>overly granular differences</li>
 </ul>
-<p>This is why refinement is essential.</p>
+<p>This is why refinement is often useful.</p>
 <hr>
 </div>
 <div class="section level3">
@@ -247,11 +245,11 @@ The refinement step is where actuarial judgement plays a key role.</p>
 <ul>
 <li>smoothing coefficients</li>
 <li>imposing monotonic trends</li>
-<li>applying business constraints</li>
+<li>applying practical constraints</li>
 <li>incorporating expert judgement</li>
 </ul>
-<p>The goal is not to improve statistical fit, but to create a tariff
-that is:</p>
+<p>The goal is not necessarily to improve statistical fit, but to
+support a tariff structure that is:</p>
 <ul>
 <li>stable</li>
 <li>explainable</li>
@@ -314,8 +312,8 @@ that works in practice.</p>
 </ul>
 <p>For coefficient refinement:</p>
 <ul>
-<li><a href="articles/refinement-workflow.html">Refinement
-workflow</a></li>
+<li><a href="articles/refinement-workflow.html">Refinement building
+blocks</a></li>
 </ul>
 <hr>
 </div>
@@ -345,8 +343,8 @@ and remain in the portfolio.</p>
 </li>
 <li>overall profitability</li>
 </ul>
-<p>This means pricing should always be considered in a
-<strong>forward-looking context</strong>.</p>
+<p>This means pricing is often considered in a <strong>forward-looking
+context</strong>.</p>
 <hr>
 </div>
 <div class="section level3">
@@ -378,7 +376,7 @@ differentiation</strong>:</p>
 <hr>
 </div>
 <div class="section level3">
-<h3 id="why-refinement-is-essential">Why refinement is essential<a class="anchor" aria-label="anchor" href="#why-refinement-is-essential"></a>
+<h3 id="why-refinement-is-often-useful">Why refinement is often useful<a class="anchor" aria-label="anchor" href="#why-refinement-is-often-useful"></a>
 </h3>
 <p>Pure statistical output is rarely suitable for direct use in
 tariffs.</p>
@@ -396,9 +394,10 @@ tariffs.</p>
 </li>
 <li>monotonicity enforces logical consistency<br>
 </li>
-<li>restrictions incorporate business rules</li>
+<li>restrictions incorporate practical constraints</li>
 </ul>
-<p>The goal is not to “improve the model”, but to ensure:</p>
+<p>The goal is not necessarily to “improve the model”, but to support a
+tariff structure where:</p>
 <blockquote>
 <p>the tariff behaves in a predictable and explainable way.</p>
 </blockquote>
@@ -463,8 +462,8 @@ required to:</p>
 </li>
 <li>operational simplicity</li>
 </ul>
-<p>No single model optimises all dimensions. The role of the pricing
-framework is to make these trade-offs:</p>
+<p>No single model optimises all dimensions. A useful pricing framework
+makes these trade-offs:</p>
 <ul>
 <li>explicit<br>
 </li>
@@ -477,7 +476,7 @@ framework is to make these trade-offs:</p>
 <div class="section level3">
 <h3 id="pricing-as-a-controlled-process">Pricing as a controlled process<a class="anchor" aria-label="anchor" href="#pricing-as-a-controlled-process"></a>
 </h3>
-<p>A structured workflow helps ensure that pricing decisions are:</p>
+<p>A structured set of tools can help make pricing decisions:</p>
 <ul>
 <li>transparent<br>
 </li>
@@ -485,7 +484,7 @@ framework is to make these trade-offs:</p>
 </li>
 <li>consistent across portfolios</li>
 </ul>
-<p>In <code>insurancerating</code>, this is reflected in:</p>
+<p>In <code>insurancerating</code>, this is supported through:</p>
 <ul>
 <li>separation of analysis, modelling, and refinement<br>
 </li>

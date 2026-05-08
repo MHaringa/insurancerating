@@ -5,6 +5,7 @@ Adds a restriction step to a `rating_refinement` object.
 `restrict_coef()` is deprecated as of version 0.9.0. Please use the
 refinement workflow instead:
 
+
     prepare_refinement(model) |>
       add_restriction(...) |>
       refit()
@@ -21,11 +22,13 @@ restrict_coef(model, restrictions)
 
 - model:
 
-  Object of class `rating_refinement`.
+  Object of class `rating_refinement`, usually created with
+  [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md).
 
 - restrictions:
 
-  data.frame with two columns containing restricted data.
+  data.frame with exactly two columns: the original risk factor level
+  and the replacement relativity to use in the refined tariff.
 
 ## Value
 

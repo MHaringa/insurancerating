@@ -7,8 +7,8 @@ Adds a relativities step to a `rating_refinement` object.
 ``` r
 add_relativities(
   model,
-  risk_factor,
-  risk_factor_split,
+  model_variable,
+  split_variable,
   relativities,
   exposure,
   normalize = TRUE
@@ -19,19 +19,25 @@ add_relativities(
 
 - model:
 
-  Object of class `rating_refinement`.
+  Object of class `rating_refinement`, usually created with
+  [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md).
 
-- risk_factor:
+- model_variable:
 
-  Character string. Name of existing risk factor in the model.
+  Character string. Existing variable in the GLM. Levels of this
+  variable can be split into more detailed groups.
 
-- risk_factor_split:
+- split_variable:
 
-  Character string. More granular split column.
+  Character string. More granular portfolio variable that defines the
+  split groups.
 
 - relativities:
 
-  Named list of data.frames.
+  Named list of data.frames, usually created with
+  [`relativities_list()`](https://mharinga.github.io/insurancerating/reference/relativities_list.md)
+  and
+  [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md).
 
 - exposure:
 

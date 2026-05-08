@@ -1,11 +1,14 @@
 # Fisher's natural breaks classification
 
+`fisher_classify()` is deprecated as of version 0.8.0 because
+Fisher-Jenks classification is not directly linked to the insurance
+rating workflow.
+
 Classifies a continuous numeric vector into intervals using Fisher-Jenks
 natural breaks. Useful for choropleth mapping or other applications
 where grouped ranges are required.
 
-`fisher()` is deprecated as of version 0.8.0. Please use
-`fisher_classify()` instead.
+`fisher()` is deprecated as of version 0.8.0.
 
 ## Usage
 
@@ -67,6 +70,9 @@ Martin Haringa
 set.seed(1)
 x <- rnorm(100)
 fisher_classify(x, n = 5)
+#> Warning: `fisher_classify()` was deprecated in insurancerating 0.8.0.
+#> ℹ Fisher-Jenks classification is a general-purpose grouping method and is not
+#>   directly linked to the insurance rating workflow.
 #>   [1] (-1.1,-0.34] (-0.34,0.23] (-1.1,-0.34] (1,2.4]      (0.23,1]    
 #>   [6] (-1.1,-0.34] (0.23,1]     (0.23,1]     (0.23,1]     (-0.34,0.23]
 #>  [11] (1,2.4]      (0.23,1]     (-1.1,-0.34] [-2.2,-1.1]  (1,2.4]     

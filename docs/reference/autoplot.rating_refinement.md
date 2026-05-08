@@ -1,11 +1,11 @@
-# Automatically create a ggplot for objects obtained from refinement
+# Plot a model refinement step
 
-**\[experimental\]** Takes an object produced by
-[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
-or
-[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
-and creates a plot comparing the adjusted coefficients with the original
-coefficients obtained from the model.
+**\[experimental\]** Takes a `rating_refinement` object and plots one
+refinement step before
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+is called. This is useful for checking whether manual tariff
+restrictions, smoothing or expert-based relativities behave as intended
+before they are used in a refined pricing model.
 
 For objects produced by
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
@@ -19,7 +19,7 @@ with the original level label centred above the segment.
 ``` r
 # S3 method for class 'rating_refinement'
 autoplot(
-  x,
+  object,
   variable = NULL,
   step = NULL,
   remove_underscores = FALSE,
@@ -31,12 +31,9 @@ autoplot(
 
 ## Arguments
 
-- x:
+- object:
 
-  Object produced by
-  [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
-  or
-  [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).
+  Object of class `rating_refinement`.
 
 - variable:
 

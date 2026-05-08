@@ -1,7 +1,7 @@
-# Check overdispersion of a Poisson GLM
+# Check overdispersion of a Poisson claim frequency model
 
-Tests whether a fitted Poisson regression model is overdispersed using
-Pearson's chi-squared statistic.
+Tests whether a fitted Poisson GLM shows overdispersion using Pearson's
+chi-squared statistic.
 
 ## Usage
 
@@ -17,34 +17,45 @@ check_overdispersion(object)
 
 ## Value
 
-An object of class `"overdispersion"`, which is a list with elements:
+An object of class `"overdispersion_check"` and `"overdispersion"`,
+which is a list with elements:
 
-- chisq:
+- pearson_chisq:
 
   Pearson's chi-squared statistic.
 
-- ratio:
+- dispersion_ratio:
 
-  Dispersion ratio (chisq / residual df).
+  Dispersion ratio, calculated as Pearson's chi-squared statistic
+  divided by residual degrees of freedom.
 
-- rdf:
+- residual_df:
 
   Residual degrees of freedom.
 
-- p:
+- p_value:
 
-  P-value from chi-squared test.
+  P-value from the chi-squared test.
+
+For backwards compatibility the object also contains the aliases
+`chisq`, `ratio`, `rdf`, and `p`.
 
 ## Details
 
-- A dispersion ratio close to 1 indicates a good Poisson fit.
+In Poisson claim frequency models, the variance is assumed to be equal
+to the mean. A dispersion ratio above 1 indicates that the observed
+variation is larger than expected under that assumption. In pricing work
+this can be a useful diagnostic signal for omitted heterogeneity,
+clustering, outliers, or model misspecification. It does not
+automatically mean that the model is unusable.
 
-- A dispersion ratio \> 1 suggests overdispersion.
+- A dispersion ratio close to 1 is broadly consistent with the Poisson
+  variance assumption.
 
-- A p-value \< 0.05 indicates significant overdispersion.
+- A dispersion ratio above 1 suggests overdispersion.
 
-- A dispersion ratio \> 2 usually means a more serious lack of fit (e.g.
-  outliers or misspecified model).
+- A p-value below 0.05 indicates statistically significant
+  overdispersion.
 
 ## References
 
