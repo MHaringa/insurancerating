@@ -17,16 +17,16 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-`insurancerating` provides a structured workflow for insurance pricing in R.
+`insurancerating` provides actuarial building blocks for insurance pricing in R.
 
-A typical pricing workflow consists of four steps:
+A common GLM-based pricing exercise often combines several tasks:
 
 1.	portfolio analysis
 2.	model estimation
 3.	interpretation of fitted coefficients
 4.	refinement of tariff structure
 
-This vignette introduces the standard workflow:
+This vignette illustrates one way to combine the main building blocks:
 
 -	analyse risk factors with `factor_analysis()`
 -	estimate pricing models with `glm()`
@@ -60,7 +60,7 @@ head(MTPL2)
 
 ### Factor analysis
 
-A pricing workflow starts with an analysis of the portfolio.
+A pricing analysis often starts with an analysis of the portfolio.
 
 Before fitting a model, it is necessary to understand:
 
@@ -80,17 +80,17 @@ We start by analysing a single risk factor.
 
 fa <- factor_analysis(
   MTPL,
-  x = "zip",
-  nclaims = "nclaims",
+  risk_factors = "zip",
+  claim_count = "nclaims",
   exposure = "exposure",
-  severity = "amount"
+  claim_amount = "amount"
 )
 
 fa
 
 ```
 
-The output provides standard portfolio metrics such as:
+The output provides commonly used portfolio metrics such as:
 
 -	frequency = claims / exposure
 -	average severity = loss / claims
@@ -103,7 +103,7 @@ The output provides standard portfolio metrics such as:
 
 ```{r}
 
-autoplot(fa, show_plots = c(6, 1, 3))
+autoplot(fa, metrics = c(6, 1, 3))
 
 ```
 
@@ -132,10 +132,10 @@ This ensures that the final tariff remains interpretable and implementable.
 
 ```{r}
 
-age_freq <- riskfactor_gam(
+age_freq <- risk_factor_gam(
   data = MTPL,
-  x = "age_policyholder",
-  nclaims = "nclaims",
+  risk_factor = "age_policyholder",
+  claim_count = "nclaims",
   exposure = "exposure"
 )
 
@@ -185,8 +185,7 @@ baseline.
 
 ### Why GLMs are used
 
-Generalized linear models form the standard basis of many insurance pricing
-workflows because they:
+Generalized linear models are widely used in insurance pricing because they:
 
 -	accommodate non-normal response distributions
 -	produce interpretable multiplicative effects
@@ -277,7 +276,7 @@ rt
 `rating_table()` expresses fitted coefficients in terms of the original factor
 levels, including the reference level.
 
-This is the standard output used to inspect tariff relativities.
+This output is commonly used to inspect tariff relativities.
 	
 
 ### Visualising coefficients
@@ -323,7 +322,7 @@ This provides summary measures of model fit, such as RMSE.
 
 ```{r}
 
-bp <- bootstrap_performance(mod_freq, dat, n = 50, show_progress = FALSE)
+bp <- bootstrap_performance(mod_freq, dat, n_resamples = 50, show_progress = FALSE)
 autoplot(bp)
 
 ```
@@ -338,7 +337,7 @@ perturbations.
 
 ## Step 7 — From model to tariff
 
-At this point, the workflow has produced:
+At this point, the example has produced:
 
 -	portfolio-level insight
 -	fitted pricing models
@@ -355,16 +354,16 @@ Typical reasons include:
 -	externally imposed restrictions
 -	expert-driven adjustments
 
-This is handled through the refinement workflow described in [Refinement workflow](articles/refinement-workflow.html).
+This can be handled with the refinement tools described in [Refinement building blocks](articles/refinement-workflow.html).
 
 ## Summary
 
-A standard workflow in `insurancerating` is:
+A possible sequence in `insurancerating` is:
 
 ```{r, eval = FALSE}
 
 factor_analysis()             # analyse portfolio behaviour
-riskfactor_gam()              # analyse continuous variables
+risk_factor_gam()              # analyse continuous variables
 construct_tariff_classes()    # derive tariff classes
 glm()                         # estimate pricing models
 rating_table()                # interpret fitted coefficients
@@ -384,9 +383,8 @@ The aim is to move from raw portfolio data to a tariff structure that is:
 
 The following vignette covers the refinement step in more detail:
 
-- [Refinement workflow](refinement-workflow.html)
+- [Refinement building blocks](refinement-workflow.html)
 
 For the conceptual background to exposure, risk premium, and tariff design, see:
 
 - [Pricing principles](pricing-principles.html)
-

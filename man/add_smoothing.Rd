@@ -7,13 +7,17 @@
 \usage{
 add_smoothing(
   model,
-  x_cut,
-  x_org,
+  model_variable = NULL,
+  source_variable = NULL,
   degree = NULL,
   breaks = NULL,
   smoothing = "spline",
   k = NULL,
-  weights = NULL
+  weights = NULL,
+  tariff_class = NULL,
+  rating_variable = NULL,
+  x_cut = NULL,
+  x_org = NULL
 )
 
 smooth_coef(
@@ -28,21 +32,32 @@ smooth_coef(
 )
 }
 \arguments{
-\item{model}{Object of class \code{rating_refinement}.}
+\item{model}{Object of class \code{rating_refinement}, usually created with
+\code{\link[=prepare_refinement]{prepare_refinement()}}.}
 
-\item{x_cut}{column name with breaks/cut}
+\item{model_variable}{Character string. Existing grouped or binned variable
+in the GLM. This is the model term that will be replaced by a smoothed
+tariff factor.}
 
-\item{x_org}{column name where x_cut is based on}
+\item{source_variable}{Character string. Original numeric portfolio variable
+underlying \code{model_variable}.}
 
-\item{degree}{order of polynomial}
+\item{degree}{Optional single whole number. Polynomial degree.}
 
-\item{breaks}{numerical vector with new clusters for x}
+\item{breaks}{Numeric vector with the new tariff class boundaries.}
 
-\item{smoothing}{smoothing specification}
+\item{smoothing}{Character string with the smoothing method.}
 
-\item{k}{number of basis functions}
+\item{k}{Optional single positive whole number. Number of basis functions for
+smoothing methods that use a basis dimension.}
 
-\item{weights}{weights column name, usually exposure}
+\item{weights}{Optional character string. Weights column, usually exposure.}
+
+\item{tariff_class, rating_variable}{Deprecated. Use \code{model_variable} and
+\code{source_variable} instead.}
+
+\item{x_cut, x_org}{Deprecated. Use \code{model_variable} and \code{source_variable}
+instead.}
 }
 \value{
 Object of class \code{rating_refinement}.

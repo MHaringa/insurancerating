@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-Model validation is part of the standard pricing workflow.
+Model validation is a common part of actuarial pricing work.
 
 After model estimation and coefficient interpretation, it is necessary to assess
 whether the model performs adequately and behaves in a stable and interpretable
@@ -30,7 +30,7 @@ In practice, model validation typically considers several dimensions:
 -	distributional diagnostics
 -	portfolio-level behaviour
 
-`insurancerating` provides tools for each of these steps.
+`insurancerating` provides tools for several of these validation tasks.
 
 The purpose of validation is not only to assess statistical fit, but also to
 determine whether a model is suitable for use in a pricing context.
@@ -76,7 +76,7 @@ model_performance(mod1, mod2)
 
 ```
 
-This provides standard summary measures of model fit, such as RMSE.
+This provides commonly used summary measures of model fit, such as RMSE.
 
 The purpose of this step is to assess whether the addition or removal of model
 terms leads to a materially different fit.
@@ -104,7 +104,7 @@ This is used to assess:
 -	the exposure behind each level
 -	whether differences are plausible and stable
 
-In pricing practice, this is a standard part of validation, because a model with
+In pricing practice, this is often part of validation, because a model with
 slightly better fit may still be less suitable if its coefficient structure is
 difficult to interpret or unstable in low-exposure segments.
 
@@ -117,7 +117,7 @@ small variations in the data.
 
 ```{r}
 
-bootstrap_performance(mod1, df, n = 100, show_progress = FALSE) |>
+bootstrap_performance(mod1, df, n_resamples = 100, show_progress = FALSE) |>
   autoplot()
 
 ```
@@ -137,7 +137,7 @@ claim volatility.
 
 ## Step 4 — Dispersion checks
 
-For Poisson models, it is standard practice to check whether the variance
+For Poisson models, it is common practice to check whether the variance
 assumption is broadly appropriate.
 
 ```{r}
@@ -207,7 +207,7 @@ review or implementation support.
 
 In practice, model validation is rarely based on a single statistic.
 
-A standard validation workflow combines:
+A validation exercise often combines:
 
 -	comparative performance measures
 -	coefficient inspection
@@ -229,7 +229,7 @@ suitable for pricing use.
 
 ## Summary
 
-A standard validation workflow in `insurancerating` is:
+One possible validation sequence in `insurancerating` is:
 
 ```{r, eval = FALSE}
 
@@ -253,13 +253,13 @@ whether the fitted model is:
 
 ## Next steps
 
-For the standard modelling workflow, see:
+For a modelling example, see:
 
 - [Getting started](getting-started.html)
 
 For the refinement step after validation, see:
 
-- [Refinement workflow](refinement-workflow.html).
+- [Refinement building blocks](refinement-workflow.html).
 
 For the conceptual background to exposure, risk premium, and tariff structure,
 see:

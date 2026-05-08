@@ -6,21 +6,25 @@
 \usage{
 add_relativities(
   model,
-  risk_factor,
-  risk_factor_split,
+  model_variable,
+  split_variable,
   relativities,
   exposure,
   normalize = TRUE
 )
 }
 \arguments{
-\item{model}{Object of class \code{rating_refinement}.}
+\item{model}{Object of class \code{rating_refinement}, usually created with
+\code{\link[=prepare_refinement]{prepare_refinement()}}.}
 
-\item{risk_factor}{Character string. Name of existing risk factor in the model.}
+\item{model_variable}{Character string. Existing variable in the GLM. Levels
+of this variable can be split into more detailed groups.}
 
-\item{risk_factor_split}{Character string. More granular split column.}
+\item{split_variable}{Character string. More granular portfolio variable that
+defines the split groups.}
 
-\item{relativities}{Named list of data.frames.}
+\item{relativities}{Named list of data.frames, usually created with
+\code{\link[=relativities_list]{relativities_list()}} and \code{\link[=split_level]{split_level()}}.}
 
 \item{exposure}{Character string. Exposure column.}
 

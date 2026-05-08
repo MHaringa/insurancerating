@@ -6,12 +6,17 @@
 \title{Factor analysis for discrete risk factors}
 \usage{
 factor_analysis(
-  df,
-  x,
-  severity = NULL,
-  nclaims = NULL,
+  data = NULL,
+  risk_factors = NULL,
+  claim_amount = NULL,
+  claim_count = NULL,
   exposure = NULL,
   premium = NULL,
+  group_by = NULL,
+  df = NULL,
+  x = NULL,
+  severity = NULL,
+  nclaims = NULL,
   by = NULL
 )
 
@@ -26,22 +31,30 @@ univariate(
 )
 }
 \arguments{
-\item{df}{A \code{data.frame} with the insurance portfolio.}
+\item{data}{A \code{data.frame} with the insurance portfolio.}
 
-\item{x}{Character vector: column(s) in \code{df} with the risk factor(s).}
+\item{risk_factors}{Character vector: column(s) in \code{data} with the risk
+factor(s).}
 
-\item{severity}{Character, column in \code{df} with claim amounts (default = NULL).}
+\item{claim_amount}{Character, column in \code{data} with claim amounts
+(default = NULL).}
 
-\item{nclaims}{Character, column in \code{df} with number of claims (default = NULL).}
+\item{claim_count}{Character, column in \code{data} with number of claims
+(default = NULL).}
 
-\item{exposure}{Character, column in \code{df} with exposures (default = NULL).}
+\item{exposure}{Character, column in \code{data} with exposures (default = NULL).}
 
-\item{premium}{Character, column in \code{df} with premiums (default = NULL).}
+\item{premium}{Character, column in \code{data} with premiums (default = NULL).}
 
-\item{by}{Character vector of column(s) in \code{df} to group by in addition to \code{x}.}
+\item{group_by}{Character vector of column(s) in \code{data} to group by in
+addition to \code{risk_factors}.}
+
+\item{df, x, severity, nclaims, by}{Deprecated argument names. Use \code{data},
+\code{risk_factors}, \code{claim_amount}, \code{claim_count}, and \code{group_by} instead.}
 }
 \value{
-An object of class \code{"univariate"} with summary statistics.
+An object of class \code{"factor_analysis"} and \code{"univariate"} with
+summary statistics.
 }
 \description{
 Performs a factor analysis for discrete risk factors in an insurance
@@ -91,9 +104,9 @@ deprecation warning and will be removed in a future release.
 \examples{
 ## --- New usage (SE) ---
 factor_analysis(MTPL2,
-                x = "area",
-                severity = "amount",
-                nclaims = "nclaims",
+                risk_factors = "area",
+                claim_amount = "amount",
+                claim_count = "nclaims",
                 exposure = "exposure",
                 premium = "premium")
 

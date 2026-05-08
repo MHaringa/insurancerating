@@ -4,7 +4,17 @@
 \alias{add_prediction}
 \title{Add Model Predictions to a Data Frame}
 \usage{
-add_prediction(data, ..., var = NULL, conf_int = FALSE, alpha = 0.1)
+add_prediction(
+  data,
+  ...,
+  predictions = NULL,
+  prefix = "pred",
+  confidence = FALSE,
+  interval_names = c("lower", "upper"),
+  alpha = 0.1,
+  var = NULL,
+  conf_int = NULL
+)
 }
 \arguments{
 \item{data}{A \code{data.frame} containing the new data for which predictions
@@ -12,16 +22,28 @@ should be generated.}
 
 \item{...}{One or more fitted model objects of class \code{"glm"}.}
 
-\item{var}{Optional character vector giving names for the new prediction
-columns. Must have the same length as the number of models supplied. If
-\code{NULL} (default), names are generated automatically.}
+\item{predictions}{Optional character vector giving names for the new
+prediction columns. Must have the same length as the number of models
+supplied. If \code{NULL} (default), names are generated automatically using
+\code{prefix}, the model response, and the model object name.}
 
-\item{conf_int}{Logical. If \code{TRUE}, add confidence intervals for predictions.
-Default is \code{FALSE}.}
+\item{prefix}{Character. Prefix used for automatically generated prediction
+column names. Default is \code{"pred"}.}
 
-\item{alpha}{Numeric between 0 and 1. Controls the confidence level for
+\item{confidence}{Logical. If \code{TRUE}, add confidence intervals for
+predictions. Default is \code{FALSE}.}
+
+\item{interval_names}{Character vector of length two. Names appended to the
+prediction column name for lower and upper confidence interval bounds.
+Default is \code{c("lower", "upper")}.}
+
+\item{alpha}{Numeric between 0 and 1. Controls the miscoverage level for
 interval estimates. Default is \code{0.10}, corresponding to a 90\% confidence
 interval.}
+
+\item{var}{Deprecated. Use \code{predictions} instead.}
+
+\item{conf_int}{Deprecated. Use \code{confidence} instead.}
 }
 \value{
 A \code{data.frame} containing the original data along with additional columns for
@@ -41,7 +63,7 @@ mod1 <- glm(nclaims ~ age_policyholder,
 mtpl_pred <- add_prediction(MTPL, mod1)
 
 # Add predicted values with confidence bounds
-mtpl_pred_ci <- add_prediction(MTPL, mod1, conf_int = TRUE)
+mtpl_pred_ci <- add_prediction(MTPL, mod1, confidence = TRUE)
 
 }
 \author{

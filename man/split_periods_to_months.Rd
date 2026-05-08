@@ -3,20 +3,34 @@
 \name{split_periods_to_months}
 \alias{split_periods_to_months}
 \alias{period_to_months}
-\title{Split periods into monthly intervals}
+\title{Split policy periods into monthly rows}
 \usage{
-split_periods_to_months(df, begin, end, cols = NULL)
+split_periods_to_months(
+  df,
+  period_start = NULL,
+  period_end = NULL,
+  prorate_cols = NULL,
+  begin = NULL,
+  end = NULL,
+  cols = NULL
+)
 
 period_to_months(df, begin, end, ...)
 }
 \arguments{
 \item{df}{A \code{data.frame} or \code{data.table}.}
 
-\item{begin}{Character string. Name of column in \code{df} with begin dates.}
+\item{period_start}{Character string. Name of the column with policy period
+start dates.}
 
-\item{end}{Character string. Name of column in \code{df} with end dates.}
+\item{period_end}{Character string. Name of the column with policy period end
+dates.}
 
-\item{cols}{Character vector with names of numeric columns in \code{df} to split.}
+\item{prorate_cols}{Character vector with names of numeric columns to prorate
+over the monthly rows, for example exposure or premium.}
+
+\item{begin, end, cols}{Deprecated argument names kept for backward
+compatibility.}
 
 \item{...}{Columns in \code{df} to split. Deprecated, use \code{cols} instead.}
 }
@@ -24,21 +38,26 @@ period_to_months(df, begin, end, ...)
 A \code{data.frame} with the same columns as in \code{df}, plus an \code{id} column.
 }
 \description{
-Splits rows where the time period is longer than one month into multiple rows
-with a time period of exactly one month each. Values in numeric columns (e.g.
-exposure or premium) are divided proportionally over the months.
+Splits policy or exposure periods that cross calendar months into monthly
+rows. Numeric columns such as exposure or premium can be prorated over the
+resulting monthly rows.
 
 This function uses \strong{standard evaluation (SE)}: column names must be passed
-as \strong{character strings} (e.g. \code{begin = "begin_date"}).
+as \strong{character strings} (e.g. \code{period_start = "begin_date"}).
 The older function \code{\link[=period_to_months]{period_to_months()}} used non-standard evaluation (NSE) and
 is deprecated as of version 0.8.0.
 }
 \details{
-In insurance portfolios it is common that rows relate to periods longer than
-one month. This can be problematic when monthly exposures are needed.
+Rating and monitoring work often needs exposure, premium, claim counts, or
+policy counts by calendar month. Source portfolios, however, usually contain
+policy periods that start and end on arbitrary dates. This helper expands
+those periods into monthly rows before modelling, reporting, or joining to
+monthly portfolio summaries.
 
-Since insurance premiums are assumed constant over months (and not depending
-on the number of days per month), the function assumes each month has 30 days.
+Prorated columns are distributed according to the part of the policy period
+that falls in each monthly row. Full months receive weight 1; partial months
+use a 30-day month convention. The total value of each prorated column is
+preserved per original row.
 }
 \examples{
 library(lubridate)
@@ -51,8 +70,9 @@ portfolio <- data.frame(
 
 # New SE interface
 split_periods_to_months(portfolio,
-  begin = "begin_date", end = "end_date",
-  cols = c("premium", "exposure")
+  period_start = "begin_date",
+  period_end = "end_date",
+  prorate_cols = c("premium", "exposure")
 )
 
 # Old NSE interface (deprecated)

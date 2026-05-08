@@ -1,8 +1,87 @@
 # insurancerating (development version)
 
+### Fisher-Jenks classification (`fisher_classify()` / `fisher()`)
+- `fisher_classify()` and `fisher()` are deprecated as of 0.8.0 because
+  Fisher-Jenks classification is a general-purpose grouping method and is not
+  directly linked to the insurance rating workflow.
+- `classInt` moved from `Imports` to `Suggests`.
+
+### Tariff class construction (`construct_tariff_classes()`)
+- `construct_tariff_classes()` now returns objects with primary class
+  `"tariff_classes"` while retaining `"constructtariffclasses"` for backwards
+  compatibility.
+- Added clearer control arguments: `complexity`, `max_iterations`, and
+  `population_size`. The previous `alpha`, `niterations`, and `ntrees`
+  arguments remain supported with lifecycle warnings.
+- Fixed split extraction for decimal-valued risk factors.
+- `autoplot(..., conf_int = TRUE)` now recognizes the confidence interval
+  columns produced by `riskfactor_gam()`.
+- Class construction failures now produce explicit errors instead of silently
+  returning a single broad interval.
+
+### Risk factor GAMs (`riskfactor_gam()` / `fit_gam()`)
+- `riskfactor_gam()` now returns objects with primary class `"riskfactor_gam"`
+  while retaining `"fitgam"` for backwards compatibility.
+- `model = "pure_premium"` replaces `model = "burning"` as the preferred API.
+  The old `"burning"` value remains supported with a lifecycle warning.
+- Improved validation for model-specific required inputs, especially severity
+  `amount` and pure premium `pure_premium`.
+- Documentation now correctly describes severity and pure premium models as
+  Gamma GAMs with log link.
+
+### Prediction helpers (`add_prediction()`)
+- Added `predictions`, `prefix`, `confidence`, and `interval_names` as clearer
+  naming and interval arguments.
+- `var` and `conf_int` are deprecated in favour of `predictions` and
+  `confidence`.
+- Confidence interval columns now use `_lower` and `_upper` suffixes by default.
+- Added validation for `alpha`, confidence settings, duplicate output names, and
+  name collisions with existing data columns.
+
+### Bootstrap model performance (`bootstrap_performance()`)
+- `bootstrap_performance()` now has an explicit `metric = "rmse"` argument.
+- Added `sampling = c("bootstrap", "split")` to distinguish bootstrap
+  out-of-bag evaluation from train/test split sampling.
+- Added validation for `n`, `frac`, `metric`, `sampling`, `show_progress`,
+  `rmse_model`, and empty data.
+- Character and factor rating variables are handled more robustly across
+  resamples so prediction does not fail when a level is absent from an initial
+  training draw.
+- Deprecated `bootstrap_rmse()` objects now also retain class
+  `"bootstrap_rmse"` for backward compatibility.
+
+### Factor analysis (`factor_analysis()` / `univariate()`)
+- `factor_analysis()` now returns objects with primary class
+  `"factor_analysis"` while retaining `"univariate"` for backwards
+  compatibility.
+- Added clear validation for metric columns and `by` variables.
+- Metrics with zero denominators now return `NA` instead of `Inf` or `NaN`.
+- Added `autoplot.factor_analysis()` while keeping `autoplot.univariate()` as a
+  compatibility method.
+- `autoplot()` now fails clearly when multiple `by` variables are supplied.
+
+### Outlier histograms (`outlier_histogram()` / `histbin()`)
+- Added clear validation for inputs, bin counts, cutoffs, colors, and numeric
+  data requirements.
+- Constant and all-missing variables now fail early instead of producing invalid
+  histogram bin widths.
+- Removed unused `rlang` imports from the documentation.
+- Deprecated `histbin()` now supports old NSE input, direct character input, and
+  character column-name variables.
+
 ### Model data extraction (`extract_model_data()` / `model_data()`)
-- Added `extract_model_data()` to retrieve cleaned model data from `glm`, `refitsmooth`, and `refitrestricted` objects.
-- `model_data()` is deprecated as of 0.8.0 and now emits a lifecycle warning; it remains as a wrapper.
+- `extract_model_data()` is now the primary API to retrieve cleaned model data
+  from `glm`, `refitsmooth`, and `refitrestricted` objects.
+- `model_data()` is deprecated as of 0.9.0 and now emits a lifecycle warning; it
+  remains as a wrapper.
+- `rating_grid()` now uses base R internally and always returns a regular
+  `data.frame`.
+- Fixed plain GLM metadata extraction so `rating_grid(glm)` groups by model
+  terms instead of unrelated original data columns.
+- Fixed `exposure_by` output names so split exposure columns use the exposure
+  column name, for example `exposure_2020`.
+- Refinement metadata is joined by the related original factor column instead
+  of being cross-joined onto every rating-grid row.
 
 ### update_smoothing()
 - Introduces a dedicated helper to update existing smoothing specifications without refitting the full model from scratch.
@@ -33,17 +112,17 @@
   - The NSE wrapper `fit_gam()` is still available but will show a deprecation warning 
     and will be removed in a future release.
     
-- The function `univariate()` has been **deprecated** and replaced by `univariate_summary()`.
+- The function `univariate()` has been **deprecated** and replaced by `factor_analysis()`.
   - `univariate()` used **non-standard evaluation (NSE)**, allowing unquoted column names.
-  - `univariate_summary()` now uses **standard evaluation (SE)**, requiring column names as **character strings**.  
+  - `factor_analysis()` now uses **standard evaluation (SE)**, requiring column names as **character strings**.
     Example migration:
     ```r
     # old (NSE, deprecated)
     univariate(df, x = area, severity = amount, nclaims = nclaims, exposure = exposure)
 
     # new (SE)
-    univariate_summary(df, x = "area", severity = "amount",
-                       nclaims = "nclaims", exposure = "exposure")
+    factor_analysis(df, x = "area", severity = "amount",
+                    nclaims = "nclaims", exposure = "exposure")
     ```
   - The NSE wrapper `univariate()` is still available but will show a deprecation warning 
     and will be removed in a future release.
@@ -170,6 +249,3 @@ on a 'refitsmooth' or 'refitrestricted' class of GLM.
 # insurancerating 0.4.2
 
 * In `construct_tariff_classes()`, `model` now also accepts 'severity' as specification.   
-
-
-

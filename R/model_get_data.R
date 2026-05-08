@@ -3,32 +3,30 @@
 #' @description
 #' `r lifecycle::badge('experimental')`
 #'
-#' `model_data()` retrieves underlying data from fitted models. It works
-#' for objects of class `"glm"`, as well as objects produced by refitting
-#' procedures (`"refitsmooth"` or `"refitrestricted"`).
+#' `extract_model_data()` retrieves the modelling data and metadata from fitted
+#' models. It works for objects of class `"glm"`, as well as objects produced by
+#' refitting procedures (`"refitsmooth"` or `"refitrestricted"`).
 #'
-#' The compatibility wrapper [extract_model_data()] remains available and is
-#' **not** deprecated.
+#' `model_data()` is kept as a deprecated compatibility wrapper.
 #'
 #' @param x An object of class `"glm"`, `"refitsmooth"`, or `"refitrestricted"`.
 #'
 #' @details
-#' For GLM objects, the function:
-#' - returns the original data used in the model,
-#' - attaches attributes with the relevant rating factors and any weights/offsets.
+#' For GLM objects, the function returns the model data and attaches attributes
+#' with the response, rating factors, terms object, and any weights or offsets.
 #'
-#' For refit objects, the function:
-#' - strips out auxiliary columns used for smoothing/restrictions,
-#' - attaches attributes with information about rating factors, merged smooths,
-#'   restrictions, and offsets.
+#' For refit objects, the function removes auxiliary columns used during
+#' smoothing or restriction and attaches attributes with rating factors, merged
+#' smooths, restrictions, and offsets.
 #'
-#' @return A `data.frame` of class `"model_data"`, containing the cleaned model
-#' data with additional attributes:
+#' @return A `data.frame` of class `"model_data"` with additional attributes:
 #' \itemize{
-#'   \item `rf` — names of risk factors in the model
-#'   \item `offweights` — weights or offsets if present
-#'   \item `mgd_rst`, `mgd_smt` — merged restrictions/smooths (refit objects only)
-#'   \item `new_nm`, `old_nm` — new and old column names (refit objects only)
+#'   \item `response` — response variable in the model;
+#'   \item `rf` — names of risk factors in the model;
+#'   \item `offweights` — weight and offset variables if present;
+#'   \item `terms` — model terms object for plain GLMs;
+#'   \item `mgd_rst`, `mgd_smt` — merged restrictions/smooths for refit objects;
+#'   \item `new_nm`, `old_nm` — new and old column names for refit objects.
 #' }
 #'
 #' @author Martin Haringa
@@ -36,51 +34,18 @@
 #' @examples
 #' \dontrun{
 #' library(insurancerating)
-#' library(dplyr)
 #'
-#' # Fit GAM for claim frequency
-#' age_policyholder_frequency <- riskfactor_gam(data = MTPL,
-#'                                              nclaims = "nclaims",
-#'                                              x = "age_policyholder",
-#'                                              exposure = "exposure")
+#' pmodel <- glm(
+#'   breaks ~ wool + tension,
+#'   data = warpbreaks,
+#'   family = poisson(link = "log")
+#' )
 #'
-#' # Determine clusters
-#' clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
-#'
-#' # Add clusters to MTPL portfolio
-#' dat <- MTPL |>
-#' mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) |>
-#' mutate(across(where(is.character), as.factor)) |>
-#' mutate(across(where(is.factor), ~biggest_reference(., exposure)))
-#'
-#' # Fit frequency and severity model
-#' freq <- glm(nclaims ~ bm + age_policyholder_freq_cat, offset = log(exposure),
-#'             family = poisson(), data = dat)
-#' sev <- glm(amount ~ bm + zip, weights = nclaims,
-#'            family = Gamma(link = "log"), data = dat |> filter(amount > 0))
-#'
-#' # Add predictions for freq and sev to data, and calculate premium
-#' premium_df <- dat |>
-#' add_prediction(freq, sev) |>
-#' mutate(premium = pred_nclaims_freq * pred_amount_sev)
-#'
-#' # Fit unrestricted model
-#' burn_unrestricted <- glm(premium ~ zip + bm + age_policyholder_freq_cat,
-#' weights = exposure, family = Gamma(link = "log"), data = premium_df)
-#'
-#' # Impose smoothing and refit model
-#' burn_restricted <- burn_unrestricted |>
-#' add_smoothing(x_cut = "age_policyholder_freq_cat",
-#' x_org = "age_policyholder",
-#' breaks = seq(18, 95, 5)) |>
-#' refit_glm()
-#'
-#' # Extract model data
-#' model_data(burn_restricted)
+#' extract_model_data(pmodel)
 #' }
 #'
 #' @export
-model_data <- function(x) {
+extract_model_data <- function(x) {
 
   if (!inherits(x, c("refitsmooth", "refitrestricted", "glm"))) {
     stop(
@@ -94,31 +59,7 @@ model_data <- function(x) {
     as.data.frame(z, stringsAsFactors = FALSE)
   }
 
-  cls <- class(x)
-
-  if (cls[length(cls)] == "glm") {
-    out <- as_df(x$data)
-
-    rf <- rating_table(x, signif_stars = FALSE)$df
-    rf <- as_df(rf)
-    colnames(rf)[3] <- "estimate"
-
-    rf2_nm <- unique(rf$risk_factor[rf$risk_factor != "(Intercept)"])
-
-    lst_call <- as.list(x$call)
-    offweights <- NULL
-
-    if (!is.null(lst_call$weights)) {
-      offweights <- append(offweights, as.character(lst_call$weights))
-    }
-    if (!is.null(lst_call$offset)) {
-      offweights <- append(offweights, as.character(lst_call$offset)[2])
-    }
-
-    attr(out, "offweights") <- offweights
-    attr(out, "rf") <- rf2_nm
-  } else {
-
+  if (inherits(x, c("refitsmooth", "refitrestricted"))) {
     xdf <- as_df(x$data)
     xdf_nm <- names(xdf)
 
@@ -146,6 +87,49 @@ model_data <- function(x) {
     attr(out, "mgd_rst") <- attr(x, "mgd_rst")
     attr(out, "mgd_smt") <- mgd_smt
     attr(out, "offweights") <- attr(x, "offweights")
+  } else {
+    out <- if (!is.null(x$data)) {
+      as_df(x$data)
+    } else {
+      as_df(stats::model.frame(x))
+    }
+
+    terms_obj <- stats::terms(x)
+    term_labels <- attr(terms_obj, "term.labels")
+    rf <- if (length(term_labels) > 0) {
+      unique(all.vars(stats::as.formula(paste("~", paste(term_labels, collapse = "+")))))
+    } else {
+      character(0)
+    }
+
+    lst_call <- as.list(x$call)
+    weight_vars <- if (!is.null(lst_call$weights)) {
+      all.vars(lst_call$weights)
+    } else {
+      character(0)
+    }
+    offset_vars <- if (!is.null(lst_call$offset)) {
+      all.vars(lst_call$offset)
+    } else {
+      character(0)
+    }
+
+    offset_idx <- attr(terms_obj, "offset")
+    if (!is.null(offset_idx)) {
+      term_vars <- attr(terms_obj, "variables")
+      offset_vars <- unique(c(
+        offset_vars,
+        unlist(lapply(offset_idx, function(i) all.vars(term_vars[[i]])), use.names = FALSE)
+      ))
+    }
+
+    response_var <- all.vars(stats::formula(x))[1]
+
+    attr(out, "response") <- response_var
+    attr(out, "offweights") <- unique(c(weight_vars, offset_vars))
+    attr(out, "rf") <- setdiff(rf, unique(c(response_var, weight_vars, offset_vars)))
+    attr(out, "terms") <- terms_obj
+    attr(out, "term.labels") <- term_labels
   }
 
   out <- as_df(out)
@@ -154,15 +138,109 @@ model_data <- function(x) {
 }
 
 
-
-#' @rdname model_data
+#' @rdname extract_model_data
 #' @description
-#' `extract_model_data()` is kept as a compatibility alias for [model_data()].
-#' It is **not** deprecated.
+#' `model_data()` is deprecated in favour of [extract_model_data()].
 #'
 #' @export
-extract_model_data <- function(x) {
-  model_data(x)
+model_data <- function(x) {
+  lifecycle::deprecate_warn(
+    "0.9.0",
+    "model_data()",
+    "extract_model_data()"
+  )
+
+  extract_model_data(x)
+}
+
+
+.rating_grid_sum <- function(df, by_vars, sum_vars) {
+  if (length(by_vars) == 0) {
+    out <- as.data.frame(as.list(vapply(
+      df[, sum_vars, drop = FALSE],
+      sum,
+      numeric(1),
+      na.rm = TRUE
+    )))
+    return(out)
+  }
+
+  out <- stats::aggregate(
+    df[, sum_vars, drop = FALSE],
+    by = df[, by_vars, drop = FALSE],
+    FUN = sum,
+    na.rm = TRUE
+  )
+  as.data.frame(out, stringsAsFactors = FALSE)
+}
+
+
+.rating_grid_count <- function(df, by_vars) {
+  df$.rating_grid_count <- 1L
+
+  if (length(by_vars) == 0) {
+    return(data.frame(count = nrow(df)))
+  }
+
+  out <- stats::aggregate(
+    df[".rating_grid_count"],
+    by = df[, by_vars, drop = FALSE],
+    FUN = length
+  )
+  names(out)[names(out) == ".rating_grid_count"] <- "count"
+  as.data.frame(out, stringsAsFactors = FALSE)
+}
+
+
+.rating_grid_merge <- function(x, y, by_vars) {
+  if (length(by_vars) == 0) {
+    return(cbind(x, y))
+  }
+
+  merge(x, y, by = by_vars, all = TRUE, sort = FALSE)
+}
+
+
+.rating_grid_wide <- function(df, group_vars, split_var, value_var, prefix) {
+  levels_split <- unique(as.character(df[[split_var]]))
+  out <- unique(df[, group_vars, drop = FALSE])
+
+  for (level in levels_split) {
+    level_rows <- as.character(df[[split_var]]) == level
+    tmp <- df[level_rows, c(group_vars, value_var), drop = FALSE]
+    names(tmp)[names(tmp) == value_var] <- paste0(prefix, "_", level)
+    out <- .rating_grid_merge(out, tmp, group_vars)
+  }
+
+  out
+}
+
+
+.rating_grid_add_refinement <- function(out, xdf, refinement_pairs) {
+  refinement_pairs <- refinement_pairs[vapply(refinement_pairs, length, integer(1)) >= 2]
+
+  for (pair in refinement_pairs) {
+    old_col <- pair[[1]]
+    new_col <- pair[[2]]
+
+    if (!old_col %in% names(out) || !new_col %in% names(xdf) || new_col %in% names(out)) {
+      next
+    }
+
+    mapping <- unique(xdf[, c(old_col, new_col), drop = FALSE])
+    if (any(duplicated(mapping[[old_col]]))) {
+      warning(
+        "Refinement column `", new_col, "` has multiple values per `", old_col,
+        "` and was not added to the rating grid.",
+        call. = FALSE
+      )
+      next
+    }
+
+    out <- merge(out, mapping, by = old_col, all.x = TRUE, sort = FALSE)
+  }
+
+  out
 }
 
 
@@ -172,66 +250,44 @@ extract_model_data <- function(x) {
 #' `rating_grid()` constructs rating-grid points by collapsing rows with
 #' identical combinations of grouping variables to a single row.
 #'
-#' The function is intended for analytical use cases where it is convenient to
-#' work with one row per observed combination of risk factors or model
-#' variables. In many raw datasets, the same combination occurs multiple times.
-#' For model diagnostics, portfolio summaries, and prediction analysis, it is
-#' often more useful to aggregate these repeated combinations than to keep all
-#' original rows.
+#' The function returns only combinations that are actually observed in the input
+#' data. It does **not** create the full Cartesian product of all unique values.
+#' This keeps the output compact and suitable for model diagnostics, portfolio
+#' summaries, and prediction analysis.
 #'
-#' By default, the function returns only combinations that are actually observed
-#' in the input data. It does **not** create the full Cartesian product of all
-#' unique values, because that can become very large and is often not needed for
-#' analysis.
-#'
-#' In other words, the function:
-#' \itemize{
-#'   \item identifies the rating-grid dimensions;
-#'   \item groups rows with identical combinations of these variables;
-#'   \item aggregates exposure and optional numeric columns to one row per
-#'   observed combination.
-#' }
-#'
-#' This is especially useful for:
-#' \itemize{
-#'   \item analysing model structure,
-#'   \item summarising portfolios at rating-grid level,
-#'   \item comparing observed and fitted values,
-#'   \item creating compact input for further analysis or plotting.
-#' }
-#'
-#' When `x` is an object returned by [model_data()], the function uses
+#' When `x` is an object returned by [extract_model_data()], the function uses
 #' the extracted model metadata to determine the grouping variables if
-#' `group_vars` is not supplied. When `x` is a plain `data.frame`, it is
-#' recommended to supply `group_vars` explicitly.
+#' `group_by` is not supplied. When `x` is a plain `data.frame`, it is
+#' recommended to supply `group_by` explicitly.
 #'
-#' @param x A `data.frame` or an object of class `"model_data"` returned by
-#'   [model_data()].
-#' @param group_vars Optional character vector with the variables that define the
-#'   rating-grid points. If `NULL` and `x` is a `"model_data"` object, the risk-factor
-#'   variables stored in the object are used. If `NULL` and `x` is a plain
-#'   `data.frame`, all columns except those listed in `exposure`,
-#'   `exposure_by`, and `agg_cols` are used.
+#' @param x A `data.frame`, an object of class `"model_data"` returned by
+#'   [extract_model_data()], or a fitted model that can be passed to
+#'   [extract_model_data()].
+#' @param group_by Optional character vector with the variables that define the
+#'   rating-grid points. If `NULL` and `x` is a `"model_data"` object, the
+#'   risk-factor variables stored in the object are used. If `NULL` and `x` is a
+#'   plain `data.frame`, all columns except those listed in `exposure`,
+#'   `exposure_by`, and `aggregate_cols` are used.
 #' @param exposure Optional character; name of the exposure column to aggregate.
 #' @param exposure_by Optional character; name of a column used to split
 #'   exposure or counts, for example a year variable.
-#' @param agg_cols Optional character vector with additional numeric columns to
-#'   aggregate using `sum(na.rm = TRUE)`.
-#' @param drop_na Logical; if `TRUE`, rows with missing values in `group_vars`
+#' @param aggregate_cols Optional character vector with additional numeric
+#'   columns to aggregate using `sum(na.rm = TRUE)`.
+#' @param drop_na Logical; if `TRUE`, rows with missing values in `group_by`
 #'   are removed before aggregation. Default is `FALSE`.
+#' @param group_vars,agg_cols Deprecated argument names. Use `group_by` and
+#'   `aggregate_cols` instead.
 #'
 #' @details
-#' The function does **not** construct all theoretically possible rating-grid
-#' combinations. Instead, it only keeps combinations that actually occur in the
-#' input data and aggregates duplicates.
+#' The implementation uses base R only. Output is always a regular
+#' `data.frame`, not a tibble or data.table.
 #'
 #' If `exposure_by` is supplied, exposure or row counts are split across levels
 #' of that variable and returned in wide format, for example
 #' `"exposure_2020"` or `"count_2020"`.
 #'
-#' For objects returned by [model_data()], additional refinement
-#' variables stored in the object attributes may be retained when they are not
-#' already part of the regular grouping variables.
+#' For objects returned by [extract_model_data()], refinement mappings are joined
+#' by their original factor column. They are not cross-joined onto every row.
 #'
 #' @return
 #' A `data.frame` with one row per observed rating-grid point.
@@ -240,38 +296,16 @@ extract_model_data <- function(x) {
 #'
 #' @examples
 #' \dontrun{
-#' library(dplyr)
+#' rating_grid(mtcars, group_by = c("cyl", "vs"))
 #'
-#' # With a data.frame
-#' mtcars |>
-#'   dplyr::select(cyl, vs) |>
-#'   rating_grid(group_vars = c("cyl", "vs"))
+#' rating_grid(
+#'   mtcars,
+#'   group_by = c("cyl", "vs"),
+#'   exposure = "disp",
+#'   exposure_by = "gear",
+#'   aggregate_cols = "mpg"
+#' )
 #'
-#' mtcars |>
-#'   dplyr::select(cyl, vs, disp) |>
-#'   rating_grid(
-#'     group_vars = c("cyl", "vs"),
-#'     exposure = "disp"
-#'   )
-#'
-#' mtcars |>
-#'   dplyr::select(cyl, vs, disp, gear) |>
-#'   rating_grid(
-#'     group_vars = c("cyl", "vs"),
-#'     exposure = "disp",
-#'     exposure_by = "gear"
-#'   )
-#'
-#' mtcars |>
-#'   dplyr::select(cyl, vs, disp, gear, mpg) |>
-#'   rating_grid(
-#'     group_vars = c("cyl", "vs"),
-#'     exposure = "disp",
-#'     exposure_by = "gear",
-#'     agg_cols = c("mpg")
-#'   )
-#'
-#' # With extracted model data
 #' pmodel <- glm(
 #'   breaks ~ wool + tension,
 #'   data = warpbreaks,
@@ -279,24 +313,41 @@ extract_model_data <- function(x) {
 #' )
 #'
 #' pmodel |>
-#'   model_data() |>
+#'   extract_model_data() |>
 #'   rating_grid()
 #' }
 #'
-#' @importFrom tidyr pivot_wider drop_na
-#' @importFrom dplyr all_of
-#'
 #' @export
 rating_grid <- function(x,
-                        group_vars = NULL,
+                        group_by = NULL,
                         exposure = NULL,
                         exposure_by = NULL,
-                        agg_cols = NULL,
-                        drop_na = FALSE) {
+                        aggregate_cols = NULL,
+                        drop_na = FALSE,
+                        group_vars = NULL,
+                        agg_cols = NULL) {
 
-  # allow direct use on fitted model objects
+  if (!is.null(group_vars)) {
+    if (!is.null(group_by)) {
+      stop("Use only one of `group_by` and deprecated `group_vars`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "rating_grid(group_vars)",
+                              "rating_grid(group_by)")
+    group_by <- group_vars
+  }
+  if (!is.null(agg_cols)) {
+    if (!is.null(aggregate_cols)) {
+      stop("Use only one of `aggregate_cols` and deprecated `agg_cols`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "rating_grid(agg_cols)",
+                              "rating_grid(aggregate_cols)")
+    aggregate_cols <- agg_cols
+  }
+
   if (inherits(x, c("glm", "refitsmooth", "refitrestricted"))) {
-    x <- model_data(x)
+    x <- extract_model_data(x)
   }
 
   if (inherits(x, "rating_refinement")) {
@@ -308,33 +359,33 @@ rating_grid <- function(x,
 
   if (!inherits(x, "model_data") && !inherits(x, "data.frame")) {
     stop(
-      "Input must be a data.frame, an object returned by model_data(), or a fitted model.",
+      "Input must be a data.frame, an object returned by extract_model_data(), or a fitted model.",
       call. = FALSE
     )
   }
 
-  if (!is.null(group_vars) && !is.character(group_vars)) {
-    stop("`group_vars` must be NULL or a character vector.", call. = FALSE)
+  if (!is.null(group_by) && !is.character(group_by)) {
+    stop("`group_by` must be NULL or a character vector.", call. = FALSE)
   }
-
   if (!is.null(exposure) && (!is.character(exposure) || length(exposure) != 1)) {
     stop("`exposure` must be NULL or a single character string.", call. = FALSE)
   }
-
   if (!is.null(exposure_by) &&
       (!is.character(exposure_by) || length(exposure_by) != 1)) {
     stop("`exposure_by` must be NULL or a single character string.", call. = FALSE)
   }
-
-  if (!is.null(agg_cols) && !is.character(agg_cols)) {
-    stop("`agg_cols` must be NULL or a character vector.", call. = FALSE)
+  if (!is.null(aggregate_cols) && !is.character(aggregate_cols)) {
+    stop("`aggregate_cols` must be NULL or a character vector.", call. = FALSE)
+  }
+  if (!is.logical(drop_na) || length(drop_na) != 1 || is.na(drop_na)) {
+    stop("`drop_na` must be TRUE or FALSE.", call. = FALSE)
   }
 
-  xdf <- as.data.frame(x)
+  xdf <- as.data.frame(x, stringsAsFactors = FALSE)
   offweights <- NULL
+  agg_cols_all <- aggregate_cols
 
   if (inherits(x, "model_data")) {
-
     offweights <- unique(attr(x, "offweights"))
     default_group_vars <- attr(x, "rf")
 
@@ -349,9 +400,7 @@ rating_grid <- function(x,
       terms_obj <- attr(x, "terms")
       if (!is.null(terms_obj)) {
         term_labels <- attr(terms_obj, "term.labels")
-        if (!is.null(term_labels)) {
-          default_group_vars <- intersect(term_labels, names(xdf))
-        }
+        default_group_vars <- intersect(term_labels, names(xdf))
       }
     }
 
@@ -362,37 +411,35 @@ rating_grid <- function(x,
         offweights,
         exposure,
         exposure_by,
-        agg_cols
+        aggregate_cols
       ))
       default_group_vars <- setdiff(names(xdf), cols_excluded)
     }
 
     if (length(default_group_vars) == 0) {
       stop(
-        "Could not determine grouping variables from `model_data`. Supply `group_vars` explicitly.",
+        "Could not determine grouping variables from `model_data`. Supply `group_by` explicitly.",
         call. = FALSE
       )
     }
 
-    if (is.null(group_vars)) {
-      group_vars <- default_group_vars
+    if (is.null(group_by)) {
+      group_by <- default_group_vars
     }
 
-    if (!is.null(exposure) && exposure %in% group_vars) {
+    if (!is.null(exposure) && exposure %in% group_by) {
       stop("Column in `exposure` is already used as grouping variable.", call. = FALSE)
     }
-
-    if (!is.null(exposure_by) && exposure_by %in% group_vars) {
+    if (!is.null(exposure_by) && exposure_by %in% group_by) {
       stop("Column in `exposure_by` is already used as grouping variable.", call. = FALSE)
     }
-
-    if (!is.null(agg_cols) && any(agg_cols %in% offweights)) {
-      stop("Column in `agg_cols` is already used in model.", call. = FALSE)
+    if (!is.null(aggregate_cols) && any(aggregate_cols %in% offweights)) {
+      stop("Column in `aggregate_cols` is already used in model.", call. = FALSE)
     }
 
     if (!is.null(exposure) &&
         !is.null(offweights) &&
-        exposure %in% c(group_vars, offweights) &&
+        exposure %in% c(group_by, offweights) &&
         is.null(exposure_by)) {
       warning("Column in `exposure` is already used in model.", call. = FALSE)
     }
@@ -405,137 +452,85 @@ rating_grid <- function(x,
       offweights <- offweights_tmp
     }
 
-    if (!is.null(offweights) && !is.null(agg_cols) && offweights %in% agg_cols) {
+    if (!is.null(offweights) && !is.null(aggregate_cols) &&
+        offweights %in% aggregate_cols) {
       offweights <- NULL
     }
 
-    agg_cols_all <- unique(c(agg_cols, offweights))
-
-  } else {
-    if (is.null(group_vars)) {
-      cols_excluded <- c(agg_cols, exposure, exposure_by)
-      group_vars <- setdiff(names(xdf), cols_excluded)
-    }
-    agg_cols_all <- agg_cols
+    agg_cols_all <- unique(c(aggregate_cols, offweights))
+  } else if (is.null(group_by)) {
+    cols_excluded <- c(aggregate_cols, exposure, exposure_by)
+    group_by <- setdiff(names(xdf), cols_excluded)
   }
 
-  if (!all(group_vars %in% names(xdf))) {
-    missing_cols <- setdiff(group_vars, names(xdf))
+  if (!all(group_by %in% names(xdf))) {
+    missing_cols <- setdiff(group_by, names(xdf))
     stop(
-      "The following `group_vars` are not present in `x`: ",
+      "The following `group_by` columns are not present in `x`: ",
       paste(missing_cols, collapse = ", "),
       call. = FALSE
     )
   }
-
   if (!is.null(exposure) && !exposure %in% names(xdf)) {
     stop("Column in `exposure` not found in `x`.", call. = FALSE)
   }
-
   if (!is.null(exposure_by) && !exposure_by %in% names(xdf)) {
     stop("Column in `exposure_by` not found in `x`.", call. = FALSE)
   }
-
   if (!is.null(agg_cols_all) && !all(agg_cols_all %in% names(xdf))) {
     missing_cols <- setdiff(agg_cols_all, names(xdf))
     stop(
-      "The following `agg_cols` are not present in `x`: ",
+      "The following `aggregate_cols` are not present in `x`: ",
       paste(missing_cols, collapse = ", "),
       call. = FALSE
     )
   }
 
   if (drop_na) {
-    xdf <- xdf |>
-      tidyr::drop_na(dplyr::all_of(group_vars))
-  }
-
-  aggregate_base <- function(df, by_vars, sum_vars = NULL) {
-    if (length(sum_vars) == 0 || is.null(sum_vars)) {
-      df |>
-        dplyr::group_by(dplyr::across(dplyr::all_of(by_vars))) |>
-        dplyr::summarise(count = dplyr::n(), .groups = "drop")
-    } else {
-      df |>
-        dplyr::group_by(dplyr::across(dplyr::all_of(by_vars))) |>
-        dplyr::summarise(
-          dplyr::across(dplyr::all_of(sum_vars), ~ sum(.x, na.rm = TRUE)),
-          .groups = "drop"
-        )
-    }
+    xdf <- xdf[stats::complete.cases(xdf[, group_by, drop = FALSE]), , drop = FALSE]
   }
 
   if (is.null(exposure)) {
-
     if (is.null(exposure_by)) {
+      out <- .rating_grid_count(xdf, group_by)
 
-      if (length(agg_cols_all) == 0) {
-        out <- aggregate_base(xdf, group_vars, NULL)
-      } else {
-        out <- aggregate_base(xdf, group_vars, agg_cols_all) |>
-          dplyr::left_join(
-            aggregate_base(xdf, group_vars, NULL),
-            by = group_vars
-          )
+      if (length(agg_cols_all) > 0) {
+        extra <- .rating_grid_sum(xdf, group_by, agg_cols_all)
+        out <- .rating_grid_merge(out, extra, group_by)
       }
-
     } else {
-
-      agg0 <- aggregate_base(
-        xdf,
-        c(group_vars, exposure_by),
-        if (length(agg_cols_all) == 0) NULL else agg_cols_all
+      counts_df <- .rating_grid_count(xdf, c(group_by, exposure_by))
+      out <- .rating_grid_wide(
+        counts_df,
+        group_vars = group_by,
+        split_var = exposure_by,
+        value_var = "count",
+        prefix = "count"
       )
 
-      counts_df <- xdf |>
-        dplyr::group_by(dplyr::across(dplyr::all_of(c(group_vars, exposure_by)))) |>
-        dplyr::summarise(count = dplyr::n(), .groups = "drop")
-
       if (length(agg_cols_all) > 0) {
-        agg0 <- dplyr::left_join(
-          agg0,
-          counts_df,
-          by = c(group_vars, exposure_by)
-        )
-      } else {
-        agg0 <- counts_df
-      }
-
-      out_wide <- agg0 |>
-        dplyr::mutate(name = paste0("count_", .data[[exposure_by]])) |>
-        dplyr::select(dplyr::all_of(group_vars), name, count) |>
-        tidyr::pivot_wider(names_from = name, values_from = count)
-
-      if (length(agg_cols_all) > 0) {
-        extra <- aggregate_base(xdf, group_vars, agg_cols_all)
-        out <- dplyr::left_join(out_wide, extra, by = group_vars)
-      } else {
-        out <- out_wide
+        extra <- .rating_grid_sum(xdf, group_by, agg_cols_all)
+        out <- .rating_grid_merge(out, extra, group_by)
       }
     }
-
   } else {
-
     sum_vars <- unique(c(agg_cols_all, exposure))
 
     if (is.null(exposure_by)) {
-
-      out <- aggregate_base(xdf, group_vars, sum_vars)
-
+      out <- .rating_grid_sum(xdf, group_by, sum_vars)
     } else {
-
-      agg0 <- aggregate_base(xdf, c(group_vars, exposure_by), sum_vars)
-
-      out_wide <- agg0 |>
-        dplyr::mutate(name = paste0(exposure, "_", .data[[exposure_by]])) |>
-        dplyr::select(dplyr::all_of(group_vars), name, dplyr::all_of(exposure)) |>
-        tidyr::pivot_wider(names_from = name, values_from = dplyr::all_of(exposure))
+      agg0 <- .rating_grid_sum(xdf, c(group_by, exposure_by), sum_vars)
+      out <- .rating_grid_wide(
+        agg0,
+        group_vars = group_by,
+        split_var = exposure_by,
+        value_var = exposure,
+        prefix = exposure
+      )
 
       if (length(agg_cols_all) > 0) {
-        extra <- aggregate_base(xdf, group_vars, agg_cols_all)
-        out <- dplyr::left_join(out_wide, extra, by = group_vars)
-      } else {
-        out <- out_wide
+        extra <- .rating_grid_sum(xdf, group_by, agg_cols_all)
+        out <- .rating_grid_merge(out, extra, group_by)
       }
     }
 
@@ -545,44 +540,13 @@ rating_grid <- function(x,
   }
 
   if (inherits(x, "model_data")) {
-    mgd_rst <- attr(x, "mgd_rst")
-    mgd_smt <- attr(x, "mgd_smt")
-    refinement_nm <- unique(c(mgd_rst, mgd_smt))
-    refinement_nm <- refinement_nm[!is.na(refinement_nm)]
-
-    if (length(refinement_nm) > 0) {
-      refinement_df <- lapply(refinement_nm, function(y) {
-        cols <- intersect(y, names(xdf))
-        cols <- setdiff(cols, names(out))
-
-        if (length(cols) == 0) {
-          return(NULL)
-        }
-
-        unique(xdf[, cols, drop = FALSE])
-      })
-
-      refinement_df <- refinement_df[!vapply(refinement_df, is.null, logical(1))]
-
-      if (length(refinement_df) > 0) {
-        refinement_grid <- refinement_df[[1]]
-
-        if (length(refinement_df) > 1) {
-          for (j in 2:length(refinement_df)) {
-            refinement_grid <- merge(refinement_grid, refinement_df[[j]], by = NULL)
-          }
-        }
-
-        new_cols <- setdiff(names(refinement_grid), names(out))
-
-        if (length(new_cols) > 0) {
-          refinement_grid <- unique(refinement_grid[, new_cols, drop = FALSE])
-          out <- merge(out, refinement_grid, by = NULL)
-        }
-      }
+    refinement_pairs <- c(attr(x, "mgd_rst"), attr(x, "mgd_smt"))
+    if (length(refinement_pairs) > 0) {
+      out <- .rating_grid_add_refinement(out, xdf, refinement_pairs)
     }
   }
 
+  out <- as.data.frame(out, stringsAsFactors = FALSE)
   rownames(out) <- NULL
   out
 }
@@ -594,11 +558,13 @@ rating_grid <- function(x,
 #'
 #' @export
 construct_model_points <- function(x,
-                                   group_vars = NULL,
+                                   group_by = NULL,
                                    exposure = NULL,
                                    exposure_by = NULL,
-                                   agg_cols = NULL,
-                                   drop_na = FALSE) {
+                                   aggregate_cols = NULL,
+                                   drop_na = FALSE,
+                                   group_vars = NULL,
+                                   agg_cols = NULL) {
   lifecycle::deprecate_warn(
     "0.9.0",
     "construct_model_points()",
@@ -607,10 +573,10 @@ construct_model_points <- function(x,
 
   rating_grid(
     x = x,
-    group_vars = group_vars,
+    group_by = if (!is.null(group_vars)) group_vars else group_by,
     exposure = exposure,
     exposure_by = exposure_by,
-    agg_cols = agg_cols,
+    aggregate_cols = if (!is.null(agg_cols)) agg_cols else aggregate_cols,
     drop_na = drop_na
   )
 }

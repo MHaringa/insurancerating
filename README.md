@@ -11,16 +11,18 @@ Status](https://www.r-pkg.org/badges/version/insurancerating)](https://cran.r-pr
 
 <!-- badges: end -->
 
-`insurancerating` provides a structured workflow for analysing,
-modelling, refining, and validating insurance rating models in R.
+`insurancerating` provides actuarial tools and building blocks for
+analysing, modelling, refining, and validating insurance rating models
+in R.
 
-The package is designed around common actuarial pricing practice and
-focuses on the translation of statistical models into interpretable and
-controllable tariff structures.
+The package is designed around common GLM-based pricing tasks and
+focuses on the translation of statistical model output into
+interpretable and controllable tariff structures.
 
 ## Scope
 
-The package supports the following steps in a typical pricing workflow:
+The package supports common tasks that often occur in actuarial pricing
+work:
 
 - exploratory analysis of risk factors
 - estimation of GLM-based pricing models
@@ -54,13 +56,13 @@ library(insurancerating)
 # Factor analysis
 fa <- factor_analysis(
   MTPL,
-  x = "zip",
-  nclaims = "nclaims",
+  risk_factors = "zip",
+  claim_count = "nclaims",
   exposure = "exposure",
-  severity = "amount"
+  claim_amount = "amount"
 )
 
-autoplot(fa, show_plots = 1:3)
+autoplot(fa, metrics = 1:3)
 ```
 
 ![](man/figures/unnamed-chunk-3-1.png)<!-- -->
@@ -105,9 +107,9 @@ rating_table(mod_refined)
     ## 4     zip_adj           2        1.000000
     ## 5     zip_adj           3        1.100000
 
-## Workflow
+## Combining Building Blocks
 
-A typical workflow consists of:
+A possible sequence of steps is:
 
 ``` r
 factor_analysis()      # analyse portfolio
@@ -131,7 +133,7 @@ These are used to assess the behaviour and credibility of risk factors.
 
 ### Rating models
 
-Models are estimated using standard GLMs:
+Models are estimated using widely used GLM specifications:
 
 - Poisson for frequency
 - Gamma for severity
@@ -157,7 +159,7 @@ This step is used to impose structure or incorporate expert judgement.
 ### Model structure
 
 ``` r
-model_data(model)
+extract_model_data(model)
 rating_grid(model)
 ```
 
@@ -177,15 +179,14 @@ Used to assess predictive accuracy and stability.
 
 ## Notes
 
-This package is intended to reflect general actuarial pricing
-methodology. It does not contain proprietary models, data, or business
-logic.
+This package is intended for general actuarial pricing work. It does not
+contain proprietary models, data, or business logic.
 
 ## Learn more
 
 Full documentation and examples are available in the articles:
 
 - [Getting started](articles/getting-started.html)
-- [Refinement workflow](articles/refinement-workflow.html)
+- [Refinement building blocks](articles/refinement-workflow.html)
 - [Model validation](articles/model-validation.html)
 - [Pricing principles](articles/pricing-principles.html)

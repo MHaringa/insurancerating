@@ -2,36 +2,44 @@
 % Please edit documentation in R/truncated_distributions.R
 \name{fit_truncated_dist}
 \alias{fit_truncated_dist}
-\title{Fit a distribution to truncated severity (loss) data}
+\title{Fit severity distributions to truncated claim data}
 \usage{
 fit_truncated_dist(
-  y,
-  dist = c("gamma", "lognormal"),
-  left = NULL,
-  right = NULL,
-  start = NULL,
+  losses = NULL,
+  distribution = c("gamma", "lognormal"),
+  lower_truncation = NULL,
+  upper_truncation = NULL,
+  start_values = NULL,
   print_initial = TRUE,
   n_variants = 1,
   n_shape_grid = 8,
   n_scale_grid = 8,
-  trace = FALSE,
-  report = TRUE
+  show_progress = FALSE,
+  show_summary = TRUE,
+  y = NULL,
+  dist = NULL,
+  left = NULL,
+  right = NULL,
+  start = NULL,
+  trace = NULL,
+  report = NULL
 )
 }
 \arguments{
-\item{y}{Vector with observations of losses.}
+\item{losses}{Numeric vector with observed claim severities.}
 
-\item{dist}{Distribution for severity: \code{"gamma"} or
+\item{distribution}{Severity distribution to fit: \code{"gamma"} or
 \code{"lognormal"}.}
 
-\item{left}{Numeric. Observations below this threshold are not present in
-the sample.}
+\item{lower_truncation}{Numeric lower truncation point. Claims at or below
+this value are assumed not to be present in \code{losses}. Defaults to \code{0}.}
 
-\item{right}{Numeric. Observations above this threshold are not present in
-the sample.}
+\item{upper_truncation}{Numeric upper truncation point. Claims at or above
+this value are assumed not to be present in \code{losses}. Defaults to \code{Inf}.}
 
-\item{start}{Optional list of starting values. If \code{NULL}, a
-multi-start strategy is used.}
+\item{start_values}{Optional named list of starting values. If \code{NULL}, a
+multi-start strategy is used. For a gamma distribution use \code{shape} and
+\code{scale}; for a lognormal distribution use \code{meanlog} and \code{sdlog}.}
 
 \item{print_initial}{Deprecated logical retained for backward compatibility.}
 
@@ -42,16 +50,62 @@ used.}
 
 \item{n_scale_grid}{Number of grid points for gamma scale.}
 
-\item{trace}{Logical. If \code{TRUE}, prints periodic progress during the
+\item{show_progress}{Logical. If \code{TRUE}, prints periodic progress during the
 fitting loop.}
 
-\item{report}{Logical. If \code{TRUE}, prints a short summary at the end.}
+\item{show_summary}{Logical. If \code{TRUE}, prints a short summary at the end.}
+
+\item{y, dist, left, right, start, trace, report}{Deprecated argument names kept
+for backward compatibility.}
 }
 \value{
-An object of class \code{c("truncated_dist", "fitdist")} with
-additional attributes describing the attempted fits.
+An object of class \code{c("truncated_dist", "fitdist")}. The object
+contains the fitted distribution parameters from \code{\link[fitdistrplus:fitdist]{fitdistrplus::fitdist()}}
+and additional attributes:
+\describe{
+\item{truncated_vec}{The observed losses used for fitting.}
+\item{lower_truncation, upper_truncation}{The truncation bounds.}
+\item{fit_attempts}{Metadata for each attempted start combination.}
+\item{n_attempts, n_success, n_failed}{Fit attempt counts.}
+\item{best_attempt_index}{Index of the selected start combination.}
+}
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} Estimate the original
-distribution from truncated data.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+Estimate an underlying claim severity distribution when the observed claims
+are truncated.
+}
+\details{
+In insurance pricing, severity models are often fitted on claim amounts that
+are not observed over the full range of possible losses. Small claims may be
+absent because of a deductible, reporting threshold, or data extraction rule.
+Very large claims may be capped, excluded, or modelled separately as large
+losses. A standard gamma or lognormal fit on the remaining observed claims
+treats that truncated sample as if it were complete, which can bias the
+estimated severity distribution.
+
+\code{fit_truncated_dist()} fits the distribution conditional on the claim being
+observed within the truncation interval. This means the fitted likelihood
+uses the density divided by the probability mass between \code{lower_truncation}
+and \code{upper_truncation}. The function is intended for truncation, where
+claims outside the interval are absent from the data. This differs from
+censoring, where claims outside a limit are still observed but their exact
+amount is not known.
+
+Observed losses must lie strictly inside the truncation interval. Values
+outside the interval indicate that the bounds do not describe the data and
+therefore produce an error.
+}
+\examples{
+\dontrun{
+observed <- MTPL2$amount[MTPL2$amount > 500 & MTPL2$amount < 10000]
+fit <- fit_truncated_dist(
+  losses = observed,
+  distribution = "gamma",
+  lower_truncation = 500,
+  upper_truncation = 10000
+)
+autoplot(fit)
+}
+
 }

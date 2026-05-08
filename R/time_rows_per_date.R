@@ -1,20 +1,33 @@
-#' Find active rows per date
+#' Find active portfolio rows for event dates
 #'
-#' @description Fast overlap joins. Usually, `df` is a very large data.table
-#' (e.g. insurance portfolio) with small interval ranges, and `dates` is much
-#' smaller with (e.g.) claim dates.
+#' @description
+#' Matches event dates, such as claim dates or portfolio snapshot dates, to the
+#' rows that were active in the portfolio on those dates.
 #'
-#' @param df data.frame with portfolio (df should include time period)
-#' @param dates data.frame with dates to join
-#' @param df_begin column name with begin dates of time period in `df`
-#' @param df_end column name with end dates of time period in `df`
-#' @param dates_date column name with dates in `dates`
-#' @param ... additional column names in `dates` to join by
+#' @param portfolio A `data.frame` or `data.table` with portfolio rows and
+#' active date intervals.
+#' @param dates A `data.frame` or `data.table` with event or snapshot dates.
+#' @param period_start Character string. Name of the portfolio column with
+#' period start dates.
+#' @param period_end Character string. Name of the portfolio column with period
+#' end dates.
+#' @param date Character string. Name of the date column in `dates`.
+#' @param by Character vector with additional columns used to match `portfolio`
+#' and `dates`, for example policy number or claim identifier.
 #' @param nomatch When a row (with interval say, `[a,b]`) in x has no match in
 #' y, nomatch=NA means NA is returned for y's non-by.y columns for that row of
 #' x. nomatch=NULL (default) means no rows will be returned for that row of x.
 #' @param mult When multiple rows in y match to the row in x, `mult` controls
 #' which values are returned - "all" (default), "first" or "last".
+#' @param df,df_begin,df_end,dates_date,... Deprecated argument names kept for
+#' backward compatibility in [rows_per_date()].
+#'
+#' @details
+#' This is useful when claim records or other dated events need the rating
+#' factors, premium, exposure, or policy attributes that were active at the event
+#' date. The function performs an interval join between event dates and
+#' portfolio coverage periods, optionally within matching identifiers such as a
+#' policy number.
 #'
 #' @author Martin Haringa
 #'
@@ -35,61 +48,130 @@
 #' ## Find active rows on different dates
 #' dates0 <- data.frame(active_date = seq(ymd("2014-01-01"), ymd("2014-05-01"),
 #' by = "months"))
-#' rows_per_date(portfolio, dates0, df_begin = begin1, df_end = end,
-#' dates_date = active_date)
+#' active_rows_by_date(
+#'   portfolio,
+#'   dates0,
+#'   period_start = "begin1",
+#'   period_end = "end",
+#'   date = "active_date"
+#' )
 #'
 #' ## With extra identifiers (merge claim date with time interval in portfolio)
 #' claim_dates <- data.frame(claim_date = ymd("2014-01-01"),
 #' car_type = c("BMW", "VOLVO"))
 #'
 #' ### Only rows are returned that can be matched
-#' rows_per_date(portfolio, claim_dates, df_begin = begin1,
-#'    df_end = end, dates_date = claim_date, car_type)
+#' active_rows_by_date(
+#'   portfolio,
+#'   claim_dates,
+#'   period_start = "begin1",
+#'   period_end = "end",
+#'   date = "claim_date",
+#'   by = "car_type"
+#' )
 #'
 #' ### When row cannot be matched, NA is returned for that row
-#' rows_per_date(portfolio, claim_dates, df_begin = begin1,
-#'    df_end = end, dates_date = claim_date, car_type, nomatch = NA)
+#' active_rows_by_date(
+#'   portfolio,
+#'   claim_dates,
+#'   period_start = "begin1",
+#'   period_end = "end",
+#'   date = "claim_date",
+#'   by = "car_type",
+#'   nomatch = NA
+#' )
 #'
+#' @export
+active_rows_by_date <- function(portfolio,
+                                dates,
+                                period_start,
+                                period_end,
+                                date,
+                                by = NULL,
+                                nomatch = NULL,
+                                mult = "all") {
+  .portfolio_row_id <- .date_row_id <- .event_date <- NULL
+
+  .time_validate_data_frame(portfolio, "`portfolio`")
+  .time_validate_data_frame(dates, "`dates`")
+  .time_validate_date_interval(portfolio, period_start, period_end,
+                               "`portfolio`")
+  .time_validate_columns(dates, date, "`date`")
+  if (!lubridate::is.Date(dates[[date]])) {
+    stop("`date` must refer to a Date column in `dates`.", call. = FALSE)
+  }
+  if (anyNA(dates[[date]])) {
+    stop("`dates` must not contain missing values in `date`.", call. = FALSE)
+  }
+  if (is.null(by)) {
+    by <- character(0)
+  }
+  .time_validate_columns(portfolio, by, "`by`")
+  .time_validate_columns(dates, by, "`by`")
+  if (!is.null(nomatch) && !identical(nomatch, NA)) {
+    stop("`nomatch` must be NULL or NA.", call. = FALSE)
+  }
+  if (!is.character(mult) || length(mult) != 1L ||
+      !mult %in% c("all", "first", "last")) {
+    stop("`mult` must be 'all', 'first', or 'last'.", call. = FALSE)
+  }
+
+  input_class <- class(portfolio)
+  portfolio_dt <- data.table::as.data.table(data.table::copy(portfolio))
+  dates_dt <- data.table::as.data.table(data.table::copy(dates))
+
+  portfolio_dt[, .portfolio_row_id := .I]
+  dates_dt[, .date_row_id := .I]
+  dates_dt[, .event_date := get(date)]
+
+  lookup <- data.table::copy(dates_dt)
+  data.table::setnames(lookup, old = date, new = period_start)
+  lookup[, (period_end) := get(period_start)]
+
+  key_cols <- c(by, period_start, period_end)
+  data.table::setkeyv(portfolio_dt, key_cols)
+  data.table::setkeyv(lookup, key_cols)
+
+  ans <- data.table::foverlaps(
+    lookup,
+    portfolio_dt,
+    by.x = key_cols,
+    by.y = key_cols,
+    type = "any",
+    which = FALSE,
+    nomatch = nomatch,
+    mult = mult
+  )
+
+  event_start <- paste0("i.", period_start)
+  event_end <- paste0("i.", period_end)
+  event_date <- ".event_date"
+  if (event_start %in% names(ans)) ans[, (event_start) := NULL]
+  if (event_end %in% names(ans)) ans[, (event_end) := NULL]
+  if (event_date %in% names(ans)) {
+    data.table::setnames(ans, old = event_date, new = date)
+  }
+  ans[, intersect(c(".portfolio_row_id", ".date_row_id"), names(ans)) := NULL]
+  ans <- ans[order(get(date))]
+  class(ans) <- input_class
+  ans
+}
+
+#' @rdname active_rows_by_date
 #' @export
 rows_per_date <- function(df, dates, df_begin, df_end, dates_date, ...,
                           nomatch = NULL, mult = "all") {
+  lifecycle::deprecate_warn("0.9.0", "rows_per_date()",
+                            "active_rows_by_date()")
 
-  cols0 <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
-
-  begin00 <- deparse(substitute(df_begin))
-  end00 <-  deparse(substitute(df_end))
-  reeks00 <- deparse(substitute(dates_date))
-  class00 <- class(df)
-
-  if (!lubridate::is.Date(df[[begin00]]) || !lubridate::is.Date(df[[end00]])) {
-    stop("Columns df_begin and df_end should be Date objects.
-         Use e.g. lubridate::ymd() to create Date object.",
-         call. = FALSE)
-  }
-
-  if (!lubridate::is.Date(dates[[reeks00]])) {
-    stop("Column dates_date must be a Date object.
-         Use e.g. lubridate::ymd() to create Date object.",
-         call. = FALSE)
-  }
-
-  cols1 <- as.character(c(reeks00, cols0))
-  dates_nm <- setdiff(names(dates), cols1)
-  lookup <- data.table::data.table(dates)[, c(cols1, dates_nm), with = FALSE]
-  data.table::setnames(lookup, old = c(reeks00), new = c(begin00))
-  lookup2 <- lookup[, c(end00) := get(begin00)][, index_dates := .I]
-  data.table::setkeyv(lookup2, as.character(c(cols0, begin00, end00)))
-  data.table::setDT(df)
-  df1 <- df[, index_df := .I]
-  ans <- data.table::foverlaps(df1, lookup2, type = "any", which = FALSE,
-                               nomatch = nomatch, mult = mult)
-  ans[, c(begin00) := NULL]
-  data.table::setnames(ans,
-                       old = c(end00, paste0("i.", begin00),
-                               paste0("i.", end00)),
-                       new = c(reeks00, begin00, end00))
-  ans <- ans[order(get(reeks00))]
-  data.table::setcolorder(ans, c(names(df1), setdiff(names(df1), names(ans))))
-  class(ans) <- class00
-  return(ans)
+  active_rows_by_date(
+    portfolio = df,
+    dates = dates,
+    period_start = deparse(substitute(df_begin)),
+    period_end = deparse(substitute(df_end)),
+    date = deparse(substitute(dates_date)),
+    by = vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1)),
+    nomatch = nomatch,
+    mult = mult
+  )
 }

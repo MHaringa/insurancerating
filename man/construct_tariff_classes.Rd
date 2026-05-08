@@ -6,32 +6,43 @@
 \usage{
 construct_tariff_classes(
   object,
-  alpha = 0,
-  niterations = 10000,
-  ntrees = 200,
-  seed = 1
+  complexity = 0,
+  max_iterations = 10000,
+  population_size = 200,
+  seed = 1,
+  alpha = NULL,
+  niterations = NULL,
+  ntrees = NULL
 )
 }
 \arguments{
-\item{object}{An object of class \code{"fitgam"}, produced by \code{\link[=riskfactor_gam]{riskfactor_gam()}}.}
+\item{object}{An object of class \code{"riskfactor_gam"}, produced by
+\code{\link[=risk_factor_gam]{risk_factor_gam()}}. Objects with the old \code{"fitgam"} class are still
+supported for backward compatibility.}
 
-\item{alpha}{Complexity parameter passed to \code{\link[evtree:evtree.control]{evtree::evtree.control()}}. Higher
-values yield fewer tariff classes. Default = 0.}
+\item{complexity}{Numeric. Controls the complexity penalty used when deriving
+classes. Higher values generally yield fewer tariff classes. Default = 0.}
 
-\item{niterations}{Maximum number of iterations before termination. Passed to
-\code{\link[evtree:evtree.control]{evtree::evtree.control()}}. Default = 10000.}
+\item{max_iterations}{Integer. Maximum number of search iterations used by
+the underlying class construction algorithm. Default = 10000.}
 
-\item{ntrees}{Number of trees in the population. Passed to
-\code{\link[evtree:evtree.control]{evtree::evtree.control()}}. Default = 200.}
+\item{population_size}{Integer. Number of candidate trees used by the
+underlying class construction algorithm. Default = 200.}
 
 \item{seed}{Integer, seed for the random number generator (for reproducibility).}
+
+\item{alpha}{Deprecated. Use \code{complexity} instead.}
+
+\item{niterations}{Deprecated. Use \code{max_iterations} instead.}
+
+\item{ntrees}{Deprecated. Use \code{population_size} instead.}
 }
 \value{
-A \code{list} of class \code{"constructtariffclasses"} with components:
+A \code{list} of class \code{"tariff_classes"} with components:
 \describe{
 \item{prediction}{Data frame with predicted values.}
 \item{x}{Name of the continuous risk factor for which tariff classes are constructed.}
-\item{model}{Model type: \code{"frequency"}, \code{"severity"}, or \code{"burning"}.}
+\item{model}{Model type: \code{"frequency"}, \code{"severity"}, or \code{"pure_premium"}.}
 \item{data}{Data frame with predicted and observed values.}
 \item{x_obs}{Observed values of the continuous risk factor.}
 \item{splits}{Numeric vector with boundaries of the constructed tariff classes.}
@@ -39,15 +50,17 @@ A \code{list} of class \code{"constructtariffclasses"} with components:
 }
 }
 \description{
-Constructs insurance tariff classes for objects of class \code{"fitgam"} produced
-by \code{\link[=riskfactor_gam]{riskfactor_gam()}} (formerly \code{\link[=fit_gam]{fit_gam()}}). The goal is to bin continuous
-risk factors into categorical tariff classes that capture the effect of the
-covariate on the response in an accurate way, while remaining easy to use in
+Constructs insurance tariff classes for objects of class \code{"riskfactor_gam"}
+produced by \code{\link[=risk_factor_gam]{risk_factor_gam()}} (formerly \code{\link[=riskfactor_gam]{riskfactor_gam()}} and
+\code{\link[=fit_gam]{fit_gam()}}). The function derives
+data-driven candidate tariff classes from the fitted GAM response pattern.
+These classes are intended to help translate continuous risk factors into
+categorical rating factors that remain interpretable and practical for use in
 a generalized linear model (GLM).
 }
 \details{
 Evolutionary trees (via \code{\link[evtree:evtree]{evtree::evtree()}}) are used as a technique to bin the
-fitted GAM object into risk-homogeneous categories.
+fitted GAM object into candidate tariff classes.
 This method is based on the work by Henckaerts et al. (2018).
 See Grubinger et al. (2014) for details on the parameters controlling the
 evtree fit.
@@ -57,10 +70,10 @@ evtree fit.
 library(dplyr)
 
 # Recommended new usage (SE)
-riskfactor_gam(MTPL,
-               nclaims = "nclaims",
-               x = "age_policyholder",
-               exposure = "exposure") |>
+risk_factor_gam(MTPL,
+                risk_factor = "age_policyholder",
+                claim_count = "nclaims",
+                exposure = "exposure") |>
   construct_tariff_classes()
 
 # Deprecated usage (NSE, still works with warning)

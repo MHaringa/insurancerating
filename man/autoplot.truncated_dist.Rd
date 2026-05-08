@@ -2,40 +2,52 @@
 % Please edit documentation in R/truncated_distributions.R
 \name{autoplot.truncated_dist}
 \alias{autoplot.truncated_dist}
-\title{Automatically create a ggplot for objects obtained from fit_truncated_dist()}
+\title{Plot a fitted truncated severity distribution}
 \usage{
 \method{autoplot}{truncated_dist}(
   object,
-  geom_ecdf = c("point", "step"),
+  ecdf_geom = c("point", "step"),
+  x_label = NULL,
+  y_label = NULL,
+  y_limits = c(0, 1),
+  x_limits = NULL,
+  show_title = TRUE,
+  digits = 2,
+  truncation_digits = 2,
+  geom_ecdf = NULL,
   xlab = NULL,
   ylab = NULL,
-  ylim = c(0, 1),
+  ylim = NULL,
   xlim = NULL,
-  print_title = TRUE,
-  print_dig = 2,
-  print_trunc = 2,
+  print_title = NULL,
+  print_dig = NULL,
+  print_trunc = NULL,
   ...
 )
 }
 \arguments{
 \item{object}{An object produced by \code{fit_truncated_dist()}.}
 
-\item{geom_ecdf}{Character string indicating how to display the ECDF.
-Must be one of \code{"point"} or \code{"step"}.}
+\item{ecdf_geom}{Character string indicating how to display the empirical
+CDF. Must be one of \code{"point"} or \code{"step"}.}
 
-\item{xlab}{Title of the x axis. Defaults to \code{"severity"}.}
+\item{x_label}{Title of the x axis. Defaults to \code{"severity"}.}
 
-\item{ylab}{Title of the y axis. Defaults to \code{"cumulative proportion"}.}
+\item{y_label}{Title of the y axis. Defaults to \code{"cumulative proportion"}.}
 
-\item{ylim}{Numeric vector of length 2 specifying y-axis limits.}
+\item{y_limits}{Numeric vector of length 2 specifying y-axis limits.}
 
-\item{xlim}{Numeric vector of length 2 specifying x-axis limits.}
+\item{x_limits}{Optional numeric vector of length 2 specifying x-axis limits.}
 
-\item{print_title}{Logical. If \code{TRUE}, print title and subtitle.}
+\item{show_title}{Logical. If \code{TRUE}, print title and subtitle.}
 
-\item{print_dig}{Integer. Number of digits for parameter estimates in the subtitle.}
+\item{digits}{Integer. Number of digits for parameter estimates in the
+subtitle.}
 
-\item{print_trunc}{Integer. Number of digits used for truncation bounds.}
+\item{truncation_digits}{Integer. Number of digits used for truncation
+bounds.}
+
+\item{geom_ecdf, xlab, ylab, ylim, xlim, print_title, print_dig, print_trunc}{Deprecated argument names kept for backward compatibility.}
 
 \item{...}{Currently unused.}
 }
@@ -43,8 +55,16 @@ Must be one of \code{"point"} or \code{"step"}.}
 A \code{ggplot2} object.
 }
 \description{
-Creates a plot of the empirical cumulative distribution function
-(ECDF) of the observed truncated data together with the fitted truncated CDF.
+Creates a plot of the empirical cumulative distribution
+function (ECDF) of the observed truncated claim amounts together with the
+fitted truncated CDF.
+}
+\details{
+The plot compares the empirical distribution of the observed, truncated
+claim severities with the fitted distribution conditional on the same
+truncation interval. This is a visual check of whether the selected severity
+distribution is plausible for the part of the portfolio that is actually
+observed.
 }
 \author{
 Martin Haringa

@@ -24,12 +24,14 @@ A factor indicating the interval to which each element of \code{x}
 belongs.
 }
 \description{
+\code{fisher_classify()} is deprecated as of version 0.8.0 because Fisher-Jenks
+classification is not directly linked to the insurance rating workflow.
+
 Classifies a continuous numeric vector into intervals using
 Fisher-Jenks natural breaks. Useful for choropleth mapping or
 other applications where grouped ranges are required.
 
 \code{fisher()} is deprecated as of version 0.8.0.
-Please use \code{\link[=fisher_classify]{fisher_classify()}} instead.
 }
 \details{
 The \code{"fisher"} style uses the algorithm proposed by Fisher (1958), commonly

@@ -4,13 +4,17 @@
 \alias{autoplot.check_residuals}
 \title{Autoplot for check_residuals objects}
 \usage{
-\method{autoplot}{check_residuals}(object, show_message = TRUE, ...)
+\method{autoplot}{check_residuals}(object, show_message = TRUE, max_points = 1000, ...)
 }
 \arguments{
 \item{object}{An object of class \code{"check_residuals"}, produced by \code{\link[=check_residuals]{check_residuals()}}.}
 
 \item{show_message}{Logical. If TRUE (default), prints a short message based on
 the p-value from the KS test.}
+
+\item{max_points}{Maximum number of QQ-plot points to display. If the
+residual check contains more points, an evenly spaced subset is shown. Use
+\code{Inf} to plot all points.}
 
 \item{...}{Additional arguments passed to \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}.}
 }

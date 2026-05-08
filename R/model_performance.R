@@ -98,18 +98,6 @@ model_performance <- function(...) {
 }
 
 
-#' Print method for model_performance objects
-#'
-#' @description
-#' Nicely formats and prints the results of [model_performance()], including
-#' rounded numeric values, without requiring external packages.
-#'
-#' @param x An object of class `"model_performance"`.
-#' @param digits Number of digits to round numeric columns. Default = 3.
-#' @param ... Further arguments passed to or from other methods (ignored).
-#'
-#' @return Invisibly returns `x`.
-#'
 #' @export
 print.model_performance <- function(x, digits = 3, ...) {
   orig_x <- x
@@ -144,4 +132,3 @@ print.model_performance <- function(x, digits = 3, ...) {
 
   invisible(orig_x)
 }
-

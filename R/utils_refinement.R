@@ -141,15 +141,15 @@ cut_borders_df <- function(df, col) {
 cut_borders_model <- function(model, x_cut) {
 
   if (inherits(model, "glm")) {
-    rf <- rating_table(model, signif_stars = FALSE)$df
+    rf <- rating_table(model, significance = FALSE)$df
   }
 
   if (inherits(model, "smooth")) {
-    rf <- rating_table(model$model_out, signif_stars = FALSE)$df
+    rf <- rating_table(model$model_out, significance = FALSE)$df
   }
 
   if (inherits(model, "restricted")) {
-    rf <- rating_table(model$model_out, signif_stars = FALSE)$df
+    rf <- rating_table(model$model_out, significance = FALSE)$df
   }
 
   colnames(rf)[3] <- c("estimate")

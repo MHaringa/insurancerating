@@ -21,7 +21,8 @@ edit_smoothing(
 \arguments{
 \item{model}{Object of class \code{rating_refinement}, \code{smooth} or \code{restricted}.}
 
-\item{variable}{Character. The \code{x_cut} variable of the smoothing step to edit.}
+\item{variable}{Character. The \code{model_variable} variable of the smoothing step
+to edit.}
 
 \item{step}{Optional numeric index of the step to edit.}
 

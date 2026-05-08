@@ -7,42 +7,50 @@
 \usage{
 rating_grid(
   x,
-  group_vars = NULL,
+  group_by = NULL,
   exposure = NULL,
   exposure_by = NULL,
-  agg_cols = NULL,
-  drop_na = FALSE
+  aggregate_cols = NULL,
+  drop_na = FALSE,
+  group_vars = NULL,
+  agg_cols = NULL
 )
 
 construct_model_points(
   x,
-  group_vars = NULL,
+  group_by = NULL,
   exposure = NULL,
   exposure_by = NULL,
-  agg_cols = NULL,
-  drop_na = FALSE
+  aggregate_cols = NULL,
+  drop_na = FALSE,
+  group_vars = NULL,
+  agg_cols = NULL
 )
 }
 \arguments{
-\item{x}{A \code{data.frame} or an object of class \code{"model_data"} returned by
-\code{\link[=model_data]{model_data()}}.}
+\item{x}{A \code{data.frame}, an object of class \code{"model_data"} returned by
+\code{\link[=extract_model_data]{extract_model_data()}}, or a fitted model that can be passed to
+\code{\link[=extract_model_data]{extract_model_data()}}.}
 
-\item{group_vars}{Optional character vector with the variables that define the
-rating-grid points. If \code{NULL} and \code{x} is a \code{"model_data"} object, the risk-factor
-variables stored in the object are used. If \code{NULL} and \code{x} is a plain
-\code{data.frame}, all columns except those listed in \code{exposure},
-\code{exposure_by}, and \code{agg_cols} are used.}
+\item{group_by}{Optional character vector with the variables that define the
+rating-grid points. If \code{NULL} and \code{x} is a \code{"model_data"} object, the
+risk-factor variables stored in the object are used. If \code{NULL} and \code{x} is a
+plain \code{data.frame}, all columns except those listed in \code{exposure},
+\code{exposure_by}, and \code{aggregate_cols} are used.}
 
 \item{exposure}{Optional character; name of the exposure column to aggregate.}
 
 \item{exposure_by}{Optional character; name of a column used to split
 exposure or counts, for example a year variable.}
 
-\item{agg_cols}{Optional character vector with additional numeric columns to
-aggregate using \code{sum(na.rm = TRUE)}.}
+\item{aggregate_cols}{Optional character vector with additional numeric
+columns to aggregate using \code{sum(na.rm = TRUE)}.}
 
-\item{drop_na}{Logical; if \code{TRUE}, rows with missing values in \code{group_vars}
+\item{drop_na}{Logical; if \code{TRUE}, rows with missing values in \code{group_by}
 are removed before aggregation. Default is \code{FALSE}.}
+
+\item{group_vars, agg_cols}{Deprecated argument names. Use \code{group_by} and
+\code{aggregate_cols} instead.}
 }
 \value{
 A \code{data.frame} with one row per observed rating-grid point.
@@ -51,88 +59,41 @@ A \code{data.frame} with one row per observed rating-grid point.
 \code{rating_grid()} constructs rating-grid points by collapsing rows with
 identical combinations of grouping variables to a single row.
 
-The function is intended for analytical use cases where it is convenient to
-work with one row per observed combination of risk factors or model
-variables. In many raw datasets, the same combination occurs multiple times.
-For model diagnostics, portfolio summaries, and prediction analysis, it is
-often more useful to aggregate these repeated combinations than to keep all
-original rows.
+The function returns only combinations that are actually observed in the input
+data. It does \strong{not} create the full Cartesian product of all unique values.
+This keeps the output compact and suitable for model diagnostics, portfolio
+summaries, and prediction analysis.
 
-By default, the function returns only combinations that are actually observed
-in the input data. It does \strong{not} create the full Cartesian product of all
-unique values, because that can become very large and is often not needed for
-analysis.
-
-In other words, the function:
-\itemize{
-\item identifies the rating-grid dimensions;
-\item groups rows with identical combinations of these variables;
-\item aggregates exposure and optional numeric columns to one row per
-observed combination.
-}
-
-This is especially useful for:
-\itemize{
-\item analysing model structure,
-\item summarising portfolios at rating-grid level,
-\item comparing observed and fitted values,
-\item creating compact input for further analysis or plotting.
-}
-
-When \code{x} is an object returned by \code{\link[=model_data]{model_data()}}, the function uses
+When \code{x} is an object returned by \code{\link[=extract_model_data]{extract_model_data()}}, the function uses
 the extracted model metadata to determine the grouping variables if
-\code{group_vars} is not supplied. When \code{x} is a plain \code{data.frame}, it is
-recommended to supply \code{group_vars} explicitly.
+\code{group_by} is not supplied. When \code{x} is a plain \code{data.frame}, it is
+recommended to supply \code{group_by} explicitly.
 
 \code{construct_model_points()} is deprecated in favour of \code{\link[=rating_grid]{rating_grid()}}.
 }
 \details{
-The function does \strong{not} construct all theoretically possible rating-grid
-combinations. Instead, it only keeps combinations that actually occur in the
-input data and aggregates duplicates.
+The implementation uses base R only. Output is always a regular
+\code{data.frame}, not a tibble or data.table.
 
 If \code{exposure_by} is supplied, exposure or row counts are split across levels
 of that variable and returned in wide format, for example
 \code{"exposure_2020"} or \code{"count_2020"}.
 
-For objects returned by \code{\link[=model_data]{model_data()}}, additional refinement
-variables stored in the object attributes may be retained when they are not
-already part of the regular grouping variables.
+For objects returned by \code{\link[=extract_model_data]{extract_model_data()}}, refinement mappings are joined
+by their original factor column. They are not cross-joined onto every row.
 }
 \examples{
 \dontrun{
-library(dplyr)
+rating_grid(mtcars, group_by = c("cyl", "vs"))
 
-# With a data.frame
-mtcars |>
-  dplyr::select(cyl, vs) |>
-  rating_grid(group_vars = c("cyl", "vs"))
+rating_grid(
+  mtcars,
+  group_by = c("cyl", "vs"),
+  exposure = "disp",
+  exposure_by = "gear",
+  aggregate_cols = "mpg"
+)
 
-mtcars |>
-  dplyr::select(cyl, vs, disp) |>
-  rating_grid(
-    group_vars = c("cyl", "vs"),
-    exposure = "disp"
-  )
-
-mtcars |>
-  dplyr::select(cyl, vs, disp, gear) |>
-  rating_grid(
-    group_vars = c("cyl", "vs"),
-    exposure = "disp",
-    exposure_by = "gear"
-  )
-
-mtcars |>
-  dplyr::select(cyl, vs, disp, gear, mpg) |>
-  rating_grid(
-    group_vars = c("cyl", "vs"),
-    exposure = "disp",
-    exposure_by = "gear",
-    agg_cols = c("mpg")
-  )
-
-# With extracted model data
 pmodel <- glm(
   breaks ~ wool + tension,
   data = warpbreaks,
@@ -140,7 +101,7 @@ pmodel <- glm(
 )
 
 pmodel |>
-  model_data() |>
+  extract_model_data() |>
   rating_grid()
 }
 

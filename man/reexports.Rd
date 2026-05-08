@@ -11,6 +11,6 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
-  \item{ggplot2}{\code{\link[ggplot2]{autoplot}}}
+  \item{ggplot2}{\code{\link[ggplot2:autoplot]{autoplot()}}}
 }}
 

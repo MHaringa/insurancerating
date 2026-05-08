@@ -1,6 +1,9 @@
 #' Fisher's natural breaks classification
 #'
 #' @description
+#' `fisher_classify()` is deprecated as of version 0.8.0 because Fisher-Jenks
+#' classification is not directly linked to the insurance rating workflow.
+#'
 #' Classifies a continuous numeric vector into intervals using
 #' Fisher-Jenks natural breaks. Useful for choropleth mapping or
 #' other applications where grouped ranges are required.
@@ -31,8 +34,6 @@
 #'
 #' @author Martin Haringa
 #'
-#' @importFrom classInt classIntervals
-#'
 #' @examples
 #' set.seed(1)
 #' x <- rnorm(100)
@@ -40,6 +41,14 @@
 #'
 #' @export
 fisher_classify <- function(x, n = 7, dig.lab = NULL, diglab = NULL) {
+  lifecycle::deprecate_warn(
+    when = "0.8.0",
+    what = "fisher_classify()",
+    details = paste(
+      "Fisher-Jenks classification is a general-purpose grouping method",
+      "and is not directly linked to the insurance rating workflow."
+    )
+  )
 
   if (!is.null(diglab) && !is.null(dig.lab)) {
     stop("Use either `dig.lab` or `diglab`, not both.", call. = FALSE)
@@ -58,8 +67,19 @@ fisher_classify <- function(x, n = 7, dig.lab = NULL, diglab = NULL) {
     dig.lab <- 2
   }
 
+  fisher_classify_impl(x, n = n, dig.lab = dig.lab)
+}
+
+fisher_classify_impl <- function(x, n = 7, dig.lab = 2) {
   if (!is.numeric(x)) stop("`x` must be numeric")
   if (length(x) < n) stop("`x` must be longer than number of classes `n`")
+
+  if (!requireNamespace("classInt", quietly = TRUE)) {
+    stop(
+      "Package `classInt` is required for `fisher_classify()`.",
+      call. = FALSE
+    )
+  }
 
   breaks <- classInt::classIntervals(
     x,
@@ -75,10 +95,16 @@ fisher_classify <- function(x, n = 7, dig.lab = NULL, diglab = NULL) {
 #' @rdname fisher_classify
 #' @description
 #' `fisher()` is deprecated as of version 0.8.0.
-#' Please use [fisher_classify()] instead.
 #'
 #' @export
 fisher <- function(x, n = 7, diglab = 2) {
-  lifecycle::deprecate_warn("0.8.0", "fisher()", "fisher_classify()")
-  fisher_classify(x, n = n, diglab = diglab)
+  lifecycle::deprecate_warn(
+    when = "0.8.0",
+    what = "fisher()",
+    details = paste(
+      "Fisher-Jenks classification is a general-purpose grouping method",
+      "and is not directly linked to the insurance rating workflow."
+    )
+  )
+  fisher_classify_impl(x, n = n, dig.lab = diglab)
 }

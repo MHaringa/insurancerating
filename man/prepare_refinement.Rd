@@ -9,8 +9,8 @@ prepare_refinement(model, data = NULL)
 \arguments{
 \item{model}{Object of class \code{glm}.}
 
-\item{data}{Optional data.frame. If \code{NULL}, the data are retrieved from the
-model object.}
+\item{data}{Optional data.frame with the same rows and model variables as the
+fitted GLM. If \code{NULL}, the data are retrieved from the model object.}
 }
 \value{
 Object of class \code{rating_refinement}.

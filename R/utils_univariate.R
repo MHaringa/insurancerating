@@ -1,28 +1,35 @@
 #' @keywords internal
 add_metrics <- function(dt, cols, .nclaims, .exposure, .severity, .premium) {
+  safe_divide <- function(numerator, denominator) {
+    out <- rep(NA_real_, length(numerator))
+    ok <- !is.na(denominator) & denominator != 0
+    out[ok] <- numerator[ok] / denominator[ok]
+    out
+  }
+
   if (!is.null(.nclaims) && !is.null(.exposure) &&
       all(c(.nclaims, .exposure) %in% cols)) {
-    dt[["frequency"]] <- dt[[.nclaims]] / dt[[.exposure]]
+    dt[["frequency"]] <- safe_divide(dt[[.nclaims]], dt[[.exposure]])
   }
 
   if (!is.null(.severity) && !is.null(.nclaims) &&
       all(c(.severity, .nclaims) %in% cols)) {
-    dt[["average_severity"]] <- dt[[.severity]] / dt[[.nclaims]]
+    dt[["average_severity"]] <- safe_divide(dt[[.severity]], dt[[.nclaims]])
   }
 
   if (!is.null(.severity) && !is.null(.exposure) &&
       all(c(.severity, .exposure) %in% cols)) {
-    dt[["risk_premium"]] <- dt[[.severity]] / dt[[.exposure]]
+    dt[["risk_premium"]] <- safe_divide(dt[[.severity]], dt[[.exposure]])
   }
 
   if (!is.null(.severity) && !is.null(.premium) &&
       all(c(.severity, .premium) %in% cols)) {
-    dt[["loss_ratio"]] <- dt[[.severity]] / dt[[.premium]]
+    dt[["loss_ratio"]] <- safe_divide(dt[[.severity]], dt[[.premium]])
   }
 
   if (!is.null(.premium) && !is.null(.exposure) &&
       all(c(.premium, .exposure) %in% cols)) {
-    dt[["average_premium"]] <- dt[[.premium]] / dt[[.exposure]]
+    dt[["average_premium"]] <- safe_divide(dt[[.premium]], dt[[.exposure]])
   }
 
   dt
@@ -336,5 +343,4 @@ ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip) {
 ggcoordflip <- function(coord_flip) {
   if (isTRUE(coord_flip)) list(ggplot2::coord_flip()) else list()
 }
-
 

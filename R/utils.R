@@ -100,12 +100,12 @@ get_splits <- function(x) {
 
   lrp <- utils::getFromNamespace(".list.rules.party", "partykit")
   splits_list <- lrp(x)
-  last_line <- unname(splits_list[length(splits_list)])
+  split_rules <- unname(splits_list)
 
-  # Remove punctuation marks
-  splits_vector <- regmatches(last_line, gregexpr("[[:digit:]]+", last_line))
+  split_pattern <- "-?[[:digit:]]+(\\.[[:digit:]]+)?"
+  splits_vector <- regmatches(split_rules, gregexpr(split_pattern, split_rules))
 
-  as.numeric(unlist(splits_vector))
+  sort(unique(as.numeric(unlist(splits_vector))))
 }
 
 

@@ -1,33 +1,40 @@
 #' Construct insurance tariff classes
 #'
 #' @description
-#' Constructs insurance tariff classes for objects of class `"fitgam"` produced
-#' by [riskfactor_gam()] (formerly [fit_gam()]). The goal is to bin continuous
-#' risk factors into categorical tariff classes that capture the effect of the
-#' covariate on the response in an accurate way, while remaining easy to use in
+#' Constructs insurance tariff classes for objects of class `"riskfactor_gam"`
+#' produced by [risk_factor_gam()] (formerly [riskfactor_gam()] and
+#' [fit_gam()]). The function derives
+#' data-driven candidate tariff classes from the fitted GAM response pattern.
+#' These classes are intended to help translate continuous risk factors into
+#' categorical rating factors that remain interpretable and practical for use in
 #' a generalized linear model (GLM).
 #'
-#' @param object An object of class `"fitgam"`, produced by [riskfactor_gam()].
-#' @param alpha Complexity parameter passed to [evtree::evtree.control()]. Higher
-#'   values yield fewer tariff classes. Default = 0.
-#' @param niterations Maximum number of iterations before termination. Passed to
-#'   [evtree::evtree.control()]. Default = 10000.
-#' @param ntrees Number of trees in the population. Passed to
-#'   [evtree::evtree.control()]. Default = 200.
+#' @param object An object of class `"riskfactor_gam"`, produced by
+#'   [risk_factor_gam()]. Objects with the old `"fitgam"` class are still
+#'   supported for backward compatibility.
+#' @param complexity Numeric. Controls the complexity penalty used when deriving
+#'   classes. Higher values generally yield fewer tariff classes. Default = 0.
+#' @param max_iterations Integer. Maximum number of search iterations used by
+#'   the underlying class construction algorithm. Default = 10000.
+#' @param population_size Integer. Number of candidate trees used by the
+#'   underlying class construction algorithm. Default = 200.
 #' @param seed Integer, seed for the random number generator (for reproducibility).
+#' @param alpha Deprecated. Use `complexity` instead.
+#' @param niterations Deprecated. Use `max_iterations` instead.
+#' @param ntrees Deprecated. Use `population_size` instead.
 #'
 #' @details
 #' Evolutionary trees (via [evtree::evtree()]) are used as a technique to bin the
-#' fitted GAM object into risk-homogeneous categories.
+#' fitted GAM object into candidate tariff classes.
 #' This method is based on the work by Henckaerts et al. (2018).
 #' See Grubinger et al. (2014) for details on the parameters controlling the
 #' evtree fit.
 #'
-#' @return A `list` of class `"constructtariffclasses"` with components:
+#' @return A `list` of class `"tariff_classes"` with components:
 #' \describe{
 #'   \item{prediction}{Data frame with predicted values.}
 #'   \item{x}{Name of the continuous risk factor for which tariff classes are constructed.}
-#'   \item{model}{Model type: `"frequency"`, `"severity"`, or `"burning"`.}
+#'   \item{model}{Model type: `"frequency"`, `"severity"`, or `"pure_premium"`.}
 #'   \item{data}{Data frame with predicted and observed values.}
 #'   \item{x_obs}{Observed values of the continuous risk factor.}
 #'   \item{splits}{Numeric vector with boundaries of the constructed tariff classes.}
@@ -59,10 +66,10 @@
 #' library(dplyr)
 #'
 #' # Recommended new usage (SE)
-#' riskfactor_gam(MTPL,
-#'                nclaims = "nclaims",
-#'                x = "age_policyholder",
-#'                exposure = "exposure") |>
+#' risk_factor_gam(MTPL,
+#'                 risk_factor = "age_policyholder",
+#'                 claim_count = "nclaims",
+#'                 exposure = "exposure") |>
 #'   construct_tariff_classes()
 #'
 #' # Deprecated usage (NSE, still works with warning)
@@ -73,37 +80,98 @@
 #' @importFrom evtree evtree evtree.control
 #'
 #' @export
-construct_tariff_classes <- function(object, alpha = 0, niterations = 10000,
-                                     ntrees = 200, seed = 1) {
+construct_tariff_classes <- function(object, complexity = 0,
+                                     max_iterations = 10000,
+                                     population_size = 200, seed = 1,
+                                     alpha = NULL, niterations = NULL,
+                                     ntrees = NULL) {
 
-  if (!inherits(object, "fitgam")) {
-    stop("Input must be of class 'fitgam' as returned by riskfactor_gam().",
+  if (!inherits(object, "riskfactor_gam") && !inherits(object, "fitgam")) {
+    stop("Input must be of class 'riskfactor_gam' as returned by risk_factor_gam().",
          call. = FALSE)
   }
+
+  if (!is.null(alpha)) {
+    lifecycle::deprecate_warn(
+      "0.8.0",
+      "construct_tariff_classes(alpha = )",
+      "construct_tariff_classes(complexity = )"
+    )
+    complexity <- alpha
+  }
+  if (!is.null(niterations)) {
+    lifecycle::deprecate_warn(
+      "0.8.0",
+      "construct_tariff_classes(niterations = )",
+      "construct_tariff_classes(max_iterations = )"
+    )
+    max_iterations <- niterations
+  }
+  if (!is.null(ntrees)) {
+    lifecycle::deprecate_warn(
+      "0.8.0",
+      "construct_tariff_classes(ntrees = )",
+      "construct_tariff_classes(population_size = )"
+    )
+    population_size <- ntrees
+  }
+
+  validate_tariff_class_control(
+    complexity = complexity,
+    max_iterations = max_iterations,
+    population_size = population_size,
+    seed = seed
+  )
 
   data_used <- object$data
   x_obs <- object$x_obs
 
-  split_x <- tryCatch({
+  if (!is.numeric(x_obs)) {
+    stop("`object$x_obs` must be numeric.", call. = FALSE)
+  }
+
+  x_range <- range(x_obs, na.rm = TRUE)
+  if (!all(is.finite(x_range)) || x_range[1] == x_range[2]) {
+    stop(
+      "Cannot construct tariff classes because the risk factor has fewer than ",
+      "two distinct finite values.",
+      call. = FALSE
+    )
+  }
+
+  split_x <- tryCatch(
+    {
     tree_x <- evtree::evtree(
       pred ~ x,
       data = data_used,
       control = evtree::evtree.control(
-        alpha = alpha,
-        ntrees = ntrees,
-        niterations = niterations,
+        alpha = complexity,
+        ntrees = population_size,
+        niterations = max_iterations,
         seed = seed
       )
     )
     split_obtained <- get_splits(tree_x)
-    unique(floor(split_obtained))
-  }, error = function(e) {
-    NULL
-  })
+    split_obtained[split_obtained > x_range[1] & split_obtained < x_range[2]]
+    },
+    error = function(e) {
+      stop(
+        "Could not construct tariff classes with evtree: ",
+        conditionMessage(e),
+        call. = FALSE
+      )
+    }
+  )
+
+  if (length(split_x) == 0) {
+    warning(
+      "No internal tariff class split was found; returning one interval.",
+      call. = FALSE
+    )
+  }
 
   # Add min and max to binning
-  splits <- sort(unique(c(min(x_obs, na.rm = TRUE), split_x,
-                          max(x_obs, na.rm = TRUE))))
+  splits <- sort(unique(c(x_range[1], split_x, x_range[2])))
   cuts <- cut(x_obs, breaks = splits, include.lowest = TRUE)
 
   structure(
@@ -116,42 +184,47 @@ construct_tariff_classes <- function(object, alpha = 0, niterations = 10000,
       splits = splits,
       tariff_classes = cuts
     ),
-    class = "constructtariffclasses"
+    class = c("tariff_classes", "constructtariffclasses")
   )
 }
 
-#' Print method for constructtariffclasses objects
-#'
-#' @description
-#' Displays the tariff class splits of an object created by
-#' [construct_tariff_classes()].
-#'
-#' @param x An object of class `"constructtariffclasses"`.
-#' @param ... Further arguments passed to or from other methods (ignored).
-#'
-#' @return Invisibly returns `x`.
-#'
+validate_tariff_class_control <- function(complexity, max_iterations,
+                                          population_size, seed) {
+  if (!is.numeric(complexity) || length(complexity) != 1L ||
+      !is.finite(complexity) || complexity < 0) {
+    stop("`complexity` must be a single non-negative number.", call. = FALSE)
+  }
+  if (!is.numeric(max_iterations) || length(max_iterations) != 1L ||
+      !is.finite(max_iterations) || max_iterations <= 0) {
+    stop("`max_iterations` must be a single positive number.", call. = FALSE)
+  }
+  if (!is.numeric(population_size) || length(population_size) != 1L ||
+      !is.finite(population_size) || population_size <= 0) {
+    stop("`population_size` must be a single positive number.", call. = FALSE)
+  }
+  if (!is.numeric(seed) || length(seed) != 1L || !is.finite(seed)) {
+    stop("`seed` must be a single finite number.", call. = FALSE)
+  }
+  invisible(NULL)
+}
+
 #' @export
-print.constructtariffclasses <- function(x, ...) {
+print.tariff_classes <- function(x, ...) {
   cat("Tariff class splits:\n")
   print(x$splits)
   invisible(x)
 }
 
-#' Coerce constructtariffclasses to a vector
-#'
-#' @description
-#' Extracts the tariff class splits as a numeric vector.
-#'
-#' @param x An object of class `"constructtariffclasses"`.
-#' @param ... Further arguments passed to or from other methods (ignored).
-#'
-#' @return A numeric vector with the split points of the tariff classes.
-#'
 #' @export
-as.vector.constructtariffclasses <- function(x, ...) {
+print.constructtariffclasses <- print.tariff_classes
+
+#' @export
+as.vector.tariff_classes <- function(x, ...) {
   as.vector(x$splits)
 }
+
+#' @export
+as.vector.constructtariffclasses <- as.vector.tariff_classes
 
 
 #' Autoplot for tariff class objects
@@ -162,10 +235,11 @@ as.vector.constructtariffclasses <- function(x, ...) {
 #' tariff class splits. Optionally, confidence intervals and observed data points
 #' can be added.
 #'
-#' @param object An object of class `"constructtariffclasses"`, produced by
+#' @param object An object of class `"tariff_classes"`, produced by
 #'   [construct_tariff_classes()].
-#' @param conf_int Logical, whether to plot 95% confidence intervals.
+#' @param confidence Logical, whether to plot 95% confidence intervals.
 #'   Default = `FALSE`.
+#' @param conf_int Deprecated. Use `confidence` instead.
 #' @param color_gam Color of the fitted GAM line. Default = `"steelblue"`.
 #' @param color_splits Color of the vertical split lines. Default = `"grey50"`.
 #' @param show_observations Logical, whether to add observed data points for each
@@ -186,18 +260,26 @@ as.vector.constructtariffclasses <- function(x, ...) {
 #' @import ggplot2
 #'
 #' @export
-autoplot.constructtariffclasses <- function(object,
-                                            conf_int = FALSE,
-                                            color_gam = "steelblue",
-                                            show_observations = FALSE,
-                                            color_splits = "grey50",
-                                            size_points = 1,
-                                            color_points = "black",
-                                            rotate_labels = FALSE,
-                                            remove_outliers = NULL,
-                                            ...) {
-  if (!inherits(object, "constructtariffclasses")) {
-    stop("Input must be of class 'constructtariffclasses'.", call. = FALSE)
+autoplot.tariff_classes <- function(object,
+                                    confidence = FALSE,
+                                    color_gam = "steelblue",
+                                    show_observations = FALSE,
+                                    color_splits = "grey50",
+                                    size_points = 1,
+                                    color_points = "black",
+                                    rotate_labels = FALSE,
+                                    remove_outliers = NULL,
+                                    conf_int = NULL,
+                                    ...) {
+  if (!is.null(conf_int)) {
+    lifecycle::deprecate_warn("0.9.0", "autoplot(conf_int)",
+                              "autoplot(confidence)")
+    confidence <- conf_int
+  }
+
+  if (!inherits(object, "tariff_classes") &&
+      !inherits(object, "constructtariffclasses")) {
+    stop("Input must be of class 'tariff_classes'.", call. = FALSE)
   }
 
   prediction <- object$prediction
@@ -221,8 +303,8 @@ autoplot.constructtariffclasses <- function(object,
   y_pred_col <- y_pred_col[1]
 
   # confidence interval column names
-  lwr_col <- c("lwr_95", "lower_95", "lwr", "lower")
-  upr_col <- c("upr_95", "upper_95", "upr", "upper")
+  lwr_col <- c("conf_low", "lwr_95", "lower_95", "lwr", "lower")
+  upr_col <- c("conf_high", "upr_95", "upper_95", "upr", "upper")
 
   lwr_col <- lwr_col[lwr_col %in% names(prediction)]
   upr_col <- upr_col[upr_col %in% names(prediction)]
@@ -239,7 +321,8 @@ autoplot.constructtariffclasses <- function(object,
       points <- points[points$frequency < remove_outliers, , drop = FALSE]
     } else if (ylab == "severity" && "avg_claimsize" %in% names(points)) {
       points <- points[points$avg_claimsize < remove_outliers, , drop = FALSE]
-    } else if (ylab == "burning" && "avg_premium" %in% names(points)) {
+    } else if (ylab %in% c("pure_premium", "burning") &&
+               "avg_premium" %in% names(points)) {
       points <- points[points$avg_premium < remove_outliers, , drop = FALSE]
     }
   }
@@ -253,7 +336,7 @@ autoplot.constructtariffclasses <- function(object,
     geom_vline(xintercept = splits, color = color_splits, linetype = 2) +
     labs(y = paste0("Predicted ", ylab), x = xlab)
 
-  if (isTRUE(conf_int) && has_conf) {
+  if (isTRUE(confidence) && has_conf) {
     ok_ci <- all(is.finite(prediction[[upr_col]])) &&
       all(prediction[[upr_col]] < 1e9, na.rm = TRUE)
 
@@ -284,7 +367,8 @@ autoplot.constructtariffclasses <- function(object,
         color = color_points
       ) +
         scale_y_continuous(labels = scales::comma)
-    } else if (ylab == "burning" && "avg_premium" %in% names(points)) {
+    } else if (ylab %in% c("pure_premium", "burning") &&
+               "avg_premium" %in% names(points)) {
       p <- p + geom_point(
         data = points,
         aes(x = .data[["x"]], y = .data[["avg_premium"]]),
@@ -302,3 +386,6 @@ autoplot.constructtariffclasses <- function(object,
 
   p
 }
+
+#' @export
+autoplot.constructtariffclasses <- autoplot.tariff_classes

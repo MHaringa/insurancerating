@@ -28,30 +28,23 @@ reference:
       Analyse portfolio behaviour and inspect risk factors before model estimation.
     contents:
       - factor_analysis
-      - autoplot.univariate
       - outlier_histogram
-      - biggest_reference
 
   - title: "Tariff classes"
     desc: >
       Analyse continuous risk factors and convert them to tariff classes.
     contents:
-      - riskfactor_gam
-      - fit_gam
-      - summary.fitgam
-      - autoplot.fitgam
+      - risk_factor_gam
+      - autoplot.riskfactor_gam
       - construct_tariff_classes
-      - print.constructtariffclasses
-      - as.vector.constructtariffclasses
-      - autoplot.constructtariffclasses
+      - autoplot.tariff_classes
 
   - title: "Modelling and interpretation"
     desc: >
       Estimate pricing models and interpret fitted coefficients in tariff terms.
     contents:
       - rating_table
-      - rating_factors
-      - autoplot.riskfactor
+      - autoplot.rating_table
       - add_prediction
 
   - title: "Refinement workflow"
@@ -68,17 +61,14 @@ reference:
       - split_level
       - split_relativities
       - refit
-      - refit_glm
 
   - title: "Validation"
     desc: >
       Assess model fit, predictive stability, dispersion, and residual behaviour.
     contents:
       - model_performance
-      - print.model_performance
       - rmse
       - bootstrap_performance
-      - as.vector.bootstrap_performance
       - autoplot.bootstrap_performance
       - check_overdispersion
       - check_residuals
@@ -88,7 +78,7 @@ reference:
     desc: >
       Extract model data and analyse observed rating-grid combinations.
     contents:
-      - model_data
+      - extract_model_data
       - rating_grid
 
   - title: "Distribution helpers"
@@ -104,11 +94,10 @@ reference:
     desc: >
       Supporting functions used across pricing workflows.
     contents:
-      - fisher
-      - period_to_months
-      - rows_per_date
-      - reduce
-      - summary.reduce
+      - biggest_reference
+      - split_periods_to_months
+      - active_rows_by_date
+      - merge_date_ranges
 
   - title: "Data"
     contents:
@@ -119,6 +108,21 @@ reference:
     desc: >
       Legacy functions retained for backward compatibility. New code should use the updated API.
     contents:
+      - univariate
+      - riskfactor_gam
+      - fit_gam
+      - rating_factors
       - rating_factors2
-      - extract_model_data
-
+      - model_data
+      - construct_model_points
+      - bootstrap_rmse
+      - fisher_classify
+      - fisher
+      - histbin
+      - restrict_coef
+      - smooth_coef
+      - refit_glm
+      - update_glm
+      - period_to_months
+      - rows_per_date
+      - reduce

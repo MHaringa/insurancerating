@@ -1,8 +1,8 @@
 ---
-title: "Refinement workflow"
+title: "Refinement building blocks"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Refinement workflow}
+  %\VignetteIndexEntry{Refinement building blocks}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -30,13 +30,13 @@ Common reasons include:
 -	expert judgement not directly represented in the model
 -	implementation constraints in policy administration systems
 
-For this reason, pricing workflows typically distinguish between:
+For this reason, actuarial pricing work often distinguishes between:
 
 1.	model estimation
 2.	tariff refinement
 3.	final refit of the pricing structure
 
-`insurancerating` formalises this through a staged refinement workflow:
+`insurancerating` provides a staged refinement interface:
 
 1.	fit an unrestricted model
 2.	initialise a refinement object with `prepare_refinement()`
@@ -44,7 +44,7 @@ For this reason, pricing workflows typically distinguish between:
 4.	inspect these steps before refit
 5.	call `refit()` to obtain the final fitted model
 
-This separation makes the workflow easier to understand, reproduce, and audit.
+This separation can make tariff adjustments easier to understand, reproduce, and audit.
 
 
 ## When refinement is used
@@ -68,7 +68,7 @@ the final pricing signal that will be used in the tariff.
 
 ## Example setup
 
-The workflow below starts from a standard premium modelling setup:
+The example below starts from one common premium modelling setup:
 
 -	analyse a continuous variable with a GAM
 -	convert it to tariff classes
@@ -82,10 +82,10 @@ The workflow below starts from a standard premium modelling setup:
 library(insurancerating)
 library(dplyr)
 
-age_policyholder_frequency <- riskfactor_gam(
+age_policyholder_frequency <- risk_factor_gam(
   data = MTPL,
-  nclaims = "nclaims",
-  x = "age_policyholder",
+  claim_count = "nclaims",
+  risk_factor = "age_policyholder",
   exposure = "exposure"
 )
 
@@ -154,7 +154,7 @@ A `rating_refinement` object stores:
 
 -	the fitted base model
 -	the underlying model data
--	the refinement steps added to the workflow
+-	the refinement steps added through the refinement interface
 
 At this point, the model itself has not been refitted. The refinement object
 represents a proposed tariff adjustment structure, not yet the final fitted
@@ -187,8 +187,8 @@ more stable structure on the rating factor.
 
 ref <- ref |>
   add_smoothing(
-    x_cut = "age_policyholder_freq_cat",
-    x_org = "age_policyholder",
+    model_variable = "age_policyholder_freq_cat",
+    source_variable = "age_policyholder",
     breaks = seq(18, 95, 5),
     weights = "exposure"
   )
@@ -197,8 +197,8 @@ ref <- ref |>
 
 The key arguments are:
 
--	`x_cut`: the binned factor present in the GLM
--	`x_org`: the original continuous variable 
+-	`model_variable`: the grouped variable present in the GLM
+-	`source_variable`: the original continuous portfolio variable
 -	`breaks`: the preferred commercial cut points
 -	`smoothing`: the smoothing specification
 -	`weights`: optional weighting, typically exposure
@@ -212,7 +212,7 @@ autoplot(ref, variable = "age_policyholder_freq_cat")
 
 ```
 
-This plot belongs to the **pre-refit workflow**. It shows:
+This plot belongs to the **pre-refit stage**. It shows:
 
 -	the original fitted coefficients
 -	the proposed smoothed structure
@@ -322,8 +322,8 @@ relativities_activity <- relativities_list(
 
 ref <- ref |>
   add_relativities(
-    risk_factor = "business_activity",
-    risk_factor_split = "business_activity_split",
+    model_variable = "business_activity",
+    split_variable = "business_activity_split",
     relativities = relativities_activity,
     exposure = "exposure",
     normalize = TRUE
@@ -344,7 +344,7 @@ This preserves the original model signal while introducing finer structure.
 Refinement steps alter part of the model structure. Once these changes are
 applied, the remaining coefficients may also need to adjust.
 
-For that reason, the workflow does not end with `add_smoothing()` or
+For that reason, the sequence does not end with `add_smoothing()` or
 `add_restriction()`. The final step is:
 
 ```{r}
@@ -391,11 +391,11 @@ rating_table(burn_refined) |>
 
 ## Model data and rating grids 
 
-After refit, model structure can be extracted with `model_data()`:
+After refit, model structure can be extracted with `extract_model_data()`:
 
 ```{r}
 
-md <- model_data(burn_refined)
+md <- extract_model_data(burn_refined)
 head(md)
 
 ```
@@ -419,7 +419,7 @@ This is typically used for:
 	
 ## Complete example
 
-A full refinement workflow typically looks as follows:
+One possible refinement sequence is:
 
 ```{r}
 
@@ -430,8 +430,8 @@ zip_df <- data.frame(
 
 burn_refined <- prepare_refinement(burn_unrestricted) |>
   add_smoothing(
-    x_cut = "age_policyholder_freq_cat",
-    x_org = "age_policyholder",
+    model_variable = "age_policyholder_freq_cat",
+    source_variable = "age_policyholder",
     breaks = seq(18, 95, 5),
     weights = "exposure"
   ) |>
@@ -446,7 +446,7 @@ rating_table(burn_refined) |>
 ```
 
 
-## Legacy workflow
+## Legacy interface
 
 Legacy entry points remain available:
 
@@ -465,7 +465,7 @@ burn_refined_old <- burn_unrestricted |>
 
 These are primarily maintained for backward compatibility.
 
-For new code, the standard workflow is:
+For new code, the recommended interface is:
 
 ```{r, eval = FALSE}
 
@@ -480,7 +480,7 @@ interpretability, governance, and auditability.
 
 ## Summary
 
-The refinement workflow separates:
+The refinement interface separates:
 
 -	model estimation
 -	tariff adjustments
@@ -500,6 +500,6 @@ For the underlying pricing concepts, see:
 
 - [Pricing principles](pricing-principles.html)
 
-For the standard workflow from portfolio analysis to fitted tariff, see:
+For an example sequence from portfolio analysis to fitted tariff, see:
 
 - [Getting started](getting-started.html)

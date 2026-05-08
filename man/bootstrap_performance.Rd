@@ -8,10 +8,14 @@
 bootstrap_performance(
   model,
   data,
-  n = 50,
-  frac = 1,
+  n_resamples = 50,
+  sample_fraction = 1,
+  metric = "rmse",
+  sampling = c("bootstrap", "split"),
   show_progress = TRUE,
-  rmse_model = NULL
+  rmse_model = NULL,
+  n = NULL,
+  frac = NULL
 )
 
 bootstrap_rmse(
@@ -19,6 +23,8 @@ bootstrap_rmse(
   data,
   n = 50,
   frac = 1,
+  metric = "rmse",
+  sampling = c("bootstrap", "split"),
   show_progress = TRUE,
   rmse_model = NULL
 )
@@ -28,39 +34,64 @@ bootstrap_rmse(
 
 \item{data}{Data used to fit the model object.}
 
-\item{n}{Integer. Number of bootstrap replicates. Default = 50.}
+\item{n_resamples}{Integer. Number of resampling replicates. Default = 50.}
 
-\item{frac}{Fraction of the data used in the training set if cross-validation
-is applied. Must be in (0, 1]. Default = 1 (use all data).}
+\item{sample_fraction}{Fraction of the data used in the training sample. Must
+be in \verb{(0, 1]}. Default = 1.}
+
+\item{metric}{Character. Performance metric to compute. Currently only
+\code{"rmse"} is supported.}
+
+\item{sampling}{Character. Sampling scheme. \code{"bootstrap"} samples training
+rows with replacement and evaluates on out-of-bag rows when
+\code{sample_fraction < 1}.
+\code{"split"} samples training rows without replacement and evaluates on the
+remaining rows when \code{sample_fraction < 1}.}
 
 \item{show_progress}{Logical. Show progress bar during bootstrap iterations.
 Default = TRUE.}
 
 \item{rmse_model}{Optional numeric RMSE of the fitted (original) model.
 If NULL (default), it is computed automatically.}
+
+\item{n, frac}{Deprecated argument names. Use \code{n_resamples} and
+\code{sample_fraction} instead.}
 }
 \value{
 An object of class \code{"bootstrap_performance"}, which is a list with components:
 \describe{
-\item{rmse_bs}{Numeric vector with \code{n} bootstrap RMSE values.}
+\item{rmse_bs}{Numeric vector with \code{n_resamples} bootstrap RMSE values.}
 \item{rmse_mod}{Root mean squared error for the original fitted model.}
+\item{metric}{Metric name.}
+\item{sampling}{Sampling scheme.}
 }
 }
 \description{
-Generate \code{n} bootstrap replicates to compute \code{n} root mean squared errors (RMSE).
-This can be used to evaluate the predictive stability of a fitted model.
+Generate repeated train/evaluation samples to compute model performance.
+Currently, the supported metric is root mean squared error (RMSE).
 
 \code{bootstrap_rmse()} is deprecated in favour of \code{\link[=bootstrap_performance]{bootstrap_performance()}}.
+Objects returned by \code{bootstrap_rmse()} keep class \code{"bootstrap_rmse"} for
+backward compatibility and also inherit from \code{"bootstrap_performance"}.
 }
 \details{
-To test the predictive ability of a fitted model it can be helpful to assess
-the variation in the computed RMSE. The variation is calculated by refitting
-the model on \code{n} bootstrap replicates and storing the resulting RMSE values.
+To test the predictive stability of a fitted model it can be helpful to
+assess the variation in a performance metric. The variation is calculated by
+refitting the model on repeated samples and storing the resulting metric
+values.
 \itemize{
-\item If \code{frac = 1}, each bootstrap sample has the same size as the dataset.
-\item If \code{frac < 1}, a subset of the data is used as training, and the remainder
-as test set (cross-validation).
+\item If \code{sample_fraction = 1}, the metric is evaluated on the sampled training
+data.
+\item If \code{sample_fraction < 1}, the metric is evaluated on rows that were not
+used for training.
 }
+
+Character columns and factor columns are converted to factors with levels
+taken from the full input data before resampling. For factor variables used
+in the model, the training sample is augmented when needed so every observed
+level is represented at least once. This prevents prediction failures when a
+level is present in the evaluation data but absent from a particular training
+sample.
 }
 \examples{
 \dontrun{
@@ -68,12 +99,15 @@ mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
             offset = log(exposure), family = poisson())
 
 # Use all records
-x <- bootstrap_performance(mod1, MTPL, n = 80, show_progress = FALSE)
+x <- bootstrap_performance(mod1, MTPL, n_resamples = 80,
+                           show_progress = FALSE)
 print(x)
 autoplot(x)
 
-# Use 80\% of records (cross-validation style)
-x_frac <- bootstrap_performance(mod1, MTPL, n = 50, frac = .8, show_progress = FALSE)
+# Use 80\% of records and evaluate on the remaining records
+x_frac <- bootstrap_performance(mod1, MTPL, n_resamples = 50,
+                                sample_fraction = .8, sampling = "split",
+                                show_progress = FALSE)
 autoplot(x_frac)
 }
 

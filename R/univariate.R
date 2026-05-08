@@ -11,13 +11,19 @@
 #'   \item average premium = premium / exposure
 #' }
 #'
-#' @param df A `data.frame` with the insurance portfolio.
-#' @param x Character vector: column(s) in `df` with the risk factor(s).
-#' @param severity Character, column in `df` with claim amounts (default = NULL).
-#' @param premium Character, column in `df` with premiums (default = NULL).
-#' @param exposure Character, column in `df` with exposures (default = NULL).
-#' @param nclaims Character, column in `df` with number of claims (default = NULL).
-#' @param by Character vector of column(s) in `df` to group by in addition to `x`.
+#' @param data A `data.frame` with the insurance portfolio.
+#' @param risk_factors Character vector: column(s) in `data` with the risk
+#'   factor(s).
+#' @param claim_amount Character, column in `data` with claim amounts
+#'   (default = NULL).
+#' @param claim_count Character, column in `data` with number of claims
+#'   (default = NULL).
+#' @param premium Character, column in `data` with premiums (default = NULL).
+#' @param exposure Character, column in `data` with exposures (default = NULL).
+#' @param group_by Character vector of column(s) in `data` to group by in
+#'   addition to `risk_factors`.
+#' @param df,x,severity,nclaims,by Deprecated argument names. Use `data`,
+#'   `risk_factors`, `claim_amount`, `claim_count`, and `group_by` instead.
 #'
 #' @details
 #' The function computes summary statistics for discrete risk factors.
@@ -47,7 +53,8 @@
 #' `univariate()` is still available for backward compatibility but will emit a
 #' deprecation warning and will be removed in a future release.
 #'
-#' @return An object of class `"univariate"` with summary statistics.
+#' @return An object of class `"factor_analysis"` and `"univariate"` with
+#' summary statistics.
 #'
 #' @author Martin Haringa
 #'
@@ -56,9 +63,9 @@
 #' @examples
 #' ## --- New usage (SE) ---
 #' factor_analysis(MTPL2,
-#'                 x = "area",
-#'                 severity = "amount",
-#'                 nclaims = "nclaims",
+#'                 risk_factors = "area",
+#'                 claim_amount = "amount",
+#'                 claim_count = "nclaims",
 #'                 exposure = "exposure",
 #'                 premium = "premium")
 #'
@@ -71,62 +78,203 @@
 #'            premium = premium)
 #'
 #' @export
-factor_analysis <- function(df, x, severity = NULL, nclaims = NULL,
-                            exposure = NULL, premium = NULL, by = NULL) {
+factor_analysis <- function(data = NULL, risk_factors = NULL,
+                            claim_amount = NULL, claim_count = NULL,
+                            exposure = NULL, premium = NULL, group_by = NULL,
+                            df = NULL, x = NULL, severity = NULL,
+                            nclaims = NULL, by = NULL) {
+  args <- resolve_factor_analysis_args(
+    data = data,
+    risk_factors = risk_factors,
+    claim_amount = claim_amount,
+    claim_count = claim_count,
+    group_by = group_by,
+    df = df,
+    x = x,
+    severity = severity,
+    nclaims = nclaims,
+    by = by
+  )
 
-  .xvar <- x
+  data <- args$data
+  risk_factors <- args$risk_factors
+  claim_amount <- args$claim_amount
+  claim_count <- args$claim_count
+  group_by <- args$group_by
+
+  validate_factor_analysis_args(
+    data = data,
+    risk_factors = risk_factors,
+    claim_amount = claim_amount,
+    claim_count = claim_count,
+    exposure = exposure,
+    premium = premium,
+    group_by = group_by
+  )
+
+  .xvar <- risk_factors
   .xvar_out <- .xvar
-  .by_out <- by
+  .by_out <- group_by
 
-  if (is.null(severity) && is.null(nclaims) && is.null(exposure) &&
+  if (length(.xvar) > 1) {
+    group_by <- c(.xvar[-1], group_by)
+    .xvar <- .xvar[1]
+  }
+
+  cols_ <- c(claim_amount, claim_count, exposure, premium)
+  cols_ <- cols_[!is.null(cols_)]
+
+  if (length(cols_) == 0) {
+    stop("Define at least one column for claim_amount, claim_count, exposure or premium.",
+         call. = FALSE)
+  }
+
+  BY <- c(.xvar, group_by)
+
+  dt <- data.table::data.table(data)[, lapply(.SD, sum, na.rm = TRUE),
+                                   by = BY, .SDcols = cols_]
+
+  dt1 <- NULL
+  if (!is.null(group_by)) {
+    dt1 <- data.table::data.table(data)[, lapply(.SD, sum, na.rm = TRUE),
+                                      by = .xvar, .SDcols = cols_]
+  }
+
+  dt  <- add_metrics(dt,  cols_, claim_count, exposure, claim_amount, premium)
+  if (!is.null(group_by)) {
+    dt1 <- add_metrics(dt1, cols_, claim_count, exposure, claim_amount, premium)
+  }
+
+  attr(dt, "xvar") <- .xvar_out
+  attr(dt, "severity") <- claim_amount
+  attr(dt, "claim_amount") <- claim_amount
+  attr(dt, "nclaims") <- claim_count
+  attr(dt, "claim_count") <- claim_count
+  attr(dt, "exposure") <- exposure
+  attr(dt, "premium") <- premium
+  attr(dt, "by") <- .by_out
+  attr(dt, "group_by") <- .by_out
+  attr(dt, "dfby") <- as.data.frame(dt1)
+
+  dt <- as.data.frame(dt)
+  class(dt) <- c("factor_analysis", "univariate", "data.frame")
+  return(dt)
+}
+
+
+resolve_factor_analysis_args <- function(data, risk_factors, claim_amount,
+                                         claim_count, group_by, df, x,
+                                         severity, nclaims, by) {
+  if (!is.null(df)) {
+    if (!is.null(data)) {
+      stop("Use only one of `data` and deprecated `df`.", call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "factor_analysis(df)",
+                              "factor_analysis(data)")
+    data <- df
+  }
+  if (!is.null(x)) {
+    if (!is.null(risk_factors)) {
+      stop("Use only one of `risk_factors` and deprecated `x`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "factor_analysis(x)",
+                              "factor_analysis(risk_factors)")
+    risk_factors <- x
+  }
+  if (!is.null(severity)) {
+    if (!is.null(claim_amount)) {
+      stop("Use only one of `claim_amount` and deprecated `severity`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "factor_analysis(severity)",
+                              "factor_analysis(claim_amount)")
+    claim_amount <- severity
+  }
+  if (!is.null(nclaims)) {
+    if (!is.null(claim_count)) {
+      stop("Use only one of `claim_count` and deprecated `nclaims`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "factor_analysis(nclaims)",
+                              "factor_analysis(claim_count)")
+    claim_count <- nclaims
+  }
+  if (!is.null(by)) {
+    if (!is.null(group_by)) {
+      stop("Use only one of `group_by` and deprecated `by`.", call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "factor_analysis(by)",
+                              "factor_analysis(group_by)")
+    group_by <- by
+  }
+
+  list(
+    data = data,
+    risk_factors = risk_factors,
+    claim_amount = claim_amount,
+    claim_count = claim_count,
+    group_by = group_by
+  )
+}
+
+
+validate_factor_analysis_args <- function(data, risk_factors,
+                                          claim_amount = NULL,
+                                          claim_count = NULL,
+                                          exposure = NULL,
+                                          premium = NULL,
+                                          group_by = NULL) {
+  if (!inherits(data, "data.frame")) {
+    stop("`data` must be a data.frame.", call. = FALSE)
+  }
+  if (!is.character(risk_factors) || length(risk_factors) == 0L ||
+      anyNA(risk_factors)) {
+    stop("`risk_factors` must be a non-empty character vector.", call. = FALSE)
+  }
+
+  optional_args <- list(
+    claim_amount = claim_amount,
+    claim_count = claim_count,
+    exposure = exposure,
+    premium = premium,
+    group_by = group_by
+  )
+
+  for (nm in names(optional_args)) {
+    value <- optional_args[[nm]]
+    if (!is.null(value) && (!is.character(value) || anyNA(value))) {
+      stop("`", nm, "` must be NULL or a character vector.", call. = FALSE)
+    }
+  }
+
+  if (is.null(claim_amount) && is.null(claim_count) && is.null(exposure) &&
       is.null(premium)) {
     stop("You did not supply any of the required arguments.", call. = FALSE)
   }
 
-  if (!all(.xvar %in% names(df))) {
-    stop("Column(s) ", paste(.xvar, collapse = ", "), " not found in data.frame",
-         call. = FALSE)
+  required_cols <- unique(c(risk_factors, claim_amount, claim_count, exposure,
+                            premium, group_by))
+  missing_cols <- setdiff(required_cols, names(data))
+  if (length(missing_cols) > 0) {
+    stop(
+      "Column(s) not found in `data`: ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
   }
 
-  if (length(.xvar) > 1) {
-    by <- c(.xvar[-1], by)
-    .xvar <- .xvar[1]
+  metric_cols <- unique(c(claim_amount, claim_count, exposure, premium))
+  non_numeric_cols <- metric_cols[!vapply(data[metric_cols], is.numeric, logical(1))]
+  if (length(non_numeric_cols) > 0) {
+    stop(
+      "Metric column(s) must be numeric: ",
+      paste(non_numeric_cols, collapse = ", "),
+      call. = FALSE
+    )
   }
 
-  cols_ <- c(severity, nclaims, exposure, premium)
-  cols_ <- cols_[!is.null(cols_)]
-
-  if (length(cols_) == 0) {
-    stop("Define at least one column for severity, nclaims, exposure or premium.",
-         call. = FALSE)
-  }
-
-  BY <- c(.xvar, by)
-
-  dt <- data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
-                                   by = BY, .SDcols = cols_]
-
-  dt1 <- NULL
-  if (!is.null(by)) {
-    dt1 <- data.table::data.table(df)[, lapply(.SD, sum, na.rm = TRUE),
-                                      by = .xvar, .SDcols = cols_]
-  }
-
-  dt  <- add_metrics(dt,  cols_, nclaims, exposure, severity, premium)
-  if (!is.null(by)) {
-    dt1 <- add_metrics(dt1, cols_, nclaims, exposure, severity, premium)
-  }
-
-  attr(dt, "xvar") <- .xvar_out
-  attr(dt, "severity") <- severity
-  attr(dt, "nclaims") <- nclaims
-  attr(dt, "exposure") <- exposure
-  attr(dt, "premium") <- premium
-  attr(dt, "by") <- .by_out
-  attr(dt, "dfby") <- as.data.frame(dt1)
-
-  class(dt) <- c("univariate", class(df))
-  return(dt)
+  invisible(TRUE)
 }
 
 
@@ -187,8 +335,8 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' Takes an object produced by [factor_analysis()] or [univariate()]
 #' (deprecated NSE interface) and plots the available statistics.
 #'
-#' @param x A `univariate` object produced by [factor_analysis()]
-#' or [univariate()].
+#' @param object A `factor_analysis` or `univariate` object produced by
+#' [factor_analysis()] or [univariate()].
 #' @param metrics Numeric vector specifying which metrics to plot (default is
 #' `1:9`). There are nine available metrics:
 #' \itemize{
@@ -262,34 +410,47 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' autoplot(x_old)
 #'
 #' @export
-autoplot.univariate <- function(x,
-                                metrics = NULL,
-                                show_plots = NULL,
-                                ncol = 1,
-                                background = TRUE,
-                                labels = TRUE,
-                                sort = FALSE,
-                                sort_manual = NULL,
-                                dec.mark = ",",
-                                color = NULL,
-                                color_bg = NULL,
-                                label_width = 50,
-                                coord_flip = FALSE,
-                                show_total = FALSE,
-                                total_color = NULL,
-                                total_name = NULL,
-                                rotate_angle = NULL,
-                                custom_theme = NULL,
-                                remove_underscores = FALSE,
-                                remove_x_elements = TRUE,
-                                ...) {
+autoplot.factor_analysis <- function(object,
+                                     metrics = NULL,
+                                     show_plots = NULL,
+                                     ncol = 1,
+                                     background = TRUE,
+                                     labels = TRUE,
+                                     sort = FALSE,
+                                     sort_manual = NULL,
+                                     dec.mark = ",",
+                                     color = NULL,
+                                     color_bg = NULL,
+                                     label_width = 50,
+                                     coord_flip = FALSE,
+                                     show_total = FALSE,
+                                     total_color = NULL,
+                                     total_name = NULL,
+                                     rotate_angle = NULL,
+                                     custom_theme = NULL,
+                                     remove_underscores = FALSE,
+                                     remove_x_elements = TRUE,
+                                     ...) {
 
-  xvar     <- attr(x, "xvar")
-  nclaims  <- attr(x, "nclaims")
-  exposure <- attr(x, "exposure")
-  severity <- attr(x, "severity")
-  premium  <- attr(x, "premium")
-  by       <- as.character(attr(x, "by"))
+  if (!inherits(object, "factor_analysis") && !inherits(object, "univariate")) {
+    stop("`object` must be a factor_analysis object.", call. = FALSE)
+  }
+
+  xvar     <- attr(object, "xvar")
+  nclaims  <- attr(object, "nclaims")
+  exposure <- attr(object, "exposure")
+  severity <- attr(object, "severity")
+  premium  <- attr(object, "premium")
+  by       <- attr(object, "by")
+
+  if (length(by) > 1) {
+    stop(
+      "`autoplot()` supports at most one `by` variable. ",
+      "Create separate factor_analysis objects or call `autoplot()` with a single `by` variable.",
+      call. = FALSE
+    )
+  }
+  by <- as.character(by)
 
   # backward compatibility
   if (!is.null(show_plots) && !is.null(metrics)) {
@@ -317,8 +478,8 @@ autoplot.univariate <- function(x,
   }
   if (length(by) == 0) by <- "NULL"
 
-  df   <- if (by == "NULL") x else attr(x, "dfby")
-  dfby <- if (by == "NULL") attr(x, "dfby") else x
+  df   <- if (by == "NULL") object else attr(object, "dfby")
+  dfby <- if (by == "NULL") attr(object, "dfby") else object
 
   if (!is.factor(df[[xvar]])) df[[xvar]] <- factor(df[[xvar]])
   if (by != "NULL" && !is.factor(dfby[[by]])) dfby[[by]] <- factor(dfby[[by]])
@@ -445,4 +606,10 @@ autoplot.univariate <- function(x,
   }
 
   plot_out
+}
+
+
+#' @export
+autoplot.univariate <- function(object, ...) {
+  autoplot.factor_analysis(object, ...)
 }

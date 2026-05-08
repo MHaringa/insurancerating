@@ -1,42 +1,7 @@
-#' Truncated probability density function
-#'
-#' @description Computes the probability density function (PDF) of a
-#' specified distribution, truncated to the interval \eqn{(a, b)}.
-#'
-#' The function takes a base distribution (e.g. \code{"norm"}, \code{"gamma"})
-#' and returns the corresponding truncated density evaluated at the values in
-#' \code{x}. Values outside the truncation interval have density zero.
-#'
-#' @param x A numeric vector of quantiles at which the truncated density is evaluated.
-#' @param spec A character string specifying the distribution name (e.g.
-#' \code{"norm"}, \code{"gamma"}, \code{"lnorm"}). The corresponding density
-#' function \code{d<spec>} and distribution function \code{p<spec>} must exist.
-#' @param a Numeric. Lower truncation bound. Defaults to \code{-Inf}.
-#' @param b Numeric. Upper truncation bound. Defaults to \code{Inf}.
-#' @param ... Additional arguments passed to the underlying distribution
-#' functions (e.g. \code{mean}, \code{sd}, \code{shape}, \code{scale}).
-#'
-#' @details
-#' The truncated density is defined as:
-#' \deqn{
-#' f_{trunc}(x) = \frac{f(x)}{F(b) - F(a)}, \quad \text{for } x \in (a, b)
-#' }
-#'
-#' and zero outside the truncation interval, where \eqn{f} and \eqn{F} are the
-#' density and cumulative distribution function of the original distribution.
-#'
-#' The function checks that the truncation interval lies within the support of
-#' the distribution to avoid numerical issues.
-#'
-#' @return A numeric vector of the same length as \code{x}, containing the
-#' truncated density values.
-#'
-#' @seealso \code{\link{ptrunc}} for the truncated cumulative distribution function.
-#'
-#' @keywords internal
+#' @noRd
 dtrunc <- function(x, spec, a = -Inf, b = Inf, ...) {
   if (a >= b) {
-    stop("argument a is greater than or equal to b")
+    stop("`a` must be smaller than `b`.", call. = FALSE)
   }
 
   tt <- rep(0, length(x))
@@ -48,7 +13,8 @@ dtrunc <- function(x, spec, a = -Inf, b = Inf, ...) {
 
   denom <- G.b - G.a
   if (!is.finite(denom) || denom <= 0) {
-    return(tt)  # alles 0 --> loglik = -Inf
+    stop("Truncation interval has no positive probability mass.",
+         call. = FALSE)
   }
 
   idx <- x >= a & x <= b
@@ -57,45 +23,10 @@ dtrunc <- function(x, spec, a = -Inf, b = Inf, ...) {
   tt
 }
 
-#' Truncated cumulative distribution function
-#'
-#' @description Computes the cumulative distribution function (CDF) of a
-#' specified distribution, truncated to the interval \eqn{(a, b)}.
-#'
-#' The function takes a base distribution (e.g. \code{"norm"}, \code{"gamma"})
-#' and returns the corresponding truncated CDF evaluated at the values in
-#' \code{q}. Values outside the truncation interval are mapped to the interval
-#' boundaries.
-#'
-#' @param q A numeric vector of quantiles at which the truncated CDF is evaluated.
-#' @param spec A character string specifying the distribution name (e.g.
-#' \code{"norm"}, \code{"gamma"}, \code{"lnorm"}). The corresponding CDF
-#' function \code{p<spec>} must exist.
-#' @param a Numeric. Lower truncation bound. Defaults to \code{-Inf}.
-#' @param b Numeric. Upper truncation bound. Defaults to \code{Inf}.
-#' @param ... Additional arguments passed to the underlying distribution
-#' function (e.g. \code{mean}, \code{sd}, \code{shape}, \code{scale}).
-#'
-#' @details
-#' The truncated CDF is defined as:
-#' \deqn{
-#' F_{trunc}(q) = \frac{F(\min(\max(q, a), b)) - F(a)}{F(b) - F(a)}
-#' }
-#'
-#' where \eqn{F} is the CDF of the original distribution.
-#'
-#' The function ensures numerical stability by checking that the truncation
-#' interval lies within the support of the distribution.
-#'
-#' @return A numeric vector of the same length as \code{q}, containing the
-#' truncated CDF values.
-#'
-#' @seealso \code{\link{dtrunc}} for the truncated density function.
-#'
-#' @keywords internal
+#' @noRd
 ptrunc <- function(q, spec, a = -Inf, b = Inf, ...) {
   if (a >= b) {
-    stop("argument a is greater than or equal to b")
+    stop("`a` must be smaller than `b`.", call. = FALSE)
   }
 
   aa <- rep(a, length(q))
@@ -107,7 +38,8 @@ ptrunc <- function(q, spec, a = -Inf, b = Inf, ...) {
 
   denom <- G.b - G.a
   if (any(!is.finite(denom)) || any(denom <= 0)) {
-    return(rep(NA_real_, length(q)))
+    stop("Truncation interval has no positive probability mass.",
+         call. = FALSE)
   }
 
   qq <- pmax(pmin(q, bb), aa)
@@ -118,7 +50,105 @@ ptrunc <- function(q, spec, a = -Inf, b = Inf, ...) {
 
 
 
-#' @keywords internal
+#' @noRd
+.is_positive_whole_number <- function(x) {
+  is.numeric(x) &&
+    length(x) == 1L &&
+    !is.na(x) &&
+    is.finite(x) &&
+    x > 0 &&
+    x == as.integer(x)
+}
+
+#' @noRd
+.is_nonnegative_whole_number <- function(x) {
+  is.numeric(x) &&
+    length(x) == 1L &&
+    !is.na(x) &&
+    is.finite(x) &&
+    x >= 0 &&
+    x == as.integer(x)
+}
+
+#' @noRd
+.is_flag <- function(x) {
+  is.logical(x) && length(x) == 1L && !is.na(x)
+}
+
+#' @noRd
+.validate_truncation_bounds <- function(lower_truncation, upper_truncation) {
+  if (!is.numeric(lower_truncation) ||
+      !is.numeric(upper_truncation) ||
+      length(lower_truncation) != 1L ||
+      length(upper_truncation) != 1L ||
+      is.na(lower_truncation) ||
+      is.na(upper_truncation)) {
+    stop("`lower_truncation` and `upper_truncation` must be numeric scalars.",
+         call. = FALSE)
+  }
+  if (lower_truncation >= upper_truncation) {
+    stop("`lower_truncation` must be smaller than `upper_truncation`.",
+         call. = FALSE)
+  }
+}
+
+#' @noRd
+.validate_probability_mass <- function(lower, upper, lower_cdf, upper_cdf,
+                                       distribution) {
+  if (!is.finite(lower_cdf) || !is.finite(upper_cdf) || lower_cdf >= upper_cdf) {
+    stop(
+      sprintf(
+        "Truncation interval has no positive probability mass for the %s distribution.",
+        distribution
+      ),
+      call. = FALSE
+    )
+  }
+}
+
+#' @noRd
+.validate_truncated_start <- function(start_values, distribution) {
+  if (!is.list(start_values) || length(start_values) == 0L ||
+      is.null(names(start_values)) || any(names(start_values) == "")) {
+    stop("`start_values` must be a named list of numeric starting values.",
+         call. = FALSE)
+  }
+
+  required <- if (distribution == "gamma") {
+    c("shape", "scale")
+  } else {
+    c("meanlog", "sdlog")
+  }
+  missing <- setdiff(required, names(start_values))
+  if (length(missing) > 0L) {
+    stop(
+      sprintf("`start_values` must contain %s.", paste(missing, collapse = " and ")),
+      call. = FALSE
+    )
+  }
+
+  lens <- vapply(start_values[required], length, integer(1))
+  if (any(lens == 0L) || length(unique(lens)) != 1L) {
+    stop("All `start_values` entries must have the same positive length.",
+         call. = FALSE)
+  }
+  vals <- unlist(start_values[required], use.names = FALSE)
+  if (!is.numeric(vals) || any(!is.finite(vals))) {
+    stop("`start_values` must contain finite numeric values.", call. = FALSE)
+  }
+
+  positive <- if (distribution == "gamma") {
+    required
+  } else {
+    "sdlog"
+  }
+  if (any(unlist(start_values[positive], use.names = FALSE) <= 0)) {
+    stop("Scale, shape, and standard deviation start values must be positive.",
+         call. = FALSE)
+  }
+}
+
+#' @noRd
 get_start_values_truncated <- function(y,
                                        dist = c("gamma", "lognormal"),
                                        n_variants = 1,
@@ -274,114 +304,240 @@ get_start_values_truncated <- function(y,
 }
 
 
-#' Fit a distribution to truncated severity (loss) data
+#' Fit severity distributions to truncated claim data
 #'
-#' @description `r lifecycle::badge('experimental')` Estimate the original
-#' distribution from truncated data.
+#' @description `r lifecycle::badge('experimental')`
+#' Estimate an underlying claim severity distribution when the observed claims
+#' are truncated.
 #'
-#' @param y Vector with observations of losses.
-#' @param dist Distribution for severity: \code{"gamma"} or
-#' \code{"lognormal"}.
-#' @param left Numeric. Observations below this threshold are not present in
-#' the sample.
-#' @param right Numeric. Observations above this threshold are not present in
-#' the sample.
-#' @param start Optional list of starting values. If \code{NULL}, a
-#' multi-start strategy is used.
+#' @param losses Numeric vector with observed claim severities.
+#' @param distribution Severity distribution to fit: `"gamma"` or
+#' `"lognormal"`.
+#' @param lower_truncation Numeric lower truncation point. Claims at or below
+#' this value are assumed not to be present in `losses`. Defaults to `0`.
+#' @param upper_truncation Numeric upper truncation point. Claims at or above
+#' this value are assumed not to be present in `losses`. Defaults to `Inf`.
+#' @param start_values Optional named list of starting values. If `NULL`, a
+#' multi-start strategy is used. For a gamma distribution use `shape` and
+#' `scale`; for a lognormal distribution use `meanlog` and `sdlog`.
 #' @param print_initial Deprecated logical retained for backward compatibility.
 #' @param n_variants Controls how many local variations around base starts are
 #' used.
 #' @param n_shape_grid Number of grid points for gamma shape.
 #' @param n_scale_grid Number of grid points for gamma scale.
-#' @param trace Logical. If \code{TRUE}, prints periodic progress during the
+#' @param show_progress Logical. If `TRUE`, prints periodic progress during the
 #' fitting loop.
-#' @param report Logical. If \code{TRUE}, prints a short summary at the end.
+#' @param show_summary Logical. If `TRUE`, prints a short summary at the end.
+#' @param y,dist,left,right,start,trace,report Deprecated argument names kept
+#' for backward compatibility.
+#'
+#' @details
+#' In insurance pricing, severity models are often fitted on claim amounts that
+#' are not observed over the full range of possible losses. Small claims may be
+#' absent because of a deductible, reporting threshold, or data extraction rule.
+#' Very large claims may be capped, excluded, or modelled separately as large
+#' losses. A standard gamma or lognormal fit on the remaining observed claims
+#' treats that truncated sample as if it were complete, which can bias the
+#' estimated severity distribution.
+#'
+#' `fit_truncated_dist()` fits the distribution conditional on the claim being
+#' observed within the truncation interval. This means the fitted likelihood
+#' uses the density divided by the probability mass between `lower_truncation`
+#' and `upper_truncation`. The function is intended for truncation, where
+#' claims outside the interval are absent from the data. This differs from
+#' censoring, where claims outside a limit are still observed but their exact
+#' amount is not known.
+#'
+#' Observed losses must lie strictly inside the truncation interval. Values
+#' outside the interval indicate that the bounds do not describe the data and
+#' therefore produce an error.
 #'
 #' @importFrom fitdistrplus fitdist
 #'
-#' @return An object of class \code{c("truncated_dist", "fitdist")} with
-#' additional attributes describing the attempted fits.
+#' @return An object of class `c("truncated_dist", "fitdist")`. The object
+#' contains the fitted distribution parameters from [fitdistrplus::fitdist()]
+#' and additional attributes:
+#' \describe{
+#'   \item{truncated_vec}{The observed losses used for fitting.}
+#'   \item{lower_truncation, upper_truncation}{The truncation bounds.}
+#'   \item{fit_attempts}{Metadata for each attempted start combination.}
+#'   \item{n_attempts, n_success, n_failed}{Fit attempt counts.}
+#'   \item{best_attempt_index}{Index of the selected start combination.}
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' observed <- MTPL2$amount[MTPL2$amount > 500 & MTPL2$amount < 10000]
+#' fit <- fit_truncated_dist(
+#'   losses = observed,
+#'   distribution = "gamma",
+#'   lower_truncation = 500,
+#'   upper_truncation = 10000
+#' )
+#' autoplot(fit)
+#' }
+#'
 #' @export
-fit_truncated_dist <- function(y,
-                               dist = c("gamma", "lognormal"),
-                               left = NULL,
-                               right = NULL,
-                               start = NULL,
+fit_truncated_dist <- function(losses = NULL,
+                               distribution = c("gamma", "lognormal"),
+                               lower_truncation = NULL,
+                               upper_truncation = NULL,
+                               start_values = NULL,
                                print_initial = TRUE,
                                n_variants = 1,
                                n_shape_grid = 8,
                                n_scale_grid = 8,
-                               trace = FALSE,
-                               report = TRUE) {
-  dist <- match.arg(dist)
+                               show_progress = FALSE,
+                               show_summary = TRUE,
+                               y = NULL,
+                               dist = NULL,
+                               left = NULL,
+                               right = NULL,
+                               start = NULL,
+                               trace = NULL,
+                               report = NULL) {
 
-  if (!is.numeric(y) || length(y) == 0) {
-    stop("y must be a non-empty numeric vector")
+  if (!is.null(y)) {
+    if (!is.null(losses)) {
+      stop("Use only one of `losses` and deprecated `y`.", call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(y)",
+                              "fit_truncated_dist(losses)")
+    losses <- y
+  }
+  if (!is.null(dist)) {
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(dist)",
+                              "fit_truncated_dist(distribution)")
+    distribution <- dist
+  }
+  if (!is.null(left)) {
+    if (!is.null(lower_truncation)) {
+      stop("Use only one of `lower_truncation` and deprecated `left`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(left)",
+                              "fit_truncated_dist(lower_truncation)")
+    lower_truncation <- left
+  }
+  if (!is.null(right)) {
+    if (!is.null(upper_truncation)) {
+      stop("Use only one of `upper_truncation` and deprecated `right`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(right)",
+                              "fit_truncated_dist(upper_truncation)")
+    upper_truncation <- right
+  }
+  if (!is.null(start)) {
+    if (!is.null(start_values)) {
+      stop("Use only one of `start_values` and deprecated `start`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(start)",
+                              "fit_truncated_dist(start_values)")
+    start_values <- start
+  }
+  if (!is.null(trace)) {
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(trace)",
+                              "fit_truncated_dist(show_progress)")
+    show_progress <- trace
+  }
+  if (!is.null(report)) {
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(report)",
+                              "fit_truncated_dist(show_summary)")
+    show_summary <- report
+  }
+  if (!identical(print_initial, TRUE)) {
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(print_initial)")
   }
 
-  y <- y[is.finite(y)]
+  distribution <- match.arg(distribution)
 
-  if (length(y) == 0) {
-    stop("y contains no finite observations")
+  if (!is.numeric(losses) || length(losses) == 0L) {
+    stop("`losses` must be a non-empty numeric vector.", call. = FALSE)
   }
 
-  if (is.null(left)) {
-    left <- 0
-  }
-  if (is.null(right)) {
-    right <- Inf
+  losses <- losses[is.finite(losses)]
+
+  if (length(losses) == 0L) {
+    stop("`losses` must contain at least one finite observation.",
+         call. = FALSE)
   }
 
-  if (!is.numeric(left) || !is.numeric(right) ||
-      length(left) != 1 || length(right) != 1) {
-    stop("left and right must be numeric scalars")
+  if (is.null(lower_truncation)) {
+    lower_truncation <- 0
+  }
+  if (is.null(upper_truncation)) {
+    upper_truncation <- Inf
   }
 
-  if (left >= right) {
-    stop("argument left is greater than or equal to right")
+  .validate_truncation_bounds(lower_truncation, upper_truncation)
+  if (any(losses <= lower_truncation | losses >= upper_truncation)) {
+    stop("All `losses` must lie strictly inside the truncation interval.",
+         call. = FALSE)
   }
-
-  if (any(y <= left | y >= right)) {
-    warning("Some observations lie outside the truncation interval")
+  if (any(losses <= 0)) {
+    stop("`losses` must be strictly positive for gamma and lognormal distributions.",
+         call. = FALSE)
+  }
+  if (!.is_nonnegative_whole_number(n_variants)) {
+    stop("`n_variants` must be a non-negative whole number.", call. = FALSE)
+  }
+  if (!.is_positive_whole_number(n_shape_grid)) {
+    stop("`n_shape_grid` must be a positive whole number.", call. = FALSE)
+  }
+  if (!.is_positive_whole_number(n_scale_grid)) {
+    stop("`n_scale_grid` must be a positive whole number.", call. = FALSE)
+  }
+  if (!.is_flag(show_progress)) {
+    stop("`show_progress` must be TRUE or FALSE.", call. = FALSE)
+  }
+  if (!.is_flag(show_summary)) {
+    stop("`show_summary` must be TRUE or FALSE.", call. = FALSE)
+  }
+  if (!is.null(start_values)) {
+    .validate_truncated_start(start_values, distribution)
   }
 
   dtruncated_gamma <- ptruncated_gamma <- NULL
   dtruncated_log_normal <- ptruncated_log_normal <- NULL
 
-  if (dist == "gamma") {
+  if (distribution == "gamma") {
     dtruncated_gamma <<- function(x, scale, shape) {
-      dtrunc(x, "gamma", a = left, b = right, scale = scale, shape = shape)
+      dtrunc(x, "gamma", a = lower_truncation, b = upper_truncation,
+             scale = scale, shape = shape)
     }
     ptruncated_gamma <<- function(q, scale, shape) {
-      ptrunc(q, "gamma", a = left, b = right, scale = scale, shape = shape)
+      ptrunc(q, "gamma", a = lower_truncation, b = upper_truncation,
+             scale = scale, shape = shape)
     }
     distt <- "truncated_gamma"
   }
 
-  if (dist == "lognormal") {
+  if (distribution == "lognormal") {
     dtruncated_log_normal <<- function(x, meanlog, sdlog) {
-      dtrunc(x, "lnorm", a = left, b = right,
+      dtrunc(x, "lnorm", a = lower_truncation, b = upper_truncation,
              meanlog = meanlog, sdlog = sdlog)
     }
     ptruncated_log_normal <<- function(q, meanlog, sdlog) {
-      ptrunc(q, "lnorm", a = left, b = right,
+      ptrunc(q, "lnorm", a = lower_truncation, b = upper_truncation,
              meanlog = meanlog, sdlog = sdlog)
     }
     distt <- "truncated_log_normal"
   }
 
-  if (is.null(start)) {
+  if (is.null(start_values)) {
     start_list <- get_start_values_truncated(
-      y = y,
-      dist = dist,
+      y = losses,
+      dist = distribution,
       n_variants = n_variants,
       n_shape_grid = n_shape_grid,
       n_scale_grid = n_scale_grid
     )
   } else {
-    n_start <- length(start[[1]])
+    n_start <- length(start_values[[1]])
     start_list <- lapply(seq_len(n_start), function(i) {
-      lapply(start, `[[`, i)
+      lapply(start_values, `[[`, i)
     })
   }
 
@@ -400,7 +556,7 @@ fit_truncated_dist <- function(y,
       suppressMessages(
         tryCatch(
           fitdistrplus::fitdist(
-            y,
+            losses,
             distt,
             method = "mle",
             start = start_e,
@@ -422,7 +578,7 @@ fit_truncated_dist <- function(y,
         message = conditionMessage(fit_i)
       )
 
-      if (isTRUE(trace) && (i == 1L || i %% 25L == 0L || i == n_total)) {
+      if (isTRUE(show_progress) && (i == 1L || i %% 25L == 0L || i == n_total)) {
         message(sprintf(
           "[%d/%d] processed (%d succeeded, %d failed)",
           i, n_total, n_success, n_failed
@@ -454,7 +610,7 @@ fit_truncated_dist <- function(y,
       )
     }
 
-    if (isTRUE(trace) && (i == 1L || i %% 25L == 0L || i == n_total)) {
+    if (isTRUE(show_progress) && (i == 1L || i %% 25L == 0L || i == n_total)) {
       message(sprintf(
         "[%d/%d] processed (%d succeeded, %d failed)",
         i, n_total, n_success, n_failed
@@ -475,7 +631,7 @@ fit_truncated_dist <- function(y,
     logical(1)
   ))[1]
 
-  if (isTRUE(report)) {
+  if (isTRUE(show_summary)) {
     message(sprintf(
       "Tried %d start combinations: %d succeeded, %d failed.",
       n_total, n_success, n_failed
@@ -487,9 +643,12 @@ fit_truncated_dist <- function(y,
   }
 
   class(out) <- append("truncated_dist", class(out))
-  attr(out, "truncated_vec") <- y
-  attr(out, "left") <- left
-  attr(out, "right") <- right
+  attr(out, "truncated_vec") <- losses
+  attr(out, "losses") <- losses
+  attr(out, "left") <- lower_truncation
+  attr(out, "right") <- upper_truncation
+  attr(out, "lower_truncation") <- lower_truncation
+  attr(out, "upper_truncation") <- upper_truncation
   attr(out, "fit_attempts") <- fit_attempts
   attr(out, "n_attempts") <- n_total
   attr(out, "n_success") <- n_success
@@ -532,15 +691,24 @@ fit_truncated_dist <- function(y,
 #'
 #' @export
 rlnormt <- function(n, meanlog, sdlog, lower, upper) {
-  if (lower >= upper) {
-    stop("lower must be strictly less than upper")
+  if (!.is_positive_whole_number(n)) {
+    stop("`n` must be a positive whole number.", call. = FALSE)
   }
+  if (!is.numeric(meanlog) || length(meanlog) != 1L || !is.finite(meanlog)) {
+    stop("`meanlog` must be a single finite number.", call. = FALSE)
+  }
+  if (!is.numeric(sdlog) || length(sdlog) != 1L ||
+      !is.finite(sdlog) || sdlog <= 0) {
+    stop("`sdlog` must be a single positive finite number.", call. = FALSE)
+  }
+  .validate_truncation_bounds(lower, upper)
 
-  f_a <- plnorm(lower, meanlog = meanlog, sdlog = sdlog)
-  f_b <- plnorm(upper, meanlog = meanlog, sdlog = sdlog)
+  f_a <- stats::plnorm(lower, meanlog = meanlog, sdlog = sdlog)
+  f_b <- stats::plnorm(upper, meanlog = meanlog, sdlog = sdlog)
+  .validate_probability_mass(lower, upper, f_a, f_b, "lognormal")
 
-  u <- runif(n, min = f_a, max = f_b)
-  qlnorm(u, meanlog = meanlog, sdlog = sdlog)
+  u <- stats::runif(n, min = f_a, max = f_b)
+  stats::qlnorm(u, meanlog = meanlog, sdlog = sdlog)
 }
 
 
@@ -576,38 +744,56 @@ rlnormt <- function(n, meanlog, sdlog, lower, upper) {
 #'
 #' @export
 rgammat <- function(n, shape, scale, lower, upper) {
-  if (lower >= upper) {
-    stop("lower must be strictly less than upper")
+  if (!.is_positive_whole_number(n)) {
+    stop("`n` must be a positive whole number.", call. = FALSE)
   }
-
-  f_a <- pgamma(lower, shape = shape, scale = scale)
-  f_b <- pgamma(upper, shape = shape, scale = scale)
-
-  if (!is.finite(f_a) || !is.finite(f_b) || f_a >= f_b) {
-    stop("Invalid truncation interval for gamma distribution")
+  if (!is.numeric(shape) || length(shape) != 1L ||
+      !is.finite(shape) || shape <= 0) {
+    stop("`shape` must be a single positive finite number.", call. = FALSE)
   }
+  if (!is.numeric(scale) || length(scale) != 1L ||
+      !is.finite(scale) || scale <= 0) {
+    stop("`scale` must be a single positive finite number.", call. = FALSE)
+  }
+  .validate_truncation_bounds(lower, upper)
 
-  u <- runif(n, min = f_a, max = f_b)
-  qgamma(u, shape = shape, scale = scale)
+  f_a <- stats::pgamma(lower, shape = shape, scale = scale)
+  f_b <- stats::pgamma(upper, shape = shape, scale = scale)
+  .validate_probability_mass(lower, upper, f_a, f_b, "gamma")
+
+  u <- stats::runif(n, min = f_a, max = f_b)
+  stats::qgamma(u, shape = shape, scale = scale)
 }
 
 
-#' Automatically create a ggplot for objects obtained from fit_truncated_dist()
+#' Plot a fitted truncated severity distribution
 #'
-#' @description Creates a plot of the empirical cumulative distribution function
-#' (ECDF) of the observed truncated data together with the fitted truncated CDF.
+#' @description Creates a plot of the empirical cumulative distribution
+#' function (ECDF) of the observed truncated claim amounts together with the
+#' fitted truncated CDF.
 #'
 #' @param object An object produced by \code{fit_truncated_dist()}.
-#' @param geom_ecdf Character string indicating how to display the ECDF.
-#' Must be one of \code{"point"} or \code{"step"}.
-#' @param xlab Title of the x axis. Defaults to \code{"severity"}.
-#' @param ylab Title of the y axis. Defaults to \code{"cumulative proportion"}.
-#' @param ylim Numeric vector of length 2 specifying y-axis limits.
-#' @param xlim Numeric vector of length 2 specifying x-axis limits.
-#' @param print_title Logical. If \code{TRUE}, print title and subtitle.
-#' @param print_dig Integer. Number of digits for parameter estimates in the subtitle.
-#' @param print_trunc Integer. Number of digits used for truncation bounds.
+#' @param ecdf_geom Character string indicating how to display the empirical
+#' CDF. Must be one of `"point"` or `"step"`.
+#' @param x_label Title of the x axis. Defaults to `"severity"`.
+#' @param y_label Title of the y axis. Defaults to `"cumulative proportion"`.
+#' @param y_limits Numeric vector of length 2 specifying y-axis limits.
+#' @param x_limits Optional numeric vector of length 2 specifying x-axis limits.
+#' @param show_title Logical. If `TRUE`, print title and subtitle.
+#' @param digits Integer. Number of digits for parameter estimates in the
+#' subtitle.
+#' @param truncation_digits Integer. Number of digits used for truncation
+#' bounds.
+#' @param geom_ecdf,xlab,ylab,ylim,xlim,print_title,print_dig,print_trunc
+#' Deprecated argument names kept for backward compatibility.
 #' @param ... Currently unused.
+#'
+#' @details
+#' The plot compares the empirical distribution of the observed, truncated
+#' claim severities with the fitted distribution conditional on the same
+#' truncation interval. This is a visual check of whether the selected severity
+#' distribution is plausible for the part of the portfolio that is actually
+#' observed.
 #'
 #' @return A \code{ggplot2} object.
 #'
@@ -619,32 +805,105 @@ rgammat <- function(n, shape, scale, lower, upper) {
 #'
 #' @export
 autoplot.truncated_dist <- function(object,
-                                    geom_ecdf = c("point", "step"),
+                                    ecdf_geom = c("point", "step"),
+                                    x_label = NULL,
+                                    y_label = NULL,
+                                    y_limits = c(0, 1),
+                                    x_limits = NULL,
+                                    show_title = TRUE,
+                                    digits = 2,
+                                    truncation_digits = 2,
+                                    geom_ecdf = NULL,
                                     xlab = NULL,
                                     ylab = NULL,
-                                    ylim = c(0, 1),
+                                    ylim = NULL,
                                     xlim = NULL,
-                                    print_title = TRUE,
-                                    print_dig = 2,
-                                    print_trunc = 2,
+                                    print_title = NULL,
+                                    print_dig = NULL,
+                                    print_trunc = NULL,
                                     ...) {
 
   if (!inherits(object, "truncated_dist")) {
-    stop("object must inherit from class 'truncated_dist'")
+    stop("`object` must inherit from class 'truncated_dist'.", call. = FALSE)
+  }
+  if (!is.null(geom_ecdf)) {
+    lifecycle::deprecate_warn("0.9.0", "autoplot(geom_ecdf)",
+                              "autoplot(ecdf_geom)")
+    ecdf_geom <- geom_ecdf
+  }
+  if (!is.null(xlab)) {
+    lifecycle::deprecate_warn("0.9.0", "autoplot(xlab)",
+                              "autoplot(x_label)")
+    x_label <- xlab
+  }
+  if (!is.null(ylab)) {
+    lifecycle::deprecate_warn("0.9.0", "autoplot(ylab)",
+                              "autoplot(y_label)")
+    y_label <- ylab
+  }
+  if (!is.null(ylim)) {
+    lifecycle::deprecate_warn("0.9.0", "autoplot(ylim)",
+                              "autoplot(y_limits)")
+    y_limits <- ylim
+  }
+  if (!is.null(xlim)) {
+    lifecycle::deprecate_warn("0.9.0", "autoplot(xlim)",
+                              "autoplot(x_limits)")
+    x_limits <- xlim
+  }
+  if (!is.null(print_title)) {
+    lifecycle::deprecate_warn("0.9.0", "autoplot(print_title)",
+                              "autoplot(show_title)")
+    show_title <- print_title
+  }
+  if (!is.null(print_dig)) {
+    lifecycle::deprecate_warn("0.9.0", "autoplot(print_dig)",
+                              "autoplot(digits)")
+    digits <- print_dig
+  }
+  if (!is.null(print_trunc)) {
+    lifecycle::deprecate_warn("0.9.0", "autoplot(print_trunc)",
+                              "autoplot(truncation_digits)")
+    truncation_digits <- print_trunc
+  }
+  if (!.is_flag(show_title)) {
+    stop("`show_title` must be TRUE or FALSE.", call. = FALSE)
+  }
+  if (!.is_nonnegative_whole_number(digits)) {
+    stop("`digits` must be a non-negative whole number.", call. = FALSE)
+  }
+  if (!.is_nonnegative_whole_number(truncation_digits)) {
+    stop("`truncation_digits` must be a non-negative whole number.",
+         call. = FALSE)
+  }
+  if (!is.numeric(y_limits) || length(y_limits) != 2L ||
+      any(!is.finite(y_limits)) || y_limits[1] >= y_limits[2]) {
+    stop("`y_limits` must be a numeric vector of length 2 in increasing order.",
+         call. = FALSE)
+  }
+  if (!is.null(x_limits) &&
+      (!is.numeric(x_limits) || length(x_limits) != 2L ||
+       any(!is.finite(x_limits)) || x_limits[1] >= x_limits[2])) {
+    stop("`x_limits` must be NULL or a numeric vector of length 2 in increasing order.",
+         call. = FALSE)
   }
 
-  left <- attr(object, "left")
-  right <- attr(object, "right")
-  xvar_vec <- attr(object, "truncated_vec")
+  left <- attr(object, "lower_truncation")
+  right <- attr(object, "upper_truncation")
+  xvar_vec <- attr(object, "losses")
+  if (is.null(left)) left <- attr(object, "left")
+  if (is.null(right)) right <- attr(object, "right")
+  if (is.null(xvar_vec)) xvar_vec <- attr(object, "truncated_vec")
 
   if (is.null(left) || is.null(right) || is.null(xvar_vec)) {
-    stop("object does not contain the required truncation attributes")
+    stop("`object` does not contain the required truncation attributes.",
+         call. = FALSE)
   }
 
-  geom_ecdf <- match.arg(geom_ecdf)
+  ecdf_geom <- match.arg(ecdf_geom)
 
-  lch <- format(round(left, print_trunc), big.mark = " ", scientific = FALSE)
-  rch <- format(round(right, print_trunc), big.mark = " ", scientific = FALSE)
+  lch <- format(round(left, truncation_digits), big.mark = " ", scientific = FALSE)
+  rch <- format(round(right, truncation_digits), big.mark = " ", scientific = FALSE)
 
   trunc_bounds <- if (left > 0 && right < Inf) {
     paste0(" (left truncation at ", lch, " and right truncation at ", rch, ")")
@@ -669,16 +928,16 @@ autoplot.truncated_dist <- function(object,
 
   df <- data.frame(xvar = xvar_vec)
 
-  if (is.null(xlim)) {
-    xlim <- c(0, max(df$xvar, na.rm = TRUE))
+  if (is.null(x_limits)) {
+    x_limits <- c(0, max(df$xvar, na.rm = TRUE))
   }
 
-  if (is.null(xlab)) {
-    xlab <- "severity"
+  if (is.null(x_label)) {
+    x_label <- "severity"
   }
 
-  if (is.null(ylab)) {
-    ylab <- "cumulative proportion"
+  if (is.null(y_label)) {
+    y_label <- "cumulative proportion"
   }
 
   distt <- switch(
@@ -690,15 +949,15 @@ autoplot.truncated_dist <- function(object,
 
   est <- object$estimate
   est_title <- paste0(
-    names(est)[1], " = ", round(est[1], print_dig),
+    names(est)[1], " = ", round(est[1], digits),
     " and ",
-    names(est)[2], " = ", round(est[2], print_dig)
+    names(est)[2], " = ", round(est[2], digits)
   )
 
   p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$xvar)) +
-    ggplot2::stat_ecdf(geom = geom_ecdf) +
+    ggplot2::stat_ecdf(geom = ecdf_geom) +
     ggplot2::theme_minimal() +
-    ggplot2::coord_cartesian(ylim = ylim, xlim = xlim) +
+    ggplot2::coord_cartesian(ylim = y_limits, xlim = x_limits) +
     ggplot2::scale_x_continuous(
       labels = function(x) format(x, big.mark = " ", scientific = FALSE)
     )
@@ -727,16 +986,16 @@ autoplot.truncated_dist <- function(object,
       )
   }
 
-  if (isTRUE(print_title)) {
+  if (isTRUE(show_title)) {
     p <- p +
       ggplot2::labs(
-        x = xlab,
-        y = ylab,
+        x = x_label,
+        y = y_label,
         title = paste0("CDF of truncated ", distt, trunc_bounds),
         subtitle = paste0("(", est_title, ")")
       )
   } else {
-    p <- p + ggplot2::labs(x = xlab, y = ylab)
+    p <- p + ggplot2::labs(x = x_label, y = y_label)
   }
 
   p

@@ -10,9 +10,11 @@ add_restriction(model, restrictions)
 restrict_coef(model, restrictions)
 }
 \arguments{
-\item{model}{Object of class \code{rating_refinement}.}
+\item{model}{Object of class \code{rating_refinement}, usually created with
+\code{\link[=prepare_refinement]{prepare_refinement()}}.}
 
-\item{restrictions}{data.frame with two columns containing restricted data.}
+\item{restrictions}{data.frame with exactly two columns: the original risk
+factor level and the replacement relativity to use in the refined tariff.}
 }
 \value{
 Object of class \code{rating_refinement}.

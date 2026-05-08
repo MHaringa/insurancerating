@@ -1,17 +1,66 @@
-#' Reduce portfolio by merging redundant date ranges
+#' @noRd
+.time_expr_to_name <- function(expr, env) {
+  if (identical(expr, quote(NULL))) {
+    return(NULL)
+  }
+  if (is.character(expr)) {
+    return(expr)
+  }
+  if (is.symbol(expr)) {
+    return(as.character(expr))
+  }
+  val <- tryCatch(eval(expr, env), error = function(e) NULL)
+  if (is.character(val)) {
+    return(val)
+  }
+  deparse(expr)
+}
+
+#' @noRd
+.time_dots_to_names <- function(exprs, env) {
+  if (length(exprs) == 0L) {
+    return(character(0))
+  }
+  unlist(lapply(exprs, .time_expr_to_name, env = env), use.names = FALSE)
+}
+
+#' @noRd
+.time_aggregate_function <- function(aggregate_fun) {
+  if (is.character(aggregate_fun)) {
+    if (length(aggregate_fun) != 1L || is.na(aggregate_fun) ||
+        aggregate_fun == "") {
+      stop("`aggregate_fun` must be a function or a single function name.",
+           call. = FALSE)
+    }
+    fun <- get(aggregate_fun, mode = "function")
+  } else if (is.function(aggregate_fun)) {
+    fun <- aggregate_fun
+  } else {
+    stop("`aggregate_fun` must be a function or a single function name.",
+         call. = FALSE)
+  }
+  fun
+}
+
+#' Reduce portfolio periods by merging adjacent date ranges
 #'
-#' @description Transform all the date ranges together as a set to produce a
-#' new set of date ranges. Ranges separated by a gap of at least `min.gapwidth`
-#' days are not merged.
+#' @description
+#' Merges overlapping or nearly adjacent policy periods within portfolio groups.
 #'
 #' @param df A `data.frame` or `data.table`.
-#' @param begin Name of column in `df` with begin dates.
-#' @param end Name of column in `df` with end dates.
-#' @param ... Names of columns in `df` used to group date ranges by.
-#' @param agg_cols List of columns in `df` to aggregate (default = NULL).
-#' @param agg Aggregation function as character string (default = `"sum"`).
-#' @param min.gapwidth Ranges separated by at least `min.gapwidth` days are not
-#' merged (default = 5).
+#' @param period_start Character string. Name of the column with period start
+#' dates.
+#' @param period_end Character string. Name of the column with period end dates.
+#' @param group_by Character vector with columns that identify the portfolio
+#' entity or rating segment within which date ranges should be merged.
+#' @param aggregate_cols Character vector with numeric columns to aggregate over
+#' merged ranges, for example premium or exposure.
+#' @param aggregate_fun Aggregation function or function name. Defaults to
+#' `"sum"`.
+#' @param merge_gap_days Non-negative whole number. Ranges with a gap smaller
+#' than this number of days are merged. Defaults to 5.
+#' @param begin,end,...,agg_cols,agg,min.gapwidth Deprecated NSE argument names
+#' kept for backward compatibility.
 #'
 #' @importFrom data.table setDT
 #' @importFrom data.table setkeyv
@@ -19,13 +68,22 @@
 #'
 #' @author Martin Haringa
 #'
-#' @details This function is inspired by `IRanges::reduce()`, adapted for
-#' insurance portfolios.
+#' @details
+#' Insurance portfolio extracts often contain multiple rows for the same policy
+#' or risk because of renewals, endorsements, product changes, or short
+#' administrative gaps. Before calculating portfolio in/outflow, active exposure
+#' windows, or policy counts, it can be useful to reduce those rows to stable
+#' coverage intervals.
+#'
+#' `merge_date_ranges()` merges date ranges within each `group_by` combination.
+#' Ranges with a gap smaller than `merge_gap_days` are treated as one continuous
+#' interval. If `aggregate_cols` is supplied, those columns are aggregated over
+#' the merged interval.
 #'
 #' @return A `data.table` of class `"reduce"`, with attributes:
 #' \itemize{
-#'   \item `begin` — name of the begin-date column
-#'   \item `end`   — name of the end-date column
+#'   \item `begin` — name of the period-start column
+#'   \item `end`   — name of the period-end column
 #'   \item `cols`  — grouping columns
 #' }
 #'
@@ -42,90 +100,170 @@
 #' )
 #'
 #' # Merge periods
-#' pt1 <- merge_date_ranges(portfolio, begin = begin_dat, end = end_dat,
-#'     policy_nr, productgroup, product, min.gapwidth = 5)
+#' pt1 <- merge_date_ranges(
+#'   portfolio,
+#'   period_start = "begin_dat",
+#'   period_end = "end_dat",
+#'   group_by = c("policy_nr", "productgroup", "product"),
+#'   merge_gap_days = 5
+#' )
 #'
 #' # Aggregate per period
 #' summary(pt1, period = "days", policy_nr, productgroup, product)
 #'
 #' # Merge periods and sum premium per period
-#' pt2 <- merge_date_ranges(portfolio, begin = begin_dat, end = end_dat,
-#'     policy_nr, productgroup, product, agg_cols = list(premium),
-#'     min.gapwidth = 5)
+#' pt2 <- merge_date_ranges(
+#'   portfolio,
+#'   period_start = "begin_dat",
+#'   period_end = "end_dat",
+#'   group_by = c("policy_nr", "productgroup", "product"),
+#'   aggregate_cols = "premium",
+#'   merge_gap_days = 5
+#' )
 #'
 #' # Create summary with aggregation per week
 #' summary(pt2, period = "weeks", policy_nr, productgroup, product)
 #'
 #' @export
-merge_date_ranges <- function(df, begin, end, ..., agg_cols = NULL,
-                              agg = "sum", min.gapwidth = 5) {
+merge_date_ranges <- function(df,
+                              ...,
+                              period_start = NULL,
+                              period_end = NULL,
+                              group_by = NULL,
+                              aggregate_cols = NULL,
+                              aggregate_fun = "sum",
+                              merge_gap_days = 5,
+                              begin = NULL,
+                              end = NULL,
+                              agg_cols = NULL,
+                              agg = NULL,
+                              min.gapwidth = NULL) {
 
-  .begin <- deparse(substitute(begin))
-  .end <- deparse(substitute(end))
-  start_dt <- end_dt <- aggcols0 <- NULL
-  if (!inherits(df[[.begin]], c("Date", "POSIXt")) ||
-      !inherits(df[[.end]], c("Date", "POSIXt"))) {
-    stop("Columns begin and end should be Date objects. Use e.g.
-         lubridate::ymd() to create Date object.",
-         call. = FALSE)
-  }
-  if (anyNA(df[[.begin]])) {
-    stop("NA values in data.table 'begin' column: '",
-         .begin, "'. All rows with NA values in the range columns must be
-         removed for reduce() to work.",
-         call. = FALSE)
-  } else if (anyNA(df[[.end]])) {
-    stop("NA values in data.table 'end' column: '",
-         .end, "'. All rows with NA values in the range columns must be removed
-         for reduce() to work.",
-         call. = FALSE)
-  }
-  cols0 <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
-  aggcols0 <- vapply(substitute(agg_cols)[-1], deparse,
-                     FUN.VALUE = character(1))
-  if (length(cols0) == 0) {
-    stop("define columns to group date ranges by", call. = FALSE)
-  }
-  cols <- c(cols0, .begin, .end)
+  env <- parent.frame()
+  begin_expr <- substitute(begin)
+  end_expr <- substitute(end)
+  dots_expr <- as.list(substitute(list(...))[-1])
+  agg_cols_expr <- substitute(agg_cols)
 
-  dt <- data.table::setDT(df)
-  data.table::setkeyv(dt, cols)
-  dt[, `:=`(c(.begin), get(.begin) - min.gapwidth)]
-  dt[, `:=`(c(.end), get(.end) + min.gapwidth)]
-  if (length(aggcols0) == 0) {
-    dt <- unique(dt, by = cols)
-    dt_reduce <- dt[, .(start_dt = get(.begin), end_dt = get(.end),
-                        index = c(0, cumsum(as.numeric(
-                          data.table::shift(get(.begin), 1, type = "lead")) >
-                            cummax(as.numeric(get(.end))))[-.N])),
-                    keyby = c(cols0)]
-    dt_reduce <- dt_reduce[, .(start_dt = min(start_dt),
-                               end_dt = max(end_dt)), by = c(cols0, "index")]
+  if (!identical(begin_expr, quote(NULL))) {
+    lifecycle::deprecate_warn("0.9.0", "merge_date_ranges(begin)",
+                              "merge_date_ranges(period_start)")
+    period_start <- .time_expr_to_name(begin_expr, env)
   }
-  if (length(aggcols0) > 0) {
-    dt <- dt[, lapply(.SD, get(agg), na.rm = TRUE), by = cols, .SDcols =
-               aggcols0]
-    dt_reduce <- dt[, .(start_dt = get(.begin), end_dt = get(.end),
-                        index = c(0, cumsum(as.numeric(
-                          data.table::shift(get(.begin), 1, type = "lead")) >
-                            cummax(as.numeric(get(.end))))[-.N])),
-                    keyby = c(cols0)]
-    dt_reduce <- cbind(dt_reduce, dt[, aggcols0, with = FALSE])
-    dt_reduce <- dt_reduce[, c(end_dt = max(end_dt), start_dt = min(start_dt),
-                               lapply(.SD, get(agg), na.rm = TRUE)),
-                           by = c(cols0, "index"),
-                           .SDcols = aggcols0]
+  if (!identical(end_expr, quote(NULL))) {
+    lifecycle::deprecate_warn("0.9.0", "merge_date_ranges(end)",
+                              "merge_date_ranges(period_end)")
+    period_end <- .time_expr_to_name(end_expr, env)
   }
-  data.table::setnames(dt_reduce,
-                       old = c("start_dt", "end_dt"),
-                       new = c(.begin, .end))
-  dt_reduce[, `:=`(c(.begin), get(.begin) + min.gapwidth)]
-  dt_reduce <- dt_reduce[, `:=`(c(.end), get(.end) -
-                                  min.gapwidth)]
-  attr(dt_reduce, "begin") <- .begin
-  attr(dt_reduce, "end") <- .end
-  attr(dt_reduce, "cols") <- cols0
-  class(dt_reduce) <- append("reduce", class(dt_reduce))
+  if (length(dots_expr) > 0L) {
+    lifecycle::deprecate_warn("0.9.0", "merge_date_ranges(...)",
+                              "merge_date_ranges(group_by)")
+    group_by <- .time_dots_to_names(dots_expr, env)
+  }
+  if (!identical(agg_cols_expr, quote(NULL))) {
+    lifecycle::deprecate_warn("0.9.0", "merge_date_ranges(agg_cols)",
+                              "merge_date_ranges(aggregate_cols)")
+    aggregate_cols <- .time_dots_to_names(as.list(agg_cols_expr)[-1], env)
+  }
+  if (!is.null(agg)) {
+    lifecycle::deprecate_warn("0.9.0", "merge_date_ranges(agg)",
+                              "merge_date_ranges(aggregate_fun)")
+    aggregate_fun <- agg
+  }
+  if (!is.null(min.gapwidth)) {
+    lifecycle::deprecate_warn("0.9.0", "merge_date_ranges(min.gapwidth)",
+                              "merge_date_ranges(merge_gap_days)")
+    merge_gap_days <- min.gapwidth
+  }
+
+  .time_validate_data_frame(df)
+  .time_validate_columns(df, c(period_start, period_end),
+                         "`period_start` and `period_end`")
+  .time_validate_date_interval(df, period_start, period_end)
+  if (is.null(group_by) || length(group_by) == 0L) {
+    stop("`group_by` must contain at least one column name.", call. = FALSE)
+  }
+  .time_validate_columns(df, group_by, "`group_by`")
+  if (is.null(aggregate_cols)) {
+    aggregate_cols <- character(0)
+  }
+  .time_validate_columns(df, aggregate_cols, "`aggregate_cols`")
+  non_numeric <- aggregate_cols[!vapply(df[aggregate_cols], is.numeric, logical(1))]
+  if (length(non_numeric) > 0L) {
+    stop(
+      sprintf("`aggregate_cols` must be numeric: %s.", paste(non_numeric, collapse = ", ")),
+      call. = FALSE
+    )
+  }
+  if (!.time_is_nonnegative_whole_number(merge_gap_days)) {
+    stop("`merge_gap_days` must be a non-negative whole number.",
+         call. = FALSE)
+  }
+  agg_fun <- .time_aggregate_function(aggregate_fun)
+
+  dt <- data.table::as.data.table(data.table::copy(df))
+  data.table::setorderv(dt, c(group_by, period_start, period_end))
+  split_dt <- split(dt, dt[, group_by, with = FALSE], drop = TRUE)
+
+  reduced <- lapply(split_dt, function(part) {
+    part <- part[order(part[[period_start]], part[[period_end]])]
+    out <- vector("list", nrow(part))
+    out_n <- 0L
+    current <- part[1, ]
+    current_start <- current[[period_start]]
+    current_end <- current[[period_end]]
+    current_values <- if (length(aggregate_cols) > 0L) {
+      as.list(current[, aggregate_cols, with = FALSE])
+    } else {
+      list()
+    }
+
+    flush_current <- function() {
+      row <- current[, c(group_by, period_start, period_end), with = FALSE]
+      row[[period_start]] <- current_start
+      row[[period_end]] <- current_end
+      for (col in aggregate_cols) {
+        row[[col]] <- agg_fun(current_values[[col]], na.rm = TRUE)
+      }
+      row
+    }
+
+    for (i in seq_len(nrow(part))) {
+      if (i == 1L) next
+      next_start <- part[[period_start]][i]
+      next_end <- part[[period_end]][i]
+      gap_days <- as.numeric(next_start - current_end) - 1
+
+      if (gap_days < merge_gap_days) {
+        current_end <- max(current_end, next_end)
+        for (col in aggregate_cols) {
+          current_values[[col]] <- c(current_values[[col]], part[[col]][i])
+        }
+      } else {
+        out_n <- out_n + 1L
+        out[[out_n]] <- flush_current()
+        current <- part[i, ]
+        current_start <- current[[period_start]]
+        current_end <- current[[period_end]]
+        current_values <- if (length(aggregate_cols) > 0L) {
+          as.list(current[, aggregate_cols, with = FALSE])
+        } else {
+          list()
+        }
+      }
+    }
+
+    out_n <- out_n + 1L
+    out[[out_n]] <- flush_current()
+    data.table::rbindlist(out[seq_len(out_n)])
+  })
+
+  dt_reduce <- data.table::rbindlist(reduced)
+  data.table::setorderv(dt_reduce, c(group_by, period_start, period_end))
+  attr(dt_reduce, "begin") <- period_start
+  attr(dt_reduce, "end") <- period_end
+  attr(dt_reduce, "cols") <- group_by
+  class(dt_reduce) <- c("merged_date_ranges", "reduce", class(dt_reduce))
   dt_reduce
 }
 
@@ -137,21 +275,21 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum",
 
   lifecycle::deprecate_warn("0.8.0", "reduce()", "merge_date_ranges()")
 
-  # capture column names as character
-  begin_sym <- substitute(begin)
-  end_sym   <- substitute(end)
-  dots_syms <- as.list(substitute(list(...))[-1])
-  agg_syms  <- as.list(substitute(agg_cols)[-1])
+  period_start <- deparse(substitute(begin))
+  period_end <- deparse(substitute(end))
+  group_by <- vapply(substitute(list(...))[-1], deparse,
+                     FUN.VALUE = character(1))
+  aggregate_cols <- vapply(substitute(agg_cols)[-1], deparse,
+                           FUN.VALUE = character(1))
 
-  do.call(
-    merge_date_ranges,
-    c(list(df = df,
-           begin = begin_sym,
-           end = end_sym,
-           agg_cols = agg_syms,
-           agg = agg,
-           min.gapwidth = min.gapwidth),
-      dots_syms)
+  merge_date_ranges(
+    df = df,
+    period_start = period_start,
+    period_end = period_end,
+    group_by = group_by,
+    aggregate_cols = aggregate_cols,
+    aggregate_fun = agg,
+    merge_gap_days = min.gapwidth
   )
 }
 
@@ -163,42 +301,22 @@ print.reduce <- function(x, ...) {
 }
 
 #' @export
+print.merged_date_ranges <- print.reduce
+
+#' @export
 as.data.frame.reduce <- function(x, ...) {
   class(x) <- c("data.frame", "data.table")
   return(as.data.frame(x))
 }
 
-##' Summarize reduce objects
-#'
-#' @description
-#' Method for `summary()` applied to objects of class `"reduce"`, as produced
-#' by [merge_date_ranges()]. It counts how many customers (or policies) are new
-#' or lost within a given period, optionally grouped by other columns.
-#'
-#' @param object An object of class `"reduce"`, created by [merge_date_ranges()].
-#' @param period Character string indicating the aggregation period. Options are
-#' `"quarters"`, `"months"`, `"weeks"`, or `"days"` (default = `"days"`).
-#' @param ... Names of columns in `object` to aggregate counts by.
-#' @param name Character string: name of the new count column in the output.
-#' Defaults to `"count"`.
-#'
+#' @export
+as.data.frame.merged_date_ranges <- as.data.frame.reduce
+
 #' @import data.table
 #' @importFrom lubridate days
 #' @importFrom lubridate weeks
+#' @importFrom lubridate period
 #' @importFrom lubridate %m+%
-#'
-#' @return A `data.frame` containing aggregated counts of new (`"in"`) and lost
-#' (`"out"`) records, per chosen period (and per grouping variables if supplied).
-#'
-#' @seealso [merge_date_ranges()]
-#'
-#' @examples
-#' \dontrun{
-#' pt <- merge_date_ranges(portfolio, begin = begin_dat, end = end_dat,
-#'                         policy_nr, productgroup, product)
-#' summary(pt, period = "months", policy_nr, productgroup)
-#' }
-#'
 #' @export
 summary.reduce <- function(object, ..., period = "days", name = "count") {
 
@@ -230,17 +348,17 @@ summary.reduce <- function(object, ..., period = "days", name = "count") {
                                      by = c(by_end)][, type := "out"]
 
   if (period %in% c("days", "day")) {
-    new[, date := get(begin)]
-    lost[, date := get(end) %m+% lubridate::days(1)]
+    new[, date := .SD[[1]], .SDcols = begin]
+    lost[, date := .SD[[1]] %m+% lubridate::days(1), .SDcols = end]
   }
 
   if (period %in% c("weeks", "week")) {
-    new[, week := get(begin)]
+    new[, week := .SD[[1]], .SDcols = begin]
     new[, week := paste0(data.table::year(week), "W",
                          ifelse(nchar(data.table::week(week)) == 1,
                                 paste0("0", data.table::week(week)),
                                 data.table::week(week)))]
-    lost[, week := get(end) %m+% lubridate::weeks(1)]
+    lost[, week := .SD[[1]] %m+% lubridate::weeks(1), .SDcols = end]
     lost[, week := paste0(data.table::year(week), "W",
                           ifelse(nchar(data.table::week(week)) == 1,
                                  paste0("0", data.table::week(week)),
@@ -248,12 +366,12 @@ summary.reduce <- function(object, ..., period = "days", name = "count") {
   }
 
   if (period %in% c("months", "month")) {
-    new[, month := get(begin)]
+    new[, month := .SD[[1]], .SDcols = begin]
     new[, month := paste0(data.table::year(month), "M",
                           ifelse(nchar(data.table::month(month)) == 1,
                                  paste0("0", data.table::month(month)),
                                  data.table::month(month)))]
-    lost[, month := get(end) %m+% months(1)]
+    lost[, month := .SD[[1]] %m+% lubridate::period(month = 1), .SDcols = end]
     lost[, month := paste0(data.table::year(month), "M",
                            ifelse(nchar(data.table::month(month)) == 1,
                                   paste0("0", data.table::month(month)),
@@ -261,15 +379,16 @@ summary.reduce <- function(object, ..., period = "days", name = "count") {
   }
 
   if (period %in% c("quarters", "quarter")) {
-    new[, quarter := paste0(data.table::year(get(begin)), "Q",
-                            data.table::quarter(get(begin)))]
-    lost[, quarter := paste0(data.table::year(get(end) %m+% months(3)), "Q",
-                             data.table::quarter(get(end) %m+% months(3)))]
+    new[, quarter := paste0(data.table::year(.SD[[1]]), "Q",
+                            data.table::quarter(.SD[[1]])), .SDcols = begin]
+    lost[, quarter := paste0(data.table::year(.SD[[1]] %m+% lubridate::period(month = 3)), "Q",
+                             data.table::quarter(.SD[[1]] %m+% lubridate::period(month = 3))),
+         .SDcols = end]
   }
 
   if (period %in% c("years", "year")) {
-    new[, year := data.table::year(get(begin))]
-    lost[, year := data.table::year(get(end))]
+    new[, year := data.table::year(.SD[[1]]), .SDcols = begin]
+    lost[, year := data.table::year(.SD[[1]]), .SDcols = end]
   }
 
   new[, c(begin) := NULL]
@@ -301,3 +420,6 @@ summary.reduce <- function(object, ..., period = "days", name = "count") {
 
   df
 }
+
+#' @export
+summary.merged_date_ranges <- summary.reduce

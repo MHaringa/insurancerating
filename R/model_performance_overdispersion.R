@@ -1,25 +1,35 @@
-#' Check overdispersion of a Poisson GLM
+#' Check overdispersion of a Poisson claim frequency model
 #'
 #' @description
-#' Tests whether a fitted Poisson regression model is overdispersed using
-#' Pearson's chi-squared statistic.
+#' Tests whether a fitted Poisson GLM shows overdispersion using Pearson's
+#' chi-squared statistic.
 #'
 #' @param object A fitted model of class `"glm"` with family Poisson.
 #'
-#' @return An object of class `"overdispersion"`, which is a list with elements:
+#' @return An object of class `"overdispersion_check"` and `"overdispersion"`,
+#' which is a list with elements:
 #' \describe{
-#'   \item{chisq}{Pearson's chi-squared statistic.}
-#'   \item{ratio}{Dispersion ratio (chisq / residual df).}
-#'   \item{rdf}{Residual degrees of freedom.}
-#'   \item{p}{P-value from chi-squared test.}
+#'   \item{pearson_chisq}{Pearson's chi-squared statistic.}
+#'   \item{dispersion_ratio}{Dispersion ratio, calculated as Pearson's
+#'   chi-squared statistic divided by residual degrees of freedom.}
+#'   \item{residual_df}{Residual degrees of freedom.}
+#'   \item{p_value}{P-value from the chi-squared test.}
 #' }
+#' For backwards compatibility the object also contains the aliases `chisq`,
+#' `ratio`, `rdf`, and `p`.
 #'
 #' @details
-#' - A dispersion ratio close to 1 indicates a good Poisson fit.
-#' - A dispersion ratio > 1 suggests overdispersion.
-#' - A p-value < 0.05 indicates significant overdispersion.
-#' - A dispersion ratio > 2 usually means a more serious lack of fit (e.g.
-#'   outliers or misspecified model).
+#' In Poisson claim frequency models, the variance is assumed to be equal to the
+#' mean. A dispersion ratio above 1 indicates that the observed variation is
+#' larger than expected under that assumption. In pricing work this can be a
+#' useful diagnostic signal for omitted heterogeneity, clustering, outliers, or
+#' model misspecification. It does not automatically mean that the model is
+#' unusable.
+#'
+#' - A dispersion ratio close to 1 is broadly consistent with the Poisson
+#'   variance assumption.
+#' - A dispersion ratio above 1 suggests overdispersion.
+#' - A p-value below 0.05 indicates statistically significant overdispersion.
 #'
 #' @references
 #' Bolker B. et al. (2017). [GLMM FAQ](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html)
@@ -36,33 +46,67 @@
 #' @export
 check_overdispersion <- function(object) {
 
-  if (stats::family(object)$family != "poisson") {
-    stop("Family of object should be Poisson", call. = FALSE)
+  if (!inherits(object, "glm")) {
+    stop("`object` must be a fitted glm object.", call. = FALSE)
+  }
+
+  if (!identical(stats::family(object)$family, "poisson")) {
+    stop("`object` must be fitted with a Poisson family.", call. = FALSE)
   }
 
   rdf <- stats::df.residual(object)
-  rp <- residuals(object, type = "pearson")
-  pearson_chisq <- sum(rp^2)
-  prat <- pearson_chisq / rdf
-  pval <- stats::pchisq(pearson_chisq, df = rdf, lower.tail = FALSE)
+  if (!is.finite(rdf) || rdf <= 0) {
+    stop("`object` must have positive residual degrees of freedom.",
+         call. = FALSE)
+  }
+
+  rp <- stats::residuals(object, type = "pearson")
+  pearson_chisq <- sum(rp^2, na.rm = TRUE)
+  dispersion_ratio <- pearson_chisq / rdf
+  p_value <- stats::pchisq(pearson_chisq, df = rdf, lower.tail = FALSE)
 
   return(structure(
-    list(chisq = pearson_chisq,
-         ratio = prat,
-         rdf = rdf,
-         p = pval),
-    class = "overdispersion"))
+    list(
+      pearson_chisq = pearson_chisq,
+      dispersion_ratio = dispersion_ratio,
+      residual_df = rdf,
+      p_value = p_value,
+      chisq = pearson_chisq,
+      ratio = dispersion_ratio,
+      rdf = rdf,
+      p = p_value
+    ),
+    class = c("overdispersion_check", "overdispersion")))
 }
 
 
 #' @export
-print.overdispersion <- function(x, digits = 3, ...) {
+print.overdispersion_check <- function(x, digits = 3, ...) {
   orig_x <- x
-  disp_ratio <- sprintf("%.*f", digits, x$ratio)
-  chisq_stat <- sprintf("%.*f", digits, x$chisq)
+  dispersion_ratio <- if (!is.null(x$dispersion_ratio)) {
+    x$dispersion_ratio
+  } else {
+    x$ratio
+  }
+  pearson_chisq <- if (!is.null(x$pearson_chisq)) {
+    x$pearson_chisq
+  } else {
+    x$chisq
+  }
+  p_value <- if (!is.null(x$p_value)) {
+    x$p_value
+  } else {
+    x$p
+  }
 
-  pval <- round(x$p, digits = digits)
-  pval_fmt <- if (pval < .001) "< 0.001" else sprintf("%.*f", digits, pval)
+  disp_ratio <- sprintf("%.*f", digits, dispersion_ratio)
+  chisq_stat <- sprintf("%.*f", digits, pearson_chisq)
+
+  pval_fmt <- if (p_value < .001) {
+    "< 0.001"
+  } else {
+    sprintf("%.*f", digits, p_value)
+  }
 
   maxlen <- max(nchar(disp_ratio), nchar(chisq_stat), nchar(pval_fmt))
 
@@ -73,11 +117,17 @@ print.overdispersion <- function(x, digits = 3, ...) {
   cat(sprintf("p-value = %s\n\n",
               format(pval_fmt, justify = "right", width = maxlen)))
 
-  if (pval > 0.05) {
+  if (p_value > 0.05) {
     message("No overdispersion detected.")
   } else {
     message("Overdispersion detected.")
   }
 
   invisible(orig_x)
+}
+
+
+#' @export
+print.overdispersion <- function(x, digits = 3, ...) {
+  print.overdispersion_check(x, digits = digits, ...)
 }

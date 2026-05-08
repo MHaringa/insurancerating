@@ -19,7 +19,7 @@ fit_severity_model <- function(df) {
 }
 
 #' @keywords internal
-fit_burning_model <- function(df) {
+fit_pure_premium_model <- function(df) {
   mgcv::gam(
     avg_premium ~ s(x),
     data = df,
@@ -45,12 +45,13 @@ round_x_values <- function(x, round_x = NULL) {
 #' @keywords internal
 check_required_columns <- function(data, ...) {
 
-  cols <- c(...)
+  cols <- list(...)
 
-  if (any(is.null(cols))) {
+  if (any(vapply(cols, is.null, logical(1)))) {
     stop("Required column arguments are missing.", call. = FALSE)
   }
 
+  cols <- unlist(cols, use.names = FALSE)
   missing_cols <- setdiff(cols, names(data))
 
   if (length(missing_cols) > 0) {
@@ -66,54 +67,97 @@ check_required_columns <- function(data, ...) {
   invisible(TRUE)
 }
 
+#' @keywords internal
+normalise_gam_model <- function(model) {
+  if (!is.character(model) || length(model) != 1L || is.na(model)) {
+    stop("`model` must be one of 'frequency', 'severity', or 'pure_premium'.",
+         call. = FALSE)
+  }
 
-#' Generalized Additive Model for Insurance Risk Factors
+  if (model == "burning") {
+    lifecycle::deprecate_warn(
+      "0.8.0",
+      "risk_factor_gam(model = 'burning')",
+      "risk_factor_gam(model = 'pure_premium')"
+    )
+    return("pure_premium")
+  }
+
+  if (!model %in% c("frequency", "severity", "pure_premium")) {
+    stop("`model` must be one of 'frequency', 'severity', or 'pure_premium'.",
+         call. = FALSE)
+  }
+
+  model
+}
+
+#' @keywords internal
+arg_to_string_or_null <- function(arg) {
+  expr <- substitute(arg)
+  if (identical(expr, quote(NULL))) {
+    NULL
+  } else {
+    deparse(expr)
+  }
+}
+
+
+#' Fit a GAM for a continuous risk factor
 #'
 #' @description
 #' Fits a generalized additive model (GAM) to a continuous risk factor in one of
-#' three contexts: claim frequency, claim severity, or burning cost (pure premium).
+#' three insurance pricing contexts: claim frequency, claim severity, or pure
+#' premium. The fitted curve helps assess non-linear rating effects before a
+#' continuous variable is grouped into tariff classes or used in a GLM workflow.
 #'
 #' @param data A data.frame containing the insurance portfolio.
-#' @param nclaims Character, name of column in `data` with the number of claims.
-#' @param x Character, name of column in `data` with the continuous risk factor.
+#' @param risk_factor Character, name of column in `data` with the continuous
+#'   risk factor.
+#' @param claim_count Character, name of column in `data` with the number of
+#'   claims.
 #' @param exposure Character, name of column in `data` with the exposure.
-#' @param amount (Optional) Character, column name in `data` with the claim
-#'   amount. Required for `model = "severity"`.
+#' @param claim_amount (Optional) Character, column name in `data` with the
+#'   claim amount. Required for `model = "severity"`.
 #' @param pure_premium (Optional) Character, column name in `data` with the pure
-#'   premium. Required for `model = "burning"`.
+#'   premium. Required for `model = "pure_premium"`.
 #' @param model Character string specifying the model type. One of
-#'   `"frequency"`, `"severity"`, or `"burning"`. Default is `"frequency"`.
-#' @param round_x (Optional) Numeric value to round the risk factor `x` to a
-#'   multiple of `round_x`. Can speed up fitting for factors with many levels.
+#'   `"frequency"`, `"severity"`, or `"pure_premium"`. Default is `"frequency"`.
+#'   The old value `"burning"` is deprecated and maps to `"pure_premium"`.
+#' @param round_risk_factor (Optional) Numeric value to round the risk factor to
+#'   a multiple of `round_risk_factor`. Can speed up fitting for factors with
+#'   many distinct values.
+#' @param x,nclaims,amount,round_x Deprecated argument names. Use `risk_factor`,
+#'   `claim_count`, `claim_amount`, and `round_risk_factor` instead.
 #'
 #' @details
 #' - **Frequency model**: Fits a Poisson GAM to the number of claims. The log of
 #'   the exposure is used as an offset so the expected number of claims is
 #'   proportional to exposure.
 #'
-#' - **Severity model**: Fits a lognormal GAM to the average claim size (total
-#'   amount divided by number of claims). The number of claims is included as a
-#'   weight.
+#' - **Severity model**: Fits a Gamma GAM with log link to the average claim
+#'   size (total amount divided by number of claims). The number of claims is
+#'   included as a weight.
 #'
-#' - **Burning cost model**: Fits a lognormal GAM to the pure premium (risk
-#'   premium). Implemented by aggregating exposure-weighted pure premiums. This
-#'   functionality is still experimental.
+#' - **Pure premium model**: Fits a Gamma GAM with log link to the pure premium
+#'   (risk premium). Implemented by aggregating exposure-weighted pure premiums.
+#'   The deprecated model value `"burning"` is still accepted for backward
+#'   compatibility.
 #'
 #' ## Migration from `fit_gam()`
 #'
 #' The function [fit_gam()] is deprecated as of version 0.8.0 and replaced by
-#' [riskfactor_gam()]. In addition to the name change, the interface has also
+#' [risk_factor_gam()]. In addition to the name change, the interface has also
 #' changed:
 #'
 #' - `fit_gam()` used **non-standard evaluation (NSE)**, so column names could be
 #'   passed unquoted (e.g. `x = age_policyholder`).
-#' - `riskfactor_gam()` uses **standard evaluation (SE)**, so column names must
-#'   be passed as character strings (e.g. `x = "age_policyholder"`).
+#' - `risk_factor_gam()` uses **standard evaluation (SE)**, so column names must
+#'   be passed as character strings (e.g. `risk_factor = "age_policyholder"`).
 #'
 #' This makes the function easier to use in programmatic workflows.
 #'
-#' `fit_gam()` is still available for backward compatibility but will emit a
-#' deprecation warning and will be removed in a future release.
+#' `riskfactor_gam()` and `fit_gam()` are still available for backward
+#' compatibility but will emit deprecation warnings.
 #'
 #'
 #' @importFrom mgcv gam predict.gam
@@ -133,10 +177,10 @@ check_required_columns <- function(data, ...) {
 #' Journal of the Royal Statistical Society (B) 73(1):3–36.
 #'
 #' @return
-#' A `list` of class `"fitgam"` with the following elements:
+#' A `list` of class `"riskfactor_gam"` with the following elements:
 #' \item{prediction}{A data frame with predicted values and confidence intervals.}
 #' \item{x}{Name of the continuous risk factor.}
-#' \item{model}{The model type: `"frequency"`, `"severity"`, or `"burning"`.}
+#' \item{model}{The model type: `"frequency"`, `"severity"`, or `"pure_premium"`.}
 #' \item{data}{Merged data frame with predictions and observed values.}
 #' \item{x_obs}{Observed values of the continuous risk factor.}
 #'
@@ -145,10 +189,10 @@ check_required_columns <- function(data, ...) {
 #' @examples
 #' ## --- Recommended new usage (SE) ---
 #' # Column names must be passed as strings
-#' riskfactor_gam(MTPL,
-#'                nclaims = "nclaims",
-#'                x = "age_policyholder",
-#'                exposure = "exposure")
+#' risk_factor_gam(MTPL,
+#'                 risk_factor = "age_policyholder",
+#'                 claim_count = "nclaims",
+#'                 exposure = "exposure")
 #'
 #' ## --- Deprecated usage (NSE) ---
 #' # This still works but will show a warning
@@ -158,32 +202,53 @@ check_required_columns <- function(data, ...) {
 #'         exposure = exposure)
 #'
 #' @export
-riskfactor_gam <- function(data, nclaims, x, exposure, amount = NULL,
-                           pure_premium = NULL, model = "frequency",
-                           round_x = NULL) {
+risk_factor_gam <- function(data, risk_factor = NULL, claim_count = NULL,
+                            exposure = NULL, claim_amount = NULL,
+                            pure_premium = NULL, model = "frequency",
+                            round_risk_factor = NULL, x = NULL,
+                            nclaims = NULL, amount = NULL,
+                            round_x = NULL) {
+
+  args <- resolve_risk_factor_gam_args(
+    risk_factor = risk_factor,
+    claim_count = claim_count,
+    claim_amount = claim_amount,
+    round_risk_factor = round_risk_factor,
+    x = x,
+    nclaims = nclaims,
+    amount = amount,
+    round_x = round_x
+  )
+  risk_factor <- args$risk_factor
+  claim_count <- args$claim_count
+  claim_amount <- args$claim_amount
+  round_risk_factor <- args$round_risk_factor
+
+  model <- normalise_gam_model(model)
 
   if (nrow(data) < 10) {
     stop("At least 10 datapoints are required. The spline smoothers assume a
          default of 10 degrees of freedom.", call. = FALSE)
   }
 
-  if (!model %in% c("frequency", "severity", "burning")) {
-    stop("Choose correct model specification: 'frequency', 'severity' or 'burning'.",
-         call. = FALSE)
+  check_required_columns(data, risk_factor, exposure)
+
+  if (!is.numeric(data[[risk_factor]])) {
+    stop("`risk_factor` should be numeric.", call. = FALSE)
+  }
+  if (!is.numeric(data[[exposure]])) {
+    stop("`exposure` should be numeric.", call. = FALSE)
   }
 
-  if (!is.numeric(data[[x]])) stop("x should be numeric", call. = FALSE)
-  if (!is.numeric(data[[exposure]])) stop("exposure should be numeric", call. = FALSE)
-
-  x_vals <- round_x_values(data[[x]], round_x)
+  x_vals <- round_x_values(data[[risk_factor]], round_risk_factor)
 
   if (model == "frequency") {
 
-    check_required_columns(data, nclaims, exposure)
+    check_required_columns(data, claim_count, exposure)
 
     df <- aggregate(
       list(
-        nclaims  = data[[nclaims]],
+        nclaims  = data[[claim_count]],
         exposure = data[[exposure]]
       ),
       by = list(x = x_vals),
@@ -202,13 +267,13 @@ riskfactor_gam <- function(data, nclaims, x, exposure, amount = NULL,
 
   if (model == "severity") {
 
-    check_required_columns(data, nclaims, exposure, amount)
+    check_required_columns(data, claim_count, exposure, claim_amount)
 
     df <- aggregate(
       list(
-        nclaims = data[[nclaims]],
+        nclaims = data[[claim_count]],
         exposure = data[[exposure]],
-        amount = data[[amount]]
+        amount = data[[claim_amount]]
       ),
       by = list(x = x_vals),
       FUN = sum,
@@ -221,9 +286,9 @@ riskfactor_gam <- function(data, nclaims, x, exposure, amount = NULL,
     gam_x <- fit_severity_model(df)
   }
 
-  if (model == "burning") {
+  if (model == "pure_premium") {
 
-    check_required_columns(data, nclaims, exposure, amount)
+    check_required_columns(data, exposure, pure_premium)
 
     df <- aggregate(
       list(
@@ -239,12 +304,12 @@ riskfactor_gam <- function(data, nclaims, x, exposure, amount = NULL,
     df <- subset(df, exposure > 0 & weighted_premium > 0)
     df$avg_premium <- df$weighted_premium / df$exposure
 
-    gam_x <- fit_burning_model(df)
+    gam_x <- fit_pure_premium_model(df)
   }
 
   prediction_grid <- data.frame(
-    x = seq(min(data[[x]], na.rm = TRUE),
-            max(data[[x]], na.rm = TRUE),
+    x = seq(min(data[[risk_factor]], na.rm = TRUE),
+            max(data[[risk_factor]], na.rm = TRUE),
             length.out = 100)
   )
 
@@ -265,18 +330,101 @@ riskfactor_gam <- function(data, nclaims, x, exposure, amount = NULL,
   )
 
   return(structure(list(prediction = out,
-                        x = x,
+                        x = risk_factor,
                         model = model,
                         data = new,
                         x_obs = x_vals),
-                   class = "fitgam"))
+                   class = c("risk_factor_gam", "riskfactor_gam", "fitgam")))
 }
 
 
-#' @rdname riskfactor_gam
+resolve_risk_factor_gam_args <- function(risk_factor, claim_count,
+                                         claim_amount, round_risk_factor, x,
+                                         nclaims, amount, round_x) {
+  if (!is.null(x)) {
+    if (!is.null(risk_factor)) {
+      stop("Use only one of `risk_factor` and deprecated `x`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "risk_factor_gam(x)",
+                              "risk_factor_gam(risk_factor)")
+    risk_factor <- x
+  }
+  if (!is.null(nclaims)) {
+    if (!is.null(claim_count)) {
+      stop("Use only one of `claim_count` and deprecated `nclaims`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "risk_factor_gam(nclaims)",
+                              "risk_factor_gam(claim_count)")
+    claim_count <- nclaims
+  }
+  if (!is.null(amount)) {
+    if (!is.null(claim_amount)) {
+      stop("Use only one of `claim_amount` and deprecated `amount`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "risk_factor_gam(amount)",
+                              "risk_factor_gam(claim_amount)")
+    claim_amount <- amount
+  }
+  if (!is.null(round_x)) {
+    if (!is.null(round_risk_factor)) {
+      stop("Use only one of `round_risk_factor` and deprecated `round_x`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "risk_factor_gam(round_x)",
+                              "risk_factor_gam(round_risk_factor)")
+    round_risk_factor <- round_x
+  }
+
+  list(
+    risk_factor = risk_factor,
+    claim_count = claim_count,
+    claim_amount = claim_amount,
+    round_risk_factor = round_risk_factor
+  )
+}
+
+
+#' @rdname risk_factor_gam
+#' @description
+#' `riskfactor_gam()` is deprecated in favour of [risk_factor_gam()].
+#'
+#' @export
+riskfactor_gam <- function(data, nclaims = NULL, x = NULL, exposure = NULL,
+                           amount = NULL, pure_premium = NULL,
+                           model = "frequency", round_x = NULL,
+                           risk_factor = NULL, claim_count = NULL,
+                           claim_amount = NULL, round_risk_factor = NULL) {
+  lifecycle::deprecate_warn(
+    "0.9.0",
+    "riskfactor_gam()",
+    "risk_factor_gam()"
+  )
+
+  if (!is.null(x)) risk_factor <- x
+  if (!is.null(nclaims)) claim_count <- nclaims
+  if (!is.null(amount)) claim_amount <- amount
+  if (!is.null(round_x)) round_risk_factor <- round_x
+
+  risk_factor_gam(
+    data = data,
+    risk_factor = risk_factor,
+    claim_count = claim_count,
+    exposure = exposure,
+    claim_amount = claim_amount,
+    pure_premium = pure_premium,
+    model = model,
+    round_risk_factor = round_risk_factor
+  )
+}
+
+
+#' @rdname risk_factor_gam
 #' @description
 #' [fit_gam()] is deprecated as of version 0.8.0.
-#' Please use [riskfactor_gam()] instead.
+#' Please use [risk_factor_gam()] instead.
 #'
 #' In addition, note that column arguments must now be passed as **strings**
 #' (standard evaluation).
@@ -288,71 +436,58 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL,
   lifecycle::deprecate_warn(
     when = "0.8.0",
     what = "fit_gam()",
-    with = "riskfactor_gam()",
+    with = "risk_factor_gam()",
     details =
-      "Please note that `riskfactor_gam()` requires **standard evaluation** (SE):
+      "Please note that `risk_factor_gam()` requires **standard evaluation** (SE):
 column names must be supplied as character strings, e.g.
-`riskfactor_gam(df, nclaims = \"nclaims\", x = \"age\", exposure = \"exposure\")`.
+`risk_factor_gam(df, claim_count = \"nclaims\", risk_factor = \"age\", exposure = \"exposure\")`.
 The old NSE-style (`fit_gam(df, nclaims = nclaims, x = age, exposure = exposure)`)
 is no longer supported."
   )
 
-  riskfactor_gam(
+  risk_factor_gam(
     data = data,
-    nclaims = deparse(substitute(nclaims)),
-    x = deparse(substitute(x)),
+    claim_count = deparse(substitute(nclaims)),
+    risk_factor = deparse(substitute(x)),
     exposure = deparse(substitute(exposure)),
-    amount = if (!is.null(substitute(amount))) deparse(substitute(
-      amount)) else NULL,
-    pure_premium = if (!is.null(substitute(pure_premium))) deparse(substitute(
-      pure_premium)) else NULL,
+    claim_amount = arg_to_string_or_null(amount),
+    pure_premium = arg_to_string_or_null(pure_premium),
     model = model,
-    round_x = round_x
+    round_risk_factor = round_x
   )
 }
 
 
-#' @keywords internal
 #' @export
-print.fitgam <- function(x, ...) {
-  cat("Predictions from fitgam object:\n")
+print.riskfactor_gam <- function(x, ...) {
+  cat("Predictions from riskfactor_gam object:\n")
   print(x$prediction)
   invisible(x)
 }
 
-
-#' @keywords internal
 #' @export
-as.data.frame.fitgam <- function(x, ...) {
+print.risk_factor_gam <- print.riskfactor_gam
+
+#' @export
+print.fitgam <- print.riskfactor_gam
+
+#' @export
+as.data.frame.riskfactor_gam <- function(x, ...) {
   as.data.frame(x$prediction, ...)
 }
 
-#' Summary method for fitgam objects
-#'
-#' @description
-#' Provides a concise summary of a `fitgam` object created by [riskfactor_gam()].
-#' Shows the fitted model type, the risk factor, and basic information about the
-#' prediction data.
-#'
-#' @param object An object of class `"fitgam"`.
-#' @param ... Further arguments passed to or from other methods (ignored).
-#'
-#' @return Invisibly returns `object`.
-#'
-#' @examples
-#' \dontrun{
-#' fit <- riskfactor_gam(MTPL,
-#'                       nclaims = "nclaims",
-#'                       x = "age_policyholder",
-#'                       exposure = "exposure")
-#' summary(fit)
-#' }
-#'
-#' @author Martin Haringa
 #' @export
-summary.fitgam <- function(object, ...) {
-  if (!inherits(object, "fitgam")) {
-    stop("Input must be of class 'fitgam'.", call. = FALSE)
+as.data.frame.risk_factor_gam <- as.data.frame.riskfactor_gam
+
+#' @export
+as.data.frame.fitgam <- as.data.frame.riskfactor_gam
+
+#' @export
+summary.riskfactor_gam <- function(object, ...) {
+  if (!inherits(object, "risk_factor_gam") &&
+      !inherits(object, "riskfactor_gam") &&
+      !inherits(object, "fitgam")) {
+    stop("Input must be of class 'risk_factor_gam'.", call. = FALSE)
   }
 
   cat("Generalized Additive Model for Insurance Risk Factors\n")
@@ -368,15 +503,23 @@ summary.fitgam <- function(object, ...) {
   invisible(object)
 }
 
-#' Autoplot for GAM Objects from `riskfactor_gam()`
+#' @export
+summary.risk_factor_gam <- summary.riskfactor_gam
+
+#' @export
+summary.fitgam <- summary.riskfactor_gam
+
+#' Autoplot for GAM objects from `risk_factor_gam()`
 #'
 #' @description Generates a `ggplot2` visualization of a fitted GAM created with
-#' [riskfactor_gam()]. The plot shows the fitted curve, and optionally confidence
+#' [risk_factor_gam()]. The plot shows the fitted curve, and optionally confidence
 #' intervals and observed data points.
 #'
-#' @param object An object of class `"fitgam"` returned by [riskfactor_gam()].
-#' @param conf_int Logical. If `TRUE`, add 95% confidence intervals around the
-#' fitted curve. Default is `FALSE`.
+#' @param object An object of class `"riskfactor_gam"` returned by
+#'   [risk_factor_gam()].
+#' @param confidence Logical. If `TRUE`, add 95% confidence intervals around
+#'   the fitted curve. Default is `FALSE`.
+#' @param conf_int Deprecated. Use `confidence` instead.
 #' @param color_gam Color for the fitted GAM line, specified by name (e.g.,
 #' `"red"`) or hex code (e.g., `"#FF1234"`). Default is `"steelblue"`.
 #' @param x_stepsize Numeric. Step size for tick marks on the x-axis. If
@@ -399,9 +542,10 @@ summary.fitgam <- function(object, ...) {
 #' @examples
 #' \dontrun{
 #' library(ggplot2)
-#' fit <- fit_gam(MTPL, nclaims = nclaims,
-#'                x = age_policyholder,
-#'                exposure = exposure)
+#' fit <- risk_factor_gam(MTPL,
+#'                        risk_factor = "age_policyholder",
+#'                        claim_count = "nclaims",
+#'                        exposure = "exposure")
 #'
 #' autoplot(fit, show_observations = TRUE)
 #' }
@@ -409,18 +553,26 @@ summary.fitgam <- function(object, ...) {
 #' @author Martin Haringa
 #'
 #' @export
-autoplot.fitgam <- function(object, conf_int = FALSE, color_gam = "steelblue",
-                            show_observations = FALSE, x_stepsize = NULL,
-                            size_points = 1, color_points = "black",
-                            rotate_labels = FALSE,
-                            remove_outliers = NULL, ...) {
+autoplot.riskfactor_gam <- function(object, confidence = FALSE,
+                                    color_gam = "steelblue",
+                                    show_observations = FALSE,
+                                    x_stepsize = NULL, size_points = 1,
+                                    color_points = "black",
+                                    rotate_labels = FALSE,
+                                    remove_outliers = NULL,
+                                    conf_int = NULL, ...) {
+  if (!is.null(conf_int)) {
+    lifecycle::deprecate_warn("0.9.0", "autoplot(conf_int)",
+                              "autoplot(confidence)")
+    confidence <- conf_int
+  }
 
-  prediction <- object[[1]]
-  xlab <- object[[2]]
-  ylab <- object[[3]]
-  points <- object[[4]]
+  prediction <- object$prediction
+  xlab <- object$x
+  ylab <- object$model
+  points <- object$data
 
-  if (isTRUE(conf_int) && any(prediction$conf_high > 1e9)) {
+  if (isTRUE(confidence) && any(prediction$conf_high > 1e9)) {
     message("Confidence intervals exceed 1e9 and will not be displayed.")
   }
 
@@ -431,6 +583,7 @@ autoplot.fitgam <- function(object, conf_int = FALSE, color_gam = "steelblue",
       ylab,
       "frequency" = points[points$frequency < remove_outliers,],
       "severity" = points[points$avg_claimsize < remove_outliers,],
+      "pure_premium" = points[points$avg_premium < remove_outliers,],
       "burning" = points[points$avg_premium < remove_outliers,],
       points  # default: nothing removed
     )
@@ -441,7 +594,7 @@ autoplot.fitgam <- function(object, conf_int = FALSE, color_gam = "steelblue",
     theme_bw(base_size = 12) +
     labs(y = paste0("Predicted ", ylab), x = xlab)
 
-  if (isTRUE(conf_int) && !any(prediction$conf_high > 1e9)) {
+  if (isTRUE(confidence) && !any(prediction$conf_high > 1e9)) {
     p <- p + geom_ribbon(aes(ymin = conf_low, ymax = conf_high), alpha = 0.12)
   }
 
@@ -455,7 +608,8 @@ autoplot.fitgam <- function(object, conf_int = FALSE, color_gam = "steelblue",
     yvar <- switch(ylab,
                    "frequency" = "frequency",
                    "severity"  = "avg_claimsize",
-                   "burning"   = "avg_premium",
+                   "pure_premium" = "avg_premium",
+                   "burning" = "avg_premium",
                    NULL)
     if (!is.null(yvar)) {
       p <- p + geom_point(data = points,
@@ -474,3 +628,9 @@ autoplot.fitgam <- function(object, conf_int = FALSE, color_gam = "steelblue",
 
   p
 }
+
+#' @export
+autoplot.risk_factor_gam <- autoplot.riskfactor_gam
+
+#' @export
+autoplot.fitgam <- autoplot.riskfactor_gam
