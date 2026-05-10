@@ -6,16 +6,16 @@
 \usage{
 edit_smoothing(
   model,
-  variable = NULL,
+  model_variable = NULL,
   step = NULL,
-  x1,
-  x2,
-  overwrite_y1 = NULL,
-  overwrite_y2 = NULL,
-  knots_x = NULL,
-  knots_y = NULL,
+  from,
+  to,
+  from_value = NULL,
+  to_value = NULL,
+  control_positions = NULL,
+  control_values = NULL,
   allow_extrapolation = FALSE,
-  extrapolation_break_size = NULL
+  extrapolation_step = NULL
 )
 }
 \arguments{
@@ -23,26 +23,27 @@ edit_smoothing(
 \code{\link[=prepare_refinement]{prepare_refinement()}}. Legacy \code{smooth} and \code{restricted} objects are still
 accepted for backwards compatibility.}
 
-\item{variable}{Character string. The \code{model_variable} of the smoothing step
-to edit. Required when more than one smoothing step exists and \code{step} is
-not supplied.}
+\item{model_variable}{Character string. The \code{model_variable} of the smoothing
+step to edit. Required when more than one smoothing step exists and \code{step}
+is not supplied.}
 
 \item{step}{Optional numeric index of the smoothing step to edit.}
 
-\item{x1, x2}{Numeric values giving the start and end of the source-variable
+\item{from, to}{Numeric values giving the start and end of the source-variable
 interval to modify.}
 
-\item{overwrite_y1, overwrite_y2}{Optional numeric values used to override the
-smoothed curve value at \code{x1} and \code{x2}.}
+\item{from_value, to_value}{Optional numeric values used to override the
+smoothed curve value at \code{from} and \code{to}.}
 
-\item{knots_x, knots_y}{Optional numeric vectors of equal length. These define
-additional points that the edited smoothing curve should pass through.}
+\item{control_positions, control_values}{Optional numeric vectors of equal
+length. These define additional points that the edited smoothing curve
+should pass through.}
 
 \item{allow_extrapolation}{Logical. Whether edits may extend beyond the
 observed source-variable range.}
 
-\item{extrapolation_break_size}{Optional positive numeric scalar used to set
-the spacing of extra break points when extrapolation is allowed.}
+\item{extrapolation_step}{Optional positive numeric scalar used to set the
+spacing of extra break points when extrapolation is allowed.}
 }
 \value{
 Object of class \code{rating_refinement}.
@@ -51,15 +52,17 @@ Object of class \code{rating_refinement}.
 Manually adjusts a smoothing step that was previously added with
 \code{\link[=add_smoothing]{add_smoothing()}}. This is intended for actuarial review of a smoothed tariff
 curve, for example to flatten an unstable segment, align the end points of an
-interval, or add extra knots where expert judgement should guide the curve.
+interval, or add extra control points where expert judgement should guide the
+curve.
 The adjusted smoothing is applied when \code{\link[=refit]{refit()}} is called.
 }
 \details{
-Use \code{variable} or \code{step} to identify the smoothing step to edit. The interval
-from \code{x1} to \code{x2} defines the part of the source variable range that should
-be changed. \code{overwrite_y1} and \code{overwrite_y2} can be used to force the curve
-values at the interval boundaries. \code{knots_x} and \code{knots_y} add additional
-points that the edited curve should follow inside the interval.
+Use \code{model_variable} or \code{step} to identify the smoothing step to edit. The
+interval from \code{from} to \code{to} defines the part of the source variable range
+that should be changed. \code{from_value} and \code{to_value} can be used to force the
+curve values at the interval boundaries. \code{control_positions} and
+\code{control_values} add additional points that the edited curve should follow
+inside the interval.
 }
 \examples{
 set.seed(42)
@@ -95,11 +98,13 @@ refined <- prepare_refinement(model, data = portfolio) |>
     weights = "exposure"
   ) |>
   edit_smoothing(
-    variable = "age_band",
-    x1 = 30,
-    x2 = 50,
-    overwrite_y1 = 1.00,
-    overwrite_y2 = 1.10
+    model_variable = "age_band",
+    from = 30,
+    to = 50,
+    from_value = 1.00,
+    to_value = 1.10,
+    control_positions = c(40),
+    control_values = c(1.05)
   )
 
 refined_model <- refit(refined)

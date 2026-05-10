@@ -815,33 +815,36 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #' Manually adjusts a smoothing step that was previously added with
 #' [add_smoothing()]. This is intended for actuarial review of a smoothed tariff
 #' curve, for example to flatten an unstable segment, align the end points of an
-#' interval, or add extra knots where expert judgement should guide the curve.
+#' interval, or add extra control points where expert judgement should guide the
+#' curve.
 #' The adjusted smoothing is applied when [refit()] is called.
 #'
 #' @details
-#' Use `variable` or `step` to identify the smoothing step to edit. The interval
-#' from `x1` to `x2` defines the part of the source variable range that should
-#' be changed. `overwrite_y1` and `overwrite_y2` can be used to force the curve
-#' values at the interval boundaries. `knots_x` and `knots_y` add additional
-#' points that the edited curve should follow inside the interval.
+#' Use `model_variable` or `step` to identify the smoothing step to edit. The
+#' interval from `from` to `to` defines the part of the source variable range
+#' that should be changed. `from_value` and `to_value` can be used to force the
+#' curve values at the interval boundaries. `control_positions` and
+#' `control_values` add additional points that the edited curve should follow
+#' inside the interval.
 #'
 #' @param model Object of class `rating_refinement`, usually created with
 #'   [prepare_refinement()]. Legacy `smooth` and `restricted` objects are still
 #'   accepted for backwards compatibility.
-#' @param variable Character string. The `model_variable` of the smoothing step
-#'   to edit. Required when more than one smoothing step exists and `step` is
-#'   not supplied.
+#' @param model_variable Character string. The `model_variable` of the smoothing
+#'   step to edit. Required when more than one smoothing step exists and `step`
+#'   is not supplied.
 #' @param step Optional numeric index of the smoothing step to edit.
-#' @param x1,x2 Numeric values giving the start and end of the source-variable
+#' @param from,to Numeric values giving the start and end of the source-variable
 #'   interval to modify.
-#' @param overwrite_y1,overwrite_y2 Optional numeric values used to override the
-#'   smoothed curve value at `x1` and `x2`.
-#' @param knots_x,knots_y Optional numeric vectors of equal length. These define
-#'   additional points that the edited smoothing curve should pass through.
+#' @param from_value,to_value Optional numeric values used to override the
+#'   smoothed curve value at `from` and `to`.
+#' @param control_positions,control_values Optional numeric vectors of equal
+#'   length. These define additional points that the edited smoothing curve
+#'   should pass through.
 #' @param allow_extrapolation Logical. Whether edits may extend beyond the
 #'   observed source-variable range.
-#' @param extrapolation_break_size Optional positive numeric scalar used to set
-#'   the spacing of extra break points when extrapolation is allowed.
+#' @param extrapolation_step Optional positive numeric scalar used to set the
+#'   spacing of extra break points when extrapolation is allowed.
 #'
 #' @author Martin Haringa
 #'
@@ -881,24 +884,27 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #'     weights = "exposure"
 #'   ) |>
 #'   edit_smoothing(
-#'     variable = "age_band",
-#'     x1 = 30,
-#'     x2 = 50,
-#'     overwrite_y1 = 1.00,
-#'     overwrite_y2 = 1.10
+#'     model_variable = "age_band",
+#'     from = 30,
+#'     to = 50,
+#'     from_value = 1.00,
+#'     to_value = 1.10,
+#'     control_positions = c(40),
+#'     control_values = c(1.05)
 #'   )
 #'
 #' refined_model <- refit(refined)
 #'
 #' @export
 edit_smoothing <- function(model,
-                           variable = NULL,
+                           model_variable = NULL,
                            step = NULL,
-                           x1, x2,
-                           overwrite_y1 = NULL, overwrite_y2 = NULL,
-                           knots_x = NULL, knots_y = NULL,
+                           from, to,
+                           from_value = NULL, to_value = NULL,
+                           control_positions = NULL,
+                           control_values = NULL,
                            allow_extrapolation = FALSE,
-                           extrapolation_break_size = NULL) {
+                           extrapolation_step = NULL) {
   if (inherits(model, c("smooth", "restricted"))) {
     lifecycle::deprecate_warn(
       when = "0.9.0",
@@ -910,26 +916,56 @@ edit_smoothing <- function(model,
 
   .assert_refinement(model)
 
-  if (is.null(knots_x)) knots_x <- numeric()
-  if (is.null(knots_y)) knots_y <- numeric()
+  .assert_single_numeric(from, "from", allow_null = FALSE)
+  .assert_single_numeric(to, "to", allow_null = FALSE)
+  if (from >= to) {
+    stop("'from' must be smaller than 'to'.", call. = FALSE)
+  }
+  .assert_single_numeric(from_value, "from_value", allow_null = TRUE)
+  .assert_single_numeric(to_value, "to_value", allow_null = TRUE)
+  .assert_single_logical(allow_extrapolation, "allow_extrapolation")
+  .assert_single_numeric(extrapolation_step, "extrapolation_step",
+                         allow_null = TRUE, positive = TRUE)
 
-  if (length(knots_x) != length(knots_y)) {
-    stop("Lengths of 'knots_x' and 'knots_y' must be equal.", call. = FALSE)
+  if (is.null(control_positions)) control_positions <- numeric()
+  if (is.null(control_values)) control_values <- numeric()
+
+  if (!is.numeric(control_positions) || anyNA(control_positions) ||
+      any(!is.finite(control_positions))) {
+    stop("'control_positions' must be a numeric vector with finite values.",
+         call. = FALSE)
+  }
+  if (!is.numeric(control_values) || anyNA(control_values) ||
+      any(!is.finite(control_values))) {
+    stop("'control_values' must be a numeric vector with finite values.",
+         call. = FALSE)
+  }
+  if (length(control_positions) != length(control_values)) {
+    stop("'control_positions' and 'control_values' must have the same length.",
+         call. = FALSE)
   }
 
-  idx <- .find_step(model, type = "smoothing", variable = variable, step = step)
+  idx <- .find_step(model, type = "smoothing",
+                    variable = model_variable,
+                    step = step)
+
+  if (length(control_positions) > 0 &&
+      any(control_positions <= from | control_positions >= to)) {
+    stop("'control_positions' must lie between 'from' and 'to'.",
+         call. = FALSE)
+  }
 
   model$steps[[idx]]$edit <- utils::modifyList(
     model$steps[[idx]]$edit %||% list(),
     list(
-      x1 = x1,
-      x2 = x2,
-      overwrite_y1 = overwrite_y1,
-      overwrite_y2 = overwrite_y2,
-      knots_x = knots_x,
-      knots_y = knots_y,
+      from = from,
+      to = to,
+      from_value = from_value,
+      to_value = to_value,
+      control_positions = control_positions,
+      control_values = control_values,
       allow_extrapolation = allow_extrapolation,
-      extrapolation_break_size = extrapolation_break_size
+      extrapolation_step = extrapolation_step
     )
   )
 
@@ -1171,7 +1207,7 @@ add_relativities <- function(model,
   if (!is.null(step$edit)) {
     edit <- step$edit
 
-    ebreak <- edit$extrapolation_break_size
+    ebreak <- edit$extrapolation_step
     if (is.null(ebreak)) {
       ebreak <- default_extrapolation_break_size(df_poly, factor = 1)
     }
@@ -1179,12 +1215,12 @@ add_relativities <- function(model,
     changed <- change_xy(
       borders_model = df_poly,
       x_org = x_org,
-      x1 = edit$x1,
-      x2 = edit$x2,
-      overwrite_y1 = edit$overwrite_y1,
-      overwrite_y2 = edit$overwrite_y2,
-      middle_x = edit$knots_x %||% numeric(),
-      middle_y = edit$knots_y %||% numeric(),
+      x1 = edit$from,
+      x2 = edit$to,
+      overwrite_y1 = edit$from_value,
+      overwrite_y2 = edit$to_value,
+      middle_x = edit$control_positions %||% numeric(),
+      middle_y = edit$control_values %||% numeric(),
       allow_extrapolation = isTRUE(edit$allow_extrapolation),
       extrapolation_break_size = ebreak
     )
@@ -1748,25 +1784,67 @@ add_relativities <- function(model,
 #' Refit a prepared refinement workflow
 #'
 #' @description
-#' Applies all collected refinement steps and refits the underlying GLM in one
-#' call.
+#' Applies the refinement steps stored in a `rating_refinement` object and
+#' returns a refitted GLM. This is the final step in the refinement workflow
+#' after [prepare_refinement()], [add_smoothing()], [add_restriction()] or
+#' [add_relativities()] have been used to define the proposed tariff structure.
 #'
-#' @param x Object of class `rating_refinement`.
-#' @param intercept_only Logical. Default `FALSE`.
-#' @param ... Other arguments.
+#' @details
+#' Refinement steps are not applied to the fitted model immediately. They are
+#' collected on the `rating_refinement` object so they can be inspected first,
+#' for example with [autoplot.rating_refinement()]. `refit()` then applies the
+#' steps in order, updates the model formula and data, and calls [stats::glm()]
+#' with the original model family and any additional arguments passed through
+#' `...`.
 #'
-#' @return Object of class `glm`.
+#' With `intercept_only = FALSE`, the refined GLM is fitted with the remaining
+#' free model terms that are still present after applying the refinement steps.
+#' With `intercept_only = TRUE`, remaining original model effects are fixed as
+#' offsets based on the existing fitted relativities. The refit then estimates
+#' only the intercept. This can be useful when the relative tariff structure
+#' should remain fixed and only the overall premium level should be recalibrated.
+#'
+#' @param object Object of class `rating_refinement`, usually created with
+#'   [prepare_refinement()].
+#' @param intercept_only Logical. If `FALSE` (default), fit the refined model
+#'   with remaining model terms still free. If `TRUE`, keep remaining existing
+#'   relativities fixed as offsets and estimate only the intercept.
+#' @param ... Additional arguments passed to [stats::glm()], such as `control`.
+#'
+#' @author Martin Haringa
+#'
+#' @return A refitted object of class `glm`. The returned model also stores
+#'   attributes used by [rating_table()] and [rating_grid()] to recognise
+#'   refined rating factors, fixed relativities and smoothing metadata.
+#'
+#' @examples
+#' zip_df <- data.frame(
+#'   zip = c(0, 1, 2, 3),
+#'   zip_adj = c(0.8, 0.9, 1.0, 1.2)
+#' )
+#'
+#' model <- glm(
+#'   nclaims ~ zip + offset(log(exposure)),
+#'   family = poisson(),
+#'   data = MTPL
+#' )
+#'
+#' refined_model <- prepare_refinement(model) |>
+#'   add_restriction(zip_df) |>
+#'   refit(intercept_only = TRUE)
+#'
 #' @export
-refit <- function(x, intercept_only = FALSE, ...) {
-  .assert_refinement(x)
+refit <- function(object, intercept_only = FALSE, ...) {
+  .assert_refinement(object)
+  .assert_single_logical(intercept_only, "intercept_only")
 
-  state <- .make_exec_state(x)
+  state <- .make_exec_state(object)
 
-  if (length(x$steps) == 0) {
+  if (length(object$steps) == 0) {
     warning("No refinement steps were added; returning refit of original model.", call. = FALSE)
   }
 
-  for (step in x$steps) {
+  for (step in object$steps) {
     state <- .apply_refinement_step(state, step)
   }
 
@@ -1788,6 +1866,7 @@ refit <- function(x, intercept_only = FALSE, ...) {
 #' @keywords internal
 refit_glm <- function(x, intercept_only = FALSE, ...) {
   lifecycle::deprecate_warn("0.9.0", "refit_glm()", "refit()")
+  .assert_single_logical(intercept_only, "intercept_only")
 
   if (inherits(x, "rating_refinement")) {
     return(refit(x, intercept_only = intercept_only, ...))

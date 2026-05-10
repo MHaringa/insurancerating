@@ -4,19 +4,61 @@
 \alias{refit}
 \title{Refit a prepared refinement workflow}
 \usage{
-refit(x, intercept_only = FALSE, ...)
+refit(object, intercept_only = FALSE, ...)
 }
 \arguments{
-\item{x}{Object of class \code{rating_refinement}.}
+\item{object}{Object of class \code{rating_refinement}, usually created with
+\code{\link[=prepare_refinement]{prepare_refinement()}}.}
 
-\item{intercept_only}{Logical. Default \code{FALSE}.}
+\item{intercept_only}{Logical. If \code{FALSE} (default), fit the refined model
+with remaining model terms still free. If \code{TRUE}, keep remaining existing
+relativities fixed as offsets and estimate only the intercept.}
 
-\item{...}{Other arguments.}
+\item{...}{Additional arguments passed to \code{\link[stats:glm]{stats::glm()}}, such as \code{control}.}
 }
 \value{
-Object of class \code{glm}.
+A refitted object of class \code{glm}. The returned model also stores
+attributes used by \code{\link[=rating_table]{rating_table()}} and \code{\link[=rating_grid]{rating_grid()}} to recognise
+refined rating factors, fixed relativities and smoothing metadata.
 }
 \description{
-Applies all collected refinement steps and refits the underlying GLM in one
-call.
+Applies the refinement steps stored in a \code{rating_refinement} object and
+returns a refitted GLM. This is the final step in the refinement workflow
+after \code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}} or
+\code{\link[=add_relativities]{add_relativities()}} have been used to define the proposed tariff structure.
+}
+\details{
+Refinement steps are not applied to the fitted model immediately. They are
+collected on the \code{rating_refinement} object so they can be inspected first,
+for example with \code{\link[=autoplot.rating_refinement]{autoplot.rating_refinement()}}. \code{refit()} then applies the
+steps in order, updates the model formula and data, and calls \code{\link[stats:glm]{stats::glm()}}
+with the original model family and any additional arguments passed through
+\code{...}.
+
+With \code{intercept_only = FALSE}, the refined GLM is fitted with the remaining
+free model terms that are still present after applying the refinement steps.
+With \code{intercept_only = TRUE}, remaining original model effects are fixed as
+offsets based on the existing fitted relativities. The refit then estimates
+only the intercept. This can be useful when the relative tariff structure
+should remain fixed and only the overall premium level should be recalibrated.
+}
+\examples{
+zip_df <- data.frame(
+  zip = c(0, 1, 2, 3),
+  zip_adj = c(0.8, 0.9, 1.0, 1.2)
+)
+
+model <- glm(
+  nclaims ~ zip + offset(log(exposure)),
+  family = poisson(),
+  data = MTPL
+)
+
+refined_model <- prepare_refinement(model) |>
+  add_restriction(zip_df) |>
+  refit(intercept_only = TRUE)
+
+}
+\author{
+Martin Haringa
 }

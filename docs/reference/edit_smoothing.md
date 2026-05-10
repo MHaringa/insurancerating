@@ -4,8 +4,8 @@ Manually adjusts a smoothing step that was previously added with
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md).
 This is intended for actuarial review of a smoothed tariff curve, for
 example to flatten an unstable segment, align the end points of an
-interval, or add extra knots where expert judgement should guide the
-curve. The adjusted smoothing is applied when
+interval, or add extra control points where expert judgement should
+guide the curve. The adjusted smoothing is applied when
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
 is called.
 
@@ -14,16 +14,16 @@ is called.
 ``` r
 edit_smoothing(
   model,
-  variable = NULL,
+  model_variable = NULL,
   step = NULL,
-  x1,
-  x2,
-  overwrite_y1 = NULL,
-  overwrite_y2 = NULL,
-  knots_x = NULL,
-  knots_y = NULL,
+  from,
+  to,
+  from_value = NULL,
+  to_value = NULL,
+  control_positions = NULL,
+  control_values = NULL,
   allow_extrapolation = FALSE,
-  extrapolation_break_size = NULL
+  extrapolation_step = NULL
 )
 ```
 
@@ -36,7 +36,7 @@ edit_smoothing(
   Legacy `smooth` and `restricted` objects are still accepted for
   backwards compatibility.
 
-- variable:
+- model_variable:
 
   Character string. The `model_variable` of the smoothing step to edit.
   Required when more than one smoothing step exists and `step` is not
@@ -46,17 +46,17 @@ edit_smoothing(
 
   Optional numeric index of the smoothing step to edit.
 
-- x1, x2:
+- from, to:
 
   Numeric values giving the start and end of the source-variable
   interval to modify.
 
-- overwrite_y1, overwrite_y2:
+- from_value, to_value:
 
   Optional numeric values used to override the smoothed curve value at
-  `x1` and `x2`.
+  `from` and `to`.
 
-- knots_x, knots_y:
+- control_positions, control_values:
 
   Optional numeric vectors of equal length. These define additional
   points that the edited smoothing curve should pass through.
@@ -66,7 +66,7 @@ edit_smoothing(
   Logical. Whether edits may extend beyond the observed source-variable
   range.
 
-- extrapolation_break_size:
+- extrapolation_step:
 
   Optional positive numeric scalar used to set the spacing of extra
   break points when extrapolation is allowed.
@@ -77,12 +77,12 @@ Object of class `rating_refinement`.
 
 ## Details
 
-Use `variable` or `step` to identify the smoothing step to edit. The
-interval from `x1` to `x2` defines the part of the source variable range
-that should be changed. `overwrite_y1` and `overwrite_y2` can be used to
-force the curve values at the interval boundaries. `knots_x` and
-`knots_y` add additional points that the edited curve should follow
-inside the interval.
+Use `model_variable` or `step` to identify the smoothing step to edit.
+The interval from `from` to `to` defines the part of the source variable
+range that should be changed. `from_value` and `to_value` can be used to
+force the curve values at the interval boundaries. `control_positions`
+and `control_values` add additional points that the edited curve should
+follow inside the interval.
 
 ## Author
 
@@ -124,11 +124,13 @@ refined <- prepare_refinement(model, data = portfolio) |>
     weights = "exposure"
   ) |>
   edit_smoothing(
-    variable = "age_band",
-    x1 = 30,
-    x2 = 50,
-    overwrite_y1 = 1.00,
-    overwrite_y2 = 1.10
+    model_variable = "age_band",
+    from = 30,
+    to = 50,
+    from_value = 1.00,
+    to_value = 1.10,
+    control_positions = c(40),
+    control_values = c(1.05)
   )
 
 refined_model <- refit(refined)

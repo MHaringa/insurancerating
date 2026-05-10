@@ -103,6 +103,34 @@ testthat::test_that(
 )
 
 testthat::test_that(
+  "refit validates intercept_only and supports object argument", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      zip = factor(c("a", "b", "c", "a", "b", "c"))
+    )
+    model <- glm(y ~ zip + offset(log(exposure)),
+                 family = poisson(),
+                 data = df)
+    restrictions <- data.frame(
+      zip = c("a", "b", "c"),
+      zip_rst = c(0.9, 1, 1.1)
+    )
+    ref <- prepare_refinement(model, data = df) |>
+      add_restriction(restrictions)
+
+    testthat::expect_error(
+      refit(object = ref, intercept_only = NA),
+      "intercept_only"
+    )
+
+    refined <- refit(object = ref, intercept_only = TRUE)
+    testthat::expect_s3_class(refined, "glm")
+    testthat::expect_true(isTRUE(attr(refined, "intercept_only")))
+  }
+)
+
+testthat::test_that(
   "add_smoothing validates public arguments before fitting", {
     df <- data.frame(
       y = c(1, 2, 1, 3),
@@ -184,6 +212,83 @@ testthat::test_that(
       add_smoothing(ref, model_variable = "age_band", source_variable = "age",
                     breaks = c(20, 35, 50)),
       "interval-style"
+    )
+  }
+)
+
+testthat::test_that(
+  "edit_smoothing stores edits with public argument names", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      age = c(20, 25, 35, 40, 50, 55)
+    )
+    df$age_band <- cut(df$age, breaks = c(18, 30, 45, 60),
+                       include.lowest = TRUE)
+    model <- glm(y ~ age_band + offset(log(exposure)),
+                 family = poisson(),
+                 data = df)
+
+    ref <- prepare_refinement(model, data = df) |>
+      add_smoothing(model_variable = "age_band",
+                    source_variable = "age",
+                    breaks = c(18, 30, 45, 60))
+
+    edited <- edit_smoothing(
+      ref,
+      model_variable = "age_band",
+      from = 30,
+      to = 45,
+      from_value = 1,
+      to_value = 1.1,
+      control_positions = c(37.5),
+      control_values = c(1.05),
+      extrapolation_step = 5
+    )
+
+    edit <- edited$steps[[1]]$edit
+    testthat::expect_equal(edit$from, 30)
+    testthat::expect_equal(edit$to, 45)
+    testthat::expect_equal(edit$from_value, 1)
+    testthat::expect_equal(edit$to_value, 1.1)
+    testthat::expect_equal(edit$control_positions, c(37.5))
+    testthat::expect_equal(edit$control_values, c(1.05))
+    testthat::expect_s3_class(refit(edited), "glm")
+  }
+)
+
+testthat::test_that(
+  "edit_smoothing validates control point inputs", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3),
+      exposure = rep(1, 4),
+      age = c(20, 30, 40, 50)
+    )
+    df$age_band <- cut(df$age, breaks = c(18, 30, 45, 60),
+                       include.lowest = TRUE)
+    model <- glm(y ~ age_band + offset(log(exposure)),
+                 family = poisson(),
+                 data = df)
+    ref <- prepare_refinement(model, data = df) |>
+      add_smoothing(model_variable = "age_band",
+                    source_variable = "age",
+                    breaks = c(18, 30, 45, 60))
+
+    testthat::expect_error(
+      edit_smoothing(ref, model_variable = "age_band", from = 45, to = 30),
+      "'from' must be smaller"
+    )
+    testthat::expect_error(
+      edit_smoothing(ref, model_variable = "age_band", from = 30, to = 45,
+                     control_positions = c(35, 40),
+                     control_values = c(1.1)),
+      "same length"
+    )
+    testthat::expect_error(
+      edit_smoothing(ref, model_variable = "age_band", from = 30, to = 45,
+                     control_positions = c(50),
+                     control_values = c(1.1)),
+      "between 'from' and 'to'"
     )
   }
 )
