@@ -2,21 +2,9 @@
 % Please edit documentation in R/model_get_data.R
 \name{rating_grid}
 \alias{rating_grid}
-\alias{construct_model_points}
 \title{Construct observed rating-grid points from model data or a data frame}
 \usage{
 rating_grid(
-  x,
-  group_by = NULL,
-  exposure = NULL,
-  exposure_by = NULL,
-  aggregate_cols = NULL,
-  drop_na = FALSE,
-  group_vars = NULL,
-  agg_cols = NULL
-)
-
-construct_model_points(
   x,
   group_by = NULL,
   exposure = NULL,
@@ -68,8 +56,6 @@ When \code{x} is an object returned by \code{\link[=extract_model_data]{extract_
 the extracted model metadata to determine the grouping variables if
 \code{group_by} is not supplied. When \code{x} is a plain \code{data.frame}, it is
 recommended to supply \code{group_by} explicitly.
-
-\code{construct_model_points()} is deprecated in favour of \code{\link[=rating_grid]{rating_grid()}}.
 }
 \details{
 The implementation uses base R only. Output is always a regular

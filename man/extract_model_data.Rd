@@ -2,12 +2,9 @@
 % Please edit documentation in R/model_get_data.R
 \name{extract_model_data}
 \alias{extract_model_data}
-\alias{model_data}
 \title{Extract model data}
 \usage{
 extract_model_data(x)
-
-model_data(x)
 }
 \arguments{
 \item{x}{An object of class \code{"glm"}, \code{"refitsmooth"}, or \code{"refitrestricted"}.}
@@ -31,8 +28,6 @@ models. It works for objects of class \code{"glm"}, as well as objects produced 
 refitting procedures (\code{"refitsmooth"} or \code{"refitrestricted"}).
 
 \code{model_data()} is kept as a deprecated compatibility wrapper.
-
-\code{model_data()} is deprecated in favour of \code{\link[=extract_model_data]{extract_model_data()}}.
 }
 \details{
 For GLM objects, the function returns the model data and attaches attributes

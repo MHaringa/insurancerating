@@ -18,25 +18,76 @@ add_relativities(
 \code{\link[=prepare_refinement]{prepare_refinement()}}.}
 
 \item{model_variable}{Character string. Existing variable in the GLM. Levels
-of this variable can be split into more detailed groups.}
+of this variable can be split into more detailed tariff groups.}
 
 \item{split_variable}{Character string. More granular portfolio variable that
-defines the split groups.}
+defines the detailed groups inside \code{model_variable}.}
 
-\item{relativities}{Named list of data.frames, usually created with
+\item{relativities}{Named list of data frames, usually created with
 \code{\link[=relativities_list]{relativities_list()}} and \code{\link[=split_level]{split_level()}}.}
 
-\item{exposure}{Character string. Exposure column.}
+\item{exposure}{Character string. Exposure column used for weighting and,
+when requested, normalisation.}
 
-\item{normalize}{Logical.}
+\item{normalize}{Logical. If \code{TRUE}, normalise the supplied relativities by
+exposure within each split model level.}
 }
 \value{
 Object of class \code{rating_refinement}.
 }
 \description{
-Adds a relativities step to a \code{rating_refinement} object.
+Splits an existing model variable into more detailed tariff groups using
+supplied relativities. This is useful when the GLM is fitted on a coarser
+rating factor for credibility or stability, but the final tariff needs a
+more detailed split that is based on portfolio exposure, expert judgement or
+externally agreed relativities.
 }
 \details{
-\code{add_relativities()} is only available within the new refinement workflow
-and should be used in combination with \code{prepare_refinement()} and \code{refit()}.
+\code{model_variable} is the variable already used in the GLM. \code{split_variable} is
+the more detailed variable in the portfolio data that will be used to split
+one or more levels of \code{model_variable}. The \code{relativities} argument should be
+a named list describing those splits, usually built with
+\code{\link[=relativities_list]{relativities_list()}} and \code{\link[=split_level]{split_level()}}.
+
+The step is stored on the \code{rating_refinement} object and is applied when
+\code{\link[=refit]{refit()}} is called. When \code{normalize = TRUE}, the supplied relativities are
+normalised using exposure so that the refined split keeps the original level
+effect on average. This helps prevent an expert split from unintentionally
+changing the total premium level for the original model group.
+}
+\examples{
+portfolio <- data.frame(
+  claims = c(1, 2, 1, 3, 2, 4),
+  exposure = rep(1, 6),
+  construction = factor(c("residential", "commercial", "residential",
+                          "commercial", "residential", "commercial")),
+  construction_detail = factor(c("flat", "shop", "house",
+                                 "office", "flat", "shop"))
+)
+
+model <- glm(
+  claims ~ construction + offset(log(exposure)),
+  family = poisson(),
+  data = portfolio
+)
+
+relativities <- relativities_list(
+  split_level(
+    "residential",
+    new_levels = c("flat", "house"),
+    relativities = c(0.95, 1.05)
+  )
+)
+
+refined <- prepare_refinement(model, data = portfolio) |>
+  add_relativities(
+    model_variable = "construction",
+    split_variable = "construction_detail",
+    relativities = relativities,
+    exposure = "exposure"
+  )
+
+}
+\author{
+Martin Haringa
 }

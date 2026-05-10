@@ -127,7 +127,7 @@ pricing signal that will be used in the tariff.</p>
 <p>The example below starts from one common premium modelling setup:</p>
 <ul>
 <li>analyse a continuous variable with a GAM</li>
-<li>convert it to tariff classes</li>
+<li>convert it to tariff groups</li>
 <li>fit frequency and severity models</li>
 <li>combine both into a premium proxy</li>
 <li>fit an unrestricted premium model</li>
@@ -144,12 +144,12 @@ pricing signal that will be used in the tariff.</p>
 <span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">clusters_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/construct_tariff_classes.html">construct_tariff_classes</a></span><span class="op">(</span><span class="va">age_policyholder_frequency</span><span class="op">)</span></span>
+<span><span class="va">age_groups_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_tariff_groups.html">derive_tariff_groups</a></span><span class="op">(</span><span class="va">age_policyholder_frequency</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="va">MTPL</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>age_policyholder_freq_cat <span class="op">=</span> <span class="va">clusters_freq</span><span class="op">$</span><span class="va">tariff_classes</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_tariff_groups.html">add_tariff_groups</a></span><span class="op">(</span><span class="va">age_groups_freq</span>, name <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">as.factor</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.factor</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="../reference/biggest_reference.html">biggest_reference</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">exposure</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.factor</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="../reference/set_reference_level.html">set_reference_level</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">exposure</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
 <span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">bm</span> <span class="op">+</span> <span class="va">age_policyholder_freq_cat</span>,</span>
@@ -594,12 +594,12 @@ are now embedded in the fitted model output.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">burn_refined_old</span> <span class="op">&lt;-</span> <span class="va">burn_unrestricted</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_smoothing.html">smooth_coef</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/smooth_coef.html">smooth_coef</a></span><span class="op">(</span></span>
 <span>    x_cut <span class="op">=</span> <span class="st">"age_policyholder_freq_man"</span>,</span>
 <span>    x_org <span class="op">=</span> <span class="st">"age_policyholder"</span>,</span>
 <span>    breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">95</span>, <span class="fl">5</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_restriction.html">restrict_coef</a></span><span class="op">(</span><span class="va">zip_df</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/restrict_coef.html">restrict_coef</a></span><span class="op">(</span><span class="va">zip_df</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/refit_glm.html">refit_glm</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>These are primarily maintained for backward compatibility.</p>
 <p>For new code, the recommended interface is:</p>

@@ -1,4 +1,4 @@
-#' Include reference group in regression output
+#' Deprecated single-model rating table helper
 #'
 #' @param model glm object produced by `glm()`
 #' @param model_data Optional data.frame used to create glm object. If `NULL`,
@@ -18,7 +18,10 @@
 #' Legacy interface. Prefer [rating_table()] for fitted models in the new
 #' workflow, but this function remains available.
 #'
+#' @return A data frame with rating factor coefficients for one model.
+#'
 #' @export
+#' @keywords internal
 rating_factors2 <- function(model, model_data = NULL, exposure = TRUE,
                             exposure_name = NULL,
                             colname = "estimate",
@@ -40,8 +43,22 @@ rating_factors2 <- function(model, model_data = NULL, exposure = TRUE,
   )
 }
 
-#' @rdname rating_table
+#' Deprecated alias for `rating_table()`
+#'
+#' @description
+#' `rating_factors()` is deprecated as of version 0.8.0. Use
+#' [rating_table()] instead.
+#'
+#' @inheritParams rating_table
+#' @param exposure_name Deprecated. Use `exposure_output` in [rating_table()]
+#'   instead.
+#' @param signif_stars Deprecated. Use `significance` in [rating_table()]
+#'   instead.
+#'
+#' @return See [rating_table()].
+#'
 #' @export
+#' @keywords internal
 rating_factors <- function(..., model_data = NULL, exposure = TRUE,
                            exposure_name = NULL,
                            signif_stars = FALSE,

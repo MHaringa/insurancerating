@@ -7,10 +7,7 @@ risk premium = severity / exposure
 loss ratio = severity / premium
 average premium = premium / exposure
 
-
-univariate() is deprecated as of version 0.8.0.
-Please use factor_analysis() instead with standard evaluation (SE),
-i.e. column names as character strings."><meta property="og:description" content="Performs a factor analysis for discrete risk factors in an insurance
+"><meta property="og:description" content="Performs a factor analysis for discrete risk factors in an insurance
 portfolio. The following summary statistics are calculated:
 frequency = number of claims / exposure
 average severity = severity / number of claims
@@ -18,10 +15,7 @@ risk premium = severity / exposure
 loss ratio = severity / premium
 average premium = premium / exposure
 
-
-univariate() is deprecated as of version 0.8.0.
-Please use factor_analysis() instead with standard evaluation (SE),
-i.e. column names as character strings."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+"><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -60,10 +54,7 @@ portfolio. The following summary statistics are calculated:</p><ul><li><p>freque
 <li><p>risk premium = severity / exposure</p></li>
 <li><p>loss ratio = severity / premium</p></li>
 <li><p>average premium = premium / exposure</p></li>
-</ul><p><code>univariate()</code> is deprecated as of version 0.8.0.
-Please use <code>factor_analysis()</code> instead with <strong>standard evaluation</strong> (SE),
-i.e. column names as character strings.</p>
-    </div>
+</ul></div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
@@ -79,16 +70,6 @@ i.e. column names as character strings.</p>
 <span>  x <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  severity <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  nclaims <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  by <span class="op">=</span> <span class="cn">NULL</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">univariate</span><span class="op">(</span></span>
-<span>  <span class="va">df</span>,</span>
-<span>  <span class="va">x</span>,</span>
-<span>  severity <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  nclaims <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  exposure <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  premium <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  by <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -148,17 +129,17 @@ summary statistics.</p>
 <li><p><strong>Average premium</strong>: premium / exposure</p></li>
 </ul><p>If one or more input arguments are not specified, the related statistics are
 omitted from the results.</p><div class="section">
-<h3 id="migration-from-univariate-">Migration from <code>univariate()</code><a class="anchor" aria-label="anchor" href="#migration-from-univariate-"></a></h3>
+<h3 id="migration-from-univariate-">Migration from <code><a href="univariate.html">univariate()</a></code><a class="anchor" aria-label="anchor" href="#migration-from-univariate-"></a></h3>
 
 
-<p>The function <code>univariate()</code> is deprecated as of version 0.8.0 and replaced by
+<p>The function <code><a href="univariate.html">univariate()</a></code> is deprecated as of version 0.8.0 and replaced by
 <code>factor_analysis()</code>. In addition to the name change, the interface has also
-changed:</p><ul><li><p><code>univariate()</code> used <strong>non-standard evaluation (NSE)</strong>, so column names could be
+changed:</p><ul><li><p><code><a href="univariate.html">univariate()</a></code> used <strong>non-standard evaluation (NSE)</strong>, so column names could be
 passed unquoted (e.g. <code>x = area</code>).</p></li>
 <li><p><code>factor_analysis()</code> uses <strong>standard evaluation (SE)</strong>, so column names must
 be passed as character strings (e.g. <code>x = "area"</code>).</p></li>
 </ul><p>This makes the function easier to use in programmatic workflows.</p>
-<p><code>univariate()</code> is still available for backward compatibility but will emit a
+<p><code><a href="univariate.html">univariate()</a></code> is still available for backward compatibility but will emit a
 deprecation warning and will be removed in a future release.</p>
 </div>
 
@@ -189,7 +170,7 @@ deprecation warning and will be removed in a future release.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4     520.1832   7.674058        67.78464</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## --- Deprecated usage (NSE) ---</span></span></span>
-<span class="r-in"><span><span class="fu">univariate</span><span class="op">(</span><span class="va">MTPL2</span>,</span></span>
+<span class="r-in"><span><span class="fu"><a href="univariate.html">univariate</a></span><span class="op">(</span><span class="va">MTPL2</span>,</span></span>
 <span class="r-in"><span>           x <span class="op">=</span> <span class="va">area</span>,</span></span>
 <span class="r-in"><span>           severity <span class="op">=</span> <span class="va">amount</span>,</span></span>
 <span class="r-in"><span>           nclaims <span class="op">=</span> <span class="va">nclaims</span>,</span></span>

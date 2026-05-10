@@ -2,12 +2,9 @@
 % Please edit documentation in R/model_refinement.R
 \name{refit_glm}
 \alias{refit_glm}
-\alias{update_glm}
-\title{Refit a GLM model or refinement workflow}
+\title{Deprecated refit wrapper}
 \usage{
 refit_glm(x, intercept_only = FALSE, ...)
-
-update_glm(x, intercept_only = FALSE, ...)
 }
 \arguments{
 \item{x}{Object of class \code{rating_refinement}, \code{restricted} or \code{smooth}.}
@@ -20,6 +17,6 @@ update_glm(x, intercept_only = FALSE, ...)
 Object of class \code{glm}.
 }
 \description{
-Backwards-compatible wrapper. Prefer using \code{\link[=refit]{refit()}} for the new
-refinement workflow.
+\code{refit_glm()} is deprecated as of version 0.9.0. Use \code{\link[=refit]{refit()}} instead.
 }
+\keyword{internal}

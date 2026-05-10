@@ -2,12 +2,9 @@
 % Please edit documentation in R/fisher_classify.R
 \name{fisher_classify}
 \alias{fisher_classify}
-\alias{fisher}
 \title{Fisher's natural breaks classification}
 \usage{
 fisher_classify(x, n = 7, dig.lab = NULL, diglab = NULL)
-
-fisher(x, n = 7, diglab = 2)
 }
 \arguments{
 \item{x}{A numeric vector to be classified.}
@@ -30,8 +27,6 @@ classification is not directly linked to the insurance rating workflow.
 Classifies a continuous numeric vector into intervals using
 Fisher-Jenks natural breaks. Useful for choropleth mapping or
 other applications where grouped ranges are required.
-
-\code{fisher()} is deprecated as of version 0.8.0.
 }
 \details{
 The \code{"fisher"} style uses the algorithm proposed by Fisher (1958), commonly

@@ -2,42 +2,20 @@
 % Please edit documentation in R/utils.R
 \name{biggest_reference}
 \alias{biggest_reference}
-\title{Set reference group to the group with largest exposure}
+\title{Deprecated alias for \code{set_reference_level()}}
 \usage{
 biggest_reference(x, weight)
 }
 \arguments{
-\item{x}{A factor (unordered). Character vectors should be converted to
-factor before use.}
+\item{x}{A factor.}
 
-\item{weight}{A numeric vector of the same length as \code{x},
-typically representing exposure or frequency weights.}
+\item{weight}{A numeric vector of the same length as \code{x}.}
 }
 \value{
-A factor of the same length as \code{x}, with the reference level set
-to the group with the largest weight.
+See \code{\link[=set_reference_level]{set_reference_level()}}.
 }
 \description{
-Relevels a factor so that the category with the highest total
-weight (e.g., exposure) becomes the reference (first) level.
-This is useful in regression settings, where the first level of a factor
-is taken as the baseline. In insurance applications, the group with the
-largest exposure is often chosen as reference.
+\code{biggest_reference()} is deprecated as of version 0.9.0. Use
+\code{\link[=set_reference_level]{set_reference_level()}} instead.
 }
-\examples{
-\dontrun{
-library(dplyr)
-df <- chickwts |>
-mutate(across(where(is.character), as.factor)) |>
-mutate(across(where(is.factor), ~biggest_reference(., weight)))
-}
-
-}
-\references{
-Kaas, Rob & Goovaerts, Marc & Dhaene, Jan & Denuit, Michel.
-(2008). Modern Actuarial Risk Theory: Using R.
-\doi{doi:10.1007/978-3-540-70998-5.}
-}
-\author{
-Martin Haringa
-}
+\keyword{internal}

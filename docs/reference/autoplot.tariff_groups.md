@@ -1,0 +1,88 @@
+# Autoplot for tariff group objects
+
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+method for objects created by
+[`derive_tariff_groups()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_groups.md).
+Produces a
+[`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
+of the fitted GAM together with the derived tariff group boundaries.
+Optionally, confidence intervals and observed data points can be added.
+
+## Usage
+
+``` r
+# S3 method for class 'tariff_groups'
+autoplot(
+  object,
+  confidence = FALSE,
+  color_gam = "steelblue",
+  show_observations = FALSE,
+  color_splits = "grey50",
+  size_points = 1,
+  color_points = "black",
+  rotate_labels = FALSE,
+  remove_outliers = NULL,
+  conf_int = NULL,
+  ...
+)
+```
+
+## Arguments
+
+- object:
+
+  An object of class `"tariff_groups"`, produced by
+  [`derive_tariff_groups()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_groups.md).
+
+- confidence:
+
+  Logical, whether to plot 95% confidence intervals. Default = `FALSE`.
+
+- color_gam:
+
+  Color of the fitted GAM line. Default = `"steelblue"`.
+
+- show_observations:
+
+  Logical, whether to add observed data points for each level of the
+  risk factor. Default = `FALSE`.
+
+- color_splits:
+
+  Color of the vertical split lines. Default = `"grey50"`.
+
+- size_points:
+
+  Numeric, size of points if `show_observations = TRUE`. Default = 1.
+
+- color_points:
+
+  Color of observed points. Default = `"black"`.
+
+- rotate_labels:
+
+  Logical, whether to rotate x-axis labels by 45 degrees. Default =
+  `FALSE`.
+
+- remove_outliers:
+
+  Numeric, exclude observations above this value from the plot (helps
+  with extreme outliers). Default = `NULL`.
+
+- conf_int:
+
+  Deprecated. Use `confidence` instead.
+
+- ...:
+
+  Additional arguments passed to
+  [`ggplot2::autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html).
+
+## Value
+
+A [ggplot2::ggplot](https://ggplot2.tidyverse.org/reference/ggplot.html)
+object.
+
+## Author
+
+Martin Haringa

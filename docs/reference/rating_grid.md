@@ -14,23 +14,10 @@ the function uses the extracted model metadata to determine the grouping
 variables if `group_by` is not supplied. When `x` is a plain
 `data.frame`, it is recommended to supply `group_by` explicitly.
 
-`construct_model_points()` is deprecated in favour of `rating_grid()`.
-
 ## Usage
 
 ``` r
 rating_grid(
-  x,
-  group_by = NULL,
-  exposure = NULL,
-  exposure_by = NULL,
-  aggregate_cols = NULL,
-  drop_na = FALSE,
-  group_vars = NULL,
-  agg_cols = NULL
-)
-
-construct_model_points(
   x,
   group_by = NULL,
   exposure = NULL,

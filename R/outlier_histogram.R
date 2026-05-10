@@ -207,7 +207,7 @@ validate_outlier_histogram_args <- function(data,
 }
 
 
-#' @rdname outlier_histogram
+#' Deprecated alias for `outlier_histogram()`
 #'
 #' @description
 #' [histbin()] is deprecated as of version 0.8.0.
@@ -216,7 +216,11 @@ validate_outlier_histogram_args <- function(data,
 #' In addition, note that `x` must now be passed as **string**
 #' (standard evaluation).
 #'
+#' @inheritParams outlier_histogram
+#' @return See [outlier_histogram()].
+#'
 #' @export
+#' @keywords internal
 histbin <- function(data, x, left = NULL, right = NULL, line = FALSE, bins = 30,
                     fill = "steelblue", color = "white",
                     fill_outliers = "#a7d1a7") {

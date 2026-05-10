@@ -278,13 +278,24 @@ validate_factor_analysis_args <- function(data, risk_factors,
 }
 
 
-#' @rdname factor_analysis
+#' Deprecated alias for `factor_analysis()`
+#'
 #' @description
-#' [univariate()] is deprecated as of version 0.8.0.
-#' Please use [factor_analysis()] instead with **standard evaluation** (SE),
-#' i.e. column names as character strings.
+#' `univariate()` is deprecated as of version 0.8.0. Use
+#' [factor_analysis()] instead.
+#'
+#' @param df A `data.frame` with the insurance portfolio.
+#' @param x Column name or expression with the risk factor.
+#' @param severity Column name or expression with claim amounts.
+#' @param nclaims Column name or expression with claim counts.
+#' @param exposure Column name or expression with exposures.
+#' @param premium Column name or expression with premiums.
+#' @param by Optional grouping column name or expression.
+#'
+#' @return See [factor_analysis()].
 #'
 #' @export
+#' @keywords internal
 univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
                        premium = NULL, by = NULL) {
 

@@ -258,13 +258,22 @@ ensure_training_levels <- function(train_rows, data, level_cols) {
   train_rows
 }
 
-#' @rdname bootstrap_performance
+#' Deprecated alias for `bootstrap_performance()`
+#'
 #' @description
 #' `bootstrap_rmse()` is deprecated in favour of [bootstrap_performance()].
 #' Objects returned by `bootstrap_rmse()` keep class `"bootstrap_rmse"` for
 #' backward compatibility and also inherit from `"bootstrap_performance"`.
 #'
+#' @inheritParams bootstrap_performance
+#' @param n Deprecated. Use `n_resamples` in [bootstrap_performance()] instead.
+#' @param frac Deprecated. Use `sample_fraction` in [bootstrap_performance()]
+#'   instead.
+#'
+#' @return See [bootstrap_performance()].
+#'
 #' @export
+#' @keywords internal
 bootstrap_rmse <- function(model, data, n = 50, frac = 1,
                            metric = "rmse",
                            sampling = c("bootstrap", "split"),

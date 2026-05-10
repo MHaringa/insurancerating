@@ -92,11 +92,19 @@ fisher_classify_impl <- function(x, n = 7, dig.lab = 2) {
 }
 
 
-#' @rdname fisher_classify
+#' Deprecated alias for `fisher_classify()`
+#'
 #' @description
 #' `fisher()` is deprecated as of version 0.8.0.
 #'
+#' @param x Numeric vector to classify.
+#' @param n Number of classes.
+#' @param diglab Deprecated. Use `dig.lab` in [fisher_classify()] instead.
+#'
+#' @return See [fisher_classify()].
+#'
 #' @export
+#' @keywords internal
 fisher <- function(x, n = 7, diglab = 2) {
   lifecycle::deprecate_warn(
     when = "0.8.0",

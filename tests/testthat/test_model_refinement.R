@@ -107,58 +107,83 @@ testthat::test_that(
     df <- data.frame(
       y = c(1, 2, 1, 3),
       exposure = rep(1, 4),
-      zip = factor(c("a", "b", "a", "b")),
       age = c(20, 30, 40, 50)
     )
-    model <- glm(y ~ zip + offset(log(exposure)), family = poisson(), data = df)
+    df$age_band <- cut(df$age, breaks = c(20, 35, 50),
+                       include.lowest = TRUE)
+    model <- glm(y ~ age_band + offset(log(exposure)),
+                 family = poisson(),
+                 data = df)
     ref <- prepare_refinement(model, data = df)
 
     testthat::expect_error(
-      add_smoothing(ref, model_variable = "zip", source_variable = "age",
-                    breaks = c(1, 2),
+      add_smoothing(ref, model_variable = "age_band", source_variable = "age",
+                    breaks = c(20, 35, 50),
                     smoothing = "bad"),
       "smoothing"
     )
     testthat::expect_error(
-      add_smoothing(ref, model_variable = "zip", source_variable = "age",
-                    breaks = c(2, 1)),
+      add_smoothing(ref, model_variable = "age_band", source_variable = "age",
+                    breaks = c(35, 20)),
       "strictly increasing"
     )
     testthat::expect_error(
       add_smoothing(ref, model_variable = "missing", source_variable = "age",
-                    breaks = c(1, 2)),
+                    breaks = c(20, 35, 50)),
       "model_variable"
     )
     testthat::expect_error(
-      add_smoothing(ref, model_variable = "zip", source_variable = "age",
-                    breaks = c(1, 2),
+      add_smoothing(ref, model_variable = "age_band", source_variable = "age",
+                    breaks = c(20, 35, 50),
                     degree = "2"),
       "degree"
     )
     testthat::expect_error(
-      add_smoothing(ref, model_variable = "zip", source_variable = "age",
-                    breaks = c(1, 2),
+      add_smoothing(ref, model_variable = "age_band", source_variable = "age",
+                    breaks = c(20, 35, 50),
                     k = 1.5),
       "k"
     )
     testthat::expect_s3_class(
-      add_smoothing(ref, model_variable = "zip", source_variable = "age",
-                    breaks = c(1, 2)),
+      add_smoothing(ref, model_variable = "age_band", source_variable = "age",
+                    breaks = c(20, 35, 50)),
       "rating_refinement"
     )
     testthat::expect_warning(
-      add_smoothing(ref, tariff_class = "zip", rating_variable = "age",
-                    breaks = c(1, 2)),
+      add_smoothing(ref, tariff_class = "age_band", rating_variable = "age",
+                    breaks = c(20, 35, 50)),
       "deprecated"
     )
     testthat::expect_warning(
-      add_smoothing(ref, x_cut = "zip", x_org = "age", breaks = c(1, 2)),
+      add_smoothing(ref, x_cut = "age_band", x_org = "age",
+                    breaks = c(20, 35, 50)),
       "deprecated"
     )
     testthat::expect_error(
-      add_smoothing(ref, model_variable = "zip", x_cut = "zip",
-                    source_variable = "age", breaks = c(1, 2)),
+      add_smoothing(ref, model_variable = "age_band", x_cut = "age_band",
+                    source_variable = "age", breaks = c(20, 35, 50)),
       "Use only one"
+    )
+  }
+)
+
+testthat::test_that(
+  "add_smoothing requires interval-style model variable levels", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3),
+      exposure = rep(1, 4),
+      age = c(20, 30, 40, 50),
+      age_band = factor(c("young", "young", "old", "old"))
+    )
+    model <- glm(y ~ age_band + offset(log(exposure)),
+                 family = poisson(),
+                 data = df)
+    ref <- prepare_refinement(model, data = df)
+
+    testthat::expect_error(
+      add_smoothing(ref, model_variable = "age_band", source_variable = "age",
+                    breaks = c(20, 35, 50)),
+      "interval-style"
     )
   }
 )

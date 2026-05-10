@@ -123,7 +123,7 @@ At this stage, the purpose is not yet to fit a model, but to understand whether 
 Continuous variables are typically not used directly in a tariff. In pricing practice, they are usually:
 
 1.	analysed as continuous variables
-2.	translated into tariff classes
+2.	translated into tariff groups
 3.	used in a GLM as categorical rating factors
 
 This ensures that the final tariff remains interpretable and implementable.
@@ -148,35 +148,35 @@ This step is used to inspect:
 -	non-linear patterns
 -	local volatility
 -	areas with low exposure
--	plausible breakpoints for tariff classes
+-	plausible breakpoints for tariff groups
 
-### Constructing tariff classes
+### Deriving tariff groups
 
 ```{r}
 
-clusters <- construct_tariff_classes(age_freq)
-autoplot(clusters)
+age_groups <- derive_tariff_groups(age_freq)
+autoplot(age_groups)
 
 ```
 
-This converts the continuous variable into risk-homogeneous classes.
+This converts the continuous variable into risk-homogeneous groups.
 
-The resulting classes should reflect differences in risk, while remaining
+The resulting groups should reflect differences in risk, while remaining
 suitable for use in a tariff.
 	
 	
-### Adding tariff classes to the data
+### Adding tariff groups to the data
 
 ```{r}
 
 dat <- MTPL |>
-  mutate(age_cat = clusters$tariff_classes) |>
+  add_tariff_groups(age_groups, name = "age_cat") |>
   mutate(across(where(is.character), as.factor)) |>
-  mutate(across(where(is.factor), ~ biggest_reference(., exposure)))
+  mutate(across(where(is.factor), ~ set_reference_level(., exposure)))
 
 ```
 
-`biggest_reference()` sets the reference level to the level with the highest
+`set_reference_level()` sets the reference level to the level with the highest
 exposure. In pricing models, this is often the most stable and interpretable
 baseline.
 
@@ -364,7 +364,7 @@ A possible sequence in `insurancerating` is:
 
 factor_analysis()             # analyse portfolio behaviour
 risk_factor_gam()              # analyse continuous variables
-construct_tariff_classes()    # derive tariff classes
+derive_tariff_groups()         # derive tariff groups
 glm()                         # estimate pricing models
 rating_table()                # interpret fitted coefficients
 bootstrap_performance()       # assess stability

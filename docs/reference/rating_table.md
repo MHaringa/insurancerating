@@ -35,16 +35,6 @@ rating_table(
   exposure_name = NULL,
   signif_stars = NULL
 )
-
-rating_factors(
-  ...,
-  model_data = NULL,
-  exposure = TRUE,
-  exposure_name = NULL,
-  signif_stars = FALSE,
-  exponentiate = TRUE,
-  round_exposure = 0
-)
 ```
 
 ## Arguments

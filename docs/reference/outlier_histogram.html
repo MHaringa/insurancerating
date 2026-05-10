@@ -9,11 +9,7 @@ keeps the main range visible and groups values below left or above right
 into dedicated tail bins.
 The plot is useful for actuarial portfolio checks, data quality review, and
 model preparation: it helps show where most risks are concentrated while
-still making the presence of extreme observations explicit.
-histbin() is deprecated as of version 0.8.0.
-Please use outlier_histogram() instead.
-In addition, note that x must now be passed as string
-(standard evaluation)."><meta property="og:description" content="Visualize the distribution of a numeric portfolio variable while keeping
+still making the presence of extreme observations explicit."><meta property="og:description" content="Visualize the distribution of a numeric portfolio variable while keeping
 extreme tails readable.
 Insurance portfolios often contain skewed variables such as claim amounts,
 premium, exposure, insured sums, deductibles, or fitted premiums. A few very
@@ -23,11 +19,7 @@ keeps the main range visible and groups values below left or above right
 into dedicated tail bins.
 The plot is useful for actuarial portfolio checks, data quality review, and
 model preparation: it helps show where most risks are concentrated while
-still making the presence of extreme observations explicit.
-histbin() is deprecated as of version 0.8.0.
-Please use outlier_histogram() instead.
-In addition, note that x must now be passed as string
-(standard evaluation)."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+still making the presence of extreme observations explicit."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -71,27 +63,11 @@ into dedicated tail bins.</p>
 <p>The plot is useful for actuarial portfolio checks, data quality review, and
 model preparation: it helps show where most risks are concentrated while
 still making the presence of extreme observations explicit.</p>
-<p><code>histbin()</code> is deprecated as of version 0.8.0.
-Please use <code>outlier_histogram()</code> instead.</p>
-<p>In addition, note that <code>x</code> must now be passed as <strong>string</strong>
-(standard evaluation).</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">outlier_histogram</span><span class="op">(</span></span>
-<span>  <span class="va">data</span>,</span>
-<span>  <span class="va">x</span>,</span>
-<span>  left <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  right <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  line <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  bins <span class="op">=</span> <span class="fl">30</span>,</span>
-<span>  fill <span class="op">=</span> <span class="st">"steelblue"</span>,</span>
-<span>  color <span class="op">=</span> <span class="st">"white"</span>,</span>
-<span>  fill_outliers <span class="op">=</span> <span class="st">"#a7d1a7"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">histbin</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
 <span>  <span class="va">x</span>,</span>
 <span>  left <span class="op">=</span> <span class="cn">NULL</span>,</span>

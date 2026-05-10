@@ -19,30 +19,92 @@ edit_smoothing(
 )
 }
 \arguments{
-\item{model}{Object of class \code{rating_refinement}, \code{smooth} or \code{restricted}.}
+\item{model}{Object of class \code{rating_refinement}, usually created with
+\code{\link[=prepare_refinement]{prepare_refinement()}}. Legacy \code{smooth} and \code{restricted} objects are still
+accepted for backwards compatibility.}
 
-\item{variable}{Character. The \code{model_variable} variable of the smoothing step
-to edit.}
+\item{variable}{Character string. The \code{model_variable} of the smoothing step
+to edit. Required when more than one smoothing step exists and \code{step} is
+not supplied.}
 
-\item{step}{Optional numeric index of the step to edit.}
+\item{step}{Optional numeric index of the smoothing step to edit.}
 
-\item{x1, x2}{Numeric. Start and end of the interval over which the smoothing
-should be modified.}
+\item{x1, x2}{Numeric values giving the start and end of the source-variable
+interval to modify.}
 
-\item{overwrite_y1, overwrite_y2}{Optional numeric. Overrides for the smoothed
-values at \code{x1} and \code{x2}.}
+\item{overwrite_y1, overwrite_y2}{Optional numeric values used to override the
+smoothed curve value at \code{x1} and \code{x2}.}
 
-\item{knots_x, knots_y}{Optional numeric vectors of equal length.}
+\item{knots_x, knots_y}{Optional numeric vectors of equal length. These define
+additional points that the edited smoothing curve should pass through.}
 
-\item{allow_extrapolation}{Logical.}
+\item{allow_extrapolation}{Logical. Whether edits may extend beyond the
+observed source-variable range.}
 
-\item{extrapolation_break_size}{Numeric scalar (> 0) or \code{NULL}.}
+\item{extrapolation_break_size}{Optional positive numeric scalar used to set
+the spacing of extra break points when extrapolation is allowed.}
 }
 \value{
 Object of class \code{rating_refinement}.
 }
 \description{
-\code{edit_smoothing()} modifies a previously added smoothing step in a
-\code{rating_refinement} object. The actual smoothing is only re-applied when
-\code{\link[=refit]{refit()}} is called.
+Manually adjusts a smoothing step that was previously added with
+\code{\link[=add_smoothing]{add_smoothing()}}. This is intended for actuarial review of a smoothed tariff
+curve, for example to flatten an unstable segment, align the end points of an
+interval, or add extra knots where expert judgement should guide the curve.
+The adjusted smoothing is applied when \code{\link[=refit]{refit()}} is called.
+}
+\details{
+Use \code{variable} or \code{step} to identify the smoothing step to edit. The interval
+from \code{x1} to \code{x2} defines the part of the source variable range that should
+be changed. \code{overwrite_y1} and \code{overwrite_y2} can be used to force the curve
+values at the interval boundaries. \code{knots_x} and \code{knots_y} add additional
+points that the edited curve should follow inside the interval.
+}
+\examples{
+set.seed(42)
+driver_age <- rep(seq(20, 59), each = 4)
+exposure <- rep(1, length(driver_age))
+age_band <- cut(
+  driver_age,
+  breaks = c(18, 30, 40, 50, 60),
+  include.lowest = TRUE
+)
+expected_claims <- exp(
+  -1.7 + 0.018 * (driver_age - 20) + 0.0006 * (driver_age - 40)^2
+)
+portfolio <- data.frame(
+  claims = rpois(length(driver_age), exposure * expected_claims),
+  exposure = exposure,
+  driver_age = driver_age,
+  age_band = age_band
+)
+
+model <- glm(
+  claims ~ age_band + offset(log(exposure)),
+  family = poisson(),
+  data = portfolio
+)
+
+refined <- prepare_refinement(model, data = portfolio) |>
+  add_smoothing(
+    model_variable = "age_band",
+    source_variable = "driver_age",
+    breaks = c(18, 30, 40, 50, 60),
+    degree = 2,
+    weights = "exposure"
+  ) |>
+  edit_smoothing(
+    variable = "age_band",
+    x1 = 30,
+    x2 = 50,
+    overwrite_y1 = 1.00,
+    overwrite_y2 = 1.10
+  )
+
+refined_model <- refit(refined)
+
+}
+\author{
+Martin Haringa
 }

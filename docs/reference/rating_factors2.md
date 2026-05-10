@@ -1,4 +1,4 @@
-# Include reference group in regression output
+# Deprecated single-model rating table helper
 
 **\[deprecated\]**
 
@@ -55,3 +55,7 @@ rating_factors2(
 - round_exposure:
 
   number of digits for exposure (defaults to 0)
+
+## Value
+
+A data frame with rating factor coefficients for one model.

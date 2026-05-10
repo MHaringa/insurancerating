@@ -13,10 +13,6 @@ portfolio. The following summary statistics are calculated:
 
 - average premium = premium / exposure
 
-`univariate()` is deprecated as of version 0.8.0. Please use
-`factor_analysis()` instead with **standard evaluation** (SE), i.e.
-column names as character strings.
-
 ## Usage
 
 ``` r
@@ -32,16 +28,6 @@ factor_analysis(
   x = NULL,
   severity = NULL,
   nclaims = NULL,
-  by = NULL
-)
-
-univariate(
-  df,
-  x,
-  severity = NULL,
-  nclaims = NULL,
-  exposure = NULL,
-  premium = NULL,
   by = NULL
 )
 ```
@@ -104,22 +90,25 @@ The function computes summary statistics for discrete risk factors.
 If one or more input arguments are not specified, the related statistics
 are omitted from the results.
 
-### Migration from `univariate()`
+### Migration from [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
 
-The function `univariate()` is deprecated as of version 0.8.0 and
-replaced by `factor_analysis()`. In addition to the name change, the
-interface has also changed:
+The function
+[`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
+is deprecated as of version 0.8.0 and replaced by `factor_analysis()`.
+In addition to the name change, the interface has also changed:
 
-- `univariate()` used **non-standard evaluation (NSE)**, so column names
-  could be passed unquoted (e.g. `x = area`).
+- [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
+  used **non-standard evaluation (NSE)**, so column names could be
+  passed unquoted (e.g. `x = area`).
 
 - `factor_analysis()` uses **standard evaluation (SE)**, so column names
   must be passed as character strings (e.g. `x = "area"`).
 
 This makes the function easier to use in programmatic workflows.
 
-`univariate()` is still available for backward compatibility but will
-emit a deprecation warning and will be removed in a future release.
+[`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
+is still available for backward compatibility but will emit a
+deprecation warning and will be removed in a future release.
 
 ## Author
 

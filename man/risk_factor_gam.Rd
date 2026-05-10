@@ -2,8 +2,6 @@
 % Please edit documentation in R/gam_riskfactor.R
 \name{risk_factor_gam}
 \alias{risk_factor_gam}
-\alias{riskfactor_gam}
-\alias{fit_gam}
 \title{Fit a GAM for a continuous risk factor}
 \usage{
 risk_factor_gam(
@@ -18,32 +16,6 @@ risk_factor_gam(
   x = NULL,
   nclaims = NULL,
   amount = NULL,
-  round_x = NULL
-)
-
-riskfactor_gam(
-  data,
-  nclaims = NULL,
-  x = NULL,
-  exposure = NULL,
-  amount = NULL,
-  pure_premium = NULL,
-  model = "frequency",
-  round_x = NULL,
-  risk_factor = NULL,
-  claim_count = NULL,
-  claim_amount = NULL,
-  round_risk_factor = NULL
-)
-
-fit_gam(
-  data,
-  nclaims,
-  x,
-  exposure,
-  amount = NULL,
-  pure_premium = NULL,
-  model = "frequency",
   round_x = NULL
 )
 }
@@ -87,15 +59,7 @@ A \code{list} of class \code{"riskfactor_gam"} with the following elements:
 Fits a generalized additive model (GAM) to a continuous risk factor in one of
 three insurance pricing contexts: claim frequency, claim severity, or pure
 premium. The fitted curve helps assess non-linear rating effects before a
-continuous variable is grouped into tariff classes or used in a GLM workflow.
-
-\code{riskfactor_gam()} is deprecated in favour of \code{\link[=risk_factor_gam]{risk_factor_gam()}}.
-
-\code{\link[=fit_gam]{fit_gam()}} is deprecated as of version 0.8.0.
-Please use \code{\link[=risk_factor_gam]{risk_factor_gam()}} instead.
-
-In addition, note that column arguments must now be passed as \strong{strings}
-(standard evaluation).
+continuous variable is grouped into tariff groups or used in a GLM workflow.
 }
 \details{
 \itemize{

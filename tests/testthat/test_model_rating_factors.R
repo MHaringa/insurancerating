@@ -49,14 +49,14 @@ age_policyholder_frequency <- risk_factor_gam(data = MTPL,
                                               risk_factor = "age_policyholder",
                                               exposure = "exposure")
 
-# Determine clusters
-clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
+# Determine tariff groups
+age_groups_freq <- derive_tariff_groups(age_policyholder_frequency)
 
-# Add clusters to MTPL portfolio
+# Add tariff groups to MTPL portfolio
 dat <- MTPL |>
-  mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) |>
+  add_tariff_groups(age_groups_freq, name = "age_policyholder_freq_cat") |>
   mutate(across(where(is.character), as.factor)) |>
-  mutate(across(where(is.factor), ~biggest_reference(., exposure)))
+  mutate(across(where(is.factor), ~set_reference_level(., exposure)))
 
 # Fit frequency and severity model
 freq <- glm(nclaims ~ bm + age_policyholder_freq_cat, offset = log(exposure),
@@ -110,7 +110,7 @@ x <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
 
 df <- MTPL2 %>%
   mutate(across(c(area), as.factor)) %>%
-  mutate(across(c(area), ~biggest_reference(., exposure)))
+  mutate(across(c(area), ~set_reference_level(., exposure)))
 
 mod1 <- glm(nclaims ~ area + premium, offset = log(exposure),
             family = poisson(), data = df)

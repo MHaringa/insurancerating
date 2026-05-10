@@ -31,14 +31,15 @@ reference:
       - autoplot.factor_analysis
       - outlier_histogram
 
-  - title: "Tariff classes"
+  - title: "Tariff groups"
     desc: >
-      Analyse continuous risk factors and convert them to tariff classes.
+      Analyse continuous risk factors and convert them to tariff groups.
     contents:
       - risk_factor_gam
       - autoplot.riskfactor_gam
-      - construct_tariff_classes
-      - autoplot.tariff_classes
+      - derive_tariff_groups
+      - add_tariff_groups
+      - autoplot.tariff_groups
 
   - title: "Modelling and interpretation"
     desc: >
@@ -86,8 +87,8 @@ reference:
     desc: >
       Helper functions for truncated and actuarial distribution workflows.
     contents:
-      - fit_truncated_dist
-      - autoplot.truncated_dist
+      - fit_truncated_severity
+      - autoplot.truncated_severity
       - rlnormt
       - rgammat
 
@@ -95,7 +96,7 @@ reference:
     desc: >
       Supporting functions used across pricing workflows.
     contents:
-      - biggest_reference
+      - set_reference_level
       - split_periods_to_months
       - active_rows_by_date
       - merge_date_ranges
@@ -116,10 +117,13 @@ reference:
       - rating_factors2
       - model_data
       - construct_model_points
+      - construct_tariff_classes
       - bootstrap_rmse
+      - fit_truncated_dist
       - fisher_classify
       - fisher
       - histbin
+      - biggest_reference
       - restrict_coef
       - smooth_coef
       - refit_glm

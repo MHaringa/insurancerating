@@ -2,7 +2,6 @@
 % Please edit documentation in R/time_period_to_months.R
 \name{split_periods_to_months}
 \alias{split_periods_to_months}
-\alias{period_to_months}
 \title{Split policy periods into monthly rows}
 \usage{
 split_periods_to_months(
@@ -14,8 +13,6 @@ split_periods_to_months(
   end = NULL,
   cols = NULL
 )
-
-period_to_months(df, begin, end, ...)
 }
 \arguments{
 \item{df}{A \code{data.frame} or \code{data.table}.}
@@ -31,8 +28,6 @@ over the monthly rows, for example exposure or premium.}
 
 \item{begin, end, cols}{Deprecated argument names kept for backward
 compatibility.}
-
-\item{...}{Columns in \code{df} to split. Deprecated, use \code{cols} instead.}
 }
 \value{
 A \code{data.frame} with the same columns as in \code{df}, plus an \code{id} column.

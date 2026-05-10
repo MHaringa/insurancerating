@@ -108,7 +108,7 @@ arg_to_string_or_null <- function(arg) {
 #' Fits a generalized additive model (GAM) to a continuous risk factor in one of
 #' three insurance pricing contexts: claim frequency, claim severity, or pure
 #' premium. The fitted curve helps assess non-linear rating effects before a
-#' continuous variable is grouped into tariff classes or used in a GLM workflow.
+#' continuous variable is grouped into tariff groups or used in a GLM workflow.
 #'
 #' @param data A data.frame containing the insurance portfolio.
 #' @param risk_factor Character, name of column in `data` with the continuous
@@ -387,11 +387,21 @@ resolve_risk_factor_gam_args <- function(risk_factor, claim_count,
 }
 
 
-#' @rdname risk_factor_gam
+#' Deprecated alias for `risk_factor_gam()`
+#'
 #' @description
 #' `riskfactor_gam()` is deprecated in favour of [risk_factor_gam()].
 #'
+#' @inheritParams risk_factor_gam
+#' @param nclaims Deprecated. Use `claim_count` instead.
+#' @param x Deprecated. Use `risk_factor` instead.
+#' @param amount Deprecated. Use `claim_amount` instead.
+#' @param round_x Deprecated. Use `round_risk_factor` instead.
+#'
+#' @return See [risk_factor_gam()].
+#'
 #' @export
+#' @keywords internal
 riskfactor_gam <- function(data, nclaims = NULL, x = NULL, exposure = NULL,
                            amount = NULL, pure_premium = NULL,
                            model = "frequency", round_x = NULL,
@@ -421,15 +431,24 @@ riskfactor_gam <- function(data, nclaims = NULL, x = NULL, exposure = NULL,
 }
 
 
-#' @rdname risk_factor_gam
+#' Deprecated NSE wrapper for `risk_factor_gam()`
+#'
 #' @description
 #' [fit_gam()] is deprecated as of version 0.8.0.
 #' Please use [risk_factor_gam()] instead.
 #'
 #' In addition, note that column arguments must now be passed as **strings**
 #' (standard evaluation).
+#' @inheritParams risk_factor_gam
+#' @param nclaims Deprecated NSE argument for claim counts.
+#' @param x Deprecated NSE argument for the continuous risk factor.
+#' @param amount Deprecated NSE argument for claim amounts.
+#' @param round_x Deprecated. Use `round_risk_factor` instead.
+#'
+#' @return See [risk_factor_gam()].
 #'
 #' @export
+#' @keywords internal
 fit_gam <- function(data, nclaims, x, exposure, amount = NULL,
                     pure_premium = NULL, model = "frequency", round_x = NULL) {
 

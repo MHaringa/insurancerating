@@ -3,7 +3,7 @@
 Takes an object produced by
 [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
 or
-[`univariate()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
+[`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
 (deprecated NSE interface) and plots the available statistics.
 
 ## Usage
@@ -42,7 +42,7 @@ autoplot(
   A `factor_analysis` or `univariate` object produced by
   [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
   or
-  [`univariate()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md).
+  [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md).
 
 - metrics:
 

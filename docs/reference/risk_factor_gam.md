@@ -4,15 +4,7 @@ Fits a generalized additive model (GAM) to a continuous risk factor in
 one of three insurance pricing contexts: claim frequency, claim
 severity, or pure premium. The fitted curve helps assess non-linear
 rating effects before a continuous variable is grouped into tariff
-classes or used in a GLM workflow.
-
-`riskfactor_gam()` is deprecated in favour of `risk_factor_gam()`.
-
-`fit_gam()` is deprecated as of version 0.8.0. Please use
-`risk_factor_gam()` instead.
-
-In addition, note that column arguments must now be passed as
-**strings** (standard evaluation).
+groups or used in a GLM workflow.
 
 ## Usage
 
@@ -29,32 +21,6 @@ risk_factor_gam(
   x = NULL,
   nclaims = NULL,
   amount = NULL,
-  round_x = NULL
-)
-
-riskfactor_gam(
-  data,
-  nclaims = NULL,
-  x = NULL,
-  exposure = NULL,
-  amount = NULL,
-  pure_premium = NULL,
-  model = "frequency",
-  round_x = NULL,
-  risk_factor = NULL,
-  claim_count = NULL,
-  claim_amount = NULL,
-  round_risk_factor = NULL
-)
-
-fit_gam(
-  data,
-  nclaims,
-  x,
-  exposure,
-  amount = NULL,
-  pure_premium = NULL,
-  model = "frequency",
   round_x = NULL
 )
 ```
@@ -143,14 +109,16 @@ A `list` of class `"riskfactor_gam"` with the following elements:
   pure premiums. The deprecated model value `"burning"` is still
   accepted for backward compatibility.
 
-### Migration from `fit_gam()`
+### Migration from [`fit_gam()`](https://mharinga.github.io/insurancerating/reference/fit_gam.md)
 
-The function `fit_gam()` is deprecated as of version 0.8.0 and replaced
-by `risk_factor_gam()`. In addition to the name change, the interface
-has also changed:
+The function
+[`fit_gam()`](https://mharinga.github.io/insurancerating/reference/fit_gam.md)
+is deprecated as of version 0.8.0 and replaced by `risk_factor_gam()`.
+In addition to the name change, the interface has also changed:
 
-- `fit_gam()` used **non-standard evaluation (NSE)**, so column names
-  could be passed unquoted (e.g. `x = age_policyholder`).
+- [`fit_gam()`](https://mharinga.github.io/insurancerating/reference/fit_gam.md)
+  used **non-standard evaluation (NSE)**, so column names could be
+  passed unquoted (e.g. `x = age_policyholder`).
 
 - `risk_factor_gam()` uses **standard evaluation (SE)**, so column names
   must be passed as character strings (e.g.
@@ -158,8 +126,11 @@ has also changed:
 
 This makes the function easier to use in programmatic workflows.
 
-`riskfactor_gam()` and `fit_gam()` are still available for backward
-compatibility but will emit deprecation warnings.
+[`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/riskfactor_gam.md)
+and
+[`fit_gam()`](https://mharinga.github.io/insurancerating/reference/fit_gam.md)
+are still available for backward compatibility but will emit deprecation
+warnings.
 
 ## References
 

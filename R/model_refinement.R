@@ -125,6 +125,24 @@
   "spline", "mpi", "mpd", "gam", "cx", "cv", "micx", "micv", "mdcx", "mdcv"
 )
 
+.assert_smoothing_interval_levels <- function(model, model_variable) {
+  borders <- suppressMessages(cut_borders_model(model, model_variable))
+  ok <- nrow(borders) > 0 &&
+    all(is.finite(borders$start_)) &&
+    all(is.finite(borders$end_)) &&
+    all(is.finite(borders$avg_))
+
+  if (!ok) {
+    stop(
+      "'model_variable' must be a grouped numeric variable with interval-style ",
+      "levels, such as levels created by cut().",
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
 .make_refinement <- function(base, steps = list(), legacy = list()) {
   structure(
     list(
@@ -429,21 +447,54 @@ print.summary.rating_refinement <- function(x, ...) {
 #' Add coefficient restrictions to a refinement workflow
 #'
 #' @description
-#' Adds a restriction step to a `rating_refinement` object.
+#' Fixes selected model levels to user-supplied relativities in a refinement
+#' workflow. This is useful when the fitted GLM coefficients need to be adjusted
+#' before the final tariff is refitted, for example to apply expert judgement,
+#' enforce a business rule, remove an implausible local effect, or make a tariff
+#' structure easier to explain.
 #'
 #' @details
-#' `add_restriction()` is part of the new refinement workflow and is intended
-#' to be used in combination with `prepare_refinement()` and `refit()`.
+#' `add_restriction()` stores a restriction step on a `rating_refinement`
+#' object. It does not refit the GLM immediately. The restrictions are applied
+#' when [refit()] is called.
 #'
-#' The legacy function `restrict_coef()` remains the only function that should
-#' be applied directly to a model object.
+#' The `restrictions` data frame identifies the model variable to restrict by
+#' its first column. The second column contains the relativities that should be
+#' used for those levels in the refined model. New code should use this function
+#' after [prepare_refinement()]; the deprecated [restrict_coef()] wrapper is
+#' only kept for backwards compatibility.
 #'
 #' @param model Object of class `rating_refinement`, usually created with
 #'   [prepare_refinement()].
-#' @param restrictions data.frame with exactly two columns: the original risk
-#'   factor level and the replacement relativity to use in the refined tariff.
+#' @param restrictions Data frame with exactly two columns. The first column
+#'   must have the same name as the model variable to restrict and contains the
+#'   levels to adjust. The second column contains the replacement relativities.
+#'
+#' @author Martin Haringa
 #'
 #' @return Object of class `rating_refinement`.
+#'
+#' @examples
+#' portfolio <- data.frame(
+#'   claims = c(1, 2, 1, 3, 2, 4),
+#'   exposure = rep(1, 6),
+#'   postal_area = factor(c("A", "B", "C", "A", "B", "C"))
+#' )
+#'
+#' model <- glm(
+#'   claims ~ postal_area + offset(log(exposure)),
+#'   family = poisson(),
+#'   data = portfolio
+#' )
+#'
+#' restrictions <- data.frame(
+#'   postal_area = c("A", "B", "C"),
+#'   relativity = c(0.95, 1.00, 1.10)
+#' )
+#'
+#' refined <- prepare_refinement(model, data = portfolio) |>
+#'   add_restriction(restrictions)
+#'
 #' @export
 add_restriction <- function(model, restrictions) {
   .assert_refinement(model)
@@ -467,10 +518,11 @@ add_restriction <- function(model, restrictions) {
 }
 
 
-#' @rdname add_restriction
+#' Deprecated restriction helper
+#'
 #' @description
-#' `restrict_coef()` is deprecated as of version 0.9.0.
-#' Please use the refinement workflow instead:
+#' `restrict_coef()` is deprecated as of version 0.9.0. Use
+#' [add_restriction()] instead.
 #'
 #' \preformatted{
 #' prepare_refinement(model) |>
@@ -478,7 +530,16 @@ add_restriction <- function(model, restrictions) {
 #'   refit()
 #' }
 #'
+#' @param model A fitted model object.
+#' @param restrictions data.frame with exactly two columns.
+#'
+#' @return A legacy restricted object. New code should use
+#'   [prepare_refinement()], [add_restriction()], and [refit()].
+#'
+#' @seealso [add_restriction()], [prepare_refinement()], [refit()]
+#'
 #' @export
+#' @keywords internal
 restrict_coef <- function(model, restrictions) {
   lifecycle::deprecate_warn(
     when = "0.9.0",
@@ -498,14 +559,23 @@ restrict_coef <- function(model, restrictions) {
 #' Add smoothing to a refinement workflow
 #'
 #' @description
-#' Adds a smoothing step to a `rating_refinement` object.
+#' Replaces a grouped or binned model effect by a smoother tariff curve in a
+#' refinement workflow. This is commonly used for numeric rating factors such as
+#' age, vehicle age, insured value or bonus-malus years, where a raw GLM factor
+#' can be too jagged for a stable and explainable tariff.
 #'
 #' @details
-#' `add_smoothing()` is part of the new refinement workflow and is intended
-#' to be used in combination with `prepare_refinement()` and `refit()`.
+#' `add_smoothing()` stores a smoothing step on a `rating_refinement` object.
+#' The original GLM contains `model_variable`, usually a factor or grouped
+#' tariff group. The smoother is fitted against `source_variable`, the original
+#' numeric portfolio variable behind those groups. The smoothed result is then
+#' converted back to tariff groups using `breaks` and applied when [refit()] is
+#' called.
 #'
-#' The legacy function `smooth_coef()` remains the only function that should
-#' be applied directly to a model object.
+#' This makes the intended API explicit: first prepare the model with
+#' [prepare_refinement()], then add a smoothing step, optionally adjust it with
+#' [edit_smoothing()], and finally call [refit()]. The deprecated
+#' [smooth_coef()] wrapper is only kept for backwards compatibility.
 #'
 #' @param model Object of class `rating_refinement`, usually created with
 #'   [prepare_refinement()].
@@ -514,9 +584,12 @@ restrict_coef <- function(model, restrictions) {
 #'   tariff factor.
 #' @param source_variable Character string. Original numeric portfolio variable
 #'   underlying `model_variable`.
-#' @param degree Optional single whole number. Polynomial degree.
-#' @param breaks Numeric vector with the new tariff class boundaries.
-#' @param smoothing Character string with the smoothing method.
+#' @param degree Optional single whole number. Polynomial degree, used by
+#'   polynomial smoothing methods.
+#' @param breaks Numeric vector with the tariff group boundaries to use after
+#'   smoothing. Values must be finite and strictly increasing.
+#' @param smoothing Character string with the smoothing method, for example
+#'   `"spline"` when supported by the fitted workflow.
 #' @param k Optional single positive whole number. Number of basis functions for
 #'   smoothing methods that use a basis dimension.
 #' @param weights Optional character string. Weights column, usually exposure.
@@ -525,7 +598,62 @@ restrict_coef <- function(model, restrictions) {
 #' @param x_cut,x_org Deprecated. Use `model_variable` and `source_variable`
 #'   instead.
 #'
+#' @author Martin Haringa
+#'
 #' @return Object of class `rating_refinement`.
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#'
+#' age_policyholder_frequency <- risk_factor_gam(
+#'   data = MTPL,
+#'   claim_count = "nclaims",
+#'   risk_factor = "age_policyholder",
+#'   exposure = "exposure"
+#' )
+#'
+#' age_groups_freq <- derive_tariff_groups(age_policyholder_frequency)
+#'
+#' dat <- MTPL |>
+#'   add_tariff_groups(age_groups_freq, name = "age_policyholder_freq_cat") |>
+#'   mutate(across(where(is.character), as.factor)) |>
+#'   mutate(across(where(is.factor), ~ set_reference_level(., exposure)))
+#'
+#' freq <- glm(
+#'   nclaims ~ bm + age_policyholder_freq_cat,
+#'   offset = log(exposure),
+#'   family = poisson(),
+#'   data = dat
+#' )
+#'
+#' sev <- glm(
+#'   amount ~ zip,
+#'   weights = nclaims,
+#'   family = Gamma(link = "log"),
+#'   data = dat |> filter(amount > 0)
+#' )
+#'
+#' premium_df <- dat |>
+#'   add_prediction(freq, sev) |>
+#'   mutate(premium = pred_nclaims_freq * pred_amount_sev)
+#'
+#' burn_unrestricted <- glm(
+#'   premium ~ zip + bm + age_policyholder_freq_cat,
+#'   weights = exposure,
+#'   family = Gamma(link = "log"),
+#'   data = premium_df
+#' )
+#'
+#' ref <- prepare_refinement(burn_unrestricted) |>
+#'   add_smoothing(
+#'     model_variable = "age_policyholder_freq_cat",
+#'     source_variable = "age_policyholder",
+#'     breaks = seq(18, 95, 5),
+#'     weights = "exposure"
+#'   )
+#' }
+#'
 #' @export
 add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
                           degree = NULL, breaks = NULL, smoothing = "spline",
@@ -595,6 +723,7 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
   .assert_column_name(model_variable, "model_variable", model$base$data)
   .assert_column_name(source_variable, "source_variable", model$base$data)
   .assert_optional_column_name(weights, "weights", model$base$data)
+  .assert_smoothing_interval_levels(model$base$model, model_variable)
   .assert_single_numeric(degree, "degree", allow_null = TRUE, positive = TRUE, whole = TRUE)
   .assert_single_numeric(k, "k", allow_null = TRUE, positive = TRUE, whole = TRUE)
 
@@ -626,10 +755,11 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
 }
 
 
-#' @rdname add_smoothing
+#' Deprecated smoothing helper
+#'
 #' @description
-#' `smooth_coef()` is deprecated as of version 0.9.0.
-#' Please use the refinement workflow instead:
+#' `smooth_coef()` is deprecated as of version 0.9.0. Use
+#' [add_smoothing()] instead.
 #'
 #' \preformatted{
 #' prepare_refinement(model) |>
@@ -639,7 +769,20 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
 #'
 #' @seealso [add_smoothing()], [prepare_refinement()], [refit()]
 #'
+#' @param model A fitted model object.
+#' @param x_cut Deprecated model variable used in the GLM.
+#' @param x_org Deprecated source variable used to fit the smoothing curve.
+#' @param degree Deprecated polynomial degree.
+#' @param breaks Deprecated smoothing break points.
+#' @param smoothing Deprecated smoothing type.
+#' @param k Deprecated spline basis dimension.
+#' @param weights Deprecated weights column.
+#'
+#' @return A legacy smooth object. New code should use [prepare_refinement()],
+#'   [add_smoothing()], and [refit()].
+#'
 #' @export
+#' @keywords internal
 smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
                         smoothing = "spline", k = NULL, weights = NULL) {
   lifecycle::deprecate_warn(
@@ -669,23 +812,84 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #' Edit an existing smoothing step in a refinement workflow
 #'
 #' @description
-#' `edit_smoothing()` modifies a previously added smoothing step in a
-#' `rating_refinement` object. The actual smoothing is only re-applied when
-#' [refit()] is called.
+#' Manually adjusts a smoothing step that was previously added with
+#' [add_smoothing()]. This is intended for actuarial review of a smoothed tariff
+#' curve, for example to flatten an unstable segment, align the end points of an
+#' interval, or add extra knots where expert judgement should guide the curve.
+#' The adjusted smoothing is applied when [refit()] is called.
 #'
-#' @param model Object of class `rating_refinement`, `smooth` or `restricted`.
-#' @param variable Character. The `model_variable` variable of the smoothing step
-#'   to edit.
-#' @param step Optional numeric index of the step to edit.
-#' @param x1,x2 Numeric. Start and end of the interval over which the smoothing
-#'   should be modified.
-#' @param overwrite_y1,overwrite_y2 Optional numeric. Overrides for the smoothed
-#'   values at `x1` and `x2`.
-#' @param knots_x,knots_y Optional numeric vectors of equal length.
-#' @param allow_extrapolation Logical.
-#' @param extrapolation_break_size Numeric scalar (> 0) or `NULL`.
+#' @details
+#' Use `variable` or `step` to identify the smoothing step to edit. The interval
+#' from `x1` to `x2` defines the part of the source variable range that should
+#' be changed. `overwrite_y1` and `overwrite_y2` can be used to force the curve
+#' values at the interval boundaries. `knots_x` and `knots_y` add additional
+#' points that the edited curve should follow inside the interval.
+#'
+#' @param model Object of class `rating_refinement`, usually created with
+#'   [prepare_refinement()]. Legacy `smooth` and `restricted` objects are still
+#'   accepted for backwards compatibility.
+#' @param variable Character string. The `model_variable` of the smoothing step
+#'   to edit. Required when more than one smoothing step exists and `step` is
+#'   not supplied.
+#' @param step Optional numeric index of the smoothing step to edit.
+#' @param x1,x2 Numeric values giving the start and end of the source-variable
+#'   interval to modify.
+#' @param overwrite_y1,overwrite_y2 Optional numeric values used to override the
+#'   smoothed curve value at `x1` and `x2`.
+#' @param knots_x,knots_y Optional numeric vectors of equal length. These define
+#'   additional points that the edited smoothing curve should pass through.
+#' @param allow_extrapolation Logical. Whether edits may extend beyond the
+#'   observed source-variable range.
+#' @param extrapolation_break_size Optional positive numeric scalar used to set
+#'   the spacing of extra break points when extrapolation is allowed.
+#'
+#' @author Martin Haringa
 #'
 #' @return Object of class `rating_refinement`.
+#'
+#' @examples
+#' set.seed(42)
+#' driver_age <- rep(seq(20, 59), each = 4)
+#' exposure <- rep(1, length(driver_age))
+#' age_band <- cut(
+#'   driver_age,
+#'   breaks = c(18, 30, 40, 50, 60),
+#'   include.lowest = TRUE
+#' )
+#' expected_claims <- exp(
+#'   -1.7 + 0.018 * (driver_age - 20) + 0.0006 * (driver_age - 40)^2
+#' )
+#' portfolio <- data.frame(
+#'   claims = rpois(length(driver_age), exposure * expected_claims),
+#'   exposure = exposure,
+#'   driver_age = driver_age,
+#'   age_band = age_band
+#' )
+#'
+#' model <- glm(
+#'   claims ~ age_band + offset(log(exposure)),
+#'   family = poisson(),
+#'   data = portfolio
+#' )
+#'
+#' refined <- prepare_refinement(model, data = portfolio) |>
+#'   add_smoothing(
+#'     model_variable = "age_band",
+#'     source_variable = "driver_age",
+#'     breaks = c(18, 30, 40, 50, 60),
+#'     degree = 2,
+#'     weights = "exposure"
+#'   ) |>
+#'   edit_smoothing(
+#'     variable = "age_band",
+#'     x1 = 30,
+#'     x2 = 50,
+#'     overwrite_y1 = 1.00,
+#'     overwrite_y2 = 1.10
+#'   )
+#'
+#' refined_model <- refit(refined)
+#'
 #' @export
 edit_smoothing <- function(model,
                            variable = NULL,
@@ -736,24 +940,74 @@ edit_smoothing <- function(model,
 #' Add expert-based relativities to a refinement workflow
 #'
 #' @description
-#' Adds a relativities step to a `rating_refinement` object.
+#' Splits an existing model variable into more detailed tariff groups using
+#' supplied relativities. This is useful when the GLM is fitted on a coarser
+#' rating factor for credibility or stability, but the final tariff needs a
+#' more detailed split that is based on portfolio exposure, expert judgement or
+#' externally agreed relativities.
 #'
 #' @details
-#' `add_relativities()` is only available within the new refinement workflow
-#' and should be used in combination with `prepare_refinement()` and `refit()`.
+#' `model_variable` is the variable already used in the GLM. `split_variable` is
+#' the more detailed variable in the portfolio data that will be used to split
+#' one or more levels of `model_variable`. The `relativities` argument should be
+#' a named list describing those splits, usually built with
+#' [relativities_list()] and [split_level()].
+#'
+#' The step is stored on the `rating_refinement` object and is applied when
+#' [refit()] is called. When `normalize = TRUE`, the supplied relativities are
+#' normalised using exposure so that the refined split keeps the original level
+#' effect on average. This helps prevent an expert split from unintentionally
+#' changing the total premium level for the original model group.
 #'
 #' @param model Object of class `rating_refinement`, usually created with
 #'   [prepare_refinement()].
 #' @param model_variable Character string. Existing variable in the GLM. Levels
-#'   of this variable can be split into more detailed groups.
+#'   of this variable can be split into more detailed tariff groups.
 #' @param split_variable Character string. More granular portfolio variable that
-#'   defines the split groups.
-#' @param relativities Named list of data.frames, usually created with
+#'   defines the detailed groups inside `model_variable`.
+#' @param relativities Named list of data frames, usually created with
 #'   [relativities_list()] and [split_level()].
-#' @param exposure Character string. Exposure column.
-#' @param normalize Logical.
+#' @param exposure Character string. Exposure column used for weighting and,
+#'   when requested, normalisation.
+#' @param normalize Logical. If `TRUE`, normalise the supplied relativities by
+#'   exposure within each split model level.
+#'
+#' @author Martin Haringa
 #'
 #' @return Object of class `rating_refinement`.
+#'
+#' @examples
+#' portfolio <- data.frame(
+#'   claims = c(1, 2, 1, 3, 2, 4),
+#'   exposure = rep(1, 6),
+#'   construction = factor(c("residential", "commercial", "residential",
+#'                           "commercial", "residential", "commercial")),
+#'   construction_detail = factor(c("flat", "shop", "house",
+#'                                  "office", "flat", "shop"))
+#' )
+#'
+#' model <- glm(
+#'   claims ~ construction + offset(log(exposure)),
+#'   family = poisson(),
+#'   data = portfolio
+#' )
+#'
+#' relativities <- relativities_list(
+#'   split_level(
+#'     "residential",
+#'     new_levels = c("flat", "house"),
+#'     relativities = c(0.95, 1.05)
+#'   )
+#' )
+#'
+#' refined <- prepare_refinement(model, data = portfolio) |>
+#'   add_relativities(
+#'     model_variable = "construction",
+#'     split_variable = "construction_detail",
+#'     relativities = relativities,
+#'     exposure = "exposure"
+#'   )
+#'
 #' @export
 add_relativities <- function(model,
                              model_variable,
@@ -1519,21 +1773,23 @@ refit <- function(x, intercept_only = FALSE, ...) {
   .fit_refined_glm(state, intercept_only = intercept_only, ...)
 }
 
-#' Refit a GLM model or refinement workflow
+#' Deprecated refit wrapper
 #'
 #' @description
-#' Backwards-compatible wrapper. Prefer using [refit()] for the new
-#' refinement workflow.
+#' `refit_glm()` is deprecated as of version 0.9.0. Use [refit()] instead.
 #'
 #' @param x Object of class `rating_refinement`, `restricted` or `smooth`.
 #' @param intercept_only Logical.
 #' @param ... Other arguments.
 #'
 #' @return Object of class `glm`.
+#'
 #' @export
+#' @keywords internal
 refit_glm <- function(x, intercept_only = FALSE, ...) {
+  lifecycle::deprecate_warn("0.9.0", "refit_glm()", "refit()")
+
   if (inherits(x, "rating_refinement")) {
-    lifecycle::deprecate_warn("0.9.0", "refit_glm()", "refit()")
     return(refit(x, intercept_only = intercept_only, ...))
   }
 
@@ -1545,9 +1801,18 @@ refit_glm <- function(x, intercept_only = FALSE, ...) {
   .legacy_refit_glm(x, intercept_only = intercept_only, ...)
 }
 
-#' @rdname refit_glm
+#' Deprecated alias for `refit_glm()`
+#'
+#' @description
+#' `update_glm()` is deprecated as of version 0.8.0. Use [refit()] for the new
+#' refinement workflow.
+#'
+#' @inheritParams refit_glm
+#' @return See [refit_glm()].
+#'
 #' @export
+#' @keywords internal
 update_glm <- function(x, intercept_only = FALSE, ...) {
-  lifecycle::deprecate_warn("0.8.0", "update_glm()", "refit_glm()")
+  lifecycle::deprecate_warn("0.8.0", "update_glm()", "refit()")
   refit_glm(x, intercept_only = intercept_only, ...)
 }

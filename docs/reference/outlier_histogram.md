@@ -14,28 +14,10 @@ The plot is useful for actuarial portfolio checks, data quality review,
 and model preparation: it helps show where most risks are concentrated
 while still making the presence of extreme observations explicit.
 
-`histbin()` is deprecated as of version 0.8.0. Please use
-`outlier_histogram()` instead.
-
-In addition, note that `x` must now be passed as **string** (standard
-evaluation).
-
 ## Usage
 
 ``` r
 outlier_histogram(
-  data,
-  x,
-  left = NULL,
-  right = NULL,
-  line = FALSE,
-  bins = 30,
-  fill = "steelblue",
-  color = "white",
-  fill_outliers = "#a7d1a7"
-)
-
-histbin(
   data,
   x,
   left = NULL,

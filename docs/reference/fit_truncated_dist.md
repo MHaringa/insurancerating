@@ -1,7 +1,8 @@
-# Fit severity distributions to truncated claim data
+# Deprecated alias for `fit_truncated_severity()`
 
-**\[experimental\]** Estimate an underlying claim severity distribution
-when the observed claims are truncated.
+`fit_truncated_dist()` is deprecated as of version 0.9.0. Use
+[`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
+instead.
 
 ## Usage
 
@@ -84,64 +85,5 @@ fit_truncated_dist(
 
 ## Value
 
-An object of class `c("truncated_dist", "fitdist")`. The object contains
-the fitted distribution parameters from
-[`fitdistrplus::fitdist()`](https://lbbe-software.github.io/fitdistrplus/reference/fitdist.html)
-and additional attributes:
-
-- truncated_vec:
-
-  The observed losses used for fitting.
-
-- lower_truncation, upper_truncation:
-
-  The truncation bounds.
-
-- fit_attempts:
-
-  Metadata for each attempted start combination.
-
-- n_attempts, n_success, n_failed:
-
-  Fit attempt counts.
-
-- best_attempt_index:
-
-  Index of the selected start combination.
-
-## Details
-
-In insurance pricing, severity models are often fitted on claim amounts
-that are not observed over the full range of possible losses. Small
-claims may be absent because of a deductible, reporting threshold, or
-data extraction rule. Very large claims may be capped, excluded, or
-modelled separately as large losses. A standard gamma or lognormal fit
-on the remaining observed claims treats that truncated sample as if it
-were complete, which can bias the estimated severity distribution.
-
-`fit_truncated_dist()` fits the distribution conditional on the claim
-being observed within the truncation interval. This means the fitted
-likelihood uses the density divided by the probability mass between
-`lower_truncation` and `upper_truncation`. The function is intended for
-truncation, where claims outside the interval are absent from the data.
-This differs from censoring, where claims outside a limit are still
-observed but their exact amount is not known.
-
-Observed losses must lie strictly inside the truncation interval. Values
-outside the interval indicate that the bounds do not describe the data
-and therefore produce an error.
-
-## Examples
-
-``` r
-if (FALSE) { # \dontrun{
-observed <- MTPL2$amount[MTPL2$amount > 500 & MTPL2$amount < 10000]
-fit <- fit_truncated_dist(
-  losses = observed,
-  distribution = "gamma",
-  lower_truncation = 500,
-  upper_truncation = 10000
-)
-autoplot(fit)
-} # }
-```
+See
+[`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md).

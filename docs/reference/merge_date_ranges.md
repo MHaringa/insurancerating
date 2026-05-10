@@ -21,8 +21,6 @@ merge_date_ranges(
   agg = NULL,
   min.gapwidth = NULL
 )
-
-reduce(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwidth = 5)
 ```
 
 ## Arguments

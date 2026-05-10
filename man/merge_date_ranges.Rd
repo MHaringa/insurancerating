@@ -2,7 +2,6 @@
 % Please edit documentation in R/time_reduce.R
 \name{merge_date_ranges}
 \alias{merge_date_ranges}
-\alias{reduce}
 \title{Reduce portfolio periods by merging adjacent date ranges}
 \usage{
 merge_date_ranges(
@@ -20,8 +19,6 @@ merge_date_ranges(
   agg = NULL,
   min.gapwidth = NULL
 )
-
-reduce(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwidth = 5)
 }
 \arguments{
 \item{df}{A \code{data.frame} or \code{data.table}.}

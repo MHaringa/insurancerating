@@ -1,18 +1,23 @@
-context("construct_tariff_classes")
+context("derive_tariff_groups")
 
-testthat::test_that("construct_tariff_classes returns tariff classes", {
+testthat::test_that("derive_tariff_groups returns tariff groups", {
   fit <- risk_factor_gam(MTPL, claim_count = "nclaims", risk_factor = "age_policyholder",
                         exposure = "exposure")
 
-  result <- construct_tariff_classes(fit)
+  result <- derive_tariff_groups(fit)
 
+  testthat::expect_s3_class(result, "tariff_groups")
   testthat::expect_s3_class(result, "tariff_classes")
   testthat::expect_s3_class(result, "constructtariffclasses")
-  testthat::expect_type(result$splits, "double")
-  testthat::expect_s3_class(result$tariff_classes, "factor")
-  testthat::expect_equal(length(result$tariff_classes), length(fit$x_obs))
-  testthat::expect_true(all(result$splits >= min(fit$x_obs, na.rm = TRUE)))
-  testthat::expect_true(all(result$splits <= max(fit$x_obs, na.rm = TRUE)))
+  testthat::expect_type(result$class_boundaries, "double")
+  testthat::expect_equal(result$class_boundaries, result$splits)
+  testthat::expect_s3_class(result$assigned_groups, "factor")
+  testthat::expect_equal(result$assigned_groups, result$tariff_classes)
+  testthat::expect_equal(length(result$assigned_groups), length(fit$x_obs))
+  testthat::expect_true(all(result$class_boundaries >= min(fit$x_obs, na.rm = TRUE)))
+  testthat::expect_true(all(result$class_boundaries <= max(fit$x_obs, na.rm = TRUE)))
+  testthat::expect_equal(result$risk_factor, "age_policyholder")
+  testthat::expect_equal(result$model_type, "frequency")
 })
 
 testthat::test_that("decimal risk factors do not create spurious split points", {
@@ -22,16 +27,16 @@ testthat::test_that("decimal risk factors do not create spurious split points", 
   fit <- risk_factor_gam(data, claim_count = "nclaims",
                         risk_factor = "age_policyholder_half",
                         exposure = "exposure")
-  result <- construct_tariff_classes(fit)
+  result <- derive_tariff_groups(fit)
 
-  testthat::expect_true(all(result$splits >= min(fit$x_obs, na.rm = TRUE)))
-  testthat::expect_true(all(result$splits <= max(fit$x_obs, na.rm = TRUE)))
+  testthat::expect_true(all(result$class_boundaries >= min(fit$x_obs, na.rm = TRUE)))
+  testthat::expect_true(all(result$class_boundaries <= max(fit$x_obs, na.rm = TRUE)))
 })
 
 testthat::test_that("autoplot can show confidence intervals", {
   fit <- risk_factor_gam(MTPL, claim_count = "nclaims", risk_factor = "age_policyholder",
                         exposure = "exposure")
-  result <- construct_tariff_classes(fit)
+  result <- derive_tariff_groups(fit)
 
   plot <- autoplot(result, confidence = TRUE)
   built <- ggplot2::ggplot_build(plot)
@@ -43,10 +48,30 @@ testthat::test_that("autoplot can show confidence intervals", {
 testthat::test_that("print and as.vector methods expose splits", {
   fit <- risk_factor_gam(MTPL, claim_count = "nclaims", risk_factor = "age_policyholder",
                         exposure = "exposure")
-  result <- construct_tariff_classes(fit)
+  result <- derive_tariff_groups(fit)
 
-  testthat::expect_output(print(result), "Tariff class splits")
-  testthat::expect_equal(as.vector(result), result$splits)
+  testthat::expect_output(print(result), "Tariff group boundaries")
+  testthat::expect_equal(as.vector(result), result$class_boundaries)
+})
+
+testthat::test_that("add_tariff_groups adds assigned groups to portfolio data", {
+  fit <- risk_factor_gam(MTPL, claim_count = "nclaims", risk_factor = "age_policyholder",
+                        exposure = "exposure")
+  result <- derive_tariff_groups(fit)
+
+  out <- add_tariff_groups(MTPL, result, name = "age_policyholder_group")
+
+  testthat::expect_s3_class(out, "data.frame")
+  testthat::expect_s3_class(out$age_policyholder_group, "factor")
+  testthat::expect_equal(out$age_policyholder_group, result$assigned_groups)
+  testthat::expect_error(
+    add_tariff_groups(out, result, name = "age_policyholder_group"),
+    "already exists"
+  )
+  testthat::expect_error(
+    add_tariff_groups(MTPL[1:10, ], result, name = "age_policyholder_group"),
+    "same number of rows"
+  )
 })
 
 testthat::test_that("deprecated evtree argument names still work", {
@@ -54,7 +79,7 @@ testthat::test_that("deprecated evtree argument names still work", {
                         exposure = "exposure")
 
   result <- testthat::expect_warning(
-    construct_tariff_classes(
+    derive_tariff_groups(
       fit,
       alpha = 0,
       niterations = 1000,
@@ -66,12 +91,24 @@ testthat::test_that("deprecated evtree argument names still work", {
   testthat::expect_s3_class(result, "tariff_classes")
 })
 
+testthat::test_that("construct_tariff_classes remains available as deprecated alias", {
+  fit <- risk_factor_gam(MTPL, claim_count = "nclaims", risk_factor = "age_policyholder",
+                        exposure = "exposure")
+
+  result <- testthat::expect_warning(
+    construct_tariff_classes(fit),
+    "deprecated"
+  )
+
+  testthat::expect_s3_class(result, "tariff_groups")
+})
+
 testthat::test_that("invalid control arguments fail clearly", {
   fit <- risk_factor_gam(MTPL, claim_count = "nclaims", risk_factor = "age_policyholder",
                         exposure = "exposure")
 
   testthat::expect_error(
-    construct_tariff_classes(fit, complexity = -1),
+    derive_tariff_groups(fit, complexity = -1),
     "`complexity`"
   )
 })

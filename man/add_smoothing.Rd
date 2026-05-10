@@ -2,7 +2,6 @@
 % Please edit documentation in R/model_refinement.R
 \name{add_smoothing}
 \alias{add_smoothing}
-\alias{smooth_coef}
 \title{Add smoothing to a refinement workflow}
 \usage{
 add_smoothing(
@@ -19,17 +18,6 @@ add_smoothing(
   x_cut = NULL,
   x_org = NULL
 )
-
-smooth_coef(
-  model,
-  x_cut,
-  x_org,
-  degree = NULL,
-  breaks = NULL,
-  smoothing = "spline",
-  k = NULL,
-  weights = NULL
-)
 }
 \arguments{
 \item{model}{Object of class \code{rating_refinement}, usually created with
@@ -42,11 +30,14 @@ tariff factor.}
 \item{source_variable}{Character string. Original numeric portfolio variable
 underlying \code{model_variable}.}
 
-\item{degree}{Optional single whole number. Polynomial degree.}
+\item{degree}{Optional single whole number. Polynomial degree, used by
+polynomial smoothing methods.}
 
-\item{breaks}{Numeric vector with the new tariff class boundaries.}
+\item{breaks}{Numeric vector with the tariff group boundaries to use after
+smoothing. Values must be finite and strictly increasing.}
 
-\item{smoothing}{Character string with the smoothing method.}
+\item{smoothing}{Character string with the smoothing method, for example
+\code{"spline"} when supported by the fitted workflow.}
 
 \item{k}{Optional single positive whole number. Number of basis functions for
 smoothing methods that use a basis dimension.}
@@ -63,24 +54,77 @@ instead.}
 Object of class \code{rating_refinement}.
 }
 \description{
-Adds a smoothing step to a \code{rating_refinement} object.
-
-\code{smooth_coef()} is deprecated as of version 0.9.0.
-Please use the refinement workflow instead:
-
-\preformatted{
-prepare_refinement(model) |>
-  add_smoothing(...) |>
-  refit()
-}
+Replaces a grouped or binned model effect by a smoother tariff curve in a
+refinement workflow. This is commonly used for numeric rating factors such as
+age, vehicle age, insured value or bonus-malus years, where a raw GLM factor
+can be too jagged for a stable and explainable tariff.
 }
 \details{
-\code{add_smoothing()} is part of the new refinement workflow and is intended
-to be used in combination with \code{prepare_refinement()} and \code{refit()}.
+\code{add_smoothing()} stores a smoothing step on a \code{rating_refinement} object.
+The original GLM contains \code{model_variable}, usually a factor or grouped
+tariff group. The smoother is fitted against \code{source_variable}, the original
+numeric portfolio variable behind those groups. The smoothed result is then
+converted back to tariff groups using \code{breaks} and applied when \code{\link[=refit]{refit()}} is
+called.
 
-The legacy function \code{smooth_coef()} remains the only function that should
-be applied directly to a model object.
+This makes the intended API explicit: first prepare the model with
+\code{\link[=prepare_refinement]{prepare_refinement()}}, then add a smoothing step, optionally adjust it with
+\code{\link[=edit_smoothing]{edit_smoothing()}}, and finally call \code{\link[=refit]{refit()}}. The deprecated
+\code{\link[=smooth_coef]{smooth_coef()}} wrapper is only kept for backwards compatibility.
 }
-\seealso{
-\code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=refit]{refit()}}
+\examples{
+\dontrun{
+library(dplyr)
+
+age_policyholder_frequency <- risk_factor_gam(
+  data = MTPL,
+  claim_count = "nclaims",
+  risk_factor = "age_policyholder",
+  exposure = "exposure"
+)
+
+age_groups_freq <- derive_tariff_groups(age_policyholder_frequency)
+
+dat <- MTPL |>
+  add_tariff_groups(age_groups_freq, name = "age_policyholder_freq_cat") |>
+  mutate(across(where(is.character), as.factor)) |>
+  mutate(across(where(is.factor), ~ set_reference_level(., exposure)))
+
+freq <- glm(
+  nclaims ~ bm + age_policyholder_freq_cat,
+  offset = log(exposure),
+  family = poisson(),
+  data = dat
+)
+
+sev <- glm(
+  amount ~ zip,
+  weights = nclaims,
+  family = Gamma(link = "log"),
+  data = dat |> filter(amount > 0)
+)
+
+premium_df <- dat |>
+  add_prediction(freq, sev) |>
+  mutate(premium = pred_nclaims_freq * pred_amount_sev)
+
+burn_unrestricted <- glm(
+  premium ~ zip + bm + age_policyholder_freq_cat,
+  weights = exposure,
+  family = Gamma(link = "log"),
+  data = premium_df
+)
+
+ref <- prepare_refinement(burn_unrestricted) |>
+  add_smoothing(
+    model_variable = "age_policyholder_freq_cat",
+    source_variable = "age_policyholder",
+    breaks = seq(18, 95, 5),
+    weights = "exposure"
+  )
+}
+
+}
+\author{
+Martin Haringa
 }

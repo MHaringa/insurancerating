@@ -6,22 +6,18 @@ Analyse portfolio behaviour and inspect risk factors before model
 estimation.
 
 - [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-  [`univariate()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
   : Factor analysis for discrete risk factors
 - [`autoplot(`*`<factor_analysis>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.factor_analysis.md)
   : Automatically create a ggplot for objects obtained from factor
   analysis
 - [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
-  [`histbin()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
   : Portfolio histogram with tail bins
 
-## Tariff classes
+## Tariff groups
 
-Analyse continuous risk factors and convert them to tariff classes.
+Analyse continuous risk factors and convert them to tariff groups.
 
 - [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
-  [`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
-  [`fit_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
   : Fit a GAM for a continuous risk factor
 
 - [`autoplot(`*`<riskfactor_gam>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.riskfactor_gam.md)
@@ -30,11 +26,14 @@ Analyse continuous risk factors and convert them to tariff classes.
   Autoplot for GAM objects from
   [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
 
-- [`construct_tariff_classes()`](https://mharinga.github.io/insurancerating/reference/construct_tariff_classes.md)
-  : Construct insurance tariff classes
+- [`derive_tariff_groups()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_groups.md)
+  : Derive insurance tariff groups
 
-- [`autoplot(`*`<tariff_classes>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.tariff_classes.md)
-  : Autoplot for tariff class objects
+- [`add_tariff_groups()`](https://mharinga.github.io/insurancerating/reference/add_tariff_groups.md)
+  : Add derived tariff groups to portfolio data
+
+- [`autoplot(`*`<tariff_groups>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.tariff_groups.md)
+  : Autoplot for tariff group objects
 
 ## Modelling and interpretation
 
@@ -42,7 +41,6 @@ Estimate pricing models and interpret fitted coefficients in tariff
 terms.
 
 - [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-  [`rating_factors()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
   : Build rating tables from fitted pricing models
 
 - [`autoplot(`*`<riskfactor>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.riskfactor.md)
@@ -65,12 +63,10 @@ relativities.
 - [`autoplot(`*`<rating_refinement>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
   **\[experimental\]** : Plot a model refinement step
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
-  [`smooth_coef()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   : Add smoothing to a refinement workflow
 - [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
   : Edit an existing smoothing step in a refinement workflow
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
-  [`restrict_coef()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   : Add coefficient restrictions to a refinement workflow
 - [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
   : Add expert-based relativities to a refinement workflow
@@ -93,7 +89,6 @@ behaviour.
 - [`rmse()`](https://mharinga.github.io/insurancerating/reference/rmse.md)
   : Root Mean Squared Error (RMSE)
 - [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
-  [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
   : Bootstrapped model performance
 - [`autoplot(`*`<bootstrap_performance>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.md)
   : Autoplot for bootstrap_performance objects
@@ -109,10 +104,8 @@ behaviour.
 Extract model data and analyse observed rating-grid combinations.
 
 - [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
-  [`model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
   **\[experimental\]** : Extract model data
 - [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-  [`construct_model_points()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
   : Construct observed rating-grid points from model data or a data
   frame
 
@@ -120,10 +113,10 @@ Extract model data and analyse observed rating-grid combinations.
 
 Helper functions for truncated and actuarial distribution workflows.
 
-- [`fit_truncated_dist()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_dist.md)
+- [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
   **\[experimental\]** : Fit severity distributions to truncated claim
   data
-- [`autoplot(`*`<truncated_dist>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.truncated_dist.md)
+- [`autoplot(`*`<truncated_severity>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.truncated_severity.md)
   : Plot a fitted truncated severity distribution
 - [`rlnormt()`](https://mharinga.github.io/insurancerating/reference/rlnormt.md)
   : Generate random samples from a truncated lognormal distribution
@@ -134,16 +127,13 @@ Helper functions for truncated and actuarial distribution workflows.
 
 Supporting functions used across pricing workflows.
 
-- [`biggest_reference()`](https://mharinga.github.io/insurancerating/reference/biggest_reference.md)
-  : Set reference group to the group with largest exposure
+- [`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md)
+  : Set the reference level of a factor
 - [`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md)
-  [`period_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md)
   : Split policy periods into monthly rows
 - [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
-  [`rows_per_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
   : Find active portfolio rows for event dates
 - [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
-  [`reduce()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
   : Reduce portfolio periods by merging adjacent date ranges
 
 ## Data
@@ -158,49 +148,113 @@ Supporting functions used across pricing workflows.
 Legacy functions retained for backward compatibility. New code should
 use the updated API.
 
-- [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-  [`univariate()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-  : Factor analysis for discrete risk factors
-- [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
-  [`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
-  [`fit_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
-  : Fit a GAM for a continuous risk factor
-- [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-  [`rating_factors()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-  : Build rating tables from fitted pricing models
+- [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
+  :
+
+  Deprecated alias for
+  [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
+
+- [`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/riskfactor_gam.md)
+  :
+
+  Deprecated alias for
+  [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
+
+- [`fit_gam()`](https://mharinga.github.io/insurancerating/reference/fit_gam.md)
+  :
+
+  Deprecated NSE wrapper for
+  [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
+
+- [`rating_factors()`](https://mharinga.github.io/insurancerating/reference/rating_factors.md)
+  :
+
+  Deprecated alias for
+  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+
 - [`rating_factors2()`](https://mharinga.github.io/insurancerating/reference/rating_factors2.md)
-  **\[deprecated\]** : Include reference group in regression output
-- [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
-  [`model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
-  **\[experimental\]** : Extract model data
-- [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-  [`construct_model_points()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-  : Construct observed rating-grid points from model data or a data
-  frame
-- [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
-  [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
-  : Bootstrapped model performance
+  **\[deprecated\]** : Deprecated single-model rating table helper
+
+- [`model_data()`](https://mharinga.github.io/insurancerating/reference/model_data.md)
+  :
+
+  Deprecated alias for
+  [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
+
+- [`construct_model_points()`](https://mharinga.github.io/insurancerating/reference/construct_model_points.md)
+  :
+
+  Deprecated alias for
+  [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+
+- [`construct_tariff_classes()`](https://mharinga.github.io/insurancerating/reference/construct_tariff_classes.md)
+  :
+
+  Deprecated alias for
+  [`derive_tariff_groups()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_groups.md)
+
+- [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_rmse.md)
+  :
+
+  Deprecated alias for
+  [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
+
+- [`fit_truncated_dist()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_dist.md)
+  :
+
+  Deprecated alias for
+  [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
+
 - [`fisher_classify()`](https://mharinga.github.io/insurancerating/reference/fisher_classify.md)
-  [`fisher()`](https://mharinga.github.io/insurancerating/reference/fisher_classify.md)
   : Fisher's natural breaks classification
-- [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
-  [`histbin()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
-  : Portfolio histogram with tail bins
-- [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
-  [`restrict_coef()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
-  : Add coefficient restrictions to a refinement workflow
-- [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
-  [`smooth_coef()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
-  : Add smoothing to a refinement workflow
+
+- [`fisher()`](https://mharinga.github.io/insurancerating/reference/fisher.md)
+  :
+
+  Deprecated alias for
+  [`fisher_classify()`](https://mharinga.github.io/insurancerating/reference/fisher_classify.md)
+
+- [`histbin()`](https://mharinga.github.io/insurancerating/reference/histbin.md)
+  :
+
+  Deprecated alias for
+  [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
+
+- [`biggest_reference()`](https://mharinga.github.io/insurancerating/reference/biggest_reference.md)
+  :
+
+  Deprecated alias for
+  [`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md)
+
+- [`restrict_coef()`](https://mharinga.github.io/insurancerating/reference/restrict_coef.md)
+  : Deprecated restriction helper
+
+- [`smooth_coef()`](https://mharinga.github.io/insurancerating/reference/smooth_coef.md)
+  : Deprecated smoothing helper
+
 - [`refit_glm()`](https://mharinga.github.io/insurancerating/reference/refit_glm.md)
-  [`update_glm()`](https://mharinga.github.io/insurancerating/reference/refit_glm.md)
-  : Refit a GLM model or refinement workflow
-- [`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md)
-  [`period_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md)
-  : Split policy periods into monthly rows
-- [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
-  [`rows_per_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
-  : Find active portfolio rows for event dates
-- [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
-  [`reduce()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
-  : Reduce portfolio periods by merging adjacent date ranges
+  : Deprecated refit wrapper
+
+- [`update_glm()`](https://mharinga.github.io/insurancerating/reference/update_glm.md)
+  :
+
+  Deprecated alias for
+  [`refit_glm()`](https://mharinga.github.io/insurancerating/reference/refit_glm.md)
+
+- [`period_to_months()`](https://mharinga.github.io/insurancerating/reference/period_to_months.md)
+  :
+
+  Deprecated alias for
+  [`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md)
+
+- [`rows_per_date()`](https://mharinga.github.io/insurancerating/reference/rows_per_date.md)
+  :
+
+  Deprecated alias for
+  [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
+
+- [`reduce()`](https://mharinga.github.io/insurancerating/reference/reduce.md)
+  :
+
+  Deprecated alias for
+  [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)

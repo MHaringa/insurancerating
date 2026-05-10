@@ -200,9 +200,21 @@ split_periods_to_months <- function(df,
 }
 
 
-#' @rdname split_periods_to_months
-#' @param ... Columns in `df` to split. Deprecated, use `cols` instead.
+#' Deprecated alias for `split_periods_to_months()`
+#'
+#' @description
+#' `period_to_months()` is deprecated as of version 0.8.0. Use
+#' [split_periods_to_months()] instead.
+#'
+#' @inheritParams split_periods_to_months
+#' @param begin Deprecated NSE argument. Use `period_start` instead.
+#' @param end Deprecated NSE argument. Use `period_end` instead.
+#' @param ... Deprecated NSE columns to prorate. Use `prorate_cols` instead.
+#'
+#' @return See [split_periods_to_months()].
+#'
 #' @export
+#' @keywords internal
 period_to_months <- function(df, begin, end, ...) {
   lifecycle::deprecate_warn("0.8.0", "period_to_months()",
                             "split_periods_to_months()")

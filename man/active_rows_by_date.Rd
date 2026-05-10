@@ -2,7 +2,6 @@
 % Please edit documentation in R/time_rows_per_date.R
 \name{active_rows_by_date}
 \alias{active_rows_by_date}
-\alias{rows_per_date}
 \title{Find active portfolio rows for event dates}
 \usage{
 active_rows_by_date(
@@ -12,17 +11,6 @@ active_rows_by_date(
   period_end,
   date,
   by = NULL,
-  nomatch = NULL,
-  mult = "all"
-)
-
-rows_per_date(
-  df,
-  dates,
-  df_begin,
-  df_end,
-  dates_date,
-  ...,
   nomatch = NULL,
   mult = "all"
 )

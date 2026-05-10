@@ -2,22 +2,9 @@
 % Please edit documentation in R/outlier_histogram.R
 \name{outlier_histogram}
 \alias{outlier_histogram}
-\alias{histbin}
 \title{Portfolio histogram with tail bins}
 \usage{
 outlier_histogram(
-  data,
-  x,
-  left = NULL,
-  right = NULL,
-  line = FALSE,
-  bins = 30,
-  fill = "steelblue",
-  color = "white",
-  fill_outliers = "#a7d1a7"
-)
-
-histbin(
   data,
   x,
   left = NULL,
@@ -67,12 +54,6 @@ into dedicated tail bins.
 The plot is useful for actuarial portfolio checks, data quality review, and
 model preparation: it helps show where most risks are concentrated while
 still making the presence of extreme observations explicit.
-
-\code{\link[=histbin]{histbin()}} is deprecated as of version 0.8.0.
-Please use \code{\link[=outlier_histogram]{outlier_histogram()}} instead.
-
-In addition, note that \code{x} must now be passed as \strong{string}
-(standard evaluation).
 }
 \details{
 This function is intended as an exploratory portfolio diagnostic. It does not

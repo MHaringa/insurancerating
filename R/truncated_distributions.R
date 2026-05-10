@@ -340,7 +340,7 @@ get_start_values_truncated <- function(y,
 #' treats that truncated sample as if it were complete, which can bias the
 #' estimated severity distribution.
 #'
-#' `fit_truncated_dist()` fits the distribution conditional on the claim being
+#' `fit_truncated_severity()` fits the distribution conditional on the claim being
 #' observed within the truncation interval. This means the fitted likelihood
 #' uses the density divided by the probability mass between `lower_truncation`
 #' and `upper_truncation`. The function is intended for truncation, where
@@ -354,7 +354,8 @@ get_start_values_truncated <- function(y,
 #'
 #' @importFrom fitdistrplus fitdist
 #'
-#' @return An object of class `c("truncated_dist", "fitdist")`. The object
+#' @return An object of class `c("truncated_severity", "truncated_dist",
+#' "fitdist")`. The object
 #' contains the fitted distribution parameters from [fitdistrplus::fitdist()]
 #' and additional attributes:
 #' \describe{
@@ -368,7 +369,7 @@ get_start_values_truncated <- function(y,
 #' @examples
 #' \dontrun{
 #' observed <- MTPL2$amount[MTPL2$amount > 500 & MTPL2$amount < 10000]
-#' fit <- fit_truncated_dist(
+#' fit <- fit_truncated_severity(
 #'   losses = observed,
 #'   distribution = "gamma",
 #'   lower_truncation = 500,
@@ -378,36 +379,36 @@ get_start_values_truncated <- function(y,
 #' }
 #'
 #' @export
-fit_truncated_dist <- function(losses = NULL,
-                               distribution = c("gamma", "lognormal"),
-                               lower_truncation = NULL,
-                               upper_truncation = NULL,
-                               start_values = NULL,
-                               print_initial = TRUE,
-                               n_variants = 1,
-                               n_shape_grid = 8,
-                               n_scale_grid = 8,
-                               show_progress = FALSE,
-                               show_summary = TRUE,
-                               y = NULL,
-                               dist = NULL,
-                               left = NULL,
-                               right = NULL,
-                               start = NULL,
-                               trace = NULL,
-                               report = NULL) {
+fit_truncated_severity <- function(losses = NULL,
+                                   distribution = c("gamma", "lognormal"),
+                                   lower_truncation = NULL,
+                                   upper_truncation = NULL,
+                                   start_values = NULL,
+                                   print_initial = TRUE,
+                                   n_variants = 1,
+                                   n_shape_grid = 8,
+                                   n_scale_grid = 8,
+                                   show_progress = FALSE,
+                                   show_summary = TRUE,
+                                   y = NULL,
+                                   dist = NULL,
+                                   left = NULL,
+                                   right = NULL,
+                                   start = NULL,
+                                   trace = NULL,
+                                   report = NULL) {
 
   if (!is.null(y)) {
     if (!is.null(losses)) {
       stop("Use only one of `losses` and deprecated `y`.", call. = FALSE)
     }
-    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(y)",
-                              "fit_truncated_dist(losses)")
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_severity(y)",
+                              "fit_truncated_severity(losses)")
     losses <- y
   }
   if (!is.null(dist)) {
-    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(dist)",
-                              "fit_truncated_dist(distribution)")
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_severity(dist)",
+                              "fit_truncated_severity(distribution)")
     distribution <- dist
   }
   if (!is.null(left)) {
@@ -415,8 +416,8 @@ fit_truncated_dist <- function(losses = NULL,
       stop("Use only one of `lower_truncation` and deprecated `left`.",
            call. = FALSE)
     }
-    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(left)",
-                              "fit_truncated_dist(lower_truncation)")
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_severity(left)",
+                              "fit_truncated_severity(lower_truncation)")
     lower_truncation <- left
   }
   if (!is.null(right)) {
@@ -424,8 +425,8 @@ fit_truncated_dist <- function(losses = NULL,
       stop("Use only one of `upper_truncation` and deprecated `right`.",
            call. = FALSE)
     }
-    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(right)",
-                              "fit_truncated_dist(upper_truncation)")
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_severity(right)",
+                              "fit_truncated_severity(upper_truncation)")
     upper_truncation <- right
   }
   if (!is.null(start)) {
@@ -433,22 +434,22 @@ fit_truncated_dist <- function(losses = NULL,
       stop("Use only one of `start_values` and deprecated `start`.",
            call. = FALSE)
     }
-    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(start)",
-                              "fit_truncated_dist(start_values)")
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_severity(start)",
+                              "fit_truncated_severity(start_values)")
     start_values <- start
   }
   if (!is.null(trace)) {
-    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(trace)",
-                              "fit_truncated_dist(show_progress)")
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_severity(trace)",
+                              "fit_truncated_severity(show_progress)")
     show_progress <- trace
   }
   if (!is.null(report)) {
-    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(report)",
-                              "fit_truncated_dist(show_summary)")
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_severity(report)",
+                              "fit_truncated_severity(show_summary)")
     show_summary <- report
   }
   if (!identical(print_initial, TRUE)) {
-    lifecycle::deprecate_warn("0.9.0", "fit_truncated_dist(print_initial)")
+    lifecycle::deprecate_warn("0.9.0", "fit_truncated_severity(print_initial)")
   }
 
   distribution <- match.arg(distribution)
@@ -642,7 +643,7 @@ fit_truncated_dist <- function(losses = NULL,
     ))
   }
 
-  class(out) <- append("truncated_dist", class(out))
+  class(out) <- c("truncated_severity", "truncated_dist", class(out))
   attr(out, "truncated_vec") <- losses
   attr(out, "losses") <- losses
   attr(out, "left") <- lower_truncation
@@ -656,6 +657,64 @@ fit_truncated_dist <- function(losses = NULL,
   attr(out, "best_attempt_index") <- best_attempt_index
 
   out
+}
+
+
+#' Deprecated alias for `fit_truncated_severity()`
+#'
+#' @description
+#' `fit_truncated_dist()` is deprecated as of version 0.9.0. Use
+#' [fit_truncated_severity()] instead.
+#'
+#' @inheritParams fit_truncated_severity
+#' @return See [fit_truncated_severity()].
+#'
+#' @export
+#' @keywords internal
+fit_truncated_dist <- function(losses = NULL,
+                               distribution = c("gamma", "lognormal"),
+                               lower_truncation = NULL,
+                               upper_truncation = NULL,
+                               start_values = NULL,
+                               print_initial = TRUE,
+                               n_variants = 1,
+                               n_shape_grid = 8,
+                               n_scale_grid = 8,
+                               show_progress = FALSE,
+                               show_summary = TRUE,
+                               y = NULL,
+                               dist = NULL,
+                               left = NULL,
+                               right = NULL,
+                               start = NULL,
+                               trace = NULL,
+                               report = NULL) {
+  lifecycle::deprecate_warn(
+    "0.9.0",
+    "fit_truncated_dist()",
+    "fit_truncated_severity()"
+  )
+
+  fit_truncated_severity(
+    losses = losses,
+    distribution = distribution,
+    lower_truncation = lower_truncation,
+    upper_truncation = upper_truncation,
+    start_values = start_values,
+    print_initial = print_initial,
+    n_variants = n_variants,
+    n_shape_grid = n_shape_grid,
+    n_scale_grid = n_scale_grid,
+    show_progress = show_progress,
+    show_summary = show_summary,
+    y = y,
+    dist = dist,
+    left = left,
+    right = right,
+    start = start,
+    trace = trace,
+    report = report
+  )
 }
 
 
@@ -772,7 +831,7 @@ rgammat <- function(n, shape, scale, lower, upper) {
 #' function (ECDF) of the observed truncated claim amounts together with the
 #' fitted truncated CDF.
 #'
-#' @param object An object produced by \code{fit_truncated_dist()}.
+#' @param object An object produced by \code{fit_truncated_severity()}.
 #' @param ecdf_geom Character string indicating how to display the empirical
 #' CDF. Must be one of `"point"` or `"step"`.
 #' @param x_label Title of the x axis. Defaults to `"severity"`.
@@ -803,28 +862,30 @@ rgammat <- function(n, shape, scale, lower, upper) {
 #'
 #' @author Martin Haringa
 #'
+#' @aliases autoplot.truncated_dist
 #' @export
-autoplot.truncated_dist <- function(object,
-                                    ecdf_geom = c("point", "step"),
-                                    x_label = NULL,
-                                    y_label = NULL,
-                                    y_limits = c(0, 1),
-                                    x_limits = NULL,
-                                    show_title = TRUE,
-                                    digits = 2,
-                                    truncation_digits = 2,
-                                    geom_ecdf = NULL,
-                                    xlab = NULL,
-                                    ylab = NULL,
-                                    ylim = NULL,
-                                    xlim = NULL,
-                                    print_title = NULL,
-                                    print_dig = NULL,
-                                    print_trunc = NULL,
-                                    ...) {
+autoplot.truncated_severity <- function(object,
+                                        ecdf_geom = c("point", "step"),
+                                        x_label = NULL,
+                                        y_label = NULL,
+                                        y_limits = c(0, 1),
+                                        x_limits = NULL,
+                                        show_title = TRUE,
+                                        digits = 2,
+                                        truncation_digits = 2,
+                                        geom_ecdf = NULL,
+                                        xlab = NULL,
+                                        ylab = NULL,
+                                        ylim = NULL,
+                                        xlim = NULL,
+                                        print_title = NULL,
+                                        print_dig = NULL,
+                                        print_trunc = NULL,
+                                        ...) {
 
-  if (!inherits(object, "truncated_dist")) {
-    stop("`object` must inherit from class 'truncated_dist'.", call. = FALSE)
+  if (!inherits(object, "truncated_severity") &&
+      !inherits(object, "truncated_dist")) {
+    stop("`object` must inherit from class 'truncated_severity'.", call. = FALSE)
   }
   if (!is.null(geom_ecdf)) {
     lifecycle::deprecate_warn("0.9.0", "autoplot(geom_ecdf)",
@@ -1000,3 +1061,6 @@ autoplot.truncated_dist <- function(object,
 
   p
 }
+
+#' @export
+autoplot.truncated_dist <- autoplot.truncated_severity

@@ -6,8 +6,10 @@ prorated over the resulting monthly rows.
 
 This function uses **standard evaluation (SE)**: column names must be
 passed as **character strings** (e.g. `period_start = "begin_date"`).
-The older function `period_to_months()` used non-standard evaluation
-(NSE) and is deprecated as of version 0.8.0.
+The older function
+[`period_to_months()`](https://mharinga.github.io/insurancerating/reference/period_to_months.md)
+used non-standard evaluation (NSE) and is deprecated as of version
+0.8.0.
 
 ## Usage
 
@@ -21,8 +23,6 @@ split_periods_to_months(
   end = NULL,
   cols = NULL
 )
-
-period_to_months(df, begin, end, ...)
 ```
 
 ## Arguments
@@ -47,10 +47,6 @@ period_to_months(df, begin, end, ...)
 - begin, end, cols:
 
   Deprecated argument names kept for backward compatibility.
-
-- ...:
-
-  Columns in `df` to split. Deprecated, use `cols` instead.
 
 ## Value
 

@@ -1,10 +1,8 @@
-# Set reference group to the group with largest exposure
+# Deprecated alias for `set_reference_level()`
 
-Relevels a factor so that the category with the highest total weight
-(e.g., exposure) becomes the reference (first) level. This is useful in
-regression settings, where the first level of a factor is taken as the
-baseline. In insurance applications, the group with the largest exposure
-is often chosen as reference.
+`biggest_reference()` is deprecated as of version 0.9.0. Use
+[`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md)
+instead.
 
 ## Usage
 
@@ -16,36 +14,13 @@ biggest_reference(x, weight)
 
 - x:
 
-  A factor (unordered). Character vectors should be converted to factor
-  before use.
+  A factor.
 
 - weight:
 
-  A numeric vector of the same length as `x`, typically representing
-  exposure or frequency weights.
+  A numeric vector of the same length as `x`.
 
 ## Value
 
-A factor of the same length as `x`, with the reference level set to the
-group with the largest weight.
-
-## References
-
-Kaas, Rob & Goovaerts, Marc & Dhaene, Jan & Denuit, Michel. (2008).
-Modern Actuarial Risk Theory: Using R.
-[doi:10.1007/978-3-540-70998-5.](https://doi.org/10.1007/978-3-540-70998-5.)
-
-## Author
-
-Martin Haringa
-
-## Examples
-
-``` r
-if (FALSE) { # \dontrun{
-library(dplyr)
-df <- chickwts |>
-mutate(across(where(is.character), as.factor)) |>
-mutate(across(where(is.factor), ~biggest_reference(., weight)))
-} # }
-```
+See
+[`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md).

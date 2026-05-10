@@ -1,15 +1,21 @@
-#' Set reference group to the group with largest exposure
+#' Set the reference level of a factor
 #'
-#' @description Relevels a factor so that the category with the highest total
-#' weight (e.g., exposure) becomes the reference (first) level.
-#' This is useful in regression settings, where the first level of a factor
-#' is taken as the baseline. In insurance applications, the group with the
-#' largest exposure is often chosen as reference.
+#' @description
+#' Relevels a factor so that the selected category becomes the reference
+#' (first) level. By default, the reference level is chosen as the level with
+#' the largest total weight, for example the largest exposure in an insurance
+#' portfolio. Use `method = "manual"` with `reference_level` when a specific
+#' business category should be the reference level.
 #'
 #' @param x A factor (unordered). Character vectors should be converted to
 #'   factor before use.
 #' @param weight A numeric vector of the same length as \code{x},
-#'   typically representing exposure or frequency weights.
+#'   typically representing exposure or frequency weights. Required when
+#'   `method = "largest_weight"`.
+#' @param method Character. Method used to choose the reference level.
+#'   Supported methods are `"largest_weight"` and `"manual"`.
+#' @param reference_level Character string with the level to use as reference
+#'   when `method = "manual"`.
 #'
 #' @author Martin Haringa
 #'
@@ -19,20 +25,53 @@
 #'
 #' @importFrom stats relevel
 #'
-#' @return A factor of the same length as \code{x}, with the reference level set
-#'   to the group with the largest weight.
+#' @return A factor of the same length as \code{x}, with the selected reference
+#'   level set as the first level.
 #'
 #' @examples
 #' \dontrun{
 #' library(dplyr)
 #' df <- chickwts |>
 #' mutate(across(where(is.character), as.factor)) |>
-#' mutate(across(where(is.factor), ~biggest_reference(., weight)))
+#' mutate(across(where(is.factor), ~set_reference_level(., weight)))
+#'
+#' set_reference_level(df$feed, method = "manual", reference_level = "casein")
 #' }
 #'
 #' @export
-biggest_reference <- function(x, weight) {
+set_reference_level <- function(x,
+                                weight = NULL,
+                                method = "largest_weight",
+                                reference_level = NULL) {
   if (!is.factor(x)) stop("`x` must be a factor")
+  if (!is.character(method) || length(method) != 1L || is.na(method)) {
+    stop("`method` must be 'largest_weight' or 'manual'.", call. = FALSE)
+  }
+  if (!method %in% c("largest_weight", "manual")) {
+    stop("`method` must be 'largest_weight' or 'manual'.", call. = FALSE)
+  }
+
+  if (method == "manual") {
+    if (!is.character(reference_level) ||
+        length(reference_level) != 1L ||
+        is.na(reference_level)) {
+      stop("`reference_level` must be a single character string.",
+           call. = FALSE)
+    }
+    if (!reference_level %in% levels(x)) {
+      stop("`reference_level` must be one of the levels of `x`.",
+           call. = FALSE)
+    }
+
+    xrelevel <- stats::relevel(x, ref = reference_level)
+    attr(xrelevel, "xoriginal") <- levels(x)
+    return(xrelevel)
+  }
+
+  if (!is.null(reference_level)) {
+    stop("`reference_level` can only be used when `method = 'manual'`.",
+         call. = FALSE)
+  }
   if (!is.numeric(weight)) stop("`weight` must be numeric")
   if (length(x) != length(weight)) {
     stop("`x` and `weight` must have the same length")
@@ -42,6 +81,28 @@ biggest_reference <- function(x, weight) {
   xrelevel <- stats::relevel(x, ref = names(counts)[1])
   attr(xrelevel, "xoriginal") <- levels(x)
   xrelevel
+}
+
+
+#' Deprecated alias for `set_reference_level()`
+#'
+#' @description
+#' `biggest_reference()` is deprecated as of version 0.9.0. Use
+#' [set_reference_level()] instead.
+#'
+#' @param x A factor.
+#' @param weight A numeric vector of the same length as \code{x}.
+#' @return See [set_reference_level()].
+#'
+#' @export
+#' @keywords internal
+biggest_reference <- function(x, weight) {
+  lifecycle::deprecate_warn(
+    "0.9.0",
+    "biggest_reference()",
+    "set_reference_level()"
+  )
+  set_reference_level(x = x, weight = weight, method = "largest_weight")
 }
 
 

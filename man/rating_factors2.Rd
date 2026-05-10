@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_rating_table_deprecated.R
 \name{rating_factors2}
 \alias{rating_factors2}
-\title{Include reference group in regression output}
+\title{Deprecated single-model rating table helper}
 \usage{
 rating_factors2(
   model,
@@ -34,9 +34,13 @@ coefficient estimates. Defaults to TRUE.}
 
 \item{round_exposure}{number of digits for exposure (defaults to 0)}
 }
+\value{
+A data frame with rating factor coefficients for one model.
+}
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
 
 Legacy interface. Prefer \code{\link[=rating_table]{rating_table()}} for fitted models in the new
 workflow, but this function remains available.
 }
+\keyword{internal}

@@ -2,7 +2,6 @@
 % Please edit documentation in R/univariate.R
 \name{factor_analysis}
 \alias{factor_analysis}
-\alias{univariate}
 \title{Factor analysis for discrete risk factors}
 \usage{
 factor_analysis(
@@ -17,16 +16,6 @@ factor_analysis(
   x = NULL,
   severity = NULL,
   nclaims = NULL,
-  by = NULL
-)
-
-univariate(
-  df,
-  x,
-  severity = NULL,
-  nclaims = NULL,
-  exposure = NULL,
-  premium = NULL,
   by = NULL
 )
 }
@@ -66,10 +55,6 @@ portfolio. The following summary statistics are calculated:
 \item loss ratio = severity / premium
 \item average premium = premium / exposure
 }
-
-\code{\link[=univariate]{univariate()}} is deprecated as of version 0.8.0.
-Please use \code{\link[=factor_analysis]{factor_analysis()}} instead with \strong{standard evaluation} (SE),
-i.e. column names as character strings.
 }
 \details{
 The function computes summary statistics for discrete risk factors.

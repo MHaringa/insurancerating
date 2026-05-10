@@ -3,10 +3,6 @@
 Generate repeated train/evaluation samples to compute model performance.
 Currently, the supported metric is root mean squared error (RMSE).
 
-`bootstrap_rmse()` is deprecated in favour of `bootstrap_performance()`.
-Objects returned by `bootstrap_rmse()` keep class `"bootstrap_rmse"` for
-backward compatibility and also inherit from `"bootstrap_performance"`.
-
 ## Usage
 
 ``` r
@@ -21,17 +17,6 @@ bootstrap_performance(
   rmse_model = NULL,
   n = NULL,
   frac = NULL
-)
-
-bootstrap_rmse(
-  model,
-  data,
-  n = 50,
-  frac = 1,
-  metric = "rmse",
-  sampling = c("bootstrap", "split"),
-  show_progress = TRUE,
-  rmse_model = NULL
 )
 ```
 

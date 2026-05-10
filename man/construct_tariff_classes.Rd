@@ -2,7 +2,7 @@
 % Please edit documentation in R/gam_construct_tariff_classes.R
 \name{construct_tariff_classes}
 \alias{construct_tariff_classes}
-\title{Construct insurance tariff classes}
+\title{Deprecated alias for \code{derive_tariff_groups()}}
 \usage{
 construct_tariff_classes(
   object,
@@ -21,13 +21,13 @@ construct_tariff_classes(
 supported for backward compatibility.}
 
 \item{complexity}{Numeric. Controls the complexity penalty used when deriving
-classes. Higher values generally yield fewer tariff classes. Default = 0.}
+groups. Higher values generally yield fewer tariff groups. Default = 0.}
 
 \item{max_iterations}{Integer. Maximum number of search iterations used by
-the underlying class construction algorithm. Default = 10000.}
+the underlying grouping algorithm. Default = 10000.}
 
 \item{population_size}{Integer. Number of candidate trees used by the
-underlying class construction algorithm. Default = 200.}
+underlying grouping algorithm. Default = 200.}
 
 \item{seed}{Integer, seed for the random number generator (for reproducibility).}
 
@@ -38,69 +38,10 @@ underlying class construction algorithm. Default = 200.}
 \item{ntrees}{Deprecated. Use \code{population_size} instead.}
 }
 \value{
-A \code{list} of class \code{"tariff_classes"} with components:
-\describe{
-\item{prediction}{Data frame with predicted values.}
-\item{x}{Name of the continuous risk factor for which tariff classes are constructed.}
-\item{model}{Model type: \code{"frequency"}, \code{"severity"}, or \code{"pure_premium"}.}
-\item{data}{Data frame with predicted and observed values.}
-\item{x_obs}{Observed values of the continuous risk factor.}
-\item{splits}{Numeric vector with boundaries of the constructed tariff classes.}
-\item{tariff_classes}{Factor with the tariff class each observation falls into.}
-}
+See \code{\link[=derive_tariff_groups]{derive_tariff_groups()}}.
 }
 \description{
-Constructs insurance tariff classes for objects of class \code{"riskfactor_gam"}
-produced by \code{\link[=risk_factor_gam]{risk_factor_gam()}} (formerly \code{\link[=riskfactor_gam]{riskfactor_gam()}} and
-\code{\link[=fit_gam]{fit_gam()}}). The function derives
-data-driven candidate tariff classes from the fitted GAM response pattern.
-These classes are intended to help translate continuous risk factors into
-categorical rating factors that remain interpretable and practical for use in
-a generalized linear model (GLM).
+\code{construct_tariff_classes()} is deprecated as of version 0.9.0. Use
+\code{\link[=derive_tariff_groups]{derive_tariff_groups()}} instead.
 }
-\details{
-Evolutionary trees (via \code{\link[evtree:evtree]{evtree::evtree()}}) are used as a technique to bin the
-fitted GAM object into candidate tariff classes.
-This method is based on the work by Henckaerts et al. (2018).
-See Grubinger et al. (2014) for details on the parameters controlling the
-evtree fit.
-}
-\examples{
-\dontrun{
-library(dplyr)
-
-# Recommended new usage (SE)
-risk_factor_gam(MTPL,
-                risk_factor = "age_policyholder",
-                claim_count = "nclaims",
-                exposure = "exposure") |>
-  construct_tariff_classes()
-
-# Deprecated usage (NSE, still works with warning)
-fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure) |>
-  construct_tariff_classes()
-}
-
-}
-\references{
-Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a
-priori and a posteriori risk classification in insurance. \emph{Advances in
-Statistical Analysis}, 96(2), 187–224. \doi{doi:10.1007/s10182-011-0152-7}
-
-Grubinger, T., Zeileis, A., and Pfeiffer, K.-P. (2014). \emph{evtree:
-Evolutionary learning of globally optimal classification and regression trees
-in R}. Journal of Statistical Software, 61(1), 1–29.
-\doi{doi:10.18637/jss.v061.i01}
-
-Henckaerts, R., Antonio, K., Clijsters, M., & Verbelen, R.
-(2018). A data driven binning strategy for the construction of insurance
-tariff classes. \emph{Scandinavian Actuarial Journal}, 2018(8), 681–705.
-\doi{doi:10.1080/03461238.2018.1429300}
-
-Wood, S.N. (2011). Fast stable restricted maximum likelihood and
-marginal likelihood estimation of semiparametric generalized linear models.
-\emph{JRSS B}, 73(1), 3–36. \doi{doi:10.1111/j.1467-9868.2010.00749.x}
-}
-\author{
-Martin Haringa
-}
+\keyword{internal}

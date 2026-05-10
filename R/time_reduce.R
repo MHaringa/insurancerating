@@ -267,9 +267,24 @@ merge_date_ranges <- function(df,
   dt_reduce
 }
 
-#' @importFrom lifecycle deprecate_warn
-#' @rdname merge_date_ranges
+#' Deprecated alias for `merge_date_ranges()`
+#'
+#' @description
+#' `reduce()` is deprecated as of version 0.8.0. Use
+#' [merge_date_ranges()] instead.
+#'
+#' @inheritParams merge_date_ranges
+#' @param begin Deprecated NSE argument. Use `period_start` instead.
+#' @param end Deprecated NSE argument. Use `period_end` instead.
+#' @param ... Deprecated NSE grouping columns. Use `group_by` instead.
+#' @param agg_cols Deprecated NSE argument. Use `aggregate_cols` instead.
+#' @param agg Deprecated. Use `aggregate_fun` instead.
+#' @param min.gapwidth Deprecated. Use `merge_gap_days` instead.
+#'
+#' @return See [merge_date_ranges()].
+#'
 #' @export
+#' @keywords internal
 reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum",
                    min.gapwidth = 5) {
 

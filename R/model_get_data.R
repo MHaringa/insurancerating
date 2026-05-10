@@ -138,11 +138,16 @@ extract_model_data <- function(x) {
 }
 
 
-#' @rdname extract_model_data
+#' Deprecated alias for `extract_model_data()`
+#'
 #' @description
 #' `model_data()` is deprecated in favour of [extract_model_data()].
 #'
+#' @inheritParams extract_model_data
+#' @return See [extract_model_data()].
+#'
 #' @export
+#' @keywords internal
 model_data <- function(x) {
   lifecycle::deprecate_warn(
     "0.9.0",
@@ -552,11 +557,16 @@ rating_grid <- function(x,
 }
 
 
-#' @rdname rating_grid
+#' Deprecated alias for `rating_grid()`
+#'
 #' @description
 #' `construct_model_points()` is deprecated in favour of [rating_grid()].
 #'
+#' @inheritParams rating_grid
+#' @return See [rating_grid()].
+#'
 #' @export
+#' @keywords internal
 construct_model_points <- function(x,
                                    group_by = NULL,
                                    exposure = NULL,

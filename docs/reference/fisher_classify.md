@@ -8,14 +8,10 @@ Classifies a continuous numeric vector into intervals using Fisher-Jenks
 natural breaks. Useful for choropleth mapping or other applications
 where grouped ranges are required.
 
-`fisher()` is deprecated as of version 0.8.0.
-
 ## Usage
 
 ``` r
 fisher_classify(x, n = 7, dig.lab = NULL, diglab = NULL)
-
-fisher(x, n = 7, diglab = 2)
 ```
 
 ## Arguments

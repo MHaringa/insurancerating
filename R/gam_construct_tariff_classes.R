@@ -1,23 +1,20 @@
-#' Construct insurance tariff classes
+#' Derive insurance tariff groups
 #'
 #' @description
-#' Constructs insurance tariff classes for objects of class `"riskfactor_gam"`
-#' produced by [risk_factor_gam()] (formerly [riskfactor_gam()] and
-#' [fit_gam()]). The function derives
-#' data-driven candidate tariff classes from the fitted GAM response pattern.
-#' These classes are intended to help translate continuous risk factors into
-#' categorical rating factors that remain interpretable and practical for use in
-#' a generalized linear model (GLM).
+#' Derives data-driven tariff groups for a continuous risk factor from a fitted
+#' `"riskfactor_gam"` object produced by [risk_factor_gam()]. The groups help
+#' translate a smooth GAM response pattern into practical categorical rating
+#' factors for a GLM tariff.
 #'
 #' @param object An object of class `"riskfactor_gam"`, produced by
 #'   [risk_factor_gam()]. Objects with the old `"fitgam"` class are still
 #'   supported for backward compatibility.
 #' @param complexity Numeric. Controls the complexity penalty used when deriving
-#'   classes. Higher values generally yield fewer tariff classes. Default = 0.
+#'   groups. Higher values generally yield fewer tariff groups. Default = 0.
 #' @param max_iterations Integer. Maximum number of search iterations used by
-#'   the underlying class construction algorithm. Default = 10000.
+#'   the underlying grouping algorithm. Default = 10000.
 #' @param population_size Integer. Number of candidate trees used by the
-#'   underlying class construction algorithm. Default = 200.
+#'   underlying grouping algorithm. Default = 200.
 #' @param seed Integer, seed for the random number generator (for reproducibility).
 #' @param alpha Deprecated. Use `complexity` instead.
 #' @param niterations Deprecated. Use `max_iterations` instead.
@@ -25,21 +22,24 @@
 #'
 #' @details
 #' Evolutionary trees (via [evtree::evtree()]) are used as a technique to bin the
-#' fitted GAM object into candidate tariff classes.
+#' fitted GAM object into candidate tariff groups.
 #' This method is based on the work by Henckaerts et al. (2018).
 #' See Grubinger et al. (2014) for details on the parameters controlling the
 #' evtree fit.
 #'
-#' @return A `list` of class `"tariff_classes"` with components:
+#' @return A `list` of class `"tariff_groups"` with components:
 #' \describe{
-#'   \item{prediction}{Data frame with predicted values.}
-#'   \item{x}{Name of the continuous risk factor for which tariff classes are constructed.}
-#'   \item{model}{Model type: `"frequency"`, `"severity"`, or `"pure_premium"`.}
-#'   \item{data}{Data frame with predicted and observed values.}
-#'   \item{x_obs}{Observed values of the continuous risk factor.}
-#'   \item{splits}{Numeric vector with boundaries of the constructed tariff classes.}
-#'   \item{tariff_classes}{Factor with the tariff class each observation falls into.}
+#'   \item{gam_prediction}{Data frame with the fitted GAM curve.}
+#'   \item{risk_factor}{Name of the continuous risk factor.}
+#'   \item{model_type}{Model type: `"frequency"`, `"severity"`, or `"pure_premium"`.}
+#'   \item{classification_data}{Data frame used to derive the groups.}
+#'   \item{risk_factor_values}{Observed risk factor values in portfolio row order.}
+#'   \item{class_boundaries}{Numeric vector with group boundaries.}
+#'   \item{assigned_groups}{Factor with the tariff group assigned to each
+#'   observed risk factor value.}
 #' }
+#' For backward compatibility, the old components `prediction`, `x`, `model`,
+#' `data`, `x_obs`, `splits`, and `tariff_classes` are also returned.
 #'
 #' @author Martin Haringa
 #'
@@ -66,25 +66,24 @@
 #' library(dplyr)
 #'
 #' # Recommended new usage (SE)
-#' risk_factor_gam(MTPL,
-#'                 risk_factor = "age_policyholder",
-#'                 claim_count = "nclaims",
-#'                 exposure = "exposure") |>
-#'   construct_tariff_classes()
+#' age_groups <- risk_factor_gam(MTPL,
+#'                               risk_factor = "age_policyholder",
+#'                               claim_count = "nclaims",
+#'                               exposure = "exposure") |>
+#'   derive_tariff_groups()
 #'
-#' # Deprecated usage (NSE, still works with warning)
-#' fit_gam(MTPL, nclaims = nclaims, x = age_policyholder, exposure = exposure) |>
-#'   construct_tariff_classes()
+#' MTPL |>
+#'   add_tariff_groups(age_groups, name = "age_policyholder_group")
 #' }
 #'
 #' @importFrom evtree evtree evtree.control
 #'
 #' @export
-construct_tariff_classes <- function(object, complexity = 0,
-                                     max_iterations = 10000,
-                                     population_size = 200, seed = 1,
-                                     alpha = NULL, niterations = NULL,
-                                     ntrees = NULL) {
+derive_tariff_groups <- function(object, complexity = 0,
+                                 max_iterations = 10000,
+                                 population_size = 200, seed = 1,
+                                 alpha = NULL, niterations = NULL,
+                                 ntrees = NULL) {
 
   if (!inherits(object, "riskfactor_gam") && !inherits(object, "fitgam")) {
     stop("Input must be of class 'riskfactor_gam' as returned by risk_factor_gam().",
@@ -94,24 +93,24 @@ construct_tariff_classes <- function(object, complexity = 0,
   if (!is.null(alpha)) {
     lifecycle::deprecate_warn(
       "0.8.0",
-      "construct_tariff_classes(alpha = )",
-      "construct_tariff_classes(complexity = )"
+      "derive_tariff_groups(alpha = )",
+      "derive_tariff_groups(complexity = )"
     )
     complexity <- alpha
   }
   if (!is.null(niterations)) {
     lifecycle::deprecate_warn(
       "0.8.0",
-      "construct_tariff_classes(niterations = )",
-      "construct_tariff_classes(max_iterations = )"
+      "derive_tariff_groups(niterations = )",
+      "derive_tariff_groups(max_iterations = )"
     )
     max_iterations <- niterations
   }
   if (!is.null(ntrees)) {
     lifecycle::deprecate_warn(
       "0.8.0",
-      "construct_tariff_classes(ntrees = )",
-      "construct_tariff_classes(population_size = )"
+      "derive_tariff_groups(ntrees = )",
+      "derive_tariff_groups(population_size = )"
     )
     population_size <- ntrees
   }
@@ -133,7 +132,7 @@ construct_tariff_classes <- function(object, complexity = 0,
   x_range <- range(x_obs, na.rm = TRUE)
   if (!all(is.finite(x_range)) || x_range[1] == x_range[2]) {
     stop(
-      "Cannot construct tariff classes because the risk factor has fewer than ",
+      "Cannot derive tariff groups because the risk factor has fewer than ",
       "two distinct finite values.",
       call. = FALSE
     )
@@ -156,7 +155,7 @@ construct_tariff_classes <- function(object, complexity = 0,
     },
     error = function(e) {
       stop(
-        "Could not construct tariff classes with evtree: ",
+        "Could not derive tariff groups with evtree: ",
         conditionMessage(e),
         call. = FALSE
       )
@@ -165,7 +164,7 @@ construct_tariff_classes <- function(object, complexity = 0,
 
   if (length(split_x) == 0) {
     warning(
-      "No internal tariff class split was found; returning one interval.",
+      "No internal tariff group split was found; returning one interval.",
       call. = FALSE
     )
   }
@@ -176,6 +175,13 @@ construct_tariff_classes <- function(object, complexity = 0,
 
   structure(
     list(
+      gam_prediction = object$prediction,
+      risk_factor = object$x,
+      model_type = object$model,
+      classification_data = data_used,
+      risk_factor_values = x_obs,
+      class_boundaries = splits,
+      assigned_groups = cuts,
       prediction = object$prediction,
       x = object$x,
       model = object$model,
@@ -184,7 +190,41 @@ construct_tariff_classes <- function(object, complexity = 0,
       splits = splits,
       tariff_classes = cuts
     ),
-    class = c("tariff_classes", "constructtariffclasses")
+    class = c("tariff_groups", "tariff_classes", "constructtariffclasses")
+  )
+}
+
+
+#' Deprecated alias for `derive_tariff_groups()`
+#'
+#' @description
+#' `construct_tariff_classes()` is deprecated as of version 0.9.0. Use
+#' [derive_tariff_groups()] instead.
+#'
+#' @inheritParams derive_tariff_groups
+#' @return See [derive_tariff_groups()].
+#'
+#' @export
+#' @keywords internal
+construct_tariff_classes <- function(object, complexity = 0,
+                                     max_iterations = 10000,
+                                     population_size = 200, seed = 1,
+                                     alpha = NULL, niterations = NULL,
+                                     ntrees = NULL) {
+  lifecycle::deprecate_warn(
+    "0.9.0",
+    "construct_tariff_classes()",
+    "derive_tariff_groups()"
+  )
+  derive_tariff_groups(
+    object = object,
+    complexity = complexity,
+    max_iterations = max_iterations,
+    population_size = population_size,
+    seed = seed,
+    alpha = alpha,
+    niterations = niterations,
+    ntrees = ntrees
   )
 }
 
@@ -209,34 +249,120 @@ validate_tariff_class_control <- function(complexity, max_iterations,
 }
 
 #' @export
-print.tariff_classes <- function(x, ...) {
-  cat("Tariff class splits:\n")
-  print(x$splits)
+print.tariff_groups <- function(x, ...) {
+  cat("Tariff group boundaries:\n")
+  print(x$class_boundaries)
   invisible(x)
 }
 
 #' @export
-print.constructtariffclasses <- print.tariff_classes
+print.tariff_classes <- print.tariff_groups
 
 #' @export
-as.vector.tariff_classes <- function(x, ...) {
-  as.vector(x$splits)
+print.constructtariffclasses <- print.tariff_groups
+
+#' @export
+as.vector.tariff_groups <- function(x, ...) {
+  as.vector(x$class_boundaries)
 }
 
 #' @export
-as.vector.constructtariffclasses <- as.vector.tariff_classes
+as.vector.tariff_classes <- as.vector.tariff_groups
+
+#' @export
+as.vector.constructtariffclasses <- as.vector.tariff_groups
 
 
-#' Autoplot for tariff class objects
+#' Add derived tariff groups to portfolio data
 #'
 #' @description
-#' `autoplot()` method for objects created by [construct_tariff_classes()].
-#' Produces a [ggplot2::ggplot()] of the fitted GAM together with the constructed
-#' tariff class splits. Optionally, confidence intervals and observed data points
+#' Adds the tariff groups derived by [derive_tariff_groups()] as a new factor
+#' column to a portfolio data set. This is the recommended way to attach derived
+#' tariff groups to the same portfolio rows that were used to fit the risk
+#' factor GAM.
+#'
+#' @param data A data frame to which the tariff groups should be added.
+#' @param groups Object of class `"tariff_groups"`, produced by
+#'   [derive_tariff_groups()]. Old `"tariff_classes"` objects are accepted for
+#'   backward compatibility.
+#' @param name Character string. Name of the new output column. If `NULL`, the
+#'   name is based on the risk factor name, for example
+#'   `"age_policyholder_group"`.
+#' @param overwrite Logical. If `FALSE`, the function stops when `name` already
+#'   exists in `data`.
+#'
+#' @return A data frame with the derived tariff group column added.
+#'
+#' @author Martin Haringa
+#'
+#' @examples
+#' \dontrun{
+#' age_groups <- risk_factor_gam(
+#'   MTPL,
+#'   risk_factor = "age_policyholder",
+#'   claim_count = "nclaims",
+#'   exposure = "exposure"
+#' ) |>
+#'   derive_tariff_groups()
+#'
+#' MTPL |>
+#'   add_tariff_groups(age_groups, name = "age_policyholder_group")
+#' }
+#'
+#' @export
+add_tariff_groups <- function(data, groups, name = NULL, overwrite = FALSE) {
+  if (!is.data.frame(data)) {
+    stop("`data` must be a data frame.", call. = FALSE)
+  }
+  if (!inherits(groups, "tariff_groups") && !inherits(groups, "tariff_classes")) {
+    stop("`groups` must be an object returned by `derive_tariff_groups()`.",
+         call. = FALSE)
+  }
+  if (!is.logical(overwrite) || length(overwrite) != 1L || is.na(overwrite)) {
+    stop("`overwrite` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  assigned_groups <- groups$assigned_groups %||% groups$tariff_classes
+  if (!is.factor(assigned_groups)) {
+    stop("`groups` does not contain a valid tariff group factor.",
+         call. = FALSE)
+  }
+  if (nrow(data) != length(assigned_groups)) {
+    stop(
+      "`data` must have the same number of rows as the assigned tariff groups.",
+      call. = FALSE
+    )
+  }
+
+  if (is.null(name)) {
+    risk_factor <- groups$risk_factor %||% groups$x %||% "tariff"
+    name <- paste0(risk_factor, "_group")
+  }
+  if (!is.character(name) || length(name) != 1L || is.na(name) || name == "") {
+    stop("`name` must be a single non-empty character string.", call. = FALSE)
+  }
+  if (name %in% names(data) && !isTRUE(overwrite)) {
+    stop("Column `", name, "` already exists. Use `overwrite = TRUE` to replace it.",
+         call. = FALSE)
+  }
+
+  out <- data
+  out[[name]] <- assigned_groups
+  out
+}
+
+
+#' Autoplot for tariff group objects
+#'
+#' @description
+#' `autoplot()` method for objects created by [derive_tariff_groups()].
+#' Produces a [ggplot2::ggplot()] of the fitted GAM together with the derived
+#' tariff group boundaries. Optionally, confidence intervals and observed data
+#' points
 #' can be added.
 #'
-#' @param object An object of class `"tariff_classes"`, produced by
-#'   [construct_tariff_classes()].
+#' @param object An object of class `"tariff_groups"`, produced by
+#'   [derive_tariff_groups()].
 #' @param confidence Logical, whether to plot 95% confidence intervals.
 #'   Default = `FALSE`.
 #' @param conf_int Deprecated. Use `confidence` instead.
@@ -260,33 +386,34 @@ as.vector.constructtariffclasses <- as.vector.tariff_classes
 #' @import ggplot2
 #'
 #' @export
-autoplot.tariff_classes <- function(object,
-                                    confidence = FALSE,
-                                    color_gam = "steelblue",
-                                    show_observations = FALSE,
-                                    color_splits = "grey50",
-                                    size_points = 1,
-                                    color_points = "black",
-                                    rotate_labels = FALSE,
-                                    remove_outliers = NULL,
-                                    conf_int = NULL,
-                                    ...) {
+autoplot.tariff_groups <- function(object,
+                                   confidence = FALSE,
+                                   color_gam = "steelblue",
+                                   show_observations = FALSE,
+                                   color_splits = "grey50",
+                                   size_points = 1,
+                                   color_points = "black",
+                                   rotate_labels = FALSE,
+                                   remove_outliers = NULL,
+                                   conf_int = NULL,
+                                   ...) {
   if (!is.null(conf_int)) {
     lifecycle::deprecate_warn("0.9.0", "autoplot(conf_int)",
                               "autoplot(confidence)")
     confidence <- conf_int
   }
 
-  if (!inherits(object, "tariff_classes") &&
+  if (!inherits(object, "tariff_groups") &&
+      !inherits(object, "tariff_classes") &&
       !inherits(object, "constructtariffclasses")) {
-    stop("Input must be of class 'tariff_classes'.", call. = FALSE)
+    stop("Input must be of class 'tariff_groups'.", call. = FALSE)
   }
 
-  prediction <- object$prediction
-  xlab <- object$x
-  ylab <- object$model
-  points <- object$data
-  splits <- object$splits
+  prediction <- object$gam_prediction %||% object$prediction
+  xlab <- object$risk_factor %||% object$x
+  ylab <- object$model_type %||% object$model
+  points <- object$classification_data %||% object$data
+  splits <- object$class_boundaries %||% object$splits
 
   # determine fitted-value column robustly
   y_pred_col <- "fitted"
@@ -388,4 +515,7 @@ autoplot.tariff_classes <- function(object,
 }
 
 #' @export
-autoplot.constructtariffclasses <- autoplot.tariff_classes
+autoplot.tariff_classes <- autoplot.tariff_groups
+
+#' @export
+autoplot.constructtariffclasses <- autoplot.tariff_groups

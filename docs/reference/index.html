@@ -41,7 +41,7 @@
 
       <dl><dt>
 
-          <code><a href="factor_analysis.html">factor_analysis()</a></code> <code><a href="factor_analysis.html">univariate()</a></code>
+          <code><a href="factor_analysis.html">factor_analysis()</a></code>
 
         </dt>
         <dd>Factor analysis for discrete risk factors</dd>
@@ -55,14 +55,14 @@
 
         <dt>
 
-          <code><a href="outlier_histogram.html">outlier_histogram()</a></code> <code><a href="outlier_histogram.html">histbin()</a></code>
+          <code><a href="outlier_histogram.html">outlier_histogram()</a></code>
 
         </dt>
         <dd>Portfolio histogram with tail bins</dd>
       </dl></div><div class="section level2">
-      <h2 id="tariff-classes">Tariff classes<a class="anchor" aria-label="anchor" href="#tariff-classes"></a></h2>
+      <h2 id="tariff-groups">Tariff groups<a class="anchor" aria-label="anchor" href="#tariff-groups"></a></h2>
 
-      <div class="section-desc"><p>Analyse continuous risk factors and convert them to tariff classes.</p></div>
+      <div class="section-desc"><p>Analyse continuous risk factors and convert them to tariff groups.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -71,7 +71,7 @@
 
       <dl><dt>
 
-          <code><a href="risk_factor_gam.html">risk_factor_gam()</a></code> <code><a href="risk_factor_gam.html">riskfactor_gam()</a></code> <code><a href="risk_factor_gam.html">fit_gam()</a></code>
+          <code><a href="risk_factor_gam.html">risk_factor_gam()</a></code>
 
         </dt>
         <dd>Fit a GAM for a continuous risk factor</dd>
@@ -85,17 +85,24 @@
 
         <dt>
 
-          <code><a href="construct_tariff_classes.html">construct_tariff_classes()</a></code>
+          <code><a href="derive_tariff_groups.html">derive_tariff_groups()</a></code>
 
         </dt>
-        <dd>Construct insurance tariff classes</dd>
+        <dd>Derive insurance tariff groups</dd>
 
         <dt>
 
-          <code><a href="autoplot.tariff_classes.html">autoplot(<i>&lt;tariff_classes&gt;</i>)</a></code>
+          <code><a href="add_tariff_groups.html">add_tariff_groups()</a></code>
 
         </dt>
-        <dd>Autoplot for tariff class objects</dd>
+        <dd>Add derived tariff groups to portfolio data</dd>
+
+        <dt>
+
+          <code><a href="autoplot.tariff_groups.html">autoplot(<i>&lt;tariff_groups&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Autoplot for tariff group objects</dd>
       </dl></div><div class="section level2">
       <h2 id="modelling-and-interpretation">Modelling and interpretation<a class="anchor" aria-label="anchor" href="#modelling-and-interpretation"></a></h2>
 
@@ -108,7 +115,7 @@
 
       <dl><dt>
 
-          <code><a href="rating_table.html">rating_table()</a></code> <code><a href="rating_table.html">rating_factors()</a></code>
+          <code><a href="rating_table.html">rating_table()</a></code>
 
         </dt>
         <dd>Build rating tables from fitted pricing models</dd>
@@ -152,7 +159,7 @@
 
         <dt>
 
-          <code><a href="add_smoothing.html">add_smoothing()</a></code> <code><a href="add_smoothing.html">smooth_coef()</a></code>
+          <code><a href="add_smoothing.html">add_smoothing()</a></code>
 
         </dt>
         <dd>Add smoothing to a refinement workflow</dd>
@@ -166,7 +173,7 @@
 
         <dt>
 
-          <code><a href="add_restriction.html">add_restriction()</a></code> <code><a href="add_restriction.html">restrict_coef()</a></code>
+          <code><a href="add_restriction.html">add_restriction()</a></code>
 
         </dt>
         <dd>Add coefficient restrictions to a refinement workflow</dd>
@@ -231,7 +238,7 @@
 
         <dt>
 
-          <code><a href="bootstrap_performance.html">bootstrap_performance()</a></code> <code><a href="bootstrap_performance.html">bootstrap_rmse()</a></code>
+          <code><a href="bootstrap_performance.html">bootstrap_performance()</a></code>
 
         </dt>
         <dd>Bootstrapped model performance</dd>
@@ -275,14 +282,14 @@
 
       <dl><dt>
 
-          <code><a href="extract_model_data.html">extract_model_data()</a></code> <code><a href="extract_model_data.html">model_data()</a></code>
+          <code><a href="extract_model_data.html">extract_model_data()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Extract model data</dd>
 
         <dt>
 
-          <code><a href="rating_grid.html">rating_grid()</a></code> <code><a href="rating_grid.html">construct_model_points()</a></code>
+          <code><a href="rating_grid.html">rating_grid()</a></code>
 
         </dt>
         <dd>Construct observed rating-grid points from model data or a data frame</dd>
@@ -298,14 +305,14 @@
 
       <dl><dt>
 
-          <code><a href="fit_truncated_dist.html">fit_truncated_dist()</a></code>
+          <code><a href="fit_truncated_severity.html">fit_truncated_severity()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
         <dd>Fit severity distributions to truncated claim data</dd>
 
         <dt>
 
-          <code><a href="autoplot.truncated_dist.html">autoplot(<i>&lt;truncated_dist&gt;</i>)</a></code>
+          <code><a href="autoplot.truncated_severity.html">autoplot(<i>&lt;truncated_severity&gt;</i>)</a></code>
 
         </dt>
         <dd>Plot a fitted truncated severity distribution</dd>
@@ -335,28 +342,28 @@
 
       <dl><dt>
 
-          <code><a href="biggest_reference.html">biggest_reference()</a></code>
+          <code><a href="set_reference_level.html">set_reference_level()</a></code>
 
         </dt>
-        <dd>Set reference group to the group with largest exposure</dd>
+        <dd>Set the reference level of a factor</dd>
 
         <dt>
 
-          <code><a href="split_periods_to_months.html">split_periods_to_months()</a></code> <code><a href="split_periods_to_months.html">period_to_months()</a></code>
+          <code><a href="split_periods_to_months.html">split_periods_to_months()</a></code>
 
         </dt>
         <dd>Split policy periods into monthly rows</dd>
 
         <dt>
 
-          <code><a href="active_rows_by_date.html">active_rows_by_date()</a></code> <code><a href="active_rows_by_date.html">rows_per_date()</a></code>
+          <code><a href="active_rows_by_date.html">active_rows_by_date()</a></code>
 
         </dt>
         <dd>Find active portfolio rows for event dates</dd>
 
         <dt>
 
-          <code><a href="merge_date_ranges.html">merge_date_ranges()</a></code> <code><a href="merge_date_ranges.html">reduce()</a></code>
+          <code><a href="merge_date_ranges.html">merge_date_ranges()</a></code>
 
         </dt>
         <dd>Reduce portfolio periods by merging adjacent date ranges</dd>
@@ -395,108 +402,150 @@
 
       <dl><dt>
 
-          <code><a href="factor_analysis.html">factor_analysis()</a></code> <code><a href="factor_analysis.html">univariate()</a></code>
+          <code><a href="univariate.html">univariate()</a></code>
 
         </dt>
-        <dd>Factor analysis for discrete risk factors</dd>
+        <dd>Deprecated alias for <code><a href="../reference/factor_analysis.html">factor_analysis()</a></code></dd>
 
         <dt>
 
-          <code><a href="risk_factor_gam.html">risk_factor_gam()</a></code> <code><a href="risk_factor_gam.html">riskfactor_gam()</a></code> <code><a href="risk_factor_gam.html">fit_gam()</a></code>
+          <code><a href="riskfactor_gam.html">riskfactor_gam()</a></code>
 
         </dt>
-        <dd>Fit a GAM for a continuous risk factor</dd>
+        <dd>Deprecated alias for <code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code></dd>
 
         <dt>
 
-          <code><a href="rating_table.html">rating_table()</a></code> <code><a href="rating_table.html">rating_factors()</a></code>
+          <code><a href="fit_gam.html">fit_gam()</a></code>
 
         </dt>
-        <dd>Build rating tables from fitted pricing models</dd>
+        <dd>Deprecated NSE wrapper for <code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code></dd>
+
+        <dt>
+
+          <code><a href="rating_factors.html">rating_factors()</a></code>
+
+        </dt>
+        <dd>Deprecated alias for <code><a href="../reference/rating_table.html">rating_table()</a></code></dd>
 
         <dt>
 
           <code><a href="rating_factors2.html">rating_factors2()</a></code>
           <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
         </dt>
-        <dd>Include reference group in regression output</dd>
+        <dd>Deprecated single-model rating table helper</dd>
 
         <dt>
 
-          <code><a href="extract_model_data.html">extract_model_data()</a></code> <code><a href="extract_model_data.html">model_data()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
-        </dt>
-        <dd>Extract model data</dd>
-
-        <dt>
-
-          <code><a href="rating_grid.html">rating_grid()</a></code> <code><a href="rating_grid.html">construct_model_points()</a></code>
+          <code><a href="model_data.html">model_data()</a></code>
 
         </dt>
-        <dd>Construct observed rating-grid points from model data or a data frame</dd>
+        <dd>Deprecated alias for <code><a href="../reference/extract_model_data.html">extract_model_data()</a></code></dd>
 
         <dt>
 
-          <code><a href="bootstrap_performance.html">bootstrap_performance()</a></code> <code><a href="bootstrap_performance.html">bootstrap_rmse()</a></code>
+          <code><a href="construct_model_points.html">construct_model_points()</a></code>
 
         </dt>
-        <dd>Bootstrapped model performance</dd>
+        <dd>Deprecated alias for <code><a href="../reference/rating_grid.html">rating_grid()</a></code></dd>
 
         <dt>
 
-          <code><a href="fisher_classify.html">fisher_classify()</a></code> <code><a href="fisher_classify.html">fisher()</a></code>
+          <code><a href="construct_tariff_classes.html">construct_tariff_classes()</a></code>
+
+        </dt>
+        <dd>Deprecated alias for <code><a href="../reference/derive_tariff_groups.html">derive_tariff_groups()</a></code></dd>
+
+        <dt>
+
+          <code><a href="bootstrap_rmse.html">bootstrap_rmse()</a></code>
+
+        </dt>
+        <dd>Deprecated alias for <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code></dd>
+
+        <dt>
+
+          <code><a href="fit_truncated_dist.html">fit_truncated_dist()</a></code>
+
+        </dt>
+        <dd>Deprecated alias for <code><a href="../reference/fit_truncated_severity.html">fit_truncated_severity()</a></code></dd>
+
+        <dt>
+
+          <code><a href="fisher_classify.html">fisher_classify()</a></code>
 
         </dt>
         <dd>Fisher's natural breaks classification</dd>
 
         <dt>
 
-          <code><a href="outlier_histogram.html">outlier_histogram()</a></code> <code><a href="outlier_histogram.html">histbin()</a></code>
+          <code><a href="fisher.html">fisher()</a></code>
 
         </dt>
-        <dd>Portfolio histogram with tail bins</dd>
+        <dd>Deprecated alias for <code><a href="../reference/fisher_classify.html">fisher_classify()</a></code></dd>
 
         <dt>
 
-          <code><a href="add_restriction.html">add_restriction()</a></code> <code><a href="add_restriction.html">restrict_coef()</a></code>
+          <code><a href="histbin.html">histbin()</a></code>
 
         </dt>
-        <dd>Add coefficient restrictions to a refinement workflow</dd>
+        <dd>Deprecated alias for <code><a href="../reference/outlier_histogram.html">outlier_histogram()</a></code></dd>
 
         <dt>
 
-          <code><a href="add_smoothing.html">add_smoothing()</a></code> <code><a href="add_smoothing.html">smooth_coef()</a></code>
+          <code><a href="biggest_reference.html">biggest_reference()</a></code>
 
         </dt>
-        <dd>Add smoothing to a refinement workflow</dd>
+        <dd>Deprecated alias for <code><a href="../reference/set_reference_level.html">set_reference_level()</a></code></dd>
 
         <dt>
 
-          <code><a href="refit_glm.html">refit_glm()</a></code> <code><a href="refit_glm.html">update_glm()</a></code>
+          <code><a href="restrict_coef.html">restrict_coef()</a></code>
 
         </dt>
-        <dd>Refit a GLM model or refinement workflow</dd>
+        <dd>Deprecated restriction helper</dd>
 
         <dt>
 
-          <code><a href="split_periods_to_months.html">split_periods_to_months()</a></code> <code><a href="split_periods_to_months.html">period_to_months()</a></code>
+          <code><a href="smooth_coef.html">smooth_coef()</a></code>
 
         </dt>
-        <dd>Split policy periods into monthly rows</dd>
+        <dd>Deprecated smoothing helper</dd>
 
         <dt>
 
-          <code><a href="active_rows_by_date.html">active_rows_by_date()</a></code> <code><a href="active_rows_by_date.html">rows_per_date()</a></code>
+          <code><a href="refit_glm.html">refit_glm()</a></code>
 
         </dt>
-        <dd>Find active portfolio rows for event dates</dd>
+        <dd>Deprecated refit wrapper</dd>
 
         <dt>
 
-          <code><a href="merge_date_ranges.html">merge_date_ranges()</a></code> <code><a href="merge_date_ranges.html">reduce()</a></code>
+          <code><a href="update_glm.html">update_glm()</a></code>
 
         </dt>
-        <dd>Reduce portfolio periods by merging adjacent date ranges</dd>
+        <dd>Deprecated alias for <code><a href="../reference/refit_glm.html">refit_glm()</a></code></dd>
+
+        <dt>
+
+          <code><a href="period_to_months.html">period_to_months()</a></code>
+
+        </dt>
+        <dd>Deprecated alias for <code><a href="../reference/split_periods_to_months.html">split_periods_to_months()</a></code></dd>
+
+        <dt>
+
+          <code><a href="rows_per_date.html">rows_per_date()</a></code>
+
+        </dt>
+        <dd>Deprecated alias for <code><a href="../reference/active_rows_by_date.html">active_rows_by_date()</a></code></dd>
+
+        <dt>
+
+          <code><a href="reduce.html">reduce()</a></code>
+
+        </dt>
+        <dd>Deprecated alias for <code><a href="../reference/merge_date_ranges.html">merge_date_ranges()</a></code></dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

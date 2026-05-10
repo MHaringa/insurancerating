@@ -1,15 +1,13 @@
-# Refit a GLM model or refinement workflow
+# Deprecated refit wrapper
 
-Backwards-compatible wrapper. Prefer using
+`refit_glm()` is deprecated as of version 0.9.0. Use
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-for the new refinement workflow.
+instead.
 
 ## Usage
 
 ``` r
 refit_glm(x, intercept_only = FALSE, ...)
-
-update_glm(x, intercept_only = FALSE, ...)
 ```
 
 ## Arguments

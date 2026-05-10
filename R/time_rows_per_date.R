@@ -157,8 +157,23 @@ active_rows_by_date <- function(portfolio,
   ans
 }
 
-#' @rdname active_rows_by_date
+#' Deprecated alias for `active_rows_by_date()`
+#'
+#' @description
+#' `rows_per_date()` is deprecated as of version 0.9.0. Use
+#' [active_rows_by_date()] instead.
+#'
+#' @inheritParams active_rows_by_date
+#' @param df Deprecated. Use `portfolio` instead.
+#' @param df_begin Deprecated NSE argument. Use `period_start` instead.
+#' @param df_end Deprecated NSE argument. Use `period_end` instead.
+#' @param dates_date Deprecated NSE argument. Use `date` instead.
+#' @param ... Deprecated NSE join columns. Use `by` instead.
+#'
+#' @return See [active_rows_by_date()].
+#'
 #' @export
+#' @keywords internal
 rows_per_date <- function(df, dates, df_begin, df_end, dates_date, ...,
                           nomatch = NULL, mult = "all") {
   lifecycle::deprecate_warn("0.9.0", "rows_per_date()",

@@ -2,7 +2,6 @@
 % Please edit documentation in R/model_performance_bootstrap_rmse.R
 \name{bootstrap_performance}
 \alias{bootstrap_performance}
-\alias{bootstrap_rmse}
 \title{Bootstrapped model performance}
 \usage{
 bootstrap_performance(
@@ -16,17 +15,6 @@ bootstrap_performance(
   rmse_model = NULL,
   n = NULL,
   frac = NULL
-)
-
-bootstrap_rmse(
-  model,
-  data,
-  n = 50,
-  frac = 1,
-  metric = "rmse",
-  sampling = c("bootstrap", "split"),
-  show_progress = TRUE,
-  rmse_model = NULL
 )
 }
 \arguments{
@@ -69,10 +57,6 @@ An object of class \code{"bootstrap_performance"}, which is a list with componen
 \description{
 Generate repeated train/evaluation samples to compute model performance.
 Currently, the supported metric is root mean squared error (RMSE).
-
-\code{bootstrap_rmse()} is deprecated in favour of \code{\link[=bootstrap_performance]{bootstrap_performance()}}.
-Objects returned by \code{bootstrap_rmse()} keep class \code{"bootstrap_rmse"} for
-backward compatibility and also inherit from \code{"bootstrap_performance"}.
 }
 \details{
 To test the predictive stability of a fitted model it can be helpful to

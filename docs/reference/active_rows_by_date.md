@@ -16,17 +16,6 @@ active_rows_by_date(
   nomatch = NULL,
   mult = "all"
 )
-
-rows_per_date(
-  df,
-  dates,
-  df_begin,
-  df_end,
-  dates_date,
-  ...,
-  nomatch = NULL,
-  mult = "all"
-)
 ```
 
 ## Arguments
@@ -73,7 +62,7 @@ rows_per_date(
 - df, df_begin, df_end, dates_date, ...:
 
   Deprecated argument names kept for backward compatibility in
-  `rows_per_date()`.
+  [`rows_per_date()`](https://mharinga.github.io/insurancerating/reference/rows_per_date.md).
 
 ## Value
 

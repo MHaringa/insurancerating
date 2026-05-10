@@ -2,7 +2,7 @@
 % Please edit documentation in R/truncated_distributions.R
 \name{fit_truncated_dist}
 \alias{fit_truncated_dist}
-\title{Fit severity distributions to truncated claim data}
+\title{Deprecated alias for \code{fit_truncated_severity()}}
 \usage{
 fit_truncated_dist(
   losses = NULL,
@@ -59,53 +59,10 @@ fitting loop.}
 for backward compatibility.}
 }
 \value{
-An object of class \code{c("truncated_dist", "fitdist")}. The object
-contains the fitted distribution parameters from \code{\link[fitdistrplus:fitdist]{fitdistrplus::fitdist()}}
-and additional attributes:
-\describe{
-\item{truncated_vec}{The observed losses used for fitting.}
-\item{lower_truncation, upper_truncation}{The truncation bounds.}
-\item{fit_attempts}{Metadata for each attempted start combination.}
-\item{n_attempts, n_success, n_failed}{Fit attempt counts.}
-\item{best_attempt_index}{Index of the selected start combination.}
-}
+See \code{\link[=fit_truncated_severity]{fit_truncated_severity()}}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-Estimate an underlying claim severity distribution when the observed claims
-are truncated.
+\code{fit_truncated_dist()} is deprecated as of version 0.9.0. Use
+\code{\link[=fit_truncated_severity]{fit_truncated_severity()}} instead.
 }
-\details{
-In insurance pricing, severity models are often fitted on claim amounts that
-are not observed over the full range of possible losses. Small claims may be
-absent because of a deductible, reporting threshold, or data extraction rule.
-Very large claims may be capped, excluded, or modelled separately as large
-losses. A standard gamma or lognormal fit on the remaining observed claims
-treats that truncated sample as if it were complete, which can bias the
-estimated severity distribution.
-
-\code{fit_truncated_dist()} fits the distribution conditional on the claim being
-observed within the truncation interval. This means the fitted likelihood
-uses the density divided by the probability mass between \code{lower_truncation}
-and \code{upper_truncation}. The function is intended for truncation, where
-claims outside the interval are absent from the data. This differs from
-censoring, where claims outside a limit are still observed but their exact
-amount is not known.
-
-Observed losses must lie strictly inside the truncation interval. Values
-outside the interval indicate that the bounds do not describe the data and
-therefore produce an error.
-}
-\examples{
-\dontrun{
-observed <- MTPL2$amount[MTPL2$amount > 500 & MTPL2$amount < 10000]
-fit <- fit_truncated_dist(
-  losses = observed,
-  distribution = "gamma",
-  lower_truncation = 500,
-  upper_truncation = 10000
-)
-autoplot(fit)
-}
-
-}
+\keyword{internal}

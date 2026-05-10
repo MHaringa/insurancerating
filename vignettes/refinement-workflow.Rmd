@@ -71,7 +71,7 @@ the final pricing signal that will be used in the tariff.
 The example below starts from one common premium modelling setup:
 
 -	analyse a continuous variable with a GAM
--	convert it to tariff classes
+-	convert it to tariff groups
 -	fit frequency and severity models
 -	combine both into a premium proxy
 -	fit an unrestricted premium model
@@ -89,12 +89,12 @@ age_policyholder_frequency <- risk_factor_gam(
   exposure = "exposure"
 )
 
-clusters_freq <- construct_tariff_classes(age_policyholder_frequency)
+age_groups_freq <- derive_tariff_groups(age_policyholder_frequency)
 
 dat <- MTPL |>
-  mutate(age_policyholder_freq_cat = clusters_freq$tariff_classes) |>
+  add_tariff_groups(age_groups_freq, name = "age_policyholder_freq_cat") |>
   mutate(across(where(is.character), as.factor)) |>
-  mutate(across(where(is.factor), ~ biggest_reference(., exposure)))
+  mutate(across(where(is.factor), ~ set_reference_level(., exposure)))
 
 freq <- glm(
   nclaims ~ bm + age_policyholder_freq_cat,
