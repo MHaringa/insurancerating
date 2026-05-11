@@ -59,7 +59,7 @@ A \code{list} of class \code{"riskfactor_gam"} with the following elements:
 Fits a generalized additive model (GAM) to a continuous risk factor in one of
 three insurance pricing contexts: claim frequency, claim severity, or pure
 premium. The fitted curve helps assess non-linear rating effects before a
-continuous variable is grouped into tariff groups or used in a GLM workflow.
+continuous variable is grouped into tariff segments or used in a GLM workflow.
 }
 \details{
 \itemize{

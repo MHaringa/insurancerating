@@ -3,67 +3,89 @@
 #' @description
 #' Create a ggplot visualisation of a `rating_table` object produced by
 #' [rating_table()]. Estimates are plotted per risk factor, with optional
-#' exposure bars and, optionally, an additional univariate line.
+#' exposure bars. Observed portfolio experience can be added first with
+#' [add_observed_experience()].
 #'
-#' When `univariate_scale = "reference"`, the univariate line is scaled to the
-#' model reference group. The reference group is determined as the level with
-#' model coefficient equal to 1. If no level is exactly equal to 1, the level
-#' with coefficient closest to 1 is used.
+#' When observed experience is attached, it is plotted as an additional line.
+#' The scaling is controlled by [add_observed_experience()].
 #'
 #' @param object A `rating_table` object returned by [rating_table()].
 #' @param risk_factors Character vector specifying which risk factors to plot.
 #'   Defaults to all risk factors.
 #' @param ncol Number of columns in the patchwork layout. Default is 1.
-#' @param labels Logical; if `TRUE`, show exposure values as labels on the bars.
-#'   Default is `TRUE`.
-#' @param dec.mark Character; decimal separator, either `","` (default) or `"."`.
-#' @param ylab Character; label for the y-axis. Default is `"Relativity"`.
-#' @param fill Fill color for the exposure bars. If `NULL`, taken from the
+#' @param show_exposure_labels Logical; if `TRUE`, show exposure values as
+#'   labels on the bars. Default is `TRUE`.
+#' @param decimal_mark Character; decimal separator, either `","` (default) or
+#'   `"."`.
+#' @param y_label Character; label for the y-axis. Default is `"Relativity"`.
+#' @param bar_fill Fill color for the exposure bars. If `NULL`, taken from the
 #'   internal palette.
-#' @param color Optional override for model line colors. If `NULL`, colors are
-#'   taken from the internal discrete palette.
-#' @param linetype Logical; if `TRUE`, use different line types for models.
+#' @param model_color Optional override for model line colors. If `NULL`, colors
+#'   are taken from the internal discrete palette.
+#' @param use_linetype Logical; if `TRUE`, use different line types for models.
 #'   Default is `FALSE`.
-#' @param univariate Optional `univariate` object returned by
-#'   [factor_analysis()]. If supplied, the selected univariate statistic is
-#'   added as an extra line.
-#' @param univariate_var Character; statistic from `univariate` to plot.
-#'   Default is `"risk_premium"`.
-#' @param univariate_name Character; legend label for the univariate line.
-#'   Default is `"Univariate"`.
-#' @param univariate_color Optional override for the univariate line color.
-#'   If `NULL`, the internal risk premium color is used.
-#' @param univariate_scale Character; scaling applied to the univariate line.
-#'   One of `"reference"` (default) or `"mean"`.
 #' @param rotate_angle Numeric value for angle of labels on the x-axis (degrees).
 #' @param custom_theme List with customised theme options.
 #' @param remove_underscores Logical; remove underscores from labels.
+#' @param labels Deprecated alias for `show_exposure_labels`.
+#' @param dec.mark Deprecated alias for `decimal_mark`.
+#' @param ylab Deprecated alias for `y_label`.
+#' @param fill Deprecated alias for `bar_fill`.
+#' @param color Deprecated alias for `model_color`.
+#' @param linetype Deprecated alias for `use_linetype`.
 #' @param ... Additional arguments passed to ggplot2 layers.
 #'
 #' @return A `ggplot`/`patchwork` object.
 #'
 #' @import ggplot2
 #' @importFrom patchwork wrap_plots
-#' @aliases autoplot.rating_table
 #' @export
-autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
-                                labels = TRUE,
-                                dec.mark = ",",
-                                ylab = "Relativity",
-                                fill = NULL,
-                                color = NULL,
-                                linetype = FALSE,
-                                univariate = NULL,
-                                univariate_var = "risk_premium",
-                                univariate_name = "Univariate",
-                                univariate_color = NULL,
-                                univariate_scale = c("reference", "mean"),
-                                rotate_angle = NULL,
-                                custom_theme = NULL,
-                                remove_underscores = FALSE,
-                                ...) {
+autoplot.rating_table <- function(object,
+                                  risk_factors = NULL,
+                                  ncol = 1,
+                                  show_exposure_labels = TRUE,
+                                  decimal_mark = ",",
+                                  y_label = "Relativity",
+                                  bar_fill = NULL,
+                                  model_color = NULL,
+                                  use_linetype = FALSE,
+                                  rotate_angle = NULL,
+                                  custom_theme = NULL,
+                                  remove_underscores = FALSE,
+                                  labels = NULL,
+                                  dec.mark = NULL,
+                                  ylab = NULL,
+                                  fill = NULL,
+                                  color = NULL,
+                                  linetype = NULL,
+                                  ...) {
 
-  univariate_scale <- match.arg(univariate_scale)
+  old_args <- resolve_autoplot_rating_table_args(
+    show_exposure_labels = show_exposure_labels,
+    decimal_mark = decimal_mark,
+    y_label = y_label,
+    bar_fill = bar_fill,
+    model_color = model_color,
+    use_linetype = use_linetype,
+    show_exposure_labels_supplied = !missing(show_exposure_labels),
+    decimal_mark_supplied = !missing(decimal_mark),
+    y_label_supplied = !missing(y_label),
+    bar_fill_supplied = !missing(bar_fill),
+    model_color_supplied = !missing(model_color),
+    use_linetype_supplied = !missing(use_linetype),
+    labels = labels,
+    dec.mark = dec.mark,
+    ylab = ylab,
+    fill = fill,
+    color = color,
+    linetype = linetype
+  )
+  show_exposure_labels <- old_args$show_exposure_labels
+  decimal_mark <- old_args$decimal_mark
+  y_label <- old_args$y_label
+  bar_fill <- old_args$bar_fill
+  model_color <- old_args$model_color
+  use_linetype <- old_args$use_linetype
 
   df_full <- object$df
   models <- object$models
@@ -99,7 +121,11 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
       panel.border     = ggplot2::element_blank(),
       axis.text.y.right  = ggplot2::element_text(color = "#9E9E9E", size = 8),
       axis.title.y.right = ggplot2::element_text(color = "#9E9E9E", size = 9),
-      axis.title.y       = ggplot2::element_text(size = 10)
+      axis.title.y       = ggplot2::element_text(size = 10),
+      axis.line.x = ggplot2::element_line(colour = "grey55", linewidth = 0.3),
+      axis.line.y.left = ggplot2::element_line(colour = "grey55", linewidth = 0.3),
+      axis.ticks = ggplot2::element_line(colour = "grey55", linewidth = 0.3),
+      axis.ticks.y.right = ggplot2::element_line(colour = "grey75", linewidth = 0.25)
     )
   }
 
@@ -147,8 +173,14 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
   pal <- plot_palette()
   grid_theme <- plot_grid_theme()
 
-  final_fill <- if (is.null(fill)) pal$bg_bar else fill
-  final_uni_color <- if (is.null(univariate_color)) pal$risk_premium else univariate_color
+  final_fill <- if (is.null(bar_fill)) pal$bg_bar else bar_fill
+  observed <- object$observed_experience
+  observed_label <- if (!is.null(observed)) observed$label else NULL
+  observed_color <- if (!is.null(observed) && !is.null(observed$color)) {
+    observed$color
+  } else {
+    pal$risk_premium
+  }
 
   # remove reference categories from plotted model lines
   df <- df_full[df_full$risk_factor != df_full$level, , drop = FALSE]
@@ -170,35 +202,39 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
     df_long$est <- exp(df_long$est)
   }
 
-  uni_df <- NULL
+  observed_df <- NULL
 
-  if (!is.null(univariate)) {
-    xvar_uni <- attr(univariate, "xvar")
-    if (length(xvar_uni) > 1) {
-      xvar_uni <- xvar_uni[1]
+  if (!is.null(observed)) {
+    experience <- observed$experience
+    observed_metric <- observed$metric
+    observed_scale <- observed$scale
+    xvar_observed <- attr(experience, "xvar")
+    if (length(xvar_observed) > 1) {
+      xvar_observed <- xvar_observed[1]
     }
 
-    if (!univariate_var %in% names(univariate)) {
-      stop("`univariate_var` not found in `univariate` object.", call. = FALSE)
-    }
-
-    uni_df <- as.data.frame(univariate)
-
-    if (!xvar_uni %in% names(uni_df)) {
-      stop("The selected `univariate` object does not contain the expected x variable.",
+    if (!observed_metric %in% names(experience)) {
+      stop("The observed metric is not found in the attached factor_analysis object.",
            call. = FALSE)
     }
 
-    names(uni_df)[names(uni_df) == xvar_uni] <- "level"
+    observed_df <- as.data.frame(experience)
 
-    if (!"risk_factor" %in% names(uni_df)) {
-      uni_df$risk_factor <- xvar_uni
+    if (!xvar_observed %in% names(observed_df)) {
+      stop("The attached factor_analysis object does not contain the expected x variable.",
+           call. = FALSE)
     }
 
-    uni_df$level <- as.character(uni_df$level)
+    names(observed_df)[names(observed_df) == xvar_observed] <- "level"
+
+    if (!"risk_factor" %in% names(observed_df)) {
+      observed_df$risk_factor <- xvar_observed
+    }
+
+    observed_df$level <- as.character(observed_df$level)
 
     ref_levels <- vapply(
-      unique(uni_df$risk_factor),
+      unique(observed_df$risk_factor),
       function(rf) {
         ref <- get_reference_level(df_full, rf_name = rf, expon = expon)
         if (is.null(ref)) NA_character_ else ref
@@ -212,27 +248,27 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
       stringsAsFactors = FALSE
     )
 
-    uni_df <- uni_df |>
+    observed_df <- observed_df |>
       dplyr::left_join(ref_lookup, by = "risk_factor") |>
       dplyr::group_by(.data[["risk_factor"]]) |>
       dplyr::mutate(
         est = dplyr::case_when(
-          univariate_scale == "mean" ~ .data[[univariate_var]] /
-            mean(.data[[univariate_var]], na.rm = TRUE),
-          univariate_scale == "reference" &
-            !is.na(.data[["ref_level"]]) ~ .data[[univariate_var]] /
-            .data[[univariate_var]][.data[["level"]] == .data[["ref_level"]]][1],
-          univariate_scale == "reference" &
-            is.na(.data[["ref_level"]]) ~ .data[[univariate_var]] /
-            mean(.data[[univariate_var]], na.rm = TRUE)
+          observed_scale == "mean" ~ .data[[observed_metric]] /
+            mean(.data[[observed_metric]], na.rm = TRUE),
+          observed_scale == "reference" &
+            !is.na(.data[["ref_level"]]) ~ .data[[observed_metric]] /
+            .data[[observed_metric]][.data[["level"]] == .data[["ref_level"]]][1],
+          observed_scale == "reference" &
+            is.na(.data[["ref_level"]]) ~ .data[[observed_metric]] /
+            mean(.data[[observed_metric]], na.rm = TRUE)
         ),
-        model = univariate_name
+        model = observed_label
       ) |>
       dplyr::ungroup() |>
       dplyr::select("risk_factor", "level", "model", "est")
   }
 
-  sep_fn <- if (dec.mark == ",") {
+  sep_fn <- if (decimal_mark == ",") {
     function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE)
   } else {
     function(x) format(x, big.mark = ",", decimal.mark = ".", scientific = FALSE)
@@ -257,8 +293,8 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
     df1 <- df_long[df_long$risk_factor == rf_i, , drop = FALSE]
     df1$level <- factor(df1$level, levels = unique(df1$level))
 
-    if (!is.null(uni_df)) {
-      uni1 <- uni_df[uni_df$risk_factor == rf_i, , drop = FALSE]
+    if (!is.null(observed_df)) {
+      uni1 <- observed_df[observed_df$risk_factor == rf_i, , drop = FALSE]
 
       if (nrow(uni1) > 0) {
         uni1$level <- factor(uni1$level, levels = levels(df1$level))
@@ -298,15 +334,21 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
 
     model_levels <- unique(df1$model)
 
-    model_cols <- discrete_palette_values(sum(model_levels != univariate_name))
-    names(model_cols) <- model_levels[model_levels != univariate_name]
-
-    if (!is.null(color)) {
-      model_cols[] <- color
+    model_names <- if (is.null(observed_label)) {
+      model_levels
+    } else {
+      model_levels[model_levels != observed_label]
     }
 
-    if (univariate_name %in% model_levels) {
-      model_cols <- c(model_cols, setNames(final_uni_color, univariate_name))
+    model_cols <- discrete_palette_values(length(model_names))
+    names(model_cols) <- model_names
+
+    if (!is.null(model_color)) {
+      model_cols[] <- model_color
+    }
+
+    if (!is.null(observed_label) && observed_label %in% model_levels) {
+      model_cols <- c(model_cols, setNames(observed_color, observed_label))
     }
 
     p <- ggplot2::ggplot(data = df1) +
@@ -344,7 +386,7 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
         )
     }
 
-    if (isTRUE(linetype)) {
+    if (isTRUE(use_linetype)) {
       p <- p +
         ggplot2::geom_line(
           ggplot2::aes(
@@ -383,7 +425,7 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
         size = 2.2
       )
 
-    if (isTRUE(labels) && isTRUE(has_valid_exposure)) {
+    if (isTRUE(show_exposure_labels) && isTRUE(has_valid_exposure)) {
       p <- p +
         ggplot2::geom_text(
           data = df1_bar,
@@ -402,7 +444,7 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
       ggplot2::scale_color_manual(values = model_cols) +
       ggplot2::labs(
         x = if (remove_underscores) gsub("_", " ", rf_i) else rf_i,
-        y = ylab
+        y = y_label
       ) +
       ggplot2::theme(
         legend.title = ggplot2::element_blank()
@@ -439,4 +481,96 @@ autoplot.riskfactor <- function(object, risk_factors = NULL, ncol = 1,
 }
 
 #' @export
-autoplot.rating_table <- autoplot.riskfactor
+autoplot.riskfactor <- autoplot.rating_table
+
+
+resolve_autoplot_rating_table_args <- function(show_exposure_labels,
+                                               decimal_mark,
+                                               y_label,
+                                               bar_fill,
+                                               model_color,
+                                               use_linetype,
+                                               show_exposure_labels_supplied,
+                                               decimal_mark_supplied,
+                                               y_label_supplied,
+                                               bar_fill_supplied,
+                                               model_color_supplied,
+                                               use_linetype_supplied,
+                                               labels = NULL,
+                                               dec.mark = NULL,
+                                               ylab = NULL,
+                                               fill = NULL,
+                                               color = NULL,
+                                               linetype = NULL) {
+  if (!is.null(labels)) {
+    if (show_exposure_labels_supplied) {
+      stop("Use only one of `show_exposure_labels` and deprecated `labels`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(labels)",
+      "autoplot(show_exposure_labels)"
+    )
+    show_exposure_labels <- labels
+  }
+  if (!is.null(dec.mark)) {
+    if (decimal_mark_supplied) {
+      stop("Use only one of `decimal_mark` and deprecated `dec.mark`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(dec.mark)",
+      "autoplot(decimal_mark)"
+    )
+    decimal_mark <- dec.mark
+  }
+  if (!is.null(ylab)) {
+    if (y_label_supplied) {
+      stop("Use only one of `y_label` and deprecated `ylab`.", call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "autoplot(ylab)", "autoplot(y_label)")
+    y_label <- ylab
+  }
+  if (!is.null(fill)) {
+    if (bar_fill_supplied) {
+      stop("Use only one of `bar_fill` and deprecated `fill`.", call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "autoplot(fill)", "autoplot(bar_fill)")
+    bar_fill <- fill
+  }
+  if (!is.null(color)) {
+    if (model_color_supplied) {
+      stop("Use only one of `model_color` and deprecated `color`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(color)",
+      "autoplot(model_color)"
+    )
+    model_color <- color
+  }
+  if (!is.null(linetype)) {
+    if (use_linetype_supplied) {
+      stop("Use only one of `use_linetype` and deprecated `linetype`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(linetype)",
+      "autoplot(use_linetype)"
+    )
+    use_linetype <- linetype
+  }
+
+  list(
+    show_exposure_labels = show_exposure_labels,
+    decimal_mark = decimal_mark,
+    y_label = y_label,
+    bar_fill = bar_fill,
+    model_color = model_color,
+    use_linetype = use_linetype
+  )
+}

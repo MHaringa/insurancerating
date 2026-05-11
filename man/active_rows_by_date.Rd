@@ -38,12 +38,9 @@ x. nomatch=NULL (default) means no rows will be returned for that row of x.}
 
 \item{mult}{When multiple rows in y match to the row in x, \code{mult} controls
 which values are returned - "all" (default), "first" or "last".}
-
-\item{df, df_begin, df_end, dates_date, ...}{Deprecated argument names kept for
-backward compatibility in \code{\link[=rows_per_date]{rows_per_date()}}.}
 }
 \value{
-returned class is equal to class of \code{df}
+An object with the same class as \code{portfolio}.
 }
 \description{
 Matches event dates, such as claim dates or portfolio snapshot dates, to the

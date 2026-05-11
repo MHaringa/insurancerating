@@ -1,0 +1,179 @@
+* using log directory ‘/Users/martin/Library/CloudStorage/Dropbox/Werk/AAV/insurancerating/..Rcheck’
+* using R version 4.5.3 (2026-03-11)
+* using platform: aarch64-apple-darwin20
+* R was compiled by
+    Apple clang version 16.0.0 (clang-1600.0.26.6)
+    GNU Fortran (GCC) 14.2.0
+* running under: macOS Tahoe 26.4.1
+* using session charset: UTF-8
+* using options ‘--no-manual --no-build-vignettes’
+* checking for file ‘./DESCRIPTION’ ... OK
+* checking extension type ... Package
+* this is package ‘insurancerating’ version ‘0.7.5.9000’
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... NOTE
+Found the following apparent object files/libraries:
+  revdep/library.noindex/insurancerating/new/openssl/libs/openssl.so
+  revdep/library.noindex/insurancerating/new/openssl/libs/openssl.so.dSYM/Contents/Resources/DWARF/openssl.so
+Object files/libraries should not be included in a source package.
+
+Subdirectory ‘.’ seems to contain an installed version of the package.
+* checking if there is a namespace ... OK
+* checking for executable files ... WARNING
+Found the following executable files:
+  .git/objects/57/1c91dd214c29abe311e406b881493b6322056e
+  .git/objects/eb/cf08b8436bd3f836e509999289e292c81bbd28
+Source packages should not contain undeclared executable files.
+See section ‘Package structure’ in the ‘Writing R Extensions’ manual.
+* checking for hidden files and directories ... NOTE
+Found the following hidden files and directories:
+  .DS_Store
+  .gitignore
+  .Rprofile
+  pkgdown/.DS_Store
+  tests/.DS_Store
+  tests/testthat/.DS_Store
+  vignettes/.gitignore
+  ..Rcheck
+  .git
+  .Rproj.user
+These were most likely included in error. See section ‘Package
+structure’ in the ‘Writing R Extensions’ manual.
+* checking for portable file names ... WARNING
+Found the following file with a non-portable file name:
+  .git/index (Exemplaar met conflict van MacBook-Pro-van-Martin.local 2022-07-28)
+These are not fully portable file names.
+See section ‘Package structure’ in the ‘Writing R Extensions’ manual.
+Found the following non-portable file paths:
+  insurancerating/.Rproj.user/shared/notebooks/392741F5-pricing-principles/1/295203B5e36c16d3/chunks.json
+  insurancerating/.Rproj.user/shared/notebooks/ACBAD721-model-validation/1/295203B5e36c16d3/chunks.json
+  insurancerating/.Rproj.user/shared/notebooks/D677537E-refinement-workflow/1/295203B5ab32b211/chunks.json
+  insurancerating/.Rproj.user/shared/notebooks/D677537E-refinement-workflow/1/295203B5e36c16d3/chunks.json
+  insurancerating/docs/articles/pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-4-1.png
+  insurancerating/docs/articles/pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-8-1.png
+  insurancerating/docs/deps/Google_Sans_Code-0.4.10/pxihyogzv91QhV44Z_GQBHsGf5PuckJMZfIVTPZaiXEp_ht12EVEHsN1sCQNcmTl1gki5uc.woff2
+  insurancerating/docs/deps/Google_Sans_Code-0.4.10/pxihyogzv91QhV44Z_GQBHsGf5PuckJMZfIVTPZaiXEp_ht12EVEHsN1sCQNcmTl2Aki5uc.woff2
+  insurancerating/docs/deps/Google_Sans_Code-0.4.10/pxihyogzv91QhV44Z_GQBHsGf5PuckJMZfIVTPZaiXEp_ht12EVEHsN1sCQNcmTl2gki5uc.woff2
+  insurancerating/docs/deps/Google_Sans_Code-0.4.10/pxihyogzv91QhV44Z_GQBHsGf5PuckJMZfIVTPZaiXEp_ht12EVEHsN1sCQNcmTlDigH297Y.woff2
+  insurancerating/docs/deps/Google_Sans_Code-0.4.10/pxihyogzv91QhV44Z_GQBHsGf5PuckJMZfIVTPZaiXEp_ht12EVEHsN1sCQNcmTlmwki5uc.woff2
+  insurancerating/docs/deps/Google_Sans_Code-0.4.10/pxihyogzv91QhV44Z_GQBHsGf5PuckJMZfIVTPZaiXEp_ht12EVEHsN1sCQNcmTlpwki5uc.woff2
+  insurancerating/docs/deps/Google_Sans_Code-0.4.10/pxihyogzv91QhV44Z_GQBHsGf5PuckJMZfIVTPZaiXEp_ht12EVEHsN1sCQNcmTltAki.woff2
+  insurancerating/docs/deps/Google_Sans_Code-0.4.10/pxihyogzv91QhV44Z_GQBHsGf5PuckJMZfIVTPZaiXEp_ht12EVEHsN1sCQNcmTlugki5uc.woff2
+  insurancerating/docs/deps/Google_Sans_Code-0.4.10/pxihyogzv91QhV44Z_GQBHsGf5PuckJMZfIVTPZaiXEp_ht12EVEHsN1sCQNcmTluwki5uc.woff2
+  insurancerating/docs/deps/Google_Sans_Code-0.4.10/pxihyogzv91QhV44Z_GQBHsGf5PuckJMZfIVTPZaiXEp_ht12EVEHsN1sCQNcmTlxwki5uc.woff2
+  insurancerating/docs/deps/Google_Sans_Code-0.4.10/pxihyogzv91QhV44Z_GQBHsGf5PuckJMZfIVTPZaiXEp_ht12EVEHsN1sCQNcmTlyAki5uc.woff2
+  insurancerating/docs/deps/Inter-0.4.10/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZBhiI2B.woff2
+  insurancerating/docs/deps/Inter-0.4.10/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZFhiI2B.woff2
+  insurancerating/docs/deps/Inter-0.4.10/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZJhiI2B.woff2
+  insurancerating/docs/deps/Inter-0.4.10/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZNhiI2B.woff2
+  insurancerating/docs/deps/Inter-0.4.10/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZthiI2B.woff2
+  insurancerating/docs/deps/Inter-0.4.10/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZxhiI2B.woff2
+  insurancerating/revdep/library.noindex/insurancerating/new/insurancerating/help/figures/lifecycle-archived.svg
+  insurancerating/revdep/library.noindex/insurancerating/new/insurancerating/help/figures/lifecycle-defunct.svg
+  insurancerating/revdep/library.noindex/insurancerating/new/insurancerating/help/figures/lifecycle-deprecated.svg
+  insurancerating/revdep/library.noindex/insurancerating/new/insurancerating/help/figures/lifecycle-experimental.svg
+  insurancerating/revdep/library.noindex/insurancerating/new/insurancerating/help/figures/lifecycle-maturing.svg
+  insurancerating/revdep/library.noindex/insurancerating/new/insurancerating/help/figures/lifecycle-questioning.svg
+  insurancerating/revdep/library.noindex/insurancerating/new/insurancerating/help/figures/lifecycle-stable.svg
+  insurancerating/revdep/library.noindex/insurancerating/new/insurancerating/help/figures/lifecycle-superseded.svg
+  insurancerating/revdep/library.noindex/insurancerating/new/openssl/libs/openssl.so.dSYM/Contents/Info.plist
+  insurancerating/revdep/library.noindex/insurancerating/new/openssl/libs/openssl.so.dSYM/Contents/Resources/DWARF/openssl.so
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/bootstraprmse-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example10-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example11-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example12-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example14-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example15-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example18a-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example19-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example23-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example3a-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example3a1-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example3b-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example3c-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example6-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example7-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example8-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/example9-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/figfreq-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/lifecycle-archived.svg
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/lifecycle-defunct.svg
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/lifecycle-deprecated.svg
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/lifecycle-experimental.svg
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/lifecycle-maturing.svg
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/lifecycle-questioning.svg
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/lifecycle-stable.svg
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/lifecycle-superseded.svg
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/normality-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/normalitysim-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/plotgam-1.png
+  insurancerating/revdep/library.noindex/insurancerating/old/insurancerating/help/figures/unnamed-chunk-3-1.png
+  insurancerating/revdep/library.noindex/insurancerating/new/openssl/libs/openssl.so.dSYM/Contents/Resources/DWARF
+
+Tarballs are only required to store paths of up to 100 bytes and cannot
+store those of more than 256 bytes, with restrictions including to 100
+bytes for the final component.
+See section ‘Package structure’ in the ‘Writing R Extensions’ manual.
+* checking for sufficient/correct file permissions ... OK
+* checking whether package ‘insurancerating’ can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking DESCRIPTION meta-information ... NOTE
+Checking should be performed on sources prepared by ‘R CMD build’.
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... WARNING
+Found the following directory with the name of a check directory:
+  ./..Rcheck
+Most likely, these were included erroneously.
+* checking code files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking dependencies in R code ... OK
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... OK
+* checking Rd files ... OK
+* checking Rd metadata ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... OK
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... OK
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking contents of ‘data’ directory ... OK
+* checking data for non-ASCII characters ... OK
+* checking LazyData ... OK
+* checking data for ASCII and uncompressed saves ... OK
+* checking files in ‘vignettes’ ... WARNING
+Files in the 'vignettes' directory but no files in 'inst/doc':
+  ‘getting-started.Rmd’ ‘model-validation.Rmd’
+  ‘pricing-workflow-building-blocks.Rmd’ ‘refinement-workflow.Rmd’
+* checking examples ... OK
+* checking for unstated dependencies in ‘tests’ ... OK
+* checking tests ... OK
+  Running ‘testthat.R’
+* checking for unstated dependencies in vignettes ... OK
+* checking package vignettes ... WARNING
+Directory 'inst/doc' does not exist.
+Package vignettes without corresponding single PDF/HTML:
+  ‘getting-started.Rmd’
+  ‘model-validation.Rmd’
+  ‘pricing-workflow-building-blocks.Rmd’
+  ‘refinement-workflow.Rmd’
+* checking running R code from vignettes ... OK
+  ‘getting-started.Rmd’ using ‘UTF-8’... OK
+  ‘model-validation.Rmd’ using ‘UTF-8’... OK
+  ‘pricing-workflow-building-blocks.Rmd’ using ‘UTF-8’... OK
+  ‘refinement-workflow.Rmd’ using ‘UTF-8’... OK
+* checking re-building of vignette outputs ... SKIPPED
+* DONE
+Status: 5 WARNINGs, 3 NOTEs

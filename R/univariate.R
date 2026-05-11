@@ -348,8 +348,8 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #'
 #' @param object A `factor_analysis` or `univariate` object produced by
 #' [factor_analysis()] or [univariate()].
-#' @param metrics Numeric vector specifying which metrics to plot (default is
-#' `1:9`). There are nine available metrics:
+#' @param metrics Numeric or character vector specifying which metrics to plot
+#'   (default is all available metrics). The numeric positions are:
 #' \itemize{
 #'   \item{1. Frequency (`nclaims / exposure`)}
 #'   \item{2. Average severity (`severity / nclaims`)}
@@ -361,23 +361,27 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #'   \item{8. Number of claims}
 #'   \item{9. Premium}
 #' }
-#' @param show_plots Deprecated. Use `metrics` instead.
+#' Character values can be `"frequency"`, `"average_severity"`,
+#' `"risk_premium"`, `"loss_ratio"`, `"average_premium"`, `"exposure"`,
+#' `"claim_amount"`, `"claim_count"`, and `"premium"`.
 #' @param ncol Number of columns in output (default = 1).
-#' @param background Show exposure as a background histogram (default = TRUE).
-#' @param labels Show labels with the exposure (default = TRUE).
-#' @param sort Sort (order) risk factor into descending order by exposure
-#'   (default = FALSE).
-#' @param sort_manual Sort risk factor into a custom order; character vector
+#' @param show_exposure Show exposure as background bars behind line plots
+#'   (default = TRUE).
+#' @param show_exposure_labels Show labels with the exposure bars
+#'   (default = TRUE).
+#' @param sort_by_exposure Sort risk factor levels into descending order by
+#'   exposure (default = FALSE).
+#' @param level_order Custom order for risk factor levels; character vector
 #'   (default = NULL).
-#' @param dec.mark Decimal mark; defaults to `","`.
-#' @param color Optional override for line/point color.
+#' @param decimal_mark Decimal mark; defaults to `","`.
+#' @param line_color Optional override for line/point color.
 #'   If NULL (default), colors are taken from the internal palette.
 #'   If specified, the chosen color is applied to all line-based plots.
-#' @param color_bg Optional override for background bar color.
+#' @param bar_fill Optional override for background bar color.
 #'   If NULL (default), the background color is taken from the internal palette.
 #'   If specified, the chosen color is applied to all background bars.
 #' @param label_width Width of labels on the x-axis (default = 10).
-#' @param coord_flip Logical. If `TRUE`, flip cartesian coordinates for bar plots
+#' @param flip_bars Logical. If `TRUE`, flip cartesian coordinates for bar plots
 #'   (metrics 6 to 9). This option does not affect the line-based plots for
 #'   metrics 1 to 5.
 #' @param show_total Show line for total if `by` is used (default = FALSE).
@@ -387,7 +391,7 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' @param custom_theme List with customized theme options.
 #' @param remove_underscores Logical; remove underscores from labels
 #'   (default = FALSE).
-#' @param remove_x_elements Logical. When \code{TRUE} and \code{ncol == 1},
+#' @param compact_x_axis Logical. When \code{TRUE} and \code{ncol == 1},
 #'   x-axis components are removed from all plots except the last one.
 #'   The following elements are suppressed:
 #'   \itemize{
@@ -397,6 +401,16 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #'   }
 #'   This prevents duplicated x-axes in vertically stacked patchwork plots.
 #'   Defaults to \code{TRUE}.
+#' @param show_plots Deprecated. Use `metrics` instead.
+#' @param background Deprecated alias for `show_exposure`.
+#' @param labels Deprecated alias for `show_exposure_labels`.
+#' @param sort Deprecated alias for `sort_by_exposure`.
+#' @param sort_manual Deprecated alias for `level_order`.
+#' @param dec.mark Deprecated alias for `decimal_mark`.
+#' @param color Deprecated alias for `line_color`.
+#' @param color_bg Deprecated alias for `bar_fill`.
+#' @param coord_flip Deprecated alias for `flip_bars`.
+#' @param remove_x_elements Deprecated alias for `compact_x_axis`.
 #' @param ... Other plotting parameters.
 #'
 #' @import patchwork
@@ -423,24 +437,33 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' @export
 autoplot.factor_analysis <- function(object,
                                      metrics = NULL,
-                                     show_plots = NULL,
                                      ncol = 1,
-                                     background = TRUE,
-                                     labels = TRUE,
-                                     sort = FALSE,
-                                     sort_manual = NULL,
-                                     dec.mark = ",",
-                                     color = NULL,
-                                     color_bg = NULL,
+                                     show_exposure = TRUE,
+                                     show_exposure_labels = TRUE,
+                                     sort_by_exposure = FALSE,
+                                     level_order = NULL,
+                                     decimal_mark = ",",
+                                     line_color = NULL,
+                                     bar_fill = NULL,
                                      label_width = 50,
-                                     coord_flip = FALSE,
+                                     flip_bars = FALSE,
                                      show_total = FALSE,
                                      total_color = NULL,
                                      total_name = NULL,
                                      rotate_angle = NULL,
                                      custom_theme = NULL,
                                      remove_underscores = FALSE,
-                                     remove_x_elements = TRUE,
+                                     compact_x_axis = TRUE,
+                                     show_plots = NULL,
+                                     background = NULL,
+                                     labels = NULL,
+                                     sort = NULL,
+                                     sort_manual = NULL,
+                                     dec.mark = NULL,
+                                     color = NULL,
+                                     color_bg = NULL,
+                                     coord_flip = NULL,
+                                     remove_x_elements = NULL,
                                      ...) {
 
   if (!inherits(object, "factor_analysis") && !inherits(object, "univariate")) {
@@ -463,25 +486,54 @@ autoplot.factor_analysis <- function(object,
   }
   by <- as.character(by)
 
-  # backward compatibility
-  if (!is.null(show_plots) && !is.null(metrics)) {
-    stop("Use either `metrics` or `show_plots`, not both.", call. = FALSE)
-  }
-
-  if (!is.null(show_plots)) {
-    lifecycle::deprecate_warn(
-      when = "0.9.0",
-      what = "autoplot(show_plots = )",
-      with = "autoplot(metrics = )"
-    )
-    metrics <- show_plots
-  }
+  args <- resolve_autoplot_factor_analysis_args(
+    metrics = metrics,
+    show_exposure = show_exposure,
+    show_exposure_labels = show_exposure_labels,
+    sort_by_exposure = sort_by_exposure,
+    level_order = level_order,
+    decimal_mark = decimal_mark,
+    line_color = line_color,
+    bar_fill = bar_fill,
+    flip_bars = flip_bars,
+    compact_x_axis = compact_x_axis,
+    metrics_supplied = !missing(metrics),
+    show_exposure_supplied = !missing(show_exposure),
+    show_exposure_labels_supplied = !missing(show_exposure_labels),
+    sort_by_exposure_supplied = !missing(sort_by_exposure),
+    level_order_supplied = !missing(level_order),
+    decimal_mark_supplied = !missing(decimal_mark),
+    line_color_supplied = !missing(line_color),
+    bar_fill_supplied = !missing(bar_fill),
+    flip_bars_supplied = !missing(flip_bars),
+    compact_x_axis_supplied = !missing(compact_x_axis),
+    show_plots = show_plots,
+    background = background,
+    labels = labels,
+    sort = sort,
+    sort_manual = sort_manual,
+    dec.mark = dec.mark,
+    color = color,
+    color_bg = color_bg,
+    coord_flip = coord_flip,
+    remove_x_elements = remove_x_elements
+  )
+  metrics <- args$metrics
+  show_exposure <- args$show_exposure
+  show_exposure_labels <- args$show_exposure_labels
+  sort_by_exposure <- args$sort_by_exposure
+  level_order <- args$level_order
+  decimal_mark <- args$decimal_mark
+  line_color <- args$line_color
+  bar_fill <- args$bar_fill
+  flip_bars <- args$flip_bars
+  compact_x_axis <- args$compact_x_axis
 
   if (is.null(metrics)) {
     metrics <- 1:9
   }
 
-  plots_allowed <- metrics[metrics %in% 1:9]
+  plots_allowed <- resolve_factor_analysis_metrics(metrics)
 
   if (length(xvar) > 1) {
     message(xvar, " has more than one element. Only the first is shown.")
@@ -497,7 +549,7 @@ autoplot.factor_analysis <- function(object,
 
   if (is.null(total_color)) total_color <- "black"
 
-  sep_mark <- separation_mark(dec.mark)
+  sep_mark <- separation_mark(decimal_mark)
 
   pal <- list(
     frequency        = "#2C7FB8",
@@ -508,10 +560,10 @@ autoplot.factor_analysis <- function(object,
     bg_bar           = "#E6E6E6"
   )
 
-  final_bg <- if (!is.null(color_bg)) color_bg else pal$bg_bar
+  final_bg <- if (!is.null(bar_fill)) bar_fill else pal$bg_bar
 
   resolve_line_color <- function(varname) {
-    if (!is.null(color)) return(color)
+    if (!is.null(line_color)) return(line_color)
     if (!is.null(pal[[varname]])) return(pal[[varname]])
     "#2C7FB8"
   }
@@ -523,10 +575,12 @@ autoplot.factor_analysis <- function(object,
     panel.border     = ggplot2::element_blank(),
     axis.text.y.right  = ggplot2::element_text(color = "#9E9E9E", size = 8),
     axis.title.y.right = ggplot2::element_text(color = "#9E9E9E", size = 9),
-    axis.title.y = ggplot2::element_text(size = 10)
+    axis.title.y = ggplot2::element_text(size = 10),
+    axis.line.x = ggplot2::element_line(colour = "grey55", linewidth = 0.3),
+    axis.line.y.left = ggplot2::element_line(colour = "grey55", linewidth = 0.3),
+    axis.ticks = ggplot2::element_line(colour = "grey55", linewidth = 0.3),
+    axis.ticks.y.right = ggplot2::element_line(colour = "grey75", linewidth = 0.25)
   )
-
-  color_bg <- pal$bg_bar
 
   p_plots <- c(
     "frequency",
@@ -572,6 +626,18 @@ autoplot.factor_analysis <- function(object,
     "9" = list(var = premium, lab = premium, denom = NULL, fun = ggbar)
   )
 
+  if (isTRUE(sort_by_exposure) && is.null(level_order) &&
+      !is.null(exposure) && exposure %in% names(df)) {
+    exposure_order <- stats::aggregate(
+      df[[exposure]],
+      by = list(level = df[[xvar]]),
+      FUN = sum,
+      na.rm = TRUE
+    )
+    exposure_order <- exposure_order[order(exposure_order$x, decreasing = TRUE), ]
+    level_order <- as.character(exposure_order$level)
+  }
+
   plots <- list()
   for (i in create_plots) {
     def <- plot_defs[[as.character(i)]]
@@ -580,22 +646,22 @@ autoplot.factor_analysis <- function(object,
       this_line_color <- resolve_line_color(def$var)
 
       p <- def$fun(
-        background, df, dfby, xvar,
+        show_exposure, df, dfby, xvar,
         def$var, def$lab, def$denom,
         final_bg, this_line_color, sep_mark, by,
-        labels, sort_manual, label_width,
+        show_exposure_labels, level_order, label_width,
         show_total, total_color,
         total_name, remove_underscores
       )
     } else {
-      p <- def$fun(df, xvar, def$var, final_bg, sep_mark, coord_flip)
+      p <- def$fun(df, xvar, def$var, final_bg, sep_mark, flip_bars)
     }
 
     p <- p + grid_theme
     plots[[paste0("p", i)]] <- p
   }
 
-  if (isTRUE(remove_x_elements) && isTRUE(ncol == 1) && length(plots) > 1) {
+  if (isTRUE(compact_x_axis) && isTRUE(ncol == 1) && length(plots) > 1) {
     strip_x <- function(p) {
       p + ggplot2::theme(
         axis.title.x = ggplot2::element_blank(),
@@ -617,6 +683,209 @@ autoplot.factor_analysis <- function(object,
   }
 
   plot_out
+}
+
+
+resolve_factor_analysis_metrics <- function(metrics) {
+  if (is.numeric(metrics)) {
+    metrics <- metrics[metrics %in% 1:9]
+    return(as.integer(metrics))
+  }
+
+  if (!is.character(metrics)) {
+    stop("`metrics` must be a numeric or character vector.", call. = FALSE)
+  }
+
+  metric_lookup <- c(
+    frequency = 1L,
+    average_severity = 2L,
+    risk_premium = 3L,
+    loss_ratio = 4L,
+    average_premium = 5L,
+    exposure = 6L,
+    claim_amount = 7L,
+    severity = 7L,
+    claim_count = 8L,
+    nclaims = 8L,
+    premium = 9L
+  )
+
+  unknown <- setdiff(metrics, names(metric_lookup))
+  if (length(unknown) > 0) {
+    stop(
+      "Unknown metric(s): ",
+      paste(unknown, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  unname(metric_lookup[metrics])
+}
+
+
+resolve_autoplot_factor_analysis_args <- function(metrics = NULL,
+                                                  show_exposure = TRUE,
+                                                  show_exposure_labels = TRUE,
+                                                  sort_by_exposure = FALSE,
+                                                  level_order = NULL,
+                                                  decimal_mark = ",",
+                                                  line_color = NULL,
+                                                  bar_fill = NULL,
+                                                  flip_bars = FALSE,
+                                                  compact_x_axis = TRUE,
+                                                  metrics_supplied = FALSE,
+                                                  show_exposure_supplied = FALSE,
+                                                  show_exposure_labels_supplied = FALSE,
+                                                  sort_by_exposure_supplied = FALSE,
+                                                  level_order_supplied = FALSE,
+                                                  decimal_mark_supplied = FALSE,
+                                                  line_color_supplied = FALSE,
+                                                  bar_fill_supplied = FALSE,
+                                                  flip_bars_supplied = FALSE,
+                                                  compact_x_axis_supplied = FALSE,
+                                                  show_plots = NULL,
+                                                  background = NULL,
+                                                  labels = NULL,
+                                                  sort = NULL,
+                                                  sort_manual = NULL,
+                                                  dec.mark = NULL,
+                                                  color = NULL,
+                                                  color_bg = NULL,
+                                                  coord_flip = NULL,
+                                                  remove_x_elements = NULL) {
+  if (!is.null(show_plots)) {
+    if (metrics_supplied) {
+      stop("Use only one of `metrics` and deprecated `show_plots`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(show_plots)",
+      "autoplot(metrics)"
+    )
+    metrics <- show_plots
+  }
+  if (!is.null(background)) {
+    if (show_exposure_supplied) {
+      stop("Use only one of `show_exposure` and deprecated `background`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(background)",
+      "autoplot(show_exposure)"
+    )
+    show_exposure <- background
+  }
+  if (!is.null(labels)) {
+    if (show_exposure_labels_supplied) {
+      stop("Use only one of `show_exposure_labels` and deprecated `labels`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(labels)",
+      "autoplot(show_exposure_labels)"
+    )
+    show_exposure_labels <- labels
+  }
+  if (!is.null(sort)) {
+    if (sort_by_exposure_supplied) {
+      stop("Use only one of `sort_by_exposure` and deprecated `sort`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(sort)",
+      "autoplot(sort_by_exposure)"
+    )
+    sort_by_exposure <- sort
+  }
+  if (!is.null(sort_manual)) {
+    if (level_order_supplied) {
+      stop("Use only one of `level_order` and deprecated `sort_manual`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(sort_manual)",
+      "autoplot(level_order)"
+    )
+    level_order <- sort_manual
+  }
+  if (!is.null(dec.mark)) {
+    if (decimal_mark_supplied) {
+      stop("Use only one of `decimal_mark` and deprecated `dec.mark`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(dec.mark)",
+      "autoplot(decimal_mark)"
+    )
+    decimal_mark <- dec.mark
+  }
+  if (!is.null(color)) {
+    if (line_color_supplied) {
+      stop("Use only one of `line_color` and deprecated `color`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(color)",
+      "autoplot(line_color)"
+    )
+    line_color <- color
+  }
+  if (!is.null(color_bg)) {
+    if (bar_fill_supplied) {
+      stop("Use only one of `bar_fill` and deprecated `color_bg`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(color_bg)",
+      "autoplot(bar_fill)"
+    )
+    bar_fill <- color_bg
+  }
+  if (!is.null(coord_flip)) {
+    if (flip_bars_supplied) {
+      stop("Use only one of `flip_bars` and deprecated `coord_flip`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(coord_flip)",
+      "autoplot(flip_bars)"
+    )
+    flip_bars <- coord_flip
+  }
+  if (!is.null(remove_x_elements)) {
+    if (compact_x_axis_supplied) {
+      stop("Use only one of `compact_x_axis` and deprecated `remove_x_elements`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "autoplot(remove_x_elements)",
+      "autoplot(compact_x_axis)"
+    )
+    compact_x_axis <- remove_x_elements
+  }
+
+  list(
+    metrics = metrics,
+    show_exposure = show_exposure,
+    show_exposure_labels = show_exposure_labels,
+    sort_by_exposure = sort_by_exposure,
+    level_order = level_order,
+    decimal_mark = decimal_mark,
+    line_color = line_color,
+    bar_fill = bar_fill,
+    flip_bars = flip_bars,
+    compact_x_axis = compact_x_axis
+  )
 }
 
 

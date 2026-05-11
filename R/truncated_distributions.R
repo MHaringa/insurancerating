@@ -1018,6 +1018,7 @@ autoplot.truncated_severity <- function(object,
   p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$xvar)) +
     ggplot2::stat_ecdf(geom = ecdf_geom) +
     ggplot2::theme_minimal() +
+    .plot_grid_theme_ir() +
     ggplot2::coord_cartesian(ylim = y_limits, xlim = x_limits) +
     ggplot2::scale_x_continuous(
       labels = function(x) format(x, big.mark = " ", scientific = FALSE)

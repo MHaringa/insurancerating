@@ -1,7 +1,7 @@
-# Deprecated alias for `derive_tariff_groups()`
+# Deprecated alias for `derive_tariff_segments()`
 
 `construct_tariff_classes()` is deprecated as of version 0.9.0. Use
-[`derive_tariff_groups()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_groups.md)
+[`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md)
 instead.
 
 ## Usage
@@ -30,8 +30,8 @@ construct_tariff_classes(
 
 - complexity:
 
-  Numeric. Controls the complexity penalty used when deriving groups.
-  Higher values generally yield fewer tariff groups. Default = 0.
+  Numeric. Controls the complexity penalty used when deriving segments.
+  Higher values generally yield fewer tariff segments. Default = 0.
 
 - max_iterations:
 
@@ -62,4 +62,4 @@ construct_tariff_classes(
 ## Value
 
 See
-[`derive_tariff_groups()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_groups.md).
+[`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md).

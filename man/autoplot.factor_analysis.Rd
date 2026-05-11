@@ -7,24 +7,33 @@
 \method{autoplot}{factor_analysis}(
   object,
   metrics = NULL,
-  show_plots = NULL,
   ncol = 1,
-  background = TRUE,
-  labels = TRUE,
-  sort = FALSE,
-  sort_manual = NULL,
-  dec.mark = ",",
-  color = NULL,
-  color_bg = NULL,
+  show_exposure = TRUE,
+  show_exposure_labels = TRUE,
+  sort_by_exposure = FALSE,
+  level_order = NULL,
+  decimal_mark = ",",
+  line_color = NULL,
+  bar_fill = NULL,
   label_width = 50,
-  coord_flip = FALSE,
+  flip_bars = FALSE,
   show_total = FALSE,
   total_color = NULL,
   total_name = NULL,
   rotate_angle = NULL,
   custom_theme = NULL,
   remove_underscores = FALSE,
-  remove_x_elements = TRUE,
+  compact_x_axis = TRUE,
+  show_plots = NULL,
+  background = NULL,
+  labels = NULL,
+  sort = NULL,
+  sort_manual = NULL,
+  dec.mark = NULL,
+  color = NULL,
+  color_bg = NULL,
+  coord_flip = NULL,
+  remove_x_elements = NULL,
   ...
 )
 }
@@ -32,8 +41,8 @@
 \item{object}{A \code{factor_analysis} or \code{univariate} object produced by
 \code{\link[=factor_analysis]{factor_analysis()}} or \code{\link[=univariate]{univariate()}}.}
 
-\item{metrics}{Numeric vector specifying which metrics to plot (default is
-\code{1:9}). There are nine available metrics:
+\item{metrics}{Numeric or character vector specifying which metrics to plot
+(default is all available metrics). The numeric positions are:
 \itemize{
 \item{1. Frequency (\code{nclaims / exposure})}
 \item{2. Average severity (\code{severity / nclaims})}
@@ -44,35 +53,38 @@
 \item{7. Severity}
 \item{8. Number of claims}
 \item{9. Premium}
-}}
-
-\item{show_plots}{Deprecated. Use \code{metrics} instead.}
+}
+Character values can be \code{"frequency"}, \code{"average_severity"},
+\code{"risk_premium"}, \code{"loss_ratio"}, \code{"average_premium"}, \code{"exposure"},
+\code{"claim_amount"}, \code{"claim_count"}, and \code{"premium"}.}
 
 \item{ncol}{Number of columns in output (default = 1).}
 
-\item{background}{Show exposure as a background histogram (default = TRUE).}
+\item{show_exposure}{Show exposure as background bars behind line plots
+(default = TRUE).}
 
-\item{labels}{Show labels with the exposure (default = TRUE).}
+\item{show_exposure_labels}{Show labels with the exposure bars
+(default = TRUE).}
 
-\item{sort}{Sort (order) risk factor into descending order by exposure
-(default = FALSE).}
+\item{sort_by_exposure}{Sort risk factor levels into descending order by
+exposure (default = FALSE).}
 
-\item{sort_manual}{Sort risk factor into a custom order; character vector
+\item{level_order}{Custom order for risk factor levels; character vector
 (default = NULL).}
 
-\item{dec.mark}{Decimal mark; defaults to \code{","}.}
+\item{decimal_mark}{Decimal mark; defaults to \code{","}.}
 
-\item{color}{Optional override for line/point color.
+\item{line_color}{Optional override for line/point color.
 If NULL (default), colors are taken from the internal palette.
 If specified, the chosen color is applied to all line-based plots.}
 
-\item{color_bg}{Optional override for background bar color.
+\item{bar_fill}{Optional override for background bar color.
 If NULL (default), the background color is taken from the internal palette.
 If specified, the chosen color is applied to all background bars.}
 
 \item{label_width}{Width of labels on the x-axis (default = 10).}
 
-\item{coord_flip}{Logical. If \code{TRUE}, flip cartesian coordinates for bar plots
+\item{flip_bars}{Logical. If \code{TRUE}, flip cartesian coordinates for bar plots
 (metrics 6 to 9). This option does not affect the line-based plots for
 metrics 1 to 5.}
 
@@ -89,7 +101,7 @@ metrics 1 to 5.}
 \item{remove_underscores}{Logical; remove underscores from labels
 (default = FALSE).}
 
-\item{remove_x_elements}{Logical. When \code{TRUE} and \code{ncol == 1},
+\item{compact_x_axis}{Logical. When \code{TRUE} and \code{ncol == 1},
 x-axis components are removed from all plots except the last one.
 The following elements are suppressed:
 \itemize{
@@ -99,6 +111,26 @@ The following elements are suppressed:
 }
 This prevents duplicated x-axes in vertically stacked patchwork plots.
 Defaults to \code{TRUE}.}
+
+\item{show_plots}{Deprecated. Use \code{metrics} instead.}
+
+\item{background}{Deprecated alias for \code{show_exposure}.}
+
+\item{labels}{Deprecated alias for \code{show_exposure_labels}.}
+
+\item{sort}{Deprecated alias for \code{sort_by_exposure}.}
+
+\item{sort_manual}{Deprecated alias for \code{level_order}.}
+
+\item{dec.mark}{Deprecated alias for \code{decimal_mark}.}
+
+\item{color}{Deprecated alias for \code{line_color}.}
+
+\item{color_bg}{Deprecated alias for \code{bar_fill}.}
+
+\item{coord_flip}{Deprecated alias for \code{flip_bars}.}
+
+\item{remove_x_elements}{Deprecated alias for \code{compact_x_axis}.}
 
 \item{...}{Other plotting parameters.}
 }

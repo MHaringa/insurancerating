@@ -21,7 +21,7 @@ value is a data.frame with columns \code{new_level} and \code{relativity}.
 \description{
 Helper function to define how one level of a risk factor should be split
 into sublevels with corresponding relativities. Intended for use inside
-\code{relativities_list()} and \code{add_relativities()}.
+\code{relativities()} and \code{add_relativities()}.
 }
 \examples{
 split_level(

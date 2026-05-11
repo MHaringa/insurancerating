@@ -343,4 +343,3 @@ ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip) {
 ggcoordflip <- function(coord_flip) {
   if (isTRUE(coord_flip)) list(ggplot2::coord_flip()) else list()
 }
-

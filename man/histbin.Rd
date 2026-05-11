@@ -11,9 +11,9 @@ histbin(
   right = NULL,
   line = FALSE,
   bins = 30,
-  fill = "steelblue",
+  fill = "#E6E6E6",
   color = "white",
-  fill_outliers = "#a7d1a7"
+  fill_outliers = "#F28E2B"
 )
 }
 \arguments{
@@ -21,21 +21,14 @@ histbin(
 
 \item{x}{Character; numeric column in \code{data} to plot.}
 
-\item{left}{Optional numeric lower threshold. Values below this threshold are
-grouped into one left-tail bin.}
+\item{left, right}{Deprecated aliases for \code{lower} and \code{upper}.}
 
-\item{right}{Optional numeric upper threshold. Values above this threshold are
-grouped into one right-tail bin.}
-
-\item{line}{Logical. If \code{TRUE}, add a density line. Default = \code{FALSE}.}
+\item{line}{Deprecated alias for \code{density}.}
 
 \item{bins}{Integer. Number of bins used for the displayed range. Default = 30.}
 
-\item{fill}{Fill color for regular histogram bars.}
-
-\item{color}{Border color for histogram bars.}
-
-\item{fill_outliers}{Fill color for tail bins. Default = \code{"#a7d1a7"}.}
+\item{fill, color, fill_outliers}{Deprecated aliases for \code{bar_fill},
+\code{bar_color}, and \code{tail_fill}.}
 }
 \value{
 See \code{\link[=outlier_histogram]{outlier_histogram()}}.

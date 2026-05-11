@@ -46,7 +46,6 @@ spaces in the x-axis label. Default is \code{FALSE}.}
 A \code{ggplot2} object.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Takes a \code{rating_refinement} object and plots one refinement step before
 \code{\link[=refit]{refit()}} is called. This is useful for checking whether manual tariff
 restrictions, smoothing or expert-based relativities behave as intended

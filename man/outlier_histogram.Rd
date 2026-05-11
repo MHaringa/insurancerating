@@ -7,13 +7,21 @@
 outlier_histogram(
   data,
   x,
+  lower = NULL,
+  upper = NULL,
+  density = FALSE,
+  bins = 30,
+  bar_fill = "#E6E6E6",
+  bar_color = "white",
+  tail_fill = "#F28E2B",
+  tail_color = "white",
+  density_color = "#2C7FB8",
   left = NULL,
   right = NULL,
-  line = FALSE,
-  bins = 30,
-  fill = "steelblue",
-  color = "white",
-  fill_outliers = "#a7d1a7"
+  line = NULL,
+  fill = NULL,
+  color = NULL,
+  fill_outliers = NULL
 )
 }
 \arguments{
@@ -21,21 +29,32 @@ outlier_histogram(
 
 \item{x}{Character; numeric column in \code{data} to plot.}
 
-\item{left}{Optional numeric lower threshold. Values below this threshold are
+\item{lower}{Optional numeric lower threshold. Values below this threshold are
 grouped into one left-tail bin.}
 
-\item{right}{Optional numeric upper threshold. Values above this threshold are
+\item{upper}{Optional numeric upper threshold. Values above this threshold are
 grouped into one right-tail bin.}
 
-\item{line}{Logical. If \code{TRUE}, add a density line. Default = \code{FALSE}.}
+\item{density}{Logical. If \code{TRUE}, add a density line. Default = \code{FALSE}.}
 
 \item{bins}{Integer. Number of bins used for the displayed range. Default = 30.}
 
-\item{fill}{Fill color for regular histogram bars.}
+\item{bar_fill}{Fill color for regular histogram bars.}
 
-\item{color}{Border color for histogram bars.}
+\item{bar_color}{Border color for regular histogram bars.}
 
-\item{fill_outliers}{Fill color for tail bins. Default = \code{"#a7d1a7"}.}
+\item{tail_fill}{Fill color for tail bins.}
+
+\item{tail_color}{Border color for tail bins.}
+
+\item{density_color}{Color for the optional density line.}
+
+\item{left, right}{Deprecated aliases for \code{lower} and \code{upper}.}
+
+\item{line}{Deprecated alias for \code{density}.}
+
+\item{fill, color, fill_outliers}{Deprecated aliases for \code{bar_fill},
+\code{bar_color}, and \code{tail_fill}.}
 }
 \value{
 A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
@@ -48,7 +67,7 @@ Insurance portfolios often contain skewed variables such as claim amounts,
 premium, exposure, insured sums, deductibles, or fitted premiums. A few very
 large policies or claim events can stretch a regular histogram so much that
 the body of the portfolio becomes hard to inspect. \code{outlier_histogram()}
-keeps the main range visible and groups values below \code{left} or above \code{right}
+keeps the main range visible and groups values below \code{lower} or above \code{upper}
 into dedicated tail bins.
 
 The plot is useful for actuarial portfolio checks, data quality review, and
@@ -69,7 +88,7 @@ The method for handling outlier bins is based on
 outlier_histogram(MTPL2, "premium")
 
 # Keep the portfolio body readable while showing both tails
-outlier_histogram(MTPL2, "premium", left = 30, right = 120, bins = 30)
+outlier_histogram(MTPL2, "premium", lower = 30, upper = 120, bins = 30)
 
 }
 \author{

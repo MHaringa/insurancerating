@@ -1,7 +1,6 @@
 # Plot a model refinement step
 
-**\[experimental\]** Takes a `rating_refinement` object and plots one
-refinement step before
+Takes a `rating_refinement` object and plots one refinement step before
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
 is called. This is useful for checking whether manual tariff
 restrictions, smoothing or expert-based relativities behave as intended

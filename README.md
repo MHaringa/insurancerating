@@ -62,10 +62,13 @@ fa <- factor_analysis(
   claim_amount = "amount"
 )
 
-autoplot(fa, metrics = 1:3)
+autoplot(
+  fa,
+  metrics = c("frequency", "average_severity", "risk_premium")
+)
 ```
 
-![](man/figures/unnamed-chunk-3-1.png)<!-- -->
+![Factor analysis plot showing frequency, average severity and risk premium by ZIP code.](man/figures/unnamed-chunk-3-1.png)<!-- -->
 
 ``` r
 # Fit model
@@ -100,12 +103,12 @@ mod_refined <- prepare_refinement(mod) |>
 rating_table(mod_refined)
 ```
 
-    ##   risk_factor       level est_mod_refined
-    ## 1 (Intercept) (Intercept)        0.136653
-    ## 2     zip_adj           0        0.900000
-    ## 3     zip_adj           1        0.950000
-    ## 4     zip_adj           2        1.000000
-    ## 5     zip_adj           3        1.100000
+    ##   risk_factor       level est_mod_refined exposure
+    ## 1 (Intercept) (Intercept)        0.136653       NA
+    ## 2     zip_adj           0        0.900000      207
+    ## 3     zip_adj           1        0.950000    11081
+    ## 4     zip_adj           2        1.000000     7783
+    ## 5     zip_adj           3        1.100000     7588
 
 ## Combining Building Blocks
 
@@ -189,4 +192,5 @@ Full documentation and examples are available in the articles:
 - [Getting started](articles/getting-started.html)
 - [Refinement building blocks](articles/refinement-workflow.html)
 - [Model validation](articles/model-validation.html)
-- [Pricing principles](articles/pricing-principles.html)
+- [Pricing workflow building
+  blocks](articles/pricing-workflow-building-blocks.html)

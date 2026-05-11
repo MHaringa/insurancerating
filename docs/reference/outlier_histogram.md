@@ -8,7 +8,7 @@ amounts, premium, exposure, insured sums, deductibles, or fitted
 premiums. A few very large policies or claim events can stretch a
 regular histogram so much that the body of the portfolio becomes hard to
 inspect. `outlier_histogram()` keeps the main range visible and groups
-values below `left` or above `right` into dedicated tail bins.
+values below `lower` or above `upper` into dedicated tail bins.
 
 The plot is useful for actuarial portfolio checks, data quality review,
 and model preparation: it helps show where most risks are concentrated
@@ -20,13 +20,21 @@ while still making the presence of extreme observations explicit.
 outlier_histogram(
   data,
   x,
+  lower = NULL,
+  upper = NULL,
+  density = FALSE,
+  bins = 30,
+  bar_fill = "#E6E6E6",
+  bar_color = "white",
+  tail_fill = "#F28E2B",
+  tail_color = "white",
+  density_color = "#2C7FB8",
   left = NULL,
   right = NULL,
-  line = FALSE,
-  bins = 30,
-  fill = "steelblue",
-  color = "white",
-  fill_outliers = "#a7d1a7"
+  line = NULL,
+  fill = NULL,
+  color = NULL,
+  fill_outliers = NULL
 )
 ```
 
@@ -40,17 +48,17 @@ outlier_histogram(
 
   Character; numeric column in `data` to plot.
 
-- left:
+- lower:
 
   Optional numeric lower threshold. Values below this threshold are
   grouped into one left-tail bin.
 
-- right:
+- upper:
 
   Optional numeric upper threshold. Values above this threshold are
   grouped into one right-tail bin.
 
-- line:
+- density:
 
   Logical. If `TRUE`, add a density line. Default = `FALSE`.
 
@@ -58,17 +66,37 @@ outlier_histogram(
 
   Integer. Number of bins used for the displayed range. Default = 30.
 
-- fill:
+- bar_fill:
 
   Fill color for regular histogram bars.
 
-- color:
+- bar_color:
 
-  Border color for histogram bars.
+  Border color for regular histogram bars.
 
-- fill_outliers:
+- tail_fill:
 
-  Fill color for tail bins. Default = `"#a7d1a7"`.
+  Fill color for tail bins.
+
+- tail_color:
+
+  Border color for tail bins.
+
+- density_color:
+
+  Color for the optional density line.
+
+- left, right:
+
+  Deprecated aliases for `lower` and `upper`.
+
+- line:
+
+  Deprecated alias for `density`.
+
+- fill, color, fill_outliers:
+
+  Deprecated aliases for `bar_fill`, `bar_color`, and `tail_fill`.
 
 ## Value
 
@@ -97,6 +125,6 @@ outlier_histogram(MTPL2, "premium")
 
 
 # Keep the portfolio body readable while showing both tails
-outlier_histogram(MTPL2, "premium", left = 30, right = 120, bins = 30)
+outlier_histogram(MTPL2, "premium", lower = 30, upper = 120, bins = 30)
 
 ```

@@ -279,5 +279,5 @@ For the refinement step after validation, see:
 For the conceptual background to exposure, risk premium, and tariff
 structure, see:
 
-- [Pricing
-  principles](https://mharinga.github.io/insurancerating/articles/pricing-principles.md)
+- [Pricing workflow building
+  blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md)

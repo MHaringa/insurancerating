@@ -1,7 +1,7 @@
 # Add expert-based relativities to a refinement workflow
 
-Splits an existing model variable into more detailed tariff groups using
-supplied relativities. This is useful when the GLM is fitted on a
+Splits an existing model variable into more detailed tariff segments
+using supplied relativities. This is useful when the GLM is fitted on a
 coarser rating factor for credibility or stability, but the final tariff
 needs a more detailed split that is based on portfolio exposure, expert
 judgement or externally agreed relativities.
@@ -29,7 +29,7 @@ add_relativities(
 - model_variable:
 
   Character string. Existing variable in the GLM. Levels of this
-  variable can be split into more detailed tariff groups.
+  variable can be split into more detailed tariff segments.
 
 - split_variable:
 
@@ -39,7 +39,7 @@ add_relativities(
 - relativities:
 
   Named list of data frames, usually created with
-  [`relativities_list()`](https://mharinga.github.io/insurancerating/reference/relativities_list.md)
+  [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
   and
   [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md).
 
@@ -64,7 +64,7 @@ Object of class `rating_refinement`.
 that will be used to split one or more levels of `model_variable`. The
 `relativities` argument should be a named list describing those splits,
 usually built with
-[`relativities_list()`](https://mharinga.github.io/insurancerating/reference/relativities_list.md)
+[`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
 and
 [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md).
 
@@ -75,6 +75,32 @@ normalised using exposure so that the refined split keeps the original
 level effect on average. This helps prevent an expert split from
 unintentionally changing the total premium level for the original model
 group.
+
+**When to use**
+
+`add_relativities()` is intended for refinement within an already
+reasonably homogeneous GLM segment. It redistributes an existing
+coefficient across sublevels using exposure-weighted relativities, while
+preserving the overall level of the original coefficient. This is useful
+for mild heterogeneity, commercial refinement, monotonic tariff
+differentiation, or expert-based segmentation within a stable risk group
+where the original GLM coefficient is broadly representative.
+
+**Limitations**
+
+The method is not a substitute for creating a separate risk segment when
+the original GLM coefficient is itself distorted. For example, suppose a
+broad industry segment contains many relatively stable businesses, but a
+few chemical companies drive most of the losses while representing
+little exposure. The fitted industry coefficient may then be dominated
+by the chemical companies' experience. Applying exposure-weighted
+relativities inside that segment may barely reduce the coefficient for
+the large exposure group, because the original coefficient is already
+pulled upward by the outlier subgroup.
+
+In that situation it is often better to create a separate GLM factor
+level, derive a separate tariff segment, or apply explicit segmentation
+or acceptation rules, instead of relying only on `add_relativities()`.
 
 ## Author
 
@@ -98,7 +124,7 @@ model <- glm(
   data = portfolio
 )
 
-relativities <- relativities_list(
+relativities <- relativities(
   split_level(
     "residential",
     new_levels = c("flat", "house"),

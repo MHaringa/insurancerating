@@ -229,5 +229,6 @@ autoplot.check_residuals <- function(object, show_message = TRUE,
       title = "Residual QQ-plot",
       subtitle = subtitle
     ) +
-    ggplot2::theme_minimal()
+    ggplot2::theme_minimal() +
+    .plot_grid_theme_ir()
 }

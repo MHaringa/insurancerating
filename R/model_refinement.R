@@ -464,11 +464,19 @@ print.summary.rating_refinement <- function(x, ...) {
 #' after [prepare_refinement()]; the deprecated [restrict_coef()] wrapper is
 #' only kept for backwards compatibility.
 #'
+#' The restriction table may contain all levels of the model variable, or only
+#' the levels that need a manual adjustment. If only a subset is supplied, the
+#' missing levels are automatically filled with their current fitted GLM
+#' relativities. This makes it possible to fix one level explicitly while keeping
+#' the other levels at their already estimated values.
+#'
 #' @param model Object of class `rating_refinement`, usually created with
 #'   [prepare_refinement()].
 #' @param restrictions Data frame with exactly two columns. The first column
 #'   must have the same name as the model variable to restrict and contains the
 #'   levels to adjust. The second column contains the replacement relativities.
+#'   Levels that are not supplied are filled with the currently fitted GLM
+#'   relativities.
 #'
 #' @author Martin Haringa
 #'
@@ -488,8 +496,8 @@ print.summary.rating_refinement <- function(x, ...) {
 #' )
 #'
 #' restrictions <- data.frame(
-#'   postal_area = c("A", "B", "C"),
-#'   relativity = c(0.95, 1.00, 1.10)
+#'   postal_area = "C",
+#'   relativity = 1.10
 #' )
 #'
 #' refined <- prepare_refinement(model, data = portfolio) |>
@@ -509,12 +517,71 @@ add_restriction <- function(model, restrictions) {
     stop("Restriction variable '", variable, "' is not in refinement data.", call. = FALSE)
   }
 
+  restrictions <- .complete_restrictions_from_model(model, restrictions)
+
   .add_step(model, list(
     id = .next_step_id(model),
     type = "restriction",
     variable = variable,
     restrictions = restrictions
   ))
+}
+
+.complete_restrictions_from_model <- function(model, restrictions) {
+  variable <- names(restrictions)[1]
+  value_col <- names(restrictions)[2]
+
+  if (length(unique(restrictions[[variable]])) != nrow(restrictions)) {
+    stop("`", variable, "` in `restrictions` must have unique values.",
+         call. = FALSE)
+  }
+
+  if (!is.numeric(restrictions[[value_col]]) ||
+      any(!is.finite(restrictions[[value_col]]))) {
+    stop("The second column of `restrictions` must contain finite numeric relativities.",
+         call. = FALSE)
+  }
+
+  rf <- model$base$rating_factors
+  rf_var <- rf[rf$risk_factor == variable, c("level", "estimate"), drop = FALSE]
+
+  if (nrow(rf_var) == 0) {
+    stop(
+      "Restriction variable '", variable,
+      "' is not a rating factor in the fitted GLM.",
+      call. = FALSE
+    )
+  }
+
+  model_levels <- as.character(rf_var$level)
+  supplied_levels <- as.character(restrictions[[variable]])
+  unknown_levels <- setdiff(supplied_levels, model_levels)
+
+  if (length(unknown_levels) > 0) {
+    stop(
+      "Level(s) in `restrictions` not found in model variable `",
+      variable,
+      "`: ",
+      paste(unknown_levels, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  full <- data.frame(
+    level = model_levels,
+    value = as.numeric(rf_var$estimate),
+    stringsAsFactors = FALSE
+  )
+
+  idx <- match(supplied_levels, full$level)
+  full$value[idx] <- restrictions[[value_col]]
+
+  out <- stats::setNames(
+    data.frame(full$level, full$value, stringsAsFactors = FALSE),
+    c(variable, value_col)
+  )
+
+  out
 }
 
 
@@ -567,9 +634,9 @@ restrict_coef <- function(model, restrictions) {
 #' @details
 #' `add_smoothing()` stores a smoothing step on a `rating_refinement` object.
 #' The original GLM contains `model_variable`, usually a factor or grouped
-#' tariff group. The smoother is fitted against `source_variable`, the original
+#' tariff segment. The smoother is fitted against `source_variable`, the original
 #' numeric portfolio variable behind those groups. The smoothed result is then
-#' converted back to tariff groups using `breaks` and applied when [refit()] is
+#' converted back to tariff segments using `breaks` and applied when [refit()] is
 #' called.
 #'
 #' This makes the intended API explicit: first prepare the model with
@@ -586,7 +653,7 @@ restrict_coef <- function(model, restrictions) {
 #'   underlying `model_variable`.
 #' @param degree Optional single whole number. Polynomial degree, used by
 #'   polynomial smoothing methods.
-#' @param breaks Numeric vector with the tariff group boundaries to use after
+#' @param breaks Numeric vector with the tariff segment boundaries to use after
 #'   smoothing. Values must be finite and strictly increasing.
 #' @param smoothing Character string with the smoothing method, for example
 #'   `"spline"` when supported by the fitted workflow.
@@ -613,10 +680,10 @@ restrict_coef <- function(model, restrictions) {
 #'   exposure = "exposure"
 #' )
 #'
-#' age_groups_freq <- derive_tariff_groups(age_policyholder_frequency)
+#' age_segments_freq <- derive_tariff_segments(age_policyholder_frequency)
 #'
 #' dat <- MTPL |>
-#'   add_tariff_groups(age_groups_freq, name = "age_policyholder_freq_cat") |>
+#'   add_tariff_segments(age_segments_freq, name = "age_policyholder_freq_cat") |>
 #'   mutate(across(where(is.character), as.factor)) |>
 #'   mutate(across(where(is.factor), ~ set_reference_level(., exposure)))
 #'
@@ -976,7 +1043,7 @@ edit_smoothing <- function(model,
 #' Add expert-based relativities to a refinement workflow
 #'
 #' @description
-#' Splits an existing model variable into more detailed tariff groups using
+#' Splits an existing model variable into more detailed tariff segments using
 #' supplied relativities. This is useful when the GLM is fitted on a coarser
 #' rating factor for credibility or stability, but the final tariff needs a
 #' more detailed split that is based on portfolio exposure, expert judgement or
@@ -986,8 +1053,8 @@ edit_smoothing <- function(model,
 #' `model_variable` is the variable already used in the GLM. `split_variable` is
 #' the more detailed variable in the portfolio data that will be used to split
 #' one or more levels of `model_variable`. The `relativities` argument should be
-#' a named list describing those splits, usually built with
-#' [relativities_list()] and [split_level()].
+#' a named list describing those splits, usually built with [relativities()] and
+#' [split_level()].
 #'
 #' The step is stored on the `rating_refinement` object and is applied when
 #' [refit()] is called. When `normalize = TRUE`, the supplied relativities are
@@ -995,14 +1062,40 @@ edit_smoothing <- function(model,
 #' effect on average. This helps prevent an expert split from unintentionally
 #' changing the total premium level for the original model group.
 #'
+#' **When to use**
+#'
+#' `add_relativities()` is intended for refinement within an already reasonably
+#' homogeneous GLM segment. It redistributes an existing coefficient across
+#' sublevels using exposure-weighted relativities, while preserving the overall
+#' level of the original coefficient. This is useful for mild heterogeneity,
+#' commercial refinement, monotonic tariff differentiation, or expert-based
+#' segmentation within a stable risk group where the original GLM coefficient is
+#' broadly representative.
+#'
+#' **Limitations**
+#'
+#' The method is not a substitute for creating a separate risk segment when the
+#' original GLM coefficient is itself distorted. For example, suppose a broad
+#' industry segment contains many relatively stable businesses, but a few
+#' chemical companies drive most of the losses while representing little
+#' exposure. The fitted industry coefficient may then be dominated by the
+#' chemical companies' experience. Applying exposure-weighted relativities inside
+#' that segment may barely reduce the coefficient for the large exposure group,
+#' because the original coefficient is already pulled upward by the outlier
+#' subgroup.
+#'
+#' In that situation it is often better to create a separate GLM factor level,
+#' derive a separate tariff segment, or apply explicit segmentation or
+#' acceptation rules, instead of relying only on `add_relativities()`.
+#'
 #' @param model Object of class `rating_refinement`, usually created with
 #'   [prepare_refinement()].
 #' @param model_variable Character string. Existing variable in the GLM. Levels
-#'   of this variable can be split into more detailed tariff groups.
+#'   of this variable can be split into more detailed tariff segments.
 #' @param split_variable Character string. More granular portfolio variable that
 #'   defines the detailed groups inside `model_variable`.
 #' @param relativities Named list of data frames, usually created with
-#'   [relativities_list()] and [split_level()].
+#'   [relativities()] and [split_level()].
 #' @param exposure Character string. Exposure column used for weighting and,
 #'   when requested, normalisation.
 #' @param normalize Logical. If `TRUE`, normalise the supplied relativities by
@@ -1028,7 +1121,7 @@ edit_smoothing <- function(model,
 #'   data = portfolio
 #' )
 #'
-#' relativities <- relativities_list(
+#' relativities <- relativities(
 #'   split_level(
 #'     "residential",
 #'     new_levels = c("flat", "house"),
@@ -1058,7 +1151,7 @@ add_relativities <- function(model,
   .assert_column_name(exposure, "exposure", model$base$data)
   .assert_single_logical(normalize, "normalize")
 
-  .check_relativities_list(relativities)
+  .check_relativities(relativities)
 
   .add_step(model, list(
     id = .next_step_id(model),

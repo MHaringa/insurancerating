@@ -102,8 +102,11 @@
 <span>  claim_amount <span class="op">=</span> <span class="st">"amount"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fa</span>, metrics <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/unnamed-chunk-3-1.png"><!-- --></p>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span></span>
+<span>  <span class="va">fa</span>,</span>
+<span>  metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"frequency"</span>, <span class="st">"average_severity"</span>, <span class="st">"risk_premium"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/unnamed-chunk-3-1.png" alt="Factor analysis plot showing frequency, average severity and risk premium by ZIP code."><!-- --></p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit model</span></span>
 <span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
@@ -132,12 +135,12 @@
 <span>  <span class="fu"><a href="reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">mod_refined</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb7"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="do">##   risk_factor       level est_mod_refined</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="do">## 1 (Intercept) (Intercept)        0.136653</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="do">## 2     zip_adj           0        0.900000</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="do">## 3     zip_adj           1        0.950000</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="do">## 4     zip_adj           2        1.000000</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="do">## 5     zip_adj           3        1.100000</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="do">##   risk_factor       level est_mod_refined exposure</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="do">## 1 (Intercept) (Intercept)        0.136653       NA</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="do">## 2     zip_adj           0        0.900000      207</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="do">## 3     zip_adj           1        0.950000    11081</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="do">## 4     zip_adj           2        1.000000     7783</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="do">## 5     zip_adj           3        1.100000     7588</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="combining-building-blocks">Combining Building Blocks<a class="anchor" aria-label="anchor" href="#combining-building-blocks"></a>
@@ -218,7 +221,7 @@
 <li><a href="articles/getting-started.html">Getting started</a></li>
 <li><a href="articles/refinement-workflow.html">Refinement building blocks</a></li>
 <li><a href="articles/model-validation.html">Model validation</a></li>
-<li><a href="articles/pricing-principles.html">Pricing principles</a></li>
+<li><a href="articles/pricing-workflow-building-blocks.html">Pricing workflow building blocks</a></li>
 </ul>
 </div>
 </div>

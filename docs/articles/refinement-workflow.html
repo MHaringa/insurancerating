@@ -67,11 +67,11 @@
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>In insurance pricing, model estimation is usually not the final
-step.</p>
-<p>A fitted GLM may capture the structure of the portfolio well, but the
-raw coefficients are not always directly suitable for implementation in
-a tariff.</p>
+<p>In many pricing analyses, model estimation is followed by a
+translation step.</p>
+<p>A fitted GLM may capture the structure of the portfolio well, while
+some fitted effects still need to be reviewed before they are used in a
+tariff.</p>
 <p>Common reasons include:</p>
 <ul>
 <li>irregular local variation</li>
@@ -102,10 +102,11 @@ interface:</p>
 reproduce, and audit.</p>
 </div>
 <div class="section level2">
-<h2 id="when-refinement-is-used">When refinement is used<a class="anchor" aria-label="anchor" href="#when-refinement-is-used"></a>
+<h2 id="when-refinement-can-help">When refinement can help<a class="anchor" aria-label="anchor" href="#when-refinement-can-help"></a>
 </h2>
-<p>Refinement is used when the estimated model output is statistically
-acceptable, but not yet suitable as a tariff structure.</p>
+<p>Refinement can help when the estimated model output is useful, but
+the fitted coefficient pattern needs additional structure before it is
+used in a tariff.</p>
 <p>Typical use cases include:</p>
 <ul>
 <li>smoothing a rating factor derived from a continuous variable</li>
@@ -115,11 +116,12 @@ acceptable, but not yet suitable as a tariff structure.</p>
 levels</li>
 <li>simplifying the final tariff for practical implementation</li>
 </ul>
-<p>In most cases, refinement is applied to the <strong>premium
-model</strong>, rather than to the separate frequency or severity
-models. The purpose of refinement is not primarily to smooth
-intermediate model components, but to impose structure on the final
-pricing signal that will be used in the tariff.</p>
+<p>In many workflows, refinement is applied to the model that represents
+the final pricing signal, such as a premium or pure-premium model. In
+other cases, it may also be useful for selected frequency or severity
+effects. The relevant question is whether the adjusted coefficient
+pattern is intended to support the tariff structure that will be
+reviewed or implemented.</p>
 </div>
 <div class="section level2">
 <h2 id="example-setup">Example setup<a class="anchor" aria-label="anchor" href="#example-setup"></a>
@@ -127,7 +129,7 @@ pricing signal that will be used in the tariff.</p>
 <p>The example below starts from one common premium modelling setup:</p>
 <ul>
 <li>analyse a continuous variable with a GAM</li>
-<li>convert it to tariff groups</li>
+<li>convert it to tariff segments</li>
 <li>fit frequency and severity models</li>
 <li>combine both into a premium proxy</li>
 <li>fit an unrestricted premium model</li>
@@ -144,10 +146,10 @@ pricing signal that will be used in the tariff.</p>
 <span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">age_groups_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_tariff_groups.html">derive_tariff_groups</a></span><span class="op">(</span><span class="va">age_policyholder_frequency</span><span class="op">)</span></span>
+<span><span class="va">age_segments_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_tariff_segments.html">derive_tariff_segments</a></span><span class="op">(</span><span class="va">age_policyholder_frequency</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="va">MTPL</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_tariff_groups.html">add_tariff_groups</a></span><span class="op">(</span><span class="va">age_groups_freq</span>, name <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_tariff_segments.html">add_tariff_segments</a></span><span class="op">(</span><span class="va">age_segments_freq</span>, name <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">as.factor</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.factor</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="../reference/set_reference_level.html">set_reference_level</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">exposure</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -200,8 +202,9 @@ structure:</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="refinement-workflow_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="700"></p>
 <p>At this stage, the coefficients reflect the unrestricted model fit.
-In practice, this output may already be informative, but still too
-irregular or too detailed for direct tariff use.</p>
+This output is often informative by itself. If the pattern is too
+irregular, too granular or difficult to explain, a refinement step can
+be added explicitly.</p>
 </div>
 <div class="section level2">
 <h2 id="the-refinement-object">The refinement object<a class="anchor" aria-label="anchor" href="#the-refinement-object"></a>
@@ -223,7 +226,7 @@ irregular or too detailed for direct tariff use.</p>
 <p>At this point, the model itself has not been refitted. The refinement
 object represents a proposed tariff adjustment structure, not yet the
 final fitted result.</p>
-<p>This distinction is deliberate: refinement steps can be inspected
+<p>This distinction is useful because refinement steps can be inspected
 before they are incorporated into the final model.</p>
 </div>
 <div class="section level2">
@@ -232,16 +235,17 @@ before they are incorporated into the final model.</p>
 <div class="section level3">
 <h3 id="purpose">Purpose<a class="anchor" aria-label="anchor" href="#purpose"></a>
 </h3>
-<p>Smoothing is used when a rating factor derived from a continuous
-variable contains undesirable local variation.</p>
+<p>Smoothing can be used when a rating factor derived from a continuous
+variable contains local variation that is hard to justify in a
+tariff.</p>
 <p>For example, a coefficient pattern such as:</p>
 <ul>
 <li>age 30–34 lower</li>
 <li>age 34–38 higher</li>
 <li>age 38–42 lower again</li>
 </ul>
-<p>may be statistically possible, but undesirable in a tariff. Smoothing
-imposes a more stable structure on the rating factor.</p>
+<p>may be statistically possible, but difficult to explain or maintain.
+Smoothing adds a more stable structure to the rating factor.</p>
 </div>
 <div class="section level3">
 <h3 id="adding-smoothing">Adding smoothing<a class="anchor" aria-label="anchor" href="#adding-smoothing"></a>
@@ -321,8 +325,8 @@ incorporated into the final fitted model.</p>
 <div class="section level3">
 <h3 id="purpose-1">Purpose<a class="anchor" aria-label="anchor" href="#purpose-1"></a>
 </h3>
-<p>Restrictions are used when coefficients must follow a predefined
-structure.</p>
+<p>Restrictions can be used when coefficients need to follow a
+predefined structure.</p>
 <p>Typical examples include:</p>
 <ul>
 <li>bonus-malus systems</li>
@@ -372,8 +376,8 @@ fitted model.</p>
 <h3 id="purpose-2">Purpose<a class="anchor" aria-label="anchor" href="#purpose-2"></a>
 </h3>
 <p>In some cases, the fitted model uses a broad factor level, while
-business or portfolio knowledge suggests that more granular
-differentiation is required.</p>
+portfolio or business knowledge suggests that more granular
+differentiation may be useful.</p>
 <p>For example, a model may estimate one coefficient for “construction”,
 while pricing practice distinguishes between:</p>
 <ul>
@@ -381,15 +385,15 @@ while pricing practice distinguishes between:</p>
 <li>commercial construction</li>
 <li>civil engineering</li>
 </ul>
-<p>This is particularly relevant when subgroup exposure is too limited
-to estimate stable coefficients directly.</p>
+<p>This can be relevant when subgroup exposure is too limited to
+estimate stable coefficients directly.</p>
 </div>
 <div class="section level3">
 <h3 id="adding-relativities">Adding relativities<a class="anchor" aria-label="anchor" href="#adding-relativities"></a>
 </h3>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="va">relativities_activity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/relativities_list.html">relativities_list</a></span><span class="op">(</span></span>
+<span><span class="va">relativities_activity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/relativities.html">relativities</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/split_level.html">split_level</a></span><span class="op">(</span></span>
 <span>    <span class="st">"construction"</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"residential_construction"</span>, <span class="st">"commercial_construction"</span><span class="op">)</span>,</span>
@@ -419,15 +423,15 @@ structure.</p>
 <h3 id="why-refit-is-required">Why refit is required<a class="anchor" aria-label="anchor" href="#why-refit-is-required"></a>
 </h3>
 <p>Refinement steps alter part of the model structure. Once these
-changes are applied, the remaining coefficients may also need to
-adjust.</p>
+changes are applied, the remaining coefficients may also adjust.</p>
 <p>For that reason, the sequence does not end with
 <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> or <code><a href="../reference/add_restriction.html">add_restriction()</a></code>. The
 final step is:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">burn_refined</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="va">ref</span><span class="op">)</span></span></code></pre></div>
-<p>This refits the model while incorporating the refinement steps.</p>
+<p>This refits the model while incorporating the documented refinement
+steps.</p>
 </div>
 <div class="section level3">
 <h3 id="inspecting-the-final-fitted-result">Inspecting the final fitted result<a class="anchor" aria-label="anchor" href="#inspecting-the-final-fitted-result"></a>
@@ -458,9 +462,9 @@ final step is:</p>
 <span><span class="co">#&gt; 19     (83,88] age_policyholder_smooth     5.983689e-01       93</span></span>
 <span><span class="co">#&gt; 20     (88,93] age_policyholder_smooth     5.224158e-01       11</span></span>
 <span><span class="co">#&gt; 21          bm                      bm     9.977213e-01       NA</span></span></code></pre></div>
-<p>At this point, the output no longer represents proposed manual
-adjustments. It represents the <strong>final fitted coefficient
-structure</strong>.</p>
+<p>At this point, the output no longer represents a proposed refinement
+plan. It represents the fitted coefficient structure after
+refinement.</p>
 <p>The distinction is:</p>
 <ul>
 <li>before <code><a href="../reference/refit.html">refit()</a></code> –&gt; inspect the refinement plan</li>
@@ -605,20 +609,20 @@ are now embedded in the fitted model output.</p>
 <p>For new code, the recommended interface is:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a></span>
 <span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="fu">prepare_refinement</span>() <span class="sc">|&gt;</span> add_<span class="sc">*</span>() <span class="sc">|&gt;</span> <span class="fu">refit</span>()</span></code></pre></div>
-<p>This makes the sequence of tariff adjustments explicit and improves
-interpretability, governance, and auditability.</p>
+<p>This keeps the sequence of tariff adjustments explicit.</p>
 </div>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
-<p>The refinement interface separates:</p>
+<p>The refinement interface helps separate:</p>
 <ul>
 <li>model estimation</li>
 <li>tariff adjustments</li>
 <li>final fitted output</li>
 </ul>
-<p>This makes it possible to move from a raw GLM to a tariff structure
-that is:</p>
+<p>This makes it easier to document and inspect adjustments before the
+model is refitted. In practice, this can support tariff structures that
+are:</p>
 <ul>
 <li>statistically grounded</li>
 <li>interpretable</li>
@@ -631,7 +635,8 @@ that is:</p>
 </h2>
 <p>For the underlying pricing concepts, see:</p>
 <ul>
-<li><a href="pricing-principles.html">Pricing principles</a></li>
+<li><a href="pricing-workflow-building-blocks.html">Pricing workflow
+building blocks</a></li>
 </ul>
 <p>For an example sequence from portfolio analysis to fitted tariff,
 see:</p>

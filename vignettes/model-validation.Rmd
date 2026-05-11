@@ -264,4 +264,4 @@ For the refinement step after validation, see:
 For the conceptual background to exposure, risk premium, and tariff structure,
 see:
 
-- [Pricing principles](pricing-principles.html)
+- [Pricing workflow building blocks](pricing-workflow-building-blocks.html)

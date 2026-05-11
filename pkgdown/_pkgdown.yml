@@ -18,9 +18,9 @@ articles:
       - getting-started
       - refinement-workflow
       - model-validation
-  - title: "Background"
+  - title: "Overview"
     contents:
-      - pricing-principles
+      - pricing-workflow-building-blocks
 
 reference:
   - title: "Portfolio analysis"
@@ -31,21 +31,22 @@ reference:
       - autoplot.factor_analysis
       - outlier_histogram
 
-  - title: "Tariff groups"
+  - title: "Tariff segments"
     desc: >
-      Analyse continuous risk factors and convert them to tariff groups.
+      Analyse continuous risk factors and convert them to tariff segments.
     contents:
       - risk_factor_gam
       - autoplot.riskfactor_gam
-      - derive_tariff_groups
-      - add_tariff_groups
-      - autoplot.tariff_groups
+      - derive_tariff_segments
+      - add_tariff_segments
+      - autoplot.tariff_segments
 
   - title: "Modelling and interpretation"
     desc: >
       Estimate pricing models and interpret fitted coefficients in tariff terms.
     contents:
       - rating_table
+      - add_observed_experience
       - autoplot.rating_table
       - add_prediction
 
@@ -59,7 +60,7 @@ reference:
       - edit_smoothing
       - add_restriction
       - add_relativities
-      - relativities_list
+      - relativities
       - split_level
       - split_relativities
       - refit

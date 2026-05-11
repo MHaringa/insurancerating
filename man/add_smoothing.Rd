@@ -33,7 +33,7 @@ underlying \code{model_variable}.}
 \item{degree}{Optional single whole number. Polynomial degree, used by
 polynomial smoothing methods.}
 
-\item{breaks}{Numeric vector with the tariff group boundaries to use after
+\item{breaks}{Numeric vector with the tariff segment boundaries to use after
 smoothing. Values must be finite and strictly increasing.}
 
 \item{smoothing}{Character string with the smoothing method, for example
@@ -62,9 +62,9 @@ can be too jagged for a stable and explainable tariff.
 \details{
 \code{add_smoothing()} stores a smoothing step on a \code{rating_refinement} object.
 The original GLM contains \code{model_variable}, usually a factor or grouped
-tariff group. The smoother is fitted against \code{source_variable}, the original
+tariff segment. The smoother is fitted against \code{source_variable}, the original
 numeric portfolio variable behind those groups. The smoothed result is then
-converted back to tariff groups using \code{breaks} and applied when \code{\link[=refit]{refit()}} is
+converted back to tariff segments using \code{breaks} and applied when \code{\link[=refit]{refit()}} is
 called.
 
 This makes the intended API explicit: first prepare the model with
@@ -83,10 +83,10 @@ age_policyholder_frequency <- risk_factor_gam(
   exposure = "exposure"
 )
 
-age_groups_freq <- derive_tariff_groups(age_policyholder_frequency)
+age_segments_freq <- derive_tariff_segments(age_policyholder_frequency)
 
 dat <- MTPL |>
-  add_tariff_groups(age_groups_freq, name = "age_policyholder_freq_cat") |>
+  add_tariff_segments(age_segments_freq, name = "age_policyholder_freq_cat") |>
   mutate(across(where(is.character), as.factor)) |>
   mutate(across(where(is.factor), ~ set_reference_level(., exposure)))
 

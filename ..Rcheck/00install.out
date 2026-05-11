@@ -1,0 +1,16 @@
+* installing *source* package ‘insurancerating’ ...
+** this is package ‘insurancerating’ version ‘0.7.5.9000’
+** using staged installation
+** R
+** data
+*** moving datasets to lazyload DB
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+*** copying figures
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded from temporary location
+** testing if installed package can be loaded from final location
+** testing if installed package keeps a record of temporary installation path
+* DONE (insurancerating)

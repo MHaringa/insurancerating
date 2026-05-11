@@ -108,7 +108,7 @@ arg_to_string_or_null <- function(arg) {
 #' Fits a generalized additive model (GAM) to a continuous risk factor in one of
 #' three insurance pricing contexts: claim frequency, claim severity, or pure
 #' premium. The fitted curve helps assess non-linear rating effects before a
-#' continuous variable is grouped into tariff groups or used in a GLM workflow.
+#' continuous variable is grouped into tariff segments or used in a GLM workflow.
 #'
 #' @param data A data.frame containing the insurance portfolio.
 #' @param risk_factor Character, name of column in `data` with the continuous
@@ -610,7 +610,8 @@ autoplot.riskfactor_gam <- function(object, confidence = FALSE,
 
   p <- ggplot(prediction, aes(x = x, y = fitted)) +
     geom_line(color = color_gam) +
-    theme_bw(base_size = 12) +
+    theme_minimal() +
+    .plot_grid_theme_ir() +
     labs(y = paste0("Predicted ", ylab), x = xlab)
 
   if (isTRUE(confidence) && !any(prediction$conf_high > 1e9)) {

@@ -4,7 +4,7 @@ Fits a generalized additive model (GAM) to a continuous risk factor in
 one of three insurance pricing contexts: claim frequency, claim
 severity, or pure premium. The fitted curve helps assess non-linear
 rating effects before a continuous variable is grouped into tariff
-groups or used in a GLM workflow.
+segments or used in a GLM workflow.
 
 ## Usage
 

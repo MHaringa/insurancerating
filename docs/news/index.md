@@ -2,206 +2,288 @@
 
 ## insurancerating (development version)
 
-#### Fisher-Jenks classification (`fisher_classify()` / `fisher()`)
+### Main API updates
 
-- [`fisher_classify()`](https://mharinga.github.io/insurancerating/reference/fisher_classify.md)
+#### Portfolio analysis
+
+- [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
+  is now the primary function for univariate/factor-level portfolio
+  analysis. It returns objects with primary class `"factor_analysis"`
+  while retaining `"univariate"` for compatibility.
+- [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
+  is deprecated and remains available as a compatibility wrapper. The
+  old NSE interface is still supported through the deprecated wrapper.
+- [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
+  now validates metric columns and grouping variables early, with
+  clearer error messages for missing columns.
+- Metrics with a zero or missing denominator now return `NA_real_`
+  instead of `Inf` or `NaN`.
+- [`autoplot.factor_analysis()`](https://mharinga.github.io/insurancerating/reference/autoplot.factor_analysis.md)
+  is the primary plot method. The deprecated `show_plots` argument has
+  been replaced by `metrics`.
+- The factor-analysis plot keeps the established package styling and now
+  uses a consistent grid, axis-line, tick and secondary-axis style.
+
+#### Outlier histograms
+
+- [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
+  has clearer argument names: `lower`, `upper`, `density`, `bar_fill`,
+  `bar_color`, `tail_fill`, `tail_color`, and `density_color`.
+- Deprecated argument names remain supported: `left`, `right`, `line`,
+  `fill`, `color`, and `fill_outliers`.
+- The default colours now align with the package palette: light grey
+  bars, orange tail bins, and blue density curve.
+- Input validation has been expanded for missing columns, non-numeric
+  variables, invalid cutoffs, invalid colours, invalid bin counts,
+  constant variables and all-missing variables.
+- [`histbin()`](https://mharinga.github.io/insurancerating/reference/histbin.md)
+  is deprecated and remains available as a compatibility wrapper.
+
+#### Risk factor GAMs and tariff segmentation
+
+- [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
+  is the primary spelling for fitting GAMs to continuous risk factors.
+  [`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/riskfactor_gam.md)
   and
-  [`fisher()`](https://mharinga.github.io/insurancerating/reference/fisher.md)
-  are deprecated as of 0.8.0 because Fisher-Jenks classification is a
-  general-purpose grouping method and is not directly linked to the
-  insurance rating workflow.
-- `classInt` moved from `Imports` to `Suggests`.
-
-#### Tariff class construction (`construct_tariff_classes()`)
-
+  [`fit_gam()`](https://mharinga.github.io/insurancerating/reference/fit_gam.md)
+  remain available for compatibility, with
+  [`fit_gam()`](https://mharinga.github.io/insurancerating/reference/fit_gam.md)
+  deprecated.
+- [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
+  returns objects with primary class `"risk_factor_gam"`; compatibility
+  classes are retained for older code.
+- `model = "pure_premium"` replaces the older `model = "burning"`
+  wording. The old value remains supported with a lifecycle warning.
+- Input validation and documentation for frequency, severity and
+  pure-premium GAMs have been improved.
+- [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md)
+  replaces
+  [`construct_tariff_classes()`](https://mharinga.github.io/insurancerating/reference/construct_tariff_classes.md)
+  as the primary API for deriving tariff segments from a fitted
+  risk-factor GAM.
+- [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md)
+  returns objects with primary class `"tariff_segments"`.
+- [`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md)
+  can add derived tariff segments back to a portfolio.
 - [`construct_tariff_classes()`](https://mharinga.github.io/insurancerating/reference/construct_tariff_classes.md)
-  now returns objects with primary class `"tariff_classes"` while
-  retaining `"constructtariffclasses"` for backwards compatibility.
-- Added clearer control arguments: `complexity`, `max_iterations`, and
-  `population_size`. The previous `alpha`, `niterations`, and `ntrees`
-  arguments remain supported with lifecycle warnings.
-- Fixed split extraction for decimal-valued risk factors.
-- `autoplot(..., conf_int = TRUE)` now recognizes the confidence
-  interval columns produced by
-  [`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/riskfactor_gam.md).
-- Class construction failures now produce explicit errors instead of
-  silently returning a single broad interval.
+  remains available as a deprecated compatibility wrapper.
+- Split extraction now handles decimal split points correctly.
+- Tree-fitting and split-extraction failures now fail clearly instead of
+  silently returning one broad tariff interval.
+- The tariff-segment plot now recognises confidence interval columns
+  produced by the package’s own GAM output.
 
-#### Risk factor GAMs (`riskfactor_gam()` / `fit_gam()`)
+#### Rating tables
 
-- [`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/riskfactor_gam.md)
-  now returns objects with primary class `"riskfactor_gam"` while
-  retaining `"fitgam"` for backwards compatibility.
-- `model = "pure_premium"` replaces `model = "burning"` as the preferred
-  API. The old `"burning"` value remains supported with a lifecycle
-  warning.
-- Improved validation for model-specific required inputs, especially
-  severity `amount` and pure premium `pure_premium`.
-- Documentation now correctly describes severity and pure premium models
-  as Gamma GAMs with log link.
+- [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+  is the primary API for interpreting fitted GLM coefficients in
+  tariff-table form.
+  [`rating_factors()`](https://mharinga.github.io/insurancerating/reference/rating_factors.md)
+  and
+  [`rating_factors2()`](https://mharinga.github.io/insurancerating/reference/rating_factors2.md)
+  are deprecated wrappers.
+- [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+  now returns objects with primary class `"rating_table"` while
+  retaining the legacy `"riskfactor"` class for compatibility.
+- `exposure_output` replaces the older `exposure_name` argument.
+- `significance` replaces the older `signif_stars` argument.
+- Deprecated rating-table wrappers and plotting code have been separated
+  more clearly in the source structure.
+- [`add_observed_experience()`](https://mharinga.github.io/insurancerating/reference/add_observed_experience.md)
+  was added to attach
+  [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
+  output to a
+  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+  object before plotting. This replaces the earlier direct
+  `univariate_*` arguments in
+  [`autoplot.rating_table()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md).
+- [`autoplot.rating_table()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
+  now plots attached observed experience from
+  [`add_observed_experience()`](https://mharinga.github.io/insurancerating/reference/add_observed_experience.md)
+  and uses cleaner, package-consistent plot styling, including a subtle
+  secondary exposure axis.
 
-#### Prediction helpers (`add_prediction()`)
+#### Prediction helpers
 
-- Added `predictions`, `prefix`, `confidence`, and `interval_names` as
-  clearer naming and interval arguments.
+- [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md)
+  now has clearer naming arguments: `predictions`, `prefix`,
+  `confidence`, and `interval_names`.
 - `var` and `conf_int` are deprecated in favour of `predictions` and
   `confidence`.
 - Confidence interval columns now use `_lower` and `_upper` suffixes by
   default.
-- Added validation for `alpha`, confidence settings, duplicate output
-  names, and name collisions with existing data columns.
+- The function now validates `alpha`, confidence settings, duplicate
+  output names, name collisions with existing columns, missing models
+  and non-GLM inputs.
 
-#### Bootstrap model performance (`bootstrap_performance()`)
+#### Model data and rating grids
+
+- [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
+  replaces
+  [`model_data()`](https://mharinga.github.io/insurancerating/reference/model_data.md)
+  as the primary API for extracting model data from fitted models.
+- [`model_data()`](https://mharinga.github.io/insurancerating/reference/model_data.md)
+  is deprecated and remains available as a wrapper.
+- [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+  now uses base R internally and returns a regular `data.frame`.
+- Plain GLM metadata extraction has been improved so `rating_grid(glm)`
+  groups by model terms as expected.
+- Refinement metadata is now joined by the related original/new factor
+  columns instead of being cross-joined onto every rating-grid row.
+
+#### Model refinement
+
+- The refinement API has been clarified around
+  `prepare_refinement() |> add_*() |> refit()`.
+- [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+  now uses `model_variable` and `source_variable` as the primary
+  argument names.
+- [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+  now uses clearer in-object editing arguments for adjusting smoothing
+  settings without supplying an external data frame.
+- [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+  can now accept a partial restriction data frame. Missing levels are
+  automatically filled with the already fitted GLM relativities, so
+  users can adjust only selected levels.
+- [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+  now uses `model_variable` and `split_variable`.
+- [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
+  replaces `relativities_list()` as the helper for building relativity
+  specifications.
+- [`restrict_coef()`](https://mharinga.github.io/insurancerating/reference/restrict_coef.md),
+  [`smooth_coef()`](https://mharinga.github.io/insurancerating/reference/smooth_coef.md)
+  and
+  [`refit_glm()`](https://mharinga.github.io/insurancerating/reference/refit_glm.md)
+  remain deprecated compatibility wrappers and now link clearly to
+  [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
+  [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+  and
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+- [`autoplot.rating_refinement()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
+  no longer carries an experimental badge and uses the package plot
+  theme.
+- The refinement documentation has been expanded with applied examples
+  and a clearer explanation of smoothing, restrictions, relativities and
+  refitting.
+
+#### Reference levels
+
+- [`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md)
+  replaces
+  [`biggest_reference()`](https://mharinga.github.io/insurancerating/reference/biggest_reference.md)
+  as the primary helper for choosing factor reference levels.
+- The default method is `method = "largest_weight"`.
+- A manual `level` argument was added so a specific reference level can
+  be selected explicitly.
+- [`biggest_reference()`](https://mharinga.github.io/insurancerating/reference/biggest_reference.md)
+  remains available as a deprecated compatibility wrapper.
+
+#### Time utilities
+
+- [`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md),
+  [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
+  and
+  [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
+  now avoid mutating caller-visible input data.
+- [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
+  replaces
+  [`rows_per_date()`](https://mharinga.github.io/insurancerating/reference/rows_per_date.md)
+  as the primary API for matching event dates, such as claim dates, to
+  active portfolio rows.
+- [`period_to_months()`](https://mharinga.github.io/insurancerating/reference/period_to_months.md),
+  [`rows_per_date()`](https://mharinga.github.io/insurancerating/reference/rows_per_date.md)
+  and
+  [`reduce()`](https://mharinga.github.io/insurancerating/reference/reduce.md)
+  remain available as deprecated compatibility wrappers.
+- Date interval validation, column validation, aggregation validation,
+  `nomatch` validation and `mult` validation have been improved.
+- R CMD check notes from data.table helper columns in
+  [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
+  have been resolved.
+
+#### Model validation and performance
 
 - [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
   now has an explicit `metric = "rmse"` argument.
-- Added `sampling = c("bootstrap", "split")` to distinguish bootstrap
-  out-of-bag evaluation from train/test split sampling.
-- Added validation for `n`, `frac`, `metric`, `sampling`,
-  `show_progress`, `rmse_model`, and empty data.
+- `sampling = c("bootstrap", "split")` was added to distinguish
+  bootstrap out-of-bag evaluation from split validation.
+- Deprecated arguments `n` and `frac` remain supported as aliases for
+  `n_resamples` and `sample_fraction`.
 - Character and factor rating variables are handled more robustly across
-  resamples so prediction does not fail when a level is absent from an
-  initial training draw.
-- Deprecated
-  [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_rmse.md)
-  objects now also retain class `"bootstrap_rmse"` for backward
-  compatibility.
+  resamples so prediction does not fail when a level is absent from a
+  training sample.
+- [`autoplot.bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.md)
+  now uses a package-consistent visual style: subtle grey histogram,
+  transparent blue density, orange original-model reference line, subtle
+  confidence interval lines and no gap between the bars and x-axis.
+- [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_rmse.md)
+  remains available as a deprecated compatibility wrapper and returned
+  objects retain class `"bootstrap_rmse"` for older code.
+- [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md)
+  now validates non-GLM input, checks for Poisson models and fails
+  clearly when residual degrees of freedom are not positive.
+- `print.overdispersion()` now bases its conclusion on the original
+  p-value rather than a rounded display value.
+- [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
+  now validates inputs, uses all scaled residuals for the KS test,
+  handles empty residual vectors clearly and documents the DHARMa-based
+  residual workflow for actuarial users.
+- [`autoplot.check_residuals()`](https://mharinga.github.io/insurancerating/reference/autoplot.check_residuals.md)
+  now has a controllable `max_points` argument and uses ASCII messages
+  and the package plot theme.
 
-#### Factor analysis (`factor_analysis()` / `univariate()`)
+#### Truncated severity distributions
 
-- [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-  now returns objects with primary class `"factor_analysis"` while
-  retaining `"univariate"` for backwards compatibility.
-- Added clear validation for metric columns and `by` variables.
-- Metrics with zero denominators now return `NA` instead of `Inf` or
-  `NaN`.
-- Added
-  [`autoplot.factor_analysis()`](https://mharinga.github.io/insurancerating/reference/autoplot.factor_analysis.md)
-  while keeping `autoplot.univariate()` as a compatibility method.
-- [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
-  now fails clearly when multiple `by` variables are supplied.
-
-#### Outlier histograms (`outlier_histogram()` / `histbin()`)
-
-- Added clear validation for inputs, bin counts, cutoffs, colors, and
-  numeric data requirements.
-- Constant and all-missing variables now fail early instead of producing
-  invalid histogram bin widths.
-- Removed unused `rlang` imports from the documentation.
-- Deprecated
-  [`histbin()`](https://mharinga.github.io/insurancerating/reference/histbin.md)
-  now supports old NSE input, direct character input, and character
-  column-name variables.
-
-#### Model data extraction (`extract_model_data()` / `model_data()`)
-
-- [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
-  is now the primary API to retrieve cleaned model data from `glm`,
-  `refitsmooth`, and `refitrestricted` objects.
-- [`model_data()`](https://mharinga.github.io/insurancerating/reference/model_data.md)
-  is deprecated as of 0.9.0 and now emits a lifecycle warning; it
-  remains as a wrapper.
-- [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-  now uses base R internally and always returns a regular `data.frame`.
-- Fixed plain GLM metadata extraction so `rating_grid(glm)` groups by
-  model terms instead of unrelated original data columns.
-- Fixed `exposure_by` output names so split exposure columns use the
-  exposure column name, for example `exposure_2020`.
-- Refinement metadata is joined by the related original factor column
-  instead of being cross-joined onto every rating-grid row.
-
-#### update_smoothing()
-
-- Introduces a dedicated helper to update existing smoothing
-  specifications without refitting the full model from scratch.
-- Enables faster, more transparent iteration when fine-tuning smoothing
-  curves.
-
-#### Rating table output (`rating_table()` / `rating_factors*()`)
-
-- Renamed
-  [`rating_factors()`](https://mharinga.github.io/insurancerating/reference/rating_factors.md)
-  to
-  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-  as the primary user-facing API.
-- [`rating_factors()`](https://mharinga.github.io/insurancerating/reference/rating_factors.md)
+- [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
+  replaces
+  [`fit_truncated_dist()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_dist.md)
+  as the primary API for fitting distributions to truncated claim
+  severities.
+- Returned objects use primary class `"truncated_severity"` while
+  compatibility with `"truncated_dist"` is retained.
+- [`fit_truncated_dist()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_dist.md)
+  remains available as a deprecated compatibility wrapper.
+- Observations outside the truncation interval now fail clearly instead
+  of only warning and continuing.
+- Validation has been expanded for truncation bounds, optimisation
+  starts, grid sizes, reporting options and random generator arguments.
+- Public random generators
+  [`rlnormt()`](https://mharinga.github.io/insurancerating/reference/rlnormt.md)
   and
-  [`rating_factors2()`](https://mharinga.github.io/insurancerating/reference/rating_factors2.md)
-  are deprecated as of 0.8.0 and now emit lifecycle warnings; they
-  remain as wrappers.
+  [`rgammat()`](https://mharinga.github.io/insurancerating/reference/rgammat.md)
+  now validate sample size, distribution parameters, finite intervals
+  and positive truncation mass.
+- Plot argument names were modernised to `ecdf_geom`, `x_label`,
+  `y_label`, `show_title`, `digits` and `truncation_digits`, with old
+  names supported for compatibility.
 
-#### Histogram functions (`outlier_histogram()` / `histbin()`)
+#### Fisher-Jenks classification
 
-- Added
-  [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
-  as the new name for histograms with outlier bins.
-- [`histbin()`](https://mharinga.github.io/insurancerating/reference/histbin.md)
-  is deprecated as of 0.8.0 and now warns; it remains as a wrapper.
-- The `x` argument must now be provided as a **string** (standard
-  evaluation).
-- No functional changes to binning or outlier handling.
+- [`fisher_classify()`](https://mharinga.github.io/insurancerating/reference/fisher_classify.md)
+  and
+  [`fisher()`](https://mharinga.github.io/insurancerating/reference/fisher.md)
+  are deprecated because Fisher-Jenks classification is a
+  general-purpose grouping method and is not directly tied to the
+  insurance-rating workflow.
+- `classInt` moved from `Imports` to `Suggests`.
 
-### Breaking changes
+### Documentation, website and tests
 
-- The function
-  [`fit_gam()`](https://mharinga.github.io/insurancerating/reference/fit_gam.md)
-  has been **deprecated** and replaced by
-  [`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/riskfactor_gam.md).
-  - [`fit_gam()`](https://mharinga.github.io/insurancerating/reference/fit_gam.md)
-    used **non-standard evaluation (NSE)**, allowing unquoted column
-    names.
-
-  - [`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/riskfactor_gam.md)
-    now uses **standard evaluation (SE)**, requiring column names as
-    **character strings**.  
-    Example migration:
-
-    ``` r
-
-    # old (NSE, deprecated)
-    fit_gam(df, nclaims = nclaims, x = age_policyholder, exposure = exposure)
-
-    # new (SE)
-    riskfactor_gam(df, nclaims = "nclaims", x = "age_policyholder", exposure = "exposure")
-    ```
-
-  - The NSE wrapper
-    [`fit_gam()`](https://mharinga.github.io/insurancerating/reference/fit_gam.md)
-    is still available but will show a deprecation warning and will be
-    removed in a future release.
-- The function
-  [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
-  has been **deprecated** and replaced by
-  [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md).
-  - [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
-    used **non-standard evaluation (NSE)**, allowing unquoted column
-    names.
-
-  - [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-    now uses **standard evaluation (SE)**, requiring column names as
-    **character strings**. Example migration:
-
-    ``` r
-
-    # old (NSE, deprecated)
-    univariate(df, x = area, severity = amount, nclaims = nclaims, exposure = exposure)
-
-    # new (SE)
-    factor_analysis(df, x = "area", severity = "amount",
-                    nclaims = "nclaims", exposure = "exposure")
-    ```
-
-  - The NSE wrapper
-    [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
-    is still available but will show a deprecation warning and will be
-    removed in a future release.
-
-### Minor changes
-
-- Improved documentation for
-  [`riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/riskfactor_gam.md),
-  including clearer examples and migration guidance from
-  [`fit_gam()`](https://mharinga.github.io/insurancerating/reference/fit_gam.md).
+- The README and vignettes have been revised to present the package as a
+  set of actuarial pricing building blocks rather than a prescribed
+  pricing method.
+- The former “Pricing principles” vignette was replaced by “Pricing
+  workflow building blocks”.
+- The refinement vignette was rewritten with a more practical tone and
+  current API examples.
+- pkgdown reference sections were reorganised; deprecated functions are
+  grouped under “Deprecated” and internal S3 methods are no longer
+  listed as primary reference topics.
+- New and expanded tests cover tariff segmentation, rating tables,
+  observed experience plotting, refinement workflows, model-data
+  extraction, model performance, overdispersion, residual checks,
+  outlier histograms, truncated distributions, time utilities and factor
+  analysis.
 
 ## insurancerating 0.7.5
 
@@ -396,8 +478,8 @@ CRAN release: 2020-04-10
   first
 - [`rating_factors()`](https://mharinga.github.io/insurancerating/reference/rating_factors.md)
   now returns an object of class `riskfactor`
-- [`autoplot.riskfactor()`](https://mharinga.github.io/insurancerating/reference/autoplot.riskfactor.md)
-  is added to create the corresponding plots to the output given by
+- `autoplot.riskfactor()` is added to create the corresponding plots to
+  the output given by
   [`rating_factors()`](https://mharinga.github.io/insurancerating/reference/rating_factors.md)
 
 ## insurancerating 0.5.2

@@ -2,11 +2,12 @@
 
 ## Introduction
 
-In insurance pricing, model estimation is usually not the final step.
+In many pricing analyses, model estimation is followed by a translation
+step.
 
-A fitted GLM may capture the structure of the portfolio well, but the
-raw coefficients are not always directly suitable for implementation in
-a tariff.
+A fitted GLM may capture the structure of the portfolio well, while some
+fitted effects still need to be reviewed before they are used in a
+tariff.
 
 Common reasons include:
 
@@ -36,10 +37,11 @@ For this reason, actuarial pricing work often distinguishes between:
 This separation can make tariff adjustments easier to understand,
 reproduce, and audit.
 
-## When refinement is used
+## When refinement can help
 
-Refinement is used when the estimated model output is statistically
-acceptable, but not yet suitable as a tariff structure.
+Refinement can help when the estimated model output is useful, but the
+fitted coefficient pattern needs additional structure before it is used
+in a tariff.
 
 Typical use cases include:
 
@@ -49,18 +51,19 @@ Typical use cases include:
 - introducing expert-based relativities within existing model levels
 - simplifying the final tariff for practical implementation
 
-In most cases, refinement is applied to the **premium model**, rather
-than to the separate frequency or severity models. The purpose of
-refinement is not primarily to smooth intermediate model components, but
-to impose structure on the final pricing signal that will be used in the
-tariff.
+In many workflows, refinement is applied to the model that represents
+the final pricing signal, such as a premium or pure-premium model. In
+other cases, it may also be useful for selected frequency or severity
+effects. The relevant question is whether the adjusted coefficient
+pattern is intended to support the tariff structure that will be
+reviewed or implemented.
 
 ## Example setup
 
 The example below starts from one common premium modelling setup:
 
 - analyse a continuous variable with a GAM
-- convert it to tariff groups
+- convert it to tariff segments
 - fit frequency and severity models
 - combine both into a premium proxy
 - fit an unrestricted premium model
@@ -78,10 +81,10 @@ age_policyholder_frequency <- risk_factor_gam(
   exposure = "exposure"
 )
 
-age_groups_freq <- derive_tariff_groups(age_policyholder_frequency)
+age_segments_freq <- derive_tariff_segments(age_policyholder_frequency)
 
 dat <- MTPL |>
-  add_tariff_groups(age_groups_freq, name = "age_policyholder_freq_cat") |>
+  add_tariff_segments(age_segments_freq, name = "age_policyholder_freq_cat") |>
   mutate(across(where(is.character), as.factor)) |>
   mutate(across(where(is.factor), ~ set_reference_level(., exposure)))
 
@@ -139,9 +142,10 @@ rating_table(burn_unrestricted) |>
 
 ![](refinement-workflow_files/figure-html/unnamed-chunk-3-1.png)
 
-At this stage, the coefficients reflect the unrestricted model fit. In
-practice, this output may already be informative, but still too
-irregular or too detailed for direct tariff use.
+At this stage, the coefficients reflect the unrestricted model fit. This
+output is often informative by itself. If the pattern is too irregular,
+too granular or difficult to explain, a refinement step can be added
+explicitly.
 
 ## The refinement object
 
@@ -167,15 +171,15 @@ At this point, the model itself has not been refitted. The refinement
 object represents a proposed tariff adjustment structure, not yet the
 final fitted result.
 
-This distinction is deliberate: refinement steps can be inspected before
-they are incorporated into the final model.
+This distinction is useful because refinement steps can be inspected
+before they are incorporated into the final model.
 
 ## Smoothing
 
 ### Purpose
 
-Smoothing is used when a rating factor derived from a continuous
-variable contains undesirable local variation.
+Smoothing can be used when a rating factor derived from a continuous
+variable contains local variation that is hard to justify in a tariff.
 
 For example, a coefficient pattern such as:
 
@@ -183,8 +187,8 @@ For example, a coefficient pattern such as:
 - age 34–38 higher
 - age 38–42 lower again
 
-may be statistically possible, but undesirable in a tariff. Smoothing
-imposes a more stable structure on the rating factor.
+may be statistically possible, but difficult to explain or maintain.
+Smoothing adds a more stable structure to the rating factor.
 
 ### Adding smoothing
 
@@ -252,7 +256,7 @@ For example:
 
 ### Purpose
 
-Restrictions are used when coefficients must follow a predefined
+Restrictions can be used when coefficients need to follow a predefined
 structure.
 
 Typical examples include:
@@ -304,8 +308,8 @@ fitted model.
 ### Purpose
 
 In some cases, the fitted model uses a broad factor level, while
-business or portfolio knowledge suggests that more granular
-differentiation is required.
+portfolio or business knowledge suggests that more granular
+differentiation may be useful.
 
 For example, a model may estimate one coefficient for “construction”,
 while pricing practice distinguishes between:
@@ -314,15 +318,15 @@ while pricing practice distinguishes between:
 - commercial construction
 - civil engineering
 
-This is particularly relevant when subgroup exposure is too limited to
-estimate stable coefficients directly.
+This can be relevant when subgroup exposure is too limited to estimate
+stable coefficients directly.
 
 ### Adding relativities
 
 ``` r
 
 
-relativities_activity <- relativities_list(
+relativities_activity <- relativities(
   split_level(
     "construction",
     c("residential_construction", "commercial_construction"),
@@ -351,7 +355,7 @@ structure.
 ### Why refit is required
 
 Refinement steps alter part of the model structure. Once these changes
-are applied, the remaining coefficients may also need to adjust.
+are applied, the remaining coefficients may also adjust.
 
 For that reason, the sequence does not end with
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
@@ -365,7 +369,8 @@ The final step is:
 burn_refined <- refit(ref)
 ```
 
-This refits the model while incorporating the refinement steps.
+This refits the model while incorporating the documented refinement
+steps.
 
 ### Inspecting the final fitted result
 
@@ -400,8 +405,8 @@ rating_table(burn_refined)
 #> 21          bm                      bm     9.977213e-01       NA
 ```
 
-At this point, the output no longer represents proposed manual
-adjustments. It represents the **final fitted coefficient structure**.
+At this point, the output no longer represents a proposed refinement
+plan. It represents the fitted coefficient structure after refinement.
 
 The distinction is:
 
@@ -568,19 +573,19 @@ For new code, the recommended interface is:
 prepare_refinement() |> add_*() |> refit()
 ```
 
-This makes the sequence of tariff adjustments explicit and improves
-interpretability, governance, and auditability.
+This keeps the sequence of tariff adjustments explicit.
 
 ## Summary
 
-The refinement interface separates:
+The refinement interface helps separate:
 
 - model estimation
 - tariff adjustments
 - final fitted output
 
-This makes it possible to move from a raw GLM to a tariff structure that
-is:
+This makes it easier to document and inspect adjustments before the
+model is refitted. In practice, this can support tariff structures that
+are:
 
 - statistically grounded
 - interpretable
@@ -591,8 +596,8 @@ is:
 
 For the underlying pricing concepts, see:
 
-- [Pricing
-  principles](https://mharinga.github.io/insurancerating/articles/pricing-principles.md)
+- [Pricing workflow building
+  blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md)
 
 For an example sequence from portfolio analysis to fitted tariff, see:
 

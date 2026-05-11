@@ -12,7 +12,9 @@ add_restriction(model, restrictions)
 
 \item{restrictions}{Data frame with exactly two columns. The first column
 must have the same name as the model variable to restrict and contains the
-levels to adjust. The second column contains the replacement relativities.}
+levels to adjust. The second column contains the replacement relativities.
+Levels that are not supplied are filled with the currently fitted GLM
+relativities.}
 }
 \value{
 Object of class \code{rating_refinement}.
@@ -34,6 +36,12 @@ its first column. The second column contains the relativities that should be
 used for those levels in the refined model. New code should use this function
 after \code{\link[=prepare_refinement]{prepare_refinement()}}; the deprecated \code{\link[=restrict_coef]{restrict_coef()}} wrapper is
 only kept for backwards compatibility.
+
+The restriction table may contain all levels of the model variable, or only
+the levels that need a manual adjustment. If only a subset is supplied, the
+missing levels are automatically filled with their current fitted GLM
+relativities. This makes it possible to fix one level explicitly while keeping
+the other levels at their already estimated values.
 }
 \examples{
 portfolio <- data.frame(
@@ -49,8 +57,8 @@ model <- glm(
 )
 
 restrictions <- data.frame(
-  postal_area = c("A", "B", "C"),
-  relativity = c(0.95, 1.00, 1.10)
+  postal_area = "C",
+  relativity = 1.10
 )
 
 refined <- prepare_refinement(model, data = portfolio) |>

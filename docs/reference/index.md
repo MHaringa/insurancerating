@@ -13,9 +13,9 @@ estimation.
 - [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
   : Portfolio histogram with tail bins
 
-## Tariff groups
+## Tariff segments
 
-Analyse continuous risk factors and convert them to tariff groups.
+Analyse continuous risk factors and convert them to tariff segments.
 
 - [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
   : Fit a GAM for a continuous risk factor
@@ -26,14 +26,14 @@ Analyse continuous risk factors and convert them to tariff groups.
   Autoplot for GAM objects from
   [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
 
-- [`derive_tariff_groups()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_groups.md)
-  : Derive insurance tariff groups
+- [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md)
+  : Derive insurance tariff segments
 
-- [`add_tariff_groups()`](https://mharinga.github.io/insurancerating/reference/add_tariff_groups.md)
-  : Add derived tariff groups to portfolio data
+- [`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md)
+  : Add derived tariff segments to portfolio data
 
-- [`autoplot(`*`<tariff_groups>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.tariff_groups.md)
-  : Autoplot for tariff group objects
+- [`autoplot(`*`<tariff_segments>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.tariff_segments.md)
+  : Autoplot for tariff segment objects
 
 ## Modelling and interpretation
 
@@ -43,7 +43,10 @@ terms.
 - [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
   : Build rating tables from fitted pricing models
 
-- [`autoplot(`*`<riskfactor>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.riskfactor.md)
+- [`add_observed_experience()`](https://mharinga.github.io/insurancerating/reference/add_observed_experience.md)
+  : Add observed portfolio experience to a rating table
+
+- [`autoplot(`*`<rating_table>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
   :
 
   Plot risk factor effects from
@@ -61,7 +64,7 @@ relativities.
 - [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md)
   : Prepare a model refinement workflow
 - [`autoplot(`*`<rating_refinement>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
-  **\[experimental\]** : Plot a model refinement step
+  : Plot a model refinement step
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   : Add smoothing to a refinement workflow
 - [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
@@ -70,8 +73,8 @@ relativities.
   : Add coefficient restrictions to a refinement workflow
 - [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
   : Add expert-based relativities to a refinement workflow
-- [`relativities_list()`](https://mharinga.github.io/insurancerating/reference/relativities_list.md)
-  : Combine multiple level splits into a relativities list
+- [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
+  : Combine multiple level splits into relativities
 - [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md)
   : Define a level split with relativities
 - [`split_relativities()`](https://mharinga.github.io/insurancerating/reference/split_relativities.md)
@@ -191,7 +194,7 @@ use the updated API.
   :
 
   Deprecated alias for
-  [`derive_tariff_groups()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_groups.md)
+  [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md)
 
 - [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_rmse.md)
   :

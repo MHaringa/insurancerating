@@ -94,7 +94,6 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #' Plot a model refinement step
 #'
 #' @description
-#' `r lifecycle::badge("experimental")`
 #' Takes a `rating_refinement` object and plots one refinement step before
 #' [refit()] is called. This is useful for checking whether manual tariff
 #' restrictions, smoothing or expert-based relativities behave as intended
@@ -204,7 +203,9 @@ autoplot.rating_refinement <- function(object,
     panel.border     = ggplot2::element_blank(),
     axis.text.y.right  = ggplot2::element_text(color = "#9E9E9E", size = 8),
     axis.title.y.right = ggplot2::element_text(color = "#9E9E9E", size = 9),
-    axis.title.y       = ggplot2::element_text(size = 10)
+    axis.title.y       = ggplot2::element_text(size = 10),
+    axis.line = ggplot2::element_line(colour = "grey55", linewidth = 0.3),
+    axis.ticks = ggplot2::element_line(colour = "grey55", linewidth = 0.3)
   )
 }
 

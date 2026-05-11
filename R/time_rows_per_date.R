@@ -19,8 +19,6 @@
 #' x. nomatch=NULL (default) means no rows will be returned for that row of x.
 #' @param mult When multiple rows in y match to the row in x, `mult` controls
 #' which values are returned - "all" (default), "first" or "last".
-#' @param df,df_begin,df_end,dates_date,... Deprecated argument names kept for
-#' backward compatibility in [rows_per_date()].
 #'
 #' @details
 #' This is useful when claim records or other dated events need the rating
@@ -34,7 +32,7 @@
 #' @import data.table
 #' @importFrom lubridate is.Date
 #'
-#' @return returned class is equal to class of `df`
+#' @return An object with the same class as `portfolio`.
 #' @examples
 #' library(lubridate)
 #' portfolio <- data.frame(

@@ -2,7 +2,7 @@
 
 Helper function to define how one level of a risk factor should be split
 into sublevels with corresponding relativities. Intended for use inside
-[`relativities_list()`](https://mharinga.github.io/insurancerating/reference/relativities_list.md)
+[`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
 and
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).
 

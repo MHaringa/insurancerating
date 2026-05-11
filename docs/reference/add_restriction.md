@@ -24,6 +24,8 @@ add_restriction(model, restrictions)
   Data frame with exactly two columns. The first column must have the
   same name as the model variable to restrict and contains the levels to
   adjust. The second column contains the replacement relativities.
+  Levels that are not supplied are filled with the currently fitted GLM
+  relativities.
 
 ## Value
 
@@ -46,6 +48,13 @@ the deprecated
 [`restrict_coef()`](https://mharinga.github.io/insurancerating/reference/restrict_coef.md)
 wrapper is only kept for backwards compatibility.
 
+The restriction table may contain all levels of the model variable, or
+only the levels that need a manual adjustment. If only a subset is
+supplied, the missing levels are automatically filled with their current
+fitted GLM relativities. This makes it possible to fix one level
+explicitly while keeping the other levels at their already estimated
+values.
+
 ## Author
 
 Martin Haringa
@@ -66,8 +75,8 @@ model <- glm(
 )
 
 restrictions <- data.frame(
-  postal_area = c("A", "B", "C"),
-  relativity = c(0.95, 1.00, 1.10)
+  postal_area = "C",
+  relativity = 1.10
 )
 
 refined <- prepare_refinement(model, data = portfolio) |>

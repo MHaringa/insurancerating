@@ -673,7 +673,7 @@ change_xy <- function(borders_model, x_org,
 
 
 #' @noRd
-.check_relativities_list <- function(relativities) {
+.check_relativities <- function(relativities) {
   ok <- vapply(relativities, is.data.frame, logical(1))
   if (!all(ok)) {
     stop("Each element of 'relativities' must be a data.frame.", call. = FALSE)
@@ -744,7 +744,7 @@ change_xy <- function(borders_model, x_org,
 #' @description
 #' Helper function to define how one level of a risk factor should be split
 #' into sublevels with corresponding relativities. Intended for use inside
-#' \code{relativities_list()} and \code{add_relativities()}.
+#' \code{relativities()} and \code{add_relativities()}.
 #'
 #' @param level Character string. Existing level of the risk factor to split.
 #' @param new_levels Character vector. Names of the new sublevels.
@@ -776,7 +776,7 @@ split_level <- function(level, new_levels, relativities) {
 }
 
 
-#' Combine multiple level splits into a relativities list
+#' Combine multiple level splits into relativities
 #'
 #' @description
 #' Helper function to combine multiple level split definitions into a single
@@ -788,14 +788,14 @@ split_level <- function(level, new_levels, relativities) {
 #'   argument in \code{add_relativities()}.
 #'
 #' @examples
-#' relativities_list(
+#' relativities(
 #'   split_level("construction",
 #'               c("residential", "commercial", "civil"),
 #'               c(1.00, 1.10, 1.25))
 #' )
 #'
 #' @export
-relativities_list <- function(...) {
+relativities <- function(...) {
   x <- list(...)
 
   if (length(x) == 0) {
@@ -814,7 +814,7 @@ relativities_list <- function(...) {
   }
 
   if (anyDuplicated(names(out)) > 0) {
-    stop("Duplicate level names found in `relativities_list()`.", call. = FALSE)
+    stop("Duplicate level names found in `relativities()`.", call. = FALSE)
   }
 
   out

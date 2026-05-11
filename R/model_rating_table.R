@@ -792,19 +792,112 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
       expon = exponentiate,
       significance = significance,
       signif_stars = significance,
-      signif_levels = signif_levels
+      signif_levels = signif_levels,
+      observed_experience = NULL
     ),
     class = c("rating_table", "riskfactor")
   )
 }
 
 
+#' Add observed portfolio experience to a rating table
+#'
+#' @description
+#' Attach the output of [factor_analysis()] to a [rating_table()] object so it
+#' can be shown in [autoplot.rating_table()]. This is useful when you want to
+#' compare fitted GLM relativities with the observed portfolio pattern for the
+#' same rating factor.
+#'
+#' The observed metric is scaled before plotting. With `scale = "reference"`
+#' the metric is divided by the observed value of the model reference level. If
+#' a clear reference level cannot be found, the metric is scaled to its mean.
+#' With `scale = "mean"`, the metric is always scaled to its mean.
+#'
+#' @param object A `rating_table` object returned by [rating_table()].
+#' @param experience A `factor_analysis` object returned by [factor_analysis()].
+#' @param metric Character; metric from `experience` to plot. Common choices are
+#'   `"frequency"`, `"average_severity"`, `"risk_premium"`, `"loss_ratio"` and
+#'   `"average_premium"`, depending on which columns were supplied to
+#'   [factor_analysis()].
+#' @param label Character; legend label for the observed experience line.
+#' @param color Optional line color. If `NULL`, the internal risk premium color
+#'   is used.
+#' @param scale Character; scaling applied before plotting. One of
+#'   `"reference"` or `"mean"`.
+#'
+#' @return A `rating_table` object with observed portfolio experience attached.
+#'
+#' @author
+#'   Martin Haringa
+#'
+#' @examples
+#' df <- MTPL2
+#' df$area <- as.factor(df$area)
+#'
+#' model <- glm(
+#'   nclaims ~ area + offset(log(exposure)),
+#'   family = poisson(),
+#'   data = df
+#' )
+#'
+#' observed <- factor_analysis(
+#'   df,
+#'   risk_factors = "area",
+#'   claim_count = "nclaims",
+#'   exposure = "exposure"
+#' )
+#'
+#' rating_table(model, model_data = df, exposure = "exposure") |>
+#'   add_observed_experience(observed, metric = "frequency") |>
+#'   autoplot(risk_factors = "area")
+#'
+#' @export
+add_observed_experience <- function(object,
+                                    experience,
+                                    metric = "risk_premium",
+                                    label = "Observed experience",
+                                    color = NULL,
+                                    scale = c("reference", "mean")) {
+  if (!inherits(object, "rating_table")) {
+    stop("'object' must be a rating_table object.", call. = FALSE)
+  }
+  if (!inherits(experience, "factor_analysis")) {
+    stop("'experience' must be a factor_analysis object.", call. = FALSE)
+  }
+  if (!is.character(metric) || length(metric) != 1 || is.na(metric)) {
+    stop("'metric' must be a single character string.", call. = FALSE)
+  }
+  if (!metric %in% names(experience)) {
+    stop("'metric' not found in 'experience'.", call. = FALSE)
+  }
+  if (!is.character(label) || length(label) != 1 || is.na(label)) {
+    stop("'label' must be a single character string.", call. = FALSE)
+  }
+  if (!is.null(color) && (!is.character(color) || length(color) != 1 ||
+                          is.na(color))) {
+    stop("'color' must be NULL or a single character string.", call. = FALSE)
+  }
+
+  scale <- match.arg(scale)
+
+  object$observed_experience <- list(
+    experience = experience,
+    metric = metric,
+    label = label,
+    color = color,
+    scale = scale
+  )
+
+  object
+}
+
+
 # -----------------------------------------------------------------------------
-# riskfactor print / summary / dataframe
+# rating_table print / summary / dataframe
 # -----------------------------------------------------------------------------
 
 #' @export
-print.riskfactor <- function(x, ...) {
+print.rating_table <- function(x, ...) {
   significance <- isTRUE(x$significance) || isTRUE(x$signif_stars)
   if (significance && !is.null(x$df_stars)) {
     if (!is.null(x$signif_levels)) {
@@ -818,10 +911,10 @@ print.riskfactor <- function(x, ...) {
 }
 
 #' @export
-print.rating_table <- print.riskfactor
+print.riskfactor <- print.rating_table
 
 #' @export
-as.data.frame.riskfactor <- function(x, ...) {
+as.data.frame.rating_table <- function(x, ...) {
   significance <- isTRUE(x$significance) || isTRUE(x$signif_stars)
   if (significance && !is.null(x$df_stars)) {
     df <- x$df_stars
@@ -832,10 +925,10 @@ as.data.frame.riskfactor <- function(x, ...) {
 }
 
 #' @export
-as.data.frame.rating_table <- as.data.frame.riskfactor
+as.data.frame.riskfactor <- as.data.frame.rating_table
 
 #' @export
-summary.riskfactor <- function(object, ...) {
+summary.rating_table <- function(object, ...) {
   out <- list(
     models = object$models,
     exposure = object$exposure,
@@ -850,10 +943,10 @@ summary.riskfactor <- function(object, ...) {
 }
 
 #' @export
-summary.rating_table <- summary.riskfactor
+summary.riskfactor <- summary.rating_table
 
 #' @export
-print.summary.riskfactor <- function(x, ...) {
+print.summary.rating_table <- function(x, ...) {
   cat("rating_table summary\n\n")
   cat("Models: ", paste(x$models, collapse = ", "), "\n", sep = "")
   cat("Exposure column: ", if (is.null(x$exposure)) "none" else x$exposure, "\n", sep = "")
@@ -865,4 +958,4 @@ print.summary.riskfactor <- function(x, ...) {
 }
 
 #' @export
-print.summary.rating_table <- print.summary.riskfactor
+print.summary.riskfactor <- print.summary.rating_table

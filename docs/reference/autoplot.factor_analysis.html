@@ -44,24 +44,33 @@
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span></span>
 <span>  <span class="va">object</span>,</span>
 <span>  metrics <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  show_plots <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  background <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  labels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  sort <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  sort_manual <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  dec.mark <span class="op">=</span> <span class="st">","</span>,</span>
-<span>  color <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  color_bg <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  show_exposure <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  show_exposure_labels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  sort_by_exposure <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  level_order <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  decimal_mark <span class="op">=</span> <span class="st">","</span>,</span>
+<span>  line_color <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bar_fill <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  label_width <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  coord_flip <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  flip_bars <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  show_total <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  total_color <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  total_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rotate_angle <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  custom_theme <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  remove_underscores <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  remove_x_elements <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  compact_x_axis <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  show_plots <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  background <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sort <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sort_manual <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  dec.mark <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  color_bg <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  coord_flip <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  remove_x_elements <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -76,8 +85,8 @@
 
 
 <dt id="arg-metrics">metrics<a class="anchor" aria-label="anchor" href="#arg-metrics"></a></dt>
-<dd><p>Numeric vector specifying which metrics to plot (default is
-<code>1:9</code>). There are nine available metrics:</p><ul><li><p>1. Frequency (<code>nclaims / exposure</code>)</p></li>
+<dd><p>Numeric or character vector specifying which metrics to plot
+(default is all available metrics). The numeric positions are:</p><ul><li><p>1. Frequency (<code>nclaims / exposure</code>)</p></li>
 <li><p>2. Average severity (<code>severity / nclaims</code>)</p></li>
 <li><p>3. Risk premium (<code>severity / exposure</code>)</p></li>
 <li><p>4. Loss ratio (<code>severity / premium</code>)</p></li>
@@ -86,46 +95,46 @@
 <li><p>7. Severity</p></li>
 <li><p>8. Number of claims</p></li>
 <li><p>9. Premium</p></li>
-</ul></dd>
-
-
-<dt id="arg-show-plots">show_plots<a class="anchor" aria-label="anchor" href="#arg-show-plots"></a></dt>
-<dd><p>Deprecated. Use <code>metrics</code> instead.</p></dd>
+</ul><p>Character values can be <code>"frequency"</code>, <code>"average_severity"</code>,
+<code>"risk_premium"</code>, <code>"loss_ratio"</code>, <code>"average_premium"</code>, <code>"exposure"</code>,
+<code>"claim_amount"</code>, <code>"claim_count"</code>, and <code>"premium"</code>.</p></dd>
 
 
 <dt id="arg-ncol">ncol<a class="anchor" aria-label="anchor" href="#arg-ncol"></a></dt>
 <dd><p>Number of columns in output (default = 1).</p></dd>
 
 
-<dt id="arg-background">background<a class="anchor" aria-label="anchor" href="#arg-background"></a></dt>
-<dd><p>Show exposure as a background histogram (default = TRUE).</p></dd>
+<dt id="arg-show-exposure">show_exposure<a class="anchor" aria-label="anchor" href="#arg-show-exposure"></a></dt>
+<dd><p>Show exposure as background bars behind line plots
+(default = TRUE).</p></dd>
 
 
-<dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
-<dd><p>Show labels with the exposure (default = TRUE).</p></dd>
+<dt id="arg-show-exposure-labels">show_exposure_labels<a class="anchor" aria-label="anchor" href="#arg-show-exposure-labels"></a></dt>
+<dd><p>Show labels with the exposure bars
+(default = TRUE).</p></dd>
 
 
-<dt id="arg-sort">sort<a class="anchor" aria-label="anchor" href="#arg-sort"></a></dt>
-<dd><p>Sort (order) risk factor into descending order by exposure
-(default = FALSE).</p></dd>
+<dt id="arg-sort-by-exposure">sort_by_exposure<a class="anchor" aria-label="anchor" href="#arg-sort-by-exposure"></a></dt>
+<dd><p>Sort risk factor levels into descending order by
+exposure (default = FALSE).</p></dd>
 
 
-<dt id="arg-sort-manual">sort_manual<a class="anchor" aria-label="anchor" href="#arg-sort-manual"></a></dt>
-<dd><p>Sort risk factor into a custom order; character vector
+<dt id="arg-level-order">level_order<a class="anchor" aria-label="anchor" href="#arg-level-order"></a></dt>
+<dd><p>Custom order for risk factor levels; character vector
 (default = NULL).</p></dd>
 
 
-<dt id="arg-dec-mark">dec.mark<a class="anchor" aria-label="anchor" href="#arg-dec-mark"></a></dt>
+<dt id="arg-decimal-mark">decimal_mark<a class="anchor" aria-label="anchor" href="#arg-decimal-mark"></a></dt>
 <dd><p>Decimal mark; defaults to <code>","</code>.</p></dd>
 
 
-<dt id="arg-color">color<a class="anchor" aria-label="anchor" href="#arg-color"></a></dt>
+<dt id="arg-line-color">line_color<a class="anchor" aria-label="anchor" href="#arg-line-color"></a></dt>
 <dd><p>Optional override for line/point color.
 If NULL (default), colors are taken from the internal palette.
 If specified, the chosen color is applied to all line-based plots.</p></dd>
 
 
-<dt id="arg-color-bg">color_bg<a class="anchor" aria-label="anchor" href="#arg-color-bg"></a></dt>
+<dt id="arg-bar-fill">bar_fill<a class="anchor" aria-label="anchor" href="#arg-bar-fill"></a></dt>
 <dd><p>Optional override for background bar color.
 If NULL (default), the background color is taken from the internal palette.
 If specified, the chosen color is applied to all background bars.</p></dd>
@@ -135,7 +144,7 @@ If specified, the chosen color is applied to all background bars.</p></dd>
 <dd><p>Width of labels on the x-axis (default = 10).</p></dd>
 
 
-<dt id="arg-coord-flip">coord_flip<a class="anchor" aria-label="anchor" href="#arg-coord-flip"></a></dt>
+<dt id="arg-flip-bars">flip_bars<a class="anchor" aria-label="anchor" href="#arg-flip-bars"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, flip cartesian coordinates for bar plots
 (metrics 6 to 9). This option does not affect the line-based plots for
 metrics 1 to 5.</p></dd>
@@ -166,7 +175,7 @@ metrics 1 to 5.</p></dd>
 (default = FALSE).</p></dd>
 
 
-<dt id="arg-remove-x-elements">remove_x_elements<a class="anchor" aria-label="anchor" href="#arg-remove-x-elements"></a></dt>
+<dt id="arg-compact-x-axis">compact_x_axis<a class="anchor" aria-label="anchor" href="#arg-compact-x-axis"></a></dt>
 <dd><p>Logical. When <code>TRUE</code> and <code>ncol == 1</code>,
 x-axis components are removed from all plots except the last one.
 The following elements are suppressed:</p><ul><li><p><code>axis.title.x</code></p></li>
@@ -174,6 +183,46 @@ The following elements are suppressed:</p><ul><li><p><code>axis.title.x</code></
 <li><p><code>axis.ticks.x</code></p></li>
 </ul><p>This prevents duplicated x-axes in vertically stacked patchwork plots.
 Defaults to <code>TRUE</code>.</p></dd>
+
+
+<dt id="arg-show-plots">show_plots<a class="anchor" aria-label="anchor" href="#arg-show-plots"></a></dt>
+<dd><p>Deprecated. Use <code>metrics</code> instead.</p></dd>
+
+
+<dt id="arg-background">background<a class="anchor" aria-label="anchor" href="#arg-background"></a></dt>
+<dd><p>Deprecated alias for <code>show_exposure</code>.</p></dd>
+
+
+<dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
+<dd><p>Deprecated alias for <code>show_exposure_labels</code>.</p></dd>
+
+
+<dt id="arg-sort">sort<a class="anchor" aria-label="anchor" href="#arg-sort"></a></dt>
+<dd><p>Deprecated alias for <code>sort_by_exposure</code>.</p></dd>
+
+
+<dt id="arg-sort-manual">sort_manual<a class="anchor" aria-label="anchor" href="#arg-sort-manual"></a></dt>
+<dd><p>Deprecated alias for <code>level_order</code>.</p></dd>
+
+
+<dt id="arg-dec-mark">dec.mark<a class="anchor" aria-label="anchor" href="#arg-dec-mark"></a></dt>
+<dd><p>Deprecated alias for <code>decimal_mark</code>.</p></dd>
+
+
+<dt id="arg-color">color<a class="anchor" aria-label="anchor" href="#arg-color"></a></dt>
+<dd><p>Deprecated alias for <code>line_color</code>.</p></dd>
+
+
+<dt id="arg-color-bg">color_bg<a class="anchor" aria-label="anchor" href="#arg-color-bg"></a></dt>
+<dd><p>Deprecated alias for <code>bar_fill</code>.</p></dd>
+
+
+<dt id="arg-coord-flip">coord_flip<a class="anchor" aria-label="anchor" href="#arg-coord-flip"></a></dt>
+<dd><p>Deprecated alias for <code>flip_bars</code>.</p></dd>
+
+
+<dt id="arg-remove-x-elements">remove_x_elements<a class="anchor" aria-label="anchor" href="#arg-remove-x-elements"></a></dt>
+<dd><p>Deprecated alias for <code>compact_x_axis</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

@@ -4,15 +4,16 @@
 \alias{autoplot.bootstrap_performance}
 \title{Autoplot for bootstrap_performance objects}
 \usage{
-\method{autoplot}{bootstrap_performance}(object, fill = "steelblue", color = "black", ...)
+\method{autoplot}{bootstrap_performance}(object, fill = "#E6E6E6", color = NA, ...)
 }
 \arguments{
 \item{object}{An object of class \code{"bootstrap_performance"}, produced by
 \code{\link[=bootstrap_performance]{bootstrap_performance()}}.}
 
-\item{fill}{Fill color of the histogram bars. Default = \code{"steelblue"}.}
+\item{fill}{Fill color of the histogram bars. Default = \code{"#E6E6E6"}.}
 
-\item{color}{Border color of the histogram bars. Default = \code{"black"}.}
+\item{color}{Border color of the histogram bars. Default = \code{NA}, which
+removes bar borders.}
 
 \item{...}{Additional arguments passed to \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}.}
 }

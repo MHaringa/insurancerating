@@ -48,7 +48,7 @@ add_smoothing(
 
 - breaks:
 
-  Numeric vector with the tariff group boundaries to use after
+  Numeric vector with the tariff segment boundaries to use after
   smoothing. Values must be finite and strictly increasing.
 
 - smoothing:
@@ -81,10 +81,10 @@ Object of class `rating_refinement`.
 
 `add_smoothing()` stores a smoothing step on a `rating_refinement`
 object. The original GLM contains `model_variable`, usually a factor or
-grouped tariff group. The smoother is fitted against `source_variable`,
-the original numeric portfolio variable behind those groups. The
-smoothed result is then converted back to tariff groups using `breaks`
-and applied when
+grouped tariff segment. The smoother is fitted against
+`source_variable`, the original numeric portfolio variable behind those
+groups. The smoothed result is then converted back to tariff segments
+using `breaks` and applied when
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
 is called.
 
@@ -115,10 +115,10 @@ age_policyholder_frequency <- risk_factor_gam(
   exposure = "exposure"
 )
 
-age_groups_freq <- derive_tariff_groups(age_policyholder_frequency)
+age_segments_freq <- derive_tariff_segments(age_policyholder_frequency)
 
 dat <- MTPL |>
-  add_tariff_groups(age_groups_freq, name = "age_policyholder_freq_cat") |>
+  add_tariff_segments(age_segments_freq, name = "age_policyholder_freq_cat") |>
   mutate(across(where(is.character), as.factor)) |>
   mutate(across(where(is.factor), ~ set_reference_level(., exposure)))
 

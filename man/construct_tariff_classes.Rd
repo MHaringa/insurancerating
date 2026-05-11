@@ -2,7 +2,7 @@
 % Please edit documentation in R/gam_construct_tariff_classes.R
 \name{construct_tariff_classes}
 \alias{construct_tariff_classes}
-\title{Deprecated alias for \code{derive_tariff_groups()}}
+\title{Deprecated alias for \code{derive_tariff_segments()}}
 \usage{
 construct_tariff_classes(
   object,
@@ -21,7 +21,7 @@ construct_tariff_classes(
 supported for backward compatibility.}
 
 \item{complexity}{Numeric. Controls the complexity penalty used when deriving
-groups. Higher values generally yield fewer tariff groups. Default = 0.}
+segments. Higher values generally yield fewer tariff segments. Default = 0.}
 
 \item{max_iterations}{Integer. Maximum number of search iterations used by
 the underlying grouping algorithm. Default = 10000.}
@@ -38,10 +38,10 @@ underlying grouping algorithm. Default = 200.}
 \item{ntrees}{Deprecated. Use \code{population_size} instead.}
 }
 \value{
-See \code{\link[=derive_tariff_groups]{derive_tariff_groups()}}.
+See \code{\link[=derive_tariff_segments]{derive_tariff_segments()}}.
 }
 \description{
 \code{construct_tariff_classes()} is deprecated as of version 0.9.0. Use
-\code{\link[=derive_tariff_groups]{derive_tariff_groups()}} instead.
+\code{\link[=derive_tariff_segments]{derive_tariff_segments()}} instead.
 }
 \keyword{internal}

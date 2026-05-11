@@ -9,7 +9,7 @@
 - [Model
   validation](https://mharinga.github.io/insurancerating/articles/model-validation.md):
 
-### Background
+### Overview
 
-- [Pricing
-  principles](https://mharinga.github.io/insurancerating/articles/pricing-principles.md):
+- [Pricing workflow building
+  blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md):

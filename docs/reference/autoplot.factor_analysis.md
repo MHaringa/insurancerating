@@ -13,24 +13,33 @@ or
 autoplot(
   object,
   metrics = NULL,
-  show_plots = NULL,
   ncol = 1,
-  background = TRUE,
-  labels = TRUE,
-  sort = FALSE,
-  sort_manual = NULL,
-  dec.mark = ",",
-  color = NULL,
-  color_bg = NULL,
+  show_exposure = TRUE,
+  show_exposure_labels = TRUE,
+  sort_by_exposure = FALSE,
+  level_order = NULL,
+  decimal_mark = ",",
+  line_color = NULL,
+  bar_fill = NULL,
   label_width = 50,
-  coord_flip = FALSE,
+  flip_bars = FALSE,
   show_total = FALSE,
   total_color = NULL,
   total_name = NULL,
   rotate_angle = NULL,
   custom_theme = NULL,
   remove_underscores = FALSE,
-  remove_x_elements = TRUE,
+  compact_x_axis = TRUE,
+  show_plots = NULL,
+  background = NULL,
+  labels = NULL,
+  sort = NULL,
+  sort_manual = NULL,
+  dec.mark = NULL,
+  color = NULL,
+  color_bg = NULL,
+  coord_flip = NULL,
+  remove_x_elements = NULL,
   ...
 )
 ```
@@ -46,8 +55,8 @@ autoplot(
 
 - metrics:
 
-  Numeric vector specifying which metrics to plot (default is `1:9`).
-  There are nine available metrics:
+  Numeric or character vector specifying which metrics to plot (default
+  is all available metrics). The numeric positions are:
 
   - 1\. Frequency (`nclaims / exposure`)
 
@@ -67,43 +76,43 @@ autoplot(
 
   - 9\. Premium
 
-- show_plots:
-
-  Deprecated. Use `metrics` instead.
+  Character values can be `"frequency"`, `"average_severity"`,
+  `"risk_premium"`, `"loss_ratio"`, `"average_premium"`, `"exposure"`,
+  `"claim_amount"`, `"claim_count"`, and `"premium"`.
 
 - ncol:
 
   Number of columns in output (default = 1).
 
-- background:
+- show_exposure:
 
-  Show exposure as a background histogram (default = TRUE).
+  Show exposure as background bars behind line plots (default = TRUE).
 
-- labels:
+- show_exposure_labels:
 
-  Show labels with the exposure (default = TRUE).
+  Show labels with the exposure bars (default = TRUE).
 
-- sort:
+- sort_by_exposure:
 
-  Sort (order) risk factor into descending order by exposure (default =
+  Sort risk factor levels into descending order by exposure (default =
   FALSE).
 
-- sort_manual:
+- level_order:
 
-  Sort risk factor into a custom order; character vector (default =
+  Custom order for risk factor levels; character vector (default =
   NULL).
 
-- dec.mark:
+- decimal_mark:
 
   Decimal mark; defaults to `","`.
 
-- color:
+- line_color:
 
   Optional override for line/point color. If NULL (default), colors are
   taken from the internal palette. If specified, the chosen color is
   applied to all line-based plots.
 
-- color_bg:
+- bar_fill:
 
   Optional override for background bar color. If NULL (default), the
   background color is taken from the internal palette. If specified, the
@@ -113,7 +122,7 @@ autoplot(
 
   Width of labels on the x-axis (default = 10).
 
-- coord_flip:
+- flip_bars:
 
   Logical. If `TRUE`, flip cartesian coordinates for bar plots (metrics
   6 to 9). This option does not affect the line-based plots for metrics
@@ -143,7 +152,7 @@ autoplot(
 
   Logical; remove underscores from labels (default = FALSE).
 
-- remove_x_elements:
+- compact_x_axis:
 
   Logical. When `TRUE` and `ncol == 1`, x-axis components are removed
   from all plots except the last one. The following elements are
@@ -157,6 +166,46 @@ autoplot(
 
   This prevents duplicated x-axes in vertically stacked patchwork plots.
   Defaults to `TRUE`.
+
+- show_plots:
+
+  Deprecated. Use `metrics` instead.
+
+- background:
+
+  Deprecated alias for `show_exposure`.
+
+- labels:
+
+  Deprecated alias for `show_exposure_labels`.
+
+- sort:
+
+  Deprecated alias for `sort_by_exposure`.
+
+- sort_manual:
+
+  Deprecated alias for `level_order`.
+
+- dec.mark:
+
+  Deprecated alias for `decimal_mark`.
+
+- color:
+
+  Deprecated alias for `line_color`.
+
+- color_bg:
+
+  Deprecated alias for `bar_fill`.
+
+- coord_flip:
+
+  Deprecated alias for `flip_bars`.
+
+- remove_x_elements:
+
+  Deprecated alias for `compact_x_axis`.
 
 - ...:
 

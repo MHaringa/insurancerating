@@ -323,8 +323,9 @@ as.vector.bootstrap_performance <- function(x, ...) {
 #'
 #' @param object An object of class `"bootstrap_performance"`, produced by
 #'   [bootstrap_performance()].
-#' @param fill Fill color of the histogram bars. Default = `"steelblue"`.
-#' @param color Border color of the histogram bars. Default = `"black"`.
+#' @param fill Fill color of the histogram bars. Default = `"#E6E6E6"`.
+#' @param color Border color of the histogram bars. Default = `NA`, which
+#'   removes bar borders.
 #' @param ... Additional arguments passed to [ggplot2::autoplot()].
 #'
 #' @return A [ggplot2::ggplot] object.
@@ -346,8 +347,8 @@ as.vector.bootstrap_performance <- function(x, ...) {
 #'
 #' @export
 autoplot.bootstrap_performance <- function(object,
-                                           fill = "steelblue",
-                                           color = "black",
+                                           fill = "#E6E6E6",
+                                           color = NA,
                                            ...) {
   if (!inherits(object, "bootstrap_performance")) {
     stop("Input must be of class 'bootstrap_performance'.", call. = FALSE)
@@ -367,24 +368,43 @@ autoplot.bootstrap_performance <- function(object,
       ggplot2::aes(y = ggplot2::after_stat(density)),
       fill = fill,
       color = color,
+      alpha = 0.75,
       bins = 30
     ) +
     ggplot2::geom_density(
-      alpha = .3,
-      fill = "antiquewhite3",
-      color = "grey40"
+      alpha = 0.12,
+      fill = "#2C7FB8",
+      color = "#2C7FB8",
+      linewidth = 0.9
+    )
+
+  if (!is.null(conf_bounds)) {
+    p <- p +
+      ggplot2::geom_vline(
+        xintercept = conf_bounds,
+        linetype = 3,
+        color = "grey75",
+        linewidth = 0.3
+      )
+  }
+
+  p <- p +
+    ggplot2::geom_vline(
+      xintercept = rmse_mod,
+      linetype = 2,
+      color = "#F28E2B",
+      linewidth = 0.7
     ) +
-    ggplot2::geom_vline(xintercept = rmse_mod, linetype = 2) +
+    ggplot2::scale_y_continuous(
+      expand = ggplot2::expansion(mult = c(0, 0.06))
+    ) +
     ggplot2::theme_minimal() +
+    .plot_grid_theme_ir() +
     ggplot2::labs(
       title = "Bootstrapped model performance",
       x = "(Simulated) RMSE",
       y = "Density"
     )
-
-  if (!is.null(conf_bounds)) {
-    p <- p + ggplot2::geom_vline(xintercept = conf_bounds, linetype = 3)
-  }
 
   p
 }
@@ -402,8 +422,8 @@ as.vector.bootstrap_rmse <- function(x, ...) {
 
 #' @export
 autoplot.bootstrap_rmse <- function(object,
-                                    fill = "steelblue",
-                                    color = "black",
+                                    fill = "#E6E6E6",
+                                    color = NA,
                                     ...) {
   autoplot.bootstrap_performance(
     object = object,

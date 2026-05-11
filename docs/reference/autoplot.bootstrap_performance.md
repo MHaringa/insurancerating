@@ -12,7 +12,7 @@ lines.
 
 ``` r
 # S3 method for class 'bootstrap_performance'
-autoplot(object, fill = "steelblue", color = "black", ...)
+autoplot(object, fill = "#E6E6E6", color = NA, ...)
 ```
 
 ## Arguments
@@ -24,11 +24,12 @@ autoplot(object, fill = "steelblue", color = "black", ...)
 
 - fill:
 
-  Fill color of the histogram bars. Default = `"steelblue"`.
+  Fill color of the histogram bars. Default = `"#E6E6E6"`.
 
 - color:
 
-  Border color of the histogram bars. Default = `"black"`.
+  Border color of the histogram bars. Default = `NA`, which removes bar
+  borders.
 
 - ...:
 

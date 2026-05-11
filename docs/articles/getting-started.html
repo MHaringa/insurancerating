@@ -171,7 +171,7 @@ portfolio.</p>
 </h3>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fa</span>, metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fa</span>, metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exposure"</span>, <span class="st">"frequency"</span>, <span class="st">"risk_premium"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="700"></p>
 <p>This provides a direct view of:</p>
 <ul>
@@ -194,7 +194,7 @@ pricing.</p>
 pricing practice, they are usually:</p>
 <ol style="list-style-type: decimal">
 <li>analysed as continuous variables</li>
-<li>translated into tariff groups</li>
+<li>translated into tariff segments</li>
 <li>used in a GLM as categorical rating factors</li>
 </ol>
 <p>This ensures that the final tariff remains interpretable and
@@ -219,29 +219,29 @@ implementable.</p>
 <li>non-linear patterns</li>
 <li>local volatility</li>
 <li>areas with low exposure</li>
-<li>plausible breakpoints for tariff groups</li>
+<li>plausible breakpoints for tariff segments</li>
 </ul>
 </div>
 <div class="section level3">
-<h3 id="deriving-tariff-groups">Deriving tariff groups<a class="anchor" aria-label="anchor" href="#deriving-tariff-groups"></a>
+<h3 id="deriving-tariff-segments">Deriving tariff segments<a class="anchor" aria-label="anchor" href="#deriving-tariff-segments"></a>
 </h3>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="va">age_groups</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_tariff_groups.html">derive_tariff_groups</a></span><span class="op">(</span><span class="va">age_freq</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">age_groups</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">age_segments</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_tariff_segments.html">derive_tariff_segments</a></span><span class="op">(</span><span class="va">age_freq</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">age_segments</span><span class="op">)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="700"></p>
-<p>This converts the continuous variable into risk-homogeneous
-groups.</p>
-<p>The resulting groups should reflect differences in risk, while
+<p>This converts the continuous variable into risk-homogeneous tariff
+segments.</p>
+<p>The resulting segments should reflect differences in risk, while
 remaining suitable for use in a tariff.</p>
 </div>
 <div class="section level3">
-<h3 id="adding-tariff-groups-to-the-data">Adding tariff groups to the data<a class="anchor" aria-label="anchor" href="#adding-tariff-groups-to-the-data"></a>
+<h3 id="adding-tariff-segments-to-the-data">Adding tariff segments to the data<a class="anchor" aria-label="anchor" href="#adding-tariff-segments-to-the-data"></a>
 </h3>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="va">MTPL</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_tariff_groups.html">add_tariff_groups</a></span><span class="op">(</span><span class="va">age_groups</span>, name <span class="op">=</span> <span class="st">"age_cat"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_tariff_segments.html">add_tariff_segments</a></span><span class="op">(</span><span class="va">age_segments</span>, name <span class="op">=</span> <span class="st">"age_cat"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">as.factor</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.factor</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="../reference/set_reference_level.html">set_reference_level</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">exposure</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/set_reference_level.html">set_reference_level()</a></code> sets the reference level to the
@@ -376,9 +376,7 @@ the original factor levels, including the reference level.</p>
 </h3>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_unrestricted</span>, </span>
-<span>             model_data <span class="op">=</span> <span class="va">premium_df</span>, </span>
-<span>             exposure <span class="op">=</span> <span class="st">"exposure"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/unnamed-chunk-13-1.png" class="r-plt" alt="" width="700"></p>
 <p>This plot is typically used to assess:</p>
@@ -457,7 +455,7 @@ blocks</a>.</p>
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="../reference/factor_analysis.html">factor_analysis</a></span><span class="op">(</span><span class="op">)</span>             <span class="co"># analyse portfolio behaviour</span></span>
 <span><span class="fu"><a href="../reference/risk_factor_gam.html">risk_factor_gam</a></span><span class="op">(</span><span class="op">)</span>              <span class="co"># analyse continuous variables</span></span>
-<span><span class="fu"><a href="../reference/derive_tariff_groups.html">derive_tariff_groups</a></span><span class="op">(</span><span class="op">)</span>         <span class="co"># derive tariff groups</span></span>
+<span><span class="fu"><a href="../reference/derive_tariff_segments.html">derive_tariff_segments</a></span><span class="op">(</span><span class="op">)</span>        <span class="co"># derive tariff segments</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="op">)</span>                         <span class="co"># estimate pricing models</span></span>
 <span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="op">)</span>                <span class="co"># interpret fitted coefficients</span></span>
 <span><span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span><span class="op">)</span>       <span class="co"># assess stability</span></span>
@@ -481,7 +479,8 @@ blocks</a></li>
 <p>For the conceptual background to exposure, risk premium, and tariff
 design, see:</p>
 <ul>
-<li><a href="pricing-principles.html">Pricing principles</a></li>
+<li><a href="pricing-workflow-building-blocks.html">Pricing workflow
+building blocks</a></li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

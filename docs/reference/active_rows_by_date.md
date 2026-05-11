@@ -59,14 +59,9 @@ active_rows_by_date(
   When multiple rows in y match to the row in x, `mult` controls which
   values are returned - "all" (default), "first" or "last".
 
-- df, df_begin, df_end, dates_date, ...:
-
-  Deprecated argument names kept for backward compatibility in
-  [`rows_per_date()`](https://mharinga.github.io/insurancerating/reference/rows_per_date.md).
-
 ## Value
 
-returned class is equal to class of `df`
+An object with the same class as `portfolio`.
 
 ## Details
 
