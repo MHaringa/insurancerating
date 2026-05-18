@@ -30,7 +30,23 @@ reference:
       - factor_analysis
       - autoplot.factor_analysis
       - outlier_histogram
+
+  - title: "Severity and large claims"
+    desc: >
+      Analyse claim amounts, capped or truncated severity, and large-loss
+      components that can be added to technical risk premium models.
+    contents:
       - plot_severity_distribution
+      - assess_excess_thresholds
+      - autoplot.excess_threshold_assessment
+      - calculate_excess_loss
+      - add_excess_loss
+      - allocation_factor
+      - autoplot.excess_loss_vector
+      - fit_truncated_severity
+      - autoplot.truncated_severity
+      - rlnormt
+      - rgammat
 
   - title: "Tariff segments"
     desc: >
@@ -57,12 +73,6 @@ reference:
     contents:
       - prepare_refinement
       - autoplot.rating_refinement
-      - assess_excess_thresholds
-      - autoplot.excess_threshold_assessment
-      - calculate_excess_loss
-      - add_excess_loss
-      - allocation_factor
-      - autoplot.excess_loss_vector
       - add_smoothing
       - edit_smoothing
       - add_restriction
@@ -90,15 +100,6 @@ reference:
     contents:
       - extract_model_data
       - rating_grid
-
-  - title: "Distribution helpers"
-    desc: >
-      Helper functions for truncated and actuarial distribution workflows.
-    contents:
-      - fit_truncated_severity
-      - autoplot.truncated_severity
-      - rlnormt
-      - rgammat
 
   - title: "Utilities"
     desc: >

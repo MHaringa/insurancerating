@@ -12,8 +12,35 @@ estimation.
   analysis
 - [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
   : Portfolio histogram with tail bins
+
+## Severity and large claims
+
+Analyse claim amounts, capped or truncated severity, and large-loss
+components that can be added to technical risk premium models.
+
 - [`plot_severity_distribution()`](https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.md)
   : Exploratory severity diagnostics by category
+- [`assess_excess_thresholds()`](https://mharinga.github.io/insurancerating/reference/assess_excess_thresholds.md)
+  : Assess possible excess-loss thresholds
+- [`autoplot(`*`<excess_threshold_assessment>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_threshold_assessment.md)
+  : Plot an excess threshold assessment
+- [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
+  : Calculate an excess-loss vector for capped severity modelling
+- [`add_excess_loss()`](https://mharinga.github.io/insurancerating/reference/add_excess_loss.md)
+  : Add calculated excess-loss columns to data
+- [`allocation_factor()`](https://mharinga.github.io/insurancerating/reference/allocation_factor.md)
+  : Extract allocation factors from an excess-loss vector
+- [`autoplot(`*`<excess_loss_vector>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_loss_vector.md)
+  : Plot an excess-loss vector
+- [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
+  **\[experimental\]** : Fit severity distributions to truncated claim
+  data
+- [`autoplot(`*`<truncated_severity>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.truncated_severity.md)
+  : Plot a fitted truncated severity distribution
+- [`rlnormt()`](https://mharinga.github.io/insurancerating/reference/rlnormt.md)
+  : Generate random samples from a truncated lognormal distribution
+- [`rgammat()`](https://mharinga.github.io/insurancerating/reference/rgammat.md)
+  : Generate random samples from a truncated gamma distribution
 
 ## Tariff segments
 
@@ -67,18 +94,6 @@ relativities.
   : Prepare a model refinement workflow
 - [`autoplot(`*`<rating_refinement>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
   : Plot a model refinement step
-- [`assess_excess_thresholds()`](https://mharinga.github.io/insurancerating/reference/assess_excess_thresholds.md)
-  : Assess possible excess-loss thresholds
-- [`autoplot(`*`<excess_threshold_assessment>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_threshold_assessment.md)
-  : Plot an excess threshold assessment
-- [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
-  : Calculate an excess-loss vector for capped severity modelling
-- [`add_excess_loss()`](https://mharinga.github.io/insurancerating/reference/add_excess_loss.md)
-  : Add calculated excess-loss columns to data
-- [`allocation_factor()`](https://mharinga.github.io/insurancerating/reference/allocation_factor.md)
-  : Extract allocation factors from an excess-loss vector
-- [`autoplot(`*`<excess_loss_vector>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_loss_vector.md)
-  : Plot an excess-loss vector
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   : Add smoothing to a refinement workflow
 - [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
@@ -125,20 +140,6 @@ Extract model data and analyse observed rating-grid combinations.
 - [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
   : Construct observed rating-grid points from model data or a data
   frame
-
-## Distribution helpers
-
-Helper functions for truncated and actuarial distribution workflows.
-
-- [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
-  **\[experimental\]** : Fit severity distributions to truncated claim
-  data
-- [`autoplot(`*`<truncated_severity>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.truncated_severity.md)
-  : Plot a fitted truncated severity distribution
-- [`rlnormt()`](https://mharinga.github.io/insurancerating/reference/rlnormt.md)
-  : Generate random samples from a truncated lognormal distribution
-- [`rgammat()`](https://mharinga.github.io/insurancerating/reference/rgammat.md)
-  : Generate random samples from a truncated gamma distribution
 
 ## Utilities
 
