@@ -10,6 +10,11 @@
   is now the primary function for univariate/factor-level portfolio
   analysis. It returns objects with primary class `"factor_analysis"`
   while retaining `"univariate"` for compatibility.
+- [`plot_severity_distribution()`](https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.md)
+  was added for exploratory severity diagnostics by category. It shows
+  individual claim observations with mean and median markers, optional
+  direct labels, and optional firebrick highlighting for claims above a
+  user-supplied threshold.
 - [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
   is deprecated and remains available as a compatibility wrapper. The
   old NSE interface is still supported through the deprecated wrapper.
@@ -135,6 +140,26 @@
 
 - The refinement API has been clarified around
   `prepare_refinement() |> add_*() |> refit()`.
+- [`assess_excess_thresholds()`](https://mharinga.github.io/insurancerating/reference/assess_excess_thresholds.md)
+  was added to compare candidate capped-severity excess thresholds
+  before calculating an excess-loss component.
+- [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
+  was added for capped severity and pure-premium modelling. It estimates
+  an excess-loss component above a cap and returns a row-level
+  `"excess_loss_vector"` with amount, share, factor and base stored as
+  attributes.
+- [`add_excess_loss()`](https://mharinga.github.io/insurancerating/reference/add_excess_loss.md)
+  adds one or more columns from an `"excess_loss_vector"` to a
+  `data.frame` without recalculating the excess-loss component.
+- Excess-loss calculations support empirical, bootstrap and manual
+  estimation methods, with exposure, historical-excess, bootstrap-excess
+  and user-supplied factor allocation.
+- Excess-loss input column arguments now use `claim_amount` for
+  consistency with the rest of the package.
+- [`allocation_factor()`](https://mharinga.github.io/insurancerating/reference/allocation_factor.md)
+  extracts the row-level vector, row-level data or grouped summary of
+  the derived or supplied allocation factors for explainability,
+  monitoring and reuse.
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   now uses `model_variable` and `source_variable` as the primary
   argument names.

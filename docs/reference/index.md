@@ -12,6 +12,8 @@ estimation.
   analysis
 - [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
   : Portfolio histogram with tail bins
+- [`plot_severity_distribution()`](https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.md)
+  : Exploratory severity diagnostics by category
 
 ## Tariff segments
 
@@ -65,6 +67,18 @@ relativities.
   : Prepare a model refinement workflow
 - [`autoplot(`*`<rating_refinement>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
   : Plot a model refinement step
+- [`assess_excess_thresholds()`](https://mharinga.github.io/insurancerating/reference/assess_excess_thresholds.md)
+  : Assess possible excess-loss thresholds
+- [`autoplot(`*`<excess_threshold_assessment>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_threshold_assessment.md)
+  : Plot an excess threshold assessment
+- [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
+  : Calculate an excess-loss vector for capped severity modelling
+- [`add_excess_loss()`](https://mharinga.github.io/insurancerating/reference/add_excess_loss.md)
+  : Add calculated excess-loss columns to data
+- [`allocation_factor()`](https://mharinga.github.io/insurancerating/reference/allocation_factor.md)
+  : Extract allocation factors from an excess-loss vector
+- [`autoplot(`*`<excess_loss_vector>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_loss_vector.md)
+  : Plot an excess-loss vector
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   : Add smoothing to a refinement workflow
 - [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)

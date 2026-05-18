@@ -39,6 +39,8 @@
 <ul><li>
 <code><a href="../reference/factor_analysis.html">factor_analysis()</a></code> is now the primary function for univariate/factor-level portfolio analysis. It returns objects with primary class <code>"factor_analysis"</code> while retaining <code>"univariate"</code> for compatibility.</li>
 <li>
+<code><a href="../reference/plot_severity_distribution.html">plot_severity_distribution()</a></code> was added for exploratory severity diagnostics by category. It shows individual claim observations with mean and median markers, optional direct labels, and optional firebrick highlighting for claims above a user-supplied threshold.</li>
+<li>
 <code><a href="../reference/univariate.html">univariate()</a></code> is deprecated and remains available as a compatibility wrapper. The old NSE interface is still supported through the deprecated wrapper.</li>
 <li>
 <code><a href="../reference/factor_analysis.html">factor_analysis()</a></code> now validates metric columns and grouping variables early, with clearer error messages for missing columns.</li>
@@ -117,6 +119,16 @@
 <div class="section level4">
 <h4 id="model-refinement-development-version">Model refinement<a class="anchor" aria-label="anchor" href="#model-refinement-development-version"></a></h4>
 <ul><li>The refinement API has been clarified around <code>prepare_refinement() |&gt; add_*() |&gt; refit()</code>.</li>
+<li>
+<code><a href="../reference/assess_excess_thresholds.html">assess_excess_thresholds()</a></code> was added to compare candidate capped-severity excess thresholds before calculating an excess-loss component.</li>
+<li>
+<code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code> was added for capped severity and pure-premium modelling. It estimates an excess-loss component above a cap and returns a row-level <code>"excess_loss_vector"</code> with amount, share, factor and base stored as attributes.</li>
+<li>
+<code><a href="../reference/add_excess_loss.html">add_excess_loss()</a></code> adds one or more columns from an <code>"excess_loss_vector"</code> to a <code>data.frame</code> without recalculating the excess-loss component.</li>
+<li>Excess-loss calculations support empirical, bootstrap and manual estimation methods, with exposure, historical-excess, bootstrap-excess and user-supplied factor allocation.</li>
+<li>Excess-loss input column arguments now use <code>claim_amount</code> for consistency with the rest of the package.</li>
+<li>
+<code><a href="../reference/allocation_factor.html">allocation_factor()</a></code> extracts the row-level vector, row-level data or grouped summary of the derived or supplied allocation factors for explainability, monitoring and reuse.</li>
 <li>
 <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> now uses <code>model_variable</code> and <code>source_variable</code> as the primary argument names.</li>
 <li>

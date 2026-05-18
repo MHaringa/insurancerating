@@ -36,6 +36,8 @@ Imports:
 Depends: R (>= 4.1.0)
 Suggests: 
     classInt,
+    ggbeeswarm,
+    ggrepel,
     spelling,
     knitr,
     rmarkdown,

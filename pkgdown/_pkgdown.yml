@@ -30,6 +30,7 @@ reference:
       - factor_analysis
       - autoplot.factor_analysis
       - outlier_histogram
+      - plot_severity_distribution
 
   - title: "Tariff segments"
     desc: >
@@ -56,6 +57,12 @@ reference:
     contents:
       - prepare_refinement
       - autoplot.rating_refinement
+      - assess_excess_thresholds
+      - autoplot.excess_threshold_assessment
+      - calculate_excess_loss
+      - add_excess_loss
+      - allocation_factor
+      - autoplot.excess_loss_vector
       - add_smoothing
       - edit_smoothing
       - add_restriction
