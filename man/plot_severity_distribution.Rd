@@ -8,6 +8,9 @@ plot_severity_distribution(
   data,
   claim_amount,
   risk_factor = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  all_claims_label = "All claims",
   threshold = NULL,
   show_labels = TRUE,
   mean_label = "Mean",
@@ -37,6 +40,15 @@ plot_severity_distribution(
 \item{risk_factor}{Optional character string. Name of the risk factor used
 to split the severity distribution. If \code{NULL}, the overall claim amount
 distribution is shown.}
+
+\item{xlab}{Optional character string. X-axis label. If \code{NULL}, a default is
+chosen from \code{claim_amount} and \code{orientation}.}
+
+\item{ylab}{Optional character string. Y-axis label. If \code{NULL}, a default is
+chosen from \code{risk_factor}, \code{claim_amount} and \code{orientation}.}
+
+\item{all_claims_label}{Character string used as the category label when
+\code{risk_factor = NULL}.}
 
 \item{threshold}{Optional numeric scalar. If supplied, claims above this
 threshold are highlighted and a dotted threshold line is shown.}
@@ -92,13 +104,9 @@ x-axis and categories on the y-axis. \code{"vertical"} reverses this.}
 \item{point_width}{Numeric spread for raw claim points.}
 }
 \value{
-An object of class \code{"severity_distribution_plot"} and
-\code{"insurancerating"} with components:
-\describe{
-\item{plot}{The ggplot object.}
-\item{data}{The filtered claim-level data used for plotting.}
-\item{settings}{The settings used to construct the plot.}
-}
+A ggplot object. The plot can be extended with regular ggplot2
+syntax, for example \code{+ ggplot2::labs(caption = "...")} or
+\code{+ ggplot2::theme(...)}.
 }
 \description{
 Visualise individual claim amounts overall or per risk factor.

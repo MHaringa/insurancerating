@@ -32,6 +32,9 @@ plot_severity_distribution(
   data,
   claim_amount,
   risk_factor = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  all_claims_label = "All claims",
   threshold = NULL,
   show_labels = TRUE,
   mean_label = "Mean",
@@ -69,6 +72,20 @@ plot_severity_distribution(
   Optional character string. Name of the risk factor used to split the
   severity distribution. If `NULL`, the overall claim amount
   distribution is shown.
+
+- xlab:
+
+  Optional character string. X-axis label. If `NULL`, a default is
+  chosen from `claim_amount` and `orientation`.
+
+- ylab:
+
+  Optional character string. Y-axis label. If `NULL`, a default is
+  chosen from `risk_factor`, `claim_amount` and `orientation`.
+
+- all_claims_label:
+
+  Character string used as the category label when `risk_factor = NULL`.
 
 - threshold:
 
@@ -159,20 +176,9 @@ plot_severity_distribution(
 
 ## Value
 
-An object of class `"severity_distribution_plot"` and
-`"insurancerating"` with components:
-
-- plot:
-
-  The ggplot object.
-
-- data:
-
-  The filtered claim-level data used for plotting.
-
-- settings:
-
-  The settings used to construct the plot.
+A ggplot object. The plot can be extended with regular ggplot2 syntax,
+for example `+ ggplot2::labs(caption = "...")` or
+`+ ggplot2::theme(...)`.
 
 ## Author
 

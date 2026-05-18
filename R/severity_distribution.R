@@ -28,6 +28,12 @@
 #' @param risk_factor Optional character string. Name of the risk factor used
 #'   to split the severity distribution. If `NULL`, the overall claim amount
 #'   distribution is shown.
+#' @param xlab Optional character string. X-axis label. If `NULL`, a default is
+#'   chosen from `claim_amount` and `orientation`.
+#' @param ylab Optional character string. Y-axis label. If `NULL`, a default is
+#'   chosen from `risk_factor`, `claim_amount` and `orientation`.
+#' @param all_claims_label Character string used as the category label when
+#'   `risk_factor = NULL`.
 #' @param threshold Optional numeric scalar. If supplied, claims above this
 #'   threshold are highlighted and a dotted threshold line is shown.
 #' @param show_labels Logical. If `TRUE`, add direct labels for the mean,
@@ -63,13 +69,9 @@
 #' @param point_size Numeric point size for raw claim points.
 #' @param point_width Numeric spread for raw claim points.
 #'
-#' @return An object of class `"severity_distribution_plot"` and
-#'   `"insurancerating"` with components:
-#' \describe{
-#'   \item{plot}{The ggplot object.}
-#'   \item{data}{The filtered claim-level data used for plotting.}
-#'   \item{settings}{The settings used to construct the plot.}
-#' }
+#' @return A ggplot object. The plot can be extended with regular ggplot2
+#'   syntax, for example `+ ggplot2::labs(caption = "...")` or
+#'   `+ ggplot2::theme(...)`.
 #'
 #' @author Martin Haringa
 #'
@@ -101,6 +103,9 @@
 plot_severity_distribution <- function(data,
                                        claim_amount,
                                        risk_factor = NULL,
+                                       xlab = NULL,
+                                       ylab = NULL,
+                                       all_claims_label = "All claims",
                                        threshold = NULL,
                                        show_labels = TRUE,
                                        mean_label = "Mean",
@@ -143,6 +148,9 @@ plot_severity_distribution <- function(data,
     data = data,
     claim_amount = amount_nm,
     risk_factor = risk_factor_nm,
+    xlab = xlab,
+    ylab = ylab,
+    all_claims_label = all_claims_label,
     threshold = threshold,
     show_labels = show_labels,
     mean_label = mean_label,
@@ -169,7 +177,7 @@ plot_severity_distribution <- function(data,
 
   plot_data <- data.frame(
     .category = if (is.null(risk_factor_nm)) {
-      rep("All claims", nrow(data))
+      rep(all_claims_label, nrow(data))
     } else {
       as.character(data[[risk_factor_nm]])
     },
@@ -243,6 +251,8 @@ plot_severity_distribution <- function(data,
     summary_data = plot_summary,
     risk_factor_nm = risk_factor_nm,
     amount_nm = amount_nm,
+    xlab = xlab,
+    ylab = ylab,
     point_method = point_method,
     distribution = distribution,
     boxplot = boxplot,
@@ -261,42 +271,43 @@ plot_severity_distribution <- function(data,
     point_width = point_width
   )
 
-  structure(
-    list(
-      plot = p,
-      data = plot_data,
-      settings = list(
-        claim_amount = amount_nm,
-        risk_factor = risk_factor_nm,
-        threshold = threshold,
-        show_labels = show_labels,
-        mean_label = mean_label,
-        median_label = median_label,
-        threshold_label = threshold_label,
-        top_n = top_n,
-        min_claims = min_claims,
-        sort = sort,
-        point_method = point_method,
-        distribution = distribution,
-        boxplot = boxplot,
-        boxplot_width = boxplot_width,
-        mean = mean,
-        median = median,
-        log_scale = log_scale,
-        orientation = orientation,
-        point_alpha = point_alpha,
-        point_size = point_size,
-        point_width = point_width,
-        category_summary = selected_summary
-      )
-    ),
-    class = c("severity_distribution_plot", "insurancerating")
+  attr(p, "severity_distribution_data") <- plot_data
+  attr(p, "severity_distribution_settings") <- list(
+    claim_amount = amount_nm,
+    risk_factor = risk_factor_nm,
+    xlab = xlab,
+    ylab = ylab,
+    all_claims_label = all_claims_label,
+    threshold = threshold,
+    show_labels = show_labels,
+    mean_label = mean_label,
+    median_label = median_label,
+    threshold_label = threshold_label,
+    top_n = top_n,
+    min_claims = min_claims,
+    sort = sort,
+    point_method = point_method,
+    distribution = distribution,
+    boxplot = boxplot,
+    boxplot_width = boxplot_width,
+    mean = mean,
+    median = median,
+    log_scale = log_scale,
+    orientation = orientation,
+    point_alpha = point_alpha,
+    point_size = point_size,
+    point_width = point_width,
+    category_summary = selected_summary
   )
+  p
 }
 
 validate_severity_distribution_args <- function(data,
                                                 claim_amount,
                                                 risk_factor,
+                                                xlab,
+                                                ylab,
+                                                all_claims_label,
                                                 threshold,
                                                 show_labels,
                                                 mean_label,
@@ -332,6 +343,19 @@ validate_severity_distribution_args <- function(data,
   }
   if (!is.numeric(data[[claim_amount]])) {
     stop("`claim_amount` must refer to a numeric column.", call. = FALSE)
+  }
+  for (nm in c("xlab", "ylab")) {
+    val <- get(nm)
+    if (!is.null(val) &&
+        (!is.character(val) || length(val) != 1L || is.na(val))) {
+      stop("`", nm, "` must be NULL or a single character string.",
+           call. = FALSE)
+    }
+  }
+  if (!is.character(all_claims_label) || length(all_claims_label) != 1L ||
+      is.na(all_claims_label)) {
+    stop("`all_claims_label` must be a single character string.",
+         call. = FALSE)
   }
   if (!is.null(threshold) &&
       (!is.numeric(threshold) || length(threshold) != 1L ||
@@ -452,6 +476,8 @@ build_severity_distribution_plot <- function(plot_data,
                                              summary_data,
                                              risk_factor_nm,
                                              amount_nm,
+                                             xlab,
+                                             ylab,
                                              point_method,
                                              distribution,
                                              boxplot,
@@ -576,8 +602,12 @@ build_severity_distribution_plot <- function(plot_data,
         expand = ggplot2::expansion(mult = c(0.03, 0.10))
       ) +
       ggplot2::labs(
-        x = amount_nm,
-        y = if (is.null(risk_factor_nm)) NULL else risk_factor_nm
+        x = if (is.null(xlab)) amount_nm else xlab,
+        y = if (is.null(ylab)) {
+          if (is.null(risk_factor_nm)) NULL else risk_factor_nm
+        } else {
+          ylab
+        }
       )
 
     if (isTRUE(log_scale)) {
@@ -688,8 +718,12 @@ build_severity_distribution_plot <- function(plot_data,
         expand = ggplot2::expansion(mult = c(0.03, 0.10))
       ) +
       ggplot2::labs(
-        x = if (is.null(risk_factor_nm)) NULL else risk_factor_nm,
-        y = amount_nm
+        x = if (is.null(xlab)) {
+          if (is.null(risk_factor_nm)) NULL else risk_factor_nm
+        } else {
+          xlab
+        },
+        y = if (is.null(ylab)) amount_nm else ylab
       )
 
     if (isTRUE(log_scale)) {
@@ -955,41 +989,4 @@ add_severity_direct_labels <- function(p,
     )
   }
   p
-}
-
-#' @export
-print.severity_distribution_plot <- function(x, ...) {
-  print(x$plot)
-  invisible(x)
-}
-
-#' @export
-summary.severity_distribution_plot <- function(object, ...) {
-  if (!inherits(object, "severity_distribution_plot")) {
-    stop("`object` must be a severity_distribution_plot object.", call. = FALSE)
-  }
-
-  settings <- object$settings
-  out <- list(
-    n_categories = nrow(settings$category_summary),
-    min_claims = settings$min_claims,
-    top_n = settings$top_n,
-    sort = settings$sort,
-    top_categories = settings$category_summary[, c(
-      ".category", "n_claims", "mean", "median"
-    ), drop = FALSE]
-  )
-  class(out) <- "summary.severity_distribution_plot"
-  out
-}
-
-#' @export
-print.summary.severity_distribution_plot <- function(x, ...) {
-  cat("severity_distribution_plot summary\n\n")
-  cat("Categories shown: ", x$n_categories, "\n", sep = "")
-  cat("Minimum claims per category: ", x$min_claims, "\n", sep = "")
-  cat("Top categories selected: ", x$top_n, "\n", sep = "")
-  cat("Sorted by: ", x$sort, "\n\n", sep = "")
-  print(x$top_categories, row.names = FALSE)
-  invisible(x)
 }
