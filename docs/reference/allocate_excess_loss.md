@@ -29,13 +29,12 @@ and converts it into an excess loading per row.
   toward the portfolio.
 
 When `pooling = "partial"` and `credibility = NULL`, credibility is
-determined automatically from the amount and quality of group-specific
-experience. The automatic credibility factor reflects the size of the
-group, the number of observed claims, the number of excess claims and
-the share of loss above the threshold. Groups with more stable and
-repeated excess loss experience receive more credibility. Groups with
-limited or incidental excess loss experience are pooled more strongly
-towards the portfolio-wide loading.
+estimated per group from a weighted combination of group exposure share,
+number of claims, number of excess claims, and the share of loss above
+the threshold. Groups with more stable and repeated excess loss
+experience receive more credibility. Groups with limited or incidental
+excess loss experience are pooled more strongly towards the
+portfolio-wide loading.
 
 `severity_noise` is only available with `method = "bootstrap"`. With
 `"lognormal"`, sampled excess claims are multiplied by lognormal noise,
@@ -53,14 +52,13 @@ allocate_excess_loss(
   weight,
   include = NULL,
   group = NULL,
-  threshold = NULL,
-  tail_fit_threshold = NULL,
   method = c("observed", "bootstrap"),
   pooling = c("portfolio", "group", "partial"),
   credibility = NULL,
   n_boot = 1000,
   severity_noise = c("none", "lognormal", "normal"),
-  severity_noise_sd = 0.25
+  severity_noise_sd = 0.25,
+  preserve_total = TRUE
 )
 ```
 
@@ -89,17 +87,6 @@ allocate_excess_loss(
   Optional character string. Grouping column for group or partial
   pooling.
 
-- threshold:
-
-  Optional numeric scalar. Main excess threshold, stored for audit
-  output.
-
-- tail_fit_threshold:
-
-  Optional numeric scalar. Lower threshold used as tail information.
-  Only allowed when `method = "bootstrap"` and must be smaller than or
-  equal to `threshold`.
-
 - method:
 
   Character. `"observed"` or `"bootstrap"`.
@@ -126,6 +113,12 @@ allocate_excess_loss(
   Non-negative numeric scalar controlling severity noise in bootstrap
   samples.
 
+- preserve_total:
+
+  Logical. If `TRUE`, rescale the final allocation so the allocated
+  excess loss over included rows equals the total excess loss being
+  allocated.
+
 ## Value
 
 An object of class `"excess_loss_allocation"`.
@@ -150,11 +143,6 @@ This means that the bootstrap not only changes the total excess burden
 that needs to be redistributed, but also how that burden is distributed
 across portfolio segments.
 
-When `tail_fit_threshold` is supplied, claims above the lower threshold
-are used to better approximate the tail of the claim distribution. This
-can be useful when only a limited number of claims exceed the main
-excess threshold.
-
 Severity noise can optionally be added to bootstrapped excess claims.
 This is useful when the number of excess claims is small and a regular
 bootstrap would otherwise repeatedly reproduce only the same observed
@@ -176,14 +164,13 @@ For example, with `severity_noise_sd = 0.25`, this gives approximately
 `0.73x`, `0.97x` and `1.38x`. An excess claim of 100,000 would therefore
 typically vary between roughly 73,000 and 138,000.
 
-The following validation rules apply:
+With `preserve_total = TRUE`, the final allocated excess loss is
+rescaled so that the sum over included rows equals the total excess loss
+being allocated. This keeps partial pooling as a redistribution of the
+selected excess burden, rather than allowing credibility blending to
+increase or reduce the total.
 
-- `tail_fit_threshold` can only be used when `method = "bootstrap"`.
-
-- `tail_fit_threshold` must be smaller than or equal to `threshold`.
-
-- `severity_noise != "none"` can only be used when
-  `method = "bootstrap"`.
+`severity_noise != "none"` can only be used when `method = "bootstrap"`.
 
 ## Author
 
@@ -206,13 +193,13 @@ allocation <- allocate_excess_loss(
   pooling = "partial"
 )
 summary(allocation)
-#>      group group_weight n_claims n_excess_claims historical_excess_loss
-#> 1 Industry            4        4               1                  20000
-#> 2   Retail            4        4               1                  50000
-#>   excess_loss_ratio group_loading portfolio_loading credibility
-#> 1                 1          5000              8750        0.88
-#> 2                 1         12500              8750        0.88
-#>   allocated_loading allocated_excess_loss
-#> 1              5450                 21800
-#> 2             12050                 48200
+#>      group weight n_claims n_excess_claims historical_excess_loss group_loading
+#> 1 Industry      4        4               1                  20000          5000
+#> 2   Retail      4        4               1                  50000         12500
+#>   portfolio_loading credibility allocated_loading allocated_excess_loss
+#> 1              8750   0.7796226          5826.415              22814.92
+#> 2              8750   0.8800000         12050.000              47185.08
+#>   excess_loss_ratio
+#> 1         0.1257862
+#> 2         0.2525253
 ```

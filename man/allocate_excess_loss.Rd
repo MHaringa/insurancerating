@@ -10,14 +10,13 @@ allocate_excess_loss(
   weight,
   include = NULL,
   group = NULL,
-  threshold = NULL,
-  tail_fit_threshold = NULL,
   method = c("observed", "bootstrap"),
   pooling = c("portfolio", "group", "partial"),
   credibility = NULL,
   n_boot = 1000,
   severity_noise = c("none", "lognormal", "normal"),
-  severity_noise_sd = 0.25
+  severity_noise_sd = 0.25,
+  preserve_total = TRUE
 )
 }
 \arguments{
@@ -33,13 +32,6 @@ rows participate in the allocation. If \code{NULL}, all rows are included.}
 \item{group}{Optional character string. Grouping column for group or partial
 pooling.}
 
-\item{threshold}{Optional numeric scalar. Main excess threshold, stored for
-audit output.}
-
-\item{tail_fit_threshold}{Optional numeric scalar. Lower threshold used as
-tail information. Only allowed when \code{method = "bootstrap"} and must be
-smaller than or equal to \code{threshold}.}
-
 \item{method}{Character. \code{"observed"} or \code{"bootstrap"}.}
 
 \item{pooling}{Character. \code{"portfolio"}, \code{"group"} or \code{"partial"}.}
@@ -53,6 +45,10 @@ smaller than or equal to \code{threshold}.}
 
 \item{severity_noise_sd}{Non-negative numeric scalar controlling severity
 noise in bootstrap samples.}
+
+\item{preserve_total}{Logical. If \code{TRUE}, rescale the final allocation so the
+allocated excess loss over included rows equals the total excess loss being
+allocated.}
 }
 \value{
 An object of class \code{"excess_loss_allocation"}.
@@ -79,13 +75,12 @@ large-loss experience to be partly credible while smaller groups should
 pool back toward the portfolio.}
 }
 
-When \code{pooling = "partial"} and \code{credibility = NULL}, credibility is determined
-automatically from the amount and quality of group-specific experience.
-The automatic credibility factor reflects the size of the group, the number
-of observed claims, the number of excess claims and the share of loss above
-the threshold. Groups with more stable and repeated excess loss experience
-receive more credibility. Groups with limited or incidental excess loss
-experience are pooled more strongly towards the portfolio-wide loading.
+When \code{pooling = "partial"} and \code{credibility = NULL}, credibility is estimated
+per group from a weighted combination of group exposure share, number of
+claims, number of excess claims, and the share of loss above the threshold.
+Groups with more stable and repeated excess loss experience receive more
+credibility. Groups with limited or incidental excess loss experience are
+pooled more strongly towards the portfolio-wide loading.
 
 \code{severity_noise} is only available with \code{method = "bootstrap"}. With
 \code{"lognormal"}, sampled excess claims are multiplied by lognormal noise, which
@@ -114,10 +109,6 @@ This means that the bootstrap not only changes the total excess burden that
 needs to be redistributed, but also how that burden is distributed across
 portfolio segments.
 
-When \code{tail_fit_threshold} is supplied, claims above the lower threshold are
-used to better approximate the tail of the claim distribution. This can be
-useful when only a limited number of claims exceed the main excess threshold.
-
 Severity noise can optionally be added to bootstrapped excess claims. This is
 useful when the number of excess claims is small and a regular bootstrap would
 otherwise repeatedly reproduce only the same observed large losses.
@@ -137,14 +128,12 @@ For example, with \code{severity_noise_sd = 0.25}, this gives approximately
 \verb{0.73x}, \verb{0.97x} and \verb{1.38x}. An excess claim of 100,000 would therefore
 typically vary between roughly 73,000 and 138,000.
 
-The following validation rules apply:
+With \code{preserve_total = TRUE}, the final allocated excess loss is rescaled so
+that the sum over included rows equals the total excess loss being allocated.
+This keeps partial pooling as a redistribution of the selected excess burden,
+rather than allowing credibility blending to increase or reduce the total.
 
-\itemize{
-\item \code{tail_fit_threshold} can only be used when \code{method = "bootstrap"}.
-\item \code{tail_fit_threshold} must be smaller than or equal to \code{threshold}.
-\item \code{severity_noise != "none"} can only be used when
-\code{method = "bootstrap"}.
-}
+\code{severity_noise != "none"} can only be used when \code{method = "bootstrap"}.
 }
 \examples{
 claims <- data.frame(

@@ -114,13 +114,33 @@ test_that("allocate_excess_loss supports partial pooling", {
     group = "segment",
     method = "observed",
     pooling = "partial",
-    credibility = 0.4
+    credibility = 0.4,
+    preserve_total = FALSE
   )
   s <- summary(allocation)
   expected <- 0.4 * s$group_loading + 0.6 * s$portfolio_loading
 
   expect_equal(s$credibility, rep(0.4, nrow(s)))
   expect_equal(s$allocated_loading, expected)
+})
+
+test_that("preserve_total rescales partial pooling to the allocated burden", {
+  decomposed <- calculate_excess_loss(excess_loss_data, "claim_amount", 100000)
+  allocation <- allocate_excess_loss(
+    decomposed,
+    excess_amount = "excess_claim_amount",
+    weight = "earned_exposure",
+    group = "segment",
+    method = "observed",
+    pooling = "partial",
+    credibility = 0.4,
+    preserve_total = TRUE
+  )
+
+  expect_equal(
+    sum(allocation$data$allocated_excess_loss[allocation$data$included]),
+    sum(decomposed$excess_claim_amount)
+  )
 })
 
 test_that("automatic credibility is between zero and one", {
@@ -134,6 +154,11 @@ test_that("automatic credibility is between zero and one", {
   )
   s <- summary(allocation)
 
+  expect_true(all(c(
+    "group", "weight", "n_claims", "n_excess_claims",
+    "historical_excess_loss", "group_loading", "portfolio_loading",
+    "credibility", "allocated_loading", "allocated_excess_loss"
+  ) %in% names(s)))
   expect_true(all(s$credibility >= 0 & s$credibility <= 1))
 })
 
@@ -180,7 +205,7 @@ test_that("bootstrap allocation is reproducible through set.seed", {
   expect_true("bootstrap_loading_mean" %in% names(summary(x)))
 })
 
-test_that("bootstrap severity noise and tail threshold are validated", {
+test_that("bootstrap severity noise and preserve_total are validated", {
   decomposed <- calculate_excess_loss(excess_loss_data, "claim_amount", 100000)
 
   expect_error(
@@ -198,11 +223,9 @@ test_that("bootstrap severity noise and tail threshold are validated", {
       decomposed,
       excess_amount = "excess_claim_amount",
       weight = "earned_exposure",
-      method = "observed",
-      threshold = 100000,
-      tail_fit_threshold = 50000
+      preserve_total = NA
     ),
-    "`tail_fit_threshold`"
+    "`preserve_total`"
   )
   expect_silent(
     allocate_excess_loss(
@@ -210,8 +233,6 @@ test_that("bootstrap severity noise and tail threshold are validated", {
       excess_amount = "excess_claim_amount",
       weight = "earned_exposure",
       method = "bootstrap",
-      threshold = 100000,
-      tail_fit_threshold = 50000,
       severity_noise = "lognormal",
       severity_noise_sd = 0.10,
       n_boot = 10

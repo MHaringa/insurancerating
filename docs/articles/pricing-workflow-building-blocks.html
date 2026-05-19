@@ -117,14 +117,63 @@ before fitting severity models or constructing tariff segments.</p>
 <p><img src="pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="700"></p>
 </div>
 <div class="section level2">
-<h2 id="translate-continuous-factors-into-tariff-segments">2. Translate continuous factors into tariff segments<a class="anchor" aria-label="anchor" href="#translate-continuous-factors-into-tariff-segments"></a>
+<h2 id="assess-large-losses">2. Assess large losses<a class="anchor" aria-label="anchor" href="#assess-large-losses"></a>
+</h2>
+<p>Large claims can dominate severity and pure premium analysis. In
+capped severity workflows, it is often useful to assess a cap first,
+decompose the historical claim amounts, and then decide how the excess
+burden should be allocated.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">thresholds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assess_excess_threshold.html">assess_excess_threshold</a></span><span class="op">(</span></span>
+<span>  <span class="va">claims</span>,</span>
+<span>  claim_amount <span class="op">=</span> <span class="st">"claim_amount"</span>,</span>
+<span>  thresholds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50000</span>, <span class="fl">100000</span>, <span class="fl">150000</span><span class="op">)</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
+<span>  group <span class="op">=</span> <span class="st">"sector"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">thresholds</span>, y <span class="op">=</span> <span class="st">"premium_impact"</span><span class="op">)</span></span></code></pre></div>
+<p>After choosing a threshold, <code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code>
+creates a deterministic historical decomposition. It does not bootstrap
+or allocate anything.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">excess</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculate_excess_loss.html">calculate_excess_loss</a></span><span class="op">(</span></span>
+<span>  <span class="va">claims</span>,</span>
+<span>  claim_amount <span class="op">=</span> <span class="st">"claim_amount"</span>,</span>
+<span>  threshold <span class="op">=</span> <span class="fl">100000</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The allocation step is where pooling and uncertainty are handled.
+Portfolio pooling is stable but ignores group experience. Group pooling
+is responsive but can be volatile. Partial pooling blends both using
+credibility.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">allocation</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/allocate_excess_loss.html">allocate_excess_loss</a></span><span class="op">(</span></span>
+<span>  <span class="va">excess</span>,</span>
+<span>  excess_amount <span class="op">=</span> <span class="st">"excess_claim_amount"</span>,</span>
+<span>  weight <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
+<span>  group <span class="op">=</span> <span class="st">"sector"</span>,</span>
+<span>  pooling <span class="op">=</span> <span class="st">"partial"</span>,</span>
+<span>  preserve_total <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">allocation</span>, compare_to_empirical <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">allocation</span>, y <span class="op">=</span> <span class="st">"allocated_loading"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">allocation</span>, y <span class="op">=</span> <span class="st">"credibility"</span><span class="op">)</span></span></code></pre></div>
+<p>The allocated loading can then be added to the pricing data.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">priced</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_excess_loading.html">add_excess_loading</a></span><span class="op">(</span><span class="va">excess</span>, <span class="va">allocation</span><span class="op">)</span></span></code></pre></div>
+<p>This excess loading is part of the technical risk premium. It is not
+intended as a commercial margin.</p>
+</div>
+<div class="section level2">
+<h2 id="translate-continuous-factors-into-tariff-segments">3. Translate continuous factors into tariff segments<a class="anchor" aria-label="anchor" href="#translate-continuous-factors-into-tariff-segments"></a>
 </h2>
 <p>Many tariffs use grouped versions of continuous variables such as
 age, vehicle age or insured value. <code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code> can be
 used to inspect the fitted shape of a continuous risk factor.
 <code><a href="../reference/derive_tariff_segments.html">derive_tariff_segments()</a></code> can then derive candidate segment
 boundaries from that pattern.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">age_gam</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/risk_factor_gam.html">risk_factor_gam</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">MTPL</span>,</span>
 <span>  claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
@@ -138,7 +187,7 @@ boundaries from that pattern.</p>
 <span><span class="co">#&gt; [1] 18 25 32 39 51 58 65 84 95</span></span></code></pre></div>
 <p>The derived segments can be added back to the portfolio with
 <code><a href="../reference/add_tariff_segments.html">add_tariff_segments()</a></code>.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="va">MTPL</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_tariff_segments.html">add_tariff_segments</a></span><span class="op">(</span><span class="va">age_segments</span>, name <span class="op">=</span> <span class="st">"age_policyholder_segment"</span><span class="op">)</span></span>
 <span></span>
@@ -157,13 +206,13 @@ replace it. Candidate segment boundaries should still be reviewed for
 credibility, stability and practical usability.</p>
 </div>
 <div class="section level2">
-<h2 id="fit-and-interpret-a-glm">3. Fit and interpret a GLM<a class="anchor" aria-label="anchor" href="#fit-and-interpret-a-glm"></a>
+<h2 id="fit-and-interpret-a-glm">4. Fit and interpret a GLM<a class="anchor" aria-label="anchor" href="#fit-and-interpret-a-glm"></a>
 </h2>
 <p>GLMs are widely used in insurance pricing because they provide an
 interpretable multiplicative structure. After fitting a model,
 <code><a href="../reference/rating_table.html">rating_table()</a></code> expresses the coefficients in tariff-table
 form.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">portfolio</span><span class="op">$</span><span class="va">zip</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">portfolio</span><span class="op">$</span><span class="va">zip</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">freq_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
@@ -190,7 +239,7 @@ form.</p>
 be attached to the rating table with
 <code><a href="../reference/add_observed_experience.html">add_observed_experience()</a></code>. This makes the comparison
 between model relativities and observed experience explicit.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">zip_experience</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/factor_analysis.html">factor_analysis</a></span><span class="op">(</span></span>
 <span>  <span class="va">portfolio</span>,</span>
 <span>  risk_factors <span class="op">=</span> <span class="st">"zip"</span>,</span>
@@ -201,16 +250,16 @@ between model relativities and observed experience explicit.</p>
 <span><span class="va">rt</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_observed_experience.html">add_observed_experience</a></span><span class="op">(</span><span class="va">zip_experience</span>, metric <span class="op">=</span> <span class="st">"frequency"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span>risk_factors <span class="op">=</span> <span class="st">"zip"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-8-1.png" class="r-plt" alt="" width="700"></p>
+<p><img src="pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="700"></p>
 </div>
 <div class="section level2">
-<h2 id="refine-tariff-effects-when-needed">4. Refine tariff effects when needed<a class="anchor" aria-label="anchor" href="#refine-tariff-effects-when-needed"></a>
+<h2 id="refine-tariff-effects-when-needed">5. Refine tariff effects when needed<a class="anchor" aria-label="anchor" href="#refine-tariff-effects-when-needed"></a>
 </h2>
 <p>Raw model output may be statistically valid but still unsuitable for
 direct tariff use. Sparse levels, noisy estimates or non-monotonic
 adjacent effects can make a tariff hard to explain or maintain.</p>
 <p>The refinement workflow makes these adjustments explicit:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">freq_model</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_smoothing.html">add_smoothing</a></span><span class="op">(</span></span>
 <span>    model_variable <span class="op">=</span> <span class="st">"age_policyholder_segment"</span>,</span>
@@ -234,7 +283,7 @@ captures the main risk structure and the remaining work is tariff
 refinement.</p>
 </div>
 <div class="section level2">
-<h2 id="validate-model-behaviour">5. Validate model behaviour<a class="anchor" aria-label="anchor" href="#validate-model-behaviour"></a>
+<h2 id="validate-model-behaviour">6. Validate model behaviour<a class="anchor" aria-label="anchor" href="#validate-model-behaviour"></a>
 </h2>
 <p>Pricing models should be checked before their output is used in a
 tariff. <code>insurancerating</code> contains helpers for several common
@@ -254,13 +303,13 @@ metrics such as RMSE</li>
 combinations</li>
 </ul>
 <p>For example:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_overdispersion.html">check_overdispersion</a></span><span class="op">(</span><span class="va">freq_model</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Dispersion ratio =     1.185</span></span>
 <span><span class="co">#&gt; Pearson's Chi-squared = 35522.367</span></span>
 <span><span class="co">#&gt; p-value =   &lt; 0.001</span></span>
 <span><span class="co">#&gt; Overdispersion detected.</span></span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_residuals.html">check_residuals</a></span><span class="op">(</span><span class="va">freq_model</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Validation does not make a tariff decision by itself. It gives
@@ -274,6 +323,12 @@ review.</p>
 <ol style="list-style-type: decimal">
 <li>Inspect the portfolio with <code><a href="../reference/factor_analysis.html">factor_analysis()</a></code> and
 <code><a href="../reference/outlier_histogram.html">outlier_histogram()</a></code>.</li>
+<li>Assess large-loss thresholds with
+<code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code> where capped severity or
+excess-loss loadings are relevant.</li>
+<li>Decompose and allocate excess loss with
+<code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code> and
+<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code>.</li>
 <li>Analyse continuous risk factors with
 <code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code>.</li>
 <li>Create candidate tariff segments with

@@ -66,7 +66,72 @@ outlier_histogram(
 
 ![](pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-4-1.png)
 
-## 2. Translate continuous factors into tariff segments
+## 2. Assess large losses
+
+Large claims can dominate severity and pure premium analysis. In capped
+severity workflows, it is often useful to assess a cap first, decompose
+the historical claim amounts, and then decide how the excess burden
+should be allocated.
+
+``` r
+
+thresholds <- assess_excess_threshold(
+  claims,
+  claim_amount = "claim_amount",
+  thresholds = c(50000, 100000, 150000),
+  exposure = "earned_exposure",
+  group = "sector"
+)
+
+autoplot(thresholds, y = "premium_impact")
+```
+
+After choosing a threshold,
+[`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
+creates a deterministic historical decomposition. It does not bootstrap
+or allocate anything.
+
+``` r
+
+excess <- calculate_excess_loss(
+  claims,
+  claim_amount = "claim_amount",
+  threshold = 100000
+)
+```
+
+The allocation step is where pooling and uncertainty are handled.
+Portfolio pooling is stable but ignores group experience. Group pooling
+is responsive but can be volatile. Partial pooling blends both using
+credibility.
+
+``` r
+
+allocation <- allocate_excess_loss(
+  excess,
+  excess_amount = "excess_claim_amount",
+  weight = "earned_exposure",
+  group = "sector",
+  pooling = "partial",
+  preserve_total = TRUE
+)
+
+summary(allocation, compare_to_empirical = TRUE)
+autoplot(allocation, y = "allocated_loading")
+autoplot(allocation, y = "credibility")
+```
+
+The allocated loading can then be added to the pricing data.
+
+``` r
+
+priced <- add_excess_loading(excess, allocation)
+```
+
+This excess loading is part of the technical risk premium. It is not
+intended as a commercial margin.
+
+## 3. Translate continuous factors into tariff segments
 
 Many tariffs use grouped versions of continuous variables such as age,
 vehicle age or insured value.
@@ -114,7 +179,7 @@ These functions are intended to support actuarial judgement, not replace
 it. Candidate segment boundaries should still be reviewed for
 credibility, stability and practical usability.
 
-## 3. Fit and interpret a GLM
+## 4. Fit and interpret a GLM
 
 GLMs are widely used in insurance pricing because they provide an
 interpretable multiplicative structure. After fitting a model,
@@ -168,9 +233,9 @@ rt |>
   autoplot(risk_factors = "zip")
 ```
 
-![](pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-8-1.png)
+![](pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-12-1.png)
 
-## 4. Refine tariff effects when needed
+## 5. Refine tariff effects when needed
 
 Raw model output may be statistically valid but still unsuitable for
 direct tariff use. Sparse levels, noisy estimates or non-monotonic
@@ -200,7 +265,7 @@ Common refinement tasks include:
 These tools are most useful when the statistical model already captures
 the main risk structure and the remaining work is tariff refinement.
 
-## 5. Validate model behaviour
+## 6. Validate model behaviour
 
 Pricing models should be checked before their output is used in a
 tariff. `insurancerating` contains helpers for several common checks:
@@ -242,22 +307,29 @@ One possible workflow is:
     [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
     and
     [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md).
-2.  Analyse continuous risk factors with
+2.  Assess large-loss thresholds with
+    [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
+    where capped severity or excess-loss loadings are relevant.
+3.  Decompose and allocate excess loss with
+    [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
+    and
+    [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md).
+4.  Analyse continuous risk factors with
     [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md).
-3.  Create candidate tariff segments with
+5.  Create candidate tariff segments with
     [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md).
-4.  Fit GLMs for frequency, severity or pure premium.
-5.  Interpret coefficients with
+6.  Fit GLMs for frequency, severity or pure premium.
+7.  Interpret coefficients with
     [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
-6.  Compare fitted relativities with observed experience using
+8.  Compare fitted relativities with observed experience using
     [`add_observed_experience()`](https://mharinga.github.io/insurancerating/reference/add_observed_experience.md).
-7.  Apply refinement where needed with
+9.  Apply refinement where needed with
     [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
     [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
     [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
     or
     [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).
-8.  Validate the resulting model with the model-performance helpers.
+10. Validate the resulting model with the model-performance helpers.
 
 The exact order and choice of functions depends on the portfolio,
 product, data quality and pricing objective.

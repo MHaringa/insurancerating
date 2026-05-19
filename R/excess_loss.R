@@ -165,13 +165,12 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #'   pool back toward the portfolio.}
 #' }
 #'
-#' When `pooling = "partial"` and `credibility = NULL`, credibility is determined
-#' automatically from the amount and quality of group-specific experience.
-#' The automatic credibility factor reflects the size of the group, the number
-#' of observed claims, the number of excess claims and the share of loss above
-#' the threshold. Groups with more stable and repeated excess loss experience
-#' receive more credibility. Groups with limited or incidental excess loss
-#' experience are pooled more strongly towards the portfolio-wide loading.
+#' When `pooling = "partial"` and `credibility = NULL`, credibility is estimated
+#' per group from a weighted combination of group exposure share, number of
+#' claims, number of excess claims, and the share of loss above the threshold.
+#' Groups with more stable and repeated excess loss experience receive more
+#' credibility. Groups with limited or incidental excess loss experience are
+#' pooled more strongly towards the portfolio-wide loading.
 #'
 #' `severity_noise` is only available with `method = "bootstrap"`. With
 #' `"lognormal"`, sampled excess claims are multiplied by lognormal noise, which
@@ -200,10 +199,6 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #' needs to be redistributed, but also how that burden is distributed across
 #' portfolio segments.
 #'
-#' When `tail_fit_threshold` is supplied, claims above the lower threshold are
-#' used to better approximate the tail of the claim distribution. This can be
-#' useful when only a limited number of claims exceed the main excess threshold.
-#'
 #' Severity noise can optionally be added to bootstrapped excess claims. This is
 #' useful when the number of excess claims is small and a regular bootstrap would
 #' otherwise repeatedly reproduce only the same observed large losses.
@@ -223,14 +218,12 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #' `0.73x`, `0.97x` and `1.38x`. An excess claim of 100,000 would therefore
 #' typically vary between roughly 73,000 and 138,000.
 #'
-#' The following validation rules apply:
+#' With `preserve_total = TRUE`, the final allocated excess loss is rescaled so
+#' that the sum over included rows equals the total excess loss being allocated.
+#' This keeps partial pooling as a redistribution of the selected excess burden,
+#' rather than allowing credibility blending to increase or reduce the total.
 #'
-#' \itemize{
-#'   \item `tail_fit_threshold` can only be used when `method = "bootstrap"`.
-#'   \item `tail_fit_threshold` must be smaller than or equal to `threshold`.
-#'   \item `severity_noise != "none"` can only be used when
-#'   `method = "bootstrap"`.
-#' }
+#' `severity_noise != "none"` can only be used when `method = "bootstrap"`.
 #'
 #' @param data A `data.frame`, typically the output of [calculate_excess_loss()].
 #' @param excess_amount Character string. Excess amount column.
@@ -239,11 +232,6 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #'   rows participate in the allocation. If `NULL`, all rows are included.
 #' @param group Optional character string. Grouping column for group or partial
 #'   pooling.
-#' @param threshold Optional numeric scalar. Main excess threshold, stored for
-#'   audit output.
-#' @param tail_fit_threshold Optional numeric scalar. Lower threshold used as
-#'   tail information. Only allowed when `method = "bootstrap"` and must be
-#'   smaller than or equal to `threshold`.
 #' @param method Character. `"observed"` or `"bootstrap"`.
 #' @param pooling Character. `"portfolio"`, `"group"` or `"partial"`.
 #' @param credibility Optional numeric scalar between 0 and 1. Used for
@@ -252,6 +240,9 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #' @param severity_noise Character. `"none"`, `"lognormal"` or `"normal"`.
 #' @param severity_noise_sd Non-negative numeric scalar controlling severity
 #'   noise in bootstrap samples.
+#' @param preserve_total Logical. If `TRUE`, rescale the final allocation so the
+#'   allocated excess loss over included rows equals the total excess loss being
+#'   allocated.
 #'
 #' @return An object of class `"excess_loss_allocation"`.
 #'
@@ -279,20 +270,19 @@ allocate_excess_loss <- function(data,
                                  weight,
                                  include = NULL,
                                  group = NULL,
-                                 threshold = NULL,
-                                 tail_fit_threshold = NULL,
                                  method = c("observed", "bootstrap"),
                                  pooling = c("portfolio", "group", "partial"),
                                  credibility = NULL,
                                  n_boot = 1000,
                                  severity_noise = c("none", "lognormal", "normal"),
-                                 severity_noise_sd = 0.25) {
+                                 severity_noise_sd = 0.25,
+                                 preserve_total = TRUE) {
   method <- match.arg(method)
   pooling <- match.arg(pooling)
   severity_noise <- match.arg(severity_noise)
   validate_allocate_excess_loss(
-    data, excess_amount, weight, include, group, threshold, tail_fit_threshold,
-    method, pooling, credibility, n_boot, severity_noise, severity_noise_sd
+    data, excess_amount, weight, include, group, method, pooling, credibility,
+    n_boot, severity_noise, severity_noise_sd, preserve_total
   )
 
   allocation_data <- prepare_allocation_data(data, excess_amount, weight, include, group)
@@ -328,6 +318,14 @@ allocate_excess_loss <- function(data,
   allocation_data$allocated_loading[!allocation_data$included] <- 0
   allocation_data$allocated_excess_loss <- allocation_data$allocated_loading *
     allocation_data$weight
+  target_excess_loss <- portfolio_loading *
+    sum(allocation_data$weight[allocation_data$included])
+  if (isTRUE(preserve_total)) {
+    allocation_data <- preserve_allocated_total(
+      allocation_data = allocation_data,
+      target_excess_loss = target_excess_loss
+    )
+  }
 
   groups <- summarize_allocated_groups(allocation_data, groups)
   structure(
@@ -336,8 +334,7 @@ allocate_excess_loss <- function(data,
       summary = groups,
       method = method,
       pooling = pooling,
-      threshold = threshold,
-      tail_fit_threshold = tail_fit_threshold,
+      preserve_total = preserve_total,
       bootstrap = boot
     ),
     class = "excess_loss_allocation"
@@ -477,10 +474,21 @@ summary.excess_loss_allocation <- function(object,
                                            ...) {
   .check_dots_empty(...)
   out <- object$summary
+  if ("group_weight" %in% names(out)) {
+    names(out)[names(out) == "group_weight"] <- "weight"
+  }
   if (!isTRUE(compare_to_empirical)) {
     drop <- intersect(c("empirical_loss", "empirical_excess_loss"), names(out))
     out <- out[, setdiff(names(out), drop), drop = FALSE]
   }
+  preferred <- c(
+    "group", "weight", "n_claims", "n_excess_claims",
+    "historical_excess_loss", "group_loading", "portfolio_loading",
+    "credibility", "allocated_loading", "allocated_excess_loss",
+    "empirical_loss", "empirical_excess_loss"
+  )
+  out <- out[, c(intersect(preferred, names(out)),
+                 setdiff(names(out), preferred)), drop = FALSE]
   row.names(out) <- NULL
   out
 }
@@ -624,9 +632,9 @@ validate_calculate_excess_loss <- function(data, claim_amount, threshold) {
 }
 
 validate_allocate_excess_loss <- function(data, excess_amount, weight, include,
-                                          group, threshold, tail_fit_threshold,
-                                          method, pooling, credibility, n_boot,
-                                          severity_noise, severity_noise_sd) {
+                                          group, method, pooling, credibility,
+                                          n_boot, severity_noise,
+                                          severity_noise_sd, preserve_total) {
   validate_data_frame(data)
   validate_character_column(data, excess_amount, "excess_amount")
   validate_character_column(data, weight, "weight")
@@ -650,23 +658,6 @@ validate_allocate_excess_loss <- function(data, excess_amount, weight, include,
   if (!is.null(group)) {
     validate_character_column(data, group, "group")
   }
-  if (!is.null(threshold) &&
-      (!is.numeric(threshold) || length(threshold) != 1L ||
-       !is.finite(threshold) || threshold <= 0)) {
-    stop("`threshold` must be NULL or a single positive number.", call. = FALSE)
-  }
-  if (!is.null(tail_fit_threshold)) {
-    if (!identical(method, "bootstrap")) {
-      stop("`tail_fit_threshold` is only allowed when `method = 'bootstrap'`.",
-           call. = FALSE)
-    }
-    if (is.null(threshold) || !is.numeric(tail_fit_threshold) ||
-        length(tail_fit_threshold) != 1L || !is.finite(tail_fit_threshold) ||
-        tail_fit_threshold <= 0 || tail_fit_threshold > threshold) {
-      stop("`tail_fit_threshold` must be positive and <= `threshold`.",
-           call. = FALSE)
-    }
-  }
   if (!identical(severity_noise, "none") && !identical(method, "bootstrap")) {
     stop("`severity_noise` is only allowed when `method = 'bootstrap'`.",
          call. = FALSE)
@@ -686,6 +677,10 @@ validate_allocate_excess_loss <- function(data, excess_amount, weight, include,
     stop("`severity_noise_sd` must be a single non-negative number.",
          call. = FALSE)
   }
+  if (!is.logical(preserve_total) || length(preserve_total) != 1L ||
+      is.na(preserve_total)) {
+    stop("`preserve_total` must be TRUE or FALSE.", call. = FALSE)
+  }
 }
 
 prepare_allocation_data <- function(data, excess_amount, weight, include, group) {
@@ -693,6 +688,7 @@ prepare_allocation_data <- function(data, excess_amount, weight, include, group)
   out <- data.frame(
     row_id = seq_len(nrow(data)),
     excess_amount = data[[excess_amount]],
+    claim_amount = if ("claim_amount" %in% names(data)) data[["claim_amount"]] else data[[excess_amount]],
     weight = data[[weight]],
     included = included,
     group = if (is.null(group)) "portfolio" else as.character(data[[group]]),
@@ -711,7 +707,7 @@ summarize_allocation_groups <- function(allocation_data) {
     included <- z[z$included, , drop = FALSE]
     historical_excess <- sum(included$excess_amount)
     group_weight <- sum(included$weight)
-    empirical_loss <- sum(z$excess_amount)
+    empirical_loss <- sum(included$claim_amount)
     data.frame(
       group = g,
       group_weight = group_weight,
@@ -832,6 +828,29 @@ summarize_allocated_groups <- function(allocation_data, groups) {
                       reorder = FALSE)
   groups$allocated_excess_loss <- as.numeric(allocated[groups$group, 1])
   groups
+}
+
+preserve_allocated_total <- function(allocation_data, target_excess_loss) {
+  included <- allocation_data$included
+  raw_total <- sum(allocation_data$allocated_excess_loss[included])
+  if (is.na(target_excess_loss) || target_excess_loss < 0) {
+    stop("The total excess loss being allocated is invalid.", call. = FALSE)
+  }
+  if (target_excess_loss == 0) {
+    allocation_data$allocated_loading[included] <- 0
+    allocation_data$allocated_excess_loss[included] <- 0
+    return(allocation_data)
+  }
+  if (is.na(raw_total) || raw_total <= 0) {
+    stop("Allocated excess loss is zero and cannot be rescaled.",
+         call. = FALSE)
+  }
+  scaling_factor <- target_excess_loss / raw_total
+  allocation_data$allocated_loading[included] <-
+    allocation_data$allocated_loading[included] * scaling_factor
+  allocation_data$allocated_excess_loss[included] <-
+    allocation_data$allocated_excess_loss[included] * scaling_factor
+  allocation_data
 }
 
 safe_ratio_excess <- function(num, den) {

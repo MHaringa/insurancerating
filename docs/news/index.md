@@ -157,6 +157,10 @@
   handles allocation, pooling and bootstrap uncertainty modelling. It
   supports observed or bootstrap excess burdens, portfolio, group-level
   and partial pooling, and optional severity noise in the bootstrap.
+- [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
+  now uses `preserve_total = TRUE` by default so that partial pooling
+  redistributes the selected excess burden without changing the total
+  allocated excess loss.
 - [`add_excess_loading()`](https://mharinga.github.io/insurancerating/reference/add_excess_loading.md)
   adds the allocated excess loading to pricing data and returns
   `base_premium`, `excess_loading` and `loaded_premium`.

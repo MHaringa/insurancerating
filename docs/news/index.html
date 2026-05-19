@@ -127,6 +127,8 @@
 <li>
 <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> handles allocation, pooling and bootstrap uncertainty modelling. It supports observed or bootstrap excess burdens, portfolio, group-level and partial pooling, and optional severity noise in the bootstrap.</li>
 <li>
+<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now uses <code>preserve_total = TRUE</code> by default so that partial pooling redistributes the selected excess burden without changing the total allocated excess loss.</li>
+<li>
 <code><a href="../reference/add_excess_loading.html">add_excess_loading()</a></code> adds the allocated excess loading to pricing data and returns <code>base_premium</code>, <code>excess_loading</code> and <code>loaded_premium</code>.</li>
 <li>
 <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> now uses <code>model_variable</code> and <code>source_variable</code> as the primary argument names.</li>

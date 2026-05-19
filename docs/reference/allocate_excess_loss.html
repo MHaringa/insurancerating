@@ -24,13 +24,12 @@ pool back toward the portfolio.
 
 
 
-When pooling = "partial" and credibility = NULL, credibility is determined
-automatically from the amount and quality of group-specific experience.
-The automatic credibility factor reflects the size of the group, the number
-of observed claims, the number of excess claims and the share of loss above
-the threshold. Groups with more stable and repeated excess loss experience
-receive more credibility. Groups with limited or incidental excess loss
-experience are pooled more strongly towards the portfolio-wide loading.
+When pooling = "partial" and credibility = NULL, credibility is estimated
+per group from a weighted combination of group exposure share, number of
+claims, number of excess claims, and the share of loss above the threshold.
+Groups with more stable and repeated excess loss experience receive more
+credibility. Groups with limited or incidental excess loss experience are
+pooled more strongly towards the portfolio-wide loading.
 severity_noise is only available with method = "bootstrap". With
 "lognormal", sampled excess claims are multiplied by lognormal noise, which
 is usually more natural for large claims because claim amounts remain
@@ -61,13 +60,12 @@ pool back toward the portfolio.
 
 
 
-When pooling = "partial" and credibility = NULL, credibility is determined
-automatically from the amount and quality of group-specific experience.
-The automatic credibility factor reflects the size of the group, the number
-of observed claims, the number of excess claims and the share of loss above
-the threshold. Groups with more stable and repeated excess loss experience
-receive more credibility. Groups with limited or incidental excess loss
-experience are pooled more strongly towards the portfolio-wide loading.
+When pooling = "partial" and credibility = NULL, credibility is estimated
+per group from a weighted combination of group exposure share, number of
+claims, number of excess claims, and the share of loss above the threshold.
+Groups with more stable and repeated excess loss experience receive more
+credibility. Groups with limited or incidental excess loss experience are
+pooled more strongly towards the portfolio-wide loading.
 severity_noise is only available with method = "bootstrap". With
 "lognormal", sampled excess claims are multiplied by lognormal noise, which
 is usually more natural for large claims because claim amounts remain
@@ -128,13 +126,12 @@ large-loss experience to be partly credible while smaller groups should
 pool back toward the portfolio.</p></dd>
 
 
-</dl><p>When <code>pooling = "partial"</code> and <code>credibility = NULL</code>, credibility is determined
-automatically from the amount and quality of group-specific experience.
-The automatic credibility factor reflects the size of the group, the number
-of observed claims, the number of excess claims and the share of loss above
-the threshold. Groups with more stable and repeated excess loss experience
-receive more credibility. Groups with limited or incidental excess loss
-experience are pooled more strongly towards the portfolio-wide loading.</p>
+</dl><p>When <code>pooling = "partial"</code> and <code>credibility = NULL</code>, credibility is estimated
+per group from a weighted combination of group exposure share, number of
+claims, number of excess claims, and the share of loss above the threshold.
+Groups with more stable and repeated excess loss experience receive more
+credibility. Groups with limited or incidental excess loss experience are
+pooled more strongly towards the portfolio-wide loading.</p>
 <p><code>severity_noise</code> is only available with <code>method = "bootstrap"</code>. With
 <code>"lognormal"</code>, sampled excess claims are multiplied by lognormal noise, which
 is usually more natural for large claims because claim amounts remain
@@ -151,14 +148,13 @@ variation.</p>
 <span>  <span class="va">weight</span>,</span>
 <span>  include <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  group <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  threshold <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  tail_fit_threshold <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"observed"</span>, <span class="st">"bootstrap"</span><span class="op">)</span>,</span>
 <span>  pooling <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"portfolio"</span>, <span class="st">"group"</span>, <span class="st">"partial"</span><span class="op">)</span>,</span>
 <span>  credibility <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_boot <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  severity_noise <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"lognormal"</span>, <span class="st">"normal"</span><span class="op">)</span>,</span>
-<span>  severity_noise_sd <span class="op">=</span> <span class="fl">0.25</span></span>
+<span>  severity_noise_sd <span class="op">=</span> <span class="fl">0.25</span>,</span>
+<span>  preserve_total <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -188,17 +184,6 @@ rows participate in the allocation. If <code>NULL</code>, all rows are included.
 pooling.</p></dd>
 
 
-<dt id="arg-threshold">threshold<a class="anchor" aria-label="anchor" href="#arg-threshold"></a></dt>
-<dd><p>Optional numeric scalar. Main excess threshold, stored for
-audit output.</p></dd>
-
-
-<dt id="arg-tail-fit-threshold">tail_fit_threshold<a class="anchor" aria-label="anchor" href="#arg-tail-fit-threshold"></a></dt>
-<dd><p>Optional numeric scalar. Lower threshold used as
-tail information. Only allowed when <code>method = "bootstrap"</code> and must be
-smaller than or equal to <code>threshold</code>.</p></dd>
-
-
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>Character. <code>"observed"</code> or <code>"bootstrap"</code>.</p></dd>
 
@@ -224,6 +209,12 @@ smaller than or equal to <code>threshold</code>.</p></dd>
 <dd><p>Non-negative numeric scalar controlling severity
 noise in bootstrap samples.</p></dd>
 
+
+<dt id="arg-preserve-total">preserve_total<a class="anchor" aria-label="anchor" href="#arg-preserve-total"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, rescale the final allocation so the
+allocated excess loss over included rows equals the total excess loss being
+allocated.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -241,9 +232,6 @@ noise in bootstrap samples.</p></dd>
 </ul><p>This means that the bootstrap not only changes the total excess burden that
 needs to be redistributed, but also how that burden is distributed across
 portfolio segments.</p>
-<p>When <code>tail_fit_threshold</code> is supplied, claims above the lower threshold are
-used to better approximate the tail of the claim distribution. This can be
-useful when only a limited number of claims exceed the main excess threshold.</p>
 <p>Severity noise can optionally be added to bootstrapped excess claims. This is
 useful when the number of excess claims is small and a regular bootstrap would
 otherwise repeatedly reproduce only the same observed large losses.</p>
@@ -257,12 +245,12 @@ factors can be inspected with:</p>
 <p>For example, with <code>severity_noise_sd = 0.25</code>, this gives approximately
 <code>0.73x</code>, <code>0.97x</code> and <code>1.38x</code>. An excess claim of 100,000 would therefore
 typically vary between roughly 73,000 and 138,000.</p>
-<p>The following validation rules apply:</p>
-<ul><li><p><code>tail_fit_threshold</code> can only be used when <code>method = "bootstrap"</code>.</p></li>
-<li><p><code>tail_fit_threshold</code> must be smaller than or equal to <code>threshold</code>.</p></li>
-<li><p><code>severity_noise != "none"</code> can only be used when
-<code>method = "bootstrap"</code>.</p></li>
-</ul></div>
+<p>With <code>preserve_total = TRUE</code>, the final allocated excess loss is rescaled so
+that the sum over included rows equals the total excess loss being allocated.
+This keeps partial pooling as a redistribution of the selected excess burden,
+rather than allowing credibility blending to increase or reduce the total.</p>
+<p><code>severity_noise != "none"</code> can only be used when <code>method = "bootstrap"</code>.</p>
+    </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
     <p>Martin Haringa</p>
@@ -284,15 +272,15 @@ typically vary between roughly 73,000 and 138,000.</p>
 <span class="r-in"><span>  pooling <span class="op">=</span> <span class="st">"partial"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">allocation</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      group group_weight n_claims n_excess_claims historical_excess_loss</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Industry            4        4               1                  20000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2   Retail            4        4               1                  50000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   excess_loss_ratio group_loading portfolio_loading credibility</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                 1          5000              8750        0.88</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                 1         12500              8750        0.88</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   allocated_loading allocated_excess_loss</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1              5450                 21800</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2             12050                 48200</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      group weight n_claims n_excess_claims historical_excess_loss group_loading</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Industry      4        4               1                  20000          5000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   Retail      4        4               1                  50000         12500</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   portfolio_loading credibility allocated_loading allocated_excess_loss</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1              8750   0.7796226          5826.415              22814.92</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2              8750   0.8800000         12050.000              47185.08</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   excess_loss_ratio</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1         0.1257862</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2         0.2525253</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
