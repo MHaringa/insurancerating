@@ -7,6 +7,8 @@
 \method{autoplot}{excess_loss_allocation}(
   object,
   y = c("allocated_loading", "allocated_excess_loss", "credibility"),
+  top_n = NULL,
+  show_labels = FALSE,
   ...
 )
 }
@@ -14,6 +16,11 @@
 \item{object}{An object returned by \code{\link[=allocate_excess_loss]{allocate_excess_loss()}}.}
 
 \item{y}{Character. Measure to plot on the y-axis.}
+
+\item{top_n}{Optional positive whole number. If supplied, only the largest
+\code{top_n} groups by \code{y} are shown.}
+
+\item{show_labels}{Logical. If \code{TRUE}, add direct value labels to the bars.}
 
 \item{...}{Unused.}
 }

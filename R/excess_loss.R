@@ -150,7 +150,9 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #' `allocate_excess_loss()` is the core allocation step in the excess-loss
 #' workflow. It starts from a deterministic excess amount, usually
 #' `excess_claim_amount` produced by [calculate_excess_loss()], and converts it
-#' into an excess loading per row.
+#' into two row-level quantities: `allocated_excess_loss`, the allocated excess
+#' burden in absolute monetary terms, and `allocated_loading`, the excess loading
+#' per unit of `weight`.
 #'
 #' `pooling` controls how much excess risk is shared between groups:
 #' \describe{
@@ -182,7 +184,10 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #' @details
 #' `method = "observed"` allocates the historically observed excess loss.
 #'
-#' `method = "bootstrap"` resamples only the positive excess claim amounts:
+#' `method = "bootstrap"` provides a pragmatic estimate of excess-loss
+#' volatility by repeatedly resampling observed excess losses. It is intended as
+#' a practical pricing approximation rather than a formal extreme value model.
+#' The bootstrap resamples only the positive excess claim amounts:
 #'
 #' `excess_amount[excess_amount > 0]`
 #'
@@ -306,6 +311,8 @@ allocate_excess_loss <- function(data,
     portfolio_loading <- boot$portfolio_loading
   }
 
+  scores <- credibility_scores(groups)
+  groups <- cbind(groups, scores)
   groups <- derive_final_loading(groups, pooling, portfolio_loading, credibility)
   allocation_data <- merge(
     allocation_data,
@@ -350,12 +357,35 @@ allocate_excess_loss <- function(data,
 #' allocate excess loss. It takes an object produced by [allocate_excess_loss()]
 #' and adds row-level loading columns to `data`.
 #'
+#' The default workflow is premium based:
+#' `loaded_premium = base_premium + allocated_excess_loss`.
+#' `allocated_excess_loss` represents the allocated excess burden in absolute
+#' monetary terms. `allocated_loading` represents the excess loading per unit of
+#' weight.
+#'
+#' Use `output = "rate"` when `base_premium` should be interpreted as a premium
+#' amount that first needs to be converted to a rate with
+#' `base_rate = base_premium / weight`.
+#'
 #' @param data A `data.frame`.
 #' @param allocation An object returned by [allocate_excess_loss()].
+#' @param base_premium Character string. Base premium amount before excess
+#'   loading.
+#' @param allocated_excess_loss Optional character string. Column in
+#'   `allocation$data` with the allocated excess burden in absolute monetary
+#'   terms. If `NULL`, `allocated_excess_loss` is used.
+#' @param allocated_loading Optional character string. Column in
+#'   `allocation$data` with the excess loading per unit of `weight`. If `NULL`,
+#'   `allocated_loading` is used.
+#' @param weight Optional character string. Weight column used to convert between
+#'   premium amounts and rates when `output = "rate"`.
+#' @param output Character. Use `"premium"` to return premium amounts or
+#'   `"rate"` to return rates per unit of `weight`.
 #'
-#' @return A `data.frame` with `base_premium`, `excess_loading` and
-#'   `loaded_premium`. If `data` already contains `base_premium`, that column is
-#'   used as the starting premium. Otherwise `base_premium` is set to zero.
+#' @return A `data.frame`. With `output = "premium"`, the result contains
+#'   `base_premium`, `allocated_excess_loss`, `allocated_loading`,
+#'   `excess_loading` and `loaded_premium`. With `output = "rate"`, it contains
+#'   `base_rate`, `allocated_loading` and `loaded_rate`.
 #'
 #' @author Martin Haringa
 #'
@@ -374,7 +404,14 @@ allocate_excess_loss <- function(data,
 #' add_excess_loading(decomposed, allocation)
 #'
 #' @export
-add_excess_loading <- function(data, allocation) {
+add_excess_loading <- function(data,
+                               allocation,
+                               base_premium = "base_premium",
+                               allocated_excess_loss = NULL,
+                               allocated_loading = NULL,
+                               weight = NULL,
+                               output = c("premium", "rate")) {
+  output <- match.arg(output)
   if (!inherits(data, "data.frame")) {
     stop("`data` must be a data.frame.", call. = FALSE)
   }
@@ -386,15 +423,38 @@ add_excess_loading <- function(data, allocation) {
     stop("`data` must have the same number of rows as the allocation data.",
          call. = FALSE)
   }
-  out <- data
-  if (!"base_premium" %in% names(out)) {
-    out$base_premium <- 0
-  } else if (!is.numeric(out$base_premium) || any(is.na(out$base_premium))) {
-    stop("`base_premium` must be numeric without missing values when present.",
+  validate_character_column(data, base_premium, "base_premium")
+  if (!is.numeric(data[[base_premium]]) || any(is.na(data[[base_premium]]))) {
+    stop("`base_premium` must refer to a numeric column without missing values.",
          call. = FALSE)
   }
-  out$excess_loading <- allocation$data$allocated_loading
-  out$loaded_premium <- out$base_premium + out$excess_loading
+  allocated_excess_loss <- allocated_excess_loss %||% "allocated_excess_loss"
+  allocated_loading <- allocated_loading %||% "allocated_loading"
+  validate_character_column(allocation$data, allocated_excess_loss,
+                            "allocated_excess_loss")
+  validate_character_column(allocation$data, allocated_loading,
+                            "allocated_loading")
+  out <- data
+  if (identical(output, "premium")) {
+    out$base_premium <- data[[base_premium]]
+    out$allocated_excess_loss <- allocation$data[[allocated_excess_loss]]
+    out$allocated_loading <- allocation$data[[allocated_loading]]
+    out$excess_loading <- out$allocated_excess_loss
+    out$loaded_premium <- out$base_premium + out$allocated_excess_loss
+    return(out)
+  }
+  if (is.null(weight)) {
+    stop("`weight` must be supplied when `output = 'rate'`.", call. = FALSE)
+  }
+  validate_character_column(data, weight, "weight")
+  if (!is.numeric(data[[weight]]) || any(is.na(data[[weight]])) ||
+      any(data[[weight]] <= 0)) {
+    stop("`weight` must refer to a positive numeric column without missing values.",
+         call. = FALSE)
+  }
+  out$base_rate <- data[[base_premium]] / data[[weight]]
+  out$allocated_loading <- allocation$data[[allocated_loading]]
+  out$loaded_rate <- out$base_rate + out$allocated_loading
   out
 }
 
@@ -483,8 +543,10 @@ summary.excess_loss_allocation <- function(object,
   }
   preferred <- c(
     "group", "weight", "n_claims", "n_excess_claims",
-    "historical_excess_loss", "group_loading", "portfolio_loading",
-    "credibility", "allocated_loading", "allocated_excess_loss",
+    "historical_excess_loss", "excess_loss_ratio",
+    "weight_score", "claim_count_score", "excess_claim_score",
+    "loss_score", "ratio_score", "credibility",
+    "group_loading", "portfolio_loading", "allocated_loading", "allocated_excess_loss",
     "empirical_loss", "empirical_excess_loss"
   )
   out <- out[, c(intersect(preferred, names(out)),
@@ -569,6 +631,9 @@ autoplot.excess_threshold_assessment <- function(object,
 #'
 #' @param object An object returned by [allocate_excess_loss()].
 #' @param y Character. Measure to plot on the y-axis.
+#' @param top_n Optional positive whole number. If supplied, only the largest
+#'   `top_n` groups by `y` are shown.
+#' @param show_labels Logical. If `TRUE`, add direct value labels to the bars.
 #' @param ... Unused.
 #'
 #' @return A `ggplot` object.
@@ -579,16 +644,38 @@ autoplot.excess_loss_allocation <- function(object,
                                             y = c("allocated_loading",
                                                   "allocated_excess_loss",
                                                   "credibility"),
+                                            top_n = NULL,
+                                            show_labels = FALSE,
                                             ...) {
   y <- match.arg(y)
   .check_dots_empty(...)
+  validate_top_n(top_n)
+  if (!is.logical(show_labels) || length(show_labels) != 1L ||
+      is.na(show_labels)) {
+    stop("`show_labels` must be TRUE or FALSE.", call. = FALSE)
+  }
   pal <- .plot_palette_ir()
   grid_theme <- .plot_grid_theme_ir()
-  ggplot2::ggplot(object$summary, ggplot2::aes(x = .data[["group"]], y = .data[[y]])) +
+  plot_data <- object$summary[order(object$summary[[y]], decreasing = TRUE), ,
+                              drop = FALSE]
+  if (!is.null(top_n)) {
+    plot_data <- utils::head(plot_data, top_n)
+  }
+  plot_data$group <- stats::reorder(plot_data$group, plot_data[[y]])
+  p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data[["group"]], y = .data[[y]])) +
     ggplot2::geom_col(fill = pal$risk_premium, width = 0.65) +
+    ggplot2::coord_flip() +
     ggplot2::labs(x = NULL, y = y) +
     ggplot2::theme_minimal() +
     grid_theme
+  if (isTRUE(show_labels)) {
+    p <- p + ggplot2::geom_text(
+      ggplot2::aes(label = signif(.data[[y]], 3)),
+      hjust = -0.15,
+      size = 3
+    )
+  }
+  p
 }
 
 validate_assess_excess_threshold <- function(data, claim_amount, thresholds,
@@ -747,17 +834,28 @@ derive_final_loading <- function(groups, pooling, portfolio_loading, credibility
 }
 
 automatic_excess_credibility <- function(groups) {
-  weight_score <- safe_ratio_excess(groups$group_weight, max(groups$group_weight))
-  claim_score <- safe_ratio_excess(groups$n_claims, max(groups$n_claims))
-  excess_claim_score <- safe_ratio_excess(groups$n_excess_claims, max(groups$n_excess_claims))
-  loss_score <- safe_ratio_excess(groups$historical_excess_loss,
-                                  max(groups$historical_excess_loss))
-  ratio_score <- pmin(groups$excess_loss_ratio / max(groups$excess_loss_ratio, na.rm = TRUE), 1)
-  score <- rowMeans(
-    cbind(weight_score, claim_score, excess_claim_score, loss_score, ratio_score),
-    na.rm = TRUE
+  scores <- credibility_scores(groups)
+  pmin(pmax(rowMeans(scores, na.rm = TRUE), 0), 1)
+}
+
+credibility_scores <- function(groups) {
+  data.frame(
+    weight_score = safe_score(groups$group_weight),
+    claim_count_score = safe_score(groups$n_claims),
+    excess_claim_score = safe_score(groups$n_excess_claims),
+    loss_score = safe_score(groups$historical_excess_loss),
+    ratio_score = safe_score(groups$excess_loss_ratio),
+    stringsAsFactors = FALSE
   )
-  pmin(pmax(score, 0), 1)
+}
+
+safe_score <- function(x) {
+  x[is.na(x)] <- 0
+  max_x <- max(x, na.rm = TRUE)
+  if (!is.finite(max_x) || max_x <= 0) {
+    return(rep(0, length(x)))
+  }
+  pmin(pmax(x / max_x, 0), 1)
 }
 
 bootstrap_excess_allocation <- function(allocation_data, n_boot,
@@ -871,6 +969,17 @@ validate_character_column <- function(data, col, arg) {
   if (!col %in% names(data)) {
     stop("Column not found in `data`: ", col, call. = FALSE)
   }
+}
+
+validate_top_n <- function(top_n) {
+  if (is.null(top_n)) {
+    return(invisible(TRUE))
+  }
+  if (!is.numeric(top_n) || length(top_n) != 1L || is.na(top_n) ||
+      top_n < 1 || top_n != floor(top_n)) {
+    stop("`top_n` must be NULL or a positive whole number.", call. = FALSE)
+  }
+  invisible(TRUE)
 }
 
 .check_dots_empty <- function(...) {

@@ -71,7 +71,9 @@ outlier_histogram(
 Large claims can dominate severity and pure premium analysis. In capped
 severity workflows, it is often useful to assess a cap first, decompose
 the historical claim amounts, and then decide how the excess burden
-should be allocated.
+should be allocated. A low threshold increases pricing responsiveness
+but introduces volatility. A high threshold improves stability but may
+understate structural differences between segments.
 
 ``` r
 
@@ -102,8 +104,9 @@ excess <- calculate_excess_loss(
 
 The allocation step is where pooling and uncertainty are handled.
 Portfolio pooling is stable but ignores group experience. Group pooling
-is responsive but can be volatile. Partial pooling blends both using
-credibility.
+is responsive but can be volatile. Partial pooling balances portfolio
+stability, group responsiveness and the credibility of observed excess
+experience.
 
 ``` r
 
@@ -121,11 +124,22 @@ autoplot(allocation, y = "allocated_loading")
 autoplot(allocation, y = "credibility")
 ```
 
+In the allocation output, `allocated_excess_loss` is the absolute
+monetary burden assigned to a row. `allocated_loading` is the
+corresponding loading per unit of the chosen weight, such as earned
+exposure. This distinction matters when the output is added back to
+pricing data.
+
 The allocated loading can then be added to the pricing data.
 
 ``` r
 
-priced <- add_excess_loading(excess, allocation)
+excess$base_premium <- excess$technical_premium
+priced <- add_excess_loading(
+  excess,
+  allocation,
+  base_premium = "base_premium"
+)
 ```
 
 This excess loading is part of the technical risk premium. It is not

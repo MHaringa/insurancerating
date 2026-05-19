@@ -7,7 +7,9 @@ model uncertainty around that burden.
 workflow. It starts from a deterministic excess amount, usually
 `excess_claim_amount` produced by
 [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md),
-and converts it into an excess loading per row.
+and converts it into two row-level quantities: `allocated_excess_loss`,
+the allocated excess burden in absolute monetary terms, and
+`allocated_loading`, the excess loading per unit of `weight`.
 
 `pooling` controls how much excess risk is shared between groups:
 
@@ -127,7 +129,11 @@ An object of class `"excess_loss_allocation"`.
 
 `method = "observed"` allocates the historically observed excess loss.
 
-`method = "bootstrap"` resamples only the positive excess claim amounts:
+`method = "bootstrap"` provides a pragmatic estimate of excess-loss
+volatility by repeatedly resampling observed excess losses. It is
+intended as a practical pricing approximation rather than a formal
+extreme value model. The bootstrap resamples only the positive excess
+claim amounts:
 
 `excess_amount[excess_amount > 0]`
 
@@ -193,13 +199,16 @@ allocation <- allocate_excess_loss(
   pooling = "partial"
 )
 summary(allocation)
-#>      group weight n_claims n_excess_claims historical_excess_loss group_loading
-#> 1 Industry      4        4               1                  20000          5000
-#> 2   Retail      4        4               1                  50000         12500
-#>   portfolio_loading credibility allocated_loading allocated_excess_loss
-#> 1              8750   0.7796226          5826.415              22814.92
-#> 2              8750   0.8800000         12050.000              47185.08
-#>   excess_loss_ratio
-#> 1         0.1257862
-#> 2         0.2525253
+#>      group weight n_claims n_excess_claims historical_excess_loss
+#> 1 Industry      4        4               1                  20000
+#> 2   Retail      4        4               1                  50000
+#>   excess_loss_ratio weight_score claim_count_score excess_claim_score
+#> 1         0.1257862            1                 1                  1
+#> 2         0.2525253            1                 1                  1
+#>   loss_score ratio_score credibility group_loading portfolio_loading
+#> 1        0.4   0.4981132   0.7796226          5000              8750
+#> 2        1.0   1.0000000   1.0000000         12500              8750
+#>   allocated_loading allocated_excess_loss
+#> 1          5826.415              22254.71
+#> 2         12500.000              47745.29
 ```

@@ -4,7 +4,9 @@ uncertainty around that burden.
 allocate_excess_loss() is the core allocation step in the excess-loss
 workflow. It starts from a deterministic excess amount, usually
 excess_claim_amount produced by calculate_excess_loss(), and converts it
-into an excess loading per row.
+into two row-level quantities: allocated_excess_loss, the allocated excess
+burden in absolute monetary terms, and allocated_loading, the excess loading
+per unit of weight.
 pooling controls how much excess risk is shared between groups:
 "portfolio"
 All included rows share one portfolio-wide excess
@@ -40,7 +42,9 @@ uncertainty around that burden.
 allocate_excess_loss() is the core allocation step in the excess-loss
 workflow. It starts from a deterministic excess amount, usually
 excess_claim_amount produced by calculate_excess_loss(), and converts it
-into an excess loading per row.
+into two row-level quantities: allocated_excess_loss, the allocated excess
+burden in absolute monetary terms, and allocated_loading, the excess loading
+per unit of weight.
 pooling controls how much excess risk is shared between groups:
 "portfolio"
 All included rows share one portfolio-wide excess
@@ -109,7 +113,9 @@ uncertainty around that burden.</p>
 <p><code>allocate_excess_loss()</code> is the core allocation step in the excess-loss
 workflow. It starts from a deterministic excess amount, usually
 <code>excess_claim_amount</code> produced by <code><a href="calculate_excess_loss.html">calculate_excess_loss()</a></code>, and converts it
-into an excess loading per row.</p>
+into two row-level quantities: <code>allocated_excess_loss</code>, the allocated excess
+burden in absolute monetary terms, and <code>allocated_loading</code>, the excess loading
+per unit of <code>weight</code>.</p>
 <p><code>pooling</code> controls how much excess risk is shared between groups:</p><dl><dt><code>"portfolio"</code></dt>
 <dd><p>All included rows share one portfolio-wide excess
 loading: total excess divided by total weight.</p></dd>
@@ -223,7 +229,10 @@ allocated.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>method = "observed"</code> allocates the historically observed excess loss.</p>
-<p><code>method = "bootstrap"</code> resamples only the positive excess claim amounts:</p>
+<p><code>method = "bootstrap"</code> provides a pragmatic estimate of excess-loss
+volatility by repeatedly resampling observed excess losses. It is intended as
+a practical pricing approximation rather than a formal extreme value model.
+The bootstrap resamples only the positive excess claim amounts:</p>
 <p><code>excess_amount[excess_amount &gt; 0]</code></p>
 <p>The full claim distribution is not bootstrapped.</p>
 <p>Bootstrap allocation introduces uncertainty in both:</p>
@@ -272,15 +281,18 @@ rather than allowing credibility blending to increase or reduce the total.</p>
 <span class="r-in"><span>  pooling <span class="op">=</span> <span class="st">"partial"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">allocation</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      group weight n_claims n_excess_claims historical_excess_loss group_loading</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Industry      4        4               1                  20000          5000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2   Retail      4        4               1                  50000         12500</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   portfolio_loading credibility allocated_loading allocated_excess_loss</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1              8750   0.7796226          5826.415              22814.92</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2              8750   0.8800000         12050.000              47185.08</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   excess_loss_ratio</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1         0.1257862</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2         0.2525253</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      group weight n_claims n_excess_claims historical_excess_loss</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Industry      4        4               1                  20000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   Retail      4        4               1                  50000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   excess_loss_ratio weight_score claim_count_score excess_claim_score</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1         0.1257862            1                 1                  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2         0.2525253            1                 1                  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   loss_score ratio_score credibility group_loading portfolio_loading</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1        0.4   0.4981132   0.7796226          5000              8750</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2        1.0   1.0000000   1.0000000         12500              8750</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   allocated_loading allocated_excess_loss</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          5826.415              22254.71</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2         12500.000              47745.29</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

@@ -10,6 +10,8 @@ credibility by allocation group.
 autoplot(
   object,
   y = c("allocated_loading", "allocated_excess_loss", "credibility"),
+  top_n = NULL,
+  show_labels = FALSE,
   ...
 )
 ```
@@ -24,6 +26,15 @@ autoplot(
 - y:
 
   Character. Measure to plot on the y-axis.
+
+- top_n:
+
+  Optional positive whole number. If supplied, only the largest `top_n`
+  groups by `y` are shown.
+
+- show_labels:
+
+  Logical. If `TRUE`, add direct value labels to the bars.
 
 - ...:
 

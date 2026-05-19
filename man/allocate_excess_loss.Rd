@@ -60,7 +60,9 @@ uncertainty around that burden.
 \code{allocate_excess_loss()} is the core allocation step in the excess-loss
 workflow. It starts from a deterministic excess amount, usually
 \code{excess_claim_amount} produced by \code{\link[=calculate_excess_loss]{calculate_excess_loss()}}, and converts it
-into an excess loading per row.
+into two row-level quantities: \code{allocated_excess_loss}, the allocated excess
+burden in absolute monetary terms, and \code{allocated_loading}, the excess loading
+per unit of \code{weight}.
 
 \code{pooling} controls how much excess risk is shared between groups:
 \describe{
@@ -92,7 +94,10 @@ variation.
 \details{
 \code{method = "observed"} allocates the historically observed excess loss.
 
-\code{method = "bootstrap"} resamples only the positive excess claim amounts:
+\code{method = "bootstrap"} provides a pragmatic estimate of excess-loss
+volatility by repeatedly resampling observed excess losses. It is intended as
+a practical pricing approximation rather than a formal extreme value model.
+The bootstrap resamples only the positive excess claim amounts:
 
 \code{excess_amount[excess_amount > 0]}
 

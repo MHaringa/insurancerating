@@ -7,10 +7,28 @@ or allocate excess loss. It takes an object produced by
 [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
 and adds row-level loading columns to `data`.
 
+The default workflow is premium based:
+`loaded_premium = base_premium + allocated_excess_loss`.
+`allocated_excess_loss` represents the allocated excess burden in
+absolute monetary terms. `allocated_loading` represents the excess
+loading per unit of weight.
+
+Use `output = "rate"` when `base_premium` should be interpreted as a
+premium amount that first needs to be converted to a rate with
+`base_rate = base_premium / weight`.
+
 ## Usage
 
 ``` r
-add_excess_loading(data, allocation)
+add_excess_loading(
+  data,
+  allocation,
+  base_premium = "base_premium",
+  allocated_excess_loss = NULL,
+  allocated_loading = NULL,
+  weight = NULL,
+  output = c("premium", "rate")
+)
 ```
 
 ## Arguments
@@ -24,12 +42,37 @@ add_excess_loading(data, allocation)
   An object returned by
   [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md).
 
+- base_premium:
+
+  Character string. Base premium amount before excess loading.
+
+- allocated_excess_loss:
+
+  Optional character string. Column in `allocation$data` with the
+  allocated excess burden in absolute monetary terms. If `NULL`,
+  `allocated_excess_loss` is used.
+
+- allocated_loading:
+
+  Optional character string. Column in `allocation$data` with the excess
+  loading per unit of `weight`. If `NULL`, `allocated_loading` is used.
+
+- weight:
+
+  Optional character string. Weight column used to convert between
+  premium amounts and rates when `output = "rate"`.
+
+- output:
+
+  Character. Use `"premium"` to return premium amounts or `"rate"` to
+  return rates per unit of `weight`.
+
 ## Value
 
-A `data.frame` with `base_premium`, `excess_loading` and
-`loaded_premium`. If `data` already contains `base_premium`, that column
-is used as the starting premium. Otherwise `base_premium` is set to
-zero.
+A `data.frame`. With `output = "premium"`, the result contains
+`base_premium`, `allocated_excess_loss`, `allocated_loading`,
+`excess_loading` and `loaded_premium`. With `output = "rate"`, it
+contains `base_rate`, `allocated_loading` and `loaded_rate`.
 
 ## Author
 
@@ -50,22 +93,5 @@ allocation <- allocate_excess_loss(
   weight = "earned_exposure"
 )
 add_excess_loading(decomposed, allocation)
-#>     sector claim_amount earned_exposure capped_claim_amount excess_claim_amount
-#> 1 Industry         1000               1               1e+03                   0
-#> 2 Industry       120000               1               1e+05               20000
-#> 3 Industry        30000               1               3e+04                   0
-#> 4 Industry         8000               1               8e+03                   0
-#> 5   Retail         2000               1               2e+03                   0
-#> 6   Retail       150000               1               1e+05               50000
-#> 7   Retail        40000               1               4e+04                   0
-#> 8   Retail         6000               1               6e+03                   0
-#>   is_excess_claim base_premium excess_loading loaded_premium
-#> 1           FALSE            0           8750           8750
-#> 2            TRUE            0           8750           8750
-#> 3           FALSE            0           8750           8750
-#> 4           FALSE            0           8750           8750
-#> 5           FALSE            0           8750           8750
-#> 6            TRUE            0           8750           8750
-#> 7           FALSE            0           8750           8750
-#> 8           FALSE            0           8750           8750
+#> Error: Column not found in `data`: base_premium
 ```

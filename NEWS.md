@@ -120,6 +120,9 @@
   total allocated excess loss.
 - `add_excess_loading()` adds the allocated excess loading to pricing data and
   returns `base_premium`, `excess_loading` and `loaded_premium`.
+- `add_excess_loading()` now treats premium amounts as the default workflow and
+  keeps the distinction between absolute `allocated_excess_loss` and per-weight
+  `allocated_loading` explicit.
 - `add_smoothing()` now uses `model_variable` and `source_variable` as the
   primary argument names.
 - `edit_smoothing()` now uses clearer in-object editing arguments for adjusting

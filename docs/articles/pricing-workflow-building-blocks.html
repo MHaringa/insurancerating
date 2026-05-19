@@ -122,7 +122,10 @@ before fitting severity models or constructing tariff segments.</p>
 <p>Large claims can dominate severity and pure premium analysis. In
 capped severity workflows, it is often useful to assess a cap first,
 decompose the historical claim amounts, and then decide how the excess
-burden should be allocated.</p>
+burden should be allocated. A low threshold increases pricing
+responsiveness but introduces volatility. A high threshold improves
+stability but may understate structural differences between
+segments.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">thresholds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assess_excess_threshold.html">assess_excess_threshold</a></span><span class="op">(</span></span>
 <span>  <span class="va">claims</span>,</span>
@@ -144,8 +147,9 @@ or allocate anything.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The allocation step is where pooling and uncertainty are handled.
 Portfolio pooling is stable but ignores group experience. Group pooling
-is responsive but can be volatile. Partial pooling blends both using
-credibility.</p>
+is responsive but can be volatile. Partial pooling balances portfolio
+stability, group responsiveness and the credibility of observed excess
+experience.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">allocation</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/allocate_excess_loss.html">allocate_excess_loss</a></span><span class="op">(</span></span>
 <span>  <span class="va">excess</span>,</span>
@@ -159,9 +163,19 @@ credibility.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">allocation</span>, compare_to_empirical <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">allocation</span>, y <span class="op">=</span> <span class="st">"allocated_loading"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">allocation</span>, y <span class="op">=</span> <span class="st">"credibility"</span><span class="op">)</span></span></code></pre></div>
+<p>In the allocation output, <code>allocated_excess_loss</code> is the
+absolute monetary burden assigned to a row.
+<code>allocated_loading</code> is the corresponding loading per unit of
+the chosen weight, such as earned exposure. This distinction matters
+when the output is added back to pricing data.</p>
 <p>The allocated loading can then be added to the pricing data.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">priced</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_excess_loading.html">add_excess_loading</a></span><span class="op">(</span><span class="va">excess</span>, <span class="va">allocation</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">excess</span><span class="op">$</span><span class="va">base_premium</span> <span class="op">&lt;-</span> <span class="va">excess</span><span class="op">$</span><span class="va">technical_premium</span></span>
+<span><span class="va">priced</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_excess_loading.html">add_excess_loading</a></span><span class="op">(</span></span>
+<span>  <span class="va">excess</span>,</span>
+<span>  <span class="va">allocation</span>,</span>
+<span>  base_premium <span class="op">=</span> <span class="st">"base_premium"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p>This excess loading is part of the technical risk premium. It is not
 intended as a commercial margin.</p>
 </div>

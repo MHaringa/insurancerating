@@ -156,7 +156,10 @@ test_that("automatic credibility is between zero and one", {
 
   expect_true(all(c(
     "group", "weight", "n_claims", "n_excess_claims",
-    "historical_excess_loss", "group_loading", "portfolio_loading",
+    "historical_excess_loss", "excess_loss_ratio",
+    "weight_score", "claim_count_score", "excess_claim_score",
+    "loss_score", "ratio_score",
+    "group_loading", "portfolio_loading",
     "credibility", "allocated_loading", "allocated_excess_loss"
   ) %in% names(s)))
   expect_true(all(s$credibility >= 0 & s$credibility <= 1))
@@ -250,8 +253,29 @@ test_that("add_excess_loading adds premium columns", {
   out <- add_excess_loading(decomposed, allocation)
 
   expect_equal(out$base_premium, decomposed$base_premium)
-  expect_equal(out$excess_loading, allocation$data$allocated_loading)
-  expect_equal(out$loaded_premium, out$base_premium + out$excess_loading)
+  expect_equal(out$allocated_excess_loss, allocation$data$allocated_excess_loss)
+  expect_equal(out$allocated_loading, allocation$data$allocated_loading)
+  expect_equal(out$excess_loading, allocation$data$allocated_excess_loss)
+  expect_equal(out$loaded_premium, out$base_premium + out$allocated_excess_loss)
+})
+
+test_that("add_excess_loading can return rates", {
+  decomposed <- calculate_excess_loss(excess_loss_data, "claim_amount", 100000)
+  allocation <- allocate_excess_loss(
+    decomposed,
+    excess_amount = "excess_claim_amount",
+    weight = "earned_exposure"
+  )
+  out <- add_excess_loading(
+    decomposed,
+    allocation,
+    weight = "earned_exposure",
+    output = "rate"
+  )
+
+  expect_equal(out$base_rate, decomposed$base_premium / decomposed$earned_exposure)
+  expect_equal(out$allocated_loading, allocation$data$allocated_loading)
+  expect_equal(out$loaded_rate, out$base_rate + out$allocated_loading)
 })
 
 test_that("print, summary and autoplot methods work", {
@@ -267,6 +291,7 @@ test_that("print, summary and autoplot methods work", {
 
   expect_output(print(allocation), "Excess loss allocation")
   expect_s3_class(autoplot(allocation), "ggplot")
+  expect_s3_class(autoplot(allocation, top_n = 2, show_labels = TRUE), "ggplot")
 })
 
 test_that("standard evaluation inputs are validated", {
