@@ -8,25 +8,25 @@ plot_severity_distribution(
   data,
   claim_amount,
   risk_factor = NULL,
-  xlab = NULL,
-  ylab = NULL,
-  all_claims_label = "All claims",
-  threshold = NULL,
-  show_labels = TRUE,
-  mean_label = "Mean",
-  median_label = "Median",
-  threshold_label = "Threshold",
   top_n = 10,
   min_claims = 20,
   sort = c("median", "mean", "n_claims"),
-  point_method = c("quasirandom", "jitter", "none"),
-  distribution = c("none", "half_violin", "violin"),
-  boxplot = FALSE,
-  boxplot_width = 0.06,
+  threshold = NULL,
   mean = TRUE,
   median = TRUE,
-  log_scale = TRUE,
+  distribution = c("none", "half_violin", "violin"),
+  point_method = c("quasirandom", "jitter", "none"),
   orientation = c("horizontal", "vertical"),
+  log_scale = TRUE,
+  boxplot = FALSE,
+  boxplot_width = 0.06,
+  show_labels = TRUE,
+  all_claims_label = "All claims",
+  mean_label = "Mean",
+  median_label = "Median",
+  threshold_label = "Threshold",
+  x_label = NULL,
+  y_label = NULL,
   point_alpha = 0.16,
   point_size = 0.75,
   point_width = 0.15
@@ -41,21 +41,46 @@ plot_severity_distribution(
 to split the severity distribution. If \code{NULL}, the overall claim amount
 distribution is shown.}
 
-\item{xlab}{Optional character string. X-axis label. If \code{NULL}, a default is
-chosen from \code{claim_amount} and \code{orientation}.}
+\item{top_n}{Positive whole number. Number of categories to keep after
+filtering and sorting.}
 
-\item{ylab}{Optional character string. Y-axis label. If \code{NULL}, a default is
-chosen from \code{risk_factor}, \code{claim_amount} and \code{orientation}.}
+\item{min_claims}{Positive whole number. Categories with fewer than this
+number of claim observations are removed.}
 
-\item{all_claims_label}{Character string used as the category label when
-\code{risk_factor = NULL}.}
+\item{sort}{Character. Metric used to sort and select categories. One of
+\code{"median"}, \code{"mean"} or \code{"n_claims"}.}
 
 \item{threshold}{Optional numeric scalar. If supplied, claims above this
 threshold are highlighted and a dotted threshold line is shown.}
 
+\item{mean}{Logical. If \code{TRUE}, add a marker for the average claim amount.}
+
+\item{median}{Logical. If \code{TRUE}, add a marker for the median claim amount.}
+
+\item{distribution}{Character. Distribution layer. One of \code{"none"},
+\code{"half_violin"} or \code{"violin"}. Default is \code{"none"}.}
+
+\item{point_method}{Character. Point placement method. One of
+\code{"quasirandom"}, \code{"jitter"} or \code{"none"}.}
+
+\item{orientation}{Character. \code{"horizontal"} places claim amount on the
+x-axis and categories on the y-axis. \code{"vertical"} reverses this.}
+
+\item{log_scale}{Logical. If \code{TRUE}, use a log10 scale for claim amounts.}
+
+\item{boxplot}{Logical. If \code{TRUE}, add a small centred boxplot. Default is
+\code{FALSE}.}
+
+\item{boxplot_width}{Numeric scalar. Width of the optional boxplot. Smaller
+values keep the boxplot as a subtle summary layer behind the individual
+claim points.}
+
 \item{show_labels}{Logical. If \code{TRUE}, add direct labels for the mean,
 median and, when supplied, threshold. Requires the suggested package
 \code{ggrepel}.}
+
+\item{all_claims_label}{Character string used as the category label when
+\code{risk_factor = NULL}.}
 
 \item{mean_label}{Character string used for the direct mean marker label.
 Default is \code{"Mean"}.}
@@ -66,36 +91,11 @@ Default is \code{"Median"}.}
 \item{threshold_label}{Character string used for the optional threshold
 label.}
 
-\item{top_n}{Positive whole number. Number of categories to keep after
-filtering and sorting.}
+\item{x_label}{Optional character string. X-axis label. If \code{NULL}, a default is
+chosen from \code{claim_amount}, \code{risk_factor} and \code{orientation}.}
 
-\item{min_claims}{Positive whole number. Categories with fewer than this
-number of claim observations are removed.}
-
-\item{sort}{Character. Metric used to sort and select categories. One of
-\code{"median"}, \code{"mean"} or \code{"n_claims"}.}
-
-\item{point_method}{Character. Point placement method. One of
-\code{"quasirandom"}, \code{"jitter"} or \code{"none"}.}
-
-\item{distribution}{Character. Distribution layer. One of \code{"none"},
-\code{"half_violin"} or \code{"violin"}. Default is \code{"none"}.}
-
-\item{boxplot}{Logical. If \code{TRUE}, add a small centred boxplot. Default is
-\code{FALSE}.}
-
-\item{boxplot_width}{Numeric scalar. Width of the optional boxplot. Smaller
-values keep the boxplot as a subtle summary layer behind the individual
-claim points.}
-
-\item{mean}{Logical. If \code{TRUE}, add a marker for the average claim amount.}
-
-\item{median}{Logical. If \code{TRUE}, add a marker for the median claim amount.}
-
-\item{log_scale}{Logical. If \code{TRUE}, use a log10 scale for claim amounts.}
-
-\item{orientation}{Character. \code{"horizontal"} places claim amount on the
-x-axis and categories on the y-axis. \code{"vertical"} reverses this.}
+\item{y_label}{Optional character string. Y-axis label. If \code{NULL}, a default is
+chosen from \code{claim_amount}, \code{risk_factor} and \code{orientation}.}
 
 \item{point_alpha}{Numeric alpha for raw claim points.}
 

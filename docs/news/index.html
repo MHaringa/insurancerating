@@ -119,16 +119,15 @@
 <div class="section level4">
 <h4 id="model-refinement-development-version">Model refinement<a class="anchor" aria-label="anchor" href="#model-refinement-development-version"></a></h4>
 <ul><li>The refinement API has been clarified around <code>prepare_refinement() |&gt; add_*() |&gt; refit()</code>.</li>
+<li>A new excess-loss workflow was added for capped severity and pure-premium modelling: <code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code>, <code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code>, <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> and <code><a href="../reference/add_excess_loading.html">add_excess_loading()</a></code>.</li>
 <li>
-<code><a href="../reference/assess_excess_thresholds.html">assess_excess_thresholds()</a></code> was added to compare candidate capped-severity excess thresholds before calculating an excess-loss component.</li>
+<code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code> compares candidate large-loss thresholds and shows the impact on excess loss, capped loss and pure premium.</li>
 <li>
-<code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code> was added for capped severity and pure-premium modelling. It estimates an excess-loss component above a cap and returns a row-level <code>"excess_loss_vector"</code> with amount, share, factor and base stored as attributes.</li>
+<code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code> now performs only the deterministic historical decomposition into capped and excess claim amounts.</li>
 <li>
-<code><a href="../reference/add_excess_loss.html">add_excess_loss()</a></code> adds one or more columns from an <code>"excess_loss_vector"</code> to a <code>data.frame</code> without recalculating the excess-loss component.</li>
-<li>Excess-loss calculations support empirical, bootstrap and manual estimation methods, with exposure, historical-excess, bootstrap-excess and user-supplied factor allocation.</li>
-<li>Excess-loss input column arguments now use <code>claim_amount</code> for consistency with the rest of the package.</li>
+<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> handles allocation, pooling and bootstrap uncertainty modelling. It supports observed or bootstrap excess burdens, portfolio, group-level and partial pooling, and optional severity noise in the bootstrap.</li>
 <li>
-<code><a href="../reference/allocation_factor.html">allocation_factor()</a></code> extracts the row-level vector, row-level data or grouped summary of the derived or supplied allocation factors for explainability, monitoring and reuse.</li>
+<code><a href="../reference/add_excess_loading.html">add_excess_loading()</a></code> adds the allocated excess loading to pricing data and returns <code>base_premium</code>, <code>excess_loading</code> and <code>loaded_premium</code>.</li>
 <li>
 <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> now uses <code>model_variable</code> and <code>source_variable</code> as the primary argument names.</li>
 <li>

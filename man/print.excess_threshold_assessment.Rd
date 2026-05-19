@@ -7,15 +7,15 @@
 \method{print}{excess_threshold_assessment}(x, ...)
 }
 \arguments{
-\item{x}{An object of class \code{"excess_threshold_assessment"}.}
+\item{x}{An object returned by \code{\link[=assess_excess_threshold]{assess_excess_threshold()}}.}
 
-\item{...}{Reserved for future extensions.}
+\item{...}{Unused.}
 }
 \value{
 Invisibly returns \code{x}.
 }
 \description{
-Compact print method for objects returned by \code{\link[=assess_excess_thresholds]{assess_excess_thresholds()}}.
+Compact print method for objects returned by \code{\link[=assess_excess_threshold]{assess_excess_threshold()}}.
 }
 \author{
 Martin Haringa

@@ -20,18 +20,18 @@ components that can be added to technical risk premium models.
 
 - [`plot_severity_distribution()`](https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.md)
   : Exploratory severity diagnostics by category
-- [`assess_excess_thresholds()`](https://mharinga.github.io/insurancerating/reference/assess_excess_thresholds.md)
+- [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
   : Assess possible excess-loss thresholds
 - [`autoplot(`*`<excess_threshold_assessment>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_threshold_assessment.md)
   : Plot an excess threshold assessment
 - [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
-  : Calculate an excess-loss vector for capped severity modelling
-- [`add_excess_loss()`](https://mharinga.github.io/insurancerating/reference/add_excess_loss.md)
-  : Add calculated excess-loss columns to data
-- [`allocation_factor()`](https://mharinga.github.io/insurancerating/reference/allocation_factor.md)
-  : Extract allocation factors from an excess-loss vector
-- [`autoplot(`*`<excess_loss_vector>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_loss_vector.md)
-  : Plot an excess-loss vector
+  : Decompose claim amounts into capped and excess parts
+- [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
+  : Allocate excess loss to a pricing portfolio
+- [`autoplot(`*`<excess_loss_allocation>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_loss_allocation.md)
+  : Plot an excess-loss allocation
+- [`add_excess_loading()`](https://mharinga.github.io/insurancerating/reference/add_excess_loading.md)
+  : Add excess loading to a pricing portfolio
 - [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
   **\[experimental\]** : Fit severity distributions to truncated claim
   data

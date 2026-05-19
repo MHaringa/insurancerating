@@ -140,26 +140,26 @@
 
 - The refinement API has been clarified around
   `prepare_refinement() |> add_*() |> refit()`.
-- [`assess_excess_thresholds()`](https://mharinga.github.io/insurancerating/reference/assess_excess_thresholds.md)
-  was added to compare candidate capped-severity excess thresholds
-  before calculating an excess-loss component.
+- A new excess-loss workflow was added for capped severity and
+  pure-premium modelling:
+  [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md),
+  [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md),
+  [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
+  and
+  [`add_excess_loading()`](https://mharinga.github.io/insurancerating/reference/add_excess_loading.md).
+- [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
+  compares candidate large-loss thresholds and shows the impact on
+  excess loss, capped loss and pure premium.
 - [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
-  was added for capped severity and pure-premium modelling. It estimates
-  an excess-loss component above a cap and returns a row-level
-  `"excess_loss_vector"` with amount, share, factor and base stored as
-  attributes.
-- [`add_excess_loss()`](https://mharinga.github.io/insurancerating/reference/add_excess_loss.md)
-  adds one or more columns from an `"excess_loss_vector"` to a
-  `data.frame` without recalculating the excess-loss component.
-- Excess-loss calculations support empirical, bootstrap and manual
-  estimation methods, with exposure, historical-excess, bootstrap-excess
-  and user-supplied factor allocation.
-- Excess-loss input column arguments now use `claim_amount` for
-  consistency with the rest of the package.
-- [`allocation_factor()`](https://mharinga.github.io/insurancerating/reference/allocation_factor.md)
-  extracts the row-level vector, row-level data or grouped summary of
-  the derived or supplied allocation factors for explainability,
-  monitoring and reuse.
+  now performs only the deterministic historical decomposition into
+  capped and excess claim amounts.
+- [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
+  handles allocation, pooling and bootstrap uncertainty modelling. It
+  supports observed or bootstrap excess burdens, portfolio, group-level
+  and partial pooling, and optional severity noise in the bootstrap.
+- [`add_excess_loading()`](https://mharinga.github.io/insurancerating/reference/add_excess_loading.md)
+  adds the allocated excess loading to pricing data and returns
+  `base_premium`, `excess_loading` and `loaded_premium`.
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   now uses `model_variable` and `source_variable` as the primary
   argument names.

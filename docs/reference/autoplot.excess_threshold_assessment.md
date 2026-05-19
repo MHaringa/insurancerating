@@ -1,6 +1,9 @@
 # Plot an excess threshold assessment
 
-Visualise how excess-loss diagnostics move across candidate thresholds.
+Visualise one diagnostic from an object returned by
+[`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md).
+The plot helps compare how candidate thresholds affect excess loss,
+excess claim counts or pure-premium impact.
 
 ## Usage
 
@@ -8,7 +11,7 @@ Visualise how excess-loss diagnostics move across candidate thresholds.
 # S3 method for class 'excess_threshold_assessment'
 autoplot(
   object,
-  y = c("excess_loss", "excess_per_exposure", "claims_above", "excess_loss_share"),
+  y = c("premium_impact", "excess_loss", "n_excess_claims", "excess_loss_ratio"),
   ...
 )
 ```
@@ -18,19 +21,19 @@ autoplot(
 - object:
 
   An object returned by
-  [`assess_excess_thresholds()`](https://mharinga.github.io/insurancerating/reference/assess_excess_thresholds.md).
+  [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md).
 
 - y:
 
-  Character. Diagnostic to plot on the y-axis.
+  Character. Measure to plot on the y-axis.
 
 - ...:
 
-  Reserved for future extensions.
+  Unused.
 
 ## Value
 
-A ggplot object.
+A `ggplot` object.
 
 ## Author
 

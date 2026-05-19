@@ -1,22 +1,24 @@
 #' Assess possible excess-loss thresholds
 #'
 #' @description
-#' `assess_excess_thresholds()` is a diagnostic helper for capped severity and
-#' pure premium modelling. It does not choose the best threshold automatically.
-#' Instead, it shows how much claim cost and claim count sits above candidate
-#' thresholds, so actuaries and governance stakeholders can make an informed
-#' threshold choice before using [calculate_excess_loss()].
+#' Compare candidate thresholds for capped severity and large-loss pricing work.
 #'
-#' This is useful when the regular severity GLM is fitted on capped claim
-#' amounts, for example `pmin(claim_amount, 100000)`, and the expected part
-#' above the cap is assessed separately as a technical risk premium component.
+#' `assess_excess_threshold()` is a diagnostic helper. It does not choose a
+#' threshold automatically. It shows how many claims and how much historical
+#' claim cost sit above candidate thresholds, and how much pure premium would
+#' remain after capping claims at each threshold.
+#'
+#' Use this before [calculate_excess_loss()] to understand the effect of the
+#' threshold on the portfolio. The output is useful for tariff notes, pricing
+#' reviews and governance discussions around capped severity models.
 #'
 #' @param data A `data.frame` with claim-level observations.
 #' @param claim_amount Character string. Claim amount column.
-#' @param exposure Character string. Exposure column.
 #' @param thresholds Numeric vector of candidate thresholds.
-#' @param by Optional character string. Grouping column.
-#' @param premium Optional character string. Premium column.
+#' @param exposure Optional character string. Exposure column. If supplied,
+#'   pure premium before and after capping is calculated.
+#' @param group Optional character string. Grouping column used to assess
+#'   thresholds by segment.
 #'
 #' @return A `data.frame` with class `"excess_threshold_assessment"`.
 #'
@@ -27,234 +29,516 @@
 #'   sector = rep(c("Industry", "Retail"), each = 5),
 #'   claim_amount = c(1000, 25000, 120000, 50000, 175000,
 #'                    2000, 40000, 90000, 150000, 300000),
-#'   earned_exposure = rep(1, 10),
-#'   earned_premium = rep(10000, 10)
+#'   earned_exposure = rep(1, 10)
 #' )
 #'
-#' thresholds <- assess_excess_thresholds(
+#' thresholds <- assess_excess_threshold(
 #'   data = claims,
 #'   claim_amount = "claim_amount",
-#'   exposure = "earned_exposure",
 #'   thresholds = c(25000, 50000, 100000, 150000),
-#'   by = "sector",
-#'   premium = "earned_premium"
+#'   exposure = "earned_exposure",
+#'   group = "sector"
 #' )
 #'
-#' autoplot(thresholds, y = "excess_per_exposure")
+#' autoplot(thresholds, y = "premium_impact")
 #'
 #' @export
-assess_excess_thresholds <- function(data,
-                                     claim_amount,
-                                     exposure,
-                                     thresholds,
-                                     by = NULL,
-                                     premium = NULL) {
-  validate_threshold_assessment_inputs(data, claim_amount, exposure, thresholds, by, premium)
+assess_excess_threshold <- function(data,
+                                    claim_amount,
+                                    thresholds,
+                                    exposure = NULL,
+                                    group = NULL) {
+  validate_assess_excess_threshold(data, claim_amount, thresholds, exposure, group)
 
-  groups <- if (is.null(by)) {
+  groups <- if (is.null(group)) {
     list(All = seq_len(nrow(data)))
   } else {
-    split(seq_len(nrow(data)), as.character(data[[by]]))
+    split(seq_len(nrow(data)), as.character(data[[group]]))
   }
 
   out <- lapply(thresholds, function(threshold) {
     rows <- lapply(names(groups), function(g) {
       idx <- groups[[g]]
-      amount_i <- data[[claim_amount]][idx]
-      exposure_i <- data[[exposure]][idx]
-      total_loss <- sum(amount_i, na.rm = TRUE)
-      capped_loss <- sum(pmin(amount_i, threshold), na.rm = TRUE)
-      excess_loss <- sum(pmax(amount_i - threshold, 0), na.rm = TRUE)
-      n_claims <- length(amount_i)
-      claims_above <- sum(amount_i > threshold, na.rm = TRUE)
-      exposure_sum <- sum(exposure_i, na.rm = TRUE)
+      amount <- data[[claim_amount]][idx]
+      total_loss <- sum(amount)
+      capped_loss <- sum(pmin(amount, threshold))
+      excess_loss <- sum(pmax(amount - threshold, 0))
+      exposure_sum <- if (is.null(exposure)) NA_real_ else sum(data[[exposure]][idx])
       ans <- data.frame(
         threshold = threshold,
-        n_claims = n_claims,
-        claims_above = claims_above,
-        share_claims_above = claims_above / n_claims,
+        n_claims = length(amount),
+        n_excess_claims = sum(amount > threshold),
+        excess_loss = excess_loss,
+        excess_loss_ratio = safe_ratio_excess(excess_loss, total_loss),
+        pure_premium_before = safe_ratio_excess(total_loss, exposure_sum),
+        pure_premium_after = safe_ratio_excess(capped_loss, exposure_sum),
+        premium_impact = safe_ratio_excess(excess_loss, exposure_sum),
         total_loss = total_loss,
         capped_loss = capped_loss,
-        excess_loss = excess_loss,
-        excess_loss_share = safe_ratio_excess(excess_loss, total_loss),
-        exposure = exposure_sum,
-        excess_per_exposure = safe_ratio_excess(excess_loss, exposure_sum),
         stringsAsFactors = FALSE
       )
-      if (!is.null(by)) {
+      if (!is.null(group)) {
         ans$group <- g
-      }
-      if (!is.null(premium)) {
-        premium_sum <- sum(data[[premium]][idx], na.rm = TRUE)
-        ans$premium <- premium_sum
-        ans$excess_as_premium_pct <- 100 * safe_ratio_excess(excess_loss, premium_sum)
       }
       ans
     })
     do.call(rbind, rows)
   })
+
   out <- do.call(rbind, out)
-  if (!is.null(by)) {
+  if (!is.null(group)) {
     out <- out[, c("threshold", "group", setdiff(names(out), c("threshold", "group"))),
                drop = FALSE]
   }
   row.names(out) <- NULL
-  attr(out, "by") <- by
   attr(out, "claim_amount") <- claim_amount
   attr(out, "exposure") <- exposure
-  attr(out, "premium") <- premium
+  attr(out, "group") <- group
   class(out) <- c("excess_threshold_assessment", "data.frame")
   out
 }
 
-validate_threshold_assessment_inputs <- function(data, claim_amount, exposure,
-                                                 thresholds, by, premium) {
-  if (!inherits(data, "data.frame")) {
-    stop("`data` must be a data.frame.", call. = FALSE)
-  }
-  for (arg in c("claim_amount", "exposure")) {
-    val <- get(arg)
-    if (!is.character(val) || length(val) != 1L || is.na(val) || !nzchar(val)) {
-      stop("`", arg, "` must be a single non-empty character string.", call. = FALSE)
-    }
-  }
-  for (arg in c("by", "premium")) {
-    val <- get(arg)
-    if (!is.null(val) &&
-        (!is.character(val) || length(val) != 1L || is.na(val) || !nzchar(val))) {
-      stop("`", arg, "` must be NULL or a single non-empty character string.",
-           call. = FALSE)
-    }
-  }
-  missing_cols <- setdiff(c(claim_amount, exposure, by, premium), names(data))
-  if (length(missing_cols) > 0) {
-    stop("Column(s) not found in `data`: ",
-         paste(missing_cols, collapse = ", "), call. = FALSE)
-  }
-  if (!is.numeric(data[[claim_amount]]) || any(is.na(data[[claim_amount]])) ||
-      any(data[[claim_amount]] < 0)) {
-    stop("`claim_amount` must refer to a numeric column with non-negative values.",
-         call. = FALSE)
-  }
-  if (!is.numeric(data[[exposure]]) || any(is.na(data[[exposure]])) ||
-      any(data[[exposure]] < 0)) {
-    stop("`exposure` must refer to a numeric column with non-negative values.",
-         call. = FALSE)
-  }
-  if (!is.null(premium) &&
-      (!is.numeric(data[[premium]]) || any(is.na(data[[premium]])) ||
-       any(data[[premium]] < 0))) {
-    stop("`premium` must refer to a numeric column with non-negative values.",
-         call. = FALSE)
-  }
-  if (!is.numeric(thresholds) || length(thresholds) < 1L ||
-      any(!is.finite(thresholds)) || any(thresholds <= 0)) {
-    stop("`thresholds` must be a numeric vector with positive finite values.",
-         call. = FALSE)
-  }
-}
-
-safe_ratio_excess <- function(num, den) {
-  ifelse(is.na(den) | den <= 0, NA_real_, num / den)
-}
-
-#' Print an excess threshold assessment
+#' Decompose claim amounts into capped and excess parts
 #'
 #' @description
-#' Compact print method for objects returned by [assess_excess_thresholds()].
+#' Calculate the historical excess amount above a selected threshold.
 #'
-#' @param x An object of class `"excess_threshold_assessment"`.
-#' @param ... Reserved for future extensions.
+#' `calculate_excess_loss()` is deliberately deterministic. It does not perform
+#' bootstrap simulation, smoothing or allocation. The function simply decomposes
+#' each observed claim into a capped part and an excess part:
+#' `excess_claim_amount = pmax(claim_amount - threshold, 0)`.
 #'
-#' @return Invisibly returns `x`.
+#' Use the output as input for [allocate_excess_loss()] when the historical
+#' excess burden needs to be pooled, credibility-weighted or bootstrapped.
+#'
+#' @param data A `data.frame` with claim-level observations.
+#' @param claim_amount Character string. Claim amount column.
+#' @param threshold Positive numeric scalar. Claims above this value are treated
+#'   as excess claims.
+#'
+#' @return A `data.frame` with the original data and the columns
+#'   `claim_amount`, `capped_claim_amount`, `excess_claim_amount` and
+#'   `is_excess_claim`.
 #'
 #' @author Martin Haringa
 #'
-#' @keywords internal
+#' @examples
+#' claims <- data.frame(claim_amount = c(1000, 120000, 30000))
+#' calculate_excess_loss(claims, claim_amount = "claim_amount", threshold = 100000)
+#'
 #' @export
-print.excess_threshold_assessment <- function(x, ...) {
-  by <- attr(x, "by")
-  cat("Excess threshold assessment\n")
-  cat("Thresholds: ", length(unique(x$threshold)), "\n", sep = "")
-  cat("Group variable: ", if (is.null(by)) "none" else by, "\n", sep = "")
-  cat("Threshold range: ",
-      format(min(x$threshold), big.mark = ","), " - ",
-      format(max(x$threshold), big.mark = ","), "\n", sep = "")
-  cat("Total claims: ", sum(x$n_claims[x$threshold == min(x$threshold)]),
-      "\n", sep = "")
-  cat("Total exposure: ",
-      format(sum(x$exposure[x$threshold == min(x$threshold)]), big.mark = ","),
-      "\n", sep = "")
-  invisible(x)
+calculate_excess_loss <- function(data, claim_amount, threshold) {
+  validate_calculate_excess_loss(data, claim_amount, threshold)
+  amount <- data[[claim_amount]]
+  out <- data
+  out$claim_amount <- amount
+  out$capped_claim_amount <- pmin(amount, threshold)
+  out$excess_claim_amount <- pmax(amount - threshold, 0)
+  out$is_excess_claim <- amount > threshold
+  attr(out, "claim_amount_column") <- claim_amount
+  attr(out, "threshold") <- threshold
+  class(out) <- c("excess_loss_decomposition", "data.frame")
+  out
+}
+
+#' Allocate excess loss to a pricing portfolio
+#'
+#' @description
+#' Allocate a historical excess burden over a portfolio and optionally model
+#' uncertainty around that burden.
+#'
+#' `allocate_excess_loss()` is the core allocation step in the excess-loss
+#' workflow. It starts from a deterministic excess amount, usually
+#' `excess_claim_amount` produced by [calculate_excess_loss()], and converts it
+#' into an excess loading per row.
+#'
+#' `pooling` controls how much excess risk is shared between groups:
+#' \describe{
+#'   \item{`"portfolio"`}{All included rows share one portfolio-wide excess
+#'   loading: total excess divided by total weight.}
+#'   \item{`"group"`}{Each group carries only its own excess burden. This is
+#'   responsive to group experience, but can be volatile for sparse large-loss
+#'   data.}
+#'   \item{`"partial"`}{Blend the group-specific loading with the portfolio
+#'   loading using credibility. This is useful when some groups have enough
+#'   large-loss experience to be partly credible while smaller groups should
+#'   pool back toward the portfolio.}
+#' }
+#'
+#' When `pooling = "partial"` and `credibility = NULL`, credibility is determined
+#' automatically from the amount and quality of group-specific experience.
+#' The automatic credibility factor reflects the size of the group, the number
+#' of observed claims, the number of excess claims and the share of loss above
+#' the threshold. Groups with more stable and repeated excess loss experience
+#' receive more credibility. Groups with limited or incidental excess loss
+#' experience are pooled more strongly towards the portfolio-wide loading.
+#'
+#' `severity_noise` is only available with `method = "bootstrap"`. With
+#' `"lognormal"`, sampled excess claims are multiplied by lognormal noise, which
+#' is usually more natural for large claims because claim amounts remain
+#' positive and variation is multiplicative. `severity_noise_sd = 0.25` is a
+#' practical starting point; `0.10` gives limited variation and `0.50` strong
+#' variation.
+#'
+#' @details
+#' `method = "observed"` allocates the historically observed excess loss.
+#'
+#' `method = "bootstrap"` resamples only the positive excess claim amounts:
+#'
+#' `excess_amount[excess_amount > 0]`
+#'
+#' The full claim distribution is not bootstrapped.
+#'
+#' Bootstrap allocation introduces uncertainty in both:
+#'
+#' \itemize{
+#'   \item the total amount of excess loss;
+#'   \item the distribution of excess loss across allocation groups.
+#' }
+#'
+#' This means that the bootstrap not only changes the total excess burden that
+#' needs to be redistributed, but also how that burden is distributed across
+#' portfolio segments.
+#'
+#' When `tail_fit_threshold` is supplied, claims above the lower threshold are
+#' used to better approximate the tail of the claim distribution. This can be
+#' useful when only a limited number of claims exceed the main excess threshold.
+#'
+#' Severity noise can optionally be added to bootstrapped excess claims. This is
+#' useful when the number of excess claims is small and a regular bootstrap would
+#' otherwise repeatedly reproduce only the same observed large losses.
+#'
+#' When severity noise is used, additional variability is introduced in the size
+#' of individual excess claims.
+#'
+#' Lognormal severity noise is usually more natural for excess claims because
+#' claim amounts are positive and large losses are typically right-skewed.
+#'
+#' For lognormal severity noise, the approximate multiplicative p10/p50/p90
+#' factors can be inspected with:
+#'
+#' `exp(qnorm(c(0.10, 0.50, 0.90)) * severity_noise_sd)`
+#'
+#' For example, with `severity_noise_sd = 0.25`, this gives approximately
+#' `0.73x`, `0.97x` and `1.38x`. An excess claim of 100,000 would therefore
+#' typically vary between roughly 73,000 and 138,000.
+#'
+#' The following validation rules apply:
+#'
+#' \itemize{
+#'   \item `tail_fit_threshold` can only be used when `method = "bootstrap"`.
+#'   \item `tail_fit_threshold` must be smaller than or equal to `threshold`.
+#'   \item `severity_noise != "none"` can only be used when
+#'   `method = "bootstrap"`.
+#' }
+#'
+#' @param data A `data.frame`, typically the output of [calculate_excess_loss()].
+#' @param excess_amount Character string. Excess amount column.
+#' @param weight Character string. Allocation weight column, usually exposure.
+#' @param include Optional character string. Logical column indicating which
+#'   rows participate in the allocation. If `NULL`, all rows are included.
+#' @param group Optional character string. Grouping column for group or partial
+#'   pooling.
+#' @param threshold Optional numeric scalar. Main excess threshold, stored for
+#'   audit output.
+#' @param tail_fit_threshold Optional numeric scalar. Lower threshold used as
+#'   tail information. Only allowed when `method = "bootstrap"` and must be
+#'   smaller than or equal to `threshold`.
+#' @param method Character. `"observed"` or `"bootstrap"`.
+#' @param pooling Character. `"portfolio"`, `"group"` or `"partial"`.
+#' @param credibility Optional numeric scalar between 0 and 1. Used for
+#'   `pooling = "partial"`. If `NULL`, credibility is estimated by group.
+#' @param n_boot Positive whole number. Number of bootstrap samples.
+#' @param severity_noise Character. `"none"`, `"lognormal"` or `"normal"`.
+#' @param severity_noise_sd Non-negative numeric scalar controlling severity
+#'   noise in bootstrap samples.
+#'
+#' @return An object of class `"excess_loss_allocation"`.
+#'
+#' @author Martin Haringa
+#'
+#' @examples
+#' claims <- data.frame(
+#'   sector = rep(c("Industry", "Retail"), each = 4),
+#'   claim_amount = c(1000, 120000, 30000, 8000, 2000, 150000, 40000, 6000),
+#'   earned_exposure = rep(1, 8)
+#' )
+#' decomposed <- calculate_excess_loss(claims, "claim_amount", threshold = 100000)
+#' allocation <- allocate_excess_loss(
+#'   decomposed,
+#'   excess_amount = "excess_claim_amount",
+#'   weight = "earned_exposure",
+#'   group = "sector",
+#'   pooling = "partial"
+#' )
+#' summary(allocation)
+#'
+#' @export
+allocate_excess_loss <- function(data,
+                                 excess_amount,
+                                 weight,
+                                 include = NULL,
+                                 group = NULL,
+                                 threshold = NULL,
+                                 tail_fit_threshold = NULL,
+                                 method = c("observed", "bootstrap"),
+                                 pooling = c("portfolio", "group", "partial"),
+                                 credibility = NULL,
+                                 n_boot = 1000,
+                                 severity_noise = c("none", "lognormal", "normal"),
+                                 severity_noise_sd = 0.25) {
+  method <- match.arg(method)
+  pooling <- match.arg(pooling)
+  severity_noise <- match.arg(severity_noise)
+  validate_allocate_excess_loss(
+    data, excess_amount, weight, include, group, threshold, tail_fit_threshold,
+    method, pooling, credibility, n_boot, severity_noise, severity_noise_sd
+  )
+
+  allocation_data <- prepare_allocation_data(data, excess_amount, weight, include, group)
+  groups <- summarize_allocation_groups(allocation_data)
+  portfolio_loading <- safe_ratio_excess(
+    sum(allocation_data$excess_amount[allocation_data$included]),
+    sum(allocation_data$weight[allocation_data$included])
+  )
+
+  boot <- NULL
+  if (identical(method, "bootstrap")) {
+    boot <- bootstrap_excess_allocation(
+      allocation_data = allocation_data,
+      n_boot = n_boot,
+      severity_noise = severity_noise,
+      severity_noise_sd = severity_noise_sd
+    )
+    groups <- merge(groups, boot$group_summary, by = "group", all.x = TRUE,
+                    sort = FALSE)
+    groups$group_loading <- groups$bootstrap_loading_mean
+    portfolio_loading <- boot$portfolio_loading
+  }
+
+  groups <- derive_final_loading(groups, pooling, portfolio_loading, credibility)
+  allocation_data <- merge(
+    allocation_data,
+    groups[, c("group", "group_loading", "portfolio_loading", "credibility",
+               "allocated_loading"), drop = FALSE],
+    by = "group",
+    all.x = TRUE,
+    sort = FALSE
+  )
+  allocation_data$allocated_loading[!allocation_data$included] <- 0
+  allocation_data$allocated_excess_loss <- allocation_data$allocated_loading *
+    allocation_data$weight
+
+  groups <- summarize_allocated_groups(allocation_data, groups)
+  structure(
+    list(
+      data = allocation_data,
+      summary = groups,
+      method = method,
+      pooling = pooling,
+      threshold = threshold,
+      tail_fit_threshold = tail_fit_threshold,
+      bootstrap = boot
+    ),
+    class = "excess_loss_allocation"
+  )
+}
+
+#' Add excess loading to a pricing portfolio
+#'
+#' @description
+#' Add an allocated excess loading to a portfolio data set.
+#'
+#' `add_excess_loading()` is the final workflow step. It does not estimate or
+#' allocate excess loss. It takes an object produced by [allocate_excess_loss()]
+#' and adds row-level loading columns to `data`.
+#'
+#' @param data A `data.frame`.
+#' @param allocation An object returned by [allocate_excess_loss()].
+#'
+#' @return A `data.frame` with `base_premium`, `excess_loading` and
+#'   `loaded_premium`. If `data` already contains `base_premium`, that column is
+#'   used as the starting premium. Otherwise `base_premium` is set to zero.
+#'
+#' @author Martin Haringa
+#'
+#' @examples
+#' claims <- data.frame(
+#'   sector = rep(c("Industry", "Retail"), each = 4),
+#'   claim_amount = c(1000, 120000, 30000, 8000, 2000, 150000, 40000, 6000),
+#'   earned_exposure = rep(1, 8)
+#' )
+#' decomposed <- calculate_excess_loss(claims, "claim_amount", threshold = 100000)
+#' allocation <- allocate_excess_loss(
+#'   decomposed,
+#'   excess_amount = "excess_claim_amount",
+#'   weight = "earned_exposure"
+#' )
+#' add_excess_loading(decomposed, allocation)
+#'
+#' @export
+add_excess_loading <- function(data, allocation) {
+  if (!inherits(data, "data.frame")) {
+    stop("`data` must be a data.frame.", call. = FALSE)
+  }
+  if (!inherits(allocation, "excess_loss_allocation")) {
+    stop("`allocation` must be returned by `allocate_excess_loss()`.",
+         call. = FALSE)
+  }
+  if (nrow(data) != nrow(allocation$data)) {
+    stop("`data` must have the same number of rows as the allocation data.",
+         call. = FALSE)
+  }
+  out <- data
+  if (!"base_premium" %in% names(out)) {
+    out$base_premium <- 0
+  } else if (!is.numeric(out$base_premium) || any(is.na(out$base_premium))) {
+    stop("`base_premium` must be numeric without missing values when present.",
+         call. = FALSE)
+  }
+  out$excess_loading <- allocation$data$allocated_loading
+  out$loaded_premium <- out$base_premium + out$excess_loading
+  out
 }
 
 #' Summarise an excess threshold assessment
 #'
 #' @description
-#' Summarises the threshold assessment across groups, returning one row per
-#' threshold.
+#' Return the key threshold diagnostics from an
+#' `"excess_threshold_assessment"` object.
 #'
-#' @param object An object of class `"excess_threshold_assessment"`.
-#' @param ... Reserved for future extensions.
+#' @param object An object returned by [assess_excess_threshold()].
+#' @param ... Unused.
 #'
-#' @return A `data.frame` with threshold-level diagnostics.
+#' @return A `data.frame`.
 #'
 #' @author Martin Haringa
-#'
 #' @keywords internal
 #' @export
 summary.excess_threshold_assessment <- function(object, ...) {
-  fun <- function(z) {
-    out <- data.frame(
-      threshold = z$threshold[1],
-      claims_above = sum(z$claims_above),
-      excess_loss = sum(z$excess_loss),
-      excess_loss_share = safe_ratio_excess(sum(z$excess_loss), sum(z$total_loss)),
-      excess_per_exposure = safe_ratio_excess(sum(z$excess_loss), sum(z$exposure)),
-      stringsAsFactors = FALSE
-    )
-    if ("premium" %in% names(z)) {
-      out$excess_as_premium_pct <- 100 * safe_ratio_excess(
-        sum(z$excess_loss),
-        sum(z$premium)
-      )
-    }
-    out
-  }
-  out <- do.call(rbind, lapply(split(object, object$threshold), fun))
+  .check_dots_empty(...)
+  keep <- intersect(
+    c(
+      "threshold", "group", "n_excess_claims", "excess_loss",
+      "excess_loss_ratio", "pure_premium_before", "pure_premium_after",
+      "premium_impact"
+    ),
+    names(object)
+  )
+  out <- object[, keep, drop = FALSE]
   row.names(out) <- NULL
   out
+}
+
+#' Print an excess threshold assessment
+#'
+#' @description
+#' Compact print method for objects returned by [assess_excess_threshold()].
+#'
+#' @param x An object returned by [assess_excess_threshold()].
+#' @param ... Unused.
+#'
+#' @return Invisibly returns `x`.
+#'
+#' @author Martin Haringa
+#' @keywords internal
+#' @export
+print.excess_threshold_assessment <- function(x, ...) {
+  .check_dots_empty(...)
+  cat("Excess threshold assessment\n")
+  cat("Thresholds: ", length(unique(x$threshold)), "\n", sep = "")
+  if ("group" %in% names(x)) {
+    cat("Groups: ", length(unique(x$group)), "\n", sep = "")
+  }
+  cat("Threshold range: ",
+      format(min(x$threshold), big.mark = ","), " - ",
+      format(max(x$threshold), big.mark = ","), "\n", sep = "")
+  invisible(x)
+}
+
+#' Summarise an excess-loss allocation
+#'
+#' @description
+#' Return the allocation audit table from an object produced by
+#' [allocate_excess_loss()].
+#'
+#' @param object An object returned by [allocate_excess_loss()].
+#' @param compare_to_empirical Logical. If `TRUE`, keep columns with the
+#'   empirical loss and empirical excess loss used for comparison.
+#' @param ... Unused.
+#'
+#' @return A `data.frame`.
+#'
+#' @author Martin Haringa
+#' @keywords internal
+#' @export
+summary.excess_loss_allocation <- function(object,
+                                           compare_to_empirical = FALSE,
+                                           ...) {
+  .check_dots_empty(...)
+  out <- object$summary
+  if (!isTRUE(compare_to_empirical)) {
+    drop <- intersect(c("empirical_loss", "empirical_excess_loss"), names(out))
+    out <- out[, setdiff(names(out), drop), drop = FALSE]
+  }
+  row.names(out) <- NULL
+  out
+}
+
+#' Print an excess-loss allocation
+#'
+#' @description
+#' Compact print method for objects returned by [allocate_excess_loss()].
+#'
+#' @param x An object returned by [allocate_excess_loss()].
+#' @param ... Unused.
+#'
+#' @return Invisibly returns `x`.
+#'
+#' @author Martin Haringa
+#' @keywords internal
+#' @export
+print.excess_loss_allocation <- function(x, ...) {
+  .check_dots_empty(...)
+  cat("Excess loss allocation\n")
+  cat("Method: ", x$method, "\n", sep = "")
+  cat("Pooling: ", x$pooling, "\n", sep = "")
+  cat("Groups: ", nrow(x$summary), "\n", sep = "")
+  cat("Allocated excess loss: ",
+      format(round(sum(x$data$allocated_excess_loss)), big.mark = ","),
+      "\n", sep = "")
+  invisible(x)
 }
 
 #' Plot an excess threshold assessment
 #'
 #' @description
-#' Visualise how excess-loss diagnostics move across candidate thresholds.
+#' Visualise one diagnostic from an object returned by
+#' [assess_excess_threshold()]. The plot helps compare how candidate thresholds
+#' affect excess loss, excess claim counts or pure-premium impact.
 #'
-#' @param object An object returned by [assess_excess_thresholds()].
-#' @param y Character. Diagnostic to plot on the y-axis.
-#' @param ... Reserved for future extensions.
+#' @param object An object returned by [assess_excess_threshold()].
+#' @param y Character. Measure to plot on the y-axis.
+#' @param ... Unused.
 #'
-#' @return A ggplot object.
+#' @return A `ggplot` object.
 #'
 #' @author Martin Haringa
-#'
 #' @export
 autoplot.excess_threshold_assessment <- function(object,
                                                  y = c(
+                                                   "premium_impact",
                                                    "excess_loss",
-                                                   "excess_per_exposure",
-                                                   "claims_above",
-                                                   "excess_loss_share"
+                                                   "n_excess_claims",
+                                                   "excess_loss_ratio"
                                                  ),
                                                  ...) {
   y <- match.arg(y)
   .check_dots_empty(...)
   pal <- .plot_palette_ir()
   grid_theme <- .plot_grid_theme_ir()
-  grouped <- "group" %in% names(object)
   p <- ggplot2::ggplot(object, ggplot2::aes(x = .data[["threshold"]], y = .data[[y]]))
-  if (grouped) {
+  if ("group" %in% names(object)) {
     p <- p +
       ggplot2::geom_line(ggplot2::aes(color = .data[["group"]]), linewidth = 0.6) +
       ggplot2::geom_point(ggplot2::aes(color = .data[["group"]]), size = 1.8)
@@ -264,407 +548,310 @@ autoplot.excess_threshold_assessment <- function(object,
       ggplot2::geom_point(color = pal$risk_premium, size = 1.8)
   }
   p +
-    ggplot2::labs(
-      title = "Excess threshold assessment",
-      x = "Threshold",
-      y = y,
-      color = NULL
-    ) +
+    ggplot2::labs(x = "Threshold", y = y, color = NULL) +
     ggplot2::theme_minimal() +
     grid_theme
 }
 
-#' Calculate an excess-loss vector for capped severity modelling
+#' Plot an excess-loss allocation
 #'
 #' @description
-#' Estimate and allocate the expected cost of large claims above a chosen cap.
+#' Visualise the allocated excess loading, allocated excess loss or credibility
+#' by allocation group.
 #'
-#' In pricing work, a severity model is often fitted on capped claim amounts,
-#' for example `pmin(claim_amount, 100000)`, because very large claims can be
-#' too sparse or volatile to model directly in the regular severity GLM.
-#' `calculate_excess_loss()` helps add this missing part back in by estimating
-#' the claim cost above the cap and allocating that amount to the selected
-#' portfolio rows. The resulting vector can then be added to the technical risk
-#' premium or pure premium.
+#' @param object An object returned by [allocate_excess_loss()].
+#' @param y Character. Measure to plot on the y-axis.
+#' @param ... Unused.
 #'
-#' The excess-loss amount is part of the technical risk premium. It is not meant
-#' as a commercial loading or margin. [add_excess_loss()] can be used afterwards
-#' to copy the calculated vectors to a data frame without recalculating them.
-#'
-#' `method` determines the total excess-loss amount:
-#'
-#' \describe{
-#'   \item{`"empirical"`}{Uses the observed excess above `excess_threshold`.
-#'   This is transparent and easy to reconcile, but sensitive to a few very
-#'   large claims.}
-#'   \item{`"bootstrap"`}{Bootstraps claims above `fit_threshold` and calculates
-#'   the excess above `excess_threshold` in each sample. This keeps the method
-#'   data-driven while giving a sense of sampling variability in sparse
-#'   large-loss experience. With `bootstrap_smooth = TRUE`, the sampled large
-#'   claims are perturbed around their observed values using
-#'   `bootstrap_bandwidth`. This avoids relying only on exact historical claim
-#'   amounts and can be useful when large-loss experience is sparse, discrete or
-#'   strongly influenced by a few individual claims.}
-#'   \item{`"manual"`}{Uses `manual_excess` as the total excess-loss amount.
-#'   This is useful when the amount comes from expert judgement, governance,
-#'   reinsurance information or an external benchmark.}
-#' }
-#'
-#' `allocation_method` determines how the total excess-loss amount is allocated
-#' back to rows:
-#'
-#' \describe{
-#'   \item{`"exposure"`}{Allocates in proportion to `allocation_weights`, with
-#'   allocation factor 1 for selected rows. In practice this means that every
-#'   selected row receives the same excess-loss loading per unit of allocation
-#'   weight, for example per unit of earned exposure. This is the most stable
-#'   choice when large-loss experience is too sparse to support a credible split
-#'   between groups.}
-#'   \item{`"historical_excess"`}{Derives allocation factors from observed
-#'   excess above `excess_threshold` per allocation group. Groups that produced
-#'   more observed excess receive a larger allocation factor, after allowing for
-#'   their allocation weight. This is more risk-sensitive than exposure
-#'   allocation, but can be volatile when a few large claims dominate the
-#'   experience.}
-#'   \item{`"bootstrap_excess"`}{Derives allocation factors from bootstrapped
-#'   excess shares per allocation group. For each bootstrap sample the excess
-#'   share by group is calculated, and the average share is translated into an
-#'   allocation factor. This is a smoother data-driven alternative to using the
-#'   raw historical excess shares, especially when large losses are sparse but
-#'   you still want the allocation to reflect observed group differences.}
-#'   \item{`"factor"`}{Uses a user supplied `allocation_factor` column. This is
-#'   appropriate when the allocation follows a pricing, underwriting or
-#'   governance decision rather than the observed large-loss split alone. For
-#'   example, a factor can restrict allocation to selected segments or give one
-#'   segment a higher share based on expert judgement.}
-#' }
-#'
-#' The allocation arguments work together as follows. `allocation_by` and
-#' `allocation_levels` define the part of the portfolio that receives the
-#' excess-loss component, for example selected industry groups or coverage
-#' segments. Rows outside those levels receive allocation factor 0. Within the
-#' selected part, `allocation_weights` defines the volume measure used to spread
-#' the amount, usually exposure or another earned-volume measure.
-#'
-#' `allocation_factor` is the row-level multiplier used in the allocation base:
-#' `allocation_base = allocation_weights * allocation_factor`. A factor of 0
-#' means no allocation, 1 means standard allocation, and values above or below 1
-#' allocate relatively more or less excess-loss to that row or group. For
-#' `allocation_method = "exposure"`, the factor is 1 for selected rows. For
-#' `allocation_method = "historical_excess"` and `"bootstrap_excess"`, the
-#' factor is derived so that the final allocation follows the observed or
-#' bootstrapped excess shares by group, after allowing for `allocation_weights`.
-#' For `allocation_method = "factor"`, the factor is read directly from the
-#' column named in `allocation_factor`.
-#'
-#' `output` determines which row-level vector is returned directly. All variants
-#' are also stored as attributes, so [add_excess_loss()] can add several
-#' diagnostic columns without recalculating.
-#'
-#' `fit_threshold` and `excess_threshold` have different roles. `fit_threshold`
-#' determines which claims are used as large-loss information. `excess_threshold`
-#' determines which part is added as excess-loss. With `fit_threshold = 20000`
-#' and `excess_threshold = 100000`, claims between 20k and 100k are sampled in
-#' bootstrap methods but contribute zero excess through
-#' `pmax(sampled_amount - excess_threshold, 0)`.
-#'
-#' @param data A `data.frame`.
-#' @param claim_amount Character string. Claim amount column.
-#' @param exposure Character string. Exposure column.
-#' @param fit_threshold Positive numeric scalar. Claims above this value are
-#'   used as large-loss information in bootstrap calculations.
-#' @param excess_threshold Numeric scalar larger than `fit_threshold`. Only the
-#'   part of a claim above this value is added as excess-loss.
-#' @param method Character. One of `"empirical"`, `"bootstrap"` or `"manual"`.
-#' @param allocation_method Character. One of `"exposure"`,
-#'   `"historical_excess"`, `"bootstrap_excess"` or `"factor"`.
-#' @param allocation_by Optional character string. Allocation grouping column.
-#' @param allocation_levels Optional character vector with selected levels.
-#' @param allocation_factor Optional character string with user supplied
-#'   allocation factors. Required when `allocation_method = "factor"`.
-#' @param allocation_weights Character string. Allocation weight column.
-#' @param bootstrap_samples Positive whole number. Number of bootstrap samples.
-#' @param bootstrap_smooth Logical. If `TRUE`, sampled large losses are
-#'   multiplied by `exp(rnorm(..., 0, bootstrap_bandwidth))`. This adds a small
-#'   multiplicative perturbation, making the bootstrap less discrete. A value
-#'   around `bootstrap_bandwidth = 0.10` is a practical starting point; higher
-#'   values create more tail variability and should be justified.
-#' @param bootstrap_bandwidth Non-negative numeric scalar used when
-#'   `bootstrap_smooth = TRUE`.
-#' @param bootstrap_seed Optional numeric seed.
-#' @param manual_excess Optional non-negative numeric scalar for
-#'   `method = "manual"`. This is the total excess-loss amount to allocate.
-#' @param output Character. One of `"amount"`, `"share"`, `"factor"` or
-#'   `"base"`.
-#'
-#' @return A numeric vector with class `c("excess_loss_vector", "numeric")`.
+#' @return A `ggplot` object.
 #'
 #' @author Martin Haringa
-#'
-#' @examples
-#' claims <- data.frame(
-#'   sector = rep(c("Industry", "Retail", "Services"), each = 6),
-#'   claim_amount = c(
-#'     1000, 25000, 120000, 8000, 45000, 170000,
-#'     2000, 30000, 90000, 150000, 6000, 35000,
-#'     1500, 12000, 18000, 22000, 30000, 40000
-#'   ),
-#'   earned_exposure = c(rep(1, 12), rep(2, 6)),
-#'   earned_premium = rep(10000, 18)
-#' )
-#'
-#' x <- calculate_excess_loss(
-#'   data = claims,
-#'   claim_amount = "claim_amount",
-#'   exposure = "earned_exposure",
-#'   fit_threshold = 20000,
-#'   excess_threshold = 100000,
-#'   method = "empirical",
-#'   allocation_method = "exposure",
-#'   allocation_by = "sector",
-#'   allocation_levels = c("Industry", "Retail"),
-#'   allocation_weights = "earned_exposure"
-#' )
-#'
-#' x <- calculate_excess_loss(
-#'   data = claims,
-#'   claim_amount = "claim_amount",
-#'   exposure = "earned_exposure",
-#'   fit_threshold = 20000,
-#'   excess_threshold = 100000,
-#'   method = "bootstrap",
-#'   allocation_method = "bootstrap_excess",
-#'   allocation_by = "sector",
-#'   allocation_levels = c("Industry", "Retail"),
-#'   allocation_weights = "earned_exposure",
-#'   bootstrap_samples = 100,
-#'   bootstrap_smooth = TRUE,
-#'   bootstrap_seed = 123
-#' )
-#'
-#' claims <- add_excess_loss(claims, x, name = "large_loss")
-#' summary(x)
-#' allocation_factor(x, type = "summary")
-#' autoplot(x, by = "sector", y = "allocation_factor")
-#'
-#' @importFrom ggplot2 autoplot
-#' @importFrom stats aggregate median quantile rnorm sd
 #' @export
-calculate_excess_loss <- function(data,
-                                  claim_amount,
-                                  exposure,
-                                  fit_threshold,
-                                  excess_threshold,
-                                  method = c("empirical", "bootstrap", "manual"),
-                                  allocation_method = c(
-                                    "exposure",
-                                    "historical_excess",
-                                    "bootstrap_excess",
-                                    "factor"
-                                  ),
-                                  allocation_by = NULL,
-                                  allocation_levels = NULL,
-                                  allocation_factor = NULL,
-                                  allocation_weights = exposure,
-                                  bootstrap_samples = 1000,
-                                  bootstrap_smooth = FALSE,
-                                  bootstrap_bandwidth = 0.10,
-                                  bootstrap_seed = NULL,
-                                  manual_excess = NULL,
-                                  output = c("amount", "share", "factor", "base")) {
-  method <- match.arg(method)
-  allocation_method <- match.arg(allocation_method)
-  output <- match.arg(output)
-
-  validate_calculate_excess_loss_inputs(
-    data = data,
-    claim_amount = claim_amount,
-    exposure = exposure,
-    fit_threshold = fit_threshold,
-    excess_threshold = excess_threshold,
-    method = method,
-    allocation_method = allocation_method,
-    allocation_by = allocation_by,
-    allocation_levels = allocation_levels,
-    allocation_factor = allocation_factor,
-    allocation_weights = allocation_weights,
-    bootstrap_samples = bootstrap_samples,
-    bootstrap_smooth = bootstrap_smooth,
-    bootstrap_bandwidth = bootstrap_bandwidth,
-    bootstrap_seed = bootstrap_seed,
-    manual_excess = manual_excess
-  )
-
-  df <- prepare_excess_loss_data(
-    data = data,
-    claim_amount = claim_amount,
-    exposure = exposure,
-    excess_threshold = excess_threshold,
-    allocation_by = allocation_by,
-    allocation_levels = allocation_levels,
-    allocation_factor = allocation_factor,
-    allocation_weights = allocation_weights
-  )
-
-  estimate <- estimate_excess_loss(
-    df = df,
-    fit_threshold = fit_threshold,
-    excess_threshold = excess_threshold,
-    method = method,
-    bootstrap_samples = bootstrap_samples,
-    bootstrap_smooth = bootstrap_smooth,
-    bootstrap_bandwidth = bootstrap_bandwidth,
-    bootstrap_seed = bootstrap_seed,
-    manual_excess = manual_excess
-  )
-
-  allocation <- derive_excess_loss_allocation(
-    df = df,
-    allocation_method = allocation_method,
-    bootstrap_samples = bootstrap_samples,
-    bootstrap_smooth = bootstrap_smooth,
-    bootstrap_bandwidth = bootstrap_bandwidth,
-    bootstrap_seed = bootstrap_seed,
-    fit_threshold = fit_threshold,
-    excess_threshold = excess_threshold
-  )
-
-  vectors <- build_excess_loss_vectors(
-    df = df,
-    allocation_factor_vector = allocation$factor_vector,
-    total_excess = estimate$total_excess
-  )
-
-  allocation_data <- data.frame(
-    row_id = seq_len(nrow(df)),
-    allocation_group = df$.allocation_group,
-    selected = df$.selected,
-    exposure = df$.exposure,
-    allocation_weight = df$.allocation_weight,
-    allocation_factor = vectors$factor,
-    allocation_base = vectors$base,
-    allocated_share = vectors$share,
-    allocated_excess = vectors$amount,
-    stringsAsFactors = FALSE
-  )
-  if (!is.null(allocation_by)) {
-    allocation_data[[allocation_by]] <- df$.allocation_group
-  }
-  allocation_summary <- summarize_excess_loss_allocation(
-    allocation_data = allocation_data,
-    allocation_by = allocation_by,
-    bootstrap_summary = allocation$bootstrap_summary
-  )
-
-  out <- switch(
-    output,
-    amount = vectors$amount,
-    share = vectors$share,
-    factor = vectors$factor,
-    base = vectors$base
-  )
-
-  structure(
-    as.numeric(out),
-    class = c("excess_loss_vector", "numeric"),
-    amount_vector = vectors$amount,
-    share_vector = vectors$share,
-    factor_vector = vectors$factor,
-    base_vector = vectors$base,
-    method = method,
-    allocation_method = allocation_method,
-    fit_threshold = fit_threshold,
-    excess_threshold = excess_threshold,
-    total_excess = estimate$total_excess,
-    total_exposure = sum(df$.exposure),
-    claim_amount_column = claim_amount,
-    output = output,
-    bootstrap_samples_vector = estimate$bootstrap_samples_vector,
-    bootstrap_summary = allocation$bootstrap_summary,
-    allocation_data = allocation_data,
-    allocation_summary = allocation_summary,
-    allocation_by = allocation_by,
-    allocation_levels = allocation_levels,
-    allocation_factor_column = allocation_factor,
-    allocation_weights_column = allocation_weights,
-    allocation_factor_source = allocation$allocation_factor_source
-  )
+autoplot.excess_loss_allocation <- function(object,
+                                            y = c("allocated_loading",
+                                                  "allocated_excess_loss",
+                                                  "credibility"),
+                                            ...) {
+  y <- match.arg(y)
+  .check_dots_empty(...)
+  pal <- .plot_palette_ir()
+  grid_theme <- .plot_grid_theme_ir()
+  ggplot2::ggplot(object$summary, ggplot2::aes(x = .data[["group"]], y = .data[[y]])) +
+    ggplot2::geom_col(fill = pal$risk_premium, width = 0.65) +
+    ggplot2::labs(x = NULL, y = y) +
+    ggplot2::theme_minimal() +
+    grid_theme
 }
 
-#' Add calculated excess-loss columns to data
-#'
-#' @description
-#' `add_excess_loss()` adds output from [calculate_excess_loss()] to a
-#' `data.frame`. It does not calculate anything itself and only copies stored
-#' vectors from the attributes of `x`. This keeps the workflow auditable: the
-#' excess-loss calculation is done once in [calculate_excess_loss()], while
-#' `add_excess_loss()` is only a data-preparation step for modelling, reporting
-#' or later tariff refinement.
-#'
-#' With the default `include = c("amount", "share", "factor")`, the function
-#' adds the allocated excess-loss amount, the row-level share of the total
-#' excess-loss amount and the allocation factor used to distribute the excess.
-#' Use `include = "base"` when you also want to inspect the allocation base
-#' (`allocation_weights * allocation_factor`).
-#'
-#' @param data A `data.frame`.
-#' @param x An `"excess_loss_vector"` returned by [calculate_excess_loss()].
-#' @param name Character string. Base output column name.
-#' @param include Character vector with any of `"amount"`, `"share"`,
-#'   `"factor"` and `"base"`. `"amount"` refers to the allocated excess-loss
-#'   amount, not the original claim amount column.
-#' @param overwrite Logical. If `FALSE`, existing output columns cause an error.
-#'
-#' @return A `data.frame` with added columns.
-#'
-#' @author Martin Haringa
-#'
-#' @examples
-#' claims <- data.frame(
-#'   segment = rep(c("A", "B"), each = 4),
-#'   claim_amount = c(1000, 120000, 30000, 8000, 2000, 150000, 40000, 6000),
-#'   exposure = rep(1, 8)
-#' )
-#' x <- calculate_excess_loss(
-#'   claims,
-#'   claim_amount = "claim_amount",
-#'   exposure = "exposure",
-#'   fit_threshold = 20000,
-#'   excess_threshold = 100000,
-#'   method = "empirical",
-#'   allocation_method = "exposure",
-#'   allocation_by = "segment",
-#'   allocation_levels = c("A", "B")
-#' )
-#' add_excess_loss(claims, x, name = "large_loss")
-#'
-#' @export
-add_excess_loss <- function(data,
-                            x,
-                            name = "excess_loss",
-                            include = c("amount", "share", "factor"),
-                            overwrite = FALSE) {
-  validate_add_excess_loss_inputs(data, x, name, include, overwrite)
-
-  out <- data
-  col_names <- excess_loss_column_names(name, include)
-  existing <- intersect(col_names, names(out))
-  if (length(existing) > 0 && !isTRUE(overwrite)) {
-    stop("Column(s) already exist in `data`: ",
-         paste(existing, collapse = ", "),
-         ". Use `overwrite = TRUE` to replace them.",
+validate_assess_excess_threshold <- function(data, claim_amount, thresholds,
+                                             exposure, group) {
+  validate_data_frame(data)
+  validate_character_column(data, claim_amount, "claim_amount")
+  if (!is.numeric(data[[claim_amount]]) || any(is.na(data[[claim_amount]])) ||
+      any(data[[claim_amount]] < 0)) {
+    stop("`claim_amount` must refer to a numeric column with non-negative values.",
          call. = FALSE)
   }
-  vectors <- list(
-    amount = attr(x, "amount_vector"),
-    share = attr(x, "share_vector"),
-    factor = attr(x, "factor_vector"),
-    base = attr(x, "base_vector")
+  if (!is.numeric(thresholds) || length(thresholds) < 1L ||
+      any(!is.finite(thresholds)) || any(thresholds <= 0)) {
+    stop("`thresholds` must be positive finite numbers.", call. = FALSE)
+  }
+  if (!is.null(exposure)) {
+    validate_character_column(data, exposure, "exposure")
+    if (!is.numeric(data[[exposure]]) || any(is.na(data[[exposure]])) ||
+        any(data[[exposure]] < 0)) {
+      stop("`exposure` must refer to a numeric column with non-negative values.",
+           call. = FALSE)
+    }
+  }
+  if (!is.null(group)) {
+    validate_character_column(data, group, "group")
+  }
+}
+
+validate_calculate_excess_loss <- function(data, claim_amount, threshold) {
+  validate_data_frame(data)
+  validate_character_column(data, claim_amount, "claim_amount")
+  if (!is.numeric(data[[claim_amount]]) || any(is.na(data[[claim_amount]])) ||
+      any(data[[claim_amount]] < 0)) {
+    stop("`claim_amount` must refer to a numeric column with non-negative values.",
+         call. = FALSE)
+  }
+  if (!is.numeric(threshold) || length(threshold) != 1L ||
+      !is.finite(threshold) || threshold <= 0) {
+    stop("`threshold` must be a single positive number.", call. = FALSE)
+  }
+}
+
+validate_allocate_excess_loss <- function(data, excess_amount, weight, include,
+                                          group, threshold, tail_fit_threshold,
+                                          method, pooling, credibility, n_boot,
+                                          severity_noise, severity_noise_sd) {
+  validate_data_frame(data)
+  validate_character_column(data, excess_amount, "excess_amount")
+  validate_character_column(data, weight, "weight")
+  if (!is.numeric(data[[excess_amount]]) || any(is.na(data[[excess_amount]])) ||
+      any(data[[excess_amount]] < 0)) {
+    stop("`excess_amount` must refer to a numeric column with non-negative values.",
+         call. = FALSE)
+  }
+  if (!is.numeric(data[[weight]]) || any(is.na(data[[weight]])) ||
+      any(data[[weight]] < 0)) {
+    stop("`weight` must refer to a numeric column with non-negative values.",
+         call. = FALSE)
+  }
+  if (!is.null(include)) {
+    validate_character_column(data, include, "include")
+    if (!is.logical(data[[include]]) || any(is.na(data[[include]]))) {
+      stop("`include` must refer to a logical column without missing values.",
+           call. = FALSE)
+    }
+  }
+  if (!is.null(group)) {
+    validate_character_column(data, group, "group")
+  }
+  if (!is.null(threshold) &&
+      (!is.numeric(threshold) || length(threshold) != 1L ||
+       !is.finite(threshold) || threshold <= 0)) {
+    stop("`threshold` must be NULL or a single positive number.", call. = FALSE)
+  }
+  if (!is.null(tail_fit_threshold)) {
+    if (!identical(method, "bootstrap")) {
+      stop("`tail_fit_threshold` is only allowed when `method = 'bootstrap'`.",
+           call. = FALSE)
+    }
+    if (is.null(threshold) || !is.numeric(tail_fit_threshold) ||
+        length(tail_fit_threshold) != 1L || !is.finite(tail_fit_threshold) ||
+        tail_fit_threshold <= 0 || tail_fit_threshold > threshold) {
+      stop("`tail_fit_threshold` must be positive and <= `threshold`.",
+           call. = FALSE)
+    }
+  }
+  if (!identical(severity_noise, "none") && !identical(method, "bootstrap")) {
+    stop("`severity_noise` is only allowed when `method = 'bootstrap'`.",
+         call. = FALSE)
+  }
+  if (!is.null(credibility) &&
+      (!is.numeric(credibility) || length(credibility) != 1L ||
+       !is.finite(credibility) || credibility < 0 || credibility > 1)) {
+    stop("`credibility` must be NULL or a number between 0 and 1.",
+         call. = FALSE)
+  }
+  if (!is.numeric(n_boot) || length(n_boot) != 1L || is.na(n_boot) ||
+      n_boot < 1 || n_boot != floor(n_boot)) {
+    stop("`n_boot` must be a positive whole number.", call. = FALSE)
+  }
+  if (!is.numeric(severity_noise_sd) || length(severity_noise_sd) != 1L ||
+      !is.finite(severity_noise_sd) || severity_noise_sd < 0) {
+    stop("`severity_noise_sd` must be a single non-negative number.",
+         call. = FALSE)
+  }
+}
+
+prepare_allocation_data <- function(data, excess_amount, weight, include, group) {
+  included <- if (is.null(include)) rep(TRUE, nrow(data)) else data[[include]]
+  out <- data.frame(
+    row_id = seq_len(nrow(data)),
+    excess_amount = data[[excess_amount]],
+    weight = data[[weight]],
+    included = included,
+    group = if (is.null(group)) "portfolio" else as.character(data[[group]]),
+    stringsAsFactors = FALSE
   )
-  for (nm in include) {
-    out[[excess_loss_column_names(name, nm)]] <- vectors[[nm]]
+  if (any(out$included & out$weight <= 0)) {
+    stop("`weight` must be positive for included rows.", call. = FALSE)
   }
   out
+}
+
+summarize_allocation_groups <- function(allocation_data) {
+  groups <- split(allocation_data, allocation_data$group)
+  out <- lapply(names(groups), function(g) {
+    z <- groups[[g]]
+    included <- z[z$included, , drop = FALSE]
+    historical_excess <- sum(included$excess_amount)
+    group_weight <- sum(included$weight)
+    empirical_loss <- sum(z$excess_amount)
+    data.frame(
+      group = g,
+      group_weight = group_weight,
+      n_claims = nrow(included),
+      n_excess_claims = sum(included$excess_amount > 0),
+      historical_excess_loss = historical_excess,
+      empirical_loss = empirical_loss,
+      empirical_excess_loss = historical_excess,
+      excess_loss_ratio = safe_ratio_excess(historical_excess, empirical_loss),
+      group_loading = safe_ratio_excess(historical_excess, group_weight),
+      stringsAsFactors = FALSE
+    )
+  })
+  do.call(rbind, out)
+}
+
+derive_final_loading <- function(groups, pooling, portfolio_loading, credibility) {
+  groups$portfolio_loading <- portfolio_loading
+  if (identical(pooling, "portfolio")) {
+    groups$credibility <- 0
+    groups$allocated_loading <- portfolio_loading
+    return(groups)
+  }
+  if (identical(pooling, "group")) {
+    groups$credibility <- 1
+    groups$allocated_loading <- groups$group_loading
+    return(groups)
+  }
+  groups$credibility <- if (is.null(credibility)) {
+    automatic_excess_credibility(groups)
+  } else {
+    credibility
+  }
+  groups$allocated_loading <- groups$credibility * groups$group_loading +
+    (1 - groups$credibility) * portfolio_loading
+  groups
+}
+
+automatic_excess_credibility <- function(groups) {
+  weight_score <- safe_ratio_excess(groups$group_weight, max(groups$group_weight))
+  claim_score <- safe_ratio_excess(groups$n_claims, max(groups$n_claims))
+  excess_claim_score <- safe_ratio_excess(groups$n_excess_claims, max(groups$n_excess_claims))
+  loss_score <- safe_ratio_excess(groups$historical_excess_loss,
+                                  max(groups$historical_excess_loss))
+  ratio_score <- pmin(groups$excess_loss_ratio / max(groups$excess_loss_ratio, na.rm = TRUE), 1)
+  score <- rowMeans(
+    cbind(weight_score, claim_score, excess_claim_score, loss_score, ratio_score),
+    na.rm = TRUE
+  )
+  pmin(pmax(score, 0), 1)
+}
+
+bootstrap_excess_allocation <- function(allocation_data, n_boot,
+                                        severity_noise, severity_noise_sd) {
+  included <- allocation_data[allocation_data$included, , drop = FALSE]
+  tail <- included[included$excess_amount > 0, , drop = FALSE]
+  if (nrow(tail) == 0) {
+    stop("No positive excess amounts are available for bootstrap allocation.",
+         call. = FALSE)
+  }
+  group_weights <- rowsum(included$weight, included$group, reorder = FALSE)
+  total_weight <- sum(included$weight)
+  boot_summaries <- replicate(n_boot, {
+    sampled <- tail[sample(seq_len(nrow(tail)), nrow(tail), replace = TRUE), ,
+                    drop = FALSE]
+    sampled$excess_amount <- apply_severity_noise(
+      sampled$excess_amount,
+      severity_noise = severity_noise,
+      severity_noise_sd = severity_noise_sd
+    )
+    sampled_sum <- rowsum(sampled$excess_amount, sampled$group, reorder = FALSE)
+    group_excess <- numeric(nrow(group_weights))
+    names(group_excess) <- rownames(group_weights)
+    group_excess[rownames(sampled_sum)] <- as.numeric(sampled_sum[, 1])
+    data.frame(
+      group = names(group_excess),
+      group_loading = safe_ratio_excess(group_excess, as.numeric(group_weights[, 1])),
+      total_loading = safe_ratio_excess(sum(group_excess), total_weight),
+      stringsAsFactors = FALSE
+    )
+  }, simplify = FALSE)
+  all <- do.call(rbind, boot_summaries)
+  group_summary <- aggregate_bootstrap_summary(all)
+  portfolio_loading <- mean(all$total_loading)
+  list(group_summary = group_summary, portfolio_loading = portfolio_loading)
+}
+
+apply_severity_noise <- function(x, severity_noise, severity_noise_sd) {
+  if (identical(severity_noise, "none") || severity_noise_sd == 0) {
+    return(x)
+  }
+  if (identical(severity_noise, "lognormal")) {
+    return(x * exp(stats::rnorm(length(x), mean = 0, sd = severity_noise_sd)))
+  }
+  pmax(x + stats::rnorm(length(x), mean = 0, sd = severity_noise_sd * stats::sd(x)), 0)
+}
+
+aggregate_bootstrap_summary <- function(x) {
+  split_x <- split(x, x$group)
+  out <- lapply(names(split_x), function(g) {
+    z <- split_x[[g]]
+    data.frame(
+      group = g,
+      bootstrap_loading_mean = mean(z$group_loading),
+      bootstrap_loading_sd = stats::sd(z$group_loading),
+      bootstrap_loading_p05 = stats::quantile(z$group_loading, 0.05, names = FALSE),
+      bootstrap_loading_p50 = stats::quantile(z$group_loading, 0.50, names = FALSE),
+      bootstrap_loading_p95 = stats::quantile(z$group_loading, 0.95, names = FALSE),
+      stringsAsFactors = FALSE
+    )
+  })
+  do.call(rbind, out)
+}
+
+summarize_allocated_groups <- function(allocation_data, groups) {
+  allocated <- rowsum(allocation_data$allocated_excess_loss,
+                      allocation_data$group,
+                      reorder = FALSE)
+  groups$allocated_excess_loss <- as.numeric(allocated[groups$group, 1])
+  groups
+}
+
+safe_ratio_excess <- function(num, den) {
+  ifelse(is.na(den) | den <= 0, NA_real_, num / den)
+}
+
+validate_data_frame <- function(data) {
+  if (!inherits(data, "data.frame")) {
+    stop("`data` must be a data.frame.", call. = FALSE)
+  }
+}
+
+validate_character_column <- function(data, col, arg) {
+  if (!is.character(col) || length(col) != 1L || is.na(col) || !nzchar(col)) {
+    stop("`", arg, "` must be a single non-empty character string.",
+         call. = FALSE)
+  }
+  if (!col %in% names(data)) {
+    stop("Column not found in `data`: ", col, call. = FALSE)
+  }
 }
 
 .check_dots_empty <- function(...) {
@@ -673,632 +860,4 @@ add_excess_loss <- function(data,
     stop("Unused argument(s): ", paste(names(dots), collapse = ", "),
          call. = FALSE)
   }
-}
-
-validate_calculate_excess_loss_inputs <- function(data,
-                                                  claim_amount,
-                                                  exposure,
-                                                  fit_threshold,
-                                                  excess_threshold,
-                                                  method,
-                                                  allocation_method,
-                                                  allocation_by,
-                                                  allocation_levels,
-                                                  allocation_factor,
-                                                  allocation_weights,
-                                                  bootstrap_samples,
-                                                  bootstrap_smooth,
-                                                  bootstrap_bandwidth,
-                                                  bootstrap_seed,
-                                                  manual_excess) {
-  if (!inherits(data, "data.frame")) {
-    stop("`data` must be a data.frame.", call. = FALSE)
-  }
-  for (arg in c("claim_amount", "exposure", "allocation_weights")) {
-    val <- get(arg)
-    if (!is.character(val) || length(val) != 1L || is.na(val) || !nzchar(val)) {
-      stop("`", arg, "` must be a single non-empty character string.",
-           call. = FALSE)
-    }
-  }
-  for (arg in c("allocation_by", "allocation_factor")) {
-    val <- get(arg)
-    if (!is.null(val) &&
-        (!is.character(val) || length(val) != 1L || is.na(val) || !nzchar(val))) {
-      stop("`", arg, "` must be NULL or a single non-empty character string.",
-           call. = FALSE)
-    }
-  }
-  missing_cols <- setdiff(
-    c(claim_amount, exposure, allocation_weights, allocation_by, allocation_factor),
-    names(data)
-  )
-  if (length(missing_cols) > 0) {
-    stop("Column(s) not found in `data`: ",
-         paste(missing_cols, collapse = ", "), call. = FALSE)
-  }
-  if (!is.numeric(data[[claim_amount]]) || any(is.na(data[[claim_amount]])) ||
-      any(data[[claim_amount]] < 0)) {
-    stop("`claim_amount` must refer to a numeric column with non-negative values.",
-         call. = FALSE)
-  }
-  if (!is.numeric(data[[exposure]]) || any(is.na(data[[exposure]])) ||
-      any(data[[exposure]] < 0)) {
-    stop("`exposure` must refer to a numeric column with non-negative values.",
-         call. = FALSE)
-  }
-  if (!is.numeric(data[[allocation_weights]]) ||
-      any(is.na(data[[allocation_weights]])) ||
-      any(data[[allocation_weights]] < 0)) {
-    stop("`allocation_weights` must refer to a numeric column with non-negative values.",
-         call. = FALSE)
-  }
-  if (!is.numeric(fit_threshold) || length(fit_threshold) != 1L ||
-      !is.finite(fit_threshold) || fit_threshold <= 0) {
-    stop("`fit_threshold` must be a single positive number.", call. = FALSE)
-  }
-  if (!is.numeric(excess_threshold) || length(excess_threshold) != 1L ||
-      !is.finite(excess_threshold) || excess_threshold <= fit_threshold) {
-    stop("`excess_threshold` must be larger than `fit_threshold`.",
-         call. = FALSE)
-  }
-  if (is.null(allocation_by) != is.null(allocation_levels)) {
-    stop("`allocation_by` and `allocation_levels` must be supplied together.",
-         call. = FALSE)
-  }
-  if (!is.null(allocation_levels) &&
-      (!is.character(allocation_levels) || length(allocation_levels) < 1L ||
-       any(is.na(allocation_levels)))) {
-    stop("`allocation_levels` must be a non-empty character vector.",
-         call. = FALSE)
-  }
-  if (!identical(allocation_method, "factor") && is.null(allocation_by)) {
-    stop("`allocation_by` and `allocation_levels` are required when `allocation_method != 'factor'`.",
-         call. = FALSE)
-  }
-  if (identical(allocation_method, "factor") && is.null(allocation_factor)) {
-    stop("`allocation_method = 'factor'` requires `allocation_factor`.",
-         call. = FALSE)
-  }
-  if (!is.null(allocation_factor)) {
-    af <- data[[allocation_factor]]
-    if (!is.numeric(af) || any(is.na(af)) || any(af < 0)) {
-      stop("`allocation_factor` must refer to a numeric column with non-missing non-negative values.",
-           call. = FALSE)
-    }
-  }
-  if ((identical(method, "bootstrap") ||
-       identical(allocation_method, "bootstrap_excess")) &&
-      (!is.numeric(bootstrap_samples) || length(bootstrap_samples) != 1L ||
-       is.na(bootstrap_samples) || bootstrap_samples < 1 ||
-       bootstrap_samples != floor(bootstrap_samples))) {
-    stop("`bootstrap_samples` must be a positive whole number.", call. = FALSE)
-  }
-  if (!is.logical(bootstrap_smooth) || length(bootstrap_smooth) != 1L ||
-      is.na(bootstrap_smooth)) {
-    stop("`bootstrap_smooth` must be TRUE or FALSE.", call. = FALSE)
-  }
-  if (!is.numeric(bootstrap_bandwidth) || length(bootstrap_bandwidth) != 1L ||
-      !is.finite(bootstrap_bandwidth) || bootstrap_bandwidth < 0) {
-    stop("`bootstrap_bandwidth` must be a single non-negative number.",
-         call. = FALSE)
-  }
-  if (!is.null(bootstrap_seed) &&
-      (!is.numeric(bootstrap_seed) || length(bootstrap_seed) != 1L ||
-       is.na(bootstrap_seed))) {
-    stop("`bootstrap_seed` must be NULL or a single number.", call. = FALSE)
-  }
-  if (identical(method, "manual") &&
-      (!is.numeric(manual_excess) || length(manual_excess) != 1L ||
-       !is.finite(manual_excess) || manual_excess < 0)) {
-    stop("`manual_excess` must be a single non-negative number when `method = 'manual'`.",
-         call. = FALSE)
-  }
-}
-
-prepare_excess_loss_data <- function(data,
-                                     claim_amount,
-                                     exposure,
-                                     excess_threshold,
-                                     allocation_by,
-                                     allocation_levels,
-                                     allocation_factor,
-                                     allocation_weights) {
-  df <- data.frame(
-    .amount = data[[claim_amount]],
-    .exposure = data[[exposure]],
-    .allocation_weight = data[[allocation_weights]],
-    stringsAsFactors = FALSE
-  )
-  df$.historical_excess <- pmax(df$.amount - excess_threshold, 0)
-  df$.allocation_group <- if (is.null(allocation_by)) {
-    "allocated"
-  } else {
-    as.character(data[[allocation_by]])
-  }
-  df$.selected <- if (is.null(allocation_by)) {
-    TRUE
-  } else {
-    df$.allocation_group %in% allocation_levels
-  }
-  if (!is.null(allocation_factor)) {
-    df$.supplied_allocation_factor <- data[[allocation_factor]]
-    if (is.null(allocation_by)) {
-      df$.selected <- df$.supplied_allocation_factor > 0
-      df$.allocation_group[!df$.selected] <- "not_allocated"
-    } else {
-      df$.selected <- df$.selected & df$.supplied_allocation_factor > 0
-    }
-  } else {
-    df$.supplied_allocation_factor <- NA_real_
-  }
-  if (!any(df$.selected)) {
-    stop("No allocation target could be determined.", call. = FALSE)
-  }
-  if (any(df$.selected & df$.allocation_weight <= 0)) {
-    stop("`allocation_weights` must be positive for selected rows.",
-         call. = FALSE)
-  }
-  df
-}
-
-estimate_excess_loss <- function(df,
-                                 fit_threshold,
-                                 excess_threshold,
-                                 method,
-                                 bootstrap_samples,
-                                 bootstrap_smooth,
-                                 bootstrap_bandwidth,
-                                 bootstrap_seed,
-                                 manual_excess) {
-  if (identical(method, "manual")) {
-    return(list(total_excess = manual_excess, bootstrap_samples_vector = numeric()))
-  }
-  if (identical(method, "empirical")) {
-    return(list(
-      total_excess = sum(df$.historical_excess, na.rm = TRUE),
-      bootstrap_samples_vector = numeric()
-    ))
-  }
-  samples <- bootstrap_excess_totals(
-    amount = df$.amount,
-    fit_threshold = fit_threshold,
-    excess_threshold = excess_threshold,
-    bootstrap_samples = bootstrap_samples,
-    bootstrap_smooth = bootstrap_smooth,
-    bootstrap_bandwidth = bootstrap_bandwidth,
-    bootstrap_seed = bootstrap_seed
-  )
-  list(total_excess = mean(samples), bootstrap_samples_vector = samples)
-}
-
-bootstrap_excess_totals <- function(amount,
-                                    fit_threshold,
-                                    excess_threshold,
-                                    bootstrap_samples,
-                                    bootstrap_smooth,
-                                    bootstrap_bandwidth,
-                                    bootstrap_seed) {
-  tail_amount <- amount[amount > fit_threshold]
-  if (length(tail_amount) == 0) {
-    stop("No claims exceed `fit_threshold`.", call. = FALSE)
-  }
-  if (!is.null(bootstrap_seed)) {
-    set.seed(bootstrap_seed)
-  }
-  replicate(bootstrap_samples, {
-    sampled <- sample(tail_amount, length(tail_amount), replace = TRUE)
-    if (isTRUE(bootstrap_smooth)) {
-      sampled <- sampled * exp(stats::rnorm(
-        length(sampled),
-        mean = 0,
-        sd = bootstrap_bandwidth
-      ))
-    }
-    sum(pmax(sampled - excess_threshold, 0))
-  })
-}
-
-derive_excess_loss_allocation <- function(df,
-                                          allocation_method,
-                                          bootstrap_samples,
-                                          bootstrap_smooth,
-                                          bootstrap_bandwidth,
-                                          bootstrap_seed,
-                                          fit_threshold,
-                                          excess_threshold) {
-  selected <- df[df$.selected, , drop = FALSE]
-  if (identical(allocation_method, "exposure")) {
-    factor <- numeric(nrow(df))
-    factor[df$.selected] <- 1
-    return(list(
-      factor_vector = factor,
-      bootstrap_summary = NULL,
-      allocation_factor_source = "derived_exposure"
-    ))
-  }
-  if (identical(allocation_method, "factor")) {
-    factor <- numeric(nrow(df))
-    factor[df$.selected] <- selected$.supplied_allocation_factor
-    return(list(
-      factor_vector = factor,
-      bootstrap_summary = NULL,
-      allocation_factor_source = "user_supplied"
-    ))
-  }
-  group_weight <- rowsum(selected$.allocation_weight,
-                         selected$.allocation_group,
-                         reorder = FALSE)
-  group_weight <- data.frame(
-    allocation_group = rownames(group_weight),
-    allocation_weight = as.numeric(group_weight[, 1]),
-    stringsAsFactors = FALSE
-  )
-  group_weight$weight_share <- group_weight$allocation_weight /
-    sum(group_weight$allocation_weight)
-  if (identical(allocation_method, "historical_excess")) {
-    group_excess <- rowsum(selected$.historical_excess,
-                           selected$.allocation_group,
-                           reorder = FALSE)
-    group_excess <- data.frame(
-      allocation_group = rownames(group_excess),
-      excess = as.numeric(group_excess[, 1]),
-      stringsAsFactors = FALSE
-    )
-    group <- merge(group_weight, group_excess, by = "allocation_group",
-                   all.x = TRUE)
-    if (sum(group$excess) <= 0) {
-      stop("Historical excess is zero for the selected allocation target.",
-           call. = FALSE)
-    }
-    group$target_share <- group$excess / sum(group$excess)
-    group$allocation_factor <- ifelse(
-      group$weight_share > 0,
-      group$target_share / group$weight_share,
-      0
-    )
-    return(list(
-      factor_vector = match_group_factor(df, group),
-      bootstrap_summary = NULL,
-      allocation_factor_source = "derived_historical_excess"
-    ))
-  }
-  boot <- bootstrap_group_excess_shares(
-    df = selected,
-    fit_threshold = fit_threshold,
-    excess_threshold = excess_threshold,
-    bootstrap_samples = bootstrap_samples,
-    bootstrap_smooth = bootstrap_smooth,
-    bootstrap_bandwidth = bootstrap_bandwidth,
-    bootstrap_seed = bootstrap_seed
-  )
-  group <- merge(group_weight, boot, by = "allocation_group", all.x = TRUE)
-  group$bootstrap_mean[is.na(group$bootstrap_mean)] <- 0
-  group$allocation_factor <- ifelse(
-    group$weight_share > 0,
-    group$bootstrap_mean / group$weight_share,
-    0
-  )
-  list(
-    factor_vector = match_group_factor(df, group),
-    bootstrap_summary = boot,
-    allocation_factor_source = "derived_bootstrap_excess"
-  )
-}
-
-bootstrap_group_excess_shares <- function(df,
-                                          fit_threshold,
-                                          excess_threshold,
-                                          bootstrap_samples,
-                                          bootstrap_smooth,
-                                          bootstrap_bandwidth,
-                                          bootstrap_seed) {
-  tail_df <- df[df$.amount > fit_threshold, , drop = FALSE]
-  groups <- unique(df$.allocation_group)
-  if (nrow(tail_df) == 0) {
-    stop("No selected allocation records exceed `fit_threshold`.", call. = FALSE)
-  }
-  if (!is.null(bootstrap_seed)) {
-    set.seed(bootstrap_seed)
-  }
-  share_mat <- replicate(bootstrap_samples, {
-    idx <- sample(seq_len(nrow(tail_df)), nrow(tail_df), replace = TRUE)
-    sampled <- tail_df[idx, , drop = FALSE]
-    amount <- sampled$.amount
-    if (isTRUE(bootstrap_smooth)) {
-      amount <- amount * exp(stats::rnorm(
-        length(amount),
-        mean = 0,
-        sd = bootstrap_bandwidth
-      ))
-    }
-    excess <- pmax(amount - excess_threshold, 0)
-    total <- sum(excess)
-    shares <- stats::setNames(rep(0, length(groups)), groups)
-    if (total > 0) {
-      by_group <- rowsum(excess, sampled$.allocation_group, reorder = FALSE)
-      shares[rownames(by_group)] <- as.numeric(by_group[, 1]) / total
-    }
-    shares
-  })
-  share_mat <- t(share_mat)
-  data.frame(
-    allocation_group = colnames(share_mat),
-    bootstrap_mean = colMeans(share_mat),
-    bootstrap_sd = apply(share_mat, 2, stats::sd),
-    p05 = apply(share_mat, 2, stats::quantile, probs = 0.05, names = FALSE),
-    p50 = apply(share_mat, 2, stats::quantile, probs = 0.50, names = FALSE),
-    p95 = apply(share_mat, 2, stats::quantile, probs = 0.95, names = FALSE),
-    stringsAsFactors = FALSE
-  )
-}
-
-match_group_factor <- function(df, group) {
-  idx <- match(df$.allocation_group, group$allocation_group)
-  out <- numeric(nrow(df))
-  selected <- df$.selected & !is.na(idx)
-  out[selected] <- group$allocation_factor[idx[selected]]
-  out
-}
-
-build_excess_loss_vectors <- function(df, allocation_factor_vector, total_excess) {
-  base <- df$.allocation_weight * allocation_factor_vector
-  if (sum(base) <= 0) {
-    stop("Sum of allocation base must be positive.", call. = FALSE)
-  }
-  share <- base / sum(base)
-  amount <- total_excess * share
-  list(
-    amount = as.numeric(amount),
-    share = as.numeric(share),
-    factor = as.numeric(allocation_factor_vector),
-    base = as.numeric(base)
-  )
-}
-
-summarize_excess_loss_allocation <- function(allocation_data,
-                                             allocation_by,
-                                             bootstrap_summary) {
-  groups <- unique(allocation_data$allocation_group)
-  out <- lapply(groups, function(g) {
-    z <- allocation_data[allocation_data$allocation_group == g, , drop = FALSE]
-    allocation_weight <- sum(z$allocation_weight)
-    allocation_base <- sum(z$allocation_base)
-    data.frame(
-      allocation_group = g,
-      n = nrow(z),
-      exposure = sum(z$exposure),
-      allocation_weight = allocation_weight,
-      allocation_factor = safe_ratio_excess(allocation_base, allocation_weight),
-      allocation_base = allocation_base,
-      allocated_excess = sum(z$allocated_excess),
-      allocated_share = sum(z$allocated_share),
-      selected = any(z$selected),
-      stringsAsFactors = FALSE
-    )
-  })
-  out <- do.call(rbind, out)
-  if (!is.null(allocation_by)) {
-    out[[allocation_by]] <- out$allocation_group
-  }
-  if (!is.null(bootstrap_summary)) {
-    out <- merge(out, bootstrap_summary, by = "allocation_group",
-                 all.x = TRUE, sort = FALSE)
-  }
-  row.names(out) <- NULL
-  out
-}
-
-validate_add_excess_loss_inputs <- function(data, x, name, include, overwrite) {
-  if (!inherits(data, "data.frame")) {
-    stop("`data` must be a data.frame.", call. = FALSE)
-  }
-  if (!inherits(x, "excess_loss_vector")) {
-    stop("`x` must be an object returned by `calculate_excess_loss()`.",
-         call. = FALSE)
-  }
-  if (length(x) != nrow(data)) {
-    stop("`length(x)` must be equal to `nrow(data)`.", call. = FALSE)
-  }
-  if (!is.character(name) || length(name) != 1L || is.na(name) || !nzchar(name)) {
-    stop("`name` must be a single non-empty character string.", call. = FALSE)
-  }
-  allowed <- c("amount", "share", "factor", "base")
-  if (!is.character(include) || length(include) < 1L ||
-      any(is.na(include)) || any(!include %in% allowed)) {
-    stop("`include` must be a subset of: ",
-         paste(allowed, collapse = ", "), call. = FALSE)
-  }
-  if (anyDuplicated(include)) {
-    stop("`include` must not contain duplicates.", call. = FALSE)
-  }
-  if (!is.logical(overwrite) || length(overwrite) != 1L || is.na(overwrite)) {
-    stop("`overwrite` must be TRUE or FALSE.", call. = FALSE)
-  }
-  required <- paste0(c("amount", "share", "factor", "base"), "_vector")
-  missing <- required[vapply(required, function(nm) is.null(attr(x, nm)), logical(1))]
-  if (length(missing) > 0) {
-    stop("`x` is missing required attribute(s): ",
-         paste(missing, collapse = ", "), call. = FALSE)
-  }
-}
-
-excess_loss_column_names <- function(name, include) {
-  suffix <- c(amount = "", share = "_share", factor = "_factor", base = "_base")
-  paste0(name, suffix[include])
-}
-
-#' Extract allocation factors from an excess-loss vector
-#'
-#' @description
-#' Extract allocation diagnostics from an object returned by
-#' [calculate_excess_loss()]. Use `type = "vector"` for the row-level factor,
-#' `type = "data"` for row-level allocation data, and `type = "summary"` for
-#' grouped allocation diagnostics.
-#'
-#' @param x An object returned by [calculate_excess_loss()].
-#' @param type Character. Output type.
-#' @param ... Reserved for future extensions.
-#'
-#' @return A vector or `data.frame`.
-#'
-#' @author Martin Haringa
-#'
-#' @export
-allocation_factor <- function(x, type = c("data", "vector", "summary"), ...) {
-  UseMethod("allocation_factor")
-}
-
-#' @export
-allocation_factor.excess_loss_vector <- function(x,
-                                                 type = c("data", "vector", "summary"),
-                                                 ...) {
-  type <- match.arg(type)
-  .check_dots_empty(...)
-  switch(
-    type,
-    vector = attr(x, "factor_vector"),
-    data = attr(x, "allocation_data"),
-    summary = attr(x, "allocation_summary")
-  )
-}
-
-#' Print an excess-loss vector
-#'
-#' @description
-#' Compact print method for objects returned by [calculate_excess_loss()].
-#'
-#' @param x An object of class `"excess_loss_vector"`.
-#' @param ... Reserved for future extensions.
-#'
-#' @return Invisibly returns `x`.
-#'
-#' @author Martin Haringa
-#'
-#' @keywords internal
-#' @export
-print.excess_loss_vector <- function(x, ...) {
-  cat("Excess loss vector\n")
-  cat("Method: ", attr(x, "method"), "\n", sep = "")
-  cat("Allocation method: ", attr(x, "allocation_method"), "\n", sep = "")
-  cat("Fit threshold: ",
-      format(round(attr(x, "fit_threshold")), big.mark = ","), "\n", sep = "")
-  cat("Excess threshold: ",
-      format(round(attr(x, "excess_threshold")), big.mark = ","), "\n", sep = "")
-  cat("Total excess loss: ",
-      format(round(attr(x, "total_excess")), big.mark = ","), "\n", sep = "")
-  cat("Output: ", attr(x, "output"), "\n", sep = "")
-  allocation_data <- attr(x, "allocation_data")
-  cat("Allocated rows: ", sum(allocation_data$selected), " / ",
-      nrow(allocation_data), "\n", sep = "")
-  invisible(x)
-}
-
-#' Summarise an excess-loss vector
-#'
-#' @description
-#' Return the grouped allocation summary stored on an object created by
-#' [calculate_excess_loss()].
-#'
-#' @param object An object of class `"excess_loss_vector"`.
-#' @param ... Reserved for future extensions.
-#'
-#' @return A `data.frame` with allocation summary columns.
-#'
-#' @author Martin Haringa
-#'
-#' @keywords internal
-#' @export
-summary.excess_loss_vector <- function(object, ...) {
-  attr(object, "allocation_summary")
-}
-
-#' Plot an excess-loss vector
-#'
-#' @description
-#' Visualise the allocation stored on an excess-loss vector. Without `by`, the
-#' plot shows allocated versus not allocated. With `by`, it shows the selected
-#' allocation metric by group. `type = "histogram"` shows the bootstrap
-#' distribution of total excess-loss estimates when available.
-#'
-#' @param object An object returned by [calculate_excess_loss()].
-#' @param by Optional character string. Grouping column available in the stored
-#'   allocation data.
-#' @param y Character. Allocation metric to show for `type = "bar"`.
-#' @param type Character. `"bar"` or `"histogram"`.
-#' @param ... Reserved for future extensions.
-#'
-#' @return A ggplot object.
-#'
-#' @author Martin Haringa
-#'
-#' @export
-autoplot.excess_loss_vector <- function(object,
-                                        by = NULL,
-                                        y = c(
-                                          "allocated_excess",
-                                          "allocated_share",
-                                          "allocation_factor",
-                                          "allocation_base"
-                                        ),
-                                        type = c("bar", "histogram"),
-                                        ...) {
-  y <- match.arg(y)
-  type <- match.arg(type)
-  .check_dots_empty(...)
-  if (!is.null(by) &&
-      (!is.character(by) || length(by) != 1L || is.na(by) || !nzchar(by))) {
-    stop("`by` must be NULL or a single character string.", call. = FALSE)
-  }
-  pal <- .plot_palette_ir()
-  grid_theme <- .plot_grid_theme_ir()
-  if (identical(type, "histogram")) {
-    samples <- attr(object, "bootstrap_samples_vector")
-    if (length(samples) == 0) {
-      stop("No bootstrap samples are available for this excess-loss vector.",
-           call. = FALSE)
-    }
-    df <- data.frame(excess_loss = samples)
-    return(
-      ggplot2::ggplot(df, ggplot2::aes(x = .data[["excess_loss"]])) +
-        ggplot2::geom_histogram(bins = 30, fill = "#E6E6E6", color = NA) +
-        ggplot2::geom_vline(
-          xintercept = attr(object, "total_excess"),
-          color = pal$risk_premium,
-          linetype = "dashed",
-          linewidth = 0.6
-        ) +
-        ggplot2::labs(
-          title = "Excess-loss allocation",
-          x = "Estimated excess loss",
-          y = "Bootstrap samples"
-        ) +
-        ggplot2::theme_minimal() +
-        grid_theme
-    )
-  }
-  summary_data <- attr(object, "allocation_summary")
-  if (is.null(by)) {
-    df <- stats::aggregate(
-      summary_data[[y]],
-      by = list(allocated = ifelse(summary_data$selected, "Allocated", "Not allocated")),
-      FUN = sum
-    )
-    names(df)[2] <- y
-    return(
-      ggplot2::ggplot(df, ggplot2::aes(x = .data[["allocated"]], y = .data[[y]])) +
-        ggplot2::geom_col(fill = pal$risk_premium, width = 0.65) +
-        ggplot2::labs(title = "Excess-loss allocation", x = NULL, y = y) +
-        ggplot2::theme_minimal() +
-        grid_theme
-    )
-  }
-  if (!by %in% names(summary_data)) {
-    stop("`by` is not available in the stored allocation data.", call. = FALSE)
-  }
-  ggplot2::ggplot(summary_data, ggplot2::aes(x = .data[[by]], y = .data[[y]])) +
-    ggplot2::geom_col(fill = pal$risk_premium, width = 0.65) +
-    ggplot2::labs(title = "Excess-loss allocation", x = by, y = y) +
-    ggplot2::theme_minimal() +
-    grid_theme
 }

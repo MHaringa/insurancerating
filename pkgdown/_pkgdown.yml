@@ -37,12 +37,12 @@ reference:
       components that can be added to technical risk premium models.
     contents:
       - plot_severity_distribution
-      - assess_excess_thresholds
+      - assess_excess_threshold
       - autoplot.excess_threshold_assessment
       - calculate_excess_loss
-      - add_excess_loss
-      - allocation_factor
-      - autoplot.excess_loss_vector
+      - allocate_excess_loss
+      - autoplot.excess_loss_allocation
+      - add_excess_loading
       - fit_truncated_severity
       - autoplot.truncated_severity
       - rlnormt

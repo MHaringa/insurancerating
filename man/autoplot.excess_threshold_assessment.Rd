@@ -6,22 +6,24 @@
 \usage{
 \method{autoplot}{excess_threshold_assessment}(
   object,
-  y = c("excess_loss", "excess_per_exposure", "claims_above", "excess_loss_share"),
+  y = c("premium_impact", "excess_loss", "n_excess_claims", "excess_loss_ratio"),
   ...
 )
 }
 \arguments{
-\item{object}{An object returned by \code{\link[=assess_excess_thresholds]{assess_excess_thresholds()}}.}
+\item{object}{An object returned by \code{\link[=assess_excess_threshold]{assess_excess_threshold()}}.}
 
-\item{y}{Character. Diagnostic to plot on the y-axis.}
+\item{y}{Character. Measure to plot on the y-axis.}
 
-\item{...}{Reserved for future extensions.}
+\item{...}{Unused.}
 }
 \value{
-A ggplot object.
+A \code{ggplot} object.
 }
 \description{
-Visualise how excess-loss diagnostics move across candidate thresholds.
+Visualise one diagnostic from an object returned by
+\code{\link[=assess_excess_threshold]{assess_excess_threshold()}}. The plot helps compare how candidate thresholds
+affect excess loss, excess claim counts or pure-premium impact.
 }
 \author{
 Martin Haringa

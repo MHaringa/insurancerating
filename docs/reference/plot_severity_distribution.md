@@ -32,25 +32,25 @@ plot_severity_distribution(
   data,
   claim_amount,
   risk_factor = NULL,
-  xlab = NULL,
-  ylab = NULL,
-  all_claims_label = "All claims",
-  threshold = NULL,
-  show_labels = TRUE,
-  mean_label = "Mean",
-  median_label = "Median",
-  threshold_label = "Threshold",
   top_n = 10,
   min_claims = 20,
   sort = c("median", "mean", "n_claims"),
-  point_method = c("quasirandom", "jitter", "none"),
-  distribution = c("none", "half_violin", "violin"),
-  boxplot = FALSE,
-  boxplot_width = 0.06,
+  threshold = NULL,
   mean = TRUE,
   median = TRUE,
-  log_scale = TRUE,
+  distribution = c("none", "half_violin", "violin"),
+  point_method = c("quasirandom", "jitter", "none"),
   orientation = c("horizontal", "vertical"),
+  log_scale = TRUE,
+  boxplot = FALSE,
+  boxplot_width = 0.06,
+  show_labels = TRUE,
+  all_claims_label = "All claims",
+  mean_label = "Mean",
+  median_label = "Median",
+  threshold_label = "Threshold",
+  x_label = NULL,
+  y_label = NULL,
   point_alpha = 0.16,
   point_size = 0.75,
   point_width = 0.15
@@ -73,44 +73,6 @@ plot_severity_distribution(
   severity distribution. If `NULL`, the overall claim amount
   distribution is shown.
 
-- xlab:
-
-  Optional character string. X-axis label. If `NULL`, a default is
-  chosen from `claim_amount` and `orientation`.
-
-- ylab:
-
-  Optional character string. Y-axis label. If `NULL`, a default is
-  chosen from `risk_factor`, `claim_amount` and `orientation`.
-
-- all_claims_label:
-
-  Character string used as the category label when `risk_factor = NULL`.
-
-- threshold:
-
-  Optional numeric scalar. If supplied, claims above this threshold are
-  highlighted and a dotted threshold line is shown.
-
-- show_labels:
-
-  Logical. If `TRUE`, add direct labels for the mean, median and, when
-  supplied, threshold. Requires the suggested package `ggrepel`.
-
-- mean_label:
-
-  Character string used for the direct mean marker label. Default is
-  `"Mean"`.
-
-- median_label:
-
-  Character string used for the direct median marker label. Default is
-  `"Median"`.
-
-- threshold_label:
-
-  Character string used for the optional threshold label.
-
 - top_n:
 
   Positive whole number. Number of categories to keep after filtering
@@ -126,15 +88,37 @@ plot_severity_distribution(
   Character. Metric used to sort and select categories. One of
   `"median"`, `"mean"` or `"n_claims"`.
 
-- point_method:
+- threshold:
 
-  Character. Point placement method. One of `"quasirandom"`, `"jitter"`
-  or `"none"`.
+  Optional numeric scalar. If supplied, claims above this threshold are
+  highlighted and a dotted threshold line is shown.
+
+- mean:
+
+  Logical. If `TRUE`, add a marker for the average claim amount.
+
+- median:
+
+  Logical. If `TRUE`, add a marker for the median claim amount.
 
 - distribution:
 
   Character. Distribution layer. One of `"none"`, `"half_violin"` or
   `"violin"`. Default is `"none"`.
+
+- point_method:
+
+  Character. Point placement method. One of `"quasirandom"`, `"jitter"`
+  or `"none"`.
+
+- orientation:
+
+  Character. `"horizontal"` places claim amount on the x-axis and
+  categories on the y-axis. `"vertical"` reverses this.
+
+- log_scale:
+
+  Logical. If `TRUE`, use a log10 scale for claim amounts.
 
 - boxplot:
 
@@ -145,22 +129,38 @@ plot_severity_distribution(
   Numeric scalar. Width of the optional boxplot. Smaller values keep the
   boxplot as a subtle summary layer behind the individual claim points.
 
-- mean:
+- show_labels:
 
-  Logical. If `TRUE`, add a marker for the average claim amount.
+  Logical. If `TRUE`, add direct labels for the mean, median and, when
+  supplied, threshold. Requires the suggested package `ggrepel`.
 
-- median:
+- all_claims_label:
 
-  Logical. If `TRUE`, add a marker for the median claim amount.
+  Character string used as the category label when `risk_factor = NULL`.
 
-- log_scale:
+- mean_label:
 
-  Logical. If `TRUE`, use a log10 scale for claim amounts.
+  Character string used for the direct mean marker label. Default is
+  `"Mean"`.
 
-- orientation:
+- median_label:
 
-  Character. `"horizontal"` places claim amount on the x-axis and
-  categories on the y-axis. `"vertical"` reverses this.
+  Character string used for the direct median marker label. Default is
+  `"Median"`.
+
+- threshold_label:
+
+  Character string used for the optional threshold label.
+
+- x_label:
+
+  Optional character string. X-axis label. If `NULL`, a default is
+  chosen from `claim_amount`, `risk_factor` and `orientation`.
+
+- y_label:
+
+  Optional character string. Y-axis label. If `NULL`, a default is
+  chosen from `claim_amount`, `risk_factor` and `orientation`.
 
 - point_alpha:
 

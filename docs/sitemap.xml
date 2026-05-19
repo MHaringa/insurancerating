@@ -12,6 +12,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/MTPL.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/MTPL2.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/active_rows_by_date.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/add_excess_loading.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/add_excess_loss.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/add_observed_experience.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/add_prediction.html</loc></url>
@@ -20,14 +21,17 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/add_smoothing.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/add_tariff_groups.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/add_tariff_segments.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/allocation_factor.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/as.data.frame.fitgam.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/as.vector.bootstrap_performance.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/as.vector.constructtariffclasses.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/assess_excess_thresholds.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.check_residuals.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.constructtariffclasses.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.excess_loss_allocation.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.excess_loss_vector.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.excess_threshold_assessment.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.factor_analysis.html</loc></url>
@@ -72,6 +76,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/prepare_refinement.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/print.constructtariffclasses.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/print.excess_loss_allocation.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/print.excess_loss_vector.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/print.excess_threshold_assessment.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/print.fitgam.html</loc></url>
@@ -100,6 +105,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/split_level.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/split_periods_to_months.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/split_relativities.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/summary.excess_loss_allocation.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/summary.excess_loss_vector.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/summary.excess_threshold_assessment.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/summary.fitgam.html</loc></url>

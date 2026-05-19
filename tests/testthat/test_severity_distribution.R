@@ -108,16 +108,16 @@ test_that("plot_severity_distribution supports axis labels", {
   horizontal <- severity_plot(
     min_claims = 20,
     top_n = 3,
-    xlab = "Claim size",
-    ylab = "Risk factor",
+    x_label = "Claim size",
+    y_label = "Risk factor",
     point_method = "none"
   )
   vertical <- severity_plot(
     min_claims = 20,
     top_n = 3,
     orientation = "vertical",
-    xlab = "Risk factor",
-    ylab = "Claim size",
+    x_label = "Risk factor",
+    y_label = "Claim size",
     point_method = "none"
   )
 
@@ -385,8 +385,8 @@ test_that("plot_severity_distribution validates inputs", {
     "`boxplot_width`"
   )
   expect_error(
-    severity_plot(xlab = NA),
-    "`xlab`"
+    severity_plot(x_label = NA),
+    "`x_label`"
   )
   expect_error(
     severity_plot(all_claims_label = NA),

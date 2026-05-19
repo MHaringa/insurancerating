@@ -92,25 +92,25 @@ suggested package and is not imported as a hard dependency.</p>
 <span>  <span class="va">data</span>,</span>
 <span>  <span class="va">claim_amount</span>,</span>
 <span>  risk_factor <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  xlab <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  ylab <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  all_claims_label <span class="op">=</span> <span class="st">"All claims"</span>,</span>
-<span>  threshold <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  show_labels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  mean_label <span class="op">=</span> <span class="st">"Mean"</span>,</span>
-<span>  median_label <span class="op">=</span> <span class="st">"Median"</span>,</span>
-<span>  threshold_label <span class="op">=</span> <span class="st">"Threshold"</span>,</span>
 <span>  top_n <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  min_claims <span class="op">=</span> <span class="fl">20</span>,</span>
 <span>  sort <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"median"</span>, <span class="st">"mean"</span>, <span class="st">"n_claims"</span><span class="op">)</span>,</span>
-<span>  point_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"quasirandom"</span>, <span class="st">"jitter"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
-<span>  distribution <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"half_violin"</span>, <span class="st">"violin"</span><span class="op">)</span>,</span>
-<span>  boxplot <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  boxplot_width <span class="op">=</span> <span class="fl">0.06</span>,</span>
+<span>  threshold <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mean <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  median <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  log_scale <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  distribution <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"half_violin"</span>, <span class="st">"violin"</span><span class="op">)</span>,</span>
+<span>  point_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"quasirandom"</span>, <span class="st">"jitter"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  orientation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"horizontal"</span>, <span class="st">"vertical"</span><span class="op">)</span>,</span>
+<span>  log_scale <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  boxplot <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  boxplot_width <span class="op">=</span> <span class="fl">0.06</span>,</span>
+<span>  show_labels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  all_claims_label <span class="op">=</span> <span class="st">"All claims"</span>,</span>
+<span>  mean_label <span class="op">=</span> <span class="st">"Mean"</span>,</span>
+<span>  median_label <span class="op">=</span> <span class="st">"Median"</span>,</span>
+<span>  threshold_label <span class="op">=</span> <span class="st">"Threshold"</span>,</span>
+<span>  x_label <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  y_label <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  point_alpha <span class="op">=</span> <span class="fl">0.16</span>,</span>
 <span>  point_size <span class="op">=</span> <span class="fl">0.75</span>,</span>
 <span>  point_width <span class="op">=</span> <span class="fl">0.15</span></span>
@@ -135,19 +135,19 @@ to split the severity distribution. If <code>NULL</code>, the overall claim amou
 distribution is shown.</p></dd>
 
 
-<dt id="arg-xlab">xlab<a class="anchor" aria-label="anchor" href="#arg-xlab"></a></dt>
-<dd><p>Optional character string. X-axis label. If <code>NULL</code>, a default is
-chosen from <code>claim_amount</code> and <code>orientation</code>.</p></dd>
+<dt id="arg-top-n">top_n<a class="anchor" aria-label="anchor" href="#arg-top-n"></a></dt>
+<dd><p>Positive whole number. Number of categories to keep after
+filtering and sorting.</p></dd>
 
 
-<dt id="arg-ylab">ylab<a class="anchor" aria-label="anchor" href="#arg-ylab"></a></dt>
-<dd><p>Optional character string. Y-axis label. If <code>NULL</code>, a default is
-chosen from <code>risk_factor</code>, <code>claim_amount</code> and <code>orientation</code>.</p></dd>
+<dt id="arg-min-claims">min_claims<a class="anchor" aria-label="anchor" href="#arg-min-claims"></a></dt>
+<dd><p>Positive whole number. Categories with fewer than this
+number of claim observations are removed.</p></dd>
 
 
-<dt id="arg-all-claims-label">all_claims_label<a class="anchor" aria-label="anchor" href="#arg-all-claims-label"></a></dt>
-<dd><p>Character string used as the category label when
-<code>risk_factor = NULL</code>.</p></dd>
+<dt id="arg-sort">sort<a class="anchor" aria-label="anchor" href="#arg-sort"></a></dt>
+<dd><p>Character. Metric used to sort and select categories. One of
+<code>"median"</code>, <code>"mean"</code> or <code>"n_claims"</code>.</p></dd>
 
 
 <dt id="arg-threshold">threshold<a class="anchor" aria-label="anchor" href="#arg-threshold"></a></dt>
@@ -155,10 +155,53 @@ chosen from <code>risk_factor</code>, <code>claim_amount</code> and <code>orient
 threshold are highlighted and a dotted threshold line is shown.</p></dd>
 
 
+<dt id="arg-mean">mean<a class="anchor" aria-label="anchor" href="#arg-mean"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, add a marker for the average claim amount.</p></dd>
+
+
+<dt id="arg-median">median<a class="anchor" aria-label="anchor" href="#arg-median"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, add a marker for the median claim amount.</p></dd>
+
+
+<dt id="arg-distribution">distribution<a class="anchor" aria-label="anchor" href="#arg-distribution"></a></dt>
+<dd><p>Character. Distribution layer. One of <code>"none"</code>,
+<code>"half_violin"</code> or <code>"violin"</code>. Default is <code>"none"</code>.</p></dd>
+
+
+<dt id="arg-point-method">point_method<a class="anchor" aria-label="anchor" href="#arg-point-method"></a></dt>
+<dd><p>Character. Point placement method. One of
+<code>"quasirandom"</code>, <code>"jitter"</code> or <code>"none"</code>.</p></dd>
+
+
+<dt id="arg-orientation">orientation<a class="anchor" aria-label="anchor" href="#arg-orientation"></a></dt>
+<dd><p>Character. <code>"horizontal"</code> places claim amount on the
+x-axis and categories on the y-axis. <code>"vertical"</code> reverses this.</p></dd>
+
+
+<dt id="arg-log-scale">log_scale<a class="anchor" aria-label="anchor" href="#arg-log-scale"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, use a log10 scale for claim amounts.</p></dd>
+
+
+<dt id="arg-boxplot">boxplot<a class="anchor" aria-label="anchor" href="#arg-boxplot"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, add a small centred boxplot. Default is
+<code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-boxplot-width">boxplot_width<a class="anchor" aria-label="anchor" href="#arg-boxplot-width"></a></dt>
+<dd><p>Numeric scalar. Width of the optional boxplot. Smaller
+values keep the boxplot as a subtle summary layer behind the individual
+claim points.</p></dd>
+
+
 <dt id="arg-show-labels">show_labels<a class="anchor" aria-label="anchor" href="#arg-show-labels"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, add direct labels for the mean,
 median and, when supplied, threshold. Requires the suggested package
 <code>ggrepel</code>.</p></dd>
+
+
+<dt id="arg-all-claims-label">all_claims_label<a class="anchor" aria-label="anchor" href="#arg-all-claims-label"></a></dt>
+<dd><p>Character string used as the category label when
+<code>risk_factor = NULL</code>.</p></dd>
 
 
 <dt id="arg-mean-label">mean_label<a class="anchor" aria-label="anchor" href="#arg-mean-label"></a></dt>
@@ -176,57 +219,14 @@ Default is <code>"Median"</code>.</p></dd>
 label.</p></dd>
 
 
-<dt id="arg-top-n">top_n<a class="anchor" aria-label="anchor" href="#arg-top-n"></a></dt>
-<dd><p>Positive whole number. Number of categories to keep after
-filtering and sorting.</p></dd>
+<dt id="arg-x-label">x_label<a class="anchor" aria-label="anchor" href="#arg-x-label"></a></dt>
+<dd><p>Optional character string. X-axis label. If <code>NULL</code>, a default is
+chosen from <code>claim_amount</code>, <code>risk_factor</code> and <code>orientation</code>.</p></dd>
 
 
-<dt id="arg-min-claims">min_claims<a class="anchor" aria-label="anchor" href="#arg-min-claims"></a></dt>
-<dd><p>Positive whole number. Categories with fewer than this
-number of claim observations are removed.</p></dd>
-
-
-<dt id="arg-sort">sort<a class="anchor" aria-label="anchor" href="#arg-sort"></a></dt>
-<dd><p>Character. Metric used to sort and select categories. One of
-<code>"median"</code>, <code>"mean"</code> or <code>"n_claims"</code>.</p></dd>
-
-
-<dt id="arg-point-method">point_method<a class="anchor" aria-label="anchor" href="#arg-point-method"></a></dt>
-<dd><p>Character. Point placement method. One of
-<code>"quasirandom"</code>, <code>"jitter"</code> or <code>"none"</code>.</p></dd>
-
-
-<dt id="arg-distribution">distribution<a class="anchor" aria-label="anchor" href="#arg-distribution"></a></dt>
-<dd><p>Character. Distribution layer. One of <code>"none"</code>,
-<code>"half_violin"</code> or <code>"violin"</code>. Default is <code>"none"</code>.</p></dd>
-
-
-<dt id="arg-boxplot">boxplot<a class="anchor" aria-label="anchor" href="#arg-boxplot"></a></dt>
-<dd><p>Logical. If <code>TRUE</code>, add a small centred boxplot. Default is
-<code>FALSE</code>.</p></dd>
-
-
-<dt id="arg-boxplot-width">boxplot_width<a class="anchor" aria-label="anchor" href="#arg-boxplot-width"></a></dt>
-<dd><p>Numeric scalar. Width of the optional boxplot. Smaller
-values keep the boxplot as a subtle summary layer behind the individual
-claim points.</p></dd>
-
-
-<dt id="arg-mean">mean<a class="anchor" aria-label="anchor" href="#arg-mean"></a></dt>
-<dd><p>Logical. If <code>TRUE</code>, add a marker for the average claim amount.</p></dd>
-
-
-<dt id="arg-median">median<a class="anchor" aria-label="anchor" href="#arg-median"></a></dt>
-<dd><p>Logical. If <code>TRUE</code>, add a marker for the median claim amount.</p></dd>
-
-
-<dt id="arg-log-scale">log_scale<a class="anchor" aria-label="anchor" href="#arg-log-scale"></a></dt>
-<dd><p>Logical. If <code>TRUE</code>, use a log10 scale for claim amounts.</p></dd>
-
-
-<dt id="arg-orientation">orientation<a class="anchor" aria-label="anchor" href="#arg-orientation"></a></dt>
-<dd><p>Character. <code>"horizontal"</code> places claim amount on the
-x-axis and categories on the y-axis. <code>"vertical"</code> reverses this.</p></dd>
+<dt id="arg-y-label">y_label<a class="anchor" aria-label="anchor" href="#arg-y-label"></a></dt>
+<dd><p>Optional character string. Y-axis label. If <code>NULL</code>, a default is
+chosen from <code>claim_amount</code>, <code>risk_factor</code> and <code>orientation</code>.</p></dd>
 
 
 <dt id="arg-point-alpha">point_alpha<a class="anchor" aria-label="anchor" href="#arg-point-alpha"></a></dt>

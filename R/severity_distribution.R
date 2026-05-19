@@ -28,10 +28,6 @@
 #' @param risk_factor Optional character string. Name of the risk factor used
 #'   to split the severity distribution. If `NULL`, the overall claim amount
 #'   distribution is shown.
-#' @param xlab Optional character string. X-axis label. If `NULL`, a default is
-#'   chosen from `claim_amount` and `orientation`.
-#' @param ylab Optional character string. Y-axis label. If `NULL`, a default is
-#'   chosen from `risk_factor`, `claim_amount` and `orientation`.
 #' @param all_claims_label Character string used as the category label when
 #'   `risk_factor = NULL`.
 #' @param threshold Optional numeric scalar. If supplied, claims above this
@@ -65,6 +61,10 @@
 #' @param log_scale Logical. If `TRUE`, use a log10 scale for claim amounts.
 #' @param orientation Character. `"horizontal"` places claim amount on the
 #'   x-axis and categories on the y-axis. `"vertical"` reverses this.
+#' @param x_label Optional character string. X-axis label. If `NULL`, a default is
+#'   chosen from `claim_amount`, `risk_factor` and `orientation`.
+#' @param y_label Optional character string. Y-axis label. If `NULL`, a default is
+#'   chosen from `claim_amount`, `risk_factor` and `orientation`.
 #' @param point_alpha Numeric alpha for raw claim points.
 #' @param point_size Numeric point size for raw claim points.
 #' @param point_width Numeric spread for raw claim points.
@@ -103,25 +103,25 @@
 plot_severity_distribution <- function(data,
                                        claim_amount,
                                        risk_factor = NULL,
-                                       xlab = NULL,
-                                       ylab = NULL,
-                                       all_claims_label = "All claims",
-                                       threshold = NULL,
-                                       show_labels = TRUE,
-                                       mean_label = "Mean",
-                                       median_label = "Median",
-                                       threshold_label = "Threshold",
                                        top_n = 10,
                                        min_claims = 20,
                                        sort = c("median", "mean", "n_claims"),
-                                       point_method = c("quasirandom", "jitter", "none"),
-                                       distribution = c("none", "half_violin", "violin"),
-                                       boxplot = FALSE,
-                                       boxplot_width = 0.06,
+                                       threshold = NULL,
                                        mean = TRUE,
                                        median = TRUE,
-                                       log_scale = TRUE,
+                                       distribution = c("none", "half_violin", "violin"),
+                                       point_method = c("quasirandom", "jitter", "none"),
                                        orientation = c("horizontal", "vertical"),
+                                       log_scale = TRUE,
+                                       boxplot = FALSE,
+                                       boxplot_width = 0.06,
+                                       show_labels = TRUE,
+                                       all_claims_label = "All claims",
+                                       mean_label = "Mean",
+                                       median_label = "Median",
+                                       threshold_label = "Threshold",
+                                       x_label = NULL,
+                                       y_label = NULL,
                                        point_alpha = 0.16,
                                        point_size = 0.75,
                                        point_width = 0.15) {
@@ -148,8 +148,8 @@ plot_severity_distribution <- function(data,
     data = data,
     claim_amount = amount_nm,
     risk_factor = risk_factor_nm,
-    xlab = xlab,
-    ylab = ylab,
+    x_label = x_label,
+    y_label = y_label,
     all_claims_label = all_claims_label,
     threshold = threshold,
     show_labels = show_labels,
@@ -251,8 +251,8 @@ plot_severity_distribution <- function(data,
     summary_data = plot_summary,
     risk_factor_nm = risk_factor_nm,
     amount_nm = amount_nm,
-    xlab = xlab,
-    ylab = ylab,
+    x_label = x_label,
+    y_label = y_label,
     point_method = point_method,
     distribution = distribution,
     boxplot = boxplot,
@@ -275,8 +275,8 @@ plot_severity_distribution <- function(data,
   attr(p, "severity_distribution_settings") <- list(
     claim_amount = amount_nm,
     risk_factor = risk_factor_nm,
-    xlab = xlab,
-    ylab = ylab,
+    x_label = x_label,
+    y_label = y_label,
     all_claims_label = all_claims_label,
     threshold = threshold,
     show_labels = show_labels,
@@ -305,8 +305,8 @@ plot_severity_distribution <- function(data,
 validate_severity_distribution_args <- function(data,
                                                 claim_amount,
                                                 risk_factor,
-                                                xlab,
-                                                ylab,
+                                                x_label,
+                                                y_label,
                                                 all_claims_label,
                                                 threshold,
                                                 show_labels,
@@ -344,7 +344,7 @@ validate_severity_distribution_args <- function(data,
   if (!is.numeric(data[[claim_amount]])) {
     stop("`claim_amount` must refer to a numeric column.", call. = FALSE)
   }
-  for (nm in c("xlab", "ylab")) {
+  for (nm in c("x_label", "y_label")) {
     val <- get(nm)
     if (!is.null(val) &&
         (!is.character(val) || length(val) != 1L || is.na(val))) {
@@ -476,8 +476,8 @@ build_severity_distribution_plot <- function(plot_data,
                                              summary_data,
                                              risk_factor_nm,
                                              amount_nm,
-                                             xlab,
-                                             ylab,
+                                             x_label,
+                                             y_label,
                                              point_method,
                                              distribution,
                                              boxplot,
@@ -602,11 +602,11 @@ build_severity_distribution_plot <- function(plot_data,
         expand = ggplot2::expansion(mult = c(0.03, 0.10))
       ) +
       ggplot2::labs(
-        x = if (is.null(xlab)) amount_nm else xlab,
-        y = if (is.null(ylab)) {
+        x = if (is.null(x_label)) amount_nm else x_label,
+        y = if (is.null(y_label)) {
           if (is.null(risk_factor_nm)) NULL else risk_factor_nm
         } else {
-          ylab
+          y_label
         }
       )
 
@@ -718,12 +718,12 @@ build_severity_distribution_plot <- function(plot_data,
         expand = ggplot2::expansion(mult = c(0.03, 0.10))
       ) +
       ggplot2::labs(
-        x = if (is.null(xlab)) {
+        x = if (is.null(x_label)) {
           if (is.null(risk_factor_nm)) NULL else risk_factor_nm
         } else {
-          xlab
+          x_label
         },
-        y = if (is.null(ylab)) amount_nm else ylab
+        y = if (is.null(y_label)) amount_nm else y_label
       )
 
     if (isTRUE(log_scale)) {

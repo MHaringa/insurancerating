@@ -7,16 +7,16 @@
 \method{summary}{excess_threshold_assessment}(object, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"excess_threshold_assessment"}.}
+\item{object}{An object returned by \code{\link[=assess_excess_threshold]{assess_excess_threshold()}}.}
 
-\item{...}{Reserved for future extensions.}
+\item{...}{Unused.}
 }
 \value{
-A \code{data.frame} with threshold-level diagnostics.
+A \code{data.frame}.
 }
 \description{
-Summarises the threshold assessment across groups, returning one row per
-threshold.
+Return the key threshold diagnostics from an
+\code{"excess_threshold_assessment"} object.
 }
 \author{
 Martin Haringa

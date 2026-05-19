@@ -1,7 +1,7 @@
 # Print an excess threshold assessment
 
 Compact print method for objects returned by
-[`assess_excess_thresholds()`](https://mharinga.github.io/insurancerating/reference/assess_excess_thresholds.md).
+[`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md).
 
 ## Usage
 
@@ -14,11 +14,12 @@ print(x, ...)
 
 - x:
 
-  An object of class `"excess_threshold_assessment"`.
+  An object returned by
+  [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md).
 
 - ...:
 
-  Reserved for future extensions.
+  Unused.
 
 ## Value
 

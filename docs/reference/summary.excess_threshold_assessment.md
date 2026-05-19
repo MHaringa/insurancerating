@@ -1,7 +1,7 @@
 # Summarise an excess threshold assessment
 
-Summarises the threshold assessment across groups, returning one row per
-threshold.
+Return the key threshold diagnostics from an
+`"excess_threshold_assessment"` object.
 
 ## Usage
 
@@ -14,15 +14,16 @@ summary(object, ...)
 
 - object:
 
-  An object of class `"excess_threshold_assessment"`.
+  An object returned by
+  [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md).
 
 - ...:
 
-  Reserved for future extensions.
+  Unused.
 
 ## Value
 
-A `data.frame` with threshold-level diagnostics.
+A `data.frame`.
 
 ## Author
 
