@@ -1,3 +1,13 @@
+## Resubmission
+
+This version fixes the invalid vignette URI reported by CRAN:
+
+  articles/refinement-workflow.html
+
+The link was corrected and the package was rebuilt and rechecked.
+
+Thank you for your review.
+
 ## Release summary
 
 This is a major update of insurancerating. The release modernises the public API
