@@ -23,3 +23,5 @@
 ^CRAN-SUBMISSION$
 ^\.positai$
 ^\.claude$
+^\.github$
+^\.github/.*$

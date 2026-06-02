@@ -1,10 +1,10 @@
 ## Resubmission
 
-This version fixes the invalid vignette URI reported by CRAN:
+This is a resubmission.
 
-  articles/refinement-workflow.html
+The previously reported invalid vignette URI has been fixed.
 
-The link was corrected and the package was rebuilt and rechecked.
+The accidentally included hidden .github directory has been excluded from the package tarball.
 
 Thank you for your review.
 
