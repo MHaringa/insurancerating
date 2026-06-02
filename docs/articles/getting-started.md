@@ -400,7 +400,7 @@ Typical reasons include:
 
 This can be handled with the refinement tools described in [Refinement
 building
-blocks](https://mharinga.github.io/insurancerating/articles/articles/refinement-workflow.md).
+blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md).
 
 ## Summary
 
@@ -410,8 +410,8 @@ A possible sequence in `insurancerating` is:
 
 
 factor_analysis()             # analyse portfolio behaviour
-risk_factor_gam()              # analyse continuous variables
-derive_tariff_segments()        # derive tariff segments
+risk_factor_gam()             # analyse continuous variables
+derive_tariff_segments()      # derive tariff segments
 glm()                         # estimate pricing models
 rating_table()                # interpret fitted coefficients
 bootstrap_performance()       # assess stability
