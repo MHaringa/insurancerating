@@ -1,4 +1,4 @@
-# insurancerating (development version)
+# insurancerating 0.8.0
 
 ## Main API updates
 
@@ -107,20 +107,27 @@
   `prepare_refinement() |> add_*() |> refit()`.
 - A new excess-loss workflow was added for capped severity and pure-premium
   modelling: `assess_excess_threshold()`, `calculate_excess_loss()`,
-  `allocate_excess_loss()` and `add_excess_loading()`.
+  `allocate_excess_loss()` and `apply_excess_loading()`.
 - `assess_excess_threshold()` compares candidate large-loss thresholds and shows
   the impact on excess loss, capped loss and pure premium.
 - `calculate_excess_loss()` now performs only the deterministic historical
   decomposition into capped and excess claim amounts.
-- `allocate_excess_loss()` handles allocation, pooling and bootstrap uncertainty
+- `allocate_excess_loss()` handles allocation and bootstrap uncertainty
   modelling. It supports observed or bootstrap excess burdens, portfolio,
-  group-level and partial pooling, and optional severity noise in the bootstrap.
-- `allocate_excess_loss()` now uses `preserve_total = TRUE` by default so that
-  partial pooling redistributes the selected excess burden without changing the
+  risk-factor and partial allocation, and optional severity noise in the
+  bootstrap.
+- `allocate_excess_loss()` now uses clearer allocation argument names:
+  `allocation_weight`, `risk_factor`, `allocation_subset`, `allocation`,
+  `n_bootstrap`, `bootstrap_seed` and `preserve_total_excess`.
+- Automatic credibility in `allocate_excess_loss()` now uses the transparent
+  formula `Z = n / (n + credibility_threshold)` with
+  `credibility_basis = "claims"`, `"excess_claims"` or `"allocation_weight"`.
+- `allocate_excess_loss()` now uses `preserve_total_excess = TRUE` by default so that
+  partial allocation redistributes the selected excess burden without changing the
   total allocated excess loss.
-- `add_excess_loading()` adds the allocated excess loading to pricing data and
+- `apply_excess_loading()` adds the allocated excess loading to pricing data and
   returns `base_premium`, `excess_loading` and `loaded_premium`.
-- `add_excess_loading()` now treats premium amounts as the default workflow and
+- `apply_excess_loading()` now treats premium amounts as the default workflow and
   keeps the distinction between absolute `allocated_excess_loss` and per-weight
   `allocated_loading` explicit.
 - `add_smoothing()` now uses `model_variable` and `source_variable` as the

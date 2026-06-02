@@ -1,23 +1,37 @@
-## Resubmission
-This is a resubmission. In this version:
+## Release summary
 
-* `rating_factors()` now always returns correct output when column with exposure in data is not named `exposure`
-* `intercept_only` in `update_glm()` is added to apply the manual changes and refit the intercept, ensuring that the changes have no impact on the other variables.
-* `smoothing` in `smooth_coef()` is added to choose smoothing specification
-* The README has been revised
+This is a major update of insurancerating. The release modernises the public API
+while retaining deprecated compatibility wrappers for older workflows.
+
+Main changes include:
+
+* Added `factor_analysis()` as the primary portfolio analysis function.
+* Added tariff segmentation helpers through `risk_factor_gam()`,
+  `derive_tariff_segments()` and `add_tariff_segments()`.
+* Added a capped-severity excess-loss workflow with
+  `assess_excess_threshold()`, `calculate_excess_loss()`,
+  `allocate_excess_loss()` and `apply_excess_loading()`.
+* Added exploratory severity distribution plots and expanded model validation
+  helpers.
+* Renamed and documented several APIs for consistency, with deprecated wrappers
+  retained where needed.
+* Expanded tests and documentation across the package.
 
 ## Test environments
-* local OS X install, R 4.4.1
-* win-builder (devel and release)
+* local macOS Tahoe 26.5, R 4.5.3
 
 ## R CMD check results
 
-0 errors | 0 warnings | 0 note
+Local check with vignette rebuilding:
 
-There were no ERRORs, WARNINGs or NOTEs
+0 errors | 0 warnings | 1 note
+
+The note is a local environment note:
+
+* the current time could not be verified locally.
+
+CRAN incoming checks, URL checks, examples, tests, vignettes and manual checks
+completed successfully.
 
 ## Downstream dependencies
-I have also run R CMD check on downstream dependencies of insurancerating.
-All packages that I could install passed.
-
-
+There are no downstream dependencies listed for insurancerating on CRAN.

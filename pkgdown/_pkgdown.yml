@@ -42,7 +42,7 @@ reference:
       - calculate_excess_loss
       - allocate_excess_loss
       - autoplot.excess_loss_allocation
-      - add_excess_loading
+      - apply_excess_loading
       - fit_truncated_severity
       - autoplot.truncated_severity
       - rlnormt

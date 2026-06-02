@@ -7,154 +7,292 @@
 allocate_excess_loss(
   data,
   excess_amount,
-  weight,
-  include = NULL,
-  group = NULL,
-  method = c("observed", "bootstrap"),
-  pooling = c("portfolio", "group", "partial"),
+  allocation_weight,
+  risk_factor = NULL,
+  allocation_subset = NULL,
+  allocation = c("portfolio", "risk_factor", "partial"),
   credibility = NULL,
-  n_boot = 1000,
+  credibility_basis = c("claims", "excess_claims", "allocation_weight"),
+  credibility_threshold = 50,
+  credibility_scale = 1,
+  method = c("observed", "bootstrap"),
+  n_bootstrap = 1000,
+  bootstrap_seed = NULL,
   severity_noise = c("none", "lognormal", "normal"),
   severity_noise_sd = 0.25,
-  preserve_total = TRUE
+  preserve_total_excess = TRUE
 )
 }
 \arguments{
-\item{data}{A \code{data.frame}, typically the output of \code{\link[=calculate_excess_loss]{calculate_excess_loss()}}.}
+\item{data}{A data.frame, typically the output of \code{\link[=calculate_excess_loss]{calculate_excess_loss()}}.}
 
-\item{excess_amount}{Character string. Excess amount column.}
+\item{excess_amount}{Character string. Column containing the excess claim
+amount to allocate.}
 
-\item{weight}{Character string. Allocation weight column, usually exposure.}
+\item{allocation_weight}{Character string. Column used as allocation weight,
+typically exposure, premium, insured value or another earned unit.}
 
-\item{include}{Optional character string. Logical column indicating which
-rows participate in the allocation. If \code{NULL}, all rows are included.}
+\item{risk_factor}{Optional character string. Risk-factor column used for
+\code{allocation = "risk_factor"} or \code{allocation = "partial"}.}
 
-\item{group}{Optional character string. Grouping column for group or partial
-pooling.}
+\item{allocation_subset}{Optional character string. Logical column indicating
+which rows participate in the allocation. If \code{NULL}, all rows are included.}
 
-\item{method}{Character. \code{"observed"} or \code{"bootstrap"}.}
+\item{allocation}{Character string. One of \code{"portfolio"}, \code{"risk_factor"} or
+\code{"partial"}.}
 
-\item{pooling}{Character. \code{"portfolio"}, \code{"group"} or \code{"partial"}.}
+\item{credibility}{Optional numeric scalar between 0 and 1. Used directly
+when \code{allocation = "partial"}. If \code{NULL}, credibility is calculated from
+\code{credibility_basis} and \code{credibility_threshold}.}
 
-\item{credibility}{Optional numeric scalar between 0 and 1. Used for
-\code{pooling = "partial"}. If \code{NULL}, credibility is estimated by group.}
+\item{credibility_basis}{Character string. Experience basis used when
+\code{credibility = NULL}: \code{"claims"}, \code{"excess_claims"} or
+\code{"allocation_weight"}.}
 
-\item{n_boot}{Positive whole number. Number of bootstrap samples.}
+\item{credibility_threshold}{Positive numeric scalar. Amount of experience
+required to reach 50 percent credibility.}
 
-\item{severity_noise}{Character. \code{"none"}, \code{"lognormal"} or \code{"normal"}.}
+\item{credibility_scale}{Positive numeric scalar. Multiplies the derived or
+supplied credibility before it is capped between 0 and 1.}
+
+\item{method}{Character string. Either \code{"observed"} or \code{"bootstrap"}.}
+
+\item{n_bootstrap}{Positive whole number. Number of bootstrap samples.}
+
+\item{bootstrap_seed}{Optional integer seed for reproducible bootstrap
+allocation.}
+
+\item{severity_noise}{Character string. One of \code{"none"}, \code{"lognormal"} or
+\code{"normal"}.}
 
 \item{severity_noise_sd}{Non-negative numeric scalar controlling severity
-noise in bootstrap samples.}
+variation in bootstrap samples.}
 
-\item{preserve_total}{Logical. If \code{TRUE}, rescale the final allocation so the
-allocated excess loss over included rows equals the total excess loss being
-allocated.}
+\item{preserve_total_excess}{Logical. If \code{TRUE}, the final allocation is
+rescaled so that the total allocated excess loss equals the total excess
+loss being allocated.}
 }
 \value{
 An object of class \code{"excess_loss_allocation"}.
 }
 \description{
-Allocate a historical excess burden over a portfolio and optionally model
-uncertainty around that burden.
+Large claims can distort risk-factor relativities and create unstable
+premiums. \code{allocate_excess_loss()} redistributes historical excess losses
+across a portfolio in a controlled and transparent way.
 
-\code{allocate_excess_loss()} is the core allocation step in the excess-loss
-workflow. It starts from a deterministic excess amount, usually
-\code{excess_claim_amount} produced by \code{\link[=calculate_excess_loss]{calculate_excess_loss()}}, and converts it
-into two row-level quantities: \code{allocated_excess_loss}, the allocated excess
-burden in absolute monetary terms, and \code{allocated_loading}, the excess loading
-per unit of \code{weight}.
-
-\code{pooling} controls how much excess risk is shared between groups:
-\describe{
-\item{\code{"portfolio"}}{All included rows share one portfolio-wide excess
-loading: total excess divided by total weight.}
-\item{\code{"group"}}{Each group carries only its own excess burden. This is
-responsive to group experience, but can be volatile for sparse large-loss
-data.}
-\item{\code{"partial"}}{Blend the group-specific loading with the portfolio
-loading using credibility. This is useful when some groups have enough
-large-loss experience to be partly credible while smaller groups should
-pool back toward the portfolio.}
-}
-
-When \code{pooling = "partial"} and \code{credibility = NULL}, credibility is estimated
-per group from a weighted combination of group exposure share, number of
-claims, number of excess claims, and the share of loss above the threshold.
-Groups with more stable and repeated excess loss experience receive more
-credibility. Groups with limited or incidental excess loss experience are
-pooled more strongly towards the portfolio-wide loading.
-
-\code{severity_noise} is only available with \code{method = "bootstrap"}. With
-\code{"lognormal"}, sampled excess claims are multiplied by lognormal noise, which
-is usually more natural for large claims because claim amounts remain
-positive and variation is multiplicative. \code{severity_noise_sd = 0.25} is a
-practical starting point; \code{0.10} gives limited variation and \code{0.50} strong
-variation.
+The function is typically used after \code{\link[=calculate_excess_loss]{calculate_excess_loss()}}. The base
+premium can be modelled on capped claim amounts, while the excess part of
+large claims is allocated back to the portfolio as an additional loading.
 }
 \details{
-\code{method = "observed"} allocates the historically observed excess loss.
+\subsection{Allocation methods}{
 
-\code{method = "bootstrap"} provides a pragmatic estimate of excess-loss
-volatility by repeatedly resampling observed excess losses. It is intended as
-a practical pricing approximation rather than a formal extreme value model.
-The bootstrap resamples only the positive excess claim amounts:
-
-\code{excess_amount[excess_amount > 0]}
-
-The full claim distribution is not bootstrapped.
-
-Bootstrap allocation introduces uncertainty in both:
-
+The \code{allocation} argument determines how the excess burden is shared.
 \itemize{
-\item the total amount of excess loss;
-\item the distribution of excess loss across allocation groups.
+\item \code{"portfolio"}: excess losses are pooled across the entire portfolio and
+redistributed using the specified allocation weight. The excess burden is
+shared by all included risks regardless of their risk-factor level.
+
+This provides the most stable excess loading and is often appropriate when
+excess losses are infrequent, highly volatile or considered a portfolio-
+wide risk rather than a risk-factor-specific characteristic.
+\item \code{"risk_factor"}: excess losses are allocated separately for each
+risk-factor level. The excess burden observed within a group is spread
+across all risks in that group and is not shared with other groups.
+
+This produces the strongest link between excess loadings and observed
+group experience, but can lead to volatile results when excess losses are
+rare.
+\item \code{"partial"}: excess losses are allocated using a credibility-weighted
+combination of portfolio and risk-factor experience. Risk-factor levels
+with more credible experience receive excess loadings that more closely
+reflect their own observed excess-loss burden, while less credible groups
+are pooled more strongly towards the portfolio average.
+
+This approach typically provides a good balance between pricing stability
+and risk differentiation and is therefore often the preferred choice in
+practical rating applications.
+}
 }
 
-This means that the bootstrap not only changes the total excess burden that
-needs to be redistributed, but also how that burden is distributed across
-portfolio segments.
+\subsection{Credibility weighting}{
 
-Severity noise can optionally be added to bootstrapped excess claims. This is
-useful when the number of excess claims is small and a regular bootstrap would
-otherwise repeatedly reproduce only the same observed large losses.
+For \code{allocation = "partial"}, excess losses are allocated using a
+credibility-weighted blend of portfolio and risk-factor experience.
 
-When severity noise is used, additional variability is introduced in the size
-of individual excess claims.
+The allocated loading is calculated as:
 
-Lognormal severity noise is usually more natural for excess claims because
-claim amounts are positive and large losses are typically right-skewed.
+\deqn{
+loading_g = Z_g \cdot loading_g^{risk\ factor} +
+            (1 - Z_g) \cdot loading^{portfolio}
+}
 
-For lognormal severity noise, the approximate multiplicative p10/p50/p90
-factors can be inspected with:
+where \code{Z_g} represents the credibility assigned to the risk-factor-level
+experience.
 
-\code{exp(qnorm(c(0.10, 0.50, 0.90)) * severity_noise_sd)}
+If \code{credibility} is supplied, the same credibility is applied to all
+risk-factor levels.
 
-For example, with \code{severity_noise_sd = 0.25}, this gives approximately
-\verb{0.73x}, \verb{0.97x} and \verb{1.38x}. An excess claim of 100,000 would therefore
-typically vary between roughly 73,000 and 138,000.
+If \code{credibility = NULL}, credibility is determined separately for each
+risk-factor level based on the selected \code{credibility_basis}:
 
-With \code{preserve_total = TRUE}, the final allocated excess loss is rescaled so
-that the sum over included rows equals the total excess loss being allocated.
-This keeps partial pooling as a redistribution of the selected excess burden,
-rather than allowing credibility blending to increase or reduce the total.
+\deqn{
+Z_g = \frac{n_g}{n_g + credibility\_threshold}
+}
 
-\code{severity_noise != "none"} can only be used when \code{method = "bootstrap"}.
+where \code{n_g} is determined by \code{credibility_basis}:
+\itemize{
+\item \code{"claims"}: total number of claims in the risk-factor level.
+\item \code{"excess_claims"}: number of claims with positive excess loss.
+\item \code{"allocation_weight"}: total allocation weight in the risk-factor level.
+}
+
+\code{credibility_threshold} represents the amount of experience required to
+reach 50 percent credibility.
+
+Example:
+
+A sector with 20 claims and \code{credibility_threshold = 50} receives:
+
+\deqn{
+Z = \frac{20}{20 + 50} = 0.29
+}
+
+Therefore 29\% of the excess loading is based on the sector's own excess-loss
+experience and 71\% is based on the portfolio-wide excess loading.
+
+For example, with \code{credibility_threshold = 50}, a group with:
+\itemize{
+\item 10 claims receives 17\% credibility;
+\item 50 claims receives 50\% credibility;
+\item 100 claims receives 67\% credibility;
+\item 200 claims receives 80\% credibility.
+}
+
+The final credibility is scaled using \code{credibility_scale} and then capped
+between 0 and 1:
+
+\deqn{
+Z_g = min(1, max(0, Z_g \cdot credibility\_scale))
+}
+
+Higher values of \code{credibility_threshold} or lower values of
+\code{credibility_scale} pool more strongly towards the portfolio loading.
+}
+
+\subsection{Bootstrap allocation}{
+
+With \code{method = "observed"}, the function allocates the historically observed
+excess loss.
+
+With \code{method = "bootstrap"}, the function repeatedly resamples observed
+positive excess claim amounts. This provides a pragmatic estimate of
+excess-loss volatility and the resulting uncertainty in excess loadings.
+
+The approach is intended as a practical pricing approximation rather than a
+formal extreme value model.
+
+The bootstrap affects both the total excess burden and the distribution of
+excess loss across risk-factor levels. Use \code{bootstrap_seed} to make bootstrap
+results reproducible.
+}
+
+\subsection{Severity noise}{
+
+\code{severity_noise} can only be used with \code{method = "bootstrap"}.
+
+If \code{severity_noise = "none"}, bootstrap samples reuse the observed excess
+claim amounts.
+
+If \code{severity_noise = "lognormal"}, sampled excess claims are multiplied by
+lognormal noise. This is usually the most natural option for large claims,
+because claim amounts remain positive and variation is multiplicative.
+
+If \code{severity_noise = "normal"}, additive normal noise is applied. This may
+be useful for experimentation, but is generally less natural for large
+positive claim amounts.
+
+\code{severity_noise_sd} controls the amount of additional severity variation. As
+a rough guide:
+\itemize{
+\item \code{0.10} provides limited variation;
+\item \code{0.25} provides moderate variation;
+\item \code{0.50} provides substantial variation.
+}
+}
+
+\subsection{Preserving the total excess loss}{
+
+If \code{preserve_total_excess = TRUE}, the final allocation is rescaled so that
+the sum of allocated excess loss equals the total excess loss being
+allocated.
+
+This ensures that credibility blending, bootstrap sampling or other
+allocation choices do not unintentionally increase or decrease the total
+excess burden.
+}
+
+\subsection{Typical pricing workflow}{
+
+A common workflow is:
+\enumerate{
+\item Use \code{\link[=calculate_excess_loss]{calculate_excess_loss()}} to separate capped and excess losses.
+\item Model the base premium using capped claim amounts.
+\item Allocate the excess-loss burden using \code{allocate_excess_loss()}.
+\item Add the resulting excess loading back to the technical premium using
+\code{\link[=apply_excess_loading]{apply_excess_loading()}}.
+}
+
+This approach prevents a small number of large claims from distorting
+risk-factor relativities while still ensuring that the excess-loss burden is
+reflected in the final premium.
+}
 }
 \examples{
 claims <- data.frame(
   sector = rep(c("Industry", "Retail"), each = 4),
-  claim_amount = c(1000, 120000, 30000, 8000, 2000, 150000, 40000, 6000),
+  claim_amount = c(
+    1000, 120000, 30000, 8000,
+    2000, 150000, 40000, 6000
+  ),
   earned_exposure = rep(1, 8)
 )
-decomposed <- calculate_excess_loss(claims, "claim_amount", threshold = 100000)
-allocation <- allocate_excess_loss(
+
+decomposed <- calculate_excess_loss(
+  claims,
+  claim_amount = "claim_amount",
+  threshold = 100000
+)
+
+# Pool all excess losses across the portfolio
+portfolio_allocation <- allocate_excess_loss(
   decomposed,
   excess_amount = "excess_claim_amount",
-  weight = "earned_exposure",
-  group = "sector",
-  pooling = "partial"
+  allocation_weight = "earned_exposure",
+  allocation = "portfolio"
 )
-summary(allocation)
+
+# Allocate excess losses separately by sector
+sector_allocation <- allocate_excess_loss(
+  decomposed,
+  excess_amount = "excess_claim_amount",
+  allocation_weight = "earned_exposure",
+  risk_factor = "sector",
+  allocation = "risk_factor"
+)
+
+# Blend sector and portfolio experience using credibility
+partial_allocation <- allocate_excess_loss(
+  decomposed,
+  excess_amount = "excess_claim_amount",
+  allocation_weight = "earned_exposure",
+  risk_factor = "sector",
+  allocation = "partial",
+  credibility_basis = "claims",
+  credibility_threshold = 50
+)
+
+summary(partial_allocation)
 
 }
 \author{

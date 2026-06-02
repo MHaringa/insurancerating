@@ -100,31 +100,81 @@ assess_excess_threshold <- function(data,
 
 #' Decompose claim amounts into capped and excess parts
 #'
-#' @description
-#' Calculate the historical excess amount above a selected threshold.
+#' Large claims can distort risk-factor relativities and make pricing models
+#' unstable. `calculate_excess_loss()` separates each claim into a capped part
+#' and an excess part above a selected threshold.
 #'
-#' `calculate_excess_loss()` is deliberately deterministic. It does not perform
-#' bootstrap simulation, smoothing or allocation. The function simply decomposes
-#' each observed claim into a capped part and an excess part:
-#' `excess_claim_amount = pmax(claim_amount - threshold, 0)`.
+#' The capped claim amount can be used to model the base premium, while the
+#' excess component can be analysed, pooled or allocated separately. This allows
+#' the impact of large individual claims to be controlled without ignoring the
+#' associated cost.
 #'
-#' Use the output as input for [allocate_excess_loss()] when the historical
-#' excess burden needs to be pooled, credibility-weighted or bootstrapped.
+#' The function is deliberately deterministic. It does not perform smoothing,
+#' credibility weighting, allocation or simulation. It simply decomposes each
+#' observed claim into:
 #'
-#' @param data A `data.frame` with claim-level observations.
+#' \deqn{
+#' claim\_amount =
+#' capped\_claim\_amount +
+#' excess\_claim\_amount
+#' }
+#'
+#' where:
+#'
+#' \deqn{
+#' excess\_claim\_amount =
+#' max(claim\_amount - threshold, 0)
+#' }
+#'
+#' and:
+#'
+#' \deqn{
+#' capped\_claim\_amount =
+#' min(claim\_amount, threshold)
+#' }
+#'
+#' The resulting excess component can subsequently be allocated using
+#' [allocate_excess_loss()] and added back to the technical premium using
+#' [apply_excess_loading()].
+#'
+#' @details
+#'
+#' ## Typical pricing workflow
+#'
+#' A common workflow is:
+#'
+#' 1. Select an excess threshold.
+#' 2. Split claims into capped and excess components.
+#' 3. Model frequency and severity using capped claim amounts.
+#' 4. Allocate the excess-loss burden separately.
+#' 5. Add the resulting excess loading back to the technical premium.
+#'
+#' This approach reduces the influence of a small number of large claims on
+#' risk-factor relativities while ensuring that the total cost of excess losses
+#' remains reflected in the final premium.
+#'
+#' @param data A data.frame with claim-level observations.
 #' @param claim_amount Character string. Claim amount column.
-#' @param threshold Positive numeric scalar. Claims above this value are treated
-#'   as excess claims.
+#' @param threshold Positive numeric scalar. Claims above this value contribute
+#'   to the excess component. Claims below the threshold remain fully included
+#'   in the capped claim amount.
 #'
-#' @return A `data.frame` with the original data and the columns
+#' @return A data.frame with the original data and the columns
 #'   `claim_amount`, `capped_claim_amount`, `excess_claim_amount` and
 #'   `is_excess_claim`.
 #'
 #' @author Martin Haringa
 #'
 #' @examples
-#' claims <- data.frame(claim_amount = c(1000, 120000, 30000))
-#' calculate_excess_loss(claims, claim_amount = "claim_amount", threshold = 100000)
+#' claims <- data.frame(
+#'   claim_amount = c(1000, 120000, 30000)
+#' )
+#'
+#' calculate_excess_loss(
+#'   claims,
+#'   claim_amount = "claim_amount",
+#'   threshold = 100000
+#' )
 #'
 #' @export
 calculate_excess_loss <- function(data, claim_amount, threshold) {
@@ -144,110 +194,202 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #' Allocate excess loss to a pricing portfolio
 #'
 #' @description
-#' Allocate a historical excess burden over a portfolio and optionally model
-#' uncertainty around that burden.
+#' Large claims can distort risk-factor relativities and create unstable
+#' premiums. `allocate_excess_loss()` redistributes historical excess losses
+#' across a portfolio in a controlled and transparent way.
 #'
-#' `allocate_excess_loss()` is the core allocation step in the excess-loss
-#' workflow. It starts from a deterministic excess amount, usually
-#' `excess_claim_amount` produced by [calculate_excess_loss()], and converts it
-#' into two row-level quantities: `allocated_excess_loss`, the allocated excess
-#' burden in absolute monetary terms, and `allocated_loading`, the excess loading
-#' per unit of `weight`.
-#'
-#' `pooling` controls how much excess risk is shared between groups:
-#' \describe{
-#'   \item{`"portfolio"`}{All included rows share one portfolio-wide excess
-#'   loading: total excess divided by total weight.}
-#'   \item{`"group"`}{Each group carries only its own excess burden. This is
-#'   responsive to group experience, but can be volatile for sparse large-loss
-#'   data.}
-#'   \item{`"partial"`}{Blend the group-specific loading with the portfolio
-#'   loading using credibility. This is useful when some groups have enough
-#'   large-loss experience to be partly credible while smaller groups should
-#'   pool back toward the portfolio.}
-#' }
-#'
-#' When `pooling = "partial"` and `credibility = NULL`, credibility is estimated
-#' per group from a weighted combination of group exposure share, number of
-#' claims, number of excess claims, and the share of loss above the threshold.
-#' Groups with more stable and repeated excess loss experience receive more
-#' credibility. Groups with limited or incidental excess loss experience are
-#' pooled more strongly towards the portfolio-wide loading.
-#'
-#' `severity_noise` is only available with `method = "bootstrap"`. With
-#' `"lognormal"`, sampled excess claims are multiplied by lognormal noise, which
-#' is usually more natural for large claims because claim amounts remain
-#' positive and variation is multiplicative. `severity_noise_sd = 0.25` is a
-#' practical starting point; `0.10` gives limited variation and `0.50` strong
-#' variation.
+#' The function is typically used after [calculate_excess_loss()]. The base
+#' premium can be modelled on capped claim amounts, while the excess part of
+#' large claims is allocated back to the portfolio as an additional loading.
 #'
 #' @details
-#' `method = "observed"` allocates the historically observed excess loss.
 #'
-#' `method = "bootstrap"` provides a pragmatic estimate of excess-loss
-#' volatility by repeatedly resampling observed excess losses. It is intended as
-#' a practical pricing approximation rather than a formal extreme value model.
-#' The bootstrap resamples only the positive excess claim amounts:
+#' ## Allocation methods
 #'
-#' `excess_amount[excess_amount > 0]`
+#' The `allocation` argument determines how the excess burden is shared.
 #'
-#' The full claim distribution is not bootstrapped.
+#' - `"portfolio"`: excess losses are pooled across the entire portfolio and
+#'   redistributed using the specified allocation weight. The excess burden is
+#'   shared by all included risks regardless of their risk-factor level.
 #'
-#' Bootstrap allocation introduces uncertainty in both:
+#'   This provides the most stable excess loading and is often appropriate when
+#'   excess losses are infrequent, highly volatile or considered a portfolio-
+#'   wide risk rather than a risk-factor-specific characteristic.
 #'
-#' \itemize{
-#'   \item the total amount of excess loss;
-#'   \item the distribution of excess loss across allocation groups.
+#' - `"risk_factor"`: excess losses are allocated separately for each
+#'   risk-factor level. The excess burden observed within a group is spread
+#'   across all risks in that group and is not shared with other groups.
+#'
+#'   This produces the strongest link between excess loadings and observed
+#'   group experience, but can lead to volatile results when excess losses are
+#'   rare.
+#'
+#' - `"partial"`: excess losses are allocated using a credibility-weighted
+#'   combination of portfolio and risk-factor experience. Risk-factor levels
+#'   with more credible experience receive excess loadings that more closely
+#'   reflect their own observed excess-loss burden, while less credible groups
+#'   are pooled more strongly towards the portfolio average.
+#'
+#'   This approach typically provides a good balance between pricing stability
+#'   and risk differentiation and is therefore often the preferred choice in
+#'   practical rating applications.
+#'
+#' ## Credibility weighting
+#'
+#' For `allocation = "partial"`, excess losses are allocated using a
+#' credibility-weighted blend of portfolio and risk-factor experience.
+#'
+#' The allocated loading is calculated as:
+#'
+#' \deqn{
+#' loading_g = Z_g \cdot loading_g^{risk\ factor} +
+#'             (1 - Z_g) \cdot loading^{portfolio}
 #' }
 #'
-#' This means that the bootstrap not only changes the total excess burden that
-#' needs to be redistributed, but also how that burden is distributed across
-#' portfolio segments.
+#' where `Z_g` represents the credibility assigned to the risk-factor-level
+#' experience.
 #'
-#' Severity noise can optionally be added to bootstrapped excess claims. This is
-#' useful when the number of excess claims is small and a regular bootstrap would
-#' otherwise repeatedly reproduce only the same observed large losses.
+#' If `credibility` is supplied, the same credibility is applied to all
+#' risk-factor levels.
 #'
-#' When severity noise is used, additional variability is introduced in the size
-#' of individual excess claims.
+#' If `credibility = NULL`, credibility is determined separately for each
+#' risk-factor level based on the selected `credibility_basis`:
 #'
-#' Lognormal severity noise is usually more natural for excess claims because
-#' claim amounts are positive and large losses are typically right-skewed.
+#' \deqn{
+#' Z_g = \frac{n_g}{n_g + credibility\_threshold}
+#' }
 #'
-#' For lognormal severity noise, the approximate multiplicative p10/p50/p90
-#' factors can be inspected with:
+#' where `n_g` is determined by `credibility_basis`:
 #'
-#' `exp(qnorm(c(0.10, 0.50, 0.90)) * severity_noise_sd)`
+#' - `"claims"`: total number of claims in the risk-factor level.
+#' - `"excess_claims"`: number of claims with positive excess loss.
+#' - `"allocation_weight"`: total allocation weight in the risk-factor level.
 #'
-#' For example, with `severity_noise_sd = 0.25`, this gives approximately
-#' `0.73x`, `0.97x` and `1.38x`. An excess claim of 100,000 would therefore
-#' typically vary between roughly 73,000 and 138,000.
+#' `credibility_threshold` represents the amount of experience required to
+#' reach 50 percent credibility.
 #'
-#' With `preserve_total = TRUE`, the final allocated excess loss is rescaled so
-#' that the sum over included rows equals the total excess loss being allocated.
-#' This keeps partial pooling as a redistribution of the selected excess burden,
-#' rather than allowing credibility blending to increase or reduce the total.
+#' Example:
 #'
-#' `severity_noise != "none"` can only be used when `method = "bootstrap"`.
+#' A sector with 20 claims and `credibility_threshold = 50` receives:
 #'
-#' @param data A `data.frame`, typically the output of [calculate_excess_loss()].
-#' @param excess_amount Character string. Excess amount column.
-#' @param weight Character string. Allocation weight column, usually exposure.
-#' @param include Optional character string. Logical column indicating which
-#'   rows participate in the allocation. If `NULL`, all rows are included.
-#' @param group Optional character string. Grouping column for group or partial
-#'   pooling.
-#' @param method Character. `"observed"` or `"bootstrap"`.
-#' @param pooling Character. `"portfolio"`, `"group"` or `"partial"`.
-#' @param credibility Optional numeric scalar between 0 and 1. Used for
-#'   `pooling = "partial"`. If `NULL`, credibility is estimated by group.
-#' @param n_boot Positive whole number. Number of bootstrap samples.
-#' @param severity_noise Character. `"none"`, `"lognormal"` or `"normal"`.
+#' \deqn{
+#' Z = \frac{20}{20 + 50} = 0.29
+#' }
+#'
+#' Therefore 29% of the excess loading is based on the sector's own excess-loss
+#' experience and 71% is based on the portfolio-wide excess loading.
+#'
+#' For example, with `credibility_threshold = 50`, a group with:
+#'
+#' - 10 claims receives 17% credibility;
+#' - 50 claims receives 50% credibility;
+#' - 100 claims receives 67% credibility;
+#' - 200 claims receives 80% credibility.
+#'
+#' The final credibility is scaled using `credibility_scale` and then capped
+#' between 0 and 1:
+#'
+#' \deqn{
+#' Z_g = min(1, max(0, Z_g \cdot credibility\_scale))
+#' }
+#'
+#' Higher values of `credibility_threshold` or lower values of
+#' `credibility_scale` pool more strongly towards the portfolio loading.
+#'
+#' ## Bootstrap allocation
+#'
+#' With `method = "observed"`, the function allocates the historically observed
+#' excess loss.
+#'
+#' With `method = "bootstrap"`, the function repeatedly resamples observed
+#' positive excess claim amounts. This provides a pragmatic estimate of
+#' excess-loss volatility and the resulting uncertainty in excess loadings.
+#'
+#' The approach is intended as a practical pricing approximation rather than a
+#' formal extreme value model.
+#'
+#' The bootstrap affects both the total excess burden and the distribution of
+#' excess loss across risk-factor levels. Use `bootstrap_seed` to make bootstrap
+#' results reproducible.
+#'
+#' ## Severity noise
+#'
+#' `severity_noise` can only be used with `method = "bootstrap"`.
+#'
+#' If `severity_noise = "none"`, bootstrap samples reuse the observed excess
+#' claim amounts.
+#'
+#' If `severity_noise = "lognormal"`, sampled excess claims are multiplied by
+#' lognormal noise. This is usually the most natural option for large claims,
+#' because claim amounts remain positive and variation is multiplicative.
+#'
+#' If `severity_noise = "normal"`, additive normal noise is applied. This may
+#' be useful for experimentation, but is generally less natural for large
+#' positive claim amounts.
+#'
+#' `severity_noise_sd` controls the amount of additional severity variation. As
+#' a rough guide:
+#'
+#' - `0.10` provides limited variation;
+#' - `0.25` provides moderate variation;
+#' - `0.50` provides substantial variation.
+#'
+#' ## Preserving the total excess loss
+#'
+#' If `preserve_total_excess = TRUE`, the final allocation is rescaled so that
+#' the sum of allocated excess loss equals the total excess loss being
+#' allocated.
+#'
+#' This ensures that credibility blending, bootstrap sampling or other
+#' allocation choices do not unintentionally increase or decrease the total
+#' excess burden.
+#'
+#' ## Typical pricing workflow
+#'
+#' A common workflow is:
+#'
+#' 1. Use [calculate_excess_loss()] to separate capped and excess losses.
+#' 2. Model the base premium using capped claim amounts.
+#' 3. Allocate the excess-loss burden using `allocate_excess_loss()`.
+#' 4. Add the resulting excess loading back to the technical premium using
+#'    [apply_excess_loading()].
+#'
+#' This approach prevents a small number of large claims from distorting
+#' risk-factor relativities while still ensuring that the excess-loss burden is
+#' reflected in the final premium.
+#'
+#' @param data A data.frame, typically the output of [calculate_excess_loss()].
+#' @param excess_amount Character string. Column containing the excess claim
+#'   amount to allocate.
+#' @param allocation_weight Character string. Column used as allocation weight,
+#'   typically exposure, premium, insured value or another earned unit.
+#' @param risk_factor Optional character string. Risk-factor column used for
+#'   `allocation = "risk_factor"` or `allocation = "partial"`.
+#' @param allocation_subset Optional character string. Logical column indicating
+#'   which rows participate in the allocation. If `NULL`, all rows are included.
+#' @param allocation Character string. One of `"portfolio"`, `"risk_factor"` or
+#'   `"partial"`.
+#' @param credibility Optional numeric scalar between 0 and 1. Used directly
+#'   when `allocation = "partial"`. If `NULL`, credibility is calculated from
+#'   `credibility_basis` and `credibility_threshold`.
+#' @param credibility_basis Character string. Experience basis used when
+#'   `credibility = NULL`: `"claims"`, `"excess_claims"` or
+#'   `"allocation_weight"`.
+#' @param credibility_threshold Positive numeric scalar. Amount of experience
+#'   required to reach 50 percent credibility.
+#' @param credibility_scale Positive numeric scalar. Multiplies the derived or
+#'   supplied credibility before it is capped between 0 and 1.
+#' @param method Character string. Either `"observed"` or `"bootstrap"`.
+#' @param n_bootstrap Positive whole number. Number of bootstrap samples.
+#' @param bootstrap_seed Optional integer seed for reproducible bootstrap
+#'   allocation.
+#' @param severity_noise Character string. One of `"none"`, `"lognormal"` or
+#'   `"normal"`.
 #' @param severity_noise_sd Non-negative numeric scalar controlling severity
-#'   noise in bootstrap samples.
-#' @param preserve_total Logical. If `TRUE`, rescale the final allocation so the
-#'   allocated excess loss over included rows equals the total excess loss being
-#'   allocated.
+#'   variation in bootstrap samples.
+#' @param preserve_total_excess Logical. If `TRUE`, the final allocation is
+#'   rescaled so that the total allocated excess loss equals the total excess
+#'   loss being allocated.
 #'
 #' @return An object of class `"excess_loss_allocation"`.
 #'
@@ -256,41 +398,84 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #' @examples
 #' claims <- data.frame(
 #'   sector = rep(c("Industry", "Retail"), each = 4),
-#'   claim_amount = c(1000, 120000, 30000, 8000, 2000, 150000, 40000, 6000),
+#'   claim_amount = c(
+#'     1000, 120000, 30000, 8000,
+#'     2000, 150000, 40000, 6000
+#'   ),
 #'   earned_exposure = rep(1, 8)
 #' )
-#' decomposed <- calculate_excess_loss(claims, "claim_amount", threshold = 100000)
-#' allocation <- allocate_excess_loss(
+#'
+#' decomposed <- calculate_excess_loss(
+#'   claims,
+#'   claim_amount = "claim_amount",
+#'   threshold = 100000
+#' )
+#'
+#' # Pool all excess losses across the portfolio
+#' portfolio_allocation <- allocate_excess_loss(
 #'   decomposed,
 #'   excess_amount = "excess_claim_amount",
-#'   weight = "earned_exposure",
-#'   group = "sector",
-#'   pooling = "partial"
+#'   allocation_weight = "earned_exposure",
+#'   allocation = "portfolio"
 #' )
-#' summary(allocation)
+#'
+#' # Allocate excess losses separately by sector
+#' sector_allocation <- allocate_excess_loss(
+#'   decomposed,
+#'   excess_amount = "excess_claim_amount",
+#'   allocation_weight = "earned_exposure",
+#'   risk_factor = "sector",
+#'   allocation = "risk_factor"
+#' )
+#'
+#' # Blend sector and portfolio experience using credibility
+#' partial_allocation <- allocate_excess_loss(
+#'   decomposed,
+#'   excess_amount = "excess_claim_amount",
+#'   allocation_weight = "earned_exposure",
+#'   risk_factor = "sector",
+#'   allocation = "partial",
+#'   credibility_basis = "claims",
+#'   credibility_threshold = 50
+#' )
+#'
+#' summary(partial_allocation)
 #'
 #' @export
 allocate_excess_loss <- function(data,
                                  excess_amount,
-                                 weight,
-                                 include = NULL,
-                                 group = NULL,
-                                 method = c("observed", "bootstrap"),
-                                 pooling = c("portfolio", "group", "partial"),
+                                 allocation_weight,
+                                 risk_factor = NULL,
+                                 allocation_subset = NULL,
+                                 allocation = c("portfolio", "risk_factor", "partial"),
                                  credibility = NULL,
-                                 n_boot = 1000,
+                                 credibility_basis = c("claims", "excess_claims", "allocation_weight"),
+                                 credibility_threshold = 50,
+                                 credibility_scale = 1,
+                                 method = c("observed", "bootstrap"),
+                                 n_bootstrap = 1000,
+                                 bootstrap_seed = NULL,
                                  severity_noise = c("none", "lognormal", "normal"),
                                  severity_noise_sd = 0.25,
-                                 preserve_total = TRUE) {
+                                 preserve_total_excess = TRUE) {
   method <- match.arg(method)
-  pooling <- match.arg(pooling)
+  allocation <- match.arg(allocation)
+  credibility_basis <- match.arg(credibility_basis)
   severity_noise <- match.arg(severity_noise)
   validate_allocate_excess_loss(
-    data, excess_amount, weight, include, group, method, pooling, credibility,
-    n_boot, severity_noise, severity_noise_sd, preserve_total
+    data, excess_amount, allocation_weight, allocation_subset, risk_factor,
+    method, allocation, credibility, credibility_basis, credibility_threshold,
+    credibility_scale, n_bootstrap, bootstrap_seed, severity_noise,
+    severity_noise_sd, preserve_total_excess
   )
 
-  allocation_data <- prepare_allocation_data(data, excess_amount, weight, include, group)
+  allocation_data <- prepare_allocation_data(
+    data = data,
+    excess_amount = excess_amount,
+    allocation_weight = allocation_weight,
+    allocation_subset = allocation_subset,
+    risk_factor = risk_factor
+  )
   groups <- summarize_allocation_groups(allocation_data)
   portfolio_loading <- safe_ratio_excess(
     sum(allocation_data$excess_amount[allocation_data$included]),
@@ -299,9 +484,21 @@ allocate_excess_loss <- function(data,
 
   boot <- NULL
   if (identical(method, "bootstrap")) {
+    if (!is.null(bootstrap_seed)) {
+      withr_seed <- exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+      old_seed <- if (withr_seed) get(".Random.seed", envir = .GlobalEnv) else NULL
+      on.exit({
+        if (withr_seed) {
+          assign(".Random.seed", old_seed, envir = .GlobalEnv)
+        } else if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+          rm(".Random.seed", envir = .GlobalEnv)
+        }
+      }, add = TRUE)
+      set.seed(bootstrap_seed)
+    }
     boot <- bootstrap_excess_allocation(
       allocation_data = allocation_data,
-      n_boot = n_boot,
+      n_bootstrap = n_bootstrap,
       severity_noise = severity_noise,
       severity_noise_sd = severity_noise_sd
     )
@@ -311,9 +508,15 @@ allocate_excess_loss <- function(data,
     portfolio_loading <- boot$portfolio_loading
   }
 
-  scores <- credibility_scores(groups)
-  groups <- cbind(groups, scores)
-  groups <- derive_final_loading(groups, pooling, portfolio_loading, credibility)
+  groups <- derive_final_loading(
+    groups = groups,
+    allocation = allocation,
+    portfolio_loading = portfolio_loading,
+    credibility = credibility,
+    credibility_basis = credibility_basis,
+    credibility_threshold = credibility_threshold,
+    credibility_scale = credibility_scale
+  )
   allocation_data <- merge(
     allocation_data,
     groups[, c("group", "group_loading", "portfolio_loading", "credibility",
@@ -327,7 +530,7 @@ allocate_excess_loss <- function(data,
     allocation_data$weight
   target_excess_loss <- portfolio_loading *
     sum(allocation_data$weight[allocation_data$included])
-  if (isTRUE(preserve_total)) {
+  if (isTRUE(preserve_total_excess)) {
     allocation_data <- preserve_allocated_total(
       allocation_data = allocation_data,
       target_excess_loss = target_excess_loss
@@ -340,77 +543,165 @@ allocate_excess_loss <- function(data,
       data = allocation_data,
       summary = groups,
       method = method,
-      pooling = pooling,
-      preserve_total = preserve_total,
+      allocation = allocation,
+      credibility_basis = credibility_basis,
+      credibility_threshold = credibility_threshold,
+      credibility_scale = credibility_scale,
+      preserve_total_excess = preserve_total_excess,
       bootstrap = boot
     ),
     class = "excess_loss_allocation"
   )
 }
 
-#' Add excess loading to a pricing portfolio
+#' Apply excess loading to a pricing portfolio
 #'
-#' @description
-#' Add an allocated excess loading to a portfolio data set.
+#' Apply an allocated excess-loss loading to a portfolio data set.
 #'
-#' `add_excess_loading()` is the final workflow step. It does not estimate or
-#' allocate excess loss. It takes an object produced by [allocate_excess_loss()]
-#' and adds row-level loading columns to `data`.
+#' `apply_excess_loading()` is the final step in the excess-loss pricing workflow.
+#' It does not cap claims, estimate excess losses or allocate the excess burden.
+#' Instead, it takes the output of [allocate_excess_loss()] and adds the
+#' allocated excess component back to the base premium or base rate.
 #'
-#' The default workflow is premium based:
-#' `loaded_premium = base_premium + allocated_excess_loss`.
-#' `allocated_excess_loss` represents the allocated excess burden in absolute
-#' monetary terms. `allocated_loading` represents the excess loading per unit of
+#' The function is typically used after the base premium has been modelled on
+#' capped claim amounts. The excess loading then ensures that the cost of claims
+#' above the selected threshold is still reflected in the final technical
+#' premium.
+#'
+#' @details
+#'
+#' ## Premium output
+#'
+#' With `output = "premium"`, the function adds the allocated excess loss in
+#' monetary terms to the base premium:
+#'
+#' \deqn{
+#' loaded\_premium =
+#' base\_premium + allocated\_excess\_loss
+#' }
+#'
+#' `allocated_excess_loss` is the row-level monetary amount of excess loss
+#' allocated to each risk.
+#'
+#' ## Rate output
+#'
+#' With `output = "rate"`, the function adds the allocated excess loading per
+#' unit of weight to the base rate:
+#'
+#' \deqn{
+#' loaded\_rate =
+#' base\_rate + allocated\_loading
+#' }
+#'
+#' Use this option when the base value represents a rate per exposure, premium
+#' unit, insured value or other allocation weight.
+#'
+#' If the input column supplied through `base_premium` contains premium amounts
+#' rather than rates, the function first converts the base premium to a rate:
+#'
+#' \deqn{
+#' base\_rate =
+#' \frac{base\_premium}{weight}
+#' }
+#'
+#' ## Interpretation of allocation columns
+#'
+#' `allocated_excess_loss` represents the monetary excess-loss burden allocated
+#' to a row.
+#'
+#' `allocated_loading` represents the excess loading per unit of allocation
 #' weight.
 #'
-#' Use `output = "rate"` when `base_premium` should be interpreted as a premium
-#' amount that first needs to be converted to a rate with
-#' `base_rate = base_premium / weight`.
+#' In other words:
 #'
-#' @param data A `data.frame`.
+#' \deqn{
+#' allocated\_excess\_loss =
+#' allocated\_loading \cdot weight
+#' }
+#'
+#' This distinction is important when moving between premium amounts and rates.
+#'
+#' ## Typical pricing workflow
+#'
+#' A common workflow is:
+#'
+#' 1. Use [calculate_excess_loss()] to separate capped and excess losses.
+#' 2. Model the base premium using capped claim amounts.
+#' 3. Allocate the excess-loss burden using [allocate_excess_loss()].
+#' 4. Use `apply_excess_loading()` to add the allocated excess component back to
+#'    the base premium or base rate.
+#'
+#' This produces a final technical premium that reflects both the modelled
+#' capped loss cost and the separately allocated excess-loss burden.
+#'
+#' @param data A data.frame containing the base premium or base rate.
 #' @param allocation An object returned by [allocate_excess_loss()].
-#' @param base_premium Character string. Base premium amount before excess
-#'   loading.
+#' @param base_premium Character string. Column containing the base premium
+#'   amount or base rate before the excess loading is added.
 #' @param allocated_excess_loss Optional character string. Column in
-#'   `allocation$data` with the allocated excess burden in absolute monetary
+#'   `allocation$data` containing the allocated excess-loss amount in monetary
 #'   terms. If `NULL`, `allocated_excess_loss` is used.
 #' @param allocated_loading Optional character string. Column in
-#'   `allocation$data` with the excess loading per unit of `weight`. If `NULL`,
-#'   `allocated_loading` is used.
+#'   `allocation$data` containing the allocated excess loading per unit of
+#'   allocation weight. If `NULL`, `allocated_loading` is used.
 #' @param weight Optional character string. Weight column used to convert between
 #'   premium amounts and rates when `output = "rate"`.
-#' @param output Character. Use `"premium"` to return premium amounts or
-#'   `"rate"` to return rates per unit of `weight`.
+#' @param output Character string. Use `"premium"` to return premium amounts or
+#'   `"rate"` to return rates per unit of weight.
 #'
-#' @return A `data.frame`. With `output = "premium"`, the result contains
+#' @return A data.frame. With `output = "premium"`, the result contains
 #'   `base_premium`, `allocated_excess_loss`, `allocated_loading`,
-#'   `excess_loading` and `loaded_premium`. With `output = "rate"`, it contains
-#'   `base_rate`, `allocated_loading` and `loaded_rate`.
+#'   `excess_loading` and `loaded_premium`. With `output = "rate"`, the result
+#'   contains `base_rate`, `allocated_loading` and `loaded_rate`.
 #'
 #' @author Martin Haringa
 #'
 #' @examples
 #' claims <- data.frame(
 #'   sector = rep(c("Industry", "Retail"), each = 4),
-#'   claim_amount = c(1000, 120000, 30000, 8000, 2000, 150000, 40000, 6000),
+#'   claim_amount = c(
+#'     1000, 120000, 30000, 8000,
+#'     2000, 150000, 40000, 6000
+#'   ),
 #'   earned_exposure = rep(1, 8)
 #' )
-#' decomposed <- calculate_excess_loss(claims, "claim_amount", threshold = 100000)
+#'
+#' decomposed <- calculate_excess_loss(
+#'   claims,
+#'   claim_amount = "claim_amount",
+#'   threshold = 100000
+#' )
+#'
+#' decomposed$base_premium <- 500
+#'
 #' allocation <- allocate_excess_loss(
 #'   decomposed,
 #'   excess_amount = "excess_claim_amount",
-#'   weight = "earned_exposure"
+#'   allocation_weight = "earned_exposure"
 #' )
-#' add_excess_loading(decomposed, allocation)
+#'
+#' apply_excess_loading(
+#'   decomposed,
+#'   allocation,
+#'   base_premium = "base_premium"
+#' )
+#'
+#' apply_excess_loading(
+#'   decomposed,
+#'   allocation,
+#'   base_premium = "base_premium",
+#'   weight = "earned_exposure",
+#'   output = "rate"
+#' )
 #'
 #' @export
-add_excess_loading <- function(data,
-                               allocation,
-                               base_premium = "base_premium",
-                               allocated_excess_loss = NULL,
-                               allocated_loading = NULL,
-                               weight = NULL,
-                               output = c("premium", "rate")) {
+apply_excess_loading <- function(data,
+                                 allocation,
+                                 base_premium = "base_premium",
+                                 allocated_excess_loss = NULL,
+                                 allocated_loading = NULL,
+                                 weight = NULL,
+                                 output = c("premium", "rate")) {
   output <- match.arg(output)
   if (!inherits(data, "data.frame")) {
     stop("`data` must be a data.frame.", call. = FALSE)
@@ -544,8 +835,8 @@ summary.excess_loss_allocation <- function(object,
   preferred <- c(
     "group", "weight", "n_claims", "n_excess_claims",
     "historical_excess_loss", "excess_loss_ratio",
-    "weight_score", "claim_count_score", "excess_claim_score",
-    "loss_score", "ratio_score", "credibility",
+    "credibility_basis", "credibility_experience", "credibility_threshold",
+    "credibility",
     "group_loading", "portfolio_loading", "allocated_loading", "allocated_excess_loss",
     "empirical_loss", "empirical_excess_loss"
   )
@@ -572,7 +863,7 @@ print.excess_loss_allocation <- function(x, ...) {
   .check_dots_empty(...)
   cat("Excess loss allocation\n")
   cat("Method: ", x$method, "\n", sep = "")
-  cat("Pooling: ", x$pooling, "\n", sep = "")
+  cat("Allocation: ", x$allocation, "\n", sep = "")
   cat("Groups: ", nrow(x$summary), "\n", sep = "")
   cat("Allocated excess loss: ",
       format(round(sum(x$data$allocated_excess_loss)), big.mark = ","),
@@ -718,32 +1009,44 @@ validate_calculate_excess_loss <- function(data, claim_amount, threshold) {
   }
 }
 
-validate_allocate_excess_loss <- function(data, excess_amount, weight, include,
-                                          group, method, pooling, credibility,
-                                          n_boot, severity_noise,
-                                          severity_noise_sd, preserve_total) {
+validate_allocate_excess_loss <- function(data, excess_amount,
+                                          allocation_weight,
+                                          allocation_subset, risk_factor,
+                                          method, allocation, credibility,
+                                          credibility_basis,
+                                          credibility_threshold,
+                                          credibility_scale, n_bootstrap,
+                                          bootstrap_seed, severity_noise,
+                                          severity_noise_sd,
+                                          preserve_total_excess) {
   validate_data_frame(data)
   validate_character_column(data, excess_amount, "excess_amount")
-  validate_character_column(data, weight, "weight")
+  validate_character_column(data, allocation_weight, "allocation_weight")
   if (!is.numeric(data[[excess_amount]]) || any(is.na(data[[excess_amount]])) ||
       any(data[[excess_amount]] < 0)) {
     stop("`excess_amount` must refer to a numeric column with non-negative values.",
          call. = FALSE)
   }
-  if (!is.numeric(data[[weight]]) || any(is.na(data[[weight]])) ||
-      any(data[[weight]] < 0)) {
-    stop("`weight` must refer to a numeric column with non-negative values.",
+  if (!is.numeric(data[[allocation_weight]]) ||
+      any(is.na(data[[allocation_weight]])) ||
+      any(data[[allocation_weight]] < 0)) {
+    stop("`allocation_weight` must refer to a numeric column with non-negative values.",
          call. = FALSE)
   }
-  if (!is.null(include)) {
-    validate_character_column(data, include, "include")
-    if (!is.logical(data[[include]]) || any(is.na(data[[include]]))) {
-      stop("`include` must refer to a logical column without missing values.",
+  if (!is.null(allocation_subset)) {
+    validate_character_column(data, allocation_subset, "allocation_subset")
+    if (!is.logical(data[[allocation_subset]]) ||
+        any(is.na(data[[allocation_subset]]))) {
+      stop("`allocation_subset` must refer to a logical column without missing values.",
            call. = FALSE)
     }
   }
-  if (!is.null(group)) {
-    validate_character_column(data, group, "group")
+  if (!is.null(risk_factor)) {
+    validate_character_column(data, risk_factor, "risk_factor")
+  }
+  if (!identical(allocation, "portfolio") && is.null(risk_factor)) {
+    stop("`risk_factor` must be supplied when `allocation` is not 'portfolio'.",
+         call. = FALSE)
   }
   if (!identical(severity_noise, "none") && !identical(method, "bootstrap")) {
     stop("`severity_noise` is only allowed when `method = 'bootstrap'`.",
@@ -755,34 +1058,59 @@ validate_allocate_excess_loss <- function(data, excess_amount, weight, include,
     stop("`credibility` must be NULL or a number between 0 and 1.",
          call. = FALSE)
   }
-  if (!is.numeric(n_boot) || length(n_boot) != 1L || is.na(n_boot) ||
-      n_boot < 1 || n_boot != floor(n_boot)) {
-    stop("`n_boot` must be a positive whole number.", call. = FALSE)
+  if (!is.numeric(credibility_threshold) ||
+      length(credibility_threshold) != 1L ||
+      !is.finite(credibility_threshold) || credibility_threshold <= 0) {
+    stop("`credibility_threshold` must be a single positive number.",
+         call. = FALSE)
+  }
+  if (!is.numeric(credibility_scale) || length(credibility_scale) != 1L ||
+      !is.finite(credibility_scale) || credibility_scale < 0) {
+    stop("`credibility_scale` must be a single non-negative number.",
+         call. = FALSE)
+  }
+  if (!is.numeric(n_bootstrap) || length(n_bootstrap) != 1L ||
+      is.na(n_bootstrap) || n_bootstrap < 1 ||
+      n_bootstrap != floor(n_bootstrap)) {
+    stop("`n_bootstrap` must be a positive whole number.", call. = FALSE)
+  }
+  if (!is.null(bootstrap_seed) &&
+      (!is.numeric(bootstrap_seed) || length(bootstrap_seed) != 1L ||
+       is.na(bootstrap_seed) || bootstrap_seed != floor(bootstrap_seed))) {
+    stop("`bootstrap_seed` must be NULL or a single whole number.",
+         call. = FALSE)
   }
   if (!is.numeric(severity_noise_sd) || length(severity_noise_sd) != 1L ||
       !is.finite(severity_noise_sd) || severity_noise_sd < 0) {
     stop("`severity_noise_sd` must be a single non-negative number.",
          call. = FALSE)
   }
-  if (!is.logical(preserve_total) || length(preserve_total) != 1L ||
-      is.na(preserve_total)) {
-    stop("`preserve_total` must be TRUE or FALSE.", call. = FALSE)
+  if (!is.logical(preserve_total_excess) ||
+      length(preserve_total_excess) != 1L ||
+      is.na(preserve_total_excess)) {
+    stop("`preserve_total_excess` must be TRUE or FALSE.", call. = FALSE)
   }
 }
 
-prepare_allocation_data <- function(data, excess_amount, weight, include, group) {
-  included <- if (is.null(include)) rep(TRUE, nrow(data)) else data[[include]]
+prepare_allocation_data <- function(data, excess_amount, allocation_weight,
+                                    allocation_subset, risk_factor) {
+  included <- if (is.null(allocation_subset)) {
+    rep(TRUE, nrow(data))
+  } else {
+    data[[allocation_subset]]
+  }
   out <- data.frame(
     row_id = seq_len(nrow(data)),
     excess_amount = data[[excess_amount]],
     claim_amount = if ("claim_amount" %in% names(data)) data[["claim_amount"]] else data[[excess_amount]],
-    weight = data[[weight]],
+    weight = data[[allocation_weight]],
     included = included,
-    group = if (is.null(group)) "portfolio" else as.character(data[[group]]),
+    group = if (is.null(risk_factor)) "portfolio" else as.character(data[[risk_factor]]),
     stringsAsFactors = FALSE
   )
   if (any(out$included & out$weight <= 0)) {
-    stop("`weight` must be positive for included rows.", call. = FALSE)
+    stop("`allocation_weight` must be positive for included rows.",
+         call. = FALSE)
   }
   out
 }
@@ -811,54 +1139,51 @@ summarize_allocation_groups <- function(allocation_data) {
   do.call(rbind, out)
 }
 
-derive_final_loading <- function(groups, pooling, portfolio_loading, credibility) {
+derive_final_loading <- function(groups, allocation, portfolio_loading,
+                                 credibility, credibility_basis,
+                                 credibility_threshold, credibility_scale) {
   groups$portfolio_loading <- portfolio_loading
-  if (identical(pooling, "portfolio")) {
+  groups$credibility_basis <- credibility_basis
+  groups$credibility_experience <- credibility_experience(groups, credibility_basis)
+  groups$credibility_threshold <- credibility_threshold
+  if (identical(allocation, "portfolio")) {
     groups$credibility <- 0
     groups$allocated_loading <- portfolio_loading
     return(groups)
   }
-  if (identical(pooling, "group")) {
+  if (identical(allocation, "risk_factor")) {
     groups$credibility <- 1
     groups$allocated_loading <- groups$group_loading
     return(groups)
   }
-  groups$credibility <- if (is.null(credibility)) {
-    automatic_excess_credibility(groups)
+  base_credibility <- if (is.null(credibility)) {
+    automatic_excess_credibility(groups, credibility_basis, credibility_threshold)
   } else {
     credibility
   }
+  groups$credibility <- pmin(1, pmax(0, base_credibility * credibility_scale))
   groups$allocated_loading <- groups$credibility * groups$group_loading +
     (1 - groups$credibility) * portfolio_loading
   groups
 }
 
-automatic_excess_credibility <- function(groups) {
-  scores <- credibility_scores(groups)
-  pmin(pmax(rowMeans(scores, na.rm = TRUE), 0), 1)
+automatic_excess_credibility <- function(groups, credibility_basis,
+                                         credibility_threshold) {
+  n <- credibility_experience(groups, credibility_basis)
+  safe_ratio_excess(n, n + credibility_threshold)
 }
 
-credibility_scores <- function(groups) {
-  data.frame(
-    weight_score = safe_score(groups$group_weight),
-    claim_count_score = safe_score(groups$n_claims),
-    excess_claim_score = safe_score(groups$n_excess_claims),
-    loss_score = safe_score(groups$historical_excess_loss),
-    ratio_score = safe_score(groups$excess_loss_ratio),
-    stringsAsFactors = FALSE
-  )
-}
-
-safe_score <- function(x) {
-  x[is.na(x)] <- 0
-  max_x <- max(x, na.rm = TRUE)
-  if (!is.finite(max_x) || max_x <= 0) {
-    return(rep(0, length(x)))
+credibility_experience <- function(groups, credibility_basis) {
+  if (identical(credibility_basis, "claims")) {
+    return(groups$n_claims)
   }
-  pmin(pmax(x / max_x, 0), 1)
+  if (identical(credibility_basis, "excess_claims")) {
+    return(groups$n_excess_claims)
+  }
+  groups$group_weight
 }
 
-bootstrap_excess_allocation <- function(allocation_data, n_boot,
+bootstrap_excess_allocation <- function(allocation_data, n_bootstrap,
                                         severity_noise, severity_noise_sd) {
   included <- allocation_data[allocation_data$included, , drop = FALSE]
   tail <- included[included$excess_amount > 0, , drop = FALSE]
@@ -868,7 +1193,7 @@ bootstrap_excess_allocation <- function(allocation_data, n_boot,
   }
   group_weights <- rowsum(included$weight, included$group, reorder = FALSE)
   total_weight <- sum(included$weight)
-  boot_summaries <- replicate(n_boot, {
+  boot_summaries <- replicate(n_bootstrap, {
     sampled <- tail[sample(seq_len(nrow(tail)), nrow(tail), replace = TRUE), ,
                     drop = FALSE]
     sampled$excess_amount <- apply_severity_noise(

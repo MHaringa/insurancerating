@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.5.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,11 +31,11 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="insurancerating-development-version">insurancerating (development version)<a class="anchor" aria-label="anchor" href="#insurancerating-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.8.0" id="insurancerating-080">insurancerating 0.8.0<a class="anchor" aria-label="anchor" href="#insurancerating-080"></a></h2>
 <div class="section level3">
-<h3 id="main-api-updates-development-version">Main API updates<a class="anchor" aria-label="anchor" href="#main-api-updates-development-version"></a></h3>
+<h3 id="main-api-updates-0-8-0">Main API updates<a class="anchor" aria-label="anchor" href="#main-api-updates-0-8-0"></a></h3>
 <div class="section level4">
-<h4 id="portfolio-analysis-development-version">Portfolio analysis<a class="anchor" aria-label="anchor" href="#portfolio-analysis-development-version"></a></h4>
+<h4 id="portfolio-analysis-0-8-0">Portfolio analysis<a class="anchor" aria-label="anchor" href="#portfolio-analysis-0-8-0"></a></h4>
 <ul><li>
 <code><a href="../reference/factor_analysis.html">factor_analysis()</a></code> is now the primary function for univariate/factor-level portfolio analysis. It returns objects with primary class <code>"factor_analysis"</code> while retaining <code>"univariate"</code> for compatibility.</li>
 <li>
@@ -50,7 +50,7 @@
 <li>The factor-analysis plot keeps the established package styling and now uses a consistent grid, axis-line, tick and secondary-axis style.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="outlier-histograms-development-version">Outlier histograms<a class="anchor" aria-label="anchor" href="#outlier-histograms-development-version"></a></h4>
+<h4 id="outlier-histograms-0-8-0">Outlier histograms<a class="anchor" aria-label="anchor" href="#outlier-histograms-0-8-0"></a></h4>
 <ul><li>
 <code><a href="../reference/outlier_histogram.html">outlier_histogram()</a></code> has clearer argument names: <code>lower</code>, <code>upper</code>, <code>density</code>, <code>bar_fill</code>, <code>bar_color</code>, <code>tail_fill</code>, <code>tail_color</code>, and <code>density_color</code>.</li>
 <li>Deprecated argument names remain supported: <code>left</code>, <code>right</code>, <code>line</code>, <code>fill</code>, <code>color</code>, and <code>fill_outliers</code>.</li>
@@ -60,7 +60,7 @@
 <code><a href="../reference/histbin.html">histbin()</a></code> is deprecated and remains available as a compatibility wrapper.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="risk-factor-gams-and-tariff-segmentation-development-version">Risk factor GAMs and tariff segmentation<a class="anchor" aria-label="anchor" href="#risk-factor-gams-and-tariff-segmentation-development-version"></a></h4>
+<h4 id="risk-factor-gams-and-tariff-segmentation-0-8-0">Risk factor GAMs and tariff segmentation<a class="anchor" aria-label="anchor" href="#risk-factor-gams-and-tariff-segmentation-0-8-0"></a></h4>
 <ul><li>
 <code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code> is the primary spelling for fitting GAMs to continuous risk factors. <code><a href="../reference/riskfactor_gam.html">riskfactor_gam()</a></code> and <code><a href="../reference/fit_gam.html">fit_gam()</a></code> remain available for compatibility, with <code><a href="../reference/fit_gam.html">fit_gam()</a></code> deprecated.</li>
 <li>
@@ -81,7 +81,7 @@
 <li>The tariff-segment plot now recognises confidence interval columns produced by the package’s own GAM output.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="rating-tables-development-version">Rating tables<a class="anchor" aria-label="anchor" href="#rating-tables-development-version"></a></h4>
+<h4 id="rating-tables-0-8-0">Rating tables<a class="anchor" aria-label="anchor" href="#rating-tables-0-8-0"></a></h4>
 <ul><li>
 <code><a href="../reference/rating_table.html">rating_table()</a></code> is the primary API for interpreting fitted GLM coefficients in tariff-table form. <code><a href="../reference/rating_factors.html">rating_factors()</a></code> and <code><a href="../reference/rating_factors2.html">rating_factors2()</a></code> are deprecated wrappers.</li>
 <li>
@@ -97,7 +97,7 @@
 <code><a href="../reference/autoplot.rating_table.html">autoplot.rating_table()</a></code> now plots attached observed experience from <code><a href="../reference/add_observed_experience.html">add_observed_experience()</a></code> and uses cleaner, package-consistent plot styling, including a subtle secondary exposure axis.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="prediction-helpers-development-version">Prediction helpers<a class="anchor" aria-label="anchor" href="#prediction-helpers-development-version"></a></h4>
+<h4 id="prediction-helpers-0-8-0">Prediction helpers<a class="anchor" aria-label="anchor" href="#prediction-helpers-0-8-0"></a></h4>
 <ul><li>
 <code><a href="../reference/add_prediction.html">add_prediction()</a></code> now has clearer naming arguments: <code>predictions</code>, <code>prefix</code>, <code>confidence</code>, and <code>interval_names</code>.</li>
 <li>
@@ -106,7 +106,7 @@
 <li>The function now validates <code>alpha</code>, confidence settings, duplicate output names, name collisions with existing columns, missing models and non-GLM inputs.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="model-data-and-rating-grids-development-version">Model data and rating grids<a class="anchor" aria-label="anchor" href="#model-data-and-rating-grids-development-version"></a></h4>
+<h4 id="model-data-and-rating-grids-0-8-0">Model data and rating grids<a class="anchor" aria-label="anchor" href="#model-data-and-rating-grids-0-8-0"></a></h4>
 <ul><li>
 <code><a href="../reference/extract_model_data.html">extract_model_data()</a></code> replaces <code><a href="../reference/model_data.html">model_data()</a></code> as the primary API for extracting model data from fitted models.</li>
 <li>
@@ -117,21 +117,24 @@
 <li>Refinement metadata is now joined by the related original/new factor columns instead of being cross-joined onto every rating-grid row.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="model-refinement-development-version">Model refinement<a class="anchor" aria-label="anchor" href="#model-refinement-development-version"></a></h4>
+<h4 id="model-refinement-0-8-0">Model refinement<a class="anchor" aria-label="anchor" href="#model-refinement-0-8-0"></a></h4>
 <ul><li>The refinement API has been clarified around <code>prepare_refinement() |&gt; add_*() |&gt; refit()</code>.</li>
-<li>A new excess-loss workflow was added for capped severity and pure-premium modelling: <code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code>, <code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code>, <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> and <code><a href="../reference/add_excess_loading.html">add_excess_loading()</a></code>.</li>
+<li>A new excess-loss workflow was added for capped severity and pure-premium modelling: <code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code>, <code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code>, <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> and <code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code>.</li>
 <li>
 <code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code> compares candidate large-loss thresholds and shows the impact on excess loss, capped loss and pure premium.</li>
 <li>
 <code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code> now performs only the deterministic historical decomposition into capped and excess claim amounts.</li>
 <li>
-<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> handles allocation, pooling and bootstrap uncertainty modelling. It supports observed or bootstrap excess burdens, portfolio, group-level and partial pooling, and optional severity noise in the bootstrap.</li>
+<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> handles allocation and bootstrap uncertainty modelling. It supports observed or bootstrap excess burdens, portfolio, risk-factor and partial allocation, and optional severity noise in the bootstrap.</li>
 <li>
-<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now uses <code>preserve_total = TRUE</code> by default so that partial pooling redistributes the selected excess burden without changing the total allocated excess loss.</li>
+<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now uses clearer allocation argument names: <code>allocation_weight</code>, <code>risk_factor</code>, <code>allocation_subset</code>, <code>allocation</code>, <code>n_bootstrap</code>, <code>bootstrap_seed</code> and <code>preserve_total_excess</code>.</li>
+<li>Automatic credibility in <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now uses the transparent formula <code>Z = n / (n + credibility_threshold)</code> with <code>credibility_basis = "claims"</code>, <code>"excess_claims"</code> or <code>"allocation_weight"</code>.</li>
 <li>
-<code><a href="../reference/add_excess_loading.html">add_excess_loading()</a></code> adds the allocated excess loading to pricing data and returns <code>base_premium</code>, <code>excess_loading</code> and <code>loaded_premium</code>.</li>
+<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now uses <code>preserve_total_excess = TRUE</code> by default so that partial allocation redistributes the selected excess burden without changing the total allocated excess loss.</li>
 <li>
-<code><a href="../reference/add_excess_loading.html">add_excess_loading()</a></code> now treats premium amounts as the default workflow and keeps the distinction between absolute <code>allocated_excess_loss</code> and per-weight <code>allocated_loading</code> explicit.</li>
+<code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code> adds the allocated excess loading to pricing data and returns <code>base_premium</code>, <code>excess_loading</code> and <code>loaded_premium</code>.</li>
+<li>
+<code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code> now treats premium amounts as the default workflow and keeps the distinction between absolute <code>allocated_excess_loss</code> and per-weight <code>allocated_loading</code> explicit.</li>
 <li>
 <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> now uses <code>model_variable</code> and <code>source_variable</code> as the primary argument names.</li>
 <li>
@@ -149,7 +152,7 @@
 <li>The refinement documentation has been expanded with applied examples and a clearer explanation of smoothing, restrictions, relativities and refitting.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="reference-levels-development-version">Reference levels<a class="anchor" aria-label="anchor" href="#reference-levels-development-version"></a></h4>
+<h4 id="reference-levels-0-8-0">Reference levels<a class="anchor" aria-label="anchor" href="#reference-levels-0-8-0"></a></h4>
 <ul><li>
 <code><a href="../reference/set_reference_level.html">set_reference_level()</a></code> replaces <code><a href="../reference/biggest_reference.html">biggest_reference()</a></code> as the primary helper for choosing factor reference levels.</li>
 <li>The default method is <code>method = "largest_weight"</code>.</li>
@@ -158,7 +161,7 @@
 <code><a href="../reference/biggest_reference.html">biggest_reference()</a></code> remains available as a deprecated compatibility wrapper.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="time-utilities-development-version">Time utilities<a class="anchor" aria-label="anchor" href="#time-utilities-development-version"></a></h4>
+<h4 id="time-utilities-0-8-0">Time utilities<a class="anchor" aria-label="anchor" href="#time-utilities-0-8-0"></a></h4>
 <ul><li>
 <code><a href="../reference/split_periods_to_months.html">split_periods_to_months()</a></code>, <code><a href="../reference/merge_date_ranges.html">merge_date_ranges()</a></code> and <code><a href="../reference/active_rows_by_date.html">active_rows_by_date()</a></code> now avoid mutating caller-visible input data.</li>
 <li>
@@ -169,7 +172,7 @@
 <li>R CMD check notes from data.table helper columns in <code><a href="../reference/active_rows_by_date.html">active_rows_by_date()</a></code> have been resolved.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="model-validation-and-performance-development-version">Model validation and performance<a class="anchor" aria-label="anchor" href="#model-validation-and-performance-development-version"></a></h4>
+<h4 id="model-validation-and-performance-0-8-0">Model validation and performance<a class="anchor" aria-label="anchor" href="#model-validation-and-performance-0-8-0"></a></h4>
 <ul><li>
 <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code> now has an explicit <code>metric = "rmse"</code> argument.</li>
 <li>
@@ -190,7 +193,7 @@
 <code><a href="../reference/autoplot.check_residuals.html">autoplot.check_residuals()</a></code> now has a controllable <code>max_points</code> argument and uses ASCII messages and the package plot theme.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="truncated-severity-distributions-development-version">Truncated severity distributions<a class="anchor" aria-label="anchor" href="#truncated-severity-distributions-development-version"></a></h4>
+<h4 id="truncated-severity-distributions-0-8-0">Truncated severity distributions<a class="anchor" aria-label="anchor" href="#truncated-severity-distributions-0-8-0"></a></h4>
 <ul><li>
 <code><a href="../reference/fit_truncated_severity.html">fit_truncated_severity()</a></code> replaces <code><a href="../reference/fit_truncated_dist.html">fit_truncated_dist()</a></code> as the primary API for fitting distributions to truncated claim severities.</li>
 <li>Returned objects use primary class <code>"truncated_severity"</code> while compatibility with <code>"truncated_dist"</code> is retained.</li>
@@ -202,7 +205,7 @@
 <li>Plot argument names were modernised to <code>ecdf_geom</code>, <code>x_label</code>, <code>y_label</code>, <code>show_title</code>, <code>digits</code> and <code>truncation_digits</code>, with old names supported for compatibility.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="fisher-jenks-classification-development-version">Fisher-Jenks classification<a class="anchor" aria-label="anchor" href="#fisher-jenks-classification-development-version"></a></h4>
+<h4 id="fisher-jenks-classification-0-8-0">Fisher-Jenks classification<a class="anchor" aria-label="anchor" href="#fisher-jenks-classification-0-8-0"></a></h4>
 <ul><li>
 <code><a href="../reference/fisher_classify.html">fisher_classify()</a></code> and <code><a href="../reference/fisher.html">fisher()</a></code> are deprecated because Fisher-Jenks classification is a general-purpose grouping method and is not directly tied to the insurance-rating workflow.</li>
 <li>
@@ -210,7 +213,7 @@
 </ul></div>
 </div>
 <div class="section level3">
-<h3 id="documentation-website-and-tests-development-version">Documentation, website and tests<a class="anchor" aria-label="anchor" href="#documentation-website-and-tests-development-version"></a></h3>
+<h3 id="documentation-website-and-tests-0-8-0">Documentation, website and tests<a class="anchor" aria-label="anchor" href="#documentation-website-and-tests-0-8-0"></a></h3>
 <ul><li>The README and vignettes have been revised to present the package as a set of actuarial pricing building blocks rather than a prescribed pricing method.</li>
 <li>The former “Pricing principles” vignette was replaced by “Pricing workflow building blocks”.</li>
 <li>The refinement vignette was rewritten with a more practical tone and current API examples.</li>

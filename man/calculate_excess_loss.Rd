@@ -7,32 +7,83 @@
 calculate_excess_loss(data, claim_amount, threshold)
 }
 \arguments{
-\item{data}{A \code{data.frame} with claim-level observations.}
+\item{data}{A data.frame with claim-level observations.}
 
 \item{claim_amount}{Character string. Claim amount column.}
 
-\item{threshold}{Positive numeric scalar. Claims above this value are treated
-as excess claims.}
+\item{threshold}{Positive numeric scalar. Claims above this value contribute
+to the excess component. Claims below the threshold remain fully included
+in the capped claim amount.}
 }
 \value{
-A \code{data.frame} with the original data and the columns
+A data.frame with the original data and the columns
 \code{claim_amount}, \code{capped_claim_amount}, \code{excess_claim_amount} and
 \code{is_excess_claim}.
 }
 \description{
-Calculate the historical excess amount above a selected threshold.
+Large claims can distort risk-factor relativities and make pricing models
+unstable. \code{calculate_excess_loss()} separates each claim into a capped part
+and an excess part above a selected threshold.
+}
+\details{
+The capped claim amount can be used to model the base premium, while the
+excess component can be analysed, pooled or allocated separately. This allows
+the impact of large individual claims to be controlled without ignoring the
+associated cost.
 
-\code{calculate_excess_loss()} is deliberately deterministic. It does not perform
-bootstrap simulation, smoothing or allocation. The function simply decomposes
-each observed claim into a capped part and an excess part:
-\code{excess_claim_amount = pmax(claim_amount - threshold, 0)}.
+The function is deliberately deterministic. It does not perform smoothing,
+credibility weighting, allocation or simulation. It simply decomposes each
+observed claim into:
 
-Use the output as input for \code{\link[=allocate_excess_loss]{allocate_excess_loss()}} when the historical
-excess burden needs to be pooled, credibility-weighted or bootstrapped.
+\deqn{
+claim\_amount =
+capped\_claim\_amount +
+excess\_claim\_amount
+}
+
+where:
+
+\deqn{
+excess\_claim\_amount =
+max(claim\_amount - threshold, 0)
+}
+
+and:
+
+\deqn{
+capped\_claim\_amount =
+min(claim\_amount, threshold)
+}
+
+The resulting excess component can subsequently be allocated using
+\code{\link[=allocate_excess_loss]{allocate_excess_loss()}} and added back to the technical premium using
+\code{\link[=apply_excess_loading]{apply_excess_loading()}}.
+\subsection{Typical pricing workflow}{
+
+A common workflow is:
+\enumerate{
+\item Select an excess threshold.
+\item Split claims into capped and excess components.
+\item Model frequency and severity using capped claim amounts.
+\item Allocate the excess-loss burden separately.
+\item Add the resulting excess loading back to the technical premium.
+}
+
+This approach reduces the influence of a small number of large claims on
+risk-factor relativities while ensuring that the total cost of excess losses
+remains reflected in the final premium.
+}
 }
 \examples{
-claims <- data.frame(claim_amount = c(1000, 120000, 30000))
-calculate_excess_loss(claims, claim_amount = "claim_amount", threshold = 100000)
+claims <- data.frame(
+  claim_amount = c(1000, 120000, 30000)
+)
+
+calculate_excess_loss(
+  claims,
+  claim_amount = "claim_amount",
+  threshold = 100000
+)
 
 }
 \author{

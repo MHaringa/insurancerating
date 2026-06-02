@@ -49,7 +49,7 @@ set as the first level.
 
 Kaas, Rob & Goovaerts, Marc & Dhaene, Jan & Denuit, Michel. (2008).
 Modern Actuarial Risk Theory: Using R.
-[doi:10.1007/978-3-540-70998-5.](https://doi.org/10.1007/978-3-540-70998-5.)
+[doi:10.1007/978-3-540-70998-5](https://doi.org/10.1007/978-3-540-70998-5)
 
 ## Author
 

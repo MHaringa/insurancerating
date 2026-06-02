@@ -1,6 +1,6 @@
 # Changelog
 
-## insurancerating (development version)
+## insurancerating 0.8.0
 
 ### Main API updates
 
@@ -146,7 +146,7 @@
   [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md),
   [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
   and
-  [`add_excess_loading()`](https://mharinga.github.io/insurancerating/reference/add_excess_loading.md).
+  [`apply_excess_loading()`](https://mharinga.github.io/insurancerating/reference/apply_excess_loading.md).
 - [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
   compares candidate large-loss thresholds and shows the impact on
   excess loss, capped loss and pure premium.
@@ -154,17 +154,26 @@
   now performs only the deterministic historical decomposition into
   capped and excess claim amounts.
 - [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
-  handles allocation, pooling and bootstrap uncertainty modelling. It
-  supports observed or bootstrap excess burdens, portfolio, group-level
-  and partial pooling, and optional severity noise in the bootstrap.
+  handles allocation and bootstrap uncertainty modelling. It supports
+  observed or bootstrap excess burdens, portfolio, risk-factor and
+  partial allocation, and optional severity noise in the bootstrap.
 - [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
-  now uses `preserve_total = TRUE` by default so that partial pooling
-  redistributes the selected excess burden without changing the total
-  allocated excess loss.
-- [`add_excess_loading()`](https://mharinga.github.io/insurancerating/reference/add_excess_loading.md)
+  now uses clearer allocation argument names: `allocation_weight`,
+  `risk_factor`, `allocation_subset`, `allocation`, `n_bootstrap`,
+  `bootstrap_seed` and `preserve_total_excess`.
+- Automatic credibility in
+  [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
+  now uses the transparent formula `Z = n / (n + credibility_threshold)`
+  with `credibility_basis = "claims"`, `"excess_claims"` or
+  `"allocation_weight"`.
+- [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
+  now uses `preserve_total_excess = TRUE` by default so that partial
+  allocation redistributes the selected excess burden without changing
+  the total allocated excess loss.
+- [`apply_excess_loading()`](https://mharinga.github.io/insurancerating/reference/apply_excess_loading.md)
   adds the allocated excess loading to pricing data and returns
   `base_premium`, `excess_loading` and `loaded_premium`.
-- [`add_excess_loading()`](https://mharinga.github.io/insurancerating/reference/add_excess_loading.md)
+- [`apply_excess_loading()`](https://mharinga.github.io/insurancerating/reference/apply_excess_loading.md)
   now treats premium amounts as the default workflow and keeps the
   distinction between absolute `allocated_excess_loss` and per-weight
   `allocated_loading` explicit.

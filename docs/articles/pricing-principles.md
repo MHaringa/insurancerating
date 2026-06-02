@@ -20,15 +20,15 @@ typically as **time under coverage**.
 
 In practice, exposure equals *policy-years*:
 
-- one year –\> exposure = 1  
+- one year –\> exposure = 1\
 - six months –\> exposure = 0.5
 
 In motor insurance, this is often expressed as *vehicle-years*.
 
-- more exposure –\> more credible observations  
+- more exposure –\> more credible observations\
 - less exposure –\> more volatile outcomes
 
-> **Key principle**  
+> **Key principle**\
 > Pricing metrics are expressed per unit of exposure.
 
 ------------------------------------------------------------------------
@@ -88,23 +88,23 @@ In practice, both approaches are used:
 Pricing is not just about estimating expected losses. The process
 typically consists of four steps:
 
-1.  **Exploration**  
+1.  **Exploration**\
     Analyse risk factors and identify patterns in the data
 
-2.  **Estimation**  
+2.  **Estimation**\
     Fit statistical models (typically GLMs)
 
-3.  **Refinement**  
+3.  **Refinement**\
     Adjust coefficients to ensure:
 
-    - stability  
-    - monotonicity  
+    - stability\
+    - monotonicity\
     - commercial acceptability
 
-4.  **Translation**  
+4.  **Translation**\
     Convert model output into a tariff structure
 
-> **Key principle**  
+> **Key principle**\
 > The refinement step is where actuarial judgement plays a key role.
 
 ------------------------------------------------------------------------
@@ -266,13 +266,13 @@ remain in the portfolio.
 
 A pricing model does not only describe risk — it influences it.
 
-- Higher premiums discourage certain risks  
+- Higher premiums discourage certain risks\
 - Lower premiums attract others
 
 As a result, pricing decisions directly affect:
 
-- portfolio composition  
-- future claims experience  
+- portfolio composition\
+- future claims experience\
 - overall profitability
 
 This means pricing is often considered in a **forward-looking context**.
@@ -283,19 +283,19 @@ This means pricing is often considered in a **forward-looking context**.
 
 A central objective of pricing is **risk differentiation**:
 
-- higher-risk segments → higher premiums  
+- higher-risk segments → higher premiums\
 - lower-risk segments → lower premiums
 
 Well-calibrated differentiation improves:
 
-- portfolio quality  
-- predictability of results  
+- portfolio quality\
+- predictability of results\
 - alignment between price and risk
 
 Poor differentiation leads to:
 
-- adverse selection  
-- cross-subsidisation  
+- adverse selection\
+- cross-subsidisation\
 - unstable performance
 
 ------------------------------------------------------------------------
@@ -306,14 +306,14 @@ Pure statistical output is rarely suitable for direct use in tariffs.
 
 This is because:
 
-- data can be sparse in certain segments  
-- models can capture noise instead of signal  
+- data can be sparse in certain segments\
+- models can capture noise instead of signal\
 - coefficients may fluctuate across adjacent levels
 
 Refinement introduces structure:
 
-- smoothing reduces volatility  
-- monotonicity enforces logical consistency  
+- smoothing reduces volatility\
+- monotonicity enforces logical consistency\
 - restrictions incorporate practical constraints
 
 The goal is not necessarily to “improve the model”, but to support a
@@ -328,14 +328,14 @@ tariff structure where:
 A good tariff is not only accurate today, but also **stable over time**.
 Large fluctuations between renewals can lead to:
 
-- poor customer experience  
-- operational complexity  
+- poor customer experience\
+- operational complexity\
 - unintended portfolio shifts
 
 This requires:
 
-- controlled updates  
-- gradual changes  
+- controlled updates\
+- gradual changes\
 - monitoring of portfolio impact
 
 ------------------------------------------------------------------------
@@ -345,15 +345,15 @@ This requires:
 Insurance pricing cannot be fully automated. Expert judgement is
 required to:
 
-- interpret model output  
-- decide on appropriate smoothing  
-- apply constraints based on business context  
+- interpret model output\
+- decide on appropriate smoothing\
+- apply constraints based on business context\
 - balance competing objectives
 
 This is particularly important when:
 
-- exposure is low  
-- historical data is not representative  
+- exposure is low\
+- historical data is not representative\
 - external factors influence risk
 
 ------------------------------------------------------------------------
@@ -362,16 +362,16 @@ This is particularly important when:
 
 Pricing involves multiple, often competing objectives:
 
-- statistical accuracy  
-- commercial competitiveness  
-- interpretability  
+- statistical accuracy\
+- commercial competitiveness\
+- interpretability\
 - operational simplicity
 
 No single model optimises all dimensions. A useful pricing framework
 makes these trade-offs:
 
-- explicit  
-- consistent  
+- explicit\
+- consistent\
 - reproducible
 
 ------------------------------------------------------------------------
@@ -380,14 +380,14 @@ makes these trade-offs:
 
 A structured set of tools can help make pricing decisions:
 
-- transparent  
-- auditable  
+- transparent\
+- auditable\
 - consistent across portfolios
 
 In `insurancerating`, this is supported through:
 
-- separation of analysis, modelling, and refinement  
-- explicit transformation steps  
+- separation of analysis, modelling, and refinement\
+- explicit transformation steps\
 - reproducible outputs
 
 ------------------------------------------------------------------------
@@ -397,8 +397,8 @@ In `insurancerating`, this is supported through:
 Insurance pricing is not about finding the “best model”. It is about
 constructing a tariff that:
 
-- reflects underlying risk  
-- behaves predictably  
+- reflects underlying risk\
+- behaves predictably\
 - supports portfolio objectives
 
 Statistical models are a tool in that process — not the end goal.

@@ -102,21 +102,21 @@ excess <- calculate_excess_loss(
 )
 ```
 
-The allocation step is where pooling and uncertainty are handled.
-Portfolio pooling is stable but ignores group experience. Group pooling
-is responsive but can be volatile. Partial pooling balances portfolio
-stability, group responsiveness and the credibility of observed excess
-experience.
+The allocation step is where sharing and uncertainty are handled.
+Portfolio allocation is stable but ignores group experience. Risk-factor
+allocation is responsive but can be volatile. Partial allocation
+balances portfolio stability, group responsiveness and the credibility
+of observed excess experience.
 
 ``` r
 
 allocation <- allocate_excess_loss(
   excess,
   excess_amount = "excess_claim_amount",
-  weight = "earned_exposure",
-  group = "sector",
-  pooling = "partial",
-  preserve_total = TRUE
+  allocation_weight = "earned_exposure",
+  risk_factor = "sector",
+  allocation = "partial",
+  preserve_total_excess = TRUE
 )
 
 summary(allocation, compare_to_empirical = TRUE)
@@ -135,7 +135,7 @@ The allocated loading can then be added to the pricing data.
 ``` r
 
 excess$base_premium <- excess$technical_premium
-priced <- add_excess_loading(
+priced <- apply_excess_loading(
   excess,
   allocation,
   base_premium = "base_premium"

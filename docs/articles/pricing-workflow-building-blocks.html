@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.5.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -145,19 +145,19 @@ or allocate anything.</p>
 <span>  claim_amount <span class="op">=</span> <span class="st">"claim_amount"</span>,</span>
 <span>  threshold <span class="op">=</span> <span class="fl">100000</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The allocation step is where pooling and uncertainty are handled.
-Portfolio pooling is stable but ignores group experience. Group pooling
-is responsive but can be volatile. Partial pooling balances portfolio
-stability, group responsiveness and the credibility of observed excess
-experience.</p>
+<p>The allocation step is where sharing and uncertainty are handled.
+Portfolio allocation is stable but ignores group experience. Risk-factor
+allocation is responsive but can be volatile. Partial allocation
+balances portfolio stability, group responsiveness and the credibility
+of observed excess experience.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">allocation</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/allocate_excess_loss.html">allocate_excess_loss</a></span><span class="op">(</span></span>
 <span>  <span class="va">excess</span>,</span>
 <span>  excess_amount <span class="op">=</span> <span class="st">"excess_claim_amount"</span>,</span>
-<span>  weight <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
-<span>  group <span class="op">=</span> <span class="st">"sector"</span>,</span>
-<span>  pooling <span class="op">=</span> <span class="st">"partial"</span>,</span>
-<span>  preserve_total <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  allocation_weight <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
+<span>  risk_factor <span class="op">=</span> <span class="st">"sector"</span>,</span>
+<span>  allocation <span class="op">=</span> <span class="st">"partial"</span>,</span>
+<span>  preserve_total_excess <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">allocation</span>, compare_to_empirical <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -171,7 +171,7 @@ when the output is added back to pricing data.</p>
 <p>The allocated loading can then be added to the pricing data.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">excess</span><span class="op">$</span><span class="va">base_premium</span> <span class="op">&lt;-</span> <span class="va">excess</span><span class="op">$</span><span class="va">technical_premium</span></span>
-<span><span class="va">priced</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_excess_loading.html">add_excess_loading</a></span><span class="op">(</span></span>
+<span><span class="va">priced</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/apply_excess_loading.html">apply_excess_loading</a></span><span class="op">(</span></span>
 <span>  <span class="va">excess</span>,</span>
 <span>  <span class="va">allocation</span>,</span>
 <span>  base_premium <span class="op">=</span> <span class="st">"base_premium"</span></span>

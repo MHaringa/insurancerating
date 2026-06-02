@@ -50,7 +50,7 @@ set_reference_level(df$feed, method = "manual", reference_level = "casein")
 \references{
 Kaas, Rob & Goovaerts, Marc & Dhaene, Jan & Denuit, Michel.
 (2008). Modern Actuarial Risk Theory: Using R.
-\doi{doi:10.1007/978-3-540-70998-5.}
+\doi{10.1007/978-3-540-70998-5}
 }
 \author{
 Martin Haringa
