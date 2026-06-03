@@ -72,8 +72,8 @@ terms.
 - [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
   : Build rating tables from fitted pricing models
 
-- [`add_observed_experience()`](https://mharinga.github.io/insurancerating/reference/add_observed_experience.md)
-  : Add observed portfolio experience to a rating table
+- [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+  : Add portfolio experience to a rating table
 
 - [`autoplot(`*`<rating_table>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
   :
@@ -83,7 +83,7 @@ terms.
   results
 
 - [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md)
-  : Add Model Predictions to a Data Frame
+  : Add model predictions to a pricing data set
 
 ## Refinement workflow
 
@@ -192,6 +192,12 @@ use the updated API.
 
 - [`rating_factors2()`](https://mharinga.github.io/insurancerating/reference/rating_factors2.md)
   **\[deprecated\]** : Deprecated single-model rating table helper
+
+- [`add_observed_experience()`](https://mharinga.github.io/insurancerating/reference/add_observed_experience.md)
+  :
+
+  Deprecated alias for
+  [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
 
 - [`model_data()`](https://mharinga.github.io/insurancerating/reference/model_data.md)
   :

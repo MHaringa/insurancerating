@@ -14,3 +14,6 @@ inst/doc
 .Rcheck/
 *.tar.gz
 docs/articles/*.utf8.md
+^CRAN-SUBMISSION$
+^\.github$
+^\.github/.*$

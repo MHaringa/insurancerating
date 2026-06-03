@@ -1,6 +1,31 @@
 # Changelog
 
+## insurancerating (development version)
+
+### Main API updates
+
+#### Rating tables
+
+- [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+  is now the primary API for enriching a
+  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+  object with observed portfolio experience.
+- [`add_observed_experience()`](https://mharinga.github.io/insurancerating/reference/add_observed_experience.md)
+  is deprecated and remains available as a compatibility wrapper.
+- [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+  can calculate portfolio experience automatically from portfolio data
+  for all risk factors in a
+  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md),
+  and accepts multiple existing
+  [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
+  objects.
+- [`autoplot.rating_table()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
+  accepts `metric` to choose the attached portfolio experience metric at
+  plot time.
+
 ## insurancerating 0.8.0
+
+CRAN release: 2026-06-02
 
 ### Main API updates
 
@@ -455,9 +480,7 @@ CRAN release: 2021-01-12
 - Dataset `MTPL` now contains extra columns for `power`, `bm`, and
   `zip`.
 - Some functions in `insight` are renamed, therefore
-  [`insight::format_table()`](https://easystats.github.io/insight/reference/format_table.html)
-  is replaced with
-  [`insight::export_table()`](https://easystats.github.io/insight/reference/export_table.html).
+  `insight::format_table()` is replaced with `insight::export_table()`.
 
 ## insurancerating 0.6.3
 

@@ -30,8 +30,9 @@ name.}
 \item{exposure_output}{Optional name for the exposure column in the output.
 If \code{NULL}, the original exposure column name is used.}
 
-\item{exponentiate}{logical indicating whether or not to exponentiate the
-coefficient estimates. Defaults to TRUE.}
+\item{exponentiate}{Logical. If \code{TRUE} (default), coefficients are
+exponentiated and shown as relativities. If \code{FALSE}, coefficients are shown
+on the model scale.}
 
 \item{significance}{Logical; if \code{TRUE}, show significance stars for p-values.}
 
@@ -50,6 +51,12 @@ the reference level for factor variables, can exponentiate GLM coefficients
 into relativities, and can add exposure by risk-factor level when the model
 data are available.
 
+In pricing work, this function is useful after fitting or refining a GLM. It
+turns model output into a table that is easier to inspect, compare and use in
+tariff notes. When \code{exponentiate = TRUE}, coefficients are shown as
+relativities. This is often the most practical scale for multiplicative GLM
+tariffs, because each level is expressed relative to the reference level.
+
 \code{rating_table()} is intended for fitted models:
 \itemize{
 \item plain \code{glm} objects
@@ -59,4 +66,61 @@ data are available.
 
 For pre-refit objects (\code{rating_refinement}, \code{restricted}, \code{smooth}) use
 \code{print()}, \code{summary()} and \code{autoplot()} instead.
+}
+\details{
+A \code{rating_table} contains one row per model term level. For factor variables,
+the reference level is added explicitly with relativity \code{1} when
+\code{exponentiate = TRUE}, or coefficient \code{0} when \code{exponentiate = FALSE}.
+
+If exposure is supplied or can be inferred from the model data, exposure is
+aggregated by risk-factor level. This helps to assess whether fitted
+relativities are supported by enough portfolio volume.
+
+Multiple models can be supplied to compare fitted effects side by side. This
+is useful when comparing unrestricted and refined models, or frequency,
+severity and pure premium models built on the same rating factors.
+}
+\examples{
+df <- MTPL
+df$zip <- as.factor(df$zip)
+
+freq <- glm(
+  nclaims ~ bm + zip + offset(log(exposure)),
+  family = poisson(),
+  data = df
+)
+
+# Inspect fitted relativities by risk-factor level
+rating_table(freq, model_data = df, exposure = "exposure")
+
+# Keep coefficients on the model scale instead of exponentiating
+rating_table(
+  freq,
+  model_data = df,
+  exposure = "exposure",
+  exponentiate = FALSE
+)
+
+# Add significance indicators when reviewing model terms
+rating_table(
+  freq,
+  model_data = df,
+  exposure = "exposure",
+  significance = TRUE
+)
+
+# Compare two fitted models side by side
+freq_simple <- glm(
+  nclaims ~ bm + offset(log(exposure)),
+  family = poisson(),
+  data = df
+)
+
+rating_table(
+  freq_simple,
+  freq,
+  model_data = df,
+  exposure = FALSE
+)
+
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_add_prediction.R
 \name{add_prediction}
 \alias{add_prediction}
-\title{Add Model Predictions to a Data Frame}
+\title{Add model predictions to a pricing data set}
 \usage{
 add_prediction(
   data,
@@ -46,12 +46,32 @@ interval.}
 \item{conf_int}{Deprecated. Use \code{confidence} instead.}
 }
 \value{
-A \code{data.frame} containing the original data along with additional columns for
-model predictions (and confidence intervals if requested).
+A \code{data.frame} containing the original data and additional columns
+for model predictions. If \code{confidence = TRUE}, confidence interval columns
+are added as well.
 }
 \description{
-Adds predictions (and optionally confidence intervals) from one or more
-\code{glm} models to a data frame.
+\code{add_prediction()} adds predictions from one or more fitted \code{glm} models to
+a data frame.
+
+In pricing workflows, this is often used to bring frequency and severity
+model output together on the same portfolio. For example, predicted claim
+frequency and predicted average claim amount can be multiplied to create a
+pure premium proxy before further tariff refinement.
+
+The function is deliberately small: it does not refit models or decide how
+predictions should be combined. It only adds model predictions, and
+optionally confidence intervals, using clear output column names.
+}
+\details{
+Predictions are calculated on the response scale using
+\code{stats::predict(..., type = "response")}. For GLMs with a log link, such as
+Poisson frequency models or Gamma severity models, the added columns are
+therefore already on the original scale.
+
+If \code{confidence = TRUE}, lower and upper confidence interval columns are added
+next to each prediction column. The default interval suffixes are \code{"lower"}
+and \code{"upper"}.
 }
 \examples{
 mod1 <- glm(nclaims ~ age_policyholder,
@@ -59,11 +79,37 @@ mod1 <- glm(nclaims ~ age_policyholder,
             offset = log(exposure),
             family = poisson())
 
-# Add predicted values
-mtpl_pred <- add_prediction(MTPL, mod1)
+# Add predicted claim frequency
+mtpl_pred <- add_prediction(MTPL, mod1, predictions = "pred_frequency")
 
 # Add predicted values with confidence bounds
-mtpl_pred_ci <- add_prediction(MTPL, mod1, confidence = TRUE)
+mtpl_pred_ci <- add_prediction(
+  MTPL,
+  mod1,
+  predictions = "pred_frequency",
+  confidence = TRUE
+)
+
+# Combine frequency and severity predictions into a pure premium proxy
+freq <- glm(nclaims ~ bm + zip,
+            data = MTPL,
+            offset = log(exposure),
+            family = poisson())
+
+sev <- glm(amount ~ bm + zip,
+           data = MTPL[MTPL$amount > 0, ],
+           weights = nclaims,
+           family = Gamma(link = "log"))
+
+premium_proxy <- add_prediction(
+  MTPL,
+  freq,
+  sev,
+  predictions = c("pred_frequency", "pred_severity")
+)
+
+premium_proxy$pred_pure_premium <-
+  premium_proxy$pred_frequency * premium_proxy$pred_severity
 
 }
 \author{

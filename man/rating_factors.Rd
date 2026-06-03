@@ -31,8 +31,9 @@ instead.}
 \item{signif_stars}{Deprecated. Use \code{significance} in \code{\link[=rating_table]{rating_table()}}
 instead.}
 
-\item{exponentiate}{logical indicating whether or not to exponentiate the
-coefficient estimates. Defaults to TRUE.}
+\item{exponentiate}{Logical. If \code{TRUE} (default), coefficients are
+exponentiated and shown as relativities. If \code{FALSE}, coefficients are shown
+on the model scale.}
 
 \item{round_exposure}{number of digits for exposure (defaults to 0)}
 }

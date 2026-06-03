@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -249,21 +249,19 @@ form.</p>
 <span><span class="co">#&gt; 4                      zip           2      0.8960053     7783</span></span>
 <span><span class="co">#&gt; 5                      zip           3      0.9493475     7588</span></span>
 <span><span class="co">#&gt; 6 age_policyholder_segment     [18,25]      1.0000000     1331</span></span></code></pre></div>
-<p>Observed portfolio experience from <code><a href="../reference/factor_analysis.html">factor_analysis()</a></code> can
-be attached to the rating table with
-<code><a href="../reference/add_observed_experience.html">add_observed_experience()</a></code>. This makes the comparison
+<p>Observed portfolio experience can be attached to the rating table
+with <code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code>. When <code>data</code> is
+supplied, the function calculates the observed experience for the
+rating-table risk factors automatically. This makes the comparison
 between model relativities and observed experience explicit.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">zip_experience</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/factor_analysis.html">factor_analysis</a></span><span class="op">(</span></span>
-<span>  <span class="va">portfolio</span>,</span>
-<span>  risk_factors <span class="op">=</span> <span class="st">"zip"</span>,</span>
-<span>  claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
-<span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">rt</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_observed_experience.html">add_observed_experience</a></span><span class="op">(</span><span class="va">zip_experience</span>, metric <span class="op">=</span> <span class="st">"frequency"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span>risk_factors <span class="op">=</span> <span class="st">"zip"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">rt</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_portfolio_experience.html">add_portfolio_experience</a></span><span class="op">(</span></span>
+<span>    data <span class="op">=</span> <span class="va">portfolio</span>,</span>
+<span>    claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
+<span>    exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span>risk_factors <span class="op">=</span> <span class="st">"zip"</span>, metric <span class="op">=</span> <span class="st">"frequency"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="700"></p>
 </div>
 <div class="section level2">
@@ -350,7 +348,7 @@ excess-loss loadings are relevant.</li>
 <li>Fit GLMs for frequency, severity or pure premium.</li>
 <li>Interpret coefficients with <code><a href="../reference/rating_table.html">rating_table()</a></code>.</li>
 <li>Compare fitted relativities with observed experience using
-<code><a href="../reference/add_observed_experience.html">add_observed_experience()</a></code>.</li>
+<code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code>.</li>
 <li>Apply refinement where needed with
 <code><a href="../reference/prepare_refinement.html">prepare_refinement()</a></code>, <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code>,
 <code><a href="../reference/add_restriction.html">add_restriction()</a></code> or <code><a href="../reference/add_relativities.html">add_relativities()</a></code>.</li>

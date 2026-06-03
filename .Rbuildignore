@@ -15,6 +15,7 @@
 ^docs$
 ^pkgdown$
 ^logo.png
+^logo_favicon.png
 ^logo[0-9]+\.png$
 ^.*\.tar\.gz$
 ^.*\.Rcheck$

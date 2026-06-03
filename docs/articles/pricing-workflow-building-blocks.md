@@ -226,25 +226,21 @@ head(rt$df)
 #> 6 age_policyholder_segment     [18,25]      1.0000000     1331
 ```
 
-Observed portfolio experience from
-[`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-can be attached to the rating table with
-[`add_observed_experience()`](https://mharinga.github.io/insurancerating/reference/add_observed_experience.md).
-This makes the comparison between model relativities and observed
-experience explicit.
+Observed portfolio experience can be attached to the rating table with
+[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md).
+When `data` is supplied, the function calculates the observed experience
+for the rating-table risk factors automatically. This makes the
+comparison between model relativities and observed experience explicit.
 
 ``` r
 
-zip_experience <- factor_analysis(
-  portfolio,
-  risk_factors = "zip",
-  claim_count = "nclaims",
-  exposure = "exposure"
-)
-
 rt |>
-  add_observed_experience(zip_experience, metric = "frequency") |>
-  autoplot(risk_factors = "zip")
+  add_portfolio_experience(
+    data = portfolio,
+    claim_count = "nclaims",
+    exposure = "exposure"
+  ) |>
+  autoplot(risk_factors = "zip", metric = "frequency")
 ```
 
 ![](pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-12-1.png)
@@ -336,7 +332,7 @@ One possible workflow is:
 7.  Interpret coefficients with
     [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
 8.  Compare fitted relativities with observed experience using
-    [`add_observed_experience()`](https://mharinga.github.io/insurancerating/reference/add_observed_experience.md).
+    [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md).
 9.  Apply refinement where needed with
     [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
     [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
