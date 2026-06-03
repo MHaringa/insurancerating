@@ -263,7 +263,7 @@ testthat::test_that(
       exposure = "exposure"
     )
 
-    rt_observed <- add_observed_experience(
+    rt_observed <- add_portfolio_experience(
       rt,
       observed,
       metric = "frequency",
@@ -276,9 +276,88 @@ testthat::test_that(
       rt_observed$observed_experience$metric,
       "frequency"
     )
+    testthat::expect_true("data" %in% names(rt_observed$observed_experience))
+    testthat::expect_true("area" %in%
+                            rt_observed$observed_experience$data$risk_factor)
 
     p <- ggplot2::autoplot(rt_observed, risk_factors = "area")
     testthat::expect_true(inherits(p, "patchwork") || inherits(p, "ggplot"))
+  }
+)
+
+testthat::test_that(
+  "observed experience can be calculated automatically for rating table factors", {
+    rt <- rating_table(mod1, model_data = df, exposure = "exposure")
+
+    rt_observed <- add_portfolio_experience(
+      rt,
+      data = df,
+      claim_count = "nclaims",
+      exposure = "exposure"
+    )
+
+    testthat::expect_s3_class(rt_observed, "rating_table")
+    expected_factors <- intersect(unique(rt$df$risk_factor), names(df))
+    testthat::expect_true(all(
+      expected_factors %in% unique(rt_observed$observed_experience$data$risk_factor)
+    ))
+    testthat::expect_identical(
+      rt_observed$observed_experience$metric,
+      "frequency"
+    )
+
+    p <- ggplot2::autoplot(rt_observed, metric = "frequency")
+    testthat::expect_true(inherits(p, "patchwork") || inherits(p, "ggplot"))
+  }
+)
+
+testthat::test_that(
+  "multiple factor_analysis objects can be attached to a rating table", {
+    rt <- rating_table(mod1, model_data = df, exposure = "exposure")
+    observed_area <- factor_analysis(
+      df,
+      risk_factors = "area",
+      claim_count = "nclaims",
+      exposure = "exposure"
+    )
+    observed_premium <- factor_analysis(
+      df,
+      risk_factors = "premium",
+      claim_count = "nclaims",
+      exposure = "exposure"
+    )
+
+    rt_observed <- add_portfolio_experience(
+      rt,
+      observed = list(observed_area, observed_premium)
+    )
+
+    testthat::expect_equal(
+      sort(unique(rt_observed$observed_experience$data$risk_factor)),
+      sort(c("area", "premium"))
+    )
+    testthat::expect_s3_class(
+      ggplot2::autoplot(rt_observed, risk_factors = "area", metric = "frequency"),
+      "ggplot"
+    )
+  }
+)
+
+testthat::test_that(
+  "add_observed_experience remains available as deprecated alias", {
+    rt <- rating_table(mod1, model_data = df, exposure = "exposure")
+
+    testthat::expect_warning(
+      rt_observed <- add_observed_experience(
+        rt,
+        data = df,
+        claim_count = "nclaims",
+        exposure = "exposure"
+      ),
+      "deprecated"
+    )
+
+    testthat::expect_s3_class(rt_observed, "rating_table")
   }
 )
 

@@ -4,14 +4,18 @@
 #' Create a ggplot visualisation of a `rating_table` object produced by
 #' [rating_table()]. Estimates are plotted per risk factor, with optional
 #' exposure bars. Observed portfolio experience can be added first with
-#' [add_observed_experience()].
+#' [add_portfolio_experience()].
 #'
 #' When observed experience is attached, it is plotted as an additional line.
-#' The scaling is controlled by [add_observed_experience()].
+#' The scaling is controlled by [add_portfolio_experience()].
 #'
 #' @param object A `rating_table` object returned by [rating_table()].
 #' @param risk_factors Character vector specifying which risk factors to plot.
 #'   Defaults to all risk factors.
+#' @param metric Optional character string. Observed-experience metric to plot
+#'   when observed experience has been attached with
+#'   [add_portfolio_experience()]. Common choices are `"frequency"`,
+#'   `"severity"`/`"average_severity"` and `"risk_premium"`.
 #' @param ncol Number of columns in the patchwork layout. Default is 1.
 #' @param show_exposure_labels Logical; if `TRUE`, show exposure values as
 #'   labels on the bars. Default is `TRUE`.
@@ -42,6 +46,7 @@
 #' @export
 autoplot.rating_table <- function(object,
                                   risk_factors = NULL,
+                                  metric = NULL,
                                   ncol = 1,
                                   show_exposure_labels = TRUE,
                                   decimal_mark = ",",
@@ -205,33 +210,20 @@ autoplot.rating_table <- function(object,
   observed_df <- NULL
 
   if (!is.null(observed)) {
-    experience <- observed$experience
-    observed_metric <- observed$metric
-    observed_scale <- observed$scale
-    xvar_observed <- attr(experience, "xvar")
-    if (length(xvar_observed) > 1) {
-      xvar_observed <- xvar_observed[1]
-    }
-
-    if (!observed_metric %in% names(experience)) {
-      stop("The observed metric is not found in the attached factor_analysis object.",
+    if (!is.null(observed$data)) {
+      observed_df <- observed$data
+    } else if (!is.null(observed$experience)) {
+      observed_df <- normalize_rating_table_observed_experience(observed$experience)
+    } else {
+      stop("The attached observed experience has an unsupported structure.",
            call. = FALSE)
     }
-
-    observed_df <- as.data.frame(experience)
-
-    if (!xvar_observed %in% names(observed_df)) {
-      stop("The attached factor_analysis object does not contain the expected x variable.",
-           call. = FALSE)
-    }
-
-    names(observed_df)[names(observed_df) == xvar_observed] <- "level"
-
-    if (!"risk_factor" %in% names(observed_df)) {
-      observed_df$risk_factor <- xvar_observed
-    }
-
-    observed_df$level <- as.character(observed_df$level)
+    observed_metric <- resolve_rating_table_observed_metric(
+      metric %||% observed$metric,
+      observed_df,
+      allow_null = FALSE
+    )
+    observed_scale <- observed$scale %||% "reference"
 
     ref_levels <- vapply(
       unique(observed_df$risk_factor),

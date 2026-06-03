@@ -1,5 +1,19 @@
 # insurancerating (development version)
 
+## Main API updates
+
+### Rating tables
+
+- `add_portfolio_experience()` is now the primary API for enriching a
+  `rating_table()` object with observed portfolio experience.
+- `add_observed_experience()` is deprecated and remains available as a
+  compatibility wrapper.
+- `add_portfolio_experience()` can calculate portfolio experience
+  automatically from portfolio data for all risk factors in a `rating_table()`,
+  and accepts multiple existing `factor_analysis()` objects.
+- `autoplot.rating_table()` accepts `metric` to choose the attached portfolio
+  experience metric at plot time.
+
 # insurancerating 0.8.0
 
 ## Main API updates

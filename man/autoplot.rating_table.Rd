@@ -7,6 +7,7 @@
 \method{autoplot}{rating_table}(
   object,
   risk_factors = NULL,
+  metric = NULL,
   ncol = 1,
   show_exposure_labels = TRUE,
   decimal_mark = ",",
@@ -31,6 +32,11 @@
 
 \item{risk_factors}{Character vector specifying which risk factors to plot.
 Defaults to all risk factors.}
+
+\item{metric}{Optional character string. Observed-experience metric to plot
+when observed experience has been attached with
+\code{\link[=add_portfolio_experience]{add_portfolio_experience()}}. Common choices are \code{"frequency"},
+\code{"severity"}/\code{"average_severity"} and \code{"risk_premium"}.}
 
 \item{ncol}{Number of columns in the patchwork layout. Default is 1.}
 
@@ -78,8 +84,8 @@ A \code{ggplot}/\code{patchwork} object.
 Create a ggplot visualisation of a \code{rating_table} object produced by
 \code{\link[=rating_table]{rating_table()}}. Estimates are plotted per risk factor, with optional
 exposure bars. Observed portfolio experience can be added first with
-\code{\link[=add_observed_experience]{add_observed_experience()}}.
+\code{\link[=add_portfolio_experience]{add_portfolio_experience()}}.
 
 When observed experience is attached, it is plotted as an additional line.
-The scaling is controlled by \code{\link[=add_observed_experience]{add_observed_experience()}}.
+The scaling is controlled by \code{\link[=add_portfolio_experience]{add_portfolio_experience()}}.
 }

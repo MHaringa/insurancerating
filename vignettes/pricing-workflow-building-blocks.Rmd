@@ -196,21 +196,20 @@ rt <- rating_table(
 head(rt$df)
 ```
 
-Observed portfolio experience from `factor_analysis()` can be attached to the
-rating table with `add_observed_experience()`. This makes the comparison between
-model relativities and observed experience explicit.
+Observed portfolio experience can be attached to the rating table with
+`add_portfolio_experience()`. When `data` is supplied, the function calculates
+the observed experience for the rating-table risk factors automatically. This
+makes the comparison between model relativities and observed experience
+explicit.
 
 ```{r}
-zip_experience <- factor_analysis(
-  portfolio,
-  risk_factors = "zip",
-  claim_count = "nclaims",
-  exposure = "exposure"
-)
-
 rt |>
-  add_observed_experience(zip_experience, metric = "frequency") |>
-  autoplot(risk_factors = "zip")
+  add_portfolio_experience(
+    data = portfolio,
+    claim_count = "nclaims",
+    exposure = "exposure"
+  ) |>
+  autoplot(risk_factors = "zip", metric = "frequency")
 ```
 
 ## 5. Refine tariff effects when needed
@@ -280,7 +279,7 @@ One possible workflow is:
 6. Fit GLMs for frequency, severity or pure premium.
 7. Interpret coefficients with `rating_table()`.
 8. Compare fitted relativities with observed experience using
-   `add_observed_experience()`.
+   `add_portfolio_experience()`.
 9. Apply refinement where needed with `prepare_refinement()`, `add_smoothing()`,
    `add_restriction()` or `add_relativities()`.
 10. Validate the resulting model with the model-performance helpers.

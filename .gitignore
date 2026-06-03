@@ -8,3 +8,9 @@ inst/doc
 /doc/
 /Meta/
 .positai
+.Rhistory
+.RData
+.Ruserdata
+.Rcheck/
+*.tar.gz
+docs/articles/*.utf8.md

@@ -800,30 +800,73 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 }
 
 
-#' Add observed portfolio experience to a rating table
+#' Add portfolio experience to a rating table
 #'
 #' @description
-#' Attach the output of [factor_analysis()] to a [rating_table()] object so it
-#' can be shown in [autoplot.rating_table()]. This is useful when you want to
-#' compare fitted GLM relativities with the observed portfolio pattern for the
-#' same rating factor.
+#' `add_portfolio_experience()` enriches a [rating_table()] object with observed
+#' portfolio experience. When `data` is supplied, observed experience is
+#' calculated automatically for all risk factors in the rating table, unless
+#' `risk_factors` is specified. Existing [factor_analysis()] results can also be
+#' supplied through `observed`.
+#'
+#' This makes it possible to compare fitted GLM relativities with observed
+#' portfolio patterns in [autoplot.rating_table()]. The full observed output is
+#' stored on the rating table, so [autoplot.rating_table()] can later switch
+#' between metrics such as `"frequency"`, `"average_severity"` and
+#' `"risk_premium"` without recalculating the summaries.
 #'
 #' The observed metric is scaled before plotting. With `scale = "reference"`
 #' the metric is divided by the observed value of the model reference level. If
 #' a clear reference level cannot be found, the metric is scaled to its mean.
 #' With `scale = "mean"`, the metric is always scaled to its mean.
 #'
-#' @param object A `rating_table` object returned by [rating_table()].
-#' @param experience A `factor_analysis` object returned by [factor_analysis()].
-#' @param metric Character; metric from `experience` to plot. Common choices are
-#'   `"frequency"`, `"average_severity"`, `"risk_premium"`, `"loss_ratio"` and
-#'   `"average_premium"`, depending on which columns were supplied to
+#' @usage
+#' add_portfolio_experience(x, ...)
+#'
+#' \method{add_portfolio_experience}{rating_table}(
+#'   x,
+#'   observed = NULL,
+#'   data = NULL,
+#'   risk_factors = NULL,
+#'   claim_count = NULL,
+#'   exposure = NULL,
+#'   claim_amount = NULL,
+#'   metric = NULL,
+#'   label = "Observed experience",
+#'   color = NULL,
+#'   scale = c("reference", "mean"),
+#'   experience = NULL,
+#'   ...
+#' )
+#'
+#' @aliases add_portfolio_experience.rating_table
+#'
+#' @param x A `rating_table` object returned by [rating_table()].
+#' @param observed Optional [factor_analysis()] object or list of
+#'   [factor_analysis()] objects. If supplied, these observed summaries are
+#'   attached directly.
+#' @param data Optional `data.frame`. If `observed = NULL`, observed experience
+#'   is calculated from this data.
+#' @param risk_factors Optional character vector. Risk factors for which
+#'   observed experience should be calculated. If `NULL`, all risk factors in
+#'   the rating table are used.
+#' @param claim_count Optional character string. Claim count column used by
 #'   [factor_analysis()].
+#' @param exposure Optional character string. Exposure column used by
+#'   [factor_analysis()].
+#' @param claim_amount Optional character string. Claim amount column used by
+#'   [factor_analysis()].
+#' @param metric Optional character string. Default observed metric to plot.
+#'   Common choices are `"frequency"`, `"severity"`/`"average_severity"` and
+#'   `"risk_premium"`. The metric can also be overridden in
+#'   [autoplot.rating_table()].
 #' @param label Character; legend label for the observed experience line.
 #' @param color Optional line color. If `NULL`, the internal risk premium color
 #'   is used.
 #' @param scale Character; scaling applied before plotting. One of
 #'   `"reference"` or `"mean"`.
+#' @param experience Deprecated alias for `observed`.
+#' @param ... Unused.
 #'
 #' @return A `rating_table` object with observed portfolio experience attached.
 #'
@@ -840,6 +883,14 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 #'   data = df
 #' )
 #'
+#' rating_table(model, model_data = df, exposure = "exposure") |>
+#'   add_portfolio_experience(
+#'     data = df,
+#'     claim_count = "nclaims",
+#'     exposure = "exposure"
+#'   ) |>
+#'   autoplot(risk_factors = "area", metric = "frequency")
+#'
 #' observed <- factor_analysis(
 #'   df,
 #'   risk_factors = "area",
@@ -848,47 +899,262 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 #' )
 #'
 #' rating_table(model, model_data = df, exposure = "exposure") |>
-#'   add_observed_experience(observed, metric = "frequency") |>
+#'   add_portfolio_experience(observed = observed) |>
 #'   autoplot(risk_factors = "area")
 #'
 #' @export
-add_observed_experience <- function(object,
-                                    experience,
-                                    metric = "risk_premium",
-                                    label = "Observed experience",
-                                    color = NULL,
-                                    scale = c("reference", "mean")) {
-  if (!inherits(object, "rating_table")) {
-    stop("'object' must be a rating_table object.", call. = FALSE)
+add_portfolio_experience <- function(x, ...) {
+  UseMethod("add_portfolio_experience")
+}
+
+#' @export
+add_portfolio_experience.rating_table <- function(x,
+                                                  observed = NULL,
+                                                  data = NULL,
+                                                  risk_factors = NULL,
+                                                  claim_count = NULL,
+                                                  exposure = NULL,
+                                                  claim_amount = NULL,
+                                                  metric = NULL,
+                                                  label = "Observed experience",
+                                                  color = NULL,
+                                                  scale = c("reference", "mean"),
+                                                  experience = NULL,
+                                                  ...) {
+  .check_dots_empty(...)
+  if (!is.null(experience)) {
+    if (!is.null(observed)) {
+      stop("Use only one of `observed` and deprecated `experience`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "add_portfolio_experience(experience)",
+      "add_portfolio_experience(observed)"
+    )
+    observed <- experience
   }
-  if (!inherits(experience, "factor_analysis")) {
-    stop("'experience' must be a factor_analysis object.", call. = FALSE)
-  }
-  if (!is.character(metric) || length(metric) != 1 || is.na(metric)) {
-    stop("'metric' must be a single character string.", call. = FALSE)
-  }
-  if (!metric %in% names(experience)) {
-    stop("'metric' not found in 'experience'.", call. = FALSE)
+
+  if (!is.null(observed) && !is.null(data)) {
+    stop("Use only one of `observed` and `data`.", call. = FALSE)
   }
   if (!is.character(label) || length(label) != 1 || is.na(label)) {
-    stop("'label' must be a single character string.", call. = FALSE)
+    stop("`label` must be a single character string.", call. = FALSE)
   }
   if (!is.null(color) && (!is.character(color) || length(color) != 1 ||
                           is.na(color))) {
-    stop("'color' must be NULL or a single character string.", call. = FALSE)
+    stop("`color` must be NULL or a single character string.", call. = FALSE)
   }
 
   scale <- match.arg(scale)
 
-  object$observed_experience <- list(
-    experience = experience,
-    metric = metric,
+  if (is.null(observed)) {
+    observed <- calculate_rating_table_observed_experience(
+      x = x,
+      data = data,
+      risk_factors = risk_factors,
+      claim_count = claim_count,
+      exposure = exposure,
+      claim_amount = claim_amount
+    )
+  }
+
+  observed_data <- normalize_rating_table_observed_experience(observed)
+  default_metric <- resolve_rating_table_observed_metric(
+    metric,
+    observed_data,
+    allow_null = TRUE
+  )
+
+  x$observed_experience <- list(
+    data = observed_data,
+    metric = default_metric,
     label = label,
     color = color,
     scale = scale
   )
+  attr(x, "observed_experience") <- x$observed_experience
 
-  object
+  x
+}
+
+#' Deprecated alias for `add_portfolio_experience()`
+#'
+#' @description
+#' `add_observed_experience()` is deprecated. Use
+#' [add_portfolio_experience()] instead.
+#'
+#' @inheritParams add_portfolio_experience
+#'
+#' @return See [add_portfolio_experience()].
+#'
+#' @author Martin Haringa
+#'
+#' @keywords internal
+#' @export
+add_observed_experience <- function(...) {
+  lifecycle::deprecate_warn(
+    "0.8.1",
+    "add_observed_experience()",
+    "add_portfolio_experience()"
+  )
+  add_portfolio_experience(...)
+}
+
+calculate_rating_table_observed_experience <- function(x,
+                                                       data,
+                                                       risk_factors = NULL,
+                                                       claim_count = NULL,
+                                                       exposure = NULL,
+                                                       claim_amount = NULL) {
+  if (!inherits(data, "data.frame")) {
+    stop("`data` must be supplied as a data.frame when `observed = NULL`.",
+         call. = FALSE)
+  }
+
+  table_risk_factors <- unique(as.character(x$df$risk_factor))
+  if (is.null(risk_factors)) {
+    risk_factors <- intersect(table_risk_factors, names(data))
+  } else if (!is.character(risk_factors) || length(risk_factors) == 0L ||
+             anyNA(risk_factors)) {
+    stop("`risk_factors` must be NULL or a non-empty character vector.",
+         call. = FALSE)
+  }
+
+  unknown <- setdiff(risk_factors, table_risk_factors)
+  if (length(unknown) > 0) {
+    stop("Unknown risk factor(s) in `risk_factors`: ",
+         paste(unknown, collapse = ", "), call. = FALSE)
+  }
+  missing_cols <- setdiff(risk_factors, names(data))
+  if (length(missing_cols) > 0) {
+    stop("Risk factor column(s) not found in `data`: ",
+         paste(missing_cols, collapse = ", "), call. = FALSE)
+  }
+
+  lapply(
+    risk_factors,
+    function(rf) {
+      factor_analysis(
+        data = data,
+        risk_factors = rf,
+        claim_count = claim_count,
+        claim_amount = claim_amount,
+        exposure = exposure
+      )
+    }
+  )
+}
+
+normalize_rating_table_observed_experience <- function(observed) {
+  if (inherits(observed, "factor_analysis")) {
+    observed <- list(observed)
+  }
+  if (!is.list(observed) || length(observed) == 0L) {
+    stop("`observed` must be a factor_analysis object or a non-empty list of factor_analysis objects.",
+         call. = FALSE)
+  }
+  if (!all(vapply(observed, inherits, logical(1), what = "factor_analysis"))) {
+    stop("Every element of `observed` must be a factor_analysis object.",
+         call. = FALSE)
+  }
+
+  observed <- lapply(observed, normalize_one_rating_table_observed_experience)
+  all_names <- unique(unlist(lapply(observed, names)))
+  observed <- lapply(
+    observed,
+    function(x) {
+      missing <- setdiff(all_names, names(x))
+      for (nm in missing) {
+        x[[nm]] <- NA
+      }
+      x[, all_names, drop = FALSE]
+    }
+  )
+  out <- do.call(rbind, observed)
+  row.names(out) <- NULL
+  out
+}
+
+normalize_one_rating_table_observed_experience <- function(experience) {
+  xvar <- attr(experience, "xvar")
+  if (length(xvar) == 0L || is.na(xvar[1])) {
+    stop("The factor_analysis object does not store a risk factor name.",
+         call. = FALSE)
+  }
+  risk_factor <- xvar[1]
+  experience_df <- as.data.frame(experience)
+
+  if (!risk_factor %in% names(experience_df)) {
+    stop("The factor_analysis object does not contain its risk factor column.",
+         call. = FALSE)
+  }
+
+  names(experience_df)[names(experience_df) == risk_factor] <- "level"
+  experience_df$risk_factor <- risk_factor
+  experience_df$level <- as.character(experience_df$level)
+
+  col_map <- c(
+    exposure = attr(experience, "exposure") %||% NA_character_,
+    claim_count = attr(experience, "claim_count") %||%
+      attr(experience, "nclaims") %||% NA_character_,
+    claim_amount = attr(experience, "claim_amount") %||%
+      attr(experience, "severity") %||% NA_character_,
+    premium = attr(experience, "premium") %||% NA_character_
+  )
+
+  for (nm in names(col_map)) {
+    old_nm <- unname(col_map[[nm]])
+    if (!is.na(old_nm) && old_nm %in% names(experience_df) && old_nm != nm) {
+      names(experience_df)[names(experience_df) == old_nm] <- nm
+    }
+  }
+
+  keep <- intersect(
+    c(
+      "risk_factor", "level", "exposure", "claim_count", "claim_amount",
+      "premium", "frequency", "average_severity", "risk_premium",
+      "loss_ratio", "average_premium"
+    ),
+    names(experience_df)
+  )
+  experience_df[, keep, drop = FALSE]
+}
+
+resolve_rating_table_observed_metric <- function(metric,
+                                                 observed_data,
+                                                 allow_null = FALSE) {
+  if (is.null(metric)) {
+    if (isTRUE(allow_null)) {
+      available <- intersect(
+        c("frequency", "average_severity", "risk_premium",
+          "loss_ratio", "average_premium"),
+        names(observed_data)
+      )
+      if (length(available) == 0L) {
+        return(NULL)
+      }
+      return(available[1])
+    }
+    stop("`metric` must be supplied when observed experience is attached.",
+         call. = FALSE)
+  }
+  if (!is.character(metric) || length(metric) != 1L || is.na(metric)) {
+    stop("`metric` must be NULL or a single character string.", call. = FALSE)
+  }
+
+  metric <- switch(
+    metric,
+    severity = "average_severity",
+    metric
+  )
+
+  if (!metric %in% names(observed_data)) {
+    stop("`metric` is not available in the attached observed experience.",
+         call. = FALSE)
+  }
+
+  metric
 }
 
 

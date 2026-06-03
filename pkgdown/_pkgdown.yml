@@ -63,7 +63,7 @@ reference:
       Estimate pricing models and interpret fitted coefficients in tariff terms.
     contents:
       - rating_table
-      - add_observed_experience
+      - add_portfolio_experience
       - autoplot.rating_table
       - add_prediction
 
@@ -124,6 +124,7 @@ reference:
       - fit_gam
       - rating_factors
       - rating_factors2
+      - add_observed_experience
       - model_data
       - construct_model_points
       - construct_tariff_classes
