@@ -1,0 +1,12 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  getting-started: getting-started.html
+  model-validation: model-validation.html
+  pricing-workflow-building-blocks: pricing-workflow-building-blocks.html
+  refinement-workflow: refinement-workflow.html
+last_built: 2026-07-14T08:00Z
+urls:
+  reference: https://mharinga.github.io/insurancerating/reference
+  article: https://mharinga.github.io/insurancerating/articles
