@@ -161,7 +161,7 @@ decomposed$base_premium <- 500
 
 allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "excess_claim_amount",
+  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure"
 )
 
@@ -170,7 +170,7 @@ apply_excess_loading(
   allocation,
   base_premium = "base_premium"
 )
-#>     sector claim_amount earned_exposure capped_claim_amount excess_claim_amount
+#>     sector claim_amount earned_exposure claim_amount_capped claim_amount_excess
 #> 1 Industry         1000               1               1e+03                   0
 #> 2 Industry       120000               1               1e+05               20000
 #> 3 Industry        30000               1               3e+04                   0
@@ -179,15 +179,15 @@ apply_excess_loading(
 #> 6   Retail       150000               1               1e+05               50000
 #> 7   Retail        40000               1               4e+04                   0
 #> 8   Retail         6000               1               6e+03                   0
-#>   is_excess_claim base_premium allocated_excess_loss allocated_loading
-#> 1           FALSE          500                  8750              8750
-#> 2            TRUE          500                  8750              8750
-#> 3           FALSE          500                  8750              8750
-#> 4           FALSE          500                  8750              8750
-#> 5           FALSE          500                  8750              8750
-#> 6            TRUE          500                  8750              8750
-#> 7           FALSE          500                  8750              8750
-#> 8           FALSE          500                  8750              8750
+#>   claim_amount_is_excess base_premium allocated_excess_loss allocated_loading
+#> 1                  FALSE          500                  8750              8750
+#> 2                   TRUE          500                  8750              8750
+#> 3                  FALSE          500                  8750              8750
+#> 4                  FALSE          500                  8750              8750
+#> 5                  FALSE          500                  8750              8750
+#> 6                   TRUE          500                  8750              8750
+#> 7                  FALSE          500                  8750              8750
+#> 8                  FALSE          500                  8750              8750
 #>   excess_loading loaded_premium
 #> 1           8750           9250
 #> 2           8750           9250
@@ -205,7 +205,7 @@ apply_excess_loading(
   weight = "earned_exposure",
   output = "rate"
 )
-#>     sector claim_amount earned_exposure capped_claim_amount excess_claim_amount
+#>     sector claim_amount earned_exposure claim_amount_capped claim_amount_excess
 #> 1 Industry         1000               1               1e+03                   0
 #> 2 Industry       120000               1               1e+05               20000
 #> 3 Industry        30000               1               3e+04                   0
@@ -214,13 +214,13 @@ apply_excess_loading(
 #> 6   Retail       150000               1               1e+05               50000
 #> 7   Retail        40000               1               4e+04                   0
 #> 8   Retail         6000               1               6e+03                   0
-#>   is_excess_claim base_premium base_rate allocated_loading loaded_rate
-#> 1           FALSE          500       500              8750        9250
-#> 2            TRUE          500       500              8750        9250
-#> 3           FALSE          500       500              8750        9250
-#> 4           FALSE          500       500              8750        9250
-#> 5           FALSE          500       500              8750        9250
-#> 6            TRUE          500       500              8750        9250
-#> 7           FALSE          500       500              8750        9250
-#> 8           FALSE          500       500              8750        9250
+#>   claim_amount_is_excess base_premium base_rate allocated_loading loaded_rate
+#> 1                  FALSE          500       500              8750        9250
+#> 2                   TRUE          500       500              8750        9250
+#> 3                  FALSE          500       500              8750        9250
+#> 4                  FALSE          500       500              8750        9250
+#> 5                  FALSE          500       500              8750        9250
+#> 6                   TRUE          500       500              8750        9250
+#> 7                  FALSE          500       500              8750        9250
+#> 8                  FALSE          500       500              8750        9250
 ```

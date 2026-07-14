@@ -68,7 +68,7 @@ autoplot(
 )
 ```
 
-![Factor analysis plot showing frequency, average severity and risk premium by ZIP code.](man/figures/unnamed-chunk-3-1.png)<!-- -->
+<img src="man/figures/unnamed-chunk-3-1.png" alt="Factor analysis plot showing frequency, average severity and risk premium by ZIP code."  />
 
 ``` r
 # Fit model
@@ -194,3 +194,16 @@ Full documentation and examples are available in the articles:
 - [Model validation](articles/model-validation.html)
 - [Pricing workflow building
   blocks](articles/pricing-workflow-building-blocks.html)
+
+## Learn more
+
+Full documentation and examples are available in the articles:
+
+- [Getting
+  started](https://mtharinga.github.io/insurancerating/articles/getting-started.html)
+- [Refinement building
+  blocks](https://mtharinga.github.io/insurancerating/articles/refinement-workflow.html)
+- [Model
+  validation](https://mtharinga.github.io/insurancerating/articles/model-validation.html)
+- [Pricing workflow building
+  blocks](https://mtharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html)

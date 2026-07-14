@@ -202,6 +202,19 @@ Full documentation and examples are available in the articles:
 - [Pricing workflow building
   blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md)
 
+## Learn more
+
+Full documentation and examples are available in the articles:
+
+- [Getting
+  started](https://mtharinga.github.io/insurancerating/articles/getting-started.html)
+- [Refinement building
+  blocks](https://mtharinga.github.io/insurancerating/articles/refinement-workflow.html)
+- [Model
+  validation](https://mtharinga.github.io/insurancerating/articles/model-validation.html)
+- [Pricing workflow building
+  blocks](https://mtharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html)
+
 # Package index
 
 ## Portfolio analysis
@@ -226,13 +239,13 @@ components that can be added to technical risk premium models.
   : Exploratory severity diagnostics by category
 - [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
   : Assess possible excess-loss thresholds
-- [`autoplot(`*`<excess_threshold_assessment>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_threshold_assessment.md)
-  : Plot an excess threshold assessment
+- [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+  : Convert an object to a gt table
 - [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
   : Decompose claim amounts into capped and excess parts
 - [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
   : Allocate excess loss to a pricing portfolio
-- [`autoplot(`*`<excess_loss_allocation>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_loss_allocation.md)
+- [`autoplot(`*`<excess_allocation>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_allocation.md)
   : Plot an excess-loss allocation
 - [`apply_excess_loading()`](https://mharinga.github.io/insurancerating/reference/apply_excess_loading.md)
   : Apply excess loading to a pricing portfolio

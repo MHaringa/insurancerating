@@ -9,54 +9,151 @@ assess_excess_threshold(
   claim_amount,
   thresholds,
   exposure = NULL,
-  group = NULL
+  group = NULL,
+  claim_count = NULL
 )
 }
 \arguments{
-\item{data}{A \code{data.frame} with claim-level observations.}
+\item{data}{A \code{data.frame} with portfolio-level or claim-level observations.
+Portfolio-level data can include policies without claims.}
 
 \item{claim_amount}{Character string. Claim amount column.}
 
 \item{thresholds}{Numeric vector of candidate thresholds.}
 
 \item{exposure}{Optional character string. Exposure column. If supplied,
-pure premium before and after capping is calculated.}
+risk premium before and after capping is calculated. The output column keeps
+this original name. If \code{NULL}, every record is counted as one exposure unit
+and the output contains an \code{exposure} column.}
 
 \item{group}{Optional character string. Grouping column used to assess
-thresholds by segment.}
+thresholds by segment. The output column keeps this original name. If
+\code{NULL}, no grouping column is added.}
+
+\item{claim_count}{Optional character string. Claim-count column. If
+supplied, \code{n_claims} is calculated as the sum of this column. If \code{NULL},
+records with \code{claim_amount > 0} are counted as one claim and records with
+\code{claim_amount == 0} as zero claims.}
 }
 \value{
-A \code{data.frame} with class \code{"excess_threshold_assessment"}.
+A \code{data.frame} with class \code{"threshold_assessment"} and columns:
+\describe{
+\item{group column}{The original grouping column, such as \code{sector}, if
+\code{group} is supplied. This is the first column when grouping is used.}
+\item{\code{threshold}}{The excess threshold being assessed. Thresholds are
+shown in the same order as supplied in the \code{thresholds} argument.}
+\item{exposure column}{The original exposure column, such as
+\code{policy_years}, if \code{exposure} is supplied. If \code{exposure = NULL}, this
+column is named \code{exposure} and counts records.}
+\item{\code{n_claims}}{Total number of claims, calculated from \code{claim_count} or
+inferred from \code{claim_amount > 0}.}
+\item{\code{n_excess_records}}{Number of records with
+\code{claim_amount > threshold}. This counts records, not individual claims.}
+\item{\code{total_loss}}{Total claim amount before applying the threshold.}
+\item{\code{capped_loss}}{Total claim amount retained below or at the
+threshold.}
+\item{\code{excess_loss}}{Total claim amount above the threshold.}
+\item{\code{pure_premium_before}}{Risk premium before capping:
+\code{total_loss / exposure}.}
+\item{\code{pure_premium_after}}{Risk premium after capping:
+\code{capped_loss / exposure}.}
+\item{\code{premium_reduction}}{\code{pure_premium_before - pure_premium_after},
+equivalent to \code{excess_loss / exposure}. This is positive when applying the
+threshold reduces the retained risk premium.}
+\item{\code{premium_reduction_ratio}}{\code{premium_reduction / pure_premium_before}. This is between 0 and 1 when
+\code{pure_premium_before > 0}; if \code{pure_premium_before == 0}, it is defined as
+0.}
+}
 }
 \description{
 Compare candidate thresholds for capped severity and large-loss pricing work.
 
 \code{assess_excess_threshold()} is a diagnostic helper. It does not choose a
-threshold automatically. It shows how many claims and how much historical
-claim cost sit above candidate thresholds, and how much pure premium would
-remain after capping claims at each threshold.
+threshold automatically. It shows how many claims, how many records contain
+claim amounts above candidate thresholds, how much historical claim cost sits
+above those thresholds, and how much risk premium would remain after capping
+claims at each threshold.
 
-Use this before \code{\link[=calculate_excess_loss]{calculate_excess_loss()}} to understand the effect of the
-threshold on the portfolio. The output is useful for tariff notes, pricing
-reviews and governance discussions around capped severity models.
+The function is intended for portfolio-level data as well as claim-level
+data. Portfolio-level data can include policies without claims, for example
+rows where \code{claim_count = 0} and the claim amount is zero. Use this before
+\code{\link[=calculate_excess_loss]{calculate_excess_loss()}} to understand the effect of the threshold on the
+portfolio. The output is useful for tariff notes, pricing reviews and
+governance discussions around capped severity models.
+}
+\details{
+The output can be used for two common follow-up analyses. First, aggregate the
+threshold assessment to portfolio level to calculate the average additional
+risk premium required to finance the excess layer. Second, after selecting a
+threshold, compare groups to see which parts of the portfolio benefit most
+from the excess protection.
 }
 \examples{
-claims <- data.frame(
+portfolio <- data.frame(
+  policy_id = 1:10,
   sector = rep(c("Industry", "Retail"), each = 5),
-  claim_amount = c(1000, 25000, 120000, 50000, 175000,
-                   2000, 40000, 90000, 150000, 300000),
-  earned_exposure = rep(1, 10)
+  claim_count = c(
+    0, 1, 1, 1, 1,
+    0, 1, 1, 1, 1
+  ),
+  claim_amount = c(
+    0, 25000, 120000, 50000, 175000,
+    0, 40000, 90000, 150000, 300000
+  ),
+  policy_years = rep(1, 10)
 )
 
 thresholds <- assess_excess_threshold(
-  data = claims,
+  data = portfolio,
   claim_amount = "claim_amount",
   thresholds = c(25000, 50000, 100000, 150000),
-  exposure = "earned_exposure",
-  group = "sector"
+  exposure = "policy_years",
+  group = "sector",
+  claim_count = "claim_count"
 )
 
-autoplot(thresholds, y = "premium_impact")
+thresholds
+if (requireNamespace("gt", quietly = TRUE)) {
+  as_gt(thresholds)
+}
+
+# Calculate the average additional risk premium required to finance
+# the excess portion of the claims.
+thresholds |>
+  dplyr::summarise(
+    policy_years = sum(policy_years),
+    excess_loss = sum(excess_loss),
+    capped_loss = sum(capped_loss),
+    extra_risk_premium = excess_loss / policy_years,
+    risk_premium_increase = excess_loss / capped_loss,
+    .by = "threshold"
+  )
+
+# After selecting a threshold, compare which groups benefit most
+# from the excess protection.
+selected_threshold <- thresholds |>
+  dplyr::filter(threshold == 100000) |>
+  dplyr::select(
+    sector,
+    threshold,
+    policy_years,
+    n_claims,
+    n_excess_records,
+    premium_reduction,
+    premium_reduction_ratio
+  ) |>
+  dplyr::arrange(dplyr::desc(premium_reduction_ratio))
+
+selected_threshold
+
+# If claim_count is omitted, records with positive claim amounts are counted.
+assess_excess_threshold(
+  data = portfolio,
+  claim_amount = "claim_amount",
+  thresholds = 100000,
+  exposure = "policy_years",
+  group = "sector"
+)
 
 }
 \author{

@@ -201,3 +201,16 @@ Full documentation and examples are available in the articles:
   validation](https://mharinga.github.io/insurancerating/articles/model-validation.md)
 - [Pricing workflow building
   blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md)
+
+## Learn more
+
+Full documentation and examples are available in the articles:
+
+- [Getting
+  started](https://mtharinga.github.io/insurancerating/articles/getting-started.html)
+- [Refinement building
+  blocks](https://mtharinga.github.io/insurancerating/articles/refinement-workflow.html)
+- [Model
+  validation](https://mtharinga.github.io/insurancerating/articles/model-validation.html)
+- [Pricing workflow building
+  blocks](https://mtharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html)

@@ -73,7 +73,7 @@ rescaled so that the total allocated excess loss equals the total excess
 loss being allocated.}
 }
 \value{
-An object of class \code{"excess_loss_allocation"}.
+An object of class \code{"excess_allocation"}.
 }
 \description{
 Large claims can distort risk-factor relativities and create unstable
@@ -267,7 +267,7 @@ decomposed <- calculate_excess_loss(
 # Pool all excess losses across the portfolio
 portfolio_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "excess_claim_amount",
+  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
   allocation = "portfolio"
 )
@@ -275,7 +275,7 @@ portfolio_allocation <- allocate_excess_loss(
 # Allocate excess losses separately by sector
 sector_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "excess_claim_amount",
+  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
   risk_factor = "sector",
   allocation = "risk_factor"
@@ -284,7 +284,7 @@ sector_allocation <- allocate_excess_loss(
 # Blend sector and portfolio experience using credibility
 partial_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "excess_claim_amount",
+  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
   risk_factor = "sector",
   allocation = "partial",

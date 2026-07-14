@@ -1,8 +1,9 @@
 # Decompose claim amounts into capped and excess parts
 
 Large claims can distort risk-factor relativities and make pricing
-models unstable. `calculate_excess_loss()` separates each claim into a
-capped part and an excess part above a selected threshold.
+models unstable. `calculate_excess_loss()` separates each row in a
+portfolio into a capped claim amount and an excess part above a selected
+threshold.
 
 ## Usage
 
@@ -14,7 +15,9 @@ calculate_excess_loss(data, claim_amount, threshold)
 
 - data:
 
-  A data.frame with claim-level observations.
+  A data.frame with portfolio-level or claim-level observations.
+  Portfolio-level data can include policies without claims, for example
+  rows where `n_claims = 0` and the claim amount is zero.
 
 - claim_amount:
 
@@ -28,8 +31,9 @@ calculate_excess_loss(data, claim_amount, threshold)
 
 ## Value
 
-A data.frame with the original data and the columns `claim_amount`,
-`capped_claim_amount`, `excess_claim_amount` and `is_excess_claim`.
+A data.frame with the original data and three added columns. The names
+are derived from `claim_amount`: `<claim_amount>_capped`,
+`<claim_amount>_excess` and `<claim_amount>_is_excess`.
 
 ## Details
 
@@ -42,15 +46,20 @@ The function is deliberately deterministic. It does not perform
 smoothing, credibility weighting, allocation or simulation. It simply
 decomposes each observed claim into:
 
-\$\$ claim\\amount = capped\\claim\\amount + excess\\claim\\amount \$\$
+\$\$ claim\\amount = claim\\amount\\capped + claim\\amount\\excess \$\$
 
 where:
 
-\$\$ excess\\claim\\amount = max(claim\\amount - threshold, 0) \$\$
+\$\$ claim\\amount\\excess = max(claim\\amount - threshold, 0) \$\$
 
 and:
 
-\$\$ capped\\claim\\amount = min(claim\\amount, threshold) \$\$
+\$\$ claim\\amount\\capped = min(claim\\amount, threshold) \$\$
+
+The output column names are derived from the column supplied through
+`claim_amount`. For example, if `claim_amount = "incurred_loss"`, the
+added columns are `incurred_loss_capped`, `incurred_loss_excess` and
+`incurred_loss_is_excess`.
 
 The resulting excess component can subsequently be allocated using
 [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
@@ -82,17 +91,25 @@ Martin Haringa
 ## Examples
 
 ``` r
-claims <- data.frame(
-  claim_amount = c(1000, 120000, 30000)
+portfolio <- data.frame(
+  policy_id = 1:4,
+  n_claims = c(0, 1, 1, 0),
+  claim_amount = c(0, 120000, 30000, 0)
 )
 
 calculate_excess_loss(
-  claims,
+  portfolio,
   claim_amount = "claim_amount",
   threshold = 100000
 )
-#>   claim_amount capped_claim_amount excess_claim_amount is_excess_claim
-#> 1         1000               1e+03                   0           FALSE
-#> 2       120000               1e+05               20000            TRUE
-#> 3        30000               3e+04                   0           FALSE
+#>   policy_id n_claims claim_amount claim_amount_capped claim_amount_excess
+#> 1         1        0            0               0e+00                   0
+#> 2         2        1       120000               1e+05               20000
+#> 3         3        1        30000               3e+04                   0
+#> 4         4        0            0               0e+00                   0
+#>   claim_amount_is_excess
+#> 1                  FALSE
+#> 2                   TRUE
+#> 3                  FALSE
+#> 4                  FALSE
 ```

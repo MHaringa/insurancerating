@@ -11,7 +11,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet">
@@ -119,7 +125,7 @@ before fitting severity models or constructing tariff segments.</p>
 <div class="section level2">
 <h2 id="assess-large-losses">2. Assess large losses<a class="anchor" aria-label="anchor" href="#assess-large-losses"></a>
 </h2>
-<p>Large claims can dominate severity and pure premium analysis. In
+<p>Large claims can dominate severity and risk premium analysis. In
 capped severity workflows, it is often useful to assess a cap first,
 decompose the historical claim amounts, and then decide how the excess
 burden should be allocated. A low threshold increases pricing
@@ -127,15 +133,31 @@ responsiveness but introduces volatility. A high threshold improves
 stability but may understate structural differences between
 segments.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">thresholds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assess_excess_threshold.html">assess_excess_threshold</a></span><span class="op">(</span></span>
-<span>  <span class="va">claims</span>,</span>
-<span>  claim_amount <span class="op">=</span> <span class="st">"claim_amount"</span>,</span>
-<span>  thresholds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50000</span>, <span class="fl">100000</span>, <span class="fl">150000</span><span class="op">)</span>,</span>
-<span>  exposure <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
-<span>  group <span class="op">=</span> <span class="st">"sector"</span></span>
+<code class="sourceCode R"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  policy_id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span>,</span>
+<span>  sector <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Industry"</span>, <span class="st">"Retail"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,</span>
+<span>  claim_count <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>,</span>
+<span>  claim_amount <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fl">0</span>, <span class="fl">25000</span>, <span class="fl">120000</span>, <span class="fl">50000</span>, <span class="fl">175000</span>,</span>
+<span>    <span class="fl">0</span>, <span class="fl">40000</span>, <span class="fl">90000</span>, <span class="fl">150000</span>, <span class="fl">300000</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  policy_years <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">10</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">thresholds</span>, y <span class="op">=</span> <span class="st">"premium_impact"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">thresholds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assess_excess_threshold.html">assess_excess_threshold</a></span><span class="op">(</span></span>
+<span>  <span class="va">portfolio</span>,</span>
+<span>  claim_amount <span class="op">=</span> <span class="st">"claim_amount"</span>,</span>
+<span>  thresholds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">25000</span>, <span class="fl">50000</span>, <span class="fl">100000</span>, <span class="fl">150000</span><span class="op">)</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="st">"policy_years"</span>,</span>
+<span>  group <span class="op">=</span> <span class="st">"sector"</span>,</span>
+<span>  claim_count <span class="op">=</span> <span class="st">"claim_count"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"gt"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="../reference/as_gt.html">as_gt</a></span><span class="op">(</span><span class="va">thresholds</span><span class="op">)</span></span>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span>  <span class="va">thresholds</span></span>
+<span><span class="op">}</span></span></code></pre></div>
 <p>After choosing a threshold, <code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code>
 creates a deterministic historical decomposition. It does not bootstrap
 or allocate anything.</p>
@@ -153,7 +175,7 @@ of observed excess experience.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">allocation</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/allocate_excess_loss.html">allocate_excess_loss</a></span><span class="op">(</span></span>
 <span>  <span class="va">excess</span>,</span>
-<span>  excess_amount <span class="op">=</span> <span class="st">"excess_claim_amount"</span>,</span>
+<span>  excess_amount <span class="op">=</span> <span class="st">"claim_amount_excess"</span>,</span>
 <span>  allocation_weight <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
 <span>  risk_factor <span class="op">=</span> <span class="st">"sector"</span>,</span>
 <span>  allocation <span class="op">=</span> <span class="st">"partial"</span>,</span>
@@ -386,7 +408,7 @@ blocks</a></li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

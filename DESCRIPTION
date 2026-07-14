@@ -38,6 +38,7 @@ Suggests:
     classInt,
     ggbeeswarm,
     ggrepel,
+    gt,
     spelling,
     knitr,
     rmarkdown,

@@ -4,105 +4,242 @@
 #' Compare candidate thresholds for capped severity and large-loss pricing work.
 #'
 #' `assess_excess_threshold()` is a diagnostic helper. It does not choose a
-#' threshold automatically. It shows how many claims and how much historical
-#' claim cost sit above candidate thresholds, and how much pure premium would
-#' remain after capping claims at each threshold.
+#' threshold automatically. It shows how many claims, how many records contain
+#' claim amounts above candidate thresholds, how much historical claim cost sits
+#' above those thresholds, and how much risk premium would remain after capping
+#' claims at each threshold.
 #'
-#' Use this before [calculate_excess_loss()] to understand the effect of the
-#' threshold on the portfolio. The output is useful for tariff notes, pricing
-#' reviews and governance discussions around capped severity models.
+#' The function is intended for portfolio-level data as well as claim-level
+#' data. Portfolio-level data can include policies without claims, for example
+#' rows where `claim_count = 0` and the claim amount is zero. Use this before
+#' [calculate_excess_loss()] to understand the effect of the threshold on the
+#' portfolio. The output is useful for tariff notes, pricing reviews and
+#' governance discussions around capped severity models.
 #'
-#' @param data A `data.frame` with claim-level observations.
+#' @param data A `data.frame` with portfolio-level or claim-level observations.
+#'   Portfolio-level data can include policies without claims.
 #' @param claim_amount Character string. Claim amount column.
 #' @param thresholds Numeric vector of candidate thresholds.
 #' @param exposure Optional character string. Exposure column. If supplied,
-#'   pure premium before and after capping is calculated.
+#'   risk premium before and after capping is calculated. The output column keeps
+#'   this original name. If `NULL`, every record is counted as one exposure unit
+#'   and the output contains an `exposure` column.
 #' @param group Optional character string. Grouping column used to assess
-#'   thresholds by segment.
+#'   thresholds by segment. The output column keeps this original name. If
+#'   `NULL`, no grouping column is added.
+#' @param claim_count Optional character string. Claim-count column. If
+#'   supplied, `n_claims` is calculated as the sum of this column. If `NULL`,
+#'   records with `claim_amount > 0` are counted as one claim and records with
+#'   `claim_amount == 0` as zero claims.
 #'
-#' @return A `data.frame` with class `"excess_threshold_assessment"`.
+#' @details
+#' The output can be used for two common follow-up analyses. First, aggregate the
+#' threshold assessment to portfolio level to calculate the average additional
+#' risk premium required to finance the excess layer. Second, after selecting a
+#' threshold, compare groups to see which parts of the portfolio benefit most
+#' from the excess protection.
+#'
+#' @return A `data.frame` with class `"threshold_assessment"` and columns:
+#' \describe{
+#'   \item{group column}{The original grouping column, such as `sector`, if
+#'   `group` is supplied. This is the first column when grouping is used.}
+#'   \item{`threshold`}{The excess threshold being assessed. Thresholds are
+#'   shown in the same order as supplied in the `thresholds` argument.}
+#'   \item{exposure column}{The original exposure column, such as
+#'   `policy_years`, if `exposure` is supplied. If `exposure = NULL`, this
+#'   column is named `exposure` and counts records.}
+#'   \item{`n_claims`}{Total number of claims, calculated from `claim_count` or
+#'   inferred from `claim_amount > 0`.}
+#'   \item{`n_excess_records`}{Number of records with
+#'   `claim_amount > threshold`. This counts records, not individual claims.}
+#'   \item{`total_loss`}{Total claim amount before applying the threshold.}
+#'   \item{`capped_loss`}{Total claim amount retained below or at the
+#'   threshold.}
+#'   \item{`excess_loss`}{Total claim amount above the threshold.}
+#'   \item{`pure_premium_before`}{Risk premium before capping:
+#'   `total_loss / exposure`.}
+#'   \item{`pure_premium_after`}{Risk premium after capping:
+#'   `capped_loss / exposure`.}
+#'   \item{`premium_reduction`}{`pure_premium_before - pure_premium_after`,
+#'   equivalent to `excess_loss / exposure`. This is positive when applying the
+#'   threshold reduces the retained risk premium.}
+#'   \item{`premium_reduction_ratio`}{`premium_reduction /
+#'   pure_premium_before`. This is between 0 and 1 when
+#'   `pure_premium_before > 0`; if `pure_premium_before == 0`, it is defined as
+#'   0.}
+#' }
 #'
 #' @author Martin Haringa
 #'
 #' @examples
-#' claims <- data.frame(
+#' portfolio <- data.frame(
+#'   policy_id = 1:10,
 #'   sector = rep(c("Industry", "Retail"), each = 5),
-#'   claim_amount = c(1000, 25000, 120000, 50000, 175000,
-#'                    2000, 40000, 90000, 150000, 300000),
-#'   earned_exposure = rep(1, 10)
+#'   claim_count = c(
+#'     0, 1, 1, 1, 1,
+#'     0, 1, 1, 1, 1
+#'   ),
+#'   claim_amount = c(
+#'     0, 25000, 120000, 50000, 175000,
+#'     0, 40000, 90000, 150000, 300000
+#'   ),
+#'   policy_years = rep(1, 10)
 #' )
 #'
 #' thresholds <- assess_excess_threshold(
-#'   data = claims,
+#'   data = portfolio,
 #'   claim_amount = "claim_amount",
 #'   thresholds = c(25000, 50000, 100000, 150000),
-#'   exposure = "earned_exposure",
-#'   group = "sector"
+#'   exposure = "policy_years",
+#'   group = "sector",
+#'   claim_count = "claim_count"
 #' )
 #'
-#' autoplot(thresholds, y = "premium_impact")
+#' thresholds
+#' if (requireNamespace("gt", quietly = TRUE)) {
+#'   as_gt(thresholds)
+#' }
+#'
+#' # Calculate the average additional risk premium required to finance
+#' # the excess portion of the claims.
+#' thresholds |>
+#'   dplyr::summarise(
+#'     policy_years = sum(policy_years),
+#'     excess_loss = sum(excess_loss),
+#'     capped_loss = sum(capped_loss),
+#'     extra_risk_premium = excess_loss / policy_years,
+#'     risk_premium_increase = excess_loss / capped_loss,
+#'     .by = "threshold"
+#'   )
+#'
+#' # After selecting a threshold, compare which groups benefit most
+#' # from the excess protection.
+#' selected_threshold <- thresholds |>
+#'   dplyr::filter(threshold == 100000) |>
+#'   dplyr::select(
+#'     sector,
+#'     threshold,
+#'     policy_years,
+#'     n_claims,
+#'     n_excess_records,
+#'     premium_reduction,
+#'     premium_reduction_ratio
+#'   ) |>
+#'   dplyr::arrange(dplyr::desc(premium_reduction_ratio))
+#'
+#' selected_threshold
+#'
+#' # If claim_count is omitted, records with positive claim amounts are counted.
+#' assess_excess_threshold(
+#'   data = portfolio,
+#'   claim_amount = "claim_amount",
+#'   thresholds = 100000,
+#'   exposure = "policy_years",
+#'   group = "sector"
+#' )
 #'
 #' @export
 assess_excess_threshold <- function(data,
                                     claim_amount,
                                     thresholds,
                                     exposure = NULL,
-                                    group = NULL) {
-  validate_assess_excess_threshold(data, claim_amount, thresholds, exposure, group)
+                                    group = NULL,
+                                    claim_count = NULL) {
+  validate_assess_excess_threshold(
+    data = data,
+    claim_amount = claim_amount,
+    thresholds = thresholds,
+    exposure = exposure,
+    group = group,
+    claim_count = claim_count
+  )
 
   groups <- if (is.null(group)) {
     list(All = seq_len(nrow(data)))
   } else {
-    split(seq_len(nrow(data)), as.character(data[[group]]))
+    split(seq_len(nrow(data)), as.character(data[[group]]), drop = TRUE)
   }
+  if (!is.null(group)) {
+    groups <- groups[sort(names(groups))]
+  }
+  exposure_output <- exposure %||% "exposure"
 
-  out <- lapply(thresholds, function(threshold) {
-    rows <- lapply(names(groups), function(g) {
+  out <- lapply(names(groups), function(g) {
+    rows <- lapply(thresholds, function(threshold) {
       idx <- groups[[g]]
       amount <- data[[claim_amount]][idx]
       total_loss <- sum(amount)
       capped_loss <- sum(pmin(amount, threshold))
       excess_loss <- sum(pmax(amount - threshold, 0))
-      exposure_sum <- if (is.null(exposure)) NA_real_ else sum(data[[exposure]][idx])
+      exposure_sum <- if (is.null(exposure)) {
+        length(idx)
+      } else {
+        sum(data[[exposure]][idx])
+      }
+      n_claims <- if (is.null(claim_count)) {
+        sum(amount > 0)
+      } else {
+        sum(data[[claim_count]][idx])
+      }
+      pure_premium_before <- safe_ratio_excess(total_loss, exposure_sum)
+      pure_premium_after <- safe_ratio_excess(capped_loss, exposure_sum)
+      premium_reduction <- pure_premium_before - pure_premium_after
       ans <- data.frame(
         threshold = threshold,
-        n_claims = length(amount),
-        n_excess_claims = sum(amount > threshold),
-        excess_loss = excess_loss,
-        excess_loss_ratio = safe_ratio_excess(excess_loss, total_loss),
-        pure_premium_before = safe_ratio_excess(total_loss, exposure_sum),
-        pure_premium_after = safe_ratio_excess(capped_loss, exposure_sum),
-        premium_impact = safe_ratio_excess(excess_loss, exposure_sum),
+        n_claims = n_claims,
+        n_excess_records = sum(amount > threshold),
         total_loss = total_loss,
         capped_loss = capped_loss,
+        excess_loss = excess_loss,
+        pure_premium_before = pure_premium_before,
+        pure_premium_after = pure_premium_after,
+        premium_reduction = premium_reduction,
+        premium_reduction_ratio = safe_ratio_excess_zero(
+          premium_reduction,
+          pure_premium_before
+        ),
         stringsAsFactors = FALSE
       )
       if (!is.null(group)) {
-        ans$group <- g
+        ans[[group]] <- data[[group]][idx][1]
       }
+      ans[[exposure_output]] <- exposure_sum
       ans
     })
     do.call(rbind, rows)
   })
 
   out <- do.call(rbind, out)
-  if (!is.null(group)) {
-    out <- out[, c("threshold", "group", setdiff(names(out), c("threshold", "group"))),
-               drop = FALSE]
-  }
+  preferred <- c(
+    group,
+    "threshold",
+    exposure_output,
+    "n_claims",
+    "n_excess_records",
+    "total_loss",
+    "capped_loss",
+    "excess_loss",
+    "pure_premium_before",
+    "pure_premium_after",
+    "premium_reduction",
+    "premium_reduction_ratio"
+  )
+  out <- out[, c(intersect(preferred, names(out)),
+                 setdiff(names(out), preferred)), drop = FALSE]
   row.names(out) <- NULL
   attr(out, "claim_amount") <- claim_amount
   attr(out, "exposure") <- exposure
   attr(out, "group") <- group
-  class(out) <- c("excess_threshold_assessment", "data.frame")
+  attr(out, "claim_count") <- claim_count
+  class(out) <- c("threshold_assessment", "data.frame")
   out
 }
 
 #' Decompose claim amounts into capped and excess parts
 #'
 #' Large claims can distort risk-factor relativities and make pricing models
-#' unstable. `calculate_excess_loss()` separates each claim into a capped part
-#' and an excess part above a selected threshold.
+#' unstable. `calculate_excess_loss()` separates each row in a portfolio into a
+#' capped claim amount and an excess part above a selected threshold.
 #'
 #' The capped claim amount can be used to model the base premium, while the
 #' excess component can be analysed, pooled or allocated separately. This allows
@@ -115,23 +252,28 @@ assess_excess_threshold <- function(data,
 #'
 #' \deqn{
 #' claim\_amount =
-#' capped\_claim\_amount +
-#' excess\_claim\_amount
+#' claim\_amount\_capped +
+#' claim\_amount\_excess
 #' }
 #'
 #' where:
 #'
 #' \deqn{
-#' excess\_claim\_amount =
+#' claim\_amount\_excess =
 #' max(claim\_amount - threshold, 0)
 #' }
 #'
 #' and:
 #'
 #' \deqn{
-#' capped\_claim\_amount =
+#' claim\_amount\_capped =
 #' min(claim\_amount, threshold)
 #' }
+#'
+#' The output column names are derived from the column supplied through
+#' `claim_amount`. For example, if `claim_amount = "incurred_loss"`, the added
+#' columns are `incurred_loss_capped`, `incurred_loss_excess` and
+#' `incurred_loss_is_excess`.
 #'
 #' The resulting excess component can subsequently be allocated using
 #' [allocate_excess_loss()] and added back to the technical premium using
@@ -153,25 +295,29 @@ assess_excess_threshold <- function(data,
 #' risk-factor relativities while ensuring that the total cost of excess losses
 #' remains reflected in the final premium.
 #'
-#' @param data A data.frame with claim-level observations.
+#' @param data A data.frame with portfolio-level or claim-level observations.
+#'   Portfolio-level data can include policies without claims, for example rows
+#'   where `n_claims = 0` and the claim amount is zero.
 #' @param claim_amount Character string. Claim amount column.
 #' @param threshold Positive numeric scalar. Claims above this value contribute
 #'   to the excess component. Claims below the threshold remain fully included
 #'   in the capped claim amount.
 #'
-#' @return A data.frame with the original data and the columns
-#'   `claim_amount`, `capped_claim_amount`, `excess_claim_amount` and
-#'   `is_excess_claim`.
+#' @return A data.frame with the original data and three added columns. The
+#'   names are derived from `claim_amount`: `<claim_amount>_capped`,
+#'   `<claim_amount>_excess` and `<claim_amount>_is_excess`.
 #'
 #' @author Martin Haringa
 #'
 #' @examples
-#' claims <- data.frame(
-#'   claim_amount = c(1000, 120000, 30000)
+#' portfolio <- data.frame(
+#'   policy_id = 1:4,
+#'   n_claims = c(0, 1, 1, 0),
+#'   claim_amount = c(0, 120000, 30000, 0)
 #' )
 #'
 #' calculate_excess_loss(
-#'   claims,
+#'   portfolio,
 #'   claim_amount = "claim_amount",
 #'   threshold = 100000
 #' )
@@ -180,14 +326,29 @@ assess_excess_threshold <- function(data,
 calculate_excess_loss <- function(data, claim_amount, threshold) {
   validate_calculate_excess_loss(data, claim_amount, threshold)
   amount <- data[[claim_amount]]
+  capped_col <- paste0(claim_amount, "_capped")
+  excess_col <- paste0(claim_amount, "_excess")
+  indicator_col <- paste0(claim_amount, "_is_excess")
+
+  added_cols <- c(capped_col, excess_col, indicator_col)
+  existing_cols <- intersect(added_cols, names(data))
+  if (length(existing_cols) > 0) {
+    stop(
+      "Output column names already exist in `data`: ",
+      paste(existing_cols, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
   out <- data
-  out$claim_amount <- amount
-  out$capped_claim_amount <- pmin(amount, threshold)
-  out$excess_claim_amount <- pmax(amount - threshold, 0)
-  out$is_excess_claim <- amount > threshold
+  out[[capped_col]] <- pmin(amount, threshold)
+  out[[excess_col]] <- pmax(amount - threshold, 0)
+  out[[indicator_col]] <- amount > threshold
   attr(out, "claim_amount_column") <- claim_amount
+  attr(out, "claim_amount_capped_column") <- capped_col
+  attr(out, "claim_amount_excess_column") <- excess_col
+  attr(out, "claim_amount_is_excess_column") <- indicator_col
   attr(out, "threshold") <- threshold
-  class(out) <- c("excess_loss_decomposition", "data.frame")
   out
 }
 
@@ -391,7 +552,7 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #'   rescaled so that the total allocated excess loss equals the total excess
 #'   loss being allocated.
 #'
-#' @return An object of class `"excess_loss_allocation"`.
+#' @return An object of class `"excess_allocation"`.
 #'
 #' @author Martin Haringa
 #'
@@ -414,7 +575,7 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #' # Pool all excess losses across the portfolio
 #' portfolio_allocation <- allocate_excess_loss(
 #'   decomposed,
-#'   excess_amount = "excess_claim_amount",
+#'   excess_amount = "claim_amount_excess",
 #'   allocation_weight = "earned_exposure",
 #'   allocation = "portfolio"
 #' )
@@ -422,7 +583,7 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #' # Allocate excess losses separately by sector
 #' sector_allocation <- allocate_excess_loss(
 #'   decomposed,
-#'   excess_amount = "excess_claim_amount",
+#'   excess_amount = "claim_amount_excess",
 #'   allocation_weight = "earned_exposure",
 #'   risk_factor = "sector",
 #'   allocation = "risk_factor"
@@ -431,7 +592,7 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #' # Blend sector and portfolio experience using credibility
 #' partial_allocation <- allocate_excess_loss(
 #'   decomposed,
-#'   excess_amount = "excess_claim_amount",
+#'   excess_amount = "claim_amount_excess",
 #'   allocation_weight = "earned_exposure",
 #'   risk_factor = "sector",
 #'   allocation = "partial",
@@ -550,7 +711,7 @@ allocate_excess_loss <- function(data,
       preserve_total_excess = preserve_total_excess,
       bootstrap = boot
     ),
-    class = "excess_loss_allocation"
+    class = "excess_allocation"
   )
 }
 
@@ -676,7 +837,7 @@ allocate_excess_loss <- function(data,
 #'
 #' allocation <- allocate_excess_loss(
 #'   decomposed,
-#'   excess_amount = "excess_claim_amount",
+#'   excess_amount = "claim_amount_excess",
 #'   allocation_weight = "earned_exposure"
 #' )
 #'
@@ -706,7 +867,7 @@ apply_excess_loading <- function(data,
   if (!inherits(data, "data.frame")) {
     stop("`data` must be a data.frame.", call. = FALSE)
   }
-  if (!inherits(allocation, "excess_loss_allocation")) {
+  if (!inherits(allocation, "excess_allocation")) {
     stop("`allocation` must be returned by `allocate_excess_loss()`.",
          call. = FALSE)
   }
@@ -749,61 +910,6 @@ apply_excess_loading <- function(data,
   out
 }
 
-#' Summarise an excess threshold assessment
-#'
-#' @description
-#' Return the key threshold diagnostics from an
-#' `"excess_threshold_assessment"` object.
-#'
-#' @param object An object returned by [assess_excess_threshold()].
-#' @param ... Unused.
-#'
-#' @return A `data.frame`.
-#'
-#' @author Martin Haringa
-#' @keywords internal
-#' @export
-summary.excess_threshold_assessment <- function(object, ...) {
-  .check_dots_empty(...)
-  keep <- intersect(
-    c(
-      "threshold", "group", "n_excess_claims", "excess_loss",
-      "excess_loss_ratio", "pure_premium_before", "pure_premium_after",
-      "premium_impact"
-    ),
-    names(object)
-  )
-  out <- object[, keep, drop = FALSE]
-  row.names(out) <- NULL
-  out
-}
-
-#' Print an excess threshold assessment
-#'
-#' @description
-#' Compact print method for objects returned by [assess_excess_threshold()].
-#'
-#' @param x An object returned by [assess_excess_threshold()].
-#' @param ... Unused.
-#'
-#' @return Invisibly returns `x`.
-#'
-#' @author Martin Haringa
-#' @keywords internal
-#' @export
-print.excess_threshold_assessment <- function(x, ...) {
-  .check_dots_empty(...)
-  cat("Excess threshold assessment\n")
-  cat("Thresholds: ", length(unique(x$threshold)), "\n", sep = "")
-  if ("group" %in% names(x)) {
-    cat("Groups: ", length(unique(x$group)), "\n", sep = "")
-  }
-  cat("Threshold range: ",
-      format(min(x$threshold), big.mark = ","), " - ",
-      format(max(x$threshold), big.mark = ","), "\n", sep = "")
-  invisible(x)
-}
-
 #' Summarise an excess-loss allocation
 #'
 #' @description
@@ -820,7 +926,7 @@ print.excess_threshold_assessment <- function(x, ...) {
 #' @author Martin Haringa
 #' @keywords internal
 #' @export
-summary.excess_loss_allocation <- function(object,
+summary.excess_allocation <- function(object,
                                            compare_to_empirical = FALSE,
                                            ...) {
   .check_dots_empty(...)
@@ -859,7 +965,7 @@ summary.excess_loss_allocation <- function(object,
 #' @author Martin Haringa
 #' @keywords internal
 #' @export
-print.excess_loss_allocation <- function(x, ...) {
+print.excess_allocation <- function(x, ...) {
   .check_dots_empty(...)
   cat("Excess loss allocation\n")
   cat("Method: ", x$method, "\n", sep = "")
@@ -871,47 +977,220 @@ print.excess_loss_allocation <- function(x, ...) {
   invisible(x)
 }
 
-#' Plot an excess threshold assessment
+#' Convert an object to a gt table
 #'
 #' @description
-#' Visualise one diagnostic from an object returned by
-#' [assess_excess_threshold()]. The plot helps compare how candidate thresholds
-#' affect excess loss, excess claim counts or pure-premium impact.
+#' Generic presentation helper. Methods return a `gt` table for objects where a
+#' formatted reporting table is more useful than another plot.
 #'
-#' @param object An object returned by [assess_excess_threshold()].
-#' @param y Character. Measure to plot on the y-axis.
-#' @param ... Unused.
+#' @param x An object.
+#' @param ... Arguments passed to methods.
 #'
-#' @return A `ggplot` object.
+#' @return A `gt_tbl` object for supported methods.
 #'
 #' @author Martin Haringa
 #' @export
-autoplot.excess_threshold_assessment <- function(object,
-                                                 y = c(
-                                                   "premium_impact",
-                                                   "excess_loss",
-                                                   "n_excess_claims",
-                                                   "excess_loss_ratio"
-                                                 ),
-                                                 ...) {
-  y <- match.arg(y)
+as_gt <- function(x, ...) {
+  UseMethod("as_gt")
+}
+
+#' Present an excess threshold assessment as a gt table
+#'
+#' @description
+#' Create a formatted `gt` table from an object returned by
+#' [assess_excess_threshold()]. The original object remains a regular
+#' `data.frame` subclass; `as_gt()` is only used when a presentation table is
+#' needed for a report, tariff note or pricing review.
+#'
+#' @param x An object returned by [assess_excess_threshold()].
+#' @param claims Logical. If `TRUE`, include claim-count columns.
+#' @param loss Logical. If `TRUE`, include loss amount columns. The default is
+#'   `FALSE` to keep the threshold comparison compact.
+#' @param premium Logical. If `TRUE`, include pure-premium and premium-reduction
+#'   columns.
+#' @param locale Character. Locale used for number formatting, for example
+#'   `"nl-NL"` or `"en-US"`.
+#' @param loss_decimals,premium_decimals,ratio_decimals Non-negative whole
+#'   numbers controlling displayed decimals for loss amounts, premium amounts
+#'   and percentage ratios.
+#' @param color_last_column Logical. If `TRUE`, color the final displayed
+#'   column from white to yellow so the highest values stand out in the
+#'   presentation table.
+#' @param title Optional character. Table title. If `NULL`, no table title is
+#'   added.
+#' @param subtitle Optional character. Table subtitle. If `NULL`, no table
+#'   subtitle is added.
+#' @param ... Unused.
+#'
+#' @return A `gt_tbl` object.
+#'
+#' @author Martin Haringa
+#' @rdname as_gt
+#'
+#' @examples
+#' portfolio <- data.frame(
+#'   policy_id = 1:10,
+#'   sector = rep(c("Industry", "Retail"), each = 5),
+#'   claim_count = c(
+#'     0, 1, 1, 1, 1,
+#'     0, 1, 1, 1, 1
+#'   ),
+#'   claim_amount = c(
+#'     0, 25000, 120000, 50000, 175000,
+#'     0, 40000, 90000, 150000, 300000
+#'   ),
+#'   policy_years = rep(1, 10)
+#' )
+#'
+#' thresholds <- assess_excess_threshold(
+#'   data = portfolio,
+#'   claim_amount = "claim_amount",
+#'   thresholds = c(25000, 50000, 100000, 150000),
+#'   exposure = "policy_years",
+#'   group = "sector",
+#'   claim_count = "claim_count"
+#' )
+#'
+#' if (requireNamespace("gt", quietly = TRUE)) {
+#'   as_gt(thresholds)
+#' }
+#'
+#' @export
+as_gt.threshold_assessment <- function(x,
+                                       claims = TRUE,
+                                       loss = FALSE,
+                                       premium = TRUE,
+                                       locale = "nl-NL",
+                                       loss_decimals = 0,
+                                       premium_decimals = 0,
+                                       ratio_decimals = 1,
+                                       color_last_column = TRUE,
+                                       title = NULL,
+                                       subtitle = NULL,
+                                       ...) {
+  rlang::check_installed("gt")
   .check_dots_empty(...)
-  pal <- .plot_palette_ir()
-  grid_theme <- .plot_grid_theme_ir()
-  p <- ggplot2::ggplot(object, ggplot2::aes(x = .data[["threshold"]], y = .data[[y]]))
-  if ("group" %in% names(object)) {
-    p <- p +
-      ggplot2::geom_line(ggplot2::aes(color = .data[["group"]]), linewidth = 0.6) +
-      ggplot2::geom_point(ggplot2::aes(color = .data[["group"]]), size = 1.8)
+  validate_as_gt_threshold_assessment(
+    x = x,
+    claims = claims,
+    loss = loss,
+    premium = premium,
+    locale = locale,
+    loss_decimals = loss_decimals,
+    premium_decimals = premium_decimals,
+    ratio_decimals = ratio_decimals,
+    color_last_column = color_last_column,
+    title = title,
+    subtitle = subtitle
+  )
+
+  group_col <- attr(x, "group", exact = TRUE)
+  exposure_attr <- attr(x, "exposure", exact = TRUE)
+  exposure_col <- exposure_attr %||% "exposure"
+
+  display_cols <- c(group_col, "threshold", exposure_col)
+  claims_cols <- c("n_claims", "n_excess_records")
+  loss_cols <- c("total_loss", "capped_loss", "excess_loss")
+  premium_cols <- c(
+    "pure_premium_before",
+    "pure_premium_after",
+    "premium_reduction",
+    "premium_reduction_ratio"
+  )
+  if (claims) display_cols <- c(display_cols, claims_cols)
+  if (loss) display_cols <- c(display_cols, loss_cols)
+  if (premium) display_cols <- c(display_cols, premium_cols)
+
+  table_data <- x[, display_cols, drop = FALSE]
+  if (!is.null(group_col)) {
+    out <- gt::gt(
+      data = table_data,
+      groupname_col = group_col,
+      row_group_as_column = TRUE,
+      locale = locale
+    )
   } else {
-    p <- p +
-      ggplot2::geom_line(color = pal$risk_premium, linewidth = 0.6) +
-      ggplot2::geom_point(color = pal$risk_premium, size = 1.8)
+    out <- gt::gt(data = table_data, locale = locale)
   }
-  p +
-    ggplot2::labs(x = "Threshold", y = y, color = NULL) +
-    ggplot2::theme_minimal() +
-    grid_theme
+
+  labels <- c(
+    threshold = "Threshold",
+    n_claims = "Count",
+    n_excess_records = "Above threshold",
+    total_loss = "Total",
+    capped_loss = "Retained",
+    excess_loss = "Excess",
+    pure_premium_before = "Before",
+    pure_premium_after = "After",
+    premium_reduction = "Reduction",
+    premium_reduction_ratio = "Reduction (%)"
+  )
+  labels[[exposure_col]] <- threshold_pretty_label(exposure_col)
+  if (!is.null(group_col)) {
+    labels[[group_col]] <- threshold_pretty_label(group_col)
+  }
+  label_args <- stats::setNames(as.list(labels[intersect(names(labels), display_cols)]),
+                                intersect(names(labels), display_cols))
+
+  out <- do.call(gt::cols_label, c(list(.data = out), label_args))
+  if (claims) {
+    out <- gt::tab_spanner(out, label = "Claims", columns = claims_cols)
+  }
+  if (loss) {
+    out <- gt::tab_spanner(out, label = "Loss", columns = loss_cols)
+  }
+  if (premium) {
+    out <- gt::tab_spanner(out, label = "Risk premium", columns = premium_cols)
+  }
+
+  out <- gt::fmt_number(
+    out,
+    columns = "threshold",
+    decimals = 0,
+    locale = locale
+  )
+  out <- gt::fmt_number(
+    out,
+    columns = exposure_col,
+    decimals = 0,
+    locale = locale
+  )
+  if (claims) {
+    out <- gt::fmt_integer(out, columns = claims_cols, locale = locale)
+  }
+  if (loss) {
+    out <- gt::fmt_number(
+      out,
+      columns = loss_cols,
+      decimals = loss_decimals,
+      locale = locale
+    )
+  }
+  if (premium) {
+    out <- gt::fmt_number(
+      out,
+      columns = premium_cols[1:3],
+      decimals = premium_decimals,
+      locale = locale
+    )
+    out <- gt::fmt_percent(
+      out,
+      columns = "premium_reduction_ratio",
+      decimals = ratio_decimals,
+      locale = locale
+    )
+  }
+  if (color_last_column) {
+    out <- gt::data_color(
+      out,
+      columns = utils::tail(display_cols, 1),
+      palette = c("white", "#F7E94D")
+    )
+  }
+  if (!is.null(title) || !is.null(subtitle)) {
+    out <- gt::tab_header(out, title = title, subtitle = subtitle)
+  }
+  out
 }
 
 #' Plot an excess-loss allocation
@@ -931,7 +1210,7 @@ autoplot.excess_threshold_assessment <- function(object,
 #'
 #' @author Martin Haringa
 #' @export
-autoplot.excess_loss_allocation <- function(object,
+autoplot.excess_allocation <- function(object,
                                             y = c("allocated_loading",
                                                   "allocated_excess_loss",
                                                   "credibility"),
@@ -970,7 +1249,7 @@ autoplot.excess_loss_allocation <- function(object,
 }
 
 validate_assess_excess_threshold <- function(data, claim_amount, thresholds,
-                                             exposure, group) {
+                                             exposure, group, claim_count) {
   validate_data_frame(data)
   validate_character_column(data, claim_amount, "claim_amount")
   if (!is.numeric(data[[claim_amount]]) || any(is.na(data[[claim_amount]])) ||
@@ -993,6 +1272,109 @@ validate_assess_excess_threshold <- function(data, claim_amount, thresholds,
   if (!is.null(group)) {
     validate_character_column(data, group, "group")
   }
+  if (!is.null(claim_count)) {
+    validate_character_column(data, claim_count, "claim_count")
+    if (!is.numeric(data[[claim_count]]) ||
+        any(is.na(data[[claim_count]])) ||
+        any(!is.finite(data[[claim_count]])) ||
+        any(data[[claim_count]] < 0)) {
+      stop(
+        "`claim_count` must refer to a numeric column with finite non-negative values.",
+        call. = FALSE
+      )
+    }
+  }
+}
+
+validate_as_gt_threshold_assessment <- function(x, claims, loss, premium,
+                                                locale, loss_decimals,
+                                                premium_decimals,
+                                                ratio_decimals,
+                                                color_last_column,
+                                                title, subtitle) {
+  if (!inherits(x, "threshold_assessment")) {
+    stop("`x` must be an object returned by `assess_excess_threshold()`.",
+         call. = FALSE)
+  }
+  validate_single_logical(claims, "claims")
+  validate_single_logical(loss, "loss")
+  validate_single_logical(premium, "premium")
+  validate_single_logical(color_last_column, "color_last_column")
+  if (!isTRUE(claims) && !isTRUE(loss) && !isTRUE(premium)) {
+    stop("At least one of `claims`, `loss` or `premium` must be TRUE.",
+         call. = FALSE)
+  }
+  validate_single_character(locale, "locale")
+  validate_decimal_count(loss_decimals, "loss_decimals")
+  validate_decimal_count(premium_decimals, "premium_decimals")
+  validate_decimal_count(ratio_decimals, "ratio_decimals")
+  if (!is.null(title)) {
+    validate_single_character(title, "title")
+  }
+  if (!is.null(subtitle)) {
+    validate_single_character(subtitle, "subtitle")
+  }
+
+  group_col <- attr(x, "group", exact = TRUE)
+  exposure_col <- attr(x, "exposure", exact = TRUE) %||% "exposure"
+  if (!is.null(group_col) &&
+      (!is.character(group_col) || length(group_col) != 1L ||
+       is.na(group_col) || !group_col %in% names(x))) {
+    stop("The grouping column stored in `attr(x, 'group')` is not available.",
+         call. = FALSE)
+  }
+  if (!is.character(exposure_col) || length(exposure_col) != 1L ||
+      is.na(exposure_col) || !exposure_col %in% names(x)) {
+    stop("The exposure column stored in `attr(x, 'exposure')` is not available.",
+         call. = FALSE)
+  }
+
+  required <- c(group_col, "threshold", exposure_col)
+  if (claims) required <- c(required, "n_claims", "n_excess_records")
+  if (loss) required <- c(required, "total_loss", "capped_loss", "excess_loss")
+  if (premium) {
+    required <- c(
+      required,
+      "pure_premium_before",
+      "pure_premium_after",
+      "premium_reduction",
+      "premium_reduction_ratio"
+    )
+  }
+  missing <- setdiff(required, names(x))
+  if (length(missing) > 0L) {
+    stop(
+      "Required column(s) missing from `x`: ",
+      paste(missing, collapse = ", "),
+      call. = FALSE
+    )
+  }
+}
+
+validate_single_logical <- function(x, arg) {
+  if (!is.logical(x) || length(x) != 1L || is.na(x)) {
+    stop("`", arg, "` must be TRUE or FALSE.", call. = FALSE)
+  }
+}
+
+validate_single_character <- function(x, arg) {
+  if (!is.character(x) || length(x) != 1L || is.na(x) || x == "") {
+    stop("`", arg, "` must be a single non-missing character value.",
+         call. = FALSE)
+  }
+}
+
+validate_decimal_count <- function(x, arg) {
+  if (!is.numeric(x) || length(x) != 1L || !is.finite(x) ||
+      x < 0 || x != floor(x)) {
+    stop("`", arg, "` must be a single non-negative whole number.",
+         call. = FALSE)
+  }
+}
+
+threshold_pretty_label <- function(x) {
+  x <- gsub("_+", " ", x)
+  tools::toTitleCase(x)
 }
 
 validate_calculate_excess_loss <- function(data, claim_amount, threshold) {
@@ -1278,6 +1660,10 @@ preserve_allocated_total <- function(allocation_data, target_excess_loss) {
 
 safe_ratio_excess <- function(num, den) {
   ifelse(is.na(den) | den <= 0, NA_real_, num / den)
+}
+
+safe_ratio_excess_zero <- function(num, den) {
+  ifelse(is.na(den), NA_real_, ifelse(den <= 0, 0, num / den))
 }
 
 validate_data_frame <- function(data) {

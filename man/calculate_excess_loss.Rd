@@ -7,7 +7,9 @@
 calculate_excess_loss(data, claim_amount, threshold)
 }
 \arguments{
-\item{data}{A data.frame with claim-level observations.}
+\item{data}{A data.frame with portfolio-level or claim-level observations.
+Portfolio-level data can include policies without claims, for example rows
+where \code{n_claims = 0} and the claim amount is zero.}
 
 \item{claim_amount}{Character string. Claim amount column.}
 
@@ -16,14 +18,14 @@ to the excess component. Claims below the threshold remain fully included
 in the capped claim amount.}
 }
 \value{
-A data.frame with the original data and the columns
-\code{claim_amount}, \code{capped_claim_amount}, \code{excess_claim_amount} and
-\code{is_excess_claim}.
+A data.frame with the original data and three added columns. The
+names are derived from \code{claim_amount}: \verb{<claim_amount>_capped},
+\verb{<claim_amount>_excess} and \verb{<claim_amount>_is_excess}.
 }
 \description{
 Large claims can distort risk-factor relativities and make pricing models
-unstable. \code{calculate_excess_loss()} separates each claim into a capped part
-and an excess part above a selected threshold.
+unstable. \code{calculate_excess_loss()} separates each row in a portfolio into a
+capped claim amount and an excess part above a selected threshold.
 }
 \details{
 The capped claim amount can be used to model the base premium, while the
@@ -37,23 +39,28 @@ observed claim into:
 
 \deqn{
 claim\_amount =
-capped\_claim\_amount +
-excess\_claim\_amount
+claim\_amount\_capped +
+claim\_amount\_excess
 }
 
 where:
 
 \deqn{
-excess\_claim\_amount =
+claim\_amount\_excess =
 max(claim\_amount - threshold, 0)
 }
 
 and:
 
 \deqn{
-capped\_claim\_amount =
+claim\_amount\_capped =
 min(claim\_amount, threshold)
 }
+
+The output column names are derived from the column supplied through
+\code{claim_amount}. For example, if \code{claim_amount = "incurred_loss"}, the added
+columns are \code{incurred_loss_capped}, \code{incurred_loss_excess} and
+\code{incurred_loss_is_excess}.
 
 The resulting excess component can subsequently be allocated using
 \code{\link[=allocate_excess_loss]{allocate_excess_loss()}} and added back to the technical premium using
@@ -75,12 +82,14 @@ remains reflected in the final premium.
 }
 }
 \examples{
-claims <- data.frame(
-  claim_amount = c(1000, 120000, 30000)
+portfolio <- data.frame(
+  policy_id = 1:4,
+  n_claims = c(0, 1, 1, 0),
+  claim_amount = c(0, 120000, 30000, 0)
 )
 
 calculate_excess_loss(
-  claims,
+  portfolio,
   claim_amount = "claim_amount",
   threshold = 100000
 )

@@ -68,7 +68,7 @@ outlier_histogram(
 
 ## 2. Assess large losses
 
-Large claims can dominate severity and pure premium analysis. In capped
+Large claims can dominate severity and risk premium analysis. In capped
 severity workflows, it is often useful to assess a cap first, decompose
 the historical claim amounts, and then decide how the excess burden
 should be allocated. A low threshold increases pricing responsiveness
@@ -77,15 +77,31 @@ understate structural differences between segments.
 
 ``` r
 
-thresholds <- assess_excess_threshold(
-  claims,
-  claim_amount = "claim_amount",
-  thresholds = c(50000, 100000, 150000),
-  exposure = "earned_exposure",
-  group = "sector"
+portfolio <- data.frame(
+  policy_id = 1:10,
+  sector = rep(c("Industry", "Retail"), each = 5),
+  claim_count = c(0, 1, 1, 1, 1, 0, 1, 1, 1, 1),
+  claim_amount = c(
+    0, 25000, 120000, 50000, 175000,
+    0, 40000, 90000, 150000, 300000
+  ),
+  policy_years = rep(1, 10)
 )
 
-autoplot(thresholds, y = "premium_impact")
+thresholds <- assess_excess_threshold(
+  portfolio,
+  claim_amount = "claim_amount",
+  thresholds = c(25000, 50000, 100000, 150000),
+  exposure = "policy_years",
+  group = "sector",
+  claim_count = "claim_count"
+)
+
+if (requireNamespace("gt", quietly = TRUE)) {
+  as_gt(thresholds)
+} else {
+  thresholds
+}
 ```
 
 After choosing a threshold,
@@ -112,7 +128,7 @@ of observed excess experience.
 
 allocation <- allocate_excess_loss(
   excess,
-  excess_amount = "excess_claim_amount",
+  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
   risk_factor = "sector",
   allocation = "partial",

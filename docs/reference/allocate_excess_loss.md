@@ -114,7 +114,7 @@ allocate_excess_loss(
 
 ## Value
 
-An object of class `"excess_loss_allocation"`.
+An object of class `"excess_allocation"`.
 
 ## Details
 
@@ -307,7 +307,7 @@ decomposed <- calculate_excess_loss(
 # Pool all excess losses across the portfolio
 portfolio_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "excess_claim_amount",
+  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
   allocation = "portfolio"
 )
@@ -315,7 +315,7 @@ portfolio_allocation <- allocate_excess_loss(
 # Allocate excess losses separately by sector
 sector_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "excess_claim_amount",
+  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
   risk_factor = "sector",
   allocation = "risk_factor"
@@ -324,7 +324,7 @@ sector_allocation <- allocate_excess_loss(
 # Blend sector and portfolio experience using credibility
 partial_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "excess_claim_amount",
+  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
   risk_factor = "sector",
   allocation = "partial",

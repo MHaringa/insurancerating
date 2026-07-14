@@ -144,7 +144,7 @@ decomposed$base_premium <- 500
 
 allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "excess_claim_amount",
+  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure"
 )
 
