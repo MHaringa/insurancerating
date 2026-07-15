@@ -201,7 +201,7 @@ CRAN release: 2026-06-02
 - [`apply_excess_loading()`](https://mharinga.github.io/insurancerating/reference/apply_excess_loading.md)
   now treats premium amounts as the default workflow and keeps the
   distinction between absolute `allocated_excess_loss` and per-weight
-  `allocated_loading` explicit.
+  `allocated_excess_loading` explicit.
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   now uses `model_variable` and `source_variable` as the primary
   argument names.

@@ -9,7 +9,7 @@ credibility by allocation group.
 # S3 method for class 'excess_allocation'
 autoplot(
   object,
-  y = c("allocated_loading", "allocated_excess_loss", "credibility"),
+  y = c("allocated_excess_loading", "allocated_excess_loss", "credibility"),
   top_n = NULL,
   show_labels = FALSE,
   ...

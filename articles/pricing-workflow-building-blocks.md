@@ -128,7 +128,6 @@ of observed excess experience.
 
 allocation <- allocate_excess_loss(
   excess,
-  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
   risk_factor = "sector",
   allocation = "partial",
@@ -136,12 +135,12 @@ allocation <- allocate_excess_loss(
 )
 
 summary(allocation, compare_to_empirical = TRUE)
-autoplot(allocation, y = "allocated_loading")
+autoplot(allocation, y = "allocated_excess_loading")
 autoplot(allocation, y = "credibility")
 ```
 
 In the allocation output, `allocated_excess_loss` is the absolute
-monetary burden assigned to a row. `allocated_loading` is the
+monetary burden assigned to a row. `allocated_excess_loading` is the
 corresponding loading per unit of the chosen weight, such as earned
 exposure. This distinction matters when the output is added back to
 pricing data.

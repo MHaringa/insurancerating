@@ -15,10 +15,11 @@ additional loading.
 ``` r
 allocate_excess_loss(
   data,
-  excess_amount,
+  excess_amount = NULL,
   allocation_weight,
   risk_factor = NULL,
   allocation_subset = NULL,
+  claim_count = NULL,
   allocation = c("portfolio", "risk_factor", "partial"),
   credibility = NULL,
   credibility_basis = c("claims", "excess_claims", "allocation_weight"),
@@ -42,8 +43,10 @@ allocate_excess_loss(
 
 - excess_amount:
 
-  Character string. Column containing the excess claim amount to
-  allocate.
+  Optional character string. Column containing the excess claim amount
+  to allocate. If `NULL`, the function uses the
+  `claim_amount_excess_column` metadata created by
+  [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md).
 
 - allocation_weight:
 
@@ -59,6 +62,14 @@ allocate_excess_loss(
 
   Optional character string. Logical column indicating which rows
   participate in the allocation. If `NULL`, all rows are included.
+
+- claim_count:
+
+  Optional character string. Claim-count column. If supplied, claim
+  counts in the allocation summary are calculated as the sum of this
+  column. If `NULL`, claim counts are inferred from the original claim
+  amount column when available: rows with a positive claim amount count
+  as one claim and rows with zero claim amount count as zero claims.
 
 - allocation:
 
@@ -114,7 +125,47 @@ allocate_excess_loss(
 
 ## Value
 
-An object of class `"excess_allocation"`.
+The input `data` enriched with allocation columns and class
+`"excess_allocation"`. The object prints as an ordinary data frame and
+has a custom
+[`summary.excess_allocation()`](https://mharinga.github.io/insurancerating/reference/summary.excess_allocation.md)
+method for aggregated allocation statistics. Original rows, columns, row
+order and metadata from
+[`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
+are preserved. The added columns are:
+
+- `allocation_included`:
+
+  Logical indicator showing whether the row was included in the
+  allocation basis. Rows are included when they satisfy
+  `allocation_subset` if supplied; included rows must also have a
+  positive allocation weight.
+
+- `<risk_factor>_excess_loading`:
+
+  Excess loading estimated from the experience of the risk-factor level.
+  For example, `risk_factor = "sector"` creates `sector_excess_loading`.
+  When no risk factor is supplied, the column is named
+  `risk_factor_excess_loading`.
+
+- `portfolio_excess_loading`:
+
+  Excess loading estimated from the full portfolio.
+
+- `credibility`:
+
+  Credibility weight assigned to the risk-factor-level experience.
+
+- `allocated_excess_loading`:
+
+  Final excess loading per unit of `allocation_weight`. For partial
+  allocation this is the credibility blend of the risk-factor and
+  portfolio excess loadings.
+
+- `allocated_excess_loss`:
+
+  Row-level allocated excess-loss amount, calculated as
+  `allocated_excess_loading * allocation_weight`.
 
 ## Details
 
@@ -282,6 +333,10 @@ This approach prevents a small number of large claims from distorting
 risk-factor relativities while still ensuring that the excess-loss
 burden is reflected in the final premium.
 
+## See also
+
+[`summary.excess_allocation()`](https://mharinga.github.io/insurancerating/reference/summary.excess_allocation.md)
+
 ## Author
 
 Martin Haringa
@@ -291,6 +346,7 @@ Martin Haringa
 ``` r
 claims <- data.frame(
   sector = rep(c("Industry", "Retail"), each = 4),
+  claim_count = c(1, 1, 1, 1, 1, 1, 1, 1),
   claim_amount = c(
     1000, 120000, 30000, 8000,
     2000, 150000, 40000, 6000
@@ -307,16 +363,16 @@ decomposed <- calculate_excess_loss(
 # Pool all excess losses across the portfolio
 portfolio_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
+  claim_count = "claim_count",
   allocation = "portfolio"
 )
 
 # Allocate excess losses separately by sector
 sector_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
+  claim_count = "claim_count",
   risk_factor = "sector",
   allocation = "risk_factor"
 )
@@ -324,8 +380,8 @@ sector_allocation <- allocate_excess_loss(
 # Blend sector and portfolio experience using credibility
 partial_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
+  claim_count = "claim_count",
   risk_factor = "sector",
   allocation = "partial",
   credibility_basis = "claims",
@@ -333,16 +389,13 @@ partial_allocation <- allocate_excess_loss(
 )
 
 summary(partial_allocation)
-#>      group weight n_claims n_excess_claims historical_excess_loss
-#> 1 Industry      4        4               1                  20000
-#> 2   Retail      4        4               1                  50000
-#>   excess_loss_ratio credibility_basis credibility_experience
-#> 1         0.1257862            claims                      4
-#> 2         0.2525253            claims                      4
-#>   credibility_threshold credibility group_loading portfolio_loading
-#> 1                    50  0.07407407          5000              8750
-#> 2                    50  0.07407407         12500              8750
-#>   allocated_loading allocated_excess_loss
-#> 1          8472.222              33888.89
-#> 2          9027.778              36111.11
+#>     sector earned_exposure claim_count excess_claim_count observed_excess_loss
+#> 1 Industry               4           4                  1                20000
+#> 2   Retail               4           4                  1                50000
+#>   observed_excess_loading credibility sector_excess_loading
+#> 1                    5000  0.07407407                  5000
+#> 2                   12500  0.07407407                 12500
+#>   portfolio_excess_loading allocated_excess_loading allocated_excess_loss
+#> 1                     8750                 8472.222              33888.89
+#> 2                     8750                 9027.778              36111.11
 ```

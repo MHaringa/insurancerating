@@ -60,10 +60,11 @@ large claims is allocated back to the portfolio as an additional loading.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">allocate_excess_loss</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
-<span>  <span class="va">excess_amount</span>,</span>
+<span>  excess_amount <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">allocation_weight</span>,</span>
 <span>  risk_factor <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  allocation_subset <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  claim_count <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  allocation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"portfolio"</span>, <span class="st">"risk_factor"</span>, <span class="st">"partial"</span><span class="op">)</span>,</span>
 <span>  credibility <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  credibility_basis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"claims"</span>, <span class="st">"excess_claims"</span>, <span class="st">"allocation_weight"</span><span class="op">)</span>,</span>
@@ -87,8 +88,9 @@ large claims is allocated back to the portfolio as an additional loading.</p>
 
 
 <dt id="arg-excess-amount">excess_amount<a class="anchor" aria-label="anchor" href="#arg-excess-amount"></a></dt>
-<dd><p>Character string. Column containing the excess claim
-amount to allocate.</p></dd>
+<dd><p>Optional character string. Column containing the excess
+claim amount to allocate. If <code>NULL</code>, the function uses the
+<code>claim_amount_excess_column</code> metadata created by <code><a href="calculate_excess_loss.html">calculate_excess_loss()</a></code>.</p></dd>
 
 
 <dt id="arg-allocation-weight">allocation_weight<a class="anchor" aria-label="anchor" href="#arg-allocation-weight"></a></dt>
@@ -104,6 +106,14 @@ typically exposure, premium, insured value or another earned unit.</p></dd>
 <dt id="arg-allocation-subset">allocation_subset<a class="anchor" aria-label="anchor" href="#arg-allocation-subset"></a></dt>
 <dd><p>Optional character string. Logical column indicating
 which rows participate in the allocation. If <code>NULL</code>, all rows are included.</p></dd>
+
+
+<dt id="arg-claim-count">claim_count<a class="anchor" aria-label="anchor" href="#arg-claim-count"></a></dt>
+<dd><p>Optional character string. Claim-count column. If
+supplied, claim counts in the allocation summary are calculated as the sum
+of this column. If <code>NULL</code>, claim counts are inferred from the original
+claim amount column when available: rows with a positive claim amount count
+as one claim and rows with zero claim amount count as zero claims.</p></dd>
 
 
 <dt id="arg-allocation">allocation<a class="anchor" aria-label="anchor" href="#arg-allocation"></a></dt>
@@ -164,8 +174,40 @@ loss being allocated.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An object of class <code>"excess_allocation"</code>.</p>
-    </div>
+    <p>The input <code>data</code> enriched with allocation columns and class
+<code>"excess_allocation"</code>. The object prints as an ordinary data frame and has
+a custom <code><a href="summary.excess_allocation.html">summary.excess_allocation()</a></code> method for aggregated allocation
+statistics. Original rows, columns, row order and metadata from
+<code><a href="calculate_excess_loss.html">calculate_excess_loss()</a></code> are preserved. The added columns are:</p><dl><dt><code>allocation_included</code></dt>
+<dd><p>Logical indicator showing whether the row
+was included in the allocation basis. Rows are included when they satisfy
+<code>allocation_subset</code> if supplied; included rows must also have a positive
+allocation weight.</p></dd>
+
+<dt><code>&lt;risk_factor&gt;_excess_loading</code></dt>
+<dd><p>Excess loading estimated from the
+experience of the risk-factor level. For example, <code>risk_factor = "sector"</code> creates <code>sector_excess_loading</code>. When no risk factor is
+supplied, the column is named <code>risk_factor_excess_loading</code>.</p></dd>
+
+<dt><code>portfolio_excess_loading</code></dt>
+<dd><p>Excess loading estimated from the full
+portfolio.</p></dd>
+
+<dt><code>credibility</code></dt>
+<dd><p>Credibility weight assigned to the risk-factor-level
+experience.</p></dd>
+
+<dt><code>allocated_excess_loading</code></dt>
+<dd><p>Final excess loading per unit of
+<code>allocation_weight</code>. For partial allocation this is the credibility blend
+of the risk-factor and portfolio excess loadings.</p></dd>
+
+<dt><code>allocated_excess_loss</code></dt>
+<dd><p>Row-level allocated excess-loss amount,
+calculated as <code>allocated_excess_loading * allocation_weight</code>.</p></dd>
+
+
+</dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
 
@@ -303,6 +345,10 @@ reflected in the final premium.</p>
 
     </div>
     <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="summary.excess_allocation.html">summary.excess_allocation()</a></code></p></div>
+    </div>
+    <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
     <p>Martin Haringa</p>
     </div>
@@ -311,6 +357,7 @@ reflected in the final premium.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">claims</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  sector <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Industry"</span>, <span class="st">"Retail"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  claim_count <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  claim_amount <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    <span class="fl">1000</span>, <span class="fl">120000</span>, <span class="fl">30000</span>, <span class="fl">8000</span>,</span></span>
 <span class="r-in"><span>    <span class="fl">2000</span>, <span class="fl">150000</span>, <span class="fl">40000</span>, <span class="fl">6000</span></span></span>
@@ -327,16 +374,16 @@ reflected in the final premium.</p>
 <span class="r-in"><span><span class="co"># Pool all excess losses across the portfolio</span></span></span>
 <span class="r-in"><span><span class="va">portfolio_allocation</span> <span class="op">&lt;-</span> <span class="fu">allocate_excess_loss</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">decomposed</span>,</span></span>
-<span class="r-in"><span>  excess_amount <span class="op">=</span> <span class="st">"claim_amount_excess"</span>,</span></span>
 <span class="r-in"><span>  allocation_weight <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span></span>
+<span class="r-in"><span>  claim_count <span class="op">=</span> <span class="st">"claim_count"</span>,</span></span>
 <span class="r-in"><span>  allocation <span class="op">=</span> <span class="st">"portfolio"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Allocate excess losses separately by sector</span></span></span>
 <span class="r-in"><span><span class="va">sector_allocation</span> <span class="op">&lt;-</span> <span class="fu">allocate_excess_loss</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">decomposed</span>,</span></span>
-<span class="r-in"><span>  excess_amount <span class="op">=</span> <span class="st">"claim_amount_excess"</span>,</span></span>
 <span class="r-in"><span>  allocation_weight <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span></span>
+<span class="r-in"><span>  claim_count <span class="op">=</span> <span class="st">"claim_count"</span>,</span></span>
 <span class="r-in"><span>  risk_factor <span class="op">=</span> <span class="st">"sector"</span>,</span></span>
 <span class="r-in"><span>  allocation <span class="op">=</span> <span class="st">"risk_factor"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
@@ -344,8 +391,8 @@ reflected in the final premium.</p>
 <span class="r-in"><span><span class="co"># Blend sector and portfolio experience using credibility</span></span></span>
 <span class="r-in"><span><span class="va">partial_allocation</span> <span class="op">&lt;-</span> <span class="fu">allocate_excess_loss</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">decomposed</span>,</span></span>
-<span class="r-in"><span>  excess_amount <span class="op">=</span> <span class="st">"claim_amount_excess"</span>,</span></span>
 <span class="r-in"><span>  allocation_weight <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span></span>
+<span class="r-in"><span>  claim_count <span class="op">=</span> <span class="st">"claim_count"</span>,</span></span>
 <span class="r-in"><span>  risk_factor <span class="op">=</span> <span class="st">"sector"</span>,</span></span>
 <span class="r-in"><span>  allocation <span class="op">=</span> <span class="st">"partial"</span>,</span></span>
 <span class="r-in"><span>  credibility_basis <span class="op">=</span> <span class="st">"claims"</span>,</span></span>
@@ -353,18 +400,15 @@ reflected in the final premium.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">partial_allocation</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      group weight n_claims n_excess_claims historical_excess_loss</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Industry      4        4               1                  20000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2   Retail      4        4               1                  50000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   excess_loss_ratio credibility_basis credibility_experience</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1         0.1257862            claims                      4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2         0.2525253            claims                      4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   credibility_threshold credibility group_loading portfolio_loading</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                    50  0.07407407          5000              8750</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                    50  0.07407407         12500              8750</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   allocated_loading allocated_excess_loss</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1          8472.222              33888.89</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          9027.778              36111.11</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     sector earned_exposure claim_count excess_claim_count observed_excess_loss</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Industry               4           4                  1                20000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   Retail               4           4                  1                50000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   observed_excess_loading credibility sector_excess_loading</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                    5000  0.07407407                  5000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                   12500  0.07407407                 12500</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   portfolio_excess_loading allocated_excess_loading allocated_excess_loss</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                     8750                 8472.222              33888.89</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                     8750                 9027.778              36111.11</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

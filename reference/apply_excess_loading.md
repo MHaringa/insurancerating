@@ -10,7 +10,7 @@ apply_excess_loading(
   allocation,
   base_premium = "base_premium",
   allocated_excess_loss = NULL,
-  allocated_loading = NULL,
+  allocated_excess_loading = NULL,
   weight = NULL,
   output = c("premium", "rate")
 )
@@ -34,15 +34,15 @@ apply_excess_loading(
 
 - allocated_excess_loss:
 
-  Optional character string. Column in `allocation$data` containing the
+  Optional character string. Column in `allocation` containing the
   allocated excess-loss amount in monetary terms. If `NULL`,
   `allocated_excess_loss` is used.
 
-- allocated_loading:
+- allocated_excess_loading:
 
-  Optional character string. Column in `allocation$data` containing the
+  Optional character string. Column in `allocation` containing the
   allocated excess loading per unit of allocation weight. If `NULL`,
-  `allocated_loading` is used.
+  `allocated_excess_loading` is used.
 
 - weight:
 
@@ -57,9 +57,10 @@ apply_excess_loading(
 ## Value
 
 A data.frame. With `output = "premium"`, the result contains
-`base_premium`, `allocated_excess_loss`, `allocated_loading`,
+`base_premium`, `allocated_excess_loss`, `allocated_excess_loading`,
 `excess_loading` and `loaded_premium`. With `output = "rate"`, the
-result contains `base_rate`, `allocated_loading` and `loaded_rate`.
+result contains `base_rate`, `allocated_excess_loading` and
+`loaded_rate`.
 
 ## Details
 
@@ -106,12 +107,13 @@ to a rate:
 `allocated_excess_loss` represents the monetary excess-loss burden
 allocated to a row.
 
-`allocated_loading` represents the excess loading per unit of allocation
-weight.
+`allocated_excess_loading` represents the excess loading per unit of
+allocation weight.
 
 In other words:
 
-\$\$ allocated\\excess\\loss = allocated\\loading \cdot weight \$\$
+\$\$ allocated\\excess\\loss = allocated\\excess\\loading \cdot weight
+\$\$
 
 This distinction is important when moving between premium amounts and
 rates.
@@ -179,24 +181,24 @@ apply_excess_loading(
 #> 6   Retail       150000               1               1e+05               50000
 #> 7   Retail        40000               1               4e+04                   0
 #> 8   Retail         6000               1               6e+03                   0
-#>   claim_amount_is_excess base_premium allocated_excess_loss allocated_loading
-#> 1                  FALSE          500                  8750              8750
-#> 2                   TRUE          500                  8750              8750
-#> 3                  FALSE          500                  8750              8750
-#> 4                  FALSE          500                  8750              8750
-#> 5                  FALSE          500                  8750              8750
-#> 6                   TRUE          500                  8750              8750
-#> 7                  FALSE          500                  8750              8750
-#> 8                  FALSE          500                  8750              8750
-#>   excess_loading loaded_premium
-#> 1           8750           9250
-#> 2           8750           9250
-#> 3           8750           9250
-#> 4           8750           9250
-#> 5           8750           9250
-#> 6           8750           9250
-#> 7           8750           9250
-#> 8           8750           9250
+#>   claim_amount_is_excess base_premium allocated_excess_loss
+#> 1                  FALSE          500                  8750
+#> 2                   TRUE          500                  8750
+#> 3                  FALSE          500                  8750
+#> 4                  FALSE          500                  8750
+#> 5                  FALSE          500                  8750
+#> 6                   TRUE          500                  8750
+#> 7                  FALSE          500                  8750
+#> 8                  FALSE          500                  8750
+#>   allocated_excess_loading excess_loading loaded_premium
+#> 1                     8750           8750           9250
+#> 2                     8750           8750           9250
+#> 3                     8750           8750           9250
+#> 4                     8750           8750           9250
+#> 5                     8750           8750           9250
+#> 6                     8750           8750           9250
+#> 7                     8750           8750           9250
+#> 8                     8750           8750           9250
 
 apply_excess_loading(
   decomposed,
@@ -214,13 +216,22 @@ apply_excess_loading(
 #> 6   Retail       150000               1               1e+05               50000
 #> 7   Retail        40000               1               4e+04                   0
 #> 8   Retail         6000               1               6e+03                   0
-#>   claim_amount_is_excess base_premium base_rate allocated_loading loaded_rate
-#> 1                  FALSE          500       500              8750        9250
-#> 2                   TRUE          500       500              8750        9250
-#> 3                  FALSE          500       500              8750        9250
-#> 4                  FALSE          500       500              8750        9250
-#> 5                  FALSE          500       500              8750        9250
-#> 6                   TRUE          500       500              8750        9250
-#> 7                  FALSE          500       500              8750        9250
-#> 8                  FALSE          500       500              8750        9250
+#>   claim_amount_is_excess base_premium base_rate allocated_excess_loading
+#> 1                  FALSE          500       500                     8750
+#> 2                   TRUE          500       500                     8750
+#> 3                  FALSE          500       500                     8750
+#> 4                  FALSE          500       500                     8750
+#> 5                  FALSE          500       500                     8750
+#> 6                   TRUE          500       500                     8750
+#> 7                  FALSE          500       500                     8750
+#> 8                  FALSE          500       500                     8750
+#>   loaded_rate
+#> 1        9250
+#> 2        9250
+#> 3        9250
+#> 4        9250
+#> 5        9250
+#> 6        9250
+#> 7        9250
+#> 8        9250
 ```
