@@ -331,9 +331,60 @@ test_that("allocate_excess_loss supports observed portfolio pooling", {
     sum(decomposed$earned_exposure)
 
   expect_s3_class(allocation, "excess_allocation")
-  expect_equal(allocation$data$allocated_loading, rep(expected_loading, nrow(decomposed)))
-  expect_equal(sum(allocation$data$allocated_excess_loss),
+  expect_s3_class(allocation, "data.frame")
+  expect_equal(allocation$allocated_excess_loading, rep(expected_loading, nrow(decomposed)))
+  expect_equal(sum(allocation$allocated_excess_loss),
                expected_loading * sum(decomposed$earned_exposure))
+})
+
+test_that("allocate_excess_loss enriches calculate_excess_loss output", {
+  decomposed <- calculate_excess_loss(excess_loss_data, "claim_amount", 100000)
+  allocation <- allocate_excess_loss(
+    decomposed,
+    allocation_weight = "earned_exposure",
+    risk_factor = "segment",
+    method = "observed",
+    allocation = "partial"
+  )
+
+  expect_s3_class(allocation, "excess_allocation")
+  expect_equal(names(allocation)[seq_along(names(decomposed))], names(decomposed))
+  expect_equal(allocation$segment, decomposed$segment)
+  expect_equal(seq_len(nrow(allocation)), seq_len(nrow(decomposed)))
+  expect_false("row_id" %in% names(allocation))
+  expect_false("group" %in% names(allocation))
+  expect_true("segment_excess_loading" %in% names(allocation))
+  expect_true(all(c(
+    "allocation_included", "portfolio_excess_loading", "credibility",
+    "allocated_excess_loading", "allocated_excess_loss"
+  ) %in% names(allocation)))
+  expect_equal(attr(allocation, "excess_amount"), "claim_amount_excess")
+  expect_equal(attr(allocation, "risk_factor"), "segment")
+  expect_equal(
+    allocation$allocated_excess_loss,
+    allocation$allocated_excess_loading * allocation$earned_exposure
+  )
+  expect_equal(
+    sum(allocation$allocated_excess_loss[allocation$allocation_included]),
+    sum(allocation$claim_amount_excess)
+  )
+
+  expect_error(
+    allocate_excess_loss(
+      data.frame(claim_amount = c(0, 120000), earned_exposure = c(1, 1)),
+      allocation_weight = "earned_exposure"
+    ),
+    "`excess_amount` is NULL"
+  )
+  with_collision <- decomposed
+  with_collision$allocated_excess_loss <- 0
+  expect_error(
+    allocate_excess_loss(
+      with_collision,
+      allocation_weight = "earned_exposure"
+    ),
+    "already exist"
+  )
 })
 
 test_that("allocate_excess_loss supports risk-factor allocation", {
@@ -347,13 +398,13 @@ test_that("allocate_excess_loss supports risk-factor allocation", {
     allocation = "risk_factor"
   )
   s <- summary(allocation, compare_to_empirical = TRUE)
-  industry <- s[s$group == "Industry", ]
+  industry <- s[s$segment == "Industry", ]
   expected <- sum(decomposed$claim_amount_excess[decomposed$segment == "Industry"]) /
     sum(decomposed$earned_exposure[decomposed$segment == "Industry"])
 
-  expect_equal(industry$group_loading, expected)
+  expect_equal(industry$segment_excess_loading, expected)
   expect_equal(industry$credibility, 1)
-  expect_true("empirical_excess_loss" %in% names(s))
+  expect_false("empirical_excess_loss" %in% names(s))
 })
 
 test_that("allocate_excess_loss supports partial allocation", {
@@ -369,10 +420,10 @@ test_that("allocate_excess_loss supports partial allocation", {
     preserve_total_excess = FALSE
   )
   s <- summary(allocation)
-  expected <- 0.4 * s$group_loading + 0.6 * s$portfolio_loading
+  expected <- 0.4 * s$segment_excess_loading + 0.6 * s$portfolio_excess_loading
 
   expect_equal(s$credibility, rep(0.4, nrow(s)))
-  expect_equal(s$allocated_loading, expected)
+  expect_equal(s$allocated_excess_loading, expected)
 })
 
 test_that("preserve_total_excess rescales partial allocation to the allocated burden", {
@@ -389,7 +440,7 @@ test_that("preserve_total_excess rescales partial allocation to the allocated bu
   )
 
   expect_equal(
-    sum(allocation$data$allocated_excess_loss[allocation$data$included]),
+    sum(allocation$allocated_excess_loss[allocation$allocation_included]),
     sum(decomposed$claim_amount_excess)
   )
 })
@@ -406,16 +457,77 @@ test_that("automatic credibility is transparent and auditable", {
   s <- summary(allocation)
 
   expect_true(all(c(
+    "segment", "earned_exposure", "claim_count", "excess_claim_count",
+    "observed_excess_loss", "observed_excess_loading",
+    "segment_excess_loading", "portfolio_excess_loading",
+    "credibility", "allocated_excess_loading", "allocated_excess_loss"
+  ) %in% names(s)))
+  expect_false(any(c(
     "group", "weight", "n_claims", "n_excess_claims",
     "historical_excess_loss", "excess_loss_ratio",
     "credibility_basis", "credibility_experience", "credibility_threshold",
-    "group_loading", "portfolio_loading",
-    "credibility", "allocated_loading", "allocated_excess_loss"
+    "group_loading", "allocated_loading", "empirical_loss",
+    "empirical_excess_loss"
   ) %in% names(s)))
-  expect_equal(s$credibility_basis, rep("claims", nrow(s)))
-  expect_equal(s$credibility_experience, s$n_claims)
-  expect_equal(s$credibility, s$n_claims / (s$n_claims + 50))
+  expect_equal(attr(s, "credibility_basis"), "claims")
+  expect_equal(attr(s, "credibility_threshold"), 50)
+  expect_equal(attr(s, "risk_factor"), "segment")
+  expect_equal(attr(s, "allocation_weight"), "earned_exposure")
+  expect_equal(s$credibility, s$claim_count / (s$claim_count + 50))
   expect_true(all(s$credibility >= 0 & s$credibility <= 1))
+  expect_equal(
+    s$observed_excess_loading,
+    s$observed_excess_loss / s$earned_exposure
+  )
+  expect_equal(
+    s$allocated_excess_loss,
+    s$allocated_excess_loading * s$earned_exposure
+  )
+})
+
+test_that("allocate_excess_loss uses claim_count and fallback claim counts", {
+  portfolio <- data.frame(
+    sector = c("Industry", "Industry", "Retail", "Retail"),
+    claim_count = c(0, 2, 0, 1),
+    claim_amount = c(0, 130000, 0, 160000),
+    earned_exposure = c(1, 1, 1, 1)
+  )
+  decomposed <- calculate_excess_loss(portfolio, "claim_amount", 100000)
+
+  fallback <- allocate_excess_loss(
+    decomposed,
+    excess_amount = "claim_amount_excess",
+    allocation_weight = "earned_exposure",
+    risk_factor = "sector",
+    allocation = "partial",
+    credibility_threshold = 10,
+    preserve_total_excess = FALSE
+  )
+  with_count <- allocate_excess_loss(
+    decomposed,
+    excess_amount = "claim_amount_excess",
+    allocation_weight = "earned_exposure",
+    risk_factor = "sector",
+    claim_count = "claim_count",
+    allocation = "partial",
+    credibility_threshold = 10,
+    preserve_total_excess = FALSE
+  )
+
+  expect_equal(summary(fallback)$claim_count, c(1, 1))
+  expect_equal(summary(with_count)$claim_count, c(2, 1))
+  expect_equal(summary(fallback)$credibility,
+               summary(fallback)$claim_count / (summary(fallback)$claim_count + 10))
+  expect_error(
+    allocate_excess_loss(
+      transform(decomposed, bad_claim_count = c(0, NA, 0, 1)),
+      excess_amount = "claim_amount_excess",
+      allocation_weight = "earned_exposure",
+      risk_factor = "sector",
+      claim_count = "bad_claim_count"
+    ),
+    "`claim_count`"
+  )
 })
 
 test_that("credibility_basis controls the experience measure", {
@@ -443,10 +555,48 @@ test_that("credibility_basis controls the experience measure", {
   s_excess <- summary(by_excess)
   s_weight <- summary(by_weight)
 
-  expect_equal(s_excess$credibility_experience, s_excess$n_excess_claims)
-  expect_equal(s_weight$credibility_experience, s_weight$weight)
+  expect_equal(attr(s_excess, "credibility_basis"), "excess_claims")
+  expect_equal(attr(s_weight, "credibility_basis"), "allocation_weight")
   expect_equal(s_excess$credibility,
-               s_excess$n_excess_claims / (s_excess$n_excess_claims + 5))
+               s_excess$excess_claim_count / (s_excess$excess_claim_count + 5))
+  expect_equal(s_weight$credibility,
+               s_weight$earned_exposure / (s_weight$earned_exposure + 5))
+})
+
+test_that("summary.excess_allocation adds empirical comparison columns on request", {
+  portfolio <- data.frame(
+    sector = factor(c("Industry", "Industry", "Retail", "Retail")),
+    claim_amount = c(0, 120000, 0, 50000),
+    earned_exposure = c(1, 1, 1, 1)
+  )
+  decomposed <- calculate_excess_loss(portfolio, "claim_amount", 100000)
+  allocation <- allocate_excess_loss(
+    decomposed,
+    allocation_weight = "earned_exposure",
+    risk_factor = "sector",
+    allocation = "partial",
+    credibility = 0.5,
+    preserve_total_excess = TRUE
+  )
+
+  s <- summary(allocation)
+  s_compare <- summary(allocation, compare_to_empirical = TRUE)
+
+  expect_s3_class(s$sector, "factor")
+  expect_false(any(c("allocation_difference", "allocation_difference_ratio") %in% names(s)))
+  expect_true(all(c("allocation_difference", "allocation_difference_ratio") %in% names(s_compare)))
+  expect_equal(
+    s_compare$allocation_difference,
+    s_compare$allocated_excess_loss - s_compare$observed_excess_loss
+  )
+  expect_equal(
+    s_compare$allocation_difference_ratio[s_compare$observed_excess_loss > 0],
+    s_compare$allocation_difference[s_compare$observed_excess_loss > 0] /
+      s_compare$observed_excess_loss[s_compare$observed_excess_loss > 0]
+  )
+  expect_true(all(is.na(
+    s_compare$allocation_difference_ratio[s_compare$observed_excess_loss == 0]
+  )))
 })
 
 test_that("allocation_subset column restricts the allocation basis", {
@@ -461,8 +611,8 @@ test_that("allocation_subset column restricts the allocation basis", {
     allocation = "portfolio"
   )
 
-  expect_true(all(allocation$data$allocated_loading[!decomposed$include_in_loading] == 0))
-  expect_true(all(allocation$data$allocated_excess_loss[!decomposed$include_in_loading] == 0))
+  expect_true(all(allocation$allocated_excess_loading[!decomposed$include_in_loading] == 0))
+  expect_true(all(allocation$allocated_excess_loss[!decomposed$include_in_loading] == 0))
 })
 
 test_that("bootstrap allocation is reproducible through bootstrap_seed", {
@@ -489,7 +639,7 @@ test_that("bootstrap allocation is reproducible through bootstrap_seed", {
   )
 
   expect_equal(summary(x), summary(y))
-  expect_true("bootstrap_loading_mean" %in% names(summary(x)))
+  expect_false("bootstrap_loading_mean" %in% names(summary(x)))
 })
 
 test_that("bootstrap severity noise and preserve_total_excess are validated", {
@@ -584,9 +734,9 @@ test_that("apply_excess_loading adds premium columns", {
   out <- apply_excess_loading(decomposed, allocation)
 
   expect_equal(out$base_premium, decomposed$base_premium)
-  expect_equal(out$allocated_excess_loss, allocation$data$allocated_excess_loss)
-  expect_equal(out$allocated_loading, allocation$data$allocated_loading)
-  expect_equal(out$excess_loading, allocation$data$allocated_excess_loss)
+  expect_equal(out$allocated_excess_loss, allocation$allocated_excess_loss)
+  expect_equal(out$allocated_excess_loading, allocation$allocated_excess_loading)
+  expect_equal(out$excess_loading, allocation$allocated_excess_loss)
   expect_equal(out$loaded_premium, out$base_premium + out$allocated_excess_loss)
 })
 
@@ -605,8 +755,8 @@ test_that("apply_excess_loading can return rates", {
   )
 
   expect_equal(out$base_rate, decomposed$base_premium / decomposed$earned_exposure)
-  expect_equal(out$allocated_loading, allocation$data$allocated_loading)
-  expect_equal(out$loaded_rate, out$base_rate + out$allocated_loading)
+  expect_equal(out$allocated_excess_loading, allocation$allocated_excess_loading)
+  expect_equal(out$loaded_rate, out$base_rate + out$allocated_excess_loading)
 })
 
 test_that("print, summary and autoplot methods work", {
@@ -620,7 +770,9 @@ test_that("print, summary and autoplot methods work", {
     allocation = "partial"
   )
 
-  expect_output(print(allocation), "Excess loss allocation")
+  expect_output(print(allocation), "allocated_excess_loss")
+  expect_null(getS3method("print", "excess_allocation", optional = TRUE))
+  expect_s3_class(summary(allocation), "data.frame")
   expect_s3_class(autoplot(allocation), "ggplot")
   expect_s3_class(autoplot(allocation, top_n = 2, show_labels = TRUE), "ggplot")
 })

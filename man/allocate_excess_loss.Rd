@@ -6,10 +6,11 @@
 \usage{
 allocate_excess_loss(
   data,
-  excess_amount,
+  excess_amount = NULL,
   allocation_weight,
   risk_factor = NULL,
   allocation_subset = NULL,
+  claim_count = NULL,
   allocation = c("portfolio", "risk_factor", "partial"),
   credibility = NULL,
   credibility_basis = c("claims", "excess_claims", "allocation_weight"),
@@ -26,8 +27,9 @@ allocate_excess_loss(
 \arguments{
 \item{data}{A data.frame, typically the output of \code{\link[=calculate_excess_loss]{calculate_excess_loss()}}.}
 
-\item{excess_amount}{Character string. Column containing the excess claim
-amount to allocate.}
+\item{excess_amount}{Optional character string. Column containing the excess
+claim amount to allocate. If \code{NULL}, the function uses the
+\code{claim_amount_excess_column} metadata created by \code{\link[=calculate_excess_loss]{calculate_excess_loss()}}.}
 
 \item{allocation_weight}{Character string. Column used as allocation weight,
 typically exposure, premium, insured value or another earned unit.}
@@ -37,6 +39,12 @@ typically exposure, premium, insured value or another earned unit.}
 
 \item{allocation_subset}{Optional character string. Logical column indicating
 which rows participate in the allocation. If \code{NULL}, all rows are included.}
+
+\item{claim_count}{Optional character string. Claim-count column. If
+supplied, claim counts in the allocation summary are calculated as the sum
+of this column. If \code{NULL}, claim counts are inferred from the original
+claim amount column when available: rows with a positive claim amount count
+as one claim and rows with zero claim amount count as zero claims.}
 
 \item{allocation}{Character string. One of \code{"portfolio"}, \code{"risk_factor"} or
 \code{"partial"}.}
@@ -73,7 +81,29 @@ rescaled so that the total allocated excess loss equals the total excess
 loss being allocated.}
 }
 \value{
-An object of class \code{"excess_allocation"}.
+The input \code{data} enriched with allocation columns and class
+\code{"excess_allocation"}. The object prints as an ordinary data frame and has
+a custom \code{\link[=summary.excess_allocation]{summary.excess_allocation()}} method for aggregated allocation
+statistics. Original rows, columns, row order and metadata from
+\code{\link[=calculate_excess_loss]{calculate_excess_loss()}} are preserved. The added columns are:
+\describe{
+\item{\code{allocation_included}}{Logical indicator showing whether the row
+was included in the allocation basis. Rows are included when they satisfy
+\code{allocation_subset} if supplied; included rows must also have a positive
+allocation weight.}
+\item{\verb{<risk_factor>_excess_loading}}{Excess loading estimated from the
+experience of the risk-factor level. For example, \code{risk_factor = "sector"} creates \code{sector_excess_loading}. When no risk factor is
+supplied, the column is named \code{risk_factor_excess_loading}.}
+\item{\code{portfolio_excess_loading}}{Excess loading estimated from the full
+portfolio.}
+\item{\code{credibility}}{Credibility weight assigned to the risk-factor-level
+experience.}
+\item{\code{allocated_excess_loading}}{Final excess loading per unit of
+\code{allocation_weight}. For partial allocation this is the credibility blend
+of the risk-factor and portfolio excess loadings.}
+\item{\code{allocated_excess_loss}}{Row-level allocated excess-loss amount,
+calculated as \code{allocated_excess_loading * allocation_weight}.}
+}
 }
 \description{
 Large claims can distort risk-factor relativities and create unstable
@@ -251,6 +281,7 @@ reflected in the final premium.
 \examples{
 claims <- data.frame(
   sector = rep(c("Industry", "Retail"), each = 4),
+  claim_count = c(1, 1, 1, 1, 1, 1, 1, 1),
   claim_amount = c(
     1000, 120000, 30000, 8000,
     2000, 150000, 40000, 6000
@@ -267,16 +298,16 @@ decomposed <- calculate_excess_loss(
 # Pool all excess losses across the portfolio
 portfolio_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
+  claim_count = "claim_count",
   allocation = "portfolio"
 )
 
 # Allocate excess losses separately by sector
 sector_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
+  claim_count = "claim_count",
   risk_factor = "sector",
   allocation = "risk_factor"
 )
@@ -284,8 +315,8 @@ sector_allocation <- allocate_excess_loss(
 # Blend sector and portfolio experience using credibility
 partial_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
+  claim_count = "claim_count",
   risk_factor = "sector",
   allocation = "partial",
   credibility_basis = "claims",
@@ -294,6 +325,9 @@ partial_allocation <- allocate_excess_loss(
 
 summary(partial_allocation)
 
+}
+\seealso{
+\code{\link[=summary.excess_allocation]{summary.excess_allocation()}}
 }
 \author{
 Martin Haringa

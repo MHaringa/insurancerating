@@ -6,7 +6,7 @@
 \usage{
 \method{autoplot}{excess_allocation}(
   object,
-  y = c("allocated_loading", "allocated_excess_loss", "credibility"),
+  y = c("allocated_excess_loading", "allocated_excess_loss", "credibility"),
   top_n = NULL,
   show_labels = FALSE,
   ...

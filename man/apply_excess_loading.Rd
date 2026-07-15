@@ -9,7 +9,7 @@ apply_excess_loading(
   allocation,
   base_premium = "base_premium",
   allocated_excess_loss = NULL,
-  allocated_loading = NULL,
+  allocated_excess_loading = NULL,
   weight = NULL,
   output = c("premium", "rate")
 )
@@ -23,12 +23,12 @@ apply_excess_loading(
 amount or base rate before the excess loading is added.}
 
 \item{allocated_excess_loss}{Optional character string. Column in
-\code{allocation$data} containing the allocated excess-loss amount in monetary
+\code{allocation} containing the allocated excess-loss amount in monetary
 terms. If \code{NULL}, \code{allocated_excess_loss} is used.}
 
-\item{allocated_loading}{Optional character string. Column in
-\code{allocation$data} containing the allocated excess loading per unit of
-allocation weight. If \code{NULL}, \code{allocated_loading} is used.}
+\item{allocated_excess_loading}{Optional character string. Column in
+\code{allocation} containing the allocated excess loading per unit of
+allocation weight. If \code{NULL}, \code{allocated_excess_loading} is used.}
 
 \item{weight}{Optional character string. Weight column used to convert between
 premium amounts and rates when \code{output = "rate"}.}
@@ -38,9 +38,9 @@ premium amounts and rates when \code{output = "rate"}.}
 }
 \value{
 A data.frame. With \code{output = "premium"}, the result contains
-\code{base_premium}, \code{allocated_excess_loss}, \code{allocated_loading},
+\code{base_premium}, \code{allocated_excess_loss}, \code{allocated_excess_loading},
 \code{excess_loading} and \code{loaded_premium}. With \code{output = "rate"}, the result
-contains \code{base_rate}, \code{allocated_loading} and \code{loaded_rate}.
+contains \code{base_rate}, \code{allocated_excess_loading} and \code{loaded_rate}.
 }
 \description{
 Apply an allocated excess-loss loading to a portfolio data set.
@@ -96,14 +96,14 @@ base\_rate =
 \code{allocated_excess_loss} represents the monetary excess-loss burden allocated
 to a row.
 
-\code{allocated_loading} represents the excess loading per unit of allocation
+\code{allocated_excess_loading} represents the excess loading per unit of allocation
 weight.
 
 In other words:
 
 \deqn{
 allocated\_excess\_loss =
-allocated\_loading \cdot weight
+allocated\_excess\_loading \cdot weight
 }
 
 This distinction is important when moving between premium amounts and rates.

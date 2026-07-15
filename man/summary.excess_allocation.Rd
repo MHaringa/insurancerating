@@ -15,11 +15,47 @@ empirical loss and empirical excess loss used for comparison.}
 \item{...}{Unused.}
 }
 \value{
-A \code{data.frame}.
+A \code{data.frame} with aggregated allocation statistics. The returned
+table has one row per risk-factor level. The original risk-factor and
+allocation-weight names are preserved. "Observed" refers to historical
+excess loss in the input data; "allocated" refers to the
+credibility-weighted allocation. Loadings are amounts per unit of
+allocation weight and losses are total amounts for the level. The returned
+columns are:
+\describe{
+\item{\verb{<risk_factor>}}{Risk-factor level. For example, \code{risk_factor = "sector"} returns a \code{sector} column. When no risk factor is supplied,
+this column is named \code{risk_factor} and contains \code{"portfolio"}.}
+\item{\verb{<allocation_weight>}}{Total allocation weight for the level. For
+example, \code{allocation_weight = "earned_exposure"} returns an
+\code{earned_exposure} column.}
+\item{\code{claim_count}}{Number of claims in the level, based on the supplied
+\code{claim_count} column or inferred from positive claim amounts.}
+\item{\code{excess_claim_count}}{Number of claim records with excess loss.}
+\item{\code{observed_excess_loss}}{Historically observed excess loss.}
+\item{\code{observed_excess_loading}}{Observed excess loss per unit of
+allocation weight.}
+\item{\code{credibility}}{Credibility assigned to the risk-factor experience.}
+\item{\verb{<risk_factor>_excess_loading}}{Risk-factor-specific excess
+loading before pooling. When no risk factor is supplied, this column is
+named \code{risk_factor_excess_loading}.}
+\item{\code{portfolio_excess_loading}}{Portfolio-wide excess loading.}
+\item{\code{allocated_excess_loading}}{Credibility-weighted excess loading.}
+\item{\code{allocated_excess_loss}}{Total excess loss allocated to the level.}
+\item{\code{allocation_difference}}{Allocated minus observed excess loss,
+included when \code{compare_to_empirical = TRUE}. A positive value means the
+level receives more allocated excess loss than it generated historically.}
+\item{\code{allocation_difference_ratio}}{Allocation difference relative to
+observed excess loss, included when \code{compare_to_empirical = TRUE}. When
+observed excess loss is zero this value is \code{NA_real_}, because a relative
+comparison with zero observed excess loss is undefined.}
+}
 }
 \description{
 Return the allocation audit table from an object produced by
 \code{\link[=allocate_excess_loss]{allocate_excess_loss()}}.
+}
+\seealso{
+\code{\link[=allocate_excess_loss]{allocate_excess_loss()}}
 }
 \author{
 Martin Haringa

@@ -145,7 +145,7 @@
   returns `base_premium`, `excess_loading` and `loaded_premium`.
 - `apply_excess_loading()` now treats premium amounts as the default workflow and
   keeps the distinction between absolute `allocated_excess_loss` and per-weight
-  `allocated_loading` explicit.
+  `allocated_excess_loading` explicit.
 - `add_smoothing()` now uses `model_variable` and `source_variable` as the
   primary argument names.
 - `edit_smoothing()` now uses clearer in-object editing arguments for adjusting
