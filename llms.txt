@@ -235,7 +235,7 @@ components that can be added to technical risk premium models.
 - [`autoplot(`*`<excess_allocation>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_allocation.md)
   : Plot an excess-loss allocation
 - [`apply_excess_loading()`](https://mharinga.github.io/insurancerating/reference/apply_excess_loading.md)
-  : Apply excess loading to a pricing portfolio
+  : Apply allocated excess losses or loadings to a pricing portfolio
 - [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
   **\[experimental\]** : Fit severity distributions to truncated claim
   data

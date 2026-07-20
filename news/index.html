@@ -39,6 +39,16 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="insurancerating-development-version">insurancerating (development version)<a class="anchor" aria-label="anchor" href="#insurancerating-development-version"></a></h2>
 <div class="section level3">
+<h3 id="overview-of-changes-since-development-version">Overview of changes since 0.8.0<a class="anchor" aria-label="anchor" href="#overview-of-changes-since-development-version"></a></h3>
+<ul><li>The excess-loss workflow has been made more portfolio-oriented and easier to audit. Threshold assessments now preserve input column names, support portfolio-level claim counts and can be presented with <code><a href="../reference/as_gt.html">as_gt()</a></code>. <code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code> returns an enriched data frame with dynamically named capped and excess columns, while <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> returns the original portfolio rows with clearly named allocation results.</li>
+<li>Excess-loss allocation now distinguishes explicitly between rows that contribute observed excess losses and rows that receive an allocation. Portfolio, risk-factor and partial allocation use a consistent output structure, transparent credibility weighting and optional bootstrap uncertainty. Allocation summaries preserve the original risk-factor, claim-count and allocation-weight column names.</li>
+<li>
+<code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code> now has a smaller API that directly consumes the standard output of <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code>. It supports both premium amounts and rates through <code>output</code>, <code>base_value</code> and <code>allocation_weight</code> without requiring users to specify internal allocation-column names.</li>
+<li>
+<code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code> is now the primary helper for attaching observed portfolio experience to <code><a href="../reference/rating_table.html">rating_table()</a></code> objects. The former <code><a href="../reference/add_observed_experience.html">add_observed_experience()</a></code> interface remains available as a deprecated compatibility wrapper.</li>
+<li>The documentation for <code><a href="../reference/rating_table.html">rating_table()</a></code>, <code><a href="../reference/add_prediction.html">add_prediction()</a></code> and the excess-loss workflow has been expanded with more applied portfolio examples. The pkgdown configuration and website build workflow have also been updated.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="main-api-updates-development-version">Main API updates<a class="anchor" aria-label="anchor" href="#main-api-updates-development-version"></a></h3>
 <div class="section level4">
 <h4 id="rating-tables-development-version">Rating tables<a class="anchor" aria-label="anchor" href="#rating-tables-development-version"></a></h4>
@@ -50,6 +60,18 @@
 <code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code> can calculate portfolio experience automatically from portfolio data for all risk factors in a <code><a href="../reference/rating_table.html">rating_table()</a></code>, and accepts multiple existing <code><a href="../reference/factor_analysis.html">factor_analysis()</a></code> objects.</li>
 <li>
 <code><a href="../reference/autoplot.rating_table.html">autoplot.rating_table()</a></code> accepts <code>metric</code> to choose the attached portfolio experience metric at plot time.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="excess-loss-workflow-development-version">Excess-loss workflow<a class="anchor" aria-label="anchor" href="#excess-loss-workflow-development-version"></a></h4>
+<ul><li>
+<code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code> now returns class <code>"threshold_assessment"</code>, preserves the original group and exposure column names, supports an optional claim-count column and uses <code><a href="../reference/as_gt.html">as_gt()</a></code> for report-ready threshold comparisons.</li>
+<li>
+<code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code> now returns a regular enriched data frame. Capped, excess and indicator column names are derived from the supplied claim-amount column, and metadata allows the next allocation step to find them automatically.</li>
+<li>
+<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now returns the original portfolio data with class <code>"excess_allocation"</code> and appended allocation columns. The <code>receives_allocation</code> argument controls which rows receive a share without excluding their observed excess losses from the total being allocated.</li>
+<li>Allocation output now distinguishes risk-factor, portfolio and blended excess loadings from the row-level <code>expected_excess_loss</code>. The allocation summary retains original input column names and provides an auditable comparison of observed and allocated excess loss.</li>
+<li>
+<code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code> now uses the compact API <code>output</code>, <code>base_value</code> and <code>allocation_weight</code>. It automatically reads <code>expected_excess_loss</code> and <code>blended_excess_loading</code> from the allocation object.</li>
 </ul></div>
 </div>
 </div>

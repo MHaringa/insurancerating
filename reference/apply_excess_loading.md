@@ -1,6 +1,7 @@
-# Apply excess loading to a pricing portfolio
+# Apply allocated excess losses or loadings to a pricing portfolio
 
-Apply an allocated excess-loss loading to a portfolio data set.
+Add an allocated expected excess loss or excess loading to an existing
+base premium or base rate.
 
 ## Usage
 
@@ -8,11 +9,9 @@ Apply an allocated excess-loss loading to a portfolio data set.
 apply_excess_loading(
   data,
   allocation,
-  base_premium = "base_premium",
-  expected_excess_loss = NULL,
-  blended_excess_loading = NULL,
-  weight = NULL,
-  output = c("premium", "rate")
+  output = c("premium", "rate"),
+  base_value = "base_value",
+  allocation_weight = NULL
 )
 ```
 
@@ -20,39 +19,41 @@ apply_excess_loading(
 
 - data:
 
-  A data.frame containing the base premium or base rate.
+  A data.frame containing the existing base premium amounts or rates.
+  Its rows must correspond to the rows in `allocation`.
 
 - allocation:
 
-  An object returned by
+  An `excess_allocation` object returned by
   [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md).
-
-- base_premium:
-
-  Character string. Column containing the base premium amount or base
-  rate before the excess loading is added.
-
-- expected_excess_loss:
-
-  Optional character string. Column in `allocation` containing the
-  expected excess-loss amount in monetary terms. If `NULL`,
-  `expected_excess_loss` is used.
-
-- blended_excess_loading:
-
-  Optional character string. Column in `allocation` containing the
-  blended excess loading per unit of allocation weight. If `NULL`,
-  `blended_excess_loading` is used.
-
-- weight:
-
-  Optional character string. Weight column used to convert between
-  premium amounts and rates when `output = "rate"`.
+  It supplies the row-level amount and loading that are applied to
+  `data`.
 
 - output:
 
-  Character string. Use `"premium"` to return premium amounts or
-  `"rate"` to return rates per unit of weight.
+  Character string. Use `"premium"` to add the allocated monetary amount
+  or `"rate"` to add the loading per unit of allocation weight.
+
+- base_value:
+
+  Character string. Column containing the existing value to which the
+  excess component is added. This is typically a premium amount when
+  `output = "premium"` and a rate when `output = "rate"`. When
+  `output = "rate"` and `allocation_weight` is supplied, `base_value` is
+  interpreted as a monetary amount and divided by `allocation_weight`
+  before the loading is added.
+
+- allocation_weight:
+
+  Optional character string. Positive numeric column used to optionally
+  convert `base_value` from a monetary amount to a rate when
+  `output = "rate"`. If `NULL`, `base_value` is treated as an existing
+  rate. When supplied, it should be the same column used as
+  `allocation_weight` in
+  [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md).
+  The standard `expected_excess_loss` and `blended_excess_loading`
+  columns are read automatically from `allocation` and do not need to be
+  specified.
 
 ## Value
 
@@ -63,43 +64,52 @@ result contains `base_rate`, `blended_excess_loading` and `loaded_rate`.
 
 ## Details
 
-`apply_excess_loading()` is the final step in the excess-loss pricing
-workflow. It does not cap claims, estimate excess losses or allocate the
-excess burden. Instead, it takes the output of
-[`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
-and adds the allocated excess component back to the base premium or base
-rate.
+### Relationship with allocation
 
-The function is typically used after the base premium has been modelled
-on capped claim amounts. The excess loading then ensures that the cost
-of claims above the selected threshold is still reflected in the final
-technical premium.
+[`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
+first distributes the portfolio's excess losses across individual
+observations. It returns both `expected_excess_loss`, the monetary
+amount allocated to each observation, and `blended_excess_loading`, the
+corresponding loading per unit of allocation weight.
+`apply_excess_loading()` then applies one of these results to an
+existing base premium or base rate.
+
+The distinction between the functions is deliberate:
+
+- [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
+  determines and allocates the expected excess-loss burden.
+
+- `apply_excess_loading()` adds the resulting amount or rate to the
+  pricing portfolio. It does not estimate or reallocate excess loss.
 
 ### Premium output
 
-With `output = "premium"`, the function adds the allocated excess loss
-in monetary terms to the base premium:
+With `output = "premium"`, the row-level `expected_excess_loss` is added
+to the column selected by `base_value`:
 
-\$\$ loaded\\premium = base\\premium + allocated\\excess\\loss \$\$
-
-`expected_excess_loss` is the row-level monetary amount of excess loss
-allocated to each risk.
+\$\$ loaded\\premium = base\\value + expected\\excess\\loss \$\$
 
 ### Rate output
 
-With `output = "rate"`, the function adds the allocated excess loading
-per unit of weight to the base rate:
+With `output = "rate"`, `blended_excess_loading` is added to the base
+rate:
 
-\$\$ loaded\\rate = base\\rate + allocated\\loading \$\$
+\$\$ loaded\\rate = base\\rate + blended\\excess\\loading \$\$
 
-Use this option when the base value represents a rate per exposure,
-premium unit, insured value or other allocation weight.
+By default, the column selected by `base_value` is treated as an
+existing base rate. If `allocation_weight` is supplied, `base_value` is
+instead treated as a monetary amount and converted to a rate before the
+excess loading is added:
 
-If the input column supplied through `base_premium` contains premium
-amounts rather than rates, the function first converts the base premium
-to a rate:
+\$\$ base\\rate = \frac{base\\value}{allocation\\weight} \$\$
 
-\$\$ base\\rate = \frac{base\\premium}{weight} \$\$
+`allocation_weight` should refer to the same quantity used in
+[`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md),
+such as earned exposure or insured amount times earned exposure. Where a
+row-level expected excess amount needs to be interpreted as a rate, the
+equivalent relationship is `expected_excess_loss / allocation_weight`.
+The allocation object already provides this rate as
+`blended_excess_loading`.
 
 ### Interpretation of allocation columns
 
@@ -111,7 +121,8 @@ allocation weight.
 
 In other words:
 
-\$\$ expected\\excess\\loss = blended\\excess\\loading \cdot weight \$\$
+\$\$ expected\\excess\\loss = blended\\excess\\loading \cdot
+allocation\\weight \$\$
 
 This distinction is important when moving between premium amounts and
 rates.
@@ -135,6 +146,11 @@ A common workflow is:
 This produces a final technical premium that reflects both the modelled
 capped loss cost and the separately allocated excess-loss burden.
 
+## See also
+
+[`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md),
+[`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
+
 ## Author
 
 Martin Haringa
@@ -142,17 +158,19 @@ Martin Haringa
 ## Examples
 
 ``` r
-claims <- data.frame(
-  sector = rep(c("Industry", "Retail"), each = 4),
+portfolio <- data.frame(
+  policy_id = 1:10,
+  sector = rep(c("Industry", "Retail"), each = 5),
+  claim_count = c(0, 1, 1, 1, 1, 0, 1, 1, 1, 1),
   claim_amount = c(
-    1000, 120000, 30000, 8000,
-    2000, 150000, 40000, 6000
+    0, 25000, 120000, 50000, 175000,
+    0, 40000, 90000, 150000, 750000
   ),
-  earned_exposure = rep(1, 8)
+  earned_exposure = rep(1, 10)
 )
 
 decomposed <- calculate_excess_loss(
-  claims,
+  portfolio,
   claim_amount = "claim_amount",
   threshold = 100000
 )
@@ -161,75 +179,23 @@ decomposed$base_premium <- 500
 
 allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "claim_amount_excess",
-  allocation_weight = "earned_exposure"
+  allocation_weight = "earned_exposure",
+  claim_count = "claim_count"
 )
 
-apply_excess_loading(
+# Add the allocated monetary amount to the base premium.
+premium_result <- apply_excess_loading(
   decomposed,
   allocation,
-  base_premium = "base_premium"
+  base_value = "base_premium"
 )
-#>     sector claim_amount earned_exposure claim_amount_capped claim_amount_excess
-#> 1 Industry         1000               1               1e+03                   0
-#> 2 Industry       120000               1               1e+05               20000
-#> 3 Industry        30000               1               3e+04                   0
-#> 4 Industry         8000               1               8e+03                   0
-#> 5   Retail         2000               1               2e+03                   0
-#> 6   Retail       150000               1               1e+05               50000
-#> 7   Retail        40000               1               4e+04                   0
-#> 8   Retail         6000               1               6e+03                   0
-#>   claim_amount_is_excess base_premium expected_excess_loss
-#> 1                  FALSE          500                 8750
-#> 2                   TRUE          500                 8750
-#> 3                  FALSE          500                 8750
-#> 4                  FALSE          500                 8750
-#> 5                  FALSE          500                 8750
-#> 6                   TRUE          500                 8750
-#> 7                  FALSE          500                 8750
-#> 8                  FALSE          500                 8750
-#>   blended_excess_loading excess_loading loaded_premium
-#> 1                   8750           8750           9250
-#> 2                   8750           8750           9250
-#> 3                   8750           8750           9250
-#> 4                   8750           8750           9250
-#> 5                   8750           8750           9250
-#> 6                   8750           8750           9250
-#> 7                   8750           8750           9250
-#> 8                   8750           8750           9250
 
-apply_excess_loading(
+# Add the excess loading per exposure unit to the base premium rate.
+decomposed$base_rate <- decomposed$base_premium / decomposed$earned_exposure
+rate_result <- apply_excess_loading(
   decomposed,
   allocation,
-  base_premium = "base_premium",
-  weight = "earned_exposure",
-  output = "rate"
+  output = "rate",
+  base_value = "base_rate"
 )
-#>     sector claim_amount earned_exposure claim_amount_capped claim_amount_excess
-#> 1 Industry         1000               1               1e+03                   0
-#> 2 Industry       120000               1               1e+05               20000
-#> 3 Industry        30000               1               3e+04                   0
-#> 4 Industry         8000               1               8e+03                   0
-#> 5   Retail         2000               1               2e+03                   0
-#> 6   Retail       150000               1               1e+05               50000
-#> 7   Retail        40000               1               4e+04                   0
-#> 8   Retail         6000               1               6e+03                   0
-#>   claim_amount_is_excess base_premium base_rate blended_excess_loading
-#> 1                  FALSE          500       500                   8750
-#> 2                   TRUE          500       500                   8750
-#> 3                  FALSE          500       500                   8750
-#> 4                  FALSE          500       500                   8750
-#> 5                  FALSE          500       500                   8750
-#> 6                   TRUE          500       500                   8750
-#> 7                  FALSE          500       500                   8750
-#> 8                  FALSE          500       500                   8750
-#>   loaded_rate
-#> 1        9250
-#> 2        9250
-#> 3        9250
-#> 4        9250
-#> 5        9250
-#> 6        9250
-#> 7        9250
-#> 8        9250
 ```

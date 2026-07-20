@@ -153,7 +153,7 @@ excess$base_premium <- excess$technical_premium
 priced <- apply_excess_loading(
   excess,
   allocation,
-  base_premium = "base_premium"
+  base_value = "base_premium"
 )
 ```
 
