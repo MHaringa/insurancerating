@@ -9,7 +9,7 @@ allocate_excess_loss(
   excess_amount = NULL,
   allocation_weight,
   risk_factor = NULL,
-  allocation_subset = NULL,
+  receives_allocation = NULL,
   claim_count = NULL,
   allocation = c("portfolio", "risk_factor", "partial"),
   credibility = NULL,
@@ -37,8 +37,11 @@ typically exposure, premium, insured value or another earned unit.}
 \item{risk_factor}{Optional character string. Risk-factor column used for
 \code{allocation = "risk_factor"} or \code{allocation = "partial"}.}
 
-\item{allocation_subset}{Optional character string. Logical column indicating
-which rows participate in the allocation. If \code{NULL}, all rows are included.}
+\item{receives_allocation}{Optional character string. Name of a logical column
+indicating which rows receive a share of the total excess loss. Rows with
+\code{FALSE} receive no allocation, but their excess losses still contribute to
+the total amount being allocated. If \code{NULL}, all rows receive an
+allocation.}
 
 \item{claim_count}{Optional character string. Claim-count column. If
 supplied, claim counts in the allocation summary are calculated as the sum
@@ -87,22 +90,28 @@ a custom \code{\link[=summary.excess_allocation]{summary.excess_allocation()}} m
 statistics. Original rows, columns, row order and metadata from
 \code{\link[=calculate_excess_loss]{calculate_excess_loss()}} are preserved. The added columns are:
 \describe{
-\item{\code{allocation_included}}{Logical indicator showing whether the row
-was included in the allocation basis. Rows are included when they satisfy
-\code{allocation_subset} if supplied; included rows must also have a positive
-allocation weight.}
+\item{\code{receives_allocation}}{Logical indicator showing whether the row
+receives a share of the total excess loss. This does not indicate whether
+the row contributed to the observed excess-loss amount: all excess losses
+can contribute to the total excess loss, while \code{receives_allocation}
+controls the target rows over which that total is redistributed. When the
+\code{receives_allocation} argument is supplied, rows receive allocation when
+the referenced logical column is \code{TRUE} and the allocation weight is
+positive. Rows with \code{FALSE} receive no allocation, but their excess
+losses still contribute to the total amount being allocated.}
 \item{\verb{<risk_factor>_excess_loading}}{Excess loading estimated from the
 experience of the risk-factor level. For example, \code{risk_factor = "sector"} creates \code{sector_excess_loading}. When no risk factor is
 supplied, the column is named \code{risk_factor_excess_loading}.}
-\item{\code{portfolio_excess_loading}}{Excess loading estimated from the full
-portfolio.}
-\item{\code{credibility}}{Credibility weight assigned to the risk-factor-level
-experience.}
-\item{\code{allocated_excess_loading}}{Final excess loading per unit of
-\code{allocation_weight}. For partial allocation this is the credibility blend
-of the risk-factor and portfolio excess loadings.}
-\item{\code{allocated_excess_loss}}{Row-level allocated excess-loss amount,
-calculated as \code{allocated_excess_loading * allocation_weight}.}
+\item{\verb{<risk_factor>_credibility}}{Credibility weight assigned to the
+risk-factor-level estimate. For example, \code{risk_factor = "sector"}
+creates \code{sector_credibility}.}
+\item{\code{portfolio_excess_loading}}{Portfolio-level excess loading per
+unit of allocation weight.}
+\item{\code{blended_excess_loading}}{Credibility-weighted blend of the
+risk-factor and portfolio excess loadings. For \code{risk_factor = "sector"},
+this is calculated as \code{sector_excess_loading * sector_credibility + portfolio_excess_loading * (1 - sector_credibility)}.}
+\item{\code{expected_excess_loss}}{Row-level expected excess-loss amount,
+calculated as \code{blended_excess_loading * allocation_weight}.}
 }
 }
 \description{
@@ -126,6 +135,12 @@ shared by all included risks regardless of their risk-factor level.
 This provides the most stable excess loading and is often appropriate when
 excess losses are infrequent, highly volatile or considered a portfolio-
 wide risk rather than a risk-factor-specific characteristic.
+
+For portfolio allocation, no risk-factor-level experience is used.
+Therefore, \code{risk_factor_credibility} equals zero and
+\code{blended_excess_loading} equals \code{portfolio_excess_loading}. The same output
+columns are kept for all allocation methods so downstream reporting code
+can use one consistent structure.
 \item \code{"risk_factor"}: excess losses are allocated separately for each
 risk-factor level. The excess burden observed within a group is spread
 across all risks in that group and is not shared with other groups.
@@ -133,6 +148,10 @@ across all risks in that group and is not shared with other groups.
 This produces the strongest link between excess loadings and observed
 group experience, but can lead to volatile results when excess losses are
 rare.
+
+For risk-factor allocation, only risk-factor-level experience is used.
+Therefore, \code{sector_credibility} equals one and \code{blended_excess_loading}
+equals \code{sector_excess_loading} when \code{risk_factor = "sector"}.
 \item \code{"partial"}: excess losses are allocated using a credibility-weighted
 combination of portfolio and risk-factor experience. Risk-factor levels
 with more credible experience receive excess loadings that more closely
@@ -150,15 +169,19 @@ practical rating applications.
 For \code{allocation = "partial"}, excess losses are allocated using a
 credibility-weighted blend of portfolio and risk-factor experience.
 
-The allocated loading is calculated as:
+The blended excess loading is calculated as:
 
 \deqn{
-loading_g = Z_g \cdot loading_g^{risk\ factor} +
-            (1 - Z_g) \cdot loading^{portfolio}
+blended\_excess\_loading_g =
+sector\_credibility_g \cdot sector\_excess\_loading_g +
+(1 - sector\_credibility_g) \cdot portfolio\_excess\_loading
 }
 
-where \code{Z_g} represents the credibility assigned to the risk-factor-level
-experience.
+In the output, \code{sector_excess_loading} is replaced by
+\verb{<risk_factor>_excess_loading} and \code{sector_credibility} by
+\verb{<risk_factor>_credibility} when another risk-factor column is supplied.
+\code{expected_excess_loss} is then calculated as
+\code{blended_excess_loading * allocation_weight}.
 
 If \code{credibility} is supplied, the same credibility is applied to all
 risk-factor levels.
@@ -279,18 +302,19 @@ reflected in the final premium.
 }
 }
 \examples{
-claims <- data.frame(
-  sector = rep(c("Industry", "Retail"), each = 4),
-  claim_count = c(1, 1, 1, 1, 1, 1, 1, 1),
+portfolio <- data.frame(
+  policy_id = 1:10,
+  sector = rep(c("Industry", "Retail"), each = 5),
+  claim_count = c(0, 1, 1, 1, 1, 0, 1, 1, 1, 1),
   claim_amount = c(
-    1000, 120000, 30000, 8000,
-    2000, 150000, 40000, 6000
+    0, 25000, 120000, 50000, 175000,
+    0, 40000, 90000, 150000, 750000
   ),
-  earned_exposure = rep(1, 8)
+  earned_exposure = rep(1, 10)
 )
 
 decomposed <- calculate_excess_loss(
-  claims,
+  portfolio,
   claim_amount = "claim_amount",
   threshold = 100000
 )
@@ -302,6 +326,8 @@ portfolio_allocation <- allocate_excess_loss(
   claim_count = "claim_count",
   allocation = "portfolio"
 )
+# No sector-level experience is used here: risk_factor_credibility is zero
+# and blended_excess_loading equals portfolio_excess_loading.
 
 # Allocate excess losses separately by sector
 sector_allocation <- allocate_excess_loss(
@@ -311,6 +337,8 @@ sector_allocation <- allocate_excess_loss(
   risk_factor = "sector",
   allocation = "risk_factor"
 )
+# Only sector-level experience is used here: sector_credibility is one
+# and blended_excess_loading equals sector_excess_loading.
 
 # Blend sector and portfolio experience using credibility
 partial_allocation <- allocate_excess_loss(
@@ -324,6 +352,40 @@ partial_allocation <- allocate_excess_loss(
 )
 
 summary(partial_allocation)
+
+# Allocate excess loss by insured amount, restricted to policies with an
+# insured amount of at least 500,000.
+portfolio <- portfolio |>
+  dplyr::mutate(
+    insured_amount = c(
+      100000, 250000, 500000, 750000, 1000000,
+      1500000, 2500000, 5000000, 7500000, 10000000
+    ),
+    receives_allocation = insured_amount >= 500000,
+    allocation_weight = insured_amount * earned_exposure
+  )
+
+decomposed <- calculate_excess_loss(
+  portfolio,
+  claim_amount = "claim_amount",
+  threshold = 500000
+)
+insured_amount_allocation <- allocate_excess_loss(
+  decomposed,
+  allocation = "portfolio",
+  allocation_weight = "allocation_weight",
+  receives_allocation = "receives_allocation"
+)
+insured_amount_allocation
+
+# All losses above the threshold contribute to the total excess loss, but
+# only rows with receives_allocation = TRUE receive a share. The share is
+# proportional to insured_amount * earned_exposure. A larger insured amount
+# therefore produces a larger absolute expected_excess_loss, while a policy
+# with the same insured amount but lower earned exposure receives
+# proportionally less. For receiving policies this gives one constant excess
+# loading as a percentage of insured amount, adjusted for earned exposure.
+# No risk-factor-level experience is used in this portfolio allocation.
 
 }
 \seealso{

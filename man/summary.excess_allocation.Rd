@@ -9,8 +9,9 @@
 \arguments{
 \item{object}{An object returned by \code{\link[=allocate_excess_loss]{allocate_excess_loss()}}.}
 
-\item{compare_to_empirical}{Logical. If \code{TRUE}, keep columns with the
-empirical loss and empirical excess loss used for comparison.}
+\item{compare_to_empirical}{Logical. If \code{TRUE}, append
+\code{allocation_difference} and \code{allocation_difference_ratio} to compare the
+credibility-weighted allocation with historically observed excess loss.}
 
 \item{...}{Unused.}
 }
@@ -28,20 +29,26 @@ this column is named \code{risk_factor} and contains \code{"portfolio"}.}
 \item{\verb{<allocation_weight>}}{Total allocation weight for the level. For
 example, \code{allocation_weight = "earned_exposure"} returns an
 \code{earned_exposure} column.}
-\item{\code{claim_count}}{Number of claims in the level, based on the supplied
-\code{claim_count} column or inferred from positive claim amounts.}
+\item{\verb{<claim_count>}}{Number of claims in the level. When \code{claim_count}
+is supplied, its original column name is preserved. When
+\code{claim_count = NULL}, inferred counts are returned as \code{claim_count}.}
 \item{\code{excess_claim_count}}{Number of claim records with excess loss.}
 \item{\code{observed_excess_loss}}{Historically observed excess loss.}
 \item{\code{observed_excess_loading}}{Observed excess loss per unit of
 allocation weight.}
-\item{\code{credibility}}{Credibility assigned to the risk-factor experience.}
 \item{\verb{<risk_factor>_excess_loading}}{Risk-factor-specific excess
 loading before pooling. When no risk factor is supplied, this column is
 named \code{risk_factor_excess_loading}.}
-\item{\code{portfolio_excess_loading}}{Portfolio-wide excess loading.}
-\item{\code{allocated_excess_loading}}{Credibility-weighted excess loading.}
-\item{\code{allocated_excess_loss}}{Total excess loss allocated to the level.}
-\item{\code{allocation_difference}}{Allocated minus observed excess loss,
+\item{\verb{<risk_factor>_credibility}}{Credibility weight assigned to the
+risk-factor-level estimate.}
+\item{\code{portfolio_excess_loading}}{Portfolio-level excess loading per unit
+of allocation weight.}
+\item{\code{blended_excess_loading}}{Credibility-weighted blend of the
+risk-factor and portfolio estimates. For \code{risk_factor = "sector"}, this
+is calculated as \code{sector_excess_loading * sector_credibility + portfolio_excess_loading * (1 - sector_credibility)}.}
+\item{\code{expected_excess_loss}}{Total expected excess loss allocated to the
+level, calculated as \verb{blended_excess_loading * <allocation_weight>}.}
+\item{\code{allocation_difference}}{Expected minus observed excess loss,
 included when \code{compare_to_empirical = TRUE}. A positive value means the
 level receives more allocated excess loss than it generated historically.}
 \item{\code{allocation_difference_ratio}}{Allocation difference relative to

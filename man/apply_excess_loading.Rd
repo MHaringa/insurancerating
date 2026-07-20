@@ -8,8 +8,8 @@ apply_excess_loading(
   data,
   allocation,
   base_premium = "base_premium",
-  allocated_excess_loss = NULL,
-  allocated_excess_loading = NULL,
+  expected_excess_loss = NULL,
+  blended_excess_loading = NULL,
   weight = NULL,
   output = c("premium", "rate")
 )
@@ -22,13 +22,13 @@ apply_excess_loading(
 \item{base_premium}{Character string. Column containing the base premium
 amount or base rate before the excess loading is added.}
 
-\item{allocated_excess_loss}{Optional character string. Column in
-\code{allocation} containing the allocated excess-loss amount in monetary
-terms. If \code{NULL}, \code{allocated_excess_loss} is used.}
+\item{expected_excess_loss}{Optional character string. Column in
+\code{allocation} containing the expected excess-loss amount in monetary terms.
+If \code{NULL}, \code{expected_excess_loss} is used.}
 
-\item{allocated_excess_loading}{Optional character string. Column in
-\code{allocation} containing the allocated excess loading per unit of
-allocation weight. If \code{NULL}, \code{allocated_excess_loading} is used.}
+\item{blended_excess_loading}{Optional character string. Column in
+\code{allocation} containing the blended excess loading per unit of
+allocation weight. If \code{NULL}, \code{blended_excess_loading} is used.}
 
 \item{weight}{Optional character string. Weight column used to convert between
 premium amounts and rates when \code{output = "rate"}.}
@@ -38,9 +38,9 @@ premium amounts and rates when \code{output = "rate"}.}
 }
 \value{
 A data.frame. With \code{output = "premium"}, the result contains
-\code{base_premium}, \code{allocated_excess_loss}, \code{allocated_excess_loading},
+\code{base_premium}, \code{expected_excess_loss}, \code{blended_excess_loading},
 \code{excess_loading} and \code{loaded_premium}. With \code{output = "rate"}, the result
-contains \code{base_rate}, \code{allocated_excess_loading} and \code{loaded_rate}.
+contains \code{base_rate}, \code{blended_excess_loading} and \code{loaded_rate}.
 }
 \description{
 Apply an allocated excess-loss loading to a portfolio data set.
@@ -65,7 +65,7 @@ loaded\_premium =
 base\_premium + allocated\_excess\_loss
 }
 
-\code{allocated_excess_loss} is the row-level monetary amount of excess loss
+\code{expected_excess_loss} is the row-level monetary amount of excess loss
 allocated to each risk.
 }
 
@@ -93,17 +93,17 @@ base\_rate =
 
 \subsection{Interpretation of allocation columns}{
 
-\code{allocated_excess_loss} represents the monetary excess-loss burden allocated
+\code{expected_excess_loss} represents the monetary excess-loss burden allocated
 to a row.
 
-\code{allocated_excess_loading} represents the excess loading per unit of allocation
+\code{blended_excess_loading} represents the excess loading per unit of allocation
 weight.
 
 In other words:
 
 \deqn{
-allocated\_excess\_loss =
-allocated\_excess\_loading \cdot weight
+expected\_excess\_loss =
+blended\_excess\_loading \cdot weight
 }
 
 This distinction is important when moving between premium amounts and rates.

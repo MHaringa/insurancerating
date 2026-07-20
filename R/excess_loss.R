@@ -376,6 +376,12 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #'   excess losses are infrequent, highly volatile or considered a portfolio-
 #'   wide risk rather than a risk-factor-specific characteristic.
 #'
+#'   For portfolio allocation, no risk-factor-level experience is used.
+#'   Therefore, `risk_factor_credibility` equals zero and
+#'   `blended_excess_loading` equals `portfolio_excess_loading`. The same output
+#'   columns are kept for all allocation methods so downstream reporting code
+#'   can use one consistent structure.
+#'
 #' - `"risk_factor"`: excess losses are allocated separately for each
 #'   risk-factor level. The excess burden observed within a group is spread
 #'   across all risks in that group and is not shared with other groups.
@@ -383,6 +389,10 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #'   This produces the strongest link between excess loadings and observed
 #'   group experience, but can lead to volatile results when excess losses are
 #'   rare.
+#'
+#'   For risk-factor allocation, only risk-factor-level experience is used.
+#'   Therefore, `sector_credibility` equals one and `blended_excess_loading`
+#'   equals `sector_excess_loading` when `risk_factor = "sector"`.
 #'
 #' - `"partial"`: excess losses are allocated using a credibility-weighted
 #'   combination of portfolio and risk-factor experience. Risk-factor levels
@@ -399,15 +409,19 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #' For `allocation = "partial"`, excess losses are allocated using a
 #' credibility-weighted blend of portfolio and risk-factor experience.
 #'
-#' The allocated loading is calculated as:
+#' The blended excess loading is calculated as:
 #'
 #' \deqn{
-#' loading_g = Z_g \cdot loading_g^{risk\ factor} +
-#'             (1 - Z_g) \cdot loading^{portfolio}
+#' blended\_excess\_loading_g =
+#' sector\_credibility_g \cdot sector\_excess\_loading_g +
+#' (1 - sector\_credibility_g) \cdot portfolio\_excess\_loading
 #' }
 #'
-#' where `Z_g` represents the credibility assigned to the risk-factor-level
-#' experience.
+#' In the output, `sector_excess_loading` is replaced by
+#' `<risk_factor>_excess_loading` and `sector_credibility` by
+#' `<risk_factor>_credibility` when another risk-factor column is supplied.
+#' `expected_excess_loss` is then calculated as
+#' `blended_excess_loading * allocation_weight`.
 #'
 #' If `credibility` is supplied, the same credibility is applied to all
 #' risk-factor levels.
@@ -526,8 +540,11 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #'   typically exposure, premium, insured value or another earned unit.
 #' @param risk_factor Optional character string. Risk-factor column used for
 #'   `allocation = "risk_factor"` or `allocation = "partial"`.
-#' @param allocation_subset Optional character string. Logical column indicating
-#'   which rows participate in the allocation. If `NULL`, all rows are included.
+#' @param receives_allocation Optional character string. Name of a logical column
+#'   indicating which rows receive a share of the total excess loss. Rows with
+#'   `FALSE` receive no allocation, but their excess losses still contribute to
+#'   the total amount being allocated. If `NULL`, all rows receive an
+#'   allocation.
 #' @param claim_count Optional character string. Claim-count column. If
 #'   supplied, claim counts in the allocation summary are calculated as the sum
 #'   of this column. If `NULL`, claim counts are inferred from the original
@@ -563,23 +580,30 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #'   statistics. Original rows, columns, row order and metadata from
 #'   [calculate_excess_loss()] are preserved. The added columns are:
 #'   \describe{
-#'     \item{`allocation_included`}{Logical indicator showing whether the row
-#'     was included in the allocation basis. Rows are included when they satisfy
-#'     `allocation_subset` if supplied; included rows must also have a positive
-#'     allocation weight.}
+#'     \item{`receives_allocation`}{Logical indicator showing whether the row
+#'     receives a share of the total excess loss. This does not indicate whether
+#'     the row contributed to the observed excess-loss amount: all excess losses
+#'     can contribute to the total excess loss, while `receives_allocation`
+#'     controls the target rows over which that total is redistributed. When the
+#'     `receives_allocation` argument is supplied, rows receive allocation when
+#'     the referenced logical column is `TRUE` and the allocation weight is
+#'     positive. Rows with `FALSE` receive no allocation, but their excess
+#'     losses still contribute to the total amount being allocated.}
 #'     \item{`<risk_factor>_excess_loading`}{Excess loading estimated from the
 #'     experience of the risk-factor level. For example, `risk_factor =
 #'     "sector"` creates `sector_excess_loading`. When no risk factor is
 #'     supplied, the column is named `risk_factor_excess_loading`.}
-#'     \item{`portfolio_excess_loading`}{Excess loading estimated from the full
-#'     portfolio.}
-#'     \item{`credibility`}{Credibility weight assigned to the risk-factor-level
-#'     experience.}
-#'     \item{`allocated_excess_loading`}{Final excess loading per unit of
-#'     `allocation_weight`. For partial allocation this is the credibility blend
-#'     of the risk-factor and portfolio excess loadings.}
-#'     \item{`allocated_excess_loss`}{Row-level allocated excess-loss amount,
-#'     calculated as `allocated_excess_loading * allocation_weight`.}
+#'     \item{`<risk_factor>_credibility`}{Credibility weight assigned to the
+#'     risk-factor-level estimate. For example, `risk_factor = "sector"`
+#'     creates `sector_credibility`.}
+#'     \item{`portfolio_excess_loading`}{Portfolio-level excess loading per
+#'     unit of allocation weight.}
+#'     \item{`blended_excess_loading`}{Credibility-weighted blend of the
+#'     risk-factor and portfolio excess loadings. For `risk_factor = "sector"`,
+#'     this is calculated as `sector_excess_loading * sector_credibility +
+#'     portfolio_excess_loading * (1 - sector_credibility)`.}
+#'     \item{`expected_excess_loss`}{Row-level expected excess-loss amount,
+#'     calculated as `blended_excess_loading * allocation_weight`.}
 #'   }
 #'
 #' @seealso [summary.excess_allocation()]
@@ -587,18 +611,19 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #' @author Martin Haringa
 #'
 #' @examples
-#' claims <- data.frame(
-#'   sector = rep(c("Industry", "Retail"), each = 4),
-#'   claim_count = c(1, 1, 1, 1, 1, 1, 1, 1),
+#' portfolio <- data.frame(
+#'   policy_id = 1:10,
+#'   sector = rep(c("Industry", "Retail"), each = 5),
+#'   claim_count = c(0, 1, 1, 1, 1, 0, 1, 1, 1, 1),
 #'   claim_amount = c(
-#'     1000, 120000, 30000, 8000,
-#'     2000, 150000, 40000, 6000
+#'     0, 25000, 120000, 50000, 175000,
+#'     0, 40000, 90000, 150000, 750000
 #'   ),
-#'   earned_exposure = rep(1, 8)
+#'   earned_exposure = rep(1, 10)
 #' )
 #'
 #' decomposed <- calculate_excess_loss(
-#'   claims,
+#'   portfolio,
 #'   claim_amount = "claim_amount",
 #'   threshold = 100000
 #' )
@@ -610,6 +635,8 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #'   claim_count = "claim_count",
 #'   allocation = "portfolio"
 #' )
+#' # No sector-level experience is used here: risk_factor_credibility is zero
+#' # and blended_excess_loading equals portfolio_excess_loading.
 #'
 #' # Allocate excess losses separately by sector
 #' sector_allocation <- allocate_excess_loss(
@@ -619,6 +646,8 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #'   risk_factor = "sector",
 #'   allocation = "risk_factor"
 #' )
+#' # Only sector-level experience is used here: sector_credibility is one
+#' # and blended_excess_loading equals sector_excess_loading.
 #'
 #' # Blend sector and portfolio experience using credibility
 #' partial_allocation <- allocate_excess_loss(
@@ -633,12 +662,46 @@ calculate_excess_loss <- function(data, claim_amount, threshold) {
 #'
 #' summary(partial_allocation)
 #'
+#' # Allocate excess loss by insured amount, restricted to policies with an
+#' # insured amount of at least 500,000.
+#' portfolio <- portfolio |>
+#'   dplyr::mutate(
+#'     insured_amount = c(
+#'       100000, 250000, 500000, 750000, 1000000,
+#'       1500000, 2500000, 5000000, 7500000, 10000000
+#'     ),
+#'     receives_allocation = insured_amount >= 500000,
+#'     allocation_weight = insured_amount * earned_exposure
+#'   )
+#'
+#' decomposed <- calculate_excess_loss(
+#'   portfolio,
+#'   claim_amount = "claim_amount",
+#'   threshold = 500000
+#' )
+#' insured_amount_allocation <- allocate_excess_loss(
+#'   decomposed,
+#'   allocation = "portfolio",
+#'   allocation_weight = "allocation_weight",
+#'   receives_allocation = "receives_allocation"
+#' )
+#' insured_amount_allocation
+#'
+#' # All losses above the threshold contribute to the total excess loss, but
+#' # only rows with receives_allocation = TRUE receive a share. The share is
+#' # proportional to insured_amount * earned_exposure. A larger insured amount
+#' # therefore produces a larger absolute expected_excess_loss, while a policy
+#' # with the same insured amount but lower earned exposure receives
+#' # proportionally less. For receiving policies this gives one constant excess
+#' # loading as a percentage of insured amount, adjusted for earned exposure.
+#' # No risk-factor-level experience is used in this portfolio allocation.
+#'
 #' @export
 allocate_excess_loss <- function(data,
                                  excess_amount = NULL,
                                  allocation_weight,
                                  risk_factor = NULL,
-                                 allocation_subset = NULL,
+                                 receives_allocation = NULL,
                                  claim_count = NULL,
                                  allocation = c("portfolio", "risk_factor", "partial"),
                                  credibility = NULL,
@@ -657,7 +720,7 @@ allocate_excess_loss <- function(data,
   severity_noise <- match.arg(severity_noise)
   excess_amount <- resolve_excess_amount_column(data, excess_amount)
   validate_allocate_excess_loss(
-    data, excess_amount, allocation_weight, allocation_subset, claim_count,
+    data, excess_amount, allocation_weight, receives_allocation, claim_count,
     risk_factor,
     method, allocation, credibility, credibility_basis, credibility_threshold,
     credibility_scale, n_bootstrap, bootstrap_seed, severity_noise,
@@ -668,13 +731,13 @@ allocate_excess_loss <- function(data,
     data = data,
     excess_amount = excess_amount,
     allocation_weight = allocation_weight,
-    allocation_subset = allocation_subset,
+    receives_allocation = receives_allocation,
     claim_count = claim_count,
     risk_factor = risk_factor
   )
   groups <- summarize_allocation_groups(allocation_data)
   portfolio_loading <- safe_ratio_excess(
-    sum(allocation_data$excess_amount[allocation_data$included]),
+    sum(allocation_data$excess_amount),
     sum(allocation_data$weight[allocation_data$included])
   )
 
@@ -737,7 +800,8 @@ allocate_excess_loss <- function(data,
   out <- build_excess_allocation_output(
     data = data,
     allocation_data = allocation_data,
-    risk_factor = risk_factor
+    risk_factor = risk_factor,
+    receives_allocation_col = receives_allocation
   )
   attr(out, "summary") <- groups
   attr(out, "method") <- method
@@ -748,6 +812,7 @@ allocate_excess_loss <- function(data,
   attr(out, "preserve_total_excess") <- preserve_total_excess
   attr(out, "bootstrap") <- boot
   attr(out, "claim_count") <- claim_count
+  attr(out, "receives_allocation") <- receives_allocation
   attr(out, "excess_amount") <- excess_amount
   attr(out, "allocation_weight") <- allocation_weight
   attr(out, "risk_factor") <- risk_factor
@@ -781,7 +846,7 @@ allocate_excess_loss <- function(data,
 #' base\_premium + allocated\_excess\_loss
 #' }
 #'
-#' `allocated_excess_loss` is the row-level monetary amount of excess loss
+#' `expected_excess_loss` is the row-level monetary amount of excess loss
 #' allocated to each risk.
 #'
 #' ## Rate output
@@ -807,17 +872,17 @@ allocate_excess_loss <- function(data,
 #'
 #' ## Interpretation of allocation columns
 #'
-#' `allocated_excess_loss` represents the monetary excess-loss burden allocated
+#' `expected_excess_loss` represents the monetary excess-loss burden allocated
 #' to a row.
 #'
-#' `allocated_excess_loading` represents the excess loading per unit of allocation
+#' `blended_excess_loading` represents the excess loading per unit of allocation
 #' weight.
 #'
 #' In other words:
 #'
 #' \deqn{
-#' allocated\_excess\_loss =
-#' allocated\_excess\_loading \cdot weight
+#' expected\_excess\_loss =
+#' blended\_excess\_loading \cdot weight
 #' }
 #'
 #' This distinction is important when moving between premium amounts and rates.
@@ -839,21 +904,21 @@ allocate_excess_loss <- function(data,
 #' @param allocation An object returned by [allocate_excess_loss()].
 #' @param base_premium Character string. Column containing the base premium
 #'   amount or base rate before the excess loading is added.
-#' @param allocated_excess_loss Optional character string. Column in
-#'   `allocation` containing the allocated excess-loss amount in monetary
-#'   terms. If `NULL`, `allocated_excess_loss` is used.
-#' @param allocated_excess_loading Optional character string. Column in
-#'   `allocation` containing the allocated excess loading per unit of
-#'   allocation weight. If `NULL`, `allocated_excess_loading` is used.
+#' @param expected_excess_loss Optional character string. Column in
+#'   `allocation` containing the expected excess-loss amount in monetary terms.
+#'   If `NULL`, `expected_excess_loss` is used.
+#' @param blended_excess_loading Optional character string. Column in
+#'   `allocation` containing the blended excess loading per unit of
+#'   allocation weight. If `NULL`, `blended_excess_loading` is used.
 #' @param weight Optional character string. Weight column used to convert between
 #'   premium amounts and rates when `output = "rate"`.
 #' @param output Character string. Use `"premium"` to return premium amounts or
 #'   `"rate"` to return rates per unit of weight.
 #'
 #' @return A data.frame. With `output = "premium"`, the result contains
-#'   `base_premium`, `allocated_excess_loss`, `allocated_excess_loading`,
+#'   `base_premium`, `expected_excess_loss`, `blended_excess_loading`,
 #'   `excess_loading` and `loaded_premium`. With `output = "rate"`, the result
-#'   contains `base_rate`, `allocated_excess_loading` and `loaded_rate`.
+#'   contains `base_rate`, `blended_excess_loading` and `loaded_rate`.
 #'
 #' @author Martin Haringa
 #'
@@ -899,8 +964,8 @@ allocate_excess_loss <- function(data,
 apply_excess_loading <- function(data,
                                  allocation,
                                  base_premium = "base_premium",
-                                 allocated_excess_loss = NULL,
-                                 allocated_excess_loading = NULL,
+                                 expected_excess_loss = NULL,
+                                 blended_excess_loading = NULL,
                                  weight = NULL,
                                  output = c("premium", "rate")) {
   output <- match.arg(output)
@@ -920,19 +985,19 @@ apply_excess_loading <- function(data,
     stop("`base_premium` must refer to a numeric column without missing values.",
          call. = FALSE)
   }
-  allocated_excess_loss <- allocated_excess_loss %||% "allocated_excess_loss"
-  allocated_excess_loading <- allocated_excess_loading %||% "allocated_excess_loading"
-  validate_character_column(allocation, allocated_excess_loss,
-                            "allocated_excess_loss")
-  validate_character_column(allocation, allocated_excess_loading,
-                            "allocated_excess_loading")
+  expected_excess_loss <- expected_excess_loss %||% "expected_excess_loss"
+  blended_excess_loading <- blended_excess_loading %||% "blended_excess_loading"
+  validate_character_column(allocation, expected_excess_loss,
+                            "expected_excess_loss")
+  validate_character_column(allocation, blended_excess_loading,
+                            "blended_excess_loading")
   out <- data
   if (identical(output, "premium")) {
     out$base_premium <- data[[base_premium]]
-    out$allocated_excess_loss <- allocation[[allocated_excess_loss]]
-    out$allocated_excess_loading <- allocation[[allocated_excess_loading]]
-    out$excess_loading <- out$allocated_excess_loss
-    out$loaded_premium <- out$base_premium + out$allocated_excess_loss
+    out$expected_excess_loss <- allocation[[expected_excess_loss]]
+    out$blended_excess_loading <- allocation[[blended_excess_loading]]
+    out$excess_loading <- out$expected_excess_loss
+    out$loaded_premium <- out$base_premium + out$expected_excess_loss
     return(out)
   }
   if (is.null(weight)) {
@@ -945,8 +1010,8 @@ apply_excess_loading <- function(data,
          call. = FALSE)
   }
   out$base_rate <- data[[base_premium]] / data[[weight]]
-  out$allocated_excess_loading <- allocation[[allocated_excess_loading]]
-  out$loaded_rate <- out$base_rate + out$allocated_excess_loading
+  out$blended_excess_loading <- allocation[[blended_excess_loading]]
+  out$loaded_rate <- out$base_rate + out$blended_excess_loading
   out
 }
 
@@ -957,8 +1022,9 @@ apply_excess_loading <- function(data,
 #' [allocate_excess_loss()].
 #'
 #' @param object An object returned by [allocate_excess_loss()].
-#' @param compare_to_empirical Logical. If `TRUE`, keep columns with the
-#'   empirical loss and empirical excess loss used for comparison.
+#' @param compare_to_empirical Logical. If `TRUE`, append
+#'   `allocation_difference` and `allocation_difference_ratio` to compare the
+#'   credibility-weighted allocation with historically observed excess loss.
 #' @param ... Unused.
 #'
 #' @return A `data.frame` with aggregated allocation statistics. The returned
@@ -975,20 +1041,27 @@ apply_excess_loading <- function(data,
 #'     \item{`<allocation_weight>`}{Total allocation weight for the level. For
 #'     example, `allocation_weight = "earned_exposure"` returns an
 #'     `earned_exposure` column.}
-#'     \item{`claim_count`}{Number of claims in the level, based on the supplied
-#'     `claim_count` column or inferred from positive claim amounts.}
+#'     \item{`<claim_count>`}{Number of claims in the level. When `claim_count`
+#'     is supplied, its original column name is preserved. When
+#'     `claim_count = NULL`, inferred counts are returned as `claim_count`.}
 #'     \item{`excess_claim_count`}{Number of claim records with excess loss.}
 #'     \item{`observed_excess_loss`}{Historically observed excess loss.}
 #'     \item{`observed_excess_loading`}{Observed excess loss per unit of
 #'     allocation weight.}
-#'     \item{`credibility`}{Credibility assigned to the risk-factor experience.}
 #'     \item{`<risk_factor>_excess_loading`}{Risk-factor-specific excess
 #'     loading before pooling. When no risk factor is supplied, this column is
 #'     named `risk_factor_excess_loading`.}
-#'     \item{`portfolio_excess_loading`}{Portfolio-wide excess loading.}
-#'     \item{`allocated_excess_loading`}{Credibility-weighted excess loading.}
-#'     \item{`allocated_excess_loss`}{Total excess loss allocated to the level.}
-#'     \item{`allocation_difference`}{Allocated minus observed excess loss,
+#'     \item{`<risk_factor>_credibility`}{Credibility weight assigned to the
+#'     risk-factor-level estimate.}
+#'     \item{`portfolio_excess_loading`}{Portfolio-level excess loading per unit
+#'     of allocation weight.}
+#'     \item{`blended_excess_loading`}{Credibility-weighted blend of the
+#'     risk-factor and portfolio estimates. For `risk_factor = "sector"`, this
+#'     is calculated as `sector_excess_loading * sector_credibility +
+#'     portfolio_excess_loading * (1 - sector_credibility)`.}
+#'     \item{`expected_excess_loss`}{Total expected excess loss allocated to the
+#'     level, calculated as `blended_excess_loading * <allocation_weight>`.}
+#'     \item{`allocation_difference`}{Expected minus observed excess loss,
 #'     included when `compare_to_empirical = TRUE`. A positive value means the
 #'     level receives more allocated excess loss than it generated historically.}
 #'     \item{`allocation_difference_ratio`}{Allocation difference relative to
@@ -1018,14 +1091,19 @@ summary.excess_allocation <- function(object,
   } else {
     allocation_weight
   }
+  claim_count_col <- attr(object, "claim_count", exact = TRUE)
+  if (is.null(claim_count_col)) {
+    claim_count_col <- "claim_count"
+  }
   risk_factor_loading_col <- paste0(risk_factor_col, "_excess_loading")
+  risk_factor_credibility_col <- paste0(risk_factor_col, "_credibility")
   if ("group_value" %in% names(out)) {
     out[[risk_factor_col]] <- out$group_value
   } else if ("group" %in% names(out)) {
     out[[risk_factor_col]] <- out$group
   }
   out[[allocation_weight_col]] <- out$group_weight
-  out$claim_count <- out$n_claims
+  out[[claim_count_col]] <- out$n_claims
   out$excess_claim_count <- out$n_excess_claims
   out$observed_excess_loss <- out$historical_excess_loss
   out$observed_excess_loading <- safe_ratio_excess_zero(
@@ -1033,10 +1111,12 @@ summary.excess_allocation <- function(object,
     out[[allocation_weight_col]]
   )
   out[[risk_factor_loading_col]] <- out$group_loading
+  out[[risk_factor_credibility_col]] <- out$credibility
   out$portfolio_excess_loading <- out$portfolio_loading
-  out$allocated_excess_loading <- out$allocated_loading
+  out$blended_excess_loading <- out$allocated_loading
+  out$expected_excess_loss <- out$allocated_excess_loss
   if (isTRUE(compare_to_empirical)) {
-    out$allocation_difference <- out$allocated_excess_loss -
+    out$allocation_difference <- out$expected_excess_loss -
       out$observed_excess_loss
     out$allocation_difference_ratio <- ifelse(
       out$observed_excess_loss == 0,
@@ -1046,10 +1126,11 @@ summary.excess_allocation <- function(object,
   }
   preferred <- c(
     risk_factor_col, allocation_weight_col,
-    "claim_count", "excess_claim_count",
-    "observed_excess_loss", "observed_excess_loading", "credibility",
-    risk_factor_loading_col, "portfolio_excess_loading",
-    "allocated_excess_loading", "allocated_excess_loss"
+    claim_count_col, "excess_claim_count",
+    "observed_excess_loss", "observed_excess_loading",
+    risk_factor_loading_col, risk_factor_credibility_col,
+    "portfolio_excess_loading", "blended_excess_loading",
+    "expected_excess_loss"
   )
   if (isTRUE(compare_to_empirical)) {
     preferred <- c(preferred, "allocation_difference",
@@ -1285,8 +1366,8 @@ as_gt.threshold_assessment <- function(x,
 #' Plot an excess-loss allocation
 #'
 #' @description
-#' Visualise the allocated excess loading, allocated excess loss or credibility
-#' by allocation group.
+#' Visualise the blended excess loading, expected excess loss or credibility by
+#' allocation group.
 #'
 #' @param object An object returned by [allocate_excess_loss()].
 #' @param y Character. Measure to plot on the y-axis.
@@ -1300,8 +1381,8 @@ as_gt.threshold_assessment <- function(x,
 #' @author Martin Haringa
 #' @export
 autoplot.excess_allocation <- function(object,
-                                            y = c("allocated_excess_loading",
-                                                  "allocated_excess_loss",
+                                            y = c("blended_excess_loading",
+                                                  "expected_excess_loss",
                                                   "credibility"),
                                             top_n = NULL,
                                             show_labels = FALSE,
@@ -1319,6 +1400,9 @@ autoplot.excess_allocation <- function(object,
   group_col <- attr(object, "risk_factor", exact = TRUE)
   if (is.null(group_col)) {
     group_col <- "risk_factor"
+  }
+  if (identical(y, "credibility")) {
+    y <- paste0(group_col, "_credibility")
   }
   plot_data <- summary_data[order(summary_data[[y]], decreasing = TRUE), ,
                             drop = FALSE]
@@ -1504,7 +1588,7 @@ resolve_excess_amount_column <- function(data, excess_amount) {
 
 validate_allocate_excess_loss <- function(data, excess_amount,
                                           allocation_weight,
-                                          allocation_subset, claim_count,
+                                          receives_allocation, claim_count,
                                           risk_factor,
                                           method, allocation, credibility,
                                           credibility_basis,
@@ -1527,11 +1611,11 @@ validate_allocate_excess_loss <- function(data, excess_amount,
     stop("`allocation_weight` must refer to a numeric column with non-negative values.",
          call. = FALSE)
   }
-  if (!is.null(allocation_subset)) {
-    validate_character_column(data, allocation_subset, "allocation_subset")
-    if (!is.logical(data[[allocation_subset]]) ||
-        any(is.na(data[[allocation_subset]]))) {
-      stop("`allocation_subset` must refer to a logical column without missing values.",
+  if (!is.null(receives_allocation)) {
+    validate_character_column(data, receives_allocation, "receives_allocation")
+    if (!is.logical(data[[receives_allocation]]) ||
+        any(is.na(data[[receives_allocation]]))) {
+      stop("`receives_allocation` must refer to a logical column without missing values.",
            call. = FALSE)
     }
   }
@@ -1598,22 +1682,28 @@ validate_allocate_excess_loss <- function(data, excess_amount,
   }
 }
 
-build_excess_allocation_output <- function(data, allocation_data, risk_factor) {
+build_excess_allocation_output <- function(data, allocation_data, risk_factor,
+                                           receives_allocation_col) {
   allocation_data <- allocation_data[order(allocation_data$row_id), , drop = FALSE]
   if (is.null(risk_factor)) {
     risk_factor_loading_col <- "risk_factor_excess_loading"
+    risk_factor_credibility_col <- "risk_factor_credibility"
   } else {
     risk_factor_loading_col <- paste0(risk_factor, "_excess_loading")
+    risk_factor_credibility_col <- paste0(risk_factor, "_credibility")
   }
   added_cols <- c(
-    "allocation_included",
+    "receives_allocation",
     risk_factor_loading_col,
+    risk_factor_credibility_col,
     "portfolio_excess_loading",
-    "credibility",
-    "allocated_excess_loading",
-    "allocated_excess_loss"
+    "blended_excess_loading",
+    "expected_excess_loss"
   )
   existing_cols <- intersect(added_cols, names(data))
+  if (identical(receives_allocation_col, "receives_allocation")) {
+    existing_cols <- setdiff(existing_cols, "receives_allocation")
+  }
   if (length(existing_cols) > 0) {
     stop(
       "Allocation output column names already exist in `data`: ",
@@ -1622,22 +1712,22 @@ build_excess_allocation_output <- function(data, allocation_data, risk_factor) {
     )
   }
   out <- data
-  out$allocation_included <- allocation_data$included
+  out$receives_allocation <- allocation_data$included
   out[[risk_factor_loading_col]] <- allocation_data$group_loading
+  out[[risk_factor_credibility_col]] <- allocation_data$credibility
   out$portfolio_excess_loading <- allocation_data$portfolio_loading
-  out$credibility <- allocation_data$credibility
-  out$allocated_excess_loading <- allocation_data$allocated_loading
-  out$allocated_excess_loss <- allocation_data$allocated_excess_loss
+  out$blended_excess_loading <- allocation_data$allocated_loading
+  out$expected_excess_loss <- allocation_data$allocated_excess_loss
   out
 }
 
 prepare_allocation_data <- function(data, excess_amount, allocation_weight,
-                                    allocation_subset, claim_count,
+                                    receives_allocation, claim_count,
                                     risk_factor) {
-  included <- if (is.null(allocation_subset)) {
+  included <- if (is.null(receives_allocation)) {
     rep(TRUE, nrow(data))
   } else {
-    data[[allocation_subset]]
+    data[[receives_allocation]]
   }
   claim_amount_col <- attr(data, "claim_amount_column", exact = TRUE)
   claim_count_values <- if (!is.null(claim_count)) {
@@ -1684,15 +1774,15 @@ summarize_allocation_groups <- function(allocation_data) {
   out <- lapply(names(groups), function(g) {
     z <- groups[[g]]
     included <- z[z$included, , drop = FALSE]
-    historical_excess <- sum(included$excess_amount)
+    historical_excess <- sum(z$excess_amount)
     group_weight <- sum(included$weight)
-    empirical_loss <- sum(included$claim_amount)
+    empirical_loss <- sum(z$claim_amount)
     data.frame(
       group = g,
-      group_value = included$group_value[1],
+      group_value = z$group_value[1],
       group_weight = group_weight,
-      n_claims = sum(included$claim_count),
-      n_excess_claims = sum(included$excess_amount > 0),
+      n_claims = sum(z$claim_count),
+      n_excess_claims = sum(z$excess_amount > 0),
       historical_excess_loss = historical_excess,
       empirical_loss = empirical_loss,
       empirical_excess_loss = historical_excess,
@@ -1751,7 +1841,7 @@ credibility_experience <- function(groups, credibility_basis) {
 bootstrap_excess_allocation <- function(allocation_data, n_bootstrap,
                                         severity_noise, severity_noise_sd) {
   included <- allocation_data[allocation_data$included, , drop = FALSE]
-  tail <- included[included$excess_amount > 0, , drop = FALSE]
+  tail <- allocation_data[allocation_data$excess_amount > 0, , drop = FALSE]
   if (nrow(tail) == 0) {
     stop("No positive excess amounts are available for bootstrap allocation.",
          call. = FALSE)

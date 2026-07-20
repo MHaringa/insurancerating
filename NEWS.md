@@ -133,7 +133,7 @@
   risk-factor and partial allocation, and optional severity noise in the
   bootstrap.
 - `allocate_excess_loss()` now uses clearer allocation argument names:
-  `allocation_weight`, `risk_factor`, `allocation_subset`, `allocation`,
+  `allocation_weight`, `risk_factor`, `receives_allocation`, `allocation`,
   `n_bootstrap`, `bootstrap_seed` and `preserve_total_excess`.
 - Automatic credibility in `allocate_excess_loss()` now uses the transparent
   formula `Z = n / (n + credibility_threshold)` with
@@ -144,8 +144,8 @@
 - `apply_excess_loading()` adds the allocated excess loading to pricing data and
   returns `base_premium`, `excess_loading` and `loaded_premium`.
 - `apply_excess_loading()` now treats premium amounts as the default workflow and
-  keeps the distinction between absolute `allocated_excess_loss` and per-weight
-  `allocated_excess_loading` explicit.
+  keeps the distinction between absolute `expected_excess_loss` and per-weight
+  `blended_excess_loading` explicit.
 - `add_smoothing()` now uses `model_variable` and `source_variable` as the
   primary argument names.
 - `edit_smoothing()` now uses clearer in-object editing arguments for adjusting

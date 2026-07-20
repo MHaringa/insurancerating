@@ -6,7 +6,7 @@
 \usage{
 \method{autoplot}{excess_allocation}(
   object,
-  y = c("allocated_excess_loading", "allocated_excess_loss", "credibility"),
+  y = c("blended_excess_loading", "expected_excess_loss", "credibility"),
   top_n = NULL,
   show_labels = FALSE,
   ...
@@ -28,8 +28,8 @@
 A \code{ggplot} object.
 }
 \description{
-Visualise the allocated excess loading, allocated excess loss or credibility
-by allocation group.
+Visualise the blended excess loading, expected excess loss or credibility by
+allocation group.
 }
 \author{
 Martin Haringa
