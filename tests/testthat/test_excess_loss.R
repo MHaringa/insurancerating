@@ -787,22 +787,47 @@ test_that("manual credibility and credibility_scale are validated", {
 })
 
 test_that("apply_excess_loading adds premium columns", {
+  expect_equal(
+    names(formals(apply_excess_loading)),
+    c("data", "allocation", "output", "base_value", "allocation_weight")
+  )
   decomposed <- calculate_excess_loss(excess_loss_data, "claim_amount", 100000)
   allocation <- allocate_excess_loss(
     decomposed,
     excess_amount = "claim_amount_excess",
     allocation_weight = "earned_exposure"
   )
+  decomposed$base_value <- decomposed$base_premium
   out <- apply_excess_loading(decomposed, allocation)
 
-  expect_equal(out$base_premium, decomposed$base_premium)
+  expect_equal(out$base_premium, decomposed$base_value)
   expect_equal(out$expected_excess_loss, allocation$expected_excess_loss)
   expect_equal(out$blended_excess_loading, allocation$blended_excess_loading)
   expect_equal(out$excess_loading, allocation$expected_excess_loss)
   expect_equal(out$loaded_premium, out$base_premium + out$expected_excess_loss)
 })
 
-test_that("apply_excess_loading can return rates", {
+test_that("apply_excess_loading adds loadings to an existing base rate", {
+  decomposed <- calculate_excess_loss(excess_loss_data, "claim_amount", 100000)
+  allocation <- allocate_excess_loss(
+    decomposed,
+    excess_amount = "claim_amount_excess",
+    allocation_weight = "earned_exposure"
+  )
+  decomposed$base_rate <- decomposed$base_premium / decomposed$earned_exposure
+  out <- apply_excess_loading(
+    decomposed,
+    allocation,
+    output = "rate",
+    base_value = "base_rate"
+  )
+
+  expect_equal(out$base_rate, decomposed$base_rate)
+  expect_equal(out$blended_excess_loading, allocation$blended_excess_loading)
+  expect_equal(out$loaded_rate, out$base_rate + out$blended_excess_loading)
+})
+
+test_that("apply_excess_loading can convert a premium amount to a rate", {
   decomposed <- calculate_excess_loss(excess_loss_data, "claim_amount", 100000)
   allocation <- allocate_excess_loss(
     decomposed,
@@ -812,13 +837,13 @@ test_that("apply_excess_loading can return rates", {
   out <- apply_excess_loading(
     decomposed,
     allocation,
-    weight = "earned_exposure",
-    output = "rate"
+    output = "rate",
+    base_value = "base_premium",
+    allocation_weight = "earned_exposure"
   )
 
-  expect_equal(out$base_rate, decomposed$base_premium / decomposed$earned_exposure)
-  expect_equal(out$blended_excess_loading, allocation$blended_excess_loading)
-  expect_equal(out$loaded_rate, out$base_rate + out$blended_excess_loading)
+  expect_equal(out$base_rate,
+               decomposed$base_premium / decomposed$earned_exposure)
 })
 
 test_that("print, summary and autoplot methods work", {

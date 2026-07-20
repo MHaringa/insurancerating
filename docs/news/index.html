@@ -150,14 +150,16 @@
 <li>
 <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> handles allocation and bootstrap uncertainty modelling. It supports observed or bootstrap excess burdens, portfolio, risk-factor and partial allocation, and optional severity noise in the bootstrap.</li>
 <li>
-<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now uses clearer allocation argument names: <code>allocation_weight</code>, <code>risk_factor</code>, <code>allocation_subset</code>, <code>allocation</code>, <code>n_bootstrap</code>, <code>bootstrap_seed</code> and <code>preserve_total_excess</code>.</li>
+<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now uses clearer allocation argument names: <code>allocation_weight</code>, <code>risk_factor</code>, <code>receives_allocation</code>, <code>allocation</code>, <code>n_bootstrap</code>, <code>bootstrap_seed</code> and <code>preserve_total_excess</code>.</li>
 <li>Automatic credibility in <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now uses the transparent formula <code>Z = n / (n + credibility_threshold)</code> with <code>credibility_basis = "claims"</code>, <code>"excess_claims"</code> or <code>"allocation_weight"</code>.</li>
 <li>
 <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now uses <code>preserve_total_excess = TRUE</code> by default so that partial allocation redistributes the selected excess burden without changing the total allocated excess loss.</li>
 <li>
 <code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code> adds the allocated excess loading to pricing data and returns <code>base_premium</code>, <code>excess_loading</code> and <code>loaded_premium</code>.</li>
 <li>
-<code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code> now treats premium amounts as the default workflow and keeps the distinction between absolute <code>allocated_excess_loss</code> and per-weight <code>allocated_loading</code> explicit.</li>
+<code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code> now treats premium amounts as the default workflow and keeps the distinction between absolute <code>expected_excess_loss</code> and per-weight <code>blended_excess_loading</code> explicit.</li>
+<li>
+<code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code> now uses <code>base_value</code> for the existing premium amount or rate. With rate output, an existing rate can be used directly or a monetary amount can be converted using <code>allocation_weight</code>. The standard allocation columns are now detected automatically.</li>
 <li>
 <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> now uses <code>model_variable</code> and <code>source_variable</code> as the primary argument names.</li>
 <li>

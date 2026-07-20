@@ -820,55 +820,64 @@ allocate_excess_loss <- function(data,
   out
 }
 
-#' Apply excess loading to a pricing portfolio
+#' Apply allocated excess losses or loadings to a pricing portfolio
 #'
-#' Apply an allocated excess-loss loading to a portfolio data set.
-#'
-#' `apply_excess_loading()` is the final step in the excess-loss pricing workflow.
-#' It does not cap claims, estimate excess losses or allocate the excess burden.
-#' Instead, it takes the output of [allocate_excess_loss()] and adds the
-#' allocated excess component back to the base premium or base rate.
-#'
-#' The function is typically used after the base premium has been modelled on
-#' capped claim amounts. The excess loading then ensures that the cost of claims
-#' above the selected threshold is still reflected in the final technical
-#' premium.
+#' Add an allocated expected excess loss or excess loading to an existing base
+#' premium or base rate.
 #'
 #' @details
 #'
+#' ## Relationship with allocation
+#'
+#' [allocate_excess_loss()] first distributes the portfolio's excess losses
+#' across individual observations. It returns both `expected_excess_loss`, the
+#' monetary amount allocated to each observation, and
+#' `blended_excess_loading`, the corresponding loading per unit of allocation
+#' weight. `apply_excess_loading()` then applies one of these results to an
+#' existing base premium or base rate.
+#'
+#' The distinction between the functions is deliberate:
+#'
+#' - [allocate_excess_loss()] determines and allocates the expected excess-loss
+#'   burden.
+#' - `apply_excess_loading()` adds the resulting amount or rate to the pricing
+#'   portfolio. It does not estimate or reallocate excess loss.
+#'
 #' ## Premium output
 #'
-#' With `output = "premium"`, the function adds the allocated excess loss in
-#' monetary terms to the base premium:
+#' With `output = "premium"`, the row-level `expected_excess_loss` is added to
+#' the column selected by `base_value`:
 #'
 #' \deqn{
 #' loaded\_premium =
-#' base\_premium + allocated\_excess\_loss
+#' base\_value + expected\_excess\_loss
 #' }
-#'
-#' `expected_excess_loss` is the row-level monetary amount of excess loss
-#' allocated to each risk.
 #'
 #' ## Rate output
 #'
-#' With `output = "rate"`, the function adds the allocated excess loading per
-#' unit of weight to the base rate:
+#' With `output = "rate"`, `blended_excess_loading` is added to the base rate:
 #'
 #' \deqn{
 #' loaded\_rate =
-#' base\_rate + allocated\_loading
+#' base\_rate + blended\_excess\_loading
 #' }
 #'
-#' Use this option when the base value represents a rate per exposure, premium
-#' unit, insured value or other allocation weight.
-#'
-#' If the input column supplied through `base_premium` contains premium amounts
-#' rather than rates, the function first converts the base premium to a rate:
+#' By default, the column selected by `base_value` is treated as an existing
+#' base rate. If `allocation_weight` is supplied, `base_value` is instead
+#' treated as a monetary amount and converted to a rate before the excess
+#' loading is added:
 #'
 #' \deqn{
 #' base\_rate =
-#' \frac{base\_premium}{weight}
+#' \frac{base\_value}{allocation\_weight}
 #' }
+#'
+#' `allocation_weight` should refer to the same quantity used in
+#' [allocate_excess_loss()], such as earned exposure or insured amount times
+#' earned exposure. Where a row-level expected excess amount needs to be
+#' interpreted as a rate, the equivalent relationship is
+#' `expected_excess_loss / allocation_weight`. The allocation object already
+#' provides this rate as `blended_excess_loading`.
 #'
 #' ## Interpretation of allocation columns
 #'
@@ -882,7 +891,7 @@ allocate_excess_loss <- function(data,
 #'
 #' \deqn{
 #' expected\_excess\_loss =
-#' blended\_excess\_loading \cdot weight
+#' blended\_excess\_loading \cdot allocation\_weight
 #' }
 #'
 #' This distinction is important when moving between premium amounts and rates.
@@ -900,40 +909,50 @@ allocate_excess_loss <- function(data,
 #' This produces a final technical premium that reflects both the modelled
 #' capped loss cost and the separately allocated excess-loss burden.
 #'
-#' @param data A data.frame containing the base premium or base rate.
-#' @param allocation An object returned by [allocate_excess_loss()].
-#' @param base_premium Character string. Column containing the base premium
-#'   amount or base rate before the excess loading is added.
-#' @param expected_excess_loss Optional character string. Column in
-#'   `allocation` containing the expected excess-loss amount in monetary terms.
-#'   If `NULL`, `expected_excess_loss` is used.
-#' @param blended_excess_loading Optional character string. Column in
-#'   `allocation` containing the blended excess loading per unit of
-#'   allocation weight. If `NULL`, `blended_excess_loading` is used.
-#' @param weight Optional character string. Weight column used to convert between
-#'   premium amounts and rates when `output = "rate"`.
-#' @param output Character string. Use `"premium"` to return premium amounts or
-#'   `"rate"` to return rates per unit of weight.
+#' @param data A data.frame containing the existing base premium amounts or
+#'   rates. Its rows must correspond to the rows in `allocation`.
+#' @param allocation An `excess_allocation` object returned by
+#'   [allocate_excess_loss()]. It supplies the row-level amount and loading that
+#'   are applied to `data`.
+#' @param output Character string. Use `"premium"` to add the allocated monetary
+#'   amount or `"rate"` to add the loading per unit of allocation weight.
+#' @param base_value Character string. Column containing the existing value to
+#'   which the excess component is added. This is typically a premium amount
+#'   when `output = "premium"` and a rate when `output = "rate"`. When
+#'   `output = "rate"` and `allocation_weight` is supplied, `base_value` is
+#'   interpreted as a monetary amount and divided by `allocation_weight` before
+#'   the loading is added.
+#' @param allocation_weight Optional character string. Positive numeric column
+#'   used to optionally convert `base_value` from a monetary amount to a rate
+#'   when `output = "rate"`. If `NULL`, `base_value` is treated as an existing rate.
+#'   When supplied, it should be the same column used as `allocation_weight` in
+#'   [allocate_excess_loss()]. The standard `expected_excess_loss` and
+#'   `blended_excess_loading` columns are read automatically from `allocation`
+#'   and do not need to be specified.
 #'
 #' @return A data.frame. With `output = "premium"`, the result contains
 #'   `base_premium`, `expected_excess_loss`, `blended_excess_loading`,
 #'   `excess_loading` and `loaded_premium`. With `output = "rate"`, the result
 #'   contains `base_rate`, `blended_excess_loading` and `loaded_rate`.
 #'
+#' @seealso [allocate_excess_loss()], [calculate_excess_loss()]
+#'
 #' @author Martin Haringa
 #'
 #' @examples
-#' claims <- data.frame(
-#'   sector = rep(c("Industry", "Retail"), each = 4),
+#' portfolio <- data.frame(
+#'   policy_id = 1:10,
+#'   sector = rep(c("Industry", "Retail"), each = 5),
+#'   claim_count = c(0, 1, 1, 1, 1, 0, 1, 1, 1, 1),
 #'   claim_amount = c(
-#'     1000, 120000, 30000, 8000,
-#'     2000, 150000, 40000, 6000
+#'     0, 25000, 120000, 50000, 175000,
+#'     0, 40000, 90000, 150000, 750000
 #'   ),
-#'   earned_exposure = rep(1, 8)
+#'   earned_exposure = rep(1, 10)
 #' )
 #'
 #' decomposed <- calculate_excess_loss(
-#'   claims,
+#'   portfolio,
 #'   claim_amount = "claim_amount",
 #'   threshold = 100000
 #' )
@@ -942,32 +961,32 @@ allocate_excess_loss <- function(data,
 #'
 #' allocation <- allocate_excess_loss(
 #'   decomposed,
-#'   excess_amount = "claim_amount_excess",
-#'   allocation_weight = "earned_exposure"
+#'   allocation_weight = "earned_exposure",
+#'   claim_count = "claim_count"
 #' )
 #'
-#' apply_excess_loading(
+#' # Add the allocated monetary amount to the base premium.
+#' premium_result <- apply_excess_loading(
 #'   decomposed,
 #'   allocation,
-#'   base_premium = "base_premium"
+#'   base_value = "base_premium"
 #' )
 #'
-#' apply_excess_loading(
+#' # Add the excess loading per exposure unit to the base premium rate.
+#' decomposed$base_rate <- decomposed$base_premium / decomposed$earned_exposure
+#' rate_result <- apply_excess_loading(
 #'   decomposed,
 #'   allocation,
-#'   base_premium = "base_premium",
-#'   weight = "earned_exposure",
-#'   output = "rate"
+#'   output = "rate",
+#'   base_value = "base_rate"
 #' )
 #'
 #' @export
 apply_excess_loading <- function(data,
                                  allocation,
-                                 base_premium = "base_premium",
-                                 expected_excess_loss = NULL,
-                                 blended_excess_loading = NULL,
-                                 weight = NULL,
-                                 output = c("premium", "rate")) {
+                                 output = c("premium", "rate"),
+                                 base_value = "base_value",
+                                 allocation_weight = NULL) {
   output <- match.arg(output)
   if (!inherits(data, "data.frame")) {
     stop("`data` must be a data.frame.", call. = FALSE)
@@ -980,37 +999,37 @@ apply_excess_loading <- function(data,
     stop("`data` must have the same number of rows as the allocation data.",
          call. = FALSE)
   }
-  validate_character_column(data, base_premium, "base_premium")
-  if (!is.numeric(data[[base_premium]]) || any(is.na(data[[base_premium]]))) {
-    stop("`base_premium` must refer to a numeric column without missing values.",
+  validate_character_column(data, base_value, "base_value")
+  if (!is.numeric(data[[base_value]]) || any(is.na(data[[base_value]]))) {
+    stop("`base_value` must refer to a numeric column without missing values.",
          call. = FALSE)
   }
-  expected_excess_loss <- expected_excess_loss %||% "expected_excess_loss"
-  blended_excess_loading <- blended_excess_loading %||% "blended_excess_loading"
-  validate_character_column(allocation, expected_excess_loss,
+  validate_character_column(allocation, "expected_excess_loss",
                             "expected_excess_loss")
-  validate_character_column(allocation, blended_excess_loading,
+  validate_character_column(allocation, "blended_excess_loading",
                             "blended_excess_loading")
   out <- data
   if (identical(output, "premium")) {
-    out$base_premium <- data[[base_premium]]
-    out$expected_excess_loss <- allocation[[expected_excess_loss]]
-    out$blended_excess_loading <- allocation[[blended_excess_loading]]
+    out$base_premium <- data[[base_value]]
+    out$expected_excess_loss <- allocation[["expected_excess_loss"]]
+    out$blended_excess_loading <- allocation[["blended_excess_loading"]]
     out$excess_loading <- out$expected_excess_loss
     out$loaded_premium <- out$base_premium + out$expected_excess_loss
     return(out)
   }
-  if (is.null(weight)) {
-    stop("`weight` must be supplied when `output = 'rate'`.", call. = FALSE)
+  if (is.null(allocation_weight)) {
+    out$base_rate <- data[[base_value]]
+  } else {
+    validate_character_column(data, allocation_weight, "allocation_weight")
+    if (!is.numeric(data[[allocation_weight]]) ||
+        any(is.na(data[[allocation_weight]])) ||
+        any(data[[allocation_weight]] <= 0)) {
+      stop("`allocation_weight` must refer to a positive numeric column without missing values.",
+           call. = FALSE)
+    }
+    out$base_rate <- data[[base_value]] / data[[allocation_weight]]
   }
-  validate_character_column(data, weight, "weight")
-  if (!is.numeric(data[[weight]]) || any(is.na(data[[weight]])) ||
-      any(data[[weight]] <= 0)) {
-    stop("`weight` must refer to a positive numeric column without missing values.",
-         call. = FALSE)
-  }
-  out$base_rate <- data[[base_premium]] / data[[weight]]
-  out$blended_excess_loading <- allocation[[blended_excess_loading]]
+  out$blended_excess_loading <- allocation[["blended_excess_loading"]]
   out$loaded_rate <- out$base_rate + out$blended_excess_loading
   out
 }

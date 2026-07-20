@@ -184,7 +184,7 @@ CRAN release: 2026-06-02
   partial allocation, and optional severity noise in the bootstrap.
 - [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
   now uses clearer allocation argument names: `allocation_weight`,
-  `risk_factor`, `allocation_subset`, `allocation`, `n_bootstrap`,
+  `risk_factor`, `receives_allocation`, `allocation`, `n_bootstrap`,
   `bootstrap_seed` and `preserve_total_excess`.
 - Automatic credibility in
   [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
@@ -200,8 +200,13 @@ CRAN release: 2026-06-02
   `base_premium`, `excess_loading` and `loaded_premium`.
 - [`apply_excess_loading()`](https://mharinga.github.io/insurancerating/reference/apply_excess_loading.md)
   now treats premium amounts as the default workflow and keeps the
-  distinction between absolute `allocated_excess_loss` and per-weight
-  `allocated_loading` explicit.
+  distinction between absolute `expected_excess_loss` and per-weight
+  `blended_excess_loading` explicit.
+- [`apply_excess_loading()`](https://mharinga.github.io/insurancerating/reference/apply_excess_loading.md)
+  now uses `base_value` for the existing premium amount or rate. With
+  rate output, an existing rate can be used directly or a monetary
+  amount can be converted using `allocation_weight`. The standard
+  allocation columns are now detected automatically.
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   now uses `model_variable` and `source_variable` as the primary
   argument names.

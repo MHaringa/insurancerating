@@ -15,10 +15,11 @@ additional loading.
 ``` r
 allocate_excess_loss(
   data,
-  excess_amount,
+  excess_amount = NULL,
   allocation_weight,
   risk_factor = NULL,
-  allocation_subset = NULL,
+  receives_allocation = NULL,
+  claim_count = NULL,
   allocation = c("portfolio", "risk_factor", "partial"),
   credibility = NULL,
   credibility_basis = c("claims", "excess_claims", "allocation_weight"),
@@ -42,8 +43,10 @@ allocate_excess_loss(
 
 - excess_amount:
 
-  Character string. Column containing the excess claim amount to
-  allocate.
+  Optional character string. Column containing the excess claim amount
+  to allocate. If `NULL`, the function uses the
+  `claim_amount_excess_column` metadata created by
+  [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md).
 
 - allocation_weight:
 
@@ -55,10 +58,21 @@ allocate_excess_loss(
   Optional character string. Risk-factor column used for
   `allocation = "risk_factor"` or `allocation = "partial"`.
 
-- allocation_subset:
+- receives_allocation:
 
-  Optional character string. Logical column indicating which rows
-  participate in the allocation. If `NULL`, all rows are included.
+  Optional character string. Name of a logical column indicating which
+  rows receive a share of the total excess loss. Rows with `FALSE`
+  receive no allocation, but their excess losses still contribute to the
+  total amount being allocated. If `NULL`, all rows receive an
+  allocation.
+
+- claim_count:
+
+  Optional character string. Claim-count column. If supplied, claim
+  counts in the allocation summary are calculated as the sum of this
+  column. If `NULL`, claim counts are inferred from the original claim
+  amount column when available: rows with a positive claim amount count
+  as one claim and rows with zero claim amount count as zero claims.
 
 - allocation:
 
@@ -114,7 +128,53 @@ allocate_excess_loss(
 
 ## Value
 
-An object of class `"excess_allocation"`.
+The input `data` enriched with allocation columns and class
+`"excess_allocation"`. The object prints as an ordinary data frame and
+has a custom
+[`summary.excess_allocation()`](https://mharinga.github.io/insurancerating/reference/summary.excess_allocation.md)
+method for aggregated allocation statistics. Original rows, columns, row
+order and metadata from
+[`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
+are preserved. The added columns are:
+
+- `receives_allocation`:
+
+  Logical indicator showing whether the row receives a share of the
+  total excess loss. This does not indicate whether the row contributed
+  to the observed excess-loss amount: all excess losses can contribute
+  to the total excess loss, while `receives_allocation` controls the
+  target rows over which that total is redistributed. When the
+  `receives_allocation` argument is supplied, rows receive allocation
+  when the referenced logical column is `TRUE` and the allocation weight
+  is positive. Rows with `FALSE` receive no allocation, but their excess
+  losses still contribute to the total amount being allocated.
+
+- `<risk_factor>_excess_loading`:
+
+  Excess loading estimated from the experience of the risk-factor level.
+  For example, `risk_factor = "sector"` creates `sector_excess_loading`.
+  When no risk factor is supplied, the column is named
+  `risk_factor_excess_loading`.
+
+- `<risk_factor>_credibility`:
+
+  Credibility weight assigned to the risk-factor-level estimate. For
+  example, `risk_factor = "sector"` creates `sector_credibility`.
+
+- `portfolio_excess_loading`:
+
+  Portfolio-level excess loading per unit of allocation weight.
+
+- `blended_excess_loading`:
+
+  Credibility-weighted blend of the risk-factor and portfolio excess
+  loadings. For `risk_factor = "sector"`, this is calculated as
+  `sector_excess_loading * sector_credibility + portfolio_excess_loading * (1 - sector_credibility)`.
+
+- `expected_excess_loss`:
+
+  Row-level expected excess-loss amount, calculated as
+  `blended_excess_loading * allocation_weight`.
 
 ## Details
 
@@ -132,6 +192,12 @@ The `allocation` argument determines how the excess burden is shared.
   portfolio- wide risk rather than a risk-factor-specific
   characteristic.
 
+  For portfolio allocation, no risk-factor-level experience is used.
+  Therefore, `risk_factor_credibility` equals zero and
+  `blended_excess_loading` equals `portfolio_excess_loading`. The same
+  output columns are kept for all allocation methods so downstream
+  reporting code can use one consistent structure.
+
 - `"risk_factor"`: excess losses are allocated separately for each
   risk-factor level. The excess burden observed within a group is spread
   across all risks in that group and is not shared with other groups.
@@ -139,6 +205,11 @@ The `allocation` argument determines how the excess burden is shared.
   This produces the strongest link between excess loadings and observed
   group experience, but can lead to volatile results when excess losses
   are rare.
+
+  For risk-factor allocation, only risk-factor-level experience is used.
+  Therefore, `sector_credibility` equals one and
+  `blended_excess_loading` equals `sector_excess_loading` when
+  `risk_factor = "sector"`.
 
 - `"partial"`: excess losses are allocated using a credibility-weighted
   combination of portfolio and risk-factor experience. Risk-factor
@@ -156,13 +227,17 @@ The `allocation` argument determines how the excess burden is shared.
 For `allocation = "partial"`, excess losses are allocated using a
 credibility-weighted blend of portfolio and risk-factor experience.
 
-The allocated loading is calculated as:
+The blended excess loading is calculated as:
 
-\$\$ loading_g = Z_g \cdot loading_g^{risk\\ factor} + (1 - Z_g) \cdot
-loading^{portfolio} \$\$
+\$\$ blended\\excess\\loading_g = sector\\credibility_g \cdot
+sector\\excess\\loading_g + (1 - sector\\credibility_g) \cdot
+portfolio\\excess\\loading \$\$
 
-where `Z_g` represents the credibility assigned to the risk-factor-level
-experience.
+In the output, `sector_excess_loading` is replaced by
+`<risk_factor>_excess_loading` and `sector_credibility` by
+`<risk_factor>_credibility` when another risk-factor column is supplied.
+`expected_excess_loss` is then calculated as
+`blended_excess_loading * allocation_weight`.
 
 If `credibility` is supplied, the same credibility is applied to all
 risk-factor levels.
@@ -282,6 +357,10 @@ This approach prevents a small number of large claims from distorting
 risk-factor relativities while still ensuring that the excess-loss
 burden is reflected in the final premium.
 
+## See also
+
+[`summary.excess_allocation()`](https://mharinga.github.io/insurancerating/reference/summary.excess_allocation.md)
+
 ## Author
 
 Martin Haringa
@@ -289,17 +368,19 @@ Martin Haringa
 ## Examples
 
 ``` r
-claims <- data.frame(
-  sector = rep(c("Industry", "Retail"), each = 4),
+portfolio <- data.frame(
+  policy_id = 1:10,
+  sector = rep(c("Industry", "Retail"), each = 5),
+  claim_count = c(0, 1, 1, 1, 1, 0, 1, 1, 1, 1),
   claim_amount = c(
-    1000, 120000, 30000, 8000,
-    2000, 150000, 40000, 6000
+    0, 25000, 120000, 50000, 175000,
+    0, 40000, 90000, 150000, 750000
   ),
-  earned_exposure = rep(1, 8)
+  earned_exposure = rep(1, 10)
 )
 
 decomposed <- calculate_excess_loss(
-  claims,
+  portfolio,
   claim_amount = "claim_amount",
   threshold = 100000
 )
@@ -307,25 +388,29 @@ decomposed <- calculate_excess_loss(
 # Pool all excess losses across the portfolio
 portfolio_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
+  claim_count = "claim_count",
   allocation = "portfolio"
 )
+# No sector-level experience is used here: risk_factor_credibility is zero
+# and blended_excess_loading equals portfolio_excess_loading.
 
 # Allocate excess losses separately by sector
 sector_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
+  claim_count = "claim_count",
   risk_factor = "sector",
   allocation = "risk_factor"
 )
+# Only sector-level experience is used here: sector_credibility is one
+# and blended_excess_loading equals sector_excess_loading.
 
 # Blend sector and portfolio experience using credibility
 partial_allocation <- allocate_excess_loss(
   decomposed,
-  excess_amount = "claim_amount_excess",
   allocation_weight = "earned_exposure",
+  claim_count = "claim_count",
   risk_factor = "sector",
   allocation = "partial",
   credibility_basis = "claims",
@@ -333,16 +418,102 @@ partial_allocation <- allocate_excess_loss(
 )
 
 summary(partial_allocation)
-#>      group weight n_claims n_excess_claims historical_excess_loss
-#> 1 Industry      4        4               1                  20000
-#> 2   Retail      4        4               1                  50000
-#>   excess_loss_ratio credibility_basis credibility_experience
-#> 1         0.1257862            claims                      4
-#> 2         0.2525253            claims                      4
-#>   credibility_threshold credibility group_loading portfolio_loading
-#> 1                    50  0.07407407          5000              8750
-#> 2                    50  0.07407407         12500              8750
-#>   allocated_loading allocated_excess_loss
-#> 1          8472.222              33888.89
-#> 2          9027.778              36111.11
+#>     sector earned_exposure claim_count excess_claim_count observed_excess_loss
+#> 1 Industry               5           4                  2                95000
+#> 2   Retail               5           4                  2               700000
+#>   observed_excess_loading sector_excess_loading sector_credibility
+#> 1                   19000                 19000         0.07407407
+#> 2                  140000                140000         0.07407407
+#>   portfolio_excess_loading blended_excess_loading expected_excess_loss
+#> 1                    79500               75018.52             375092.6
+#> 2                    79500               83981.48             419907.4
+
+# Allocate excess loss by insured amount, restricted to policies with an
+# insured amount of at least 500,000.
+portfolio <- portfolio |>
+  dplyr::mutate(
+    insured_amount = c(
+      100000, 250000, 500000, 750000, 1000000,
+      1500000, 2500000, 5000000, 7500000, 10000000
+    ),
+    receives_allocation = insured_amount >= 500000,
+    allocation_weight = insured_amount * earned_exposure
+  )
+
+decomposed <- calculate_excess_loss(
+  portfolio,
+  claim_amount = "claim_amount",
+  threshold = 500000
+)
+insured_amount_allocation <- allocate_excess_loss(
+  decomposed,
+  allocation = "portfolio",
+  allocation_weight = "allocation_weight",
+  receives_allocation = "receives_allocation"
+)
+insured_amount_allocation
+#>    policy_id   sector claim_count claim_amount earned_exposure insured_amount
+#> 1          1 Industry           0            0               1        1.0e+05
+#> 2          2 Industry           1        25000               1        2.5e+05
+#> 3          3 Industry           1       120000               1        5.0e+05
+#> 4          4 Industry           1        50000               1        7.5e+05
+#> 5          5 Industry           1       175000               1        1.0e+06
+#> 6          6   Retail           0            0               1        1.5e+06
+#> 7          7   Retail           1        40000               1        2.5e+06
+#> 8          8   Retail           1        90000               1        5.0e+06
+#> 9          9   Retail           1       150000               1        7.5e+06
+#> 10        10   Retail           1       750000               1        1.0e+07
+#>    receives_allocation allocation_weight claim_amount_capped
+#> 1                FALSE           1.0e+05                   0
+#> 2                FALSE           2.5e+05               25000
+#> 3                 TRUE           5.0e+05              120000
+#> 4                 TRUE           7.5e+05               50000
+#> 5                 TRUE           1.0e+06              175000
+#> 6                 TRUE           1.5e+06                   0
+#> 7                 TRUE           2.5e+06               40000
+#> 8                 TRUE           5.0e+06               90000
+#> 9                 TRUE           7.5e+06              150000
+#> 10                TRUE           1.0e+07              500000
+#>    claim_amount_excess claim_amount_is_excess risk_factor_excess_loading
+#> 1                    0                  FALSE                0.008695652
+#> 2                    0                  FALSE                0.008695652
+#> 3                    0                  FALSE                0.008695652
+#> 4                    0                  FALSE                0.008695652
+#> 5                    0                  FALSE                0.008695652
+#> 6                    0                  FALSE                0.008695652
+#> 7                    0                  FALSE                0.008695652
+#> 8                    0                  FALSE                0.008695652
+#> 9                    0                  FALSE                0.008695652
+#> 10              250000                   TRUE                0.008695652
+#>    risk_factor_credibility portfolio_excess_loading blended_excess_loading
+#> 1                        0              0.008695652            0.000000000
+#> 2                        0              0.008695652            0.000000000
+#> 3                        0              0.008695652            0.008695652
+#> 4                        0              0.008695652            0.008695652
+#> 5                        0              0.008695652            0.008695652
+#> 6                        0              0.008695652            0.008695652
+#> 7                        0              0.008695652            0.008695652
+#> 8                        0              0.008695652            0.008695652
+#> 9                        0              0.008695652            0.008695652
+#> 10                       0              0.008695652            0.008695652
+#>    expected_excess_loss
+#> 1                 0.000
+#> 2                 0.000
+#> 3              4347.826
+#> 4              6521.739
+#> 5              8695.652
+#> 6             13043.478
+#> 7             21739.130
+#> 8             43478.261
+#> 9             65217.391
+#> 10            86956.522
+
+# All losses above the threshold contribute to the total excess loss, but
+# only rows with receives_allocation = TRUE receive a share. The share is
+# proportional to insured_amount * earned_exposure. A larger insured amount
+# therefore produces a larger absolute expected_excess_loss, while a policy
+# with the same insured amount but lower earned exposure receives
+# proportionally less. For receiving policies this gives one constant excess
+# loading as a percentage of insured amount, adjusted for earned exposure.
+# No risk-factor-level experience is used in this portfolio allocation.
 ```

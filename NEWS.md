@@ -1,5 +1,31 @@
 # insurancerating (development version)
 
+## Overview of changes since 0.8.0
+
+- The excess-loss workflow has been made more portfolio-oriented and easier to
+  audit. Threshold assessments now preserve input column names, support
+  portfolio-level claim counts and can be presented with `as_gt()`.
+  `calculate_excess_loss()` returns an enriched data frame with dynamically
+  named capped and excess columns, while `allocate_excess_loss()` returns the
+  original portfolio rows with clearly named allocation results.
+- Excess-loss allocation now distinguishes explicitly between rows that
+  contribute observed excess losses and rows that receive an allocation.
+  Portfolio, risk-factor and partial allocation use a consistent output
+  structure, transparent credibility weighting and optional bootstrap
+  uncertainty. Allocation summaries preserve the original risk-factor,
+  claim-count and allocation-weight column names.
+- `apply_excess_loading()` now has a smaller API that directly consumes the
+  standard output of `allocate_excess_loss()`. It supports both premium amounts
+  and rates through `output`, `base_value` and `allocation_weight` without
+  requiring users to specify internal allocation-column names.
+- `add_portfolio_experience()` is now the primary helper for attaching observed
+  portfolio experience to `rating_table()` objects. The former
+  `add_observed_experience()` interface remains available as a deprecated
+  compatibility wrapper.
+- The documentation for `rating_table()`, `add_prediction()` and the excess-loss
+  workflow has been expanded with more applied portfolio examples. The pkgdown
+  configuration and website build workflow have also been updated.
+
 ## Main API updates
 
 ### Rating tables
@@ -13,6 +39,27 @@
   and accepts multiple existing `factor_analysis()` objects.
 - `autoplot.rating_table()` accepts `metric` to choose the attached portfolio
   experience metric at plot time.
+
+### Excess-loss workflow
+
+- `assess_excess_threshold()` now returns class `"threshold_assessment"`,
+  preserves the original group and exposure column names, supports an optional
+  claim-count column and uses `as_gt()` for report-ready threshold comparisons.
+- `calculate_excess_loss()` now returns a regular enriched data frame. Capped,
+  excess and indicator column names are derived from the supplied claim-amount
+  column, and metadata allows the next allocation step to find them
+  automatically.
+- `allocate_excess_loss()` now returns the original portfolio data with class
+  `"excess_allocation"` and appended allocation columns. The
+  `receives_allocation` argument controls which rows receive a share without
+  excluding their observed excess losses from the total being allocated.
+- Allocation output now distinguishes risk-factor, portfolio and blended excess
+  loadings from the row-level `expected_excess_loss`. The allocation summary
+  retains original input column names and provides an auditable comparison of
+  observed and allocated excess loss.
+- `apply_excess_loading()` now uses the compact API `output`, `base_value` and
+  `allocation_weight`. It automatically reads `expected_excess_loss` and
+  `blended_excess_loading` from the allocation object.
 
 # insurancerating 0.8.0
 
