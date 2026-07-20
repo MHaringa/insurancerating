@@ -59,8 +59,9 @@ allocate_excess_loss()."><meta property="og:image" content="https://mharinga.git
 
 
 <dt id="arg-compare-to-empirical">compare_to_empirical<a class="anchor" aria-label="anchor" href="#arg-compare-to-empirical"></a></dt>
-<dd><p>Logical. If <code>TRUE</code>, keep columns with the
-empirical loss and empirical excess loss used for comparison.</p></dd>
+<dd><p>Logical. If <code>TRUE</code>, append
+<code>allocation_difference</code> and <code>allocation_difference_ratio</code> to compare the
+credibility-weighted allocation with historically observed excess loss.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -84,9 +85,10 @@ this column is named <code>risk_factor</code> and contains <code>"portfolio"</co
 example, <code>allocation_weight = "earned_exposure"</code> returns an
 <code>earned_exposure</code> column.</p></dd>
 
-<dt><code>claim_count</code></dt>
-<dd><p>Number of claims in the level, based on the supplied
-<code>claim_count</code> column or inferred from positive claim amounts.</p></dd>
+<dt><code>&lt;claim_count&gt;</code></dt>
+<dd><p>Number of claims in the level. When <code>claim_count</code>
+is supplied, its original column name is preserved. When
+<code>claim_count = NULL</code>, inferred counts are returned as <code>claim_count</code>.</p></dd>
 
 <dt><code>excess_claim_count</code></dt>
 <dd><p>Number of claim records with excess loss.</p></dd>
@@ -98,25 +100,30 @@ example, <code>allocation_weight = "earned_exposure"</code> returns an
 <dd><p>Observed excess loss per unit of
 allocation weight.</p></dd>
 
-<dt><code>credibility</code></dt>
-<dd><p>Credibility assigned to the risk-factor experience.</p></dd>
-
 <dt><code>&lt;risk_factor&gt;_excess_loading</code></dt>
 <dd><p>Risk-factor-specific excess
 loading before pooling. When no risk factor is supplied, this column is
 named <code>risk_factor_excess_loading</code>.</p></dd>
 
+<dt><code>&lt;risk_factor&gt;_credibility</code></dt>
+<dd><p>Credibility weight assigned to the
+risk-factor-level estimate.</p></dd>
+
 <dt><code>portfolio_excess_loading</code></dt>
-<dd><p>Portfolio-wide excess loading.</p></dd>
+<dd><p>Portfolio-level excess loading per unit
+of allocation weight.</p></dd>
 
-<dt><code>allocated_excess_loading</code></dt>
-<dd><p>Credibility-weighted excess loading.</p></dd>
+<dt><code>blended_excess_loading</code></dt>
+<dd><p>Credibility-weighted blend of the
+risk-factor and portfolio estimates. For <code>risk_factor = "sector"</code>, this
+is calculated as <code>sector_excess_loading * sector_credibility + portfolio_excess_loading * (1 - sector_credibility)</code>.</p></dd>
 
-<dt><code>allocated_excess_loss</code></dt>
-<dd><p>Total excess loss allocated to the level.</p></dd>
+<dt><code>expected_excess_loss</code></dt>
+<dd><p>Total expected excess loss allocated to the
+level, calculated as <code>blended_excess_loading * &lt;allocation_weight&gt;</code>.</p></dd>
 
 <dt><code>allocation_difference</code></dt>
-<dd><p>Allocated minus observed excess loss,
+<dd><p>Expected minus observed excess loss,
 included when <code>compare_to_empirical = TRUE</code>. A positive value means the
 level receives more allocated excess loss than it generated historically.</p></dd>
 

@@ -1,6 +1,6 @@
 # Plot an excess-loss allocation
 
-Visualise the allocated excess loading, allocated excess loss or
+Visualise the blended excess loading, expected excess loss or
 credibility by allocation group.
 
 ## Usage
@@ -9,7 +9,7 @@ credibility by allocation group.
 # S3 method for class 'excess_allocation'
 autoplot(
   object,
-  y = c("allocated_excess_loading", "allocated_excess_loss", "credibility"),
+  y = c("blended_excess_loading", "expected_excess_loss", "credibility"),
   top_n = NULL,
   show_labels = FALSE,
   ...

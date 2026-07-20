@@ -135,12 +135,12 @@ allocation <- allocate_excess_loss(
 )
 
 summary(allocation, compare_to_empirical = TRUE)
-autoplot(allocation, y = "allocated_excess_loading")
+autoplot(allocation, y = "blended_excess_loading")
 autoplot(allocation, y = "credibility")
 ```
 
-In the allocation output, `allocated_excess_loss` is the absolute
-monetary burden assigned to a row. `allocated_excess_loading` is the
+In the allocation output, `expected_excess_loss` is the absolute
+monetary burden assigned to a row. `blended_excess_loading` is the
 corresponding loading per unit of the chosen weight, such as earned
 exposure. This distinction matters when the output is added back to
 pricing data.

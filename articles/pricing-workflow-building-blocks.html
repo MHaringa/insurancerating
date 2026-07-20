@@ -182,11 +182,11 @@ of observed excess experience.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">allocation</span>, compare_to_empirical <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">allocation</span>, y <span class="op">=</span> <span class="st">"allocated_excess_loading"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">allocation</span>, y <span class="op">=</span> <span class="st">"blended_excess_loading"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">allocation</span>, y <span class="op">=</span> <span class="st">"credibility"</span><span class="op">)</span></span></code></pre></div>
-<p>In the allocation output, <code>allocated_excess_loss</code> is the
+<p>In the allocation output, <code>expected_excess_loss</code> is the
 absolute monetary burden assigned to a row.
-<code>allocated_excess_loading</code> is the corresponding loading per
+<code>blended_excess_loading</code> is the corresponding loading per
 unit of the chosen weight, such as earned exposure. This distinction
 matters when the output is added back to pricing data.</p>
 <p>The allocated loading can then be added to the pricing data.</p>

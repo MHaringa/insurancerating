@@ -19,8 +19,9 @@ summary(object, compare_to_empirical = FALSE, ...)
 
 - compare_to_empirical:
 
-  Logical. If `TRUE`, keep columns with the empirical loss and empirical
-  excess loss used for comparison.
+  Logical. If `TRUE`, append `allocation_difference` and
+  `allocation_difference_ratio` to compare the credibility-weighted
+  allocation with historically observed excess loss.
 
 - ...:
 
@@ -48,10 +49,11 @@ returned columns are:
   `allocation_weight = "earned_exposure"` returns an `earned_exposure`
   column.
 
-- `claim_count`:
+- `<claim_count>`:
 
-  Number of claims in the level, based on the supplied `claim_count`
-  column or inferred from positive claim amounts.
+  Number of claims in the level. When `claim_count` is supplied, its
+  original column name is preserved. When `claim_count = NULL`, inferred
+  counts are returned as `claim_count`.
 
 - `excess_claim_count`:
 
@@ -65,30 +67,33 @@ returned columns are:
 
   Observed excess loss per unit of allocation weight.
 
-- `credibility`:
-
-  Credibility assigned to the risk-factor experience.
-
 - `<risk_factor>_excess_loading`:
 
   Risk-factor-specific excess loading before pooling. When no risk
   factor is supplied, this column is named `risk_factor_excess_loading`.
 
+- `<risk_factor>_credibility`:
+
+  Credibility weight assigned to the risk-factor-level estimate.
+
 - `portfolio_excess_loading`:
 
-  Portfolio-wide excess loading.
+  Portfolio-level excess loading per unit of allocation weight.
 
-- `allocated_excess_loading`:
+- `blended_excess_loading`:
 
-  Credibility-weighted excess loading.
+  Credibility-weighted blend of the risk-factor and portfolio estimates.
+  For `risk_factor = "sector"`, this is calculated as
+  `sector_excess_loading * sector_credibility + portfolio_excess_loading * (1 - sector_credibility)`.
 
-- `allocated_excess_loss`:
+- `expected_excess_loss`:
 
-  Total excess loss allocated to the level.
+  Total expected excess loss allocated to the level, calculated as
+  `blended_excess_loading * <allocation_weight>`.
 
 - `allocation_difference`:
 
-  Allocated minus observed excess loss, included when
+  Expected minus observed excess loss, included when
   `compare_to_empirical = TRUE`. A positive value means the level
   receives more allocated excess loss than it generated historically.
 
