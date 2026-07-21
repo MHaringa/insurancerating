@@ -77,9 +77,9 @@ claims at each threshold.
 The function is intended for portfolio-level data as well as claim-level
 data. Portfolio-level data can include policies without claims, for example
 rows where \code{claim_count = 0} and the claim amount is zero. Use this before
-\code{\link[=calculate_excess_loss]{calculate_excess_loss()}} to understand the effect of the threshold on the
-portfolio. The output is useful for tariff notes, pricing reviews and
-governance discussions around capped severity models.
+\code{\link[=redistribute_excess_loss]{redistribute_excess_loss()}} to understand the effect of the threshold on
+the portfolio. The output is useful for tariff notes, pricing reviews and
+governance discussions around adjusted severity models.
 }
 \details{
 The output can be used for two common follow-up analyses. First, aggregate the

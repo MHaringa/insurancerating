@@ -14,9 +14,9 @@ claims at each threshold.
 The function is intended for portfolio-level data as well as claim-level
 data. Portfolio-level data can include policies without claims, for example
 rows where claim_count = 0 and the claim amount is zero. Use this before
-calculate_excess_loss() to understand the effect of the threshold on the
-portfolio. The output is useful for tariff notes, pricing reviews and
-governance discussions around capped severity models."><meta property="og:description" content="Compare candidate thresholds for capped severity and large-loss pricing work.
+redistribute_excess_loss() to understand the effect of the threshold on
+the portfolio. The output is useful for tariff notes, pricing reviews and
+governance discussions around adjusted severity models."><meta property="og:description" content="Compare candidate thresholds for capped severity and large-loss pricing work.
 assess_excess_threshold() is a diagnostic helper. It does not choose a
 threshold automatically. It shows how many claims, how many records contain
 claim amounts above candidate thresholds, how much historical claim cost sits
@@ -25,9 +25,9 @@ claims at each threshold.
 The function is intended for portfolio-level data as well as claim-level
 data. Portfolio-level data can include policies without claims, for example
 rows where claim_count = 0 and the claim amount is zero. Use this before
-calculate_excess_loss() to understand the effect of the threshold on the
-portfolio. The output is useful for tariff notes, pricing reviews and
-governance discussions around capped severity models."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"><!-- dependencies from examples --></head><body>
+redistribute_excess_loss() to understand the effect of the threshold on
+the portfolio. The output is useful for tariff notes, pricing reviews and
+governance discussions around adjusted severity models."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"><!-- dependencies from examples --></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -69,9 +69,9 @@ claims at each threshold.</p>
 <p>The function is intended for portfolio-level data as well as claim-level
 data. Portfolio-level data can include policies without claims, for example
 rows where <code>claim_count = 0</code> and the claim amount is zero. Use this before
-<code><a href="calculate_excess_loss.html">calculate_excess_loss()</a></code> to understand the effect of the threshold on the
-portfolio. The output is useful for tariff notes, pricing reviews and
-governance discussions around capped severity models.</p>
+<code><a href="redistribute_excess_loss.html">redistribute_excess_loss()</a></code> to understand the effect of the threshold on
+the portfolio. The output is useful for tariff notes, pricing reviews and
+governance discussions around adjusted severity models.</p>
     </div>
 
     <div class="section level2">

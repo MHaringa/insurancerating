@@ -68,7 +68,7 @@
       </dl></div><div class="section level2">
       <h2 id="severity-and-large-claims">Severity and large claims<a class="anchor" aria-label="anchor" href="#severity-and-large-claims"></a></h2>
 
-      <div class="section-desc"><p>Analyse claim amounts, capped or truncated severity, and large-loss components that can be added to technical risk premium models.</p></div>
+      <div class="section-desc"><p>Analyse claim amounts, capped or truncated severity, and redistribute large losses before fitting severity models.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -98,31 +98,10 @@
 
         <dt>
 
-          <code><a href="calculate_excess_loss.html">calculate_excess_loss()</a></code>
+          <code><a href="redistribute_excess_loss.html">redistribute_excess_loss()</a></code>
 
         </dt>
-        <dd>Decompose claim amounts into capped and excess parts</dd>
-
-        <dt>
-
-          <code><a href="allocate_excess_loss.html">allocate_excess_loss()</a></code>
-
-        </dt>
-        <dd>Allocate excess loss to a pricing portfolio</dd>
-
-        <dt>
-
-          <code><a href="autoplot.excess_allocation.html">autoplot(<i>&lt;excess_allocation&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Plot an excess-loss allocation</dd>
-
-        <dt>
-
-          <code><a href="apply_excess_loading.html">apply_excess_loading()</a></code>
-
-        </dt>
-        <dd>Apply allocated excess losses or loadings to a pricing portfolio</dd>
+        <dd>Redistribute large losses before fitting a severity model</dd>
 
         <dt>
 

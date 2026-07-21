@@ -219,8 +219,8 @@ estimation.
 
 ## Severity and large claims
 
-Analyse claim amounts, capped or truncated severity, and large-loss
-components that can be added to technical risk premium models.
+Analyse claim amounts, capped or truncated severity, and redistribute
+large losses before fitting severity models.
 
 - [`plot_severity_distribution()`](https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.md)
   : Exploratory severity diagnostics by category
@@ -228,14 +228,8 @@ components that can be added to technical risk premium models.
   : Assess possible excess-loss thresholds
 - [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
   : Convert an object to a gt table
-- [`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
-  : Decompose claim amounts into capped and excess parts
-- [`allocate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/allocate_excess_loss.md)
-  : Allocate excess loss to a pricing portfolio
-- [`autoplot(`*`<excess_allocation>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.excess_allocation.md)
-  : Plot an excess-loss allocation
-- [`apply_excess_loading()`](https://mharinga.github.io/insurancerating/reference/apply_excess_loading.md)
-  : Apply allocated excess losses or loadings to a pricing portfolio
+- [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
+  : Redistribute large losses before fitting a severity model
 - [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
   **\[experimental\]** : Fit severity distributions to truncated claim
   data

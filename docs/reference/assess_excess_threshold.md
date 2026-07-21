@@ -13,10 +13,10 @@ The function is intended for portfolio-level data as well as claim-level
 data. Portfolio-level data can include policies without claims, for
 example rows where `claim_count = 0` and the claim amount is zero. Use
 this before
-[`calculate_excess_loss()`](https://mharinga.github.io/insurancerating/reference/calculate_excess_loss.md)
+[`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
 to understand the effect of the threshold on the portfolio. The output
 is useful for tariff notes, pricing reviews and governance discussions
-around capped severity models.
+around adjusted severity models.
 
 ## Usage
 

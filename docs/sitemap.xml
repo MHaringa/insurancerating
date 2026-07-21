@@ -86,6 +86,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/rating_factors2.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/rating_grid.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/rating_table.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/reduce.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/reexports.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/refit.html</loc></url>
@@ -107,6 +108,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/split_relativities.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/summary.excess_allocation.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/summary.excess_loss_vector.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/summary.excess_redistribution.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/summary.fitgam.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/summary.reduce.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/univariate.html</loc></url>

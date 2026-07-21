@@ -18,9 +18,8 @@ Main changes include:
 * Added `factor_analysis()` as the primary portfolio analysis function.
 * Added tariff segmentation helpers through `risk_factor_gam()`,
   `derive_tariff_segments()` and `add_tariff_segments()`.
-* Added a capped-severity excess-loss workflow with
-  `assess_excess_threshold()`, `calculate_excess_loss()`,
-  `allocate_excess_loss()` and `apply_excess_loading()`.
+* Added a large-loss severity workflow with `assess_excess_threshold()` and
+  `redistribute_excess_loss()`.
 * Added exploratory severity distribution plots and expanded model validation
   helpers.
 * Renamed and documented several APIs for consistency, with deprecated wrappers

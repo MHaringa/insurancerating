@@ -105,54 +105,39 @@ if (requireNamespace("gt", quietly = TRUE)) {
 }
 ```
 
-After choosing a threshold, `calculate_excess_loss()` creates a deterministic
-historical decomposition. It does not bootstrap or allocate anything.
+After choosing a threshold, `redistribute_excess_loss()` caps the large losses
+and redistributes the excess amount over the claims used in severity modelling.
+The total observed claim cost is preserved.
 
 ```{r, eval = FALSE}
-excess <- calculate_excess_loss(
-  claims,
+adjusted <- redistribute_excess_loss(
+  portfolio,
   claim_amount = "claim_amount",
-  threshold = 100000
-)
-```
-
-The allocation step is where sharing and uncertainty are handled. Portfolio
-allocation is stable but ignores group experience. Risk-factor allocation is
-responsive but can be volatile. Partial allocation balances portfolio stability, group
-responsiveness and the credibility of observed excess experience.
-
-```{r, eval = FALSE}
-allocation <- allocate_excess_loss(
-  excess,
-  allocation_weight = "earned_exposure",
+  threshold = 100000,
+  claim_count = "claim_count",
   risk_factor = "sector",
-  allocation = "partial",
-  preserve_total_excess = TRUE
+  redistribution_method = "partial"
 )
-
-summary(allocation, compare_to_empirical = TRUE)
-autoplot(allocation, y = "blended_excess_loading")
-autoplot(allocation, y = "credibility")
 ```
 
-In the allocation output, `expected_excess_loss` is the absolute monetary
-burden assigned to a row. `blended_excess_loading` is the corresponding loading
-per unit of the chosen weight, such as earned exposure. This distinction matters
-when the output is added back to pricing data.
-
-The allocated loading can then be added to the pricing data.
+Portfolio redistribution gives every claim the same excess amount per claim.
+Risk-factor redistribution uses only the experience of each group. Partial
+redistribution balances portfolio stability, group responsiveness and the
+credibility of observed excess experience.
 
 ```{r, eval = FALSE}
-excess$base_premium <- excess$technical_premium
-priced <- apply_excess_loading(
-  excess,
-  allocation,
-  base_value = "base_premium"
+severity_data <- adjusted[adjusted$claim_count > 0, ]
+severity_model <- glm(
+  claim_amount_adjusted_average ~ sector,
+  weights = claim_count,
+  family = Gamma(link = "log"),
+  data = severity_data
 )
 ```
 
-This excess loading is part of the technical risk premium. It is not intended
-as a commercial margin.
+The adjusted average claim amount already contains the redistributed cost of
+large losses. A separate excess-premium component does not need to be added to
+the resulting risk premium.
 
 ## 3. Translate continuous factors into tariff segments
 
@@ -287,8 +272,8 @@ One possible workflow is:
 1. Inspect the portfolio with `factor_analysis()` and `outlier_histogram()`.
 2. Assess large-loss thresholds with `assess_excess_threshold()` where capped
    severity or excess-loss loadings are relevant.
-3. Decompose and allocate excess loss with `calculate_excess_loss()` and
-   `allocate_excess_loss()`.
+3. Redistribute large losses before severity modelling with
+   `redistribute_excess_loss()`.
 4. Analyse continuous risk factors with `risk_factor_gam()`.
 5. Create candidate tariff segments with `derive_tariff_segments()`.
 6. Fit GLMs for frequency, severity or pure premium.

@@ -34,16 +34,13 @@ reference:
 
   - title: "Severity and large claims"
     desc: >
-      Analyse claim amounts, capped or truncated severity, and large-loss
-      components that can be added to technical risk premium models.
+      Analyse claim amounts, capped or truncated severity, and redistribute
+      large losses before fitting severity models.
     contents:
       - plot_severity_distribution
       - assess_excess_threshold
       - as_gt
-      - calculate_excess_loss
-      - allocate_excess_loss
-      - autoplot.excess_allocation
-      - apply_excess_loading
+      - redistribute_excess_loss
       - fit_truncated_severity
       - autoplot.truncated_severity
       - rlnormt
