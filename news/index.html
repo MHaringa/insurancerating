@@ -40,10 +40,8 @@
 <h2 class="pkg-version" data-toc-text="development version" id="insurancerating-development-version">insurancerating (development version)<a class="anchor" aria-label="anchor" href="#insurancerating-development-version"></a></h2>
 <div class="section level3">
 <h3 id="overview-of-changes-since-development-version">Overview of changes since 0.8.0<a class="anchor" aria-label="anchor" href="#overview-of-changes-since-development-version"></a></h3>
-<ul><li>The excess-loss workflow has been made more portfolio-oriented and easier to audit. Threshold assessments now preserve input column names, support portfolio-level claim counts and can be presented with <code><a href="../reference/as_gt.html">as_gt()</a></code>. <code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code> returns an enriched data frame with dynamically named capped and excess columns, while <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> returns the original portfolio rows with clearly named allocation results.</li>
-<li>Excess-loss allocation now distinguishes explicitly between rows that contribute observed excess losses and rows that receive an allocation. Portfolio, risk-factor and partial allocation use a consistent output structure, transparent credibility weighting and optional bootstrap uncertainty. Allocation summaries preserve the original risk-factor, claim-count and allocation-weight column names.</li>
-<li>
-<code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code> now has a smaller API that directly consumes the standard output of <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code>. It supports both premium amounts and rates through <code>output</code>, <code>base_value</code> and <code>allocation_weight</code> without requiring users to specify internal allocation-column names.</li>
+<ul><li>The excess-loss workflow has been made more portfolio-oriented and easier to audit. Threshold assessments now preserve input column names, support portfolio-level claim counts and can be presented with <code><a href="../reference/as_gt.html">as_gt()</a></code>. <code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code> now combines capping and redistribution in one step and returns adjusted claim amounts for severity modelling.</li>
+<li>Large-loss cost is redistributed over claim-bearing rows using portfolio, risk-factor or partial credibility redistribution. The total observed claim cost is preserved, so no separate excess-premium component needs to be applied.</li>
 <li>
 <code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code> is now the primary helper for attaching observed portfolio experience to <code><a href="../reference/rating_table.html">rating_table()</a></code> objects. The former <code><a href="../reference/add_observed_experience.html">add_observed_experience()</a></code> interface remains available as a deprecated compatibility wrapper.</li>
 <li>The documentation for <code><a href="../reference/rating_table.html">rating_table()</a></code>, <code><a href="../reference/add_prediction.html">add_prediction()</a></code> and the excess-loss workflow has been expanded with more applied portfolio examples. The pkgdown configuration and website build workflow have also been updated.</li>
@@ -66,12 +64,16 @@
 <ul><li>
 <code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code> now returns class <code>"threshold_assessment"</code>, preserves the original group and exposure column names, supports an optional claim-count column and uses <code><a href="../reference/as_gt.html">as_gt()</a></code> for report-ready threshold comparisons.</li>
 <li>
-<code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code> now returns a regular enriched data frame. Capped, excess and indicator column names are derived from the supplied claim-amount column, and metadata allows the next allocation step to find them automatically.</li>
+<code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code> replaces the former multi-step decomposition, allocation and loading workflow. It returns capped, excess, redistributed, adjusted and adjusted-average claim amounts using names derived from the supplied claim-amount column.</li>
+<li>Redistribution is claim-count weighted. Rows without claims remain zero, and the adjusted loss reconciles to the original observed loss.</li>
 <li>
-<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now returns the original portfolio data with class <code>"excess_allocation"</code> and appended allocation columns. The <code>receives_allocation</code> argument controls which rows receive a share without excluding their observed excess losses from the total being allocated.</li>
-<li>Allocation output now distinguishes risk-factor, portfolio and blended excess loadings from the row-level <code>expected_excess_loss</code>. The allocation summary retains original input column names and provides an auditable comparison of observed and allocated excess loss.</li>
+<code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code> now accepts <code>redistribution_weight</code> for risk-sensitive shares and <code>receives_redistribution</code> for selecting which claim-bearing rows receive redistributed excess loss.</li>
 <li>
-<code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code> now uses the compact API <code>output</code>, <code>base_value</code> and <code>allocation_weight</code>. It automatically reads <code>expected_excess_loss</code> and <code>blended_excess_loading</code> from the allocation object.</li>
+<code>redistribute_excess</code> can now identify large losses that should remain unadjusted and should not contribute their excess to the redistribution pool.</li>
+<li>The redistribution choice is now expressed through <code>redistribution_method = "portfolio"</code>, <code>"risk_factor"</code> or <code>"partial"</code>.</li>
+<li>Results now inherit from <code>"excess_redistribution"</code>. Their <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> method audits contributed and received excess loss, net loss shifts and changes in average claim amount by risk factor or another selected portfolio column.</li>
+<li>
+<code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code> now exposes the risk-factor loading, credibility, portfolio loading, blended loading, preservation factor and final redistribution loading. Set <code>calculation_details = FALSE</code> to omit these row-level audit columns from modelling data; <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> retains the complete calculation audit.</li>
 </ul></div>
 </div>
 </div>
@@ -164,22 +166,13 @@
 <div class="section level4">
 <h4 id="model-refinement-0-8-0">Model refinement<a class="anchor" aria-label="anchor" href="#model-refinement-0-8-0"></a></h4>
 <ul><li>The refinement API has been clarified around <code>prepare_refinement() |&gt; add_*() |&gt; refit()</code>.</li>
-<li>A new excess-loss workflow was added for capped severity and pure-premium modelling: <code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code>, <code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code>, <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> and <code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code>.</li>
+<li>A large-loss workflow was added for adjusted severity modelling: <code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code> and <code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code>.</li>
 <li>
 <code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code> compares candidate large-loss thresholds and shows the impact on excess loss, capped loss and pure premium.</li>
 <li>
-<code><a href="../reference/calculate_excess_loss.html">calculate_excess_loss()</a></code> now performs only the deterministic historical decomposition into capped and excess claim amounts.</li>
-<li>
-<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> handles allocation and bootstrap uncertainty modelling. It supports observed or bootstrap excess burdens, portfolio, risk-factor and partial allocation, and optional severity noise in the bootstrap.</li>
-<li>
-<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now uses clearer allocation argument names: <code>allocation_weight</code>, <code>risk_factor</code>, <code>receives_allocation</code>, <code>allocation</code>, <code>n_bootstrap</code>, <code>bootstrap_seed</code> and <code>preserve_total_excess</code>.</li>
-<li>Automatic credibility in <code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now uses the transparent formula <code>Z = n / (n + credibility_threshold)</code> with <code>credibility_basis = "claims"</code>, <code>"excess_claims"</code> or <code>"allocation_weight"</code>.</li>
-<li>
-<code><a href="../reference/allocate_excess_loss.html">allocate_excess_loss()</a></code> now uses <code>preserve_total_excess = TRUE</code> by default so that partial allocation redistributes the selected excess burden without changing the total allocated excess loss.</li>
-<li>
-<code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code> adds the allocated excess loading to pricing data and returns <code>base_premium</code>, <code>excess_loading</code> and <code>loaded_premium</code>.</li>
-<li>
-<code><a href="../reference/apply_excess_loading.html">apply_excess_loading()</a></code> now treats premium amounts as the default workflow and keeps the distinction between absolute <code>expected_excess_loss</code> and per-weight <code>blended_excess_loading</code> explicit.</li>
+<code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code> caps claim amounts and redistributes the observed excess burden across claims before a severity GLM is fitted. It supports portfolio, risk-factor and partial redistribution.</li>
+<li>Automatic credibility in <code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code> uses the transparent formula <code>Z = n / (n + credibility_threshold)</code> with <code>credibility_basis = "claims"</code> or <code>"excess_records"</code>.</li>
+<li>Redistribution always preserves the total observed claim cost and returns an adjusted average claim amount suitable for a claim-count-weighted severity GLM.</li>
 <li>
 <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> now uses <code>model_variable</code> and <code>source_variable</code> as the primary argument names.</li>
 <li>
