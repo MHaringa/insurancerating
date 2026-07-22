@@ -35,6 +35,8 @@ add_smoothing(
 
   Character string. Existing grouped or binned variable in the GLM. This
   is the model term that will be replaced by a smoothed tariff factor.
+  The column must not contain missing values; remove or impute missing
+  values before adding the smoothing step.
 
 - source_variable:
 

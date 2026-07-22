@@ -8,10 +8,12 @@
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Summarise redistributed large-loss experience — summary.excess_redistribution"><meta name="description" content="Audit how much excess loss was contributed and received across portfolio
 segments after redistribute_excess_loss(). The summary shows whether a
 segment receives more large-loss cost than it contributes, or transfers part
-of its observed excess burden to other segments."><meta property="og:description" content="Audit how much excess loss was contributed and received across portfolio
+of its observed excess burden to other segments. The same audit is available
+for redistributed claims and separate excess loadings."><meta property="og:description" content="Audit how much excess loss was contributed and received across portfolio
 segments after redistribute_excess_loss(). The summary shows whether a
 segment receives more large-loss cost than it contributes, or transfers part
-of its observed excess burden to other segments."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+of its observed excess burden to other segments. The same audit is available
+for redistributed claims and separate excess loadings."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -47,7 +49,8 @@ of its observed excess burden to other segments."><meta property="og:image" cont
     <p>Audit how much excess loss was contributed and received across portfolio
 segments after <code><a href="redistribute_excess_loss.html">redistribute_excess_loss()</a></code>. The summary shows whether a
 segment receives more large-loss cost than it contributes, or transfers part
-of its observed excess burden to other segments.</p>
+of its observed excess burden to other segments. The same audit is available
+for redistributed claims and separate excess loadings.</p>
     </div>
 
     <div class="section level2">
@@ -97,6 +100,10 @@ amount was actually contributed to the redistribution pool.</p></dd>
 <dt><code>observed_loss</code></dt>
 <dd><p>Observed claim cost before redistribution.</p></dd>
 
+<dt><code>retained_loss</code></dt>
+<dd><p>Claim cost retained at or below the threshold,
+including full claims excluded through <code>redistribute_excess</code>.</p></dd>
+
 <dt><code>observed_excess_loss</code></dt>
 <dd><p>Observed claim cost above the threshold,
 including excess from rows excluded through <code>redistribute_excess</code>.</p></dd>
@@ -129,6 +136,14 @@ amount being redistributed after blending.</p></dd>
 <dt><code>final_redistribution_loading</code></dt>
 <dd><p>Blended loading multiplied by the
 redistribution scaling factor.</p></dd>
+
+<dt><code>allocated_excess_loss</code></dt>
+<dd><p>Absolute excess-loss amount allocated to
+the audit group.</p></dd>
+
+<dt><code>average_excess_loading</code></dt>
+<dd><p>Allocated excess loss per unit of total
+receiving redistribution weight.</p></dd>
 
 <dt><code>redistributed_excess_received</code></dt>
 <dd><p>Excess assigned to receiving
@@ -173,7 +188,10 @@ redistribution, <code>&lt;risk_factor&gt;_excess_loading</code> is blended with
 receiving <code>redistribution_weight</code> gives
 <code>redistributed_excess_received</code>.</p>
 <p>If <code>by</code> differs from the risk factor used in the redistribution, loading and
-credibility columns are receiving-weighted averages within each audit group.</p>
+credibility columns are receiving-weighted averages within each audit group.
+For separate-loading output, <code>adjusted_loss</code> is shown only as a reconciliation
+of retained plus allocated loss; it does not mean that the allocated amount
+was added to the row-level severity response.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

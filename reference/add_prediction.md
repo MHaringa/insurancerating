@@ -93,6 +93,12 @@ If `confidence = TRUE`, lower and upper confidence interval columns are
 added next to each prediction column. The default interval suffixes are
 `"lower"` and `"upper"`.
 
+Predictions containing missing values are retained. If one or more `NA`
+predictions are produced, the function issues a warning with the
+affected prediction columns and number of missing predictions. This is
+typically caused by missing predictor values in `data` or by predictor
+values outside the domain supported by the fitted model.
+
 ## Author
 
 Martin Haringa

@@ -80,7 +80,8 @@ can be too jagged for a stable and explainable tariff.</p>
 <dt id="arg-model-variable">model_variable<a class="anchor" aria-label="anchor" href="#arg-model-variable"></a></dt>
 <dd><p>Character string. Existing grouped or binned variable
 in the GLM. This is the model term that will be replaced by a smoothed
-tariff factor.</p></dd>
+tariff factor. The column must not contain missing values; remove or impute
+missing values before adding the smoothing step.</p></dd>
 
 
 <dt id="arg-source-variable">source_variable<a class="anchor" aria-label="anchor" href="#arg-source-variable"></a></dt>

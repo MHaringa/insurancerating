@@ -106,9 +106,15 @@ if (requireNamespace("gt", quietly = TRUE)) {
 
 After choosing a threshold,
 [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
-caps the large losses and redistributes the excess amount over the
-claims used in severity modelling. The total observed claim cost is
-preserved.
+caps the large losses and allocates the excess burden. The same
+calculation supports two modelling workflows:
+
+| Output | Typical redistribution weight | Interpretation | Typical use |
+|----|----|----|----|
+| `"redistributed_claim"` | Claim count or expected claim count | Excess loss redistributed across claims | One severity model |
+| `"excess_loading"` | Earned exposure | Excess risk premium per exposure unit | Separate component of total risk premium |
+
+The total excess loss is preserved in both workflows.
 
 ``` r
 
@@ -118,7 +124,8 @@ adjusted <- redistribute_excess_loss(
   threshold = 100000,
   claim_count = "claim_count",
   risk_factor = "sector",
-  redistribution_method = "partial"
+  redistribution_method = "partial",
+  output = "redistributed_claim"
 )
 ```
 
@@ -139,8 +146,67 @@ severity_model <- glm(
 ```
 
 The adjusted average claim amount already contains the redistributed
-cost of large losses. A separate excess-premium component does not need
-to be added to the resulting risk premium.
+cost of large losses. A separate excess-premium component must therefore
+not be added again. This is a concise workflow and generally works well
+when modelled groups contain sufficient claims and sparse factor levels
+have been combined.
+
+The amount allocated to an individual row is not an observed claim
+amount for that row. In a sparse sector, a severity model can therefore
+interpret allocated portfolio excess as evidence about that sector.
+Inspect claim volume, combine sparse levels using an actuarially
+meaningful hierarchy and validate coefficient stability over time. A
+minimum such as 20 claims can be a useful starting point, but is
+illustrative and must be selected for the portfolio at hand.
+
+When retained severity and allocated excess should remain conceptually
+separate, use earned exposure as the redistribution weight:
+
+``` r
+
+loading_result <- redistribute_excess_loss(
+  portfolio,
+  claim_amount = "claim_amount",
+  threshold = 100000,
+  claim_count = "claim_count",
+  redistribution_weight = "policy_years",
+  risk_factor = "sector",
+  redistribution_method = "partial",
+  output = "excess_loading"
+)
+
+frequency_model <- glm(
+  claim_count ~ sector + offset(log(policy_years)),
+  family = poisson(link = "log"),
+  data = loading_result
+)
+retained_severity_model <- glm(
+  claim_amount_capped ~ sector,
+  weights = claim_count,
+  family = Gamma(link = "log"),
+  data = loading_result[loading_result$claim_count > 0, ]
+)
+
+loading_result$predicted_frequency <-
+  predict(frequency_model, type = "response") / loading_result$policy_years
+loading_result$predicted_retained_severity <- predict(
+  retained_severity_model,
+  newdata = loading_result,
+  type = "response"
+)
+loading_result$predicted_retained_risk_premium <-
+  loading_result$predicted_frequency *
+  loading_result$predicted_retained_severity
+loading_result$predicted_total_risk_premium <-
+  loading_result$predicted_retained_risk_premium +
+  loading_result$excess_loading
+```
+
+Here `excess_loading` is an amount per policy year. Claim volume can
+still determine partial credibility while policy years determine both
+the allocation shares and the unit of the loading. This approach avoids
+treating allocated portfolio excess as an observed individual claim
+severity.
 
 ## 3. Translate continuous factors into tariff segments
 
@@ -240,7 +306,7 @@ rt |>
   autoplot(risk_factors = "zip", metric = "frequency")
 ```
 
-![](pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-11-1.png)
+![](pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-12-1.png)
 
 ## 5. Refine tariff effects when needed
 
@@ -317,8 +383,10 @@ One possible workflow is:
 2.  Assess large-loss thresholds with
     [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
     where capped severity or excess-loss loadings are relevant.
-3.  Redistribute large losses before severity modelling with
-    [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md).
+3.  Use
+    [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
+    either to create one redistributed severity response or to calculate
+    a separate excess loading per exposure unit.
 4.  Analyse continuous risk factors with
     [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md).
 5.  Create candidate tariff segments with

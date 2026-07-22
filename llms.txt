@@ -229,7 +229,7 @@ large losses before fitting severity models.
 - [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
   : Convert an object to a gt table
 - [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
-  : Redistribute large losses before fitting a severity model
+  : Redistribute large losses for severity or risk-premium modelling
 - [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
   **\[experimental\]** : Fit severity distributions to truncated claim
   data

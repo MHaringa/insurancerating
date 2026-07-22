@@ -5,7 +5,8 @@ segments after
 [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md).
 The summary shows whether a segment receives more large-loss cost than
 it contributes, or transfers part of its observed excess burden to other
-segments.
+segments. The same audit is available for redistributed claims and
+separate excess loadings.
 
 ## Usage
 
@@ -60,6 +61,11 @@ original name and type when `by` is used. The remaining columns are:
 
   Observed claim cost before redistribution.
 
+- `retained_loss`:
+
+  Claim cost retained at or below the threshold, including full claims
+  excluded through `redistribute_excess`.
+
 - `observed_excess_loss`:
 
   Observed claim cost above the threshold, including excess from rows
@@ -98,6 +104,15 @@ original name and type when `by` is used. The remaining columns are:
 - `final_redistribution_loading`:
 
   Blended loading multiplied by the redistribution scaling factor.
+
+- `allocated_excess_loss`:
+
+  Absolute excess-loss amount allocated to the audit group.
+
+- `average_excess_loading`:
+
+  Allocated excess loss per unit of total receiving redistribution
+  weight.
 
 - `redistributed_excess_received`:
 
@@ -150,7 +165,9 @@ total receiving `redistribution_weight` gives
 
 If `by` differs from the risk factor used in the redistribution, loading
 and credibility columns are receiving-weighted averages within each
-audit group.
+audit group. For separate-loading output, `adjusted_loss` is shown only
+as a reconciliation of retained plus allocated loss; it does not mean
+that the allocated amount was added to the row-level severity response.
 
 ## See also
 

@@ -1,26 +1,31 @@
-# Redistribute large losses before fitting a severity model
+# Redistribute large losses for severity or risk-premium modelling
 
-Reduce the influence of individual large losses without removing their
-cost from the portfolio. `redistribute_excess_loss()` caps observed
-claim amounts at a selected threshold and redistributes the excess
-amount across the claims used for severity modelling.
+Large claims can have a disproportionate influence on observed severity
+and on estimated risk-factor effects. `redistribute_excess_loss()`
+decomposes each selected claim amount into a retained component up to a
+specified threshold and an excess component above that threshold. The
+excess component is subsequently allocated using portfolio-wide,
+risk-factor-level or partially pooled experience. The allocation
+preserves the total excess loss, subject to numerical tolerance.
 
-In practical terms, the function shifts part of the observed loss cost
-from claims above the threshold to other claims before the severity
-model is fitted. Large claims therefore have less direct influence on
-the fitted severity relativities, while the total portfolio loss remains
-unchanged.
+The allocated excess can be incorporated in the pricing analysis in two
+ways:
 
-The redistributed large-loss cost is already included in the adjusted
-claim amounts. It should not be added to the risk premium again as a
-separate large-loss loading. This provides a practical alternative to
-modelling and adding a separate excess-loss premium component after the
-severity model has been fitted.
+- `output = "redistributed_claim"` adds the allocated excess loss to the
+  retained claim amount. The resulting variable contains both components
+  and can be used as the response in a single severity model.
 
-The function combines decomposition and redistribution in one step. It
-is intended for a workflow in which a severity GLM is fitted to adjusted
-claim amounts. The resulting adjusted average claim amount can be used
-directly as the response in a claim-count-weighted severity GLM.
+- `output = "excess_loading"` keeps retained claim severity and excess
+  loss as separate quantities. The function returns an excess loading
+  per unit of `redistribution_weight`. This loading can be added to the
+  risk premium based on predicted frequency and retained severity.
+
+Both output forms use the same threshold, credibility and allocation
+calculations. They therefore differ only in how the allocated excess
+loss is represented in subsequent modelling; the total amount allocated
+is the same.
+
+The default is `output = "redistributed_claim"`.
 
 ## Usage
 
@@ -39,7 +44,8 @@ redistribute_excess_loss(
   credibility_basis = c("claims", "excess_records"),
   credibility_threshold = 50,
   credibility_scale = 1,
-  calculation_details = TRUE
+  calculation_details = TRUE,
+  output = c("redistributed_claim", "excess_loading")
 )
 ```
 
@@ -47,134 +53,158 @@ redistribute_excess_loss(
 
 - data:
 
-  A data.frame with portfolio-level or claim-level observations.
+  A data.frame containing portfolio-level or claim-level observations.
 
 - claim_amount:
 
-  Character string. Numeric column containing observed claim amounts or
-  aggregate claim loss per row.
+  Character string naming a finite, non-negative numeric column with
+  observed claim amounts or aggregate claim loss per row.
 
 - threshold:
 
-  Positive numeric scalar. Claim amounts above this value are capped
-  before the excess amount is redistributed.
+  Positive numeric scalar defining the boundary between retained and
+  excess loss. For selected rows, the amount above this value is
+  allocated.
 
 - claim_count:
 
-  Optional character string. Numeric claim-count column. Claim count
-  determines which rows contain claims and is the denominator for
-  adjusted average claim amount. It is also the default redistribution
-  weight. If `NULL`, every row with `claim_amount > 0` is treated as one
-  claim.
+  Optional character string naming a non-negative, whole-number
+  claim-count column. Claim count identifies claim-bearing rows and is
+  the denominator of the adjusted average claim amount. It is also the
+  default redistribution weight. If `NULL`, each row with
+  `claim_amount > 0` is treated as one claim.
 
 - redistribution_weight:
 
-  Optional character string. Numeric non-negative column determining the
-  relative redistribution shares. If `NULL`, claim count is used. Values
-  must be positive for rows that receive redistribution.
+  Optional character string naming a finite, non-negative numeric
+  column. The column determines the relative allocation shares and the
+  unit of the resulting loading. If `NULL`, claim count is used. Claim
+  count or expected claim count expresses the allocation per claim;
+  earned exposure expresses it per exposure unit. Rows with zero weight
+  receive no allocation. At least one eligible row must have positive
+  weight.
 
 - receives_redistribution:
 
   Optional character string. Logical column indicating which rows may
-  receive redistributed excess loss. A row only receives redistribution
-  when this column is `TRUE` and its claim count is positive. Rows with
-  `FALSE` receive zero, while their observed excess loss remains part of
-  the total amount being redistributed. If `NULL`, all rows with a
-  positive claim count receive redistribution.
+  receive allocated excess loss. Rows with `FALSE` receive zero, while
+  their observed excess remains in the total allocation unless excluded
+  by `redistribute_excess`. If `NULL`, all otherwise eligible rows are
+  included. Eligibility additionally requires positive claim count for
+  redistributed claims and positive redistribution weight for excess
+  loadings.
 
 - redistribute_excess:
 
-  Optional character string. Logical column indicating which large
-  losses have their excess part redistributed. Rows with `FALSE` are not
-  capped: their full observed claim amount remains in the adjusted claim
-  amount and their excess does not enter the redistribution pool. If
-  `NULL`, all rows above `threshold` contribute their excess.
+  Optional character string. Logical column indicating which rows
+  contribute their excess component to the allocation. Rows with `FALSE`
+  retain their full observed amount and contribute no excess to the
+  allocation pool. If `NULL`, every row above `threshold` contributes.
 
 - risk_factor:
 
-  Optional character string. Risk-factor column used for
+  Optional character string naming the risk-factor column for
   `redistribution_method = "risk_factor"` or
   `redistribution_method = "partial"`.
 
 - redistribution_method:
 
-  Character string. Method used to redistribute excess loss:
-  `"portfolio"`, `"risk_factor"` or `"partial"`.
+  Character string specifying the experience level used in the
+  allocation: `"portfolio"`, `"risk_factor"` or `"partial"`.
 
 - credibility:
 
-  Optional numeric scalar between zero and one. For partial
-  redistribution, use this credibility for every risk-factor level. If
-  `NULL`, credibility is derived from `credibility_basis`.
+  Optional numeric scalar in `[0, 1]`. For partial redistribution, the
+  supplied value is applied to every risk-factor level. If `NULL`,
+  credibility is calculated from `credibility_basis`.
 
 - credibility_basis:
 
-  Character string. Experience measure used for automatic credibility:
-  `"claims"` or `"excess_records"`.
+  Character string specifying the experience measure used in automatic
+  credibility: `"claims"` or `"excess_records"`.
 
 - credibility_threshold:
 
-  Positive numeric scalar. Amount of experience required to reach 50
-  percent credibility.
+  Positive numeric scalar representing the amount of credibility-basis
+  experience at which automatic credibility equals 0.5, before applying
+  `credibility_scale`.
 
 - credibility_scale:
 
-  Non-negative numeric scalar. Multiplier applied to credibility before
-  it is bounded between zero and one.
+  Non-negative numeric scalar multiplying automatic credibility before
+  truncation to `[0, 1]`.
 
 - calculation_details:
 
   Logical. If `TRUE`, append the risk-factor loading, credibility,
-  portfolio loading, blended loading, preservation factor and final
-  redistribution loading used in the row-level calculation. Set to
-  `FALSE` for a compact modelling data set. The same information remains
-  available through
+  portfolio loading, blended loading, scaling factor and final loading
+  used in the row-level calculation. If `FALSE`, these columns are
+  omitted from `data` but remain available through
   [`summary.excess_redistribution()`](https://mharinga.github.io/insurancerating/reference/summary.excess_redistribution.md).
+
+- output:
+
+  Character string specifying the representation of allocated excess.
+  `"redistributed_claim"` adds it to retained claim amounts;
+  `"excess_loading"` returns it separately per unit of
+  `redistribution_weight`.
 
 ## Value
 
-The original data.frame with class `"excess_redistribution"` and six
-dynamically named claim-amount columns. The object prints as an ordinary
-data.frame;
+The input data.frame with additional columns and class
+`"excess_redistribution"`. The object uses standard data.frame printing.
 [`summary.excess_redistribution()`](https://mharinga.github.io/insurancerating/reference/summary.excess_redistribution.md)
-provides an audit of contributed, received and shifted loss. The added
-columns are:
+aggregates contributed, allocated and shifted loss. Both output forms
+add:
 
 - `<claim_amount>_capped`:
 
   Observed claim amount capped at `threshold` when its excess is
-  redistributed. An unselected row retains its full observed amount.
+  allocated. Rows excluded through `redistribute_excess` retain their
+  full observed amount.
 
 - `<claim_amount>_excess`:
 
-  Observed claim amount above `threshold`.
+  Observed amount above `threshold`, whether or not that amount is
+  selected for allocation.
 
 - `<claim_amount>_is_excess`:
 
-  Whether the row's claim amount exceeds `threshold`.
+  Logical indicator that the observed claim amount exceeds `threshold`.
+
+With `output = "redistributed_claim"`, the result additionally contains:
 
 - `<claim_amount>_redistributed_excess`:
 
-  Excess loss redistributed to the row. Rows without claims receive
-  zero.
+  Row-level allocated excess loss. Rows without claims receive zero.
 
 - `<claim_amount>_adjusted`:
 
-  Capped claim amount plus redistributed excess loss.
+  Retained claim amount plus row-level allocated excess loss.
 
 - `<claim_amount>_adjusted_average`:
 
-  Adjusted claim amount divided by the row's claim count. This is the
-  response that can be used in a claim-count-weighted severity GLM. Rows
-  without claims contain zero.
+  Redistributed claim amount divided by claim count. Rows without claims
+  contain zero.
+
+With `output = "excess_loading"`, the result additionally contains:
+
+- `allocated_excess_loss`:
+
+  Absolute excess-loss amount allocated to the row.
+
+- `excess_loading`:
+
+  Allocated excess loss per unit of `redistribution_weight`.
 
 With `calculation_details = TRUE`, the result also contains
 `<risk_factor>_excess_loading`, `<risk_factor>_credibility`,
 `portfolio_excess_loading`, `blended_excess_loading`,
-`redistribution_scaling_factor` and `final_redistribution_loading`. The
-scaling factor preserves the total loss being redistributed;
-`final_redistribution_loading` equals `blended_excess_loading` times
-this factor for receiving rows.
+`redistribution_scaling_factor` and `final_redistribution_loading`. For
+receiving rows, `final_redistribution_loading` equals
+`blended_excess_loading` multiplied by `redistribution_scaling_factor`.
+The selected output and effective redistribution-weight label are stored
+in the `"output"` and `"redistribution_weight_label"` attributes.
 
 ## Details
 
@@ -183,37 +213,100 @@ amount is decomposed as:
 
 \$\$ claim\\amount = capped\\claim\\amount + excess\\claim\\amount \$\$
 
-An unselected row retains its full observed amount as its capped
-component; its observed excess is reported for diagnostics but is not
-redistributed.
+If a row is not selected through `redistribute_excess`, its full
+observed amount is retained. Any amount above the threshold remains
+available as a diagnostic quantity but is excluded from the amount to be
+allocated.
 
-The total excess amount is then redistributed over eligible rows with a
-positive claim count. Rows without claims remain zero and do not receive
-redistributed loss. By default, redistribution is proportional to the
-number of claims in each row. A separate `redistribution_weight` can be
-used when large-loss exposure also depends on another measure, such as
-insured amount.
+The excess amount is allocated over eligible rows in proportion to
+`redistribution_weight`. If no weight column is supplied, claim count is
+used. For redistributed-claim output, only rows with a positive claim
+count are eligible. For excess-loading output, eligibility is determined
+by a positive redistribution weight, so policy rows without observed
+claims may receive a loading when exposure is used.
 
-The adjusted loss is:
+For `output = "redistributed_claim"`, the redistributed claim amount is:
 
 \$\$ adjusted\\claim\\amount = capped\\claim\\amount +
 redistributed\\excess \$\$
 
-The function always rescales the redistribution so that the total
-adjusted claim amount equals the total observed claim amount, subject to
+This redistributed claim amount is returned as
+`<claim_amount>_adjusted`. The corresponding average per claim is
+suitable as the response in a claim-count-weighted severity GLM. Because
+this response includes allocated excess loss, the same excess component
+should not subsequently be added to the estimated risk premium.
+
+For `output = "excess_loading"`, capped claim severity remains separate
+and:
+
+\$\$ excess\\loading_i =
+\frac{allocated\\excess\\loss_i}{redistribution\\weight_i} \$\$
+
+The loading can be added to the risk premium derived from predicted
+frequency and retained severity. When earned exposure is used as
+`redistribution_weight`, the loading is expressed per unit of earned
+exposure. The total allocated excess loss is preserved, subject to
 numerical tolerance.
+
+### Interpretation of the output forms
+
+Redistributed-claim output combines retained and allocated loss in one
+model response. It requires one severity model and assigns the complete
+historical loss burden to that response. Its interpretation is most
+direct when the modelled risk-factor levels contain sufficient claim
+experience and the estimated effects are stable across observation
+periods.
+
+The allocated component is not an observed loss for the receiving row.
+For example, an observed claim of 10,000 may receive an allocation of
+20,000, resulting in a redistributed amount of 30,000. If the row
+belongs to a risk-factor level with few claims, the fitted model may
+attribute a material part of this allocated portfolio experience to that
+individual level. This can increase the sampling variability of its
+estimated effect.
+
+Excess-loading output estimates retained severity from observed loss up
+to the threshold and represents allocated excess as a separate
+risk-premium component:
+
+\$\$ retained\\ risk\\ premium = predicted\\ frequency \cdot predicted\\
+retained\\ severity \$\$
+
+\$\$ total\\ risk\\ premium = retained\\ risk\\ premium + excess\\
+loading \$\$
+
+The two output forms therefore imply different model interpretations
+rather than different total loss amounts. The selection should reflect
+claim volume, the stability of risk-factor effects and the intended
+construction of the technical risk premium.
+
+### Sparse risk-factor levels
+
+Before fitting a redistributed-claim severity model, claim volume should
+be assessed by risk-factor level. Levels with limited information may be
+combined using an economically or actuarially meaningful hierarchy.
+Coefficient stability across periods and agreement between observed and
+predicted severity provide additional diagnostics. Excess-loading output
+is an alternative when separate level estimates remain weakly supported.
+
+For example, a model-preparation rule may map sectors with fewer than 20
+claims to `"Other"`. The value 20 is illustrative and should not be
+treated as a general minimum. An appropriate threshold depends on
+portfolio size, heterogeneity and validation results. Grouping is
+therefore outside the scope of this function.
 
 ### Reproducing the redistribution
 
-The calculation columns make the redistribution directly auditable. For
-partial redistribution, the loading before preservation is:
+The optional calculation columns allow the allocation to be reproduced.
+For partial redistribution, the loading before total-preservation
+scaling is:
 
 \$\$ blended\\loading = Z_g \cdot risk\\factor\\loading_g + (1 - Z_g)
 \cdot portfolio\\loading \$\$
 
-where `Z_g` is the credibility of risk-factor level `g`. Because
-blending can change the total amount implied by these loadings, a single
-preservation factor is applied:
+where `Z_g` denotes the credibility assigned to risk-factor level `g`.
+Blending may change the total amount implied by the unscaled loadings. A
+common scaling factor is therefore applied:
 
 \$\$ preservation\\factor = \frac{total\\ excess\\ to\\ redistribute}
 {\sum_i blended\\loading_i \cdot redistribution\\weight_i} \$\$
@@ -223,12 +316,13 @@ The final amount received by row `i` is:
 \$\$ redistributed\\excess_i = blended\\loading_i \cdot
 preservation\\factor \cdot redistribution\\weight_i \$\$
 
-For example, suppose a sector loading is 30 per unit of weight, the
-portfolio loading is 20 and sector credibility is 40 percent. The
-blended loading is `0.40 * 30 + 0.60 * 20 = 24`. If the preservation
-factor is 1.10, the final loading is 26.4. A receiving row with
-redistribution weight 2 is assigned `26.4 * 2 = 52.8`. Its adjusted
-claim amount equals its capped claim amount plus 52.8.
+For example, let the sector loading be 30 per unit of weight, the
+portfolio loading 20 and sector credibility 0.40. The blended loading
+equals `0.40 * 30 + 0.60 * 20 = 24`. With a scaling factor of 1.10, the
+final loading equals 26.4. A receiving row with redistribution weight 2
+is then allocated `26.4 * 2 = 52.8`. In redistributed-claim output, 52.8
+is added to the retained claim amount; in excess-loading output, 26.4 is
+retained as the loading per unit of weight.
 
 With portfolio redistribution, credibility is zero and the blend equals
 the portfolio loading. With risk-factor redistribution, credibility is
@@ -236,42 +330,50 @@ one and the blend equals the risk-factor loading.
 
 ### Eligibility and redistribution weights
 
-`receives_redistribution` controls which claim-bearing rows receive part
-of the excess loss. Rows for which this logical column is `FALSE`
-receive zero, but their observed excess loss still contributes to the
-total amount being redistributed. If the argument is `NULL`, all rows
-with a positive claim count receive redistribution.
+`receives_redistribution` identifies the rows to which excess loss may
+be allocated. Rows with value `FALSE` receive zero. Their observed
+excess loss is nevertheless included in the total amount to be allocated
+unless excluded through `redistribute_excess`. For redistributed-claim
+output, a receiving row must also have a positive claim count. For
+excess-loading output, a receiving row must have a positive
+redistribution weight.
 
 `redistribute_excess` controls which large losses contribute their
 excess part to the redistribution. If it is `NULL`, every row with
 `claim_amount > threshold` contributes. For a row marked `FALSE`, the
-claim is not capped: its full observed amount remains in the adjusted
-claim amount and none of its excess enters the redistribution pool. This
-keeps excluded large losses in the severity experience without spreading
-them over other claims.
+claim is not capped: its full observed amount is retained and its excess
+does not enter the allocation pool. This permits specific loss types,
+such as events treated outside the regular large-loss procedure, to
+remain unchanged.
 
-`redistribution_weight` controls the relative shares among receiving
-rows. If it is `NULL`, claim count is used. For example, a user can
-create `claim_count * insured_amount` as a weight when claims on
-policies with a higher insured amount should receive a larger part of
-the large-loss burden. The function does not automatically link the
-claim threshold to an insured- amount threshold; these are separate
-actuarial choices.
+`redistribution_weight` controls both the relative shares among
+receiving rows and the unit of the resulting loading. Claim count
+produces an amount per claim, expected claim count an amount per
+expected claim, earned exposure an amount per exposure unit, and insured
+amount an amount per unit insured. If it is `NULL`, claim count is used.
+For an excess loading that is added to an annual risk premium, earned
+exposure is usually the corresponding unit.
+
+Rows with zero redistribution weight remain in the output but receive
+zero. For example, `claim_count * insured_amount` assigns a larger share
+to claim observations with a higher insured amount. The excess threshold
+and an insured-amount criterion for receiving allocations are separate
+model specifications.
 
 ### Redistribution methods
 
-The `redistribution_method` argument controls how excess experience is
-shared:
+The `redistribution_method` argument determines the level at which
+excess experience is estimated:
 
-- `"portfolio"` gives every claim the same excess amount per claim. No
-  risk-factor-level experience is used.
+- `"portfolio"` derives one loading from the complete allocation
+  portfolio. Risk-factor-level excess experience is not used.
 
-- `"risk_factor"` redistributes excess loss within each risk-factor
-  level. Only the experience of that level is used.
+- `"risk_factor"` derives a separate loading for each risk-factor level.
+  Each level is based only on its own excess experience and allocation
+  weight.
 
 - `"partial"` blends the risk-factor loading with the portfolio loading
-  using credibility. This balances group responsiveness with portfolio
-  stability.
+  using credibility.
 
 For partial redistribution, credibility is either supplied directly
 through `credibility` or calculated as:
@@ -284,13 +386,21 @@ is the number of records containing a positive excess amount. The
 resulting value is multiplied by `credibility_scale` and bounded between
 zero and one.
 
+Credibility and redistribution weight have distinct roles. Credibility
+determines the contribution of risk-factor-level experience to a partial
+loading. Redistribution weight determines the row-level allocation
+shares and the unit of the final loading. Thus, with
+`credibility_basis = "claims"` and earned exposure as
+`redistribution_weight`, claim volume determines credibility while the
+resulting loading is expressed per unit of exposure.
+
 ### Aggregated portfolio rows
 
 When a row contains multiple claims, `claim_amount` is treated as the
 total loss for that row and `threshold` is applied to that row total.
-The function cannot determine which individual claim crossed the
-threshold from aggregated data. Use claim-level data when the threshold
-must be applied to each individual claim.
+The function cannot identify which individual claims exceeded the
+threshold from an aggregated row. Claim-level input is required when the
+threshold is intended to apply separately to each claim.
 
 ## See also
 
@@ -305,44 +415,57 @@ Martin Haringa
 ``` r
 portfolio <- data.frame(
   policy_id = 1:10,
-  sector = rep(c("Industry", "Retail"), each = 5),
+  sector = c(rep("Industry", 5), rep("Retail", 4), "Office"),
   claim_count = c(0, 1, 1, 1, 1, 0, 1, 1, 1, 1),
   claim_amount = c(
     0, 25000, 120000, 50000, 175000,
     0, 40000, 90000, 150000, 300000
-  )
+  ),
+  policy_years = rep(1, 10)
 )
 
+# Output form 1: include allocated excess in the severity response.
 adjusted <- redistribute_excess_loss(
   portfolio,
   claim_amount = "claim_amount",
   threshold = 100000,
   claim_count = "claim_count",
   risk_factor = "sector",
-  redistribution_method = "partial"
+  redistribution_method = "partial",
+  output = "redistributed_claim"
 )
 summary(adjusted)
 #>     sector n_records claim_count redistribution_weight n_excess_records
 #> 1 Industry         5           4                     4                2
-#> 2   Retail         5           4                     4                2
-#>   n_redistributed_excess_records observed_loss observed_excess_loss
-#> 1                              2        370000                95000
-#> 2                              2        580000               250000
-#>   redistributed_excess_contributed sector_excess_loading sector_credibility
-#> 1                            95000                 23750         0.07407407
-#> 2                           250000                 62500         0.07407407
-#>   portfolio_excess_loading blended_excess_loading redistribution_scaling_factor
-#> 1                    43125               41689.81                             1
-#> 2                    43125               44560.19                             1
-#>   final_redistribution_loading redistributed_excess_received net_loss_shift
-#> 1                     41689.81                      166759.3       71759.26
-#> 2                     44560.19                      178240.7      -71759.26
-#>   adjusted_loss observed_average_claim adjusted_average_claim
-#> 1      441759.3                  92500               110439.8
-#> 2      508240.7                 145000               127060.2
+#> 2   Office         1           1                     1                1
+#> 3   Retail         4           3                     3                1
+#>   n_redistributed_excess_records observed_loss retained_loss
+#> 1                              2        370000        275000
+#> 2                              1        300000        100000
+#> 3                              1        280000        230000
+#>   observed_excess_loss redistributed_excess_contributed sector_excess_loading
+#> 1                95000                            95000              23750.00
+#> 2               200000                           200000             200000.00
+#> 3                50000                            50000              16666.67
+#>   sector_credibility portfolio_excess_loading blended_excess_loading
+#> 1         0.07407407                    43125               41689.81
+#> 2         0.01960784                    43125               46200.98
+#> 3         0.05660377                    43125               41627.36
+#>   redistribution_scaling_factor final_redistribution_loading
+#> 1                      1.021186                     42573.07
+#> 2                      1.021186                     47179.82
+#> 3                      1.021186                     42509.30
+#>   allocated_excess_loss average_excess_loading redistributed_excess_received
+#> 1             170292.30               42573.07                     170292.30
+#> 2              47179.82               47179.82                      47179.82
+#> 3             127527.89               42509.30                     127527.89
+#>   net_loss_shift adjusted_loss observed_average_claim adjusted_average_claim
+#> 1       75292.30      445292.3               92500.00               111323.1
+#> 2     -152820.18      147179.8              300000.00               147179.8
+#> 3       77527.89      357527.9               93333.33               119176.0
 
-# Inspect the complete row-level calculation. The last amount equals the
-# final loading multiplied by the row's redistribution weight.
+# Inspect the row-level calculation. The allocated amount in the final column
+# equals final_redistribution_loading times redistribution weight.
 adjusted[c(
   "sector_excess_loading", "sector_credibility",
   "portfolio_excess_loading", "blended_excess_loading",
@@ -350,41 +473,40 @@ adjusted[c(
   "claim_amount_redistributed_excess"
 )]
 #>    sector_excess_loading sector_credibility portfolio_excess_loading
-#> 1                  23750         0.07407407                    43125
-#> 2                  23750         0.07407407                    43125
-#> 3                  23750         0.07407407                    43125
-#> 4                  23750         0.07407407                    43125
-#> 5                  23750         0.07407407                    43125
-#> 6                  62500         0.07407407                    43125
-#> 7                  62500         0.07407407                    43125
-#> 8                  62500         0.07407407                    43125
-#> 9                  62500         0.07407407                    43125
-#> 10                 62500         0.07407407                    43125
+#> 1               23750.00         0.07407407                    43125
+#> 2               23750.00         0.07407407                    43125
+#> 3               23750.00         0.07407407                    43125
+#> 4               23750.00         0.07407407                    43125
+#> 5               23750.00         0.07407407                    43125
+#> 6               16666.67         0.05660377                    43125
+#> 7               16666.67         0.05660377                    43125
+#> 8               16666.67         0.05660377                    43125
+#> 9               16666.67         0.05660377                    43125
+#> 10             200000.00         0.01960784                    43125
 #>    blended_excess_loading redistribution_scaling_factor
-#> 1                41689.81                             1
-#> 2                41689.81                             1
-#> 3                41689.81                             1
-#> 4                41689.81                             1
-#> 5                41689.81                             1
-#> 6                44560.19                             1
-#> 7                44560.19                             1
-#> 8                44560.19                             1
-#> 9                44560.19                             1
-#> 10               44560.19                             1
+#> 1                41689.81                      1.021186
+#> 2                41689.81                      1.021186
+#> 3                41689.81                      1.021186
+#> 4                41689.81                      1.021186
+#> 5                41689.81                      1.021186
+#> 6                41627.36                      1.021186
+#> 7                41627.36                      1.021186
+#> 8                41627.36                      1.021186
+#> 9                41627.36                      1.021186
+#> 10               46200.98                      1.021186
 #>    final_redistribution_loading claim_amount_redistributed_excess
 #> 1                          0.00                              0.00
-#> 2                      41689.81                          41689.81
-#> 3                      41689.81                          41689.81
-#> 4                      41689.81                          41689.81
-#> 5                      41689.81                          41689.81
+#> 2                      42573.07                          42573.07
+#> 3                      42573.07                          42573.07
+#> 4                      42573.07                          42573.07
+#> 5                      42573.07                          42573.07
 #> 6                          0.00                              0.00
-#> 7                      44560.19                          44560.19
-#> 8                      44560.19                          44560.19
-#> 9                      44560.19                          44560.19
-#> 10                     44560.19                          44560.19
+#> 7                      42509.30                          42509.30
+#> 8                      42509.30                          42509.30
+#> 9                      42509.30                          42509.30
+#> 10                     47179.82                          47179.82
 
-# Keep the modelling data compact when row-level calculation details are not
-# needed. summary() still provides the complete allocation audit.
+# Omit row-level calculation columns while retaining them in summary().
 compact_adjusted <- redistribute_excess_loss(
   portfolio,
   claim_amount = "claim_amount",
@@ -397,48 +519,111 @@ compact_adjusted <- redistribute_excess_loss(
 summary(compact_adjusted)
 #>     sector n_records claim_count redistribution_weight n_excess_records
 #> 1 Industry         5           4                     4                2
-#> 2   Retail         5           4                     4                2
-#>   n_redistributed_excess_records observed_loss observed_excess_loss
-#> 1                              2        370000                95000
-#> 2                              2        580000               250000
-#>   redistributed_excess_contributed sector_excess_loading sector_credibility
-#> 1                            95000                 23750         0.07407407
-#> 2                           250000                 62500         0.07407407
-#>   portfolio_excess_loading blended_excess_loading redistribution_scaling_factor
-#> 1                    43125               41689.81                             1
-#> 2                    43125               44560.19                             1
-#>   final_redistribution_loading redistributed_excess_received net_loss_shift
-#> 1                     41689.81                      166759.3       71759.26
-#> 2                     44560.19                      178240.7      -71759.26
-#>   adjusted_loss observed_average_claim adjusted_average_claim
-#> 1      441759.3                  92500               110439.8
-#> 2      508240.7                 145000               127060.2
+#> 2   Office         1           1                     1                1
+#> 3   Retail         4           3                     3                1
+#>   n_redistributed_excess_records observed_loss retained_loss
+#> 1                              2        370000        275000
+#> 2                              1        300000        100000
+#> 3                              1        280000        230000
+#>   observed_excess_loss redistributed_excess_contributed sector_excess_loading
+#> 1                95000                            95000              23750.00
+#> 2               200000                           200000             200000.00
+#> 3                50000                            50000              16666.67
+#>   sector_credibility portfolio_excess_loading blended_excess_loading
+#> 1         0.07407407                    43125               41689.81
+#> 2         0.01960784                    43125               46200.98
+#> 3         0.05660377                    43125               41627.36
+#>   redistribution_scaling_factor final_redistribution_loading
+#> 1                      1.021186                     42573.07
+#> 2                      1.021186                     47179.82
+#> 3                      1.021186                     42509.30
+#>   allocated_excess_loss average_excess_loading redistributed_excess_received
+#> 1             170292.30               42573.07                     170292.30
+#> 2              47179.82               47179.82                      47179.82
+#> 3             127527.89               42509.30                     127527.89
+#>   net_loss_shift adjusted_loss observed_average_claim adjusted_average_claim
+#> 1       75292.30      445292.3               92500.00               111323.1
+#> 2     -152820.18      147179.8              300000.00               147179.8
+#> 3       77527.89      357527.9               93333.33               119176.0
 
-# Fit a severity model to the adjusted average claim amount.
+# Combine levels with limited claim experience before model estimation.
+# Three claims is used for this small example; it is not a general minimum.
+adjusted$sector_claim_count <- ave(
+  adjusted$claim_count, adjusted$sector, FUN = sum
+)
+adjusted$sector_model <- ifelse(
+  adjusted$sector_claim_count >= 3,
+  adjusted$sector,
+  "Other"
+)
+
+# Fit a severity model to redistributed average claim amount. For aggregated
+# rows, claim count represents the number of observations underlying each
+# average. With one row per claim, this additional weight is unnecessary.
 severity_data <- adjusted[adjusted$claim_count > 0, ]
 stats::glm(
-  claim_amount_adjusted_average ~ sector,
+  claim_amount_adjusted_average ~ sector_model,
   weights = claim_count,
   family = stats::Gamma(link = "log"),
   data = severity_data
 )
 #> 
-#> Call:  stats::glm(formula = claim_amount_adjusted_average ~ sector, 
+#> Call:  stats::glm(formula = claim_amount_adjusted_average ~ sector_model, 
 #>     family = stats::Gamma(link = "log"), data = severity_data, 
 #>     weights = claim_count)
 #> 
 #> Coefficients:
-#>  (Intercept)  sectorRetail  
-#>      11.6122        0.1402  
+#>        (Intercept)   sector_modelOther  sector_modelRetail  
+#>           11.62019             0.27922             0.06816  
 #> 
-#> Degrees of Freedom: 7 Total (i.e. Null);  6 Residual
-#> Null Deviance:       0.6071 
-#> Residual Deviance: 0.5678    AIC: 194
+#> Degrees of Freedom: 7 Total (i.e. Null);  5 Residual
+#> Null Deviance:       0.6092 
+#> Residual Deviance: 0.5433    AIC: 195.6
 
-# Portfolio redistribution pools the excess loss across all sectors. Every
-# receiving claim gets the same redistributed amount per unit of weight.
-# A sector's own historical large-loss experience does not determine its
-# share; sector differences are subsequently estimated by the severity GLM.
+# Output form 2: estimate retained severity and excess loading separately.
+# Using policy years expresses excess_loading per policy year.
+loading_result <- redistribute_excess_loss(
+  portfolio,
+  claim_amount = "claim_amount",
+  threshold = 100000,
+  claim_count = "claim_count",
+  redistribution_weight = "policy_years",
+  risk_factor = "sector",
+  redistribution_method = "partial",
+  output = "excess_loading"
+)
+
+frequency_model <- stats::glm(
+  claim_count ~ sector + offset(log(policy_years)),
+  family = stats::poisson(link = "log"),
+  data = loading_result
+)
+retained_severity_model <- stats::glm(
+  claim_amount_capped ~ sector,
+  weights = claim_count,
+  family = stats::Gamma(link = "log"),
+  data = loading_result[loading_result$claim_count > 0, ]
+)
+
+loading_result$predicted_claim_frequency <- stats::predict(
+  frequency_model,
+  newdata = loading_result,
+  type = "response"
+) / loading_result$policy_years
+loading_result$predicted_retained_severity <- stats::predict(
+  retained_severity_model,
+  newdata = loading_result,
+  type = "response"
+)
+loading_result$predicted_retained_risk_premium <-
+  loading_result$predicted_claim_frequency *
+  loading_result$predicted_retained_severity
+loading_result$predicted_total_risk_premium <-
+  loading_result$predicted_retained_risk_premium +
+  loading_result$excess_loading
+
+# Portfolio redistribution estimates one loading across all sectors. Sector-
+# specific excess experience does not enter the allocation loading.
 portfolio_adjusted <- redistribute_excess_loss(
   portfolio,
   claim_amount = "claim_amount",
@@ -449,30 +634,39 @@ portfolio_adjusted <- redistribute_excess_loss(
 summary(portfolio_adjusted, by = "sector")
 #>     sector n_records claim_count redistribution_weight n_excess_records
 #> 1 Industry         5           4                     4                2
-#> 2   Retail         5           4                     4                2
-#>   n_redistributed_excess_records observed_loss observed_excess_loss
-#> 1                              2        370000                95000
-#> 2                              2        580000               250000
-#>   redistributed_excess_contributed risk_factor_excess_loading
-#> 1                            95000                      43125
-#> 2                           250000                      43125
-#>   risk_factor_credibility portfolio_excess_loading blended_excess_loading
-#> 1                       0                    43125                  43125
-#> 2                       0                    43125                  43125
-#>   redistribution_scaling_factor final_redistribution_loading
-#> 1                             1                        43125
-#> 2                             1                        43125
+#> 2   Office         1           1                     1                1
+#> 3   Retail         4           3                     3                1
+#>   n_redistributed_excess_records observed_loss retained_loss
+#> 1                              2        370000        275000
+#> 2                              1        300000        100000
+#> 3                              1        280000        230000
+#>   observed_excess_loss redistributed_excess_contributed
+#> 1                95000                            95000
+#> 2               200000                           200000
+#> 3                50000                            50000
+#>   risk_factor_excess_loading risk_factor_credibility portfolio_excess_loading
+#> 1                      43125                       0                    43125
+#> 2                      43125                       0                    43125
+#> 3                      43125                       0                    43125
+#>   blended_excess_loading redistribution_scaling_factor
+#> 1                  43125                             1
+#> 2                  43125                             1
+#> 3                  43125                             1
+#>   final_redistribution_loading allocated_excess_loss average_excess_loading
+#> 1                        43125                172500                  43125
+#> 2                        43125                 43125                  43125
+#> 3                        43125                129375                  43125
 #>   redistributed_excess_received net_loss_shift adjusted_loss
 #> 1                        172500          77500        447500
-#> 2                        172500         -77500        502500
+#> 2                         43125        -156875        143125
+#> 3                        129375          79375        359375
 #>   observed_average_claim adjusted_average_claim
-#> 1                  92500                 111875
-#> 2                 145000                 125625
+#> 1               92500.00               111875.0
+#> 2              300000.00               143125.0
+#> 3               93333.33               119791.7
 
-# Risk-factor redistribution keeps each sector's excess burden within that
-# sector. Claims in Industry receive only redistributed excess originating
-# from Industry, and the same applies to Retail. This preserves sector-level
-# large-loss experience, but can be less stable for sectors with few claims.
+# Risk-factor redistribution estimates a separate loading for each sector.
+# The estimate for a sector uses only that sector's excess loss and weight.
 sector_adjusted <- redistribute_excess_loss(
   portfolio,
   claim_amount = "claim_amount",
@@ -482,8 +676,8 @@ sector_adjusted <- redistribute_excess_loss(
   redistribution_method = "risk_factor"
 )
 
-# Give claims on policies with a higher insured amount a larger share, while
-# restricting redistribution to policies insured for at least 100,000.
+# Allocate in proportion to claim count times insured amount, restricted to
+# policies with an insured amount of at least 100,000.
 weighted_portfolio <- transform(
   portfolio,
   insured_amount = rep(c(50000, 250000), each = 5)
@@ -502,9 +696,8 @@ weighted_adjusted <- redistribute_excess_loss(
   receives_redistribution = "receives_redistribution"
 )
 
-# Exclude catastrophe events and unsettled claims from the excess amounts
-# that are redistributed. Their full observed claim amounts remain in the
-# adjusted severity data.
+# Exclude catastrophe events and unsettled claims from the allocation pool.
+# Their full observed claim amounts remain retained in the model data.
 portfolio$is_catastrophe <- c(
   FALSE, FALSE, FALSE, FALSE, TRUE,
   FALSE, FALSE, FALSE, FALSE, FALSE
