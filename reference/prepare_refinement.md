@@ -20,8 +20,11 @@ prepare_refinement(model, data = NULL)
 
 - data:
 
-  Optional data.frame with the same rows and model variables as the
-  fitted GLM. If `NULL`, the data are retrieved from the model object.
+  Optional data.frame containing exactly the observations retained in
+  the fitted GLM and all required model variables. If model fitting
+  omitted rows because of missing values, supply the retained model data
+  rather than the original unfiltered data. If `NULL`, the data are
+  retrieved from the model object.
 
 ## Value
 

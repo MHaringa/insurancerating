@@ -241,6 +241,10 @@ CRAN release: 2026-06-02
 
 - The refinement API has been clarified around
   `prepare_refinement() |> add_*() |> refit()`.
+- [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md)
+  now explains row-count differences caused by omitted model
+  observations. Its error identifies missing or non-finite model inputs,
+  including the source variables used inside transformed model terms.
 - A large-loss workflow was added for adjusted severity modelling:
   [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
   and
