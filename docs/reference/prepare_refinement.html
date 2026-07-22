@@ -61,8 +61,11 @@ sequentially and are only applied once <code><a href="refit.html">refit()</a></c
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>Optional data.frame with the same rows and model variables as the
-fitted GLM. If <code>NULL</code>, the data are retrieved from the model object.</p></dd>
+<dd><p>Optional data.frame containing exactly the observations retained
+in the fitted GLM and all required model variables. If model fitting omitted
+rows because of missing values, supply the retained model data rather than
+the original unfiltered data. If <code>NULL</code>, the data are retrieved from the
+model object.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -40,18 +40,172 @@
   as.data.frame(rfdf)
 }
 
+.refinement_model_variables <- function(model, data) {
+  model_terms <- tryCatch(stats::terms(model), error = function(e) NULL)
+  variables <- if (is.null(model_terms)) {
+    character()
+  } else {
+    all.vars(stats::delete.response(model_terms))
+  }
+
+  if (!is.null(model$call$weights)) {
+    variables <- c(variables, all.vars(model$call$weights))
+  }
+  if (!is.null(model$call$offset)) {
+    variables <- c(variables, all.vars(model$call$offset))
+  }
+
+  intersect(unique(variables), names(data))
+}
+
+.refinement_problem_counts <- function(data, variables, rows = NULL) {
+  values <- if (is.null(rows)) {
+    data[variables]
+  } else {
+    data[rows, variables, drop = FALSE]
+  }
+
+  missing <- vapply(values, function(x) sum(is.na(x)), integer(1))
+  non_finite <- vapply(
+    values,
+    function(x) {
+      if (is.numeric(x)) {
+        sum(!is.finite(x) & !is.na(x))
+      } else {
+        0L
+      }
+    },
+    integer(1)
+  )
+
+  list(
+    missing = missing[missing > 0L],
+    non_finite = non_finite[non_finite > 0L]
+  )
+}
+
+.format_refinement_counts <- function(counts) {
+  paste0("- ", names(counts), ": ", unname(counts))
+}
+
+.stop_refinement_row_mismatch <- function(model, data, model_rows) {
+  data_rows <- nrow(data)
+  model_variables <- .refinement_model_variables(model, data)
+  na_action <- model$na.action
+  if (is.null(na_action)) {
+    na_action <- tryCatch(stats::na.action(model), error = function(e) NULL)
+  }
+  omitted_rows <- if (is.null(na_action)) integer() else as.integer(na_action)
+  omitted_rows <- omitted_rows[
+    is.finite(omitted_rows) & omitted_rows >= 1L & omitted_rows <= data_rows
+  ]
+  omitted_rows <- unique(omitted_rows)
+
+  omission_matches <- data_rows > model_rows &&
+    length(omitted_rows) == data_rows - model_rows
+  omitted_problems <- if (omission_matches && length(model_variables) > 0L) {
+    .refinement_problem_counts(data, model_variables, omitted_rows)
+  } else {
+    list(missing = integer(), non_finite = integer())
+  }
+
+  if (omission_matches &&
+      (length(omitted_problems$missing) > 0L ||
+       length(omitted_problems$non_finite) > 0L)) {
+    issue <- if (length(omitted_problems$missing) > 0L &&
+                 length(omitted_problems$non_finite) > 0L) {
+      "missing or non-finite model inputs"
+    } else if (length(omitted_problems$missing) > 0L) {
+      "missing values"
+    } else {
+      "non-finite numeric values"
+    }
+    omitted_text <- if (length(omitted_rows) == 1L) {
+      "1 observation appears"
+    } else {
+      paste(length(omitted_rows), "observations appear")
+    }
+    lines <- c(
+      paste0(
+        "The model was fitted on ", model_rows,
+        " observations, but `data` contains ", data_rows, " rows."
+      ),
+      paste0(
+        omitted_text,
+        " to have been omitted during model fitting ",
+        "because of ", issue, "."
+      ),
+      paste0(
+        "The fitted model frame no longer contains these observations; ",
+        "`lm()`, `glm()` and related model functions remove omitted rows ",
+        "before storing the model frame."
+      )
+    )
+    if (length(omitted_problems$missing) > 0L) {
+      lines <- c(
+        lines,
+        "Variables containing missing values in the omitted rows:",
+        .format_refinement_counts(omitted_problems$missing)
+      )
+    }
+    if (length(omitted_problems$non_finite) > 0L) {
+      lines <- c(
+        lines,
+        "Numeric variables containing non-finite values in the omitted rows:",
+        .format_refinement_counts(omitted_problems$non_finite)
+      )
+    }
+    lines <- c(
+      lines,
+      paste0(
+        "`prepare_refinement()` requires `data` to contain exactly the ",
+        "observations used to fit the model. Remove the omitted observations, ",
+        "refit the model with an explicit missing-value strategy, or supply ",
+        "the model frame used during fitting."
+      )
+    )
+    stop(paste(lines, collapse = "\n"), call. = FALSE)
+  }
+
+  all_problems <- if (length(model_variables) > 0L) {
+    .refinement_problem_counts(data, model_variables)
+  } else {
+    list(missing = integer(), non_finite = integer())
+  }
+  lines <- c(
+    paste0(
+      "The model frame contains ", model_rows,
+      " rows, while `data` contains ", data_rows, " rows."
+    ),
+    paste0(
+      "The fitted model frame contains only observations retained by the ",
+      "model-fitting function."
+    ),
+    paste0(
+      "The supplied data does not appear to be the same data used to fit the ",
+      "model. Missing values, subsetting, filtering, or row removal during ",
+      "model fitting may have caused this difference."
+    )
+  )
+  if (length(all_problems$non_finite) > 0L) {
+    lines <- c(
+      lines,
+      "Numeric model variables containing non-finite values in `data`:",
+      .format_refinement_counts(all_problems$non_finite)
+    )
+  }
+  stop(paste(lines, collapse = "\n"), call. = FALSE)
+}
+
 .validate_refinement_data <- function(model, data) {
   if (!is.data.frame(data)) {
     stop("'data' must be a data.frame.", call. = FALSE)
   }
 
-  expected_rows <- stats::nobs(model)
-  if (!is.null(expected_rows) && nrow(data) != expected_rows) {
-    stop(
-      "'data' must contain the same number of rows as the model frame used by 'model' (",
-      expected_rows, ").",
-      call. = FALSE
-    )
+  model_frame <- tryCatch(stats::model.frame(model), error = function(e) NULL)
+  model_rows <- if (is.null(model_frame)) stats::nobs(model) else nrow(model_frame)
+  if (!is.null(model_rows) && nrow(data) != model_rows) {
+    .stop_refinement_row_mismatch(model, data, model_rows)
   }
 
   needed <- all.vars(stats::formula(model))
@@ -377,8 +531,11 @@ as_refinement.restricted <- function(x, ...) {
 #' sequentially and are only applied once [refit()] is called.
 #'
 #' @param model Object of class `glm`.
-#' @param data Optional data.frame with the same rows and model variables as the
-#'   fitted GLM. If `NULL`, the data are retrieved from the model object.
+#' @param data Optional data.frame containing exactly the observations retained
+#'   in the fitted GLM and all required model variables. If model fitting omitted
+#'   rows because of missing values, supply the retained model data rather than
+#'   the original unfiltered data. If `NULL`, the data are retrieved from the
+#'   model object.
 #'
 #' @return Object of class `rating_refinement`.
 #' @export

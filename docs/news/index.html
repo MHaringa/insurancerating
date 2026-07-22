@@ -170,6 +170,8 @@
 <div class="section level4">
 <h4 id="model-refinement-0-8-0">Model refinement<a class="anchor" aria-label="anchor" href="#model-refinement-0-8-0"></a></h4>
 <ul><li>The refinement API has been clarified around <code>prepare_refinement() |&gt; add_*() |&gt; refit()</code>.</li>
+<li>
+<code><a href="../reference/prepare_refinement.html">prepare_refinement()</a></code> now explains row-count differences caused by omitted model observations. Its error identifies missing or non-finite model inputs, including the source variables used inside transformed model terms.</li>
 <li>A large-loss workflow was added for adjusted severity modelling: <code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code> and <code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code>.</li>
 <li>
 <code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code> compares candidate large-loss thresholds and shows the impact on excess loss, capped loss and pure premium.</li>

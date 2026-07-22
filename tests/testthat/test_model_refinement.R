@@ -56,7 +56,7 @@ testthat::test_that(
                               "rating_refinement")
     testthat::expect_error(
       prepare_refinement(model, data = df[1:3, ]),
-      "same number of rows"
+      "does not appear to be the same data"
     )
     testthat::expect_error(
       prepare_refinement(model, data = df[, c("y", "zip")]),
@@ -66,6 +66,140 @@ testthat::test_that(
       prepare_refinement(model, data = list()),
       "data.frame"
     )
+  }
+)
+
+testthat::test_that(
+  "prepare_refinement explains rows omitted by missing model values", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      construction_year = c(1990, NA, 2000, 2005, 2010, 2015)
+    )
+    model <- glm(
+      y ~ construction_year + offset(log(exposure)),
+      family = poisson(),
+      data = df,
+      na.action = na.omit
+    )
+
+    error <- tryCatch(
+      prepare_refinement(model, data = df),
+      error = identity
+    )
+    message <- conditionMessage(error)
+
+    testthat::expect_s3_class(error, "error")
+    testthat::expect_match(message, "fitted on 5 observations")
+    testthat::expect_match(message, "`data` contains 6 rows", fixed = TRUE)
+    testthat::expect_match(message, "1 observation appears to have been omitted")
+    testthat::expect_match(message, "- construction_year: 1", fixed = TRUE)
+    testthat::expect_match(message, "model frame no longer contains")
+  }
+)
+
+testthat::test_that(
+  "prepare_refinement reports multiple numeric and factor predictors", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      insured_amount = c(100, NA, 300, 400, 500, 600),
+      sector = factor(c("Industry", "Retail", "Industry", "Retail", NA,
+                        "Industry"))
+    )
+    model <- glm(
+      y ~ insured_amount + sector + offset(log(exposure)),
+      family = poisson(),
+      data = df,
+      na.action = na.omit
+    )
+
+    error <- tryCatch(
+      prepare_refinement(model, data = df),
+      error = identity
+    )
+    message <- conditionMessage(error)
+
+    testthat::expect_match(message, "fitted on 4 observations")
+    testthat::expect_match(message, "2 observations appear to have been omitted")
+    testthat::expect_match(message, "- insured_amount: 1", fixed = TRUE)
+    testthat::expect_match(message, "- sector: 1", fixed = TRUE)
+  }
+)
+
+testthat::test_that(
+  "prepare_refinement reports source variables in transformed terms", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2),
+      exposure = rep(1, 5),
+      insured_amount = c(100, 200, NA, 400, 500)
+    )
+    model <- glm(
+      y ~ log(insured_amount) + offset(log(exposure)),
+      family = poisson(),
+      data = df,
+      na.action = na.omit
+    )
+
+    error <- tryCatch(
+      prepare_refinement(model, data = df),
+      error = identity
+    )
+    message <- conditionMessage(error)
+
+    testthat::expect_match(message, "- insured_amount: 1", fixed = TRUE)
+    testthat::expect_false(grepl("- log\\(insured_amount\\):", message))
+  }
+)
+
+testthat::test_that(
+  "prepare_refinement keeps filtering mismatches general", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      sector = factor(c("A", "B", "A", "B", "A", "B"))
+    )
+    model <- glm(
+      y ~ sector + offset(log(exposure)),
+      family = poisson(),
+      data = df,
+      subset = seq_len(nrow(df)) != 2
+    )
+
+    error <- tryCatch(
+      prepare_refinement(model, data = df),
+      error = identity
+    )
+    message <- conditionMessage(error)
+
+    testthat::expect_match(message, "model frame contains 5 rows")
+    testthat::expect_match(message, "subsetting, filtering, or row removal")
+    testthat::expect_false(grepl("appear to have been omitted.*missing", message))
+  }
+)
+
+testthat::test_that(
+  "prepare_refinement reports non-finite numeric model inputs separately", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2),
+      exposure = rep(1, 5),
+      insured_amount = c(100, 200, Inf, 400, 500)
+    )
+    model <- glm(
+      y ~ insured_amount + offset(log(exposure)),
+      family = poisson(),
+      data = df,
+      subset = is.finite(insured_amount)
+    )
+
+    error <- tryCatch(
+      prepare_refinement(model, data = df),
+      error = identity
+    )
+    message <- conditionMessage(error)
+
+    testthat::expect_match(message, "non-finite values")
+    testthat::expect_match(message, "- insured_amount: 1", fixed = TRUE)
   }
 )
 

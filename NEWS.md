@@ -175,6 +175,9 @@
 
 - The refinement API has been clarified around
   `prepare_refinement() |> add_*() |> refit()`.
+- `prepare_refinement()` now explains row-count differences caused by omitted
+  model observations. Its error identifies missing or non-finite model inputs,
+  including the source variables used inside transformed model terms.
 - A large-loss workflow was added for adjusted severity modelling:
   `assess_excess_threshold()` and `redistribute_excess_loss()`.
 - `assess_excess_threshold()` compares candidate large-loss thresholds and shows

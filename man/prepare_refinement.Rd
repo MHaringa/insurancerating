@@ -9,8 +9,11 @@ prepare_refinement(model, data = NULL)
 \arguments{
 \item{model}{Object of class \code{glm}.}
 
-\item{data}{Optional data.frame with the same rows and model variables as the
-fitted GLM. If \code{NULL}, the data are retrieved from the model object.}
+\item{data}{Optional data.frame containing exactly the observations retained
+in the fitted GLM and all required model variables. If model fitting omitted
+rows because of missing values, supply the retained model data rather than
+the original unfiltered data. If \code{NULL}, the data are retrieved from the
+model object.}
 }
 \value{
 Object of class \code{rating_refinement}.
