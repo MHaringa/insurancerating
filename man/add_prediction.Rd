@@ -72,6 +72,12 @@ therefore already on the original scale.
 If \code{confidence = TRUE}, lower and upper confidence interval columns are added
 next to each prediction column. The default interval suffixes are \code{"lower"}
 and \code{"upper"}.
+
+Predictions containing missing values are retained. If one or more \code{NA}
+predictions are produced, the function issues a warning with the affected
+prediction columns and number of missing predictions. This is typically
+caused by missing predictor values in \code{data} or by predictor values outside
+the domain supported by the fitted model.
 }
 \examples{
 mod1 <- glm(nclaims ~ age_policyholder,

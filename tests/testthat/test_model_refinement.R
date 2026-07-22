@@ -233,6 +233,17 @@ testthat::test_that(
                     breaks = c(20, 35, 50)),
       "rating_refinement"
     )
+    ref_with_missing <- ref
+    ref_with_missing$base$data$age_band[2] <- NA
+    testthat::expect_error(
+      add_smoothing(
+        ref_with_missing,
+        model_variable = "age_band",
+        source_variable = "age",
+        breaks = c(20, 35, 50)
+      ),
+      "`model_variable` column `age_band` contains 1 missing value.*remove or impute"
+    )
     testthat::expect_warning(
       add_smoothing(ref, tariff_class = "age_band", rating_variable = "age",
                     breaks = c(20, 35, 50)),

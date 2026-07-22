@@ -648,7 +648,8 @@ restrict_coef <- function(model, restrictions) {
 #'   [prepare_refinement()].
 #' @param model_variable Character string. Existing grouped or binned variable
 #'   in the GLM. This is the model term that will be replaced by a smoothed
-#'   tariff factor.
+#'   tariff factor. The column must not contain missing values; remove or impute
+#'   missing values before adding the smoothing step.
 #' @param source_variable Character string. Original numeric portfolio variable
 #'   underlying `model_variable`.
 #' @param degree Optional single whole number. Polynomial degree, used by
@@ -790,6 +791,20 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
   .assert_column_name(model_variable, "model_variable", model$base$data)
   .assert_column_name(source_variable, "source_variable", model$base$data)
   .assert_optional_column_name(weights, "weights", model$base$data)
+  model_variable_missing <- sum(is.na(model$base$data[[model_variable]]))
+  if (model_variable_missing > 0L) {
+    missing_label <- if (model_variable_missing == 1L) {
+      "missing value"
+    } else {
+      "missing values"
+    }
+    stop(
+      "The `model_variable` column `", model_variable, "` contains ",
+      model_variable_missing, " ", missing_label, ". Smoothing cannot be ",
+      "applied to missing values; remove or impute them first.",
+      call. = FALSE
+    )
+  }
   .assert_smoothing_interval_levels(model$base$model, model_variable)
   .assert_single_numeric(degree, "degree", allow_null = TRUE, positive = TRUE, whole = TRUE)
   .assert_single_numeric(k, "k", allow_null = TRUE, positive = TRUE, whole = TRUE)

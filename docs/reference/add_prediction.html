@@ -145,6 +145,11 @@ therefore already on the original scale.</p>
 <p>If <code>confidence = TRUE</code>, lower and upper confidence interval columns are added
 next to each prediction column. The default interval suffixes are <code>"lower"</code>
 and <code>"upper"</code>.</p>
+<p>Predictions containing missing values are retained. If one or more <code>NA</code>
+predictions are produced, the function issues a warning with the affected
+prediction columns and number of missing predictions. This is typically
+caused by missing predictor values in <code>data</code> or by predictor values outside
+the domain supported by the fitted model.</p>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>

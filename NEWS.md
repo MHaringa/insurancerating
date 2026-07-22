@@ -8,8 +8,9 @@
   `redistribute_excess_loss()` now combines capping and redistribution in one
   step and returns adjusted claim amounts for severity modelling.
 - Large-loss cost is redistributed over claim-bearing rows using portfolio,
-  risk-factor or partial credibility redistribution. The total observed claim cost
-  is preserved, so no separate excess-premium component needs to be applied.
+  risk-factor or partial credibility redistribution. The total observed claim
+  cost is preserved. Users can include the allocation in one severity response
+  or retain it as a separate excess-loading component.
 - `add_portfolio_experience()` is now the primary helper for attaching observed
   portfolio experience to `rating_table()` objects. The former
   `add_observed_experience()` interface remains available as a deprecated
@@ -19,6 +20,10 @@
   configuration and website build workflow have also been updated.
 
 ## Main API updates
+
+- `add_smoothing()` now stops early with the affected column and missing-value
+  count when `model_variable` contains `NA`. `add_prediction()` preserves `NA`
+  predictions and reports their number in a warning.
 
 ### Rating tables
 
@@ -58,6 +63,10 @@
   final redistribution loading. Set `calculation_details = FALSE` to omit these
   row-level audit columns from modelling data; `summary()` retains the complete
   calculation audit.
+- `redistribute_excess_loss()` now supports `output = "excess_loading"` in
+  addition to the backwards-compatible `"redistributed_claim"` default. The new
+  mode keeps capped severity separate and returns allocated excess loss plus an
+  excess loading per unit of `redistribution_weight`.
 
 # insurancerating 0.8.0
 

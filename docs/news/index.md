@@ -13,8 +13,9 @@
   adjusted claim amounts for severity modelling.
 - Large-loss cost is redistributed over claim-bearing rows using
   portfolio, risk-factor or partial credibility redistribution. The
-  total observed claim cost is preserved, so no separate excess-premium
-  component needs to be applied.
+  total observed claim cost is preserved. Users can include the
+  allocation in one severity response or retain it as a separate
+  excess-loading component.
 - [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
   is now the primary helper for attaching observed portfolio experience
   to
@@ -30,6 +31,12 @@
   workflow have also been updated.
 
 ### Main API updates
+
+- [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+  now stops early with the affected column and missing-value count when
+  `model_variable` contains `NA`.
+  [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md)
+  preserves `NA` predictions and reports their number in a warning.
 
 #### Rating tables
 
@@ -86,6 +93,11 @@
   columns from modelling data;
   [`summary()`](https://rdrr.io/r/base/summary.html) retains the
   complete calculation audit.
+- [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
+  now supports `output = "excess_loading"` in addition to the
+  backwards-compatible `"redistributed_claim"` default. The new mode
+  keeps capped severity separate and returns allocated excess loss plus
+  an excess loading per unit of `redistribution_weight`.
 
 ## insurancerating 0.8.0
 

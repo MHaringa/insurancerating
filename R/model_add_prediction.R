@@ -43,6 +43,12 @@
 #' next to each prediction column. The default interval suffixes are `"lower"`
 #' and `"upper"`.
 #'
+#' Predictions containing missing values are retained. If one or more `NA`
+#' predictions are produced, the function issues a warning with the affected
+#' prediction columns and number of missing predictions. This is typically
+#' caused by missing predictor values in `data` or by predictor values outside
+#' the domain supported by the fitted model.
+#'
 #' @return A `data.frame` containing the original data and additional columns
 #'   for model predictions. If `confidence = TRUE`, confidence interval columns
 #'   are added as well.
@@ -167,6 +173,7 @@ add_prediction <- function(data, ..., predictions = NULL, prefix = "pred",
   }
 
   listdf <- vector("list", length(objects))
+  missing_prediction_counts <- integer(length(objects))
 
 
   for (i in seq_along(objects)) {
@@ -175,6 +182,7 @@ add_prediction <- function(data, ..., predictions = NULL, prefix = "pred",
     # predictions
     addcol <- as.numeric(stats::predict(object, data, type = "response"))
     var_nm <- prediction_names[i]
+    missing_prediction_counts[i] <- sum(is.na(addcol))
 
     df <- data.frame(addcol)
     names(df) <- var_nm
@@ -193,6 +201,27 @@ add_prediction <- function(data, ..., predictions = NULL, prefix = "pred",
     }
 
     listdf[[i]] <- df
+  }
+
+  if (any(missing_prediction_counts > 0L)) {
+    affected <- which(missing_prediction_counts > 0L)
+    details <- paste0(
+      prediction_names[affected], " (", missing_prediction_counts[affected],
+      ")"
+    )
+    total_missing <- sum(missing_prediction_counts)
+    prediction_label <- if (total_missing == 1L) {
+      "prediction is"
+    } else {
+      "predictions are"
+    }
+    warning(
+      total_missing, " ", prediction_label, " NA across prediction columns: ",
+      paste(details, collapse = ", "), ". This is typically caused by ",
+      "predictor values outside the fitted model domain or missing values in ",
+      "the prediction data. NA predictions have been preserved.",
+      call. = FALSE
+    )
   }
 
   cbind(data, do.call(cbind, listdf))

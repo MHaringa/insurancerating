@@ -27,6 +27,8 @@ the threshold.}
 \item{\code{n_redistributed_excess_records}}{Number of records whose excess
 amount was actually contributed to the redistribution pool.}
 \item{\code{observed_loss}}{Observed claim cost before redistribution.}
+\item{\code{retained_loss}}{Claim cost retained at or below the threshold,
+including full claims excluded through \code{redistribute_excess}.}
 \item{\code{observed_excess_loss}}{Observed claim cost above the threshold,
 including excess from rows excluded through \code{redistribute_excess}.}
 \item{\code{redistributed_excess_contributed}}{Excess removed from selected
@@ -44,6 +46,10 @@ plus portfolio loading times one minus credibility.}
 amount being redistributed after blending.}
 \item{\code{final_redistribution_loading}}{Blended loading multiplied by the
 redistribution scaling factor.}
+\item{\code{allocated_excess_loss}}{Absolute excess-loss amount allocated to
+the audit group.}
+\item{\code{average_excess_loading}}{Allocated excess loss per unit of total
+receiving redistribution weight.}
 \item{\code{redistributed_excess_received}}{Excess assigned to receiving
 claim-bearing rows.}
 \item{\code{net_loss_shift}}{Received minus contributed redistributed excess.}
@@ -56,7 +62,8 @@ claim-bearing rows.}
 Audit how much excess loss was contributed and received across portfolio
 segments after \code{\link[=redistribute_excess_loss]{redistribute_excess_loss()}}. The summary shows whether a
 segment receives more large-loss cost than it contributes, or transfers part
-of its observed excess burden to other segments.
+of its observed excess burden to other segments. The same audit is available
+for redistributed claims and separate excess loadings.
 }
 \details{
 \code{redistributed_excess_contributed} is the excess amount removed from selected
@@ -88,6 +95,9 @@ receiving \code{redistribution_weight} gives
 
 If \code{by} differs from the risk factor used in the redistribution, loading and
 credibility columns are receiving-weighted averages within each audit group.
+For separate-loading output, \code{adjusted_loss} is shown only as a reconciliation
+of retained plus allocated loss; it does not mean that the allocated amount
+was added to the row-level severity response.
 }
 \seealso{
 \code{\link[=redistribute_excess_loss]{redistribute_excess_loss()}}

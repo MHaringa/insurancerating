@@ -103,3 +103,35 @@ test_that("inline models require explicit prediction names", {
 
   expect_true("freq_hat" %in% names(result))
 })
+
+test_that("NA predictions are warned about and preserved", {
+  training <- data.frame(
+    claims = c(0, 1, 0, 2),
+    exposure = rep(1, 4),
+    age = c(20, 30, 40, 50)
+  )
+  model <- glm(
+    claims ~ age + offset(log(exposure)),
+    family = poisson(),
+    data = training
+  )
+  prediction_data <- data.frame(
+    exposure = rep(1, 4),
+    age = c(25, NA, 45, NA)
+  )
+
+  result <- expect_warning(
+    add_prediction(
+      prediction_data,
+      model,
+      predictions = "pred_frequency"
+    ),
+    paste0(
+      "2 predictions are NA.*pred_frequency \\(2\\).*",
+      "outside the fitted model domain or missing values"
+    )
+  )
+
+  expect_equal(which(is.na(result$pred_frequency)), c(2, 4))
+  expect_equal(result$age, prediction_data$age)
+})

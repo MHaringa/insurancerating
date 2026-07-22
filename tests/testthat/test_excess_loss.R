@@ -134,6 +134,182 @@ test_that("redistribute_excess_loss redistributes excess per claim", {
   expect_equal(x$claim_amount_adjusted_average, c(0, 135000, 65000, 135000))
   expect_equal(sum(x$claim_amount_adjusted), sum(x$claim_amount))
   expect_equal(x$claim_amount_redistributed_excess[x$claim_count == 0], 0)
+  expect_identical(attr(x, "output"), "redistributed_claim")
+})
+
+test_that("default output is backward compatible with redistributed claims", {
+  default <- redistribute_excess_loss(
+    portfolio_data,
+    claim_amount = "claim_amount",
+    threshold = 100000,
+    claim_count = "claim_count",
+    risk_factor = "sector",
+    redistribution_method = "partial"
+  )
+  explicit <- redistribute_excess_loss(
+    portfolio_data,
+    claim_amount = "claim_amount",
+    threshold = 100000,
+    claim_count = "claim_count",
+    risk_factor = "sector",
+    redistribution_method = "partial",
+    output = "redistributed_claim"
+  )
+
+  expect_equal(default, explicit)
+  expect_equal(
+    explicit$claim_amount_adjusted,
+    explicit$claim_amount_capped +
+      explicit$claim_amount_redistributed_excess
+  )
+})
+
+test_that("excess loading is returned per unit of redistribution weight", {
+  x <- redistribute_excess_loss(
+    portfolio_data,
+    claim_amount = "claim_amount",
+    threshold = 100000,
+    claim_count = "claim_count",
+    redistribution_weight = "policy_years",
+    risk_factor = "sector",
+    redistribution_method = "partial",
+    output = "excess_loading"
+  )
+  total_excess <- sum(pmax(portfolio_data$claim_amount - 100000, 0))
+
+  expect_identical(attr(x, "output"), "excess_loading")
+  expect_identical(attr(x, "redistribution_weight_label"), "policy_years")
+  expect_true(all(c("allocated_excess_loss", "excess_loading") %in% names(x)))
+  expect_false(any(c(
+    "claim_amount_adjusted", "claim_amount_adjusted_average"
+  ) %in% names(x)))
+  expect_equal(
+    x$allocated_excess_loss,
+    x$excess_loading * x$policy_years
+  )
+  expect_equal(sum(x$allocated_excess_loss), total_excess)
+  expect_equal(sum(x$excess_loading * x$policy_years), total_excess)
+  expect_true(all(x$allocated_excess_loss[x$claim_count == 0] > 0))
+})
+
+test_that("claim-count loading is expressed per claim", {
+  x <- redistribute_excess_loss(
+    portfolio_data,
+    claim_amount = "claim_amount",
+    threshold = 100000,
+    claim_count = "claim_count",
+    output = "excess_loading"
+  )
+
+  expect_equal(
+    sum(x$excess_loading * x$claim_count),
+    sum(pmax(portfolio_data$claim_amount - 100000, 0))
+  )
+  expect_equal(x$excess_loading[x$claim_count == 0], c(0, 0))
+})
+
+test_that("risk-factor loadings reconcile within risk-factor levels", {
+  x <- redistribute_excess_loss(
+    portfolio_data,
+    claim_amount = "claim_amount",
+    threshold = 100000,
+    claim_count = "claim_count",
+    redistribution_weight = "policy_years",
+    risk_factor = "sector",
+    redistribution_method = "risk_factor",
+    output = "excess_loading"
+  )
+  allocated_by_sector <- tapply(
+    x$allocated_excess_loss, x$sector, sum
+  )
+  observed_by_sector <- tapply(
+    pmax(x$claim_amount - 100000, 0), x$sector, sum
+  )
+
+  expect_equal(allocated_by_sector, observed_by_sector)
+  expect_true(all(vapply(
+    split(x$excess_loading, x$sector),
+    function(z) length(unique(z)) == 1L,
+    logical(1)
+  )))
+})
+
+test_that("zero redistribution weights receive zero loading", {
+  portfolio <- transform(
+    portfolio_data,
+    loading_exposure = c(0, rep(1, 9))
+  )
+  x <- redistribute_excess_loss(
+    portfolio,
+    claim_amount = "claim_amount",
+    threshold = 100000,
+    claim_count = "claim_count",
+    redistribution_weight = "loading_exposure",
+    output = "excess_loading"
+  )
+
+  expect_equal(x$allocated_excess_loss[1], 0)
+  expect_equal(x$excess_loading[1], 0)
+  expect_equal(
+    sum(x$allocated_excess_loss),
+    sum(pmax(portfolio$claim_amount - 100000, 0))
+  )
+})
+
+test_that("both outputs preserve excess under every redistribution method", {
+  methods <- c("portfolio", "risk_factor", "partial")
+  outputs <- c("redistributed_claim", "excess_loading")
+  total_excess <- sum(pmax(portfolio_data$claim_amount - 100000, 0))
+
+  for (method in methods) {
+    for (output in outputs) {
+      args <- list(
+        data = portfolio_data,
+        claim_amount = "claim_amount",
+        threshold = 100000,
+        claim_count = "claim_count",
+        redistribution_weight = if (
+          identical(output, "excess_loading")
+        ) "policy_years" else NULL,
+        risk_factor = if (identical(method, "portfolio")) NULL else "sector",
+        redistribution_method = method,
+        output = output
+      )
+      x <- do.call(redistribute_excess_loss, args)
+      allocated <- attr(x, "allocated_excess_loss_vector")
+      expect_equal(sum(allocated), total_excess, info = paste(method, output))
+    }
+  }
+})
+
+test_that("sparse groups illustrate the two actuarial interpretations", {
+  portfolio <- data.frame(
+    sector = c("Sparse", "Established"),
+    claim_count = c(1, 1),
+    claim_amount = c(10000, 150000),
+    earned_exposure = c(1, 1)
+  )
+  redistributed <- redistribute_excess_loss(
+    portfolio,
+    claim_amount = "claim_amount",
+    threshold = 100000,
+    claim_count = "claim_count",
+    redistribution_method = "portfolio",
+    output = "redistributed_claim"
+  )
+  loading <- redistribute_excess_loss(
+    portfolio,
+    claim_amount = "claim_amount",
+    threshold = 100000,
+    claim_count = "claim_count",
+    redistribution_weight = "earned_exposure",
+    redistribution_method = "portfolio",
+    output = "excess_loading"
+  )
+
+  expect_equal(redistributed$claim_amount_adjusted[1], 35000)
+  expect_equal(loading$claim_amount_capped[1], 10000)
+  expect_equal(loading$excess_loading[1], 25000)
 })
 
 test_that("redistribute_excess_loss infers one claim per positive row", {
@@ -326,10 +502,12 @@ test_that("summary audits contributed, received and shifted loss", {
   expect_equal(names(s), c(
     "sector", "n_records", "claim_count", "redistribution_weight",
     "n_excess_records", "n_redistributed_excess_records", "observed_loss",
-    "observed_excess_loss", "redistributed_excess_contributed",
+    "retained_loss", "observed_excess_loss",
+    "redistributed_excess_contributed",
     "sector_excess_loading", "sector_credibility",
     "portfolio_excess_loading", "blended_excess_loading",
     "redistribution_scaling_factor", "final_redistribution_loading",
+    "allocated_excess_loss", "average_excess_loading",
     "redistributed_excess_received", "net_loss_shift", "adjusted_loss",
     "observed_average_claim", "adjusted_average_claim"
   ))
@@ -400,7 +578,8 @@ test_that("redistribute_excess_loss validates inputs and output collisions", {
       "redistribution_weight", "receives_redistribution",
       "redistribute_excess", "risk_factor", "redistribution_method",
       "credibility", "credibility_basis",
-      "credibility_threshold", "credibility_scale", "calculation_details"
+      "credibility_threshold", "credibility_scale", "calculation_details",
+      "output"
     )
   )
   expect_error(
@@ -457,6 +636,21 @@ test_that("redistribute_excess_loss validates inputs and output collisions", {
       calculation_details = NA
     ),
     "`calculation_details`"
+  )
+  expect_error(
+    redistribute_excess_loss(
+      portfolio_data, "claim_amount", 100000, output = "invalid"
+    ),
+    "arg"
+  )
+  expect_error(
+    redistribute_excess_loss(
+      transform(portfolio_data, zero_weight = 0),
+      "claim_amount", 100000,
+      redistribution_weight = "zero_weight",
+      output = "excess_loading"
+    ),
+    "positive redistribution weight"
   )
 })
 
