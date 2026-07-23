@@ -234,6 +234,10 @@ CRAN release: 2026-06-02
   now uses base R internally and returns a regular `data.frame`.
 - Plain GLM metadata extraction has been improved so `rating_grid(glm)`
   groups by model terms as expected.
+- [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+  now formats `rating_table` objects as grouped tariff tables, with
+  optional significance stars and locale-aware formatting for fitted
+  effects and exposure.
 - Refinement metadata is now joined by the related original/new factor
   columns instead of being cross-joined onto every rating-grid row.
 
@@ -266,6 +270,15 @@ CRAN release: 2026-06-02
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   now uses `model_variable` and `source_variable` as the primary
   argument names.
+- GAM and shape-constrained smoothing now validate the requested basis
+  dimension against the number of unique grouped covariate values before
+  model fitting. Polynomial smoothing similarly validates `degree`, with
+  actionable errors when the requested curve is too complex for the
+  available model levels.
+- [`autoplot.rating_refinement()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
+  accepts `x_max` for smoothing steps, allowing users to limit the
+  visible x-axis range without changing the smoothing fit or the
+  underlying refinement data.
 - [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
   now uses clearer in-object editing arguments for adjusting smoothing
   settings without supplying an external data frame.

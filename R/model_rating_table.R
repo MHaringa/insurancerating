@@ -590,6 +590,9 @@
 #'
 #' @return Object of class `"rating_table"` and legacy class `"riskfactor"`.
 #'
+#' @seealso [as_gt()] for a grouped presentation table and
+#'   [autoplot.rating_table()] for a graphical comparison of fitted effects.
+#'
 #' @details
 #' A `rating_table` contains one row per model term level. For factor variables,
 #' the reference level is added explicitly with relativity `1` when

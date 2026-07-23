@@ -222,7 +222,11 @@ print(ref)
 #> Base model: glm, lm
 #> Steps: 1
 #> 1. smoothing [age_policyholder_freq_cat]
-autoplot(ref, variable = "age_policyholder_freq_cat")
+autoplot(
+  ref,
+  variable = "age_policyholder_freq_cat",
+  x_max = 90
+)
 ```
 
 ![](refinement-workflow_files/figure-html/unnamed-chunk-6-1.png)

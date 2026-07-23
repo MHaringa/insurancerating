@@ -198,6 +198,95 @@ testthat::test_that(
 )
 
 testthat::test_that(
+  "as_gt presents rating factors as grouped tariff tables", {
+    testthat::skip_if_not_installed("gt")
+
+    rt <- rating_table(
+      mod1,
+      model_data = df,
+      exposure = "exposure",
+      exposure_output = "earned_exposure",
+      significance = TRUE
+    )
+    tbl <- as_gt(rt)
+
+    testthat::expect_s3_class(tbl, "gt_tbl")
+    testthat::expect_equal(tbl[["_locale"]]$locale, "nl-NL")
+    testthat::expect_true(all(c(
+      "risk_factor", "level", "est_mod1", "earned_exposure"
+    ) %in% names(tbl[["_data"]])))
+    testthat::expect_setequal(
+      unique(tbl[["_data"]]$risk_factor),
+      tbl[["_row_groups"]]
+    )
+
+    html <- suppressWarnings(as.character(gt::as_raw_html(tbl)))
+    testthat::expect_match(html, "Relativities")
+    testthat::expect_match(html, "Significance levels")
+    testthat::expect_match(html, "Risk factor")
+
+    without_stars <- as_gt(
+      rt,
+      significance = FALSE,
+      locale = "en-US",
+      estimate_decimals = 2,
+      exposure_decimals = 1
+    )
+    testthat::expect_s3_class(without_stars, "gt_tbl")
+    testthat::expect_equal(without_stars[["_locale"]]$locale, "en-US")
+    testthat::expect_no_match(
+      suppressWarnings(as.character(gt::as_raw_html(without_stars))),
+      "Significance levels"
+    )
+
+    coefficient_table <- rating_table(
+      mod1,
+      model_data = df,
+      exposure = FALSE,
+      exponentiate = FALSE
+    )
+    coefficient_gt <- as_gt(coefficient_table)
+    testthat::expect_match(
+      suppressWarnings(as.character(gt::as_raw_html(coefficient_gt))),
+      "Coefficients"
+    )
+
+    comparison_table <- rating_table(
+      mod1,
+      mod2,
+      model_data = df,
+      exposure = FALSE
+    )
+    comparison_gt <- as_gt(comparison_table)
+    testthat::expect_true(all(
+      c("est_mod1", "est_mod2") %in% names(comparison_gt[["_data"]])
+    ))
+  }
+)
+
+testthat::test_that(
+  "as_gt validates unavailable rating-table significance", {
+    testthat::skip_if_not_installed("gt")
+
+    rt <- rating_table(
+      mod1,
+      model_data = df,
+      exposure = "exposure",
+      significance = FALSE
+    )
+
+    testthat::expect_error(
+      as_gt(rt, significance = TRUE),
+      "rating_table.*significance = TRUE"
+    )
+    testthat::expect_error(
+      as_gt(rt, significance = NA),
+      "significance"
+    )
+  }
+)
+
+testthat::test_that(
   "deprecated rating_table arguments remain available", {
     testthat::expect_warning(
       rating_table(mod1, model_data = df, exposure = "exposure",

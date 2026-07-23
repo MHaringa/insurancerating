@@ -1,6 +1,8 @@
-# insurancerating (development version)
+# insurancerating
 
-## Overview of changes since 0.8.0
+## insurancerating 0.8.0.9000 (development version)
+
+### Overview of changes since 0.8.0
 
 - The excess-loss workflow has been made more portfolio-oriented and easier to
   audit. Threshold assessments now preserve input column names, support
@@ -19,13 +21,13 @@
   workflow has been expanded with more applied portfolio examples. The pkgdown
   configuration and website build workflow have also been updated.
 
-## Main API updates
+### Main API updates
 
 - `add_smoothing()` now stops early with the affected column and missing-value
   count when `model_variable` contains `NA`. `add_prediction()` preserves `NA`
   predictions and reports their number in a warning.
 
-### Rating tables
+#### Rating tables
 
 - `add_portfolio_experience()` is now the primary API for enriching a
   `rating_table()` object with observed portfolio experience.
@@ -37,7 +39,7 @@
 - `autoplot.rating_table()` accepts `metric` to choose the attached portfolio
   experience metric at plot time.
 
-### Excess-loss workflow
+#### Excess-loss workflow
 
 - `assess_excess_threshold()` now returns class `"threshold_assessment"`,
   preserves the original group and exposure column names, supports an optional
@@ -68,11 +70,11 @@
   mode keeps capped severity separate and returns allocated excess loss plus an
   excess loading per unit of `redistribution_weight`.
 
-# insurancerating 0.8.0
+## insurancerating 0.8.0
 
-## Main API updates
+### Main API updates
 
-### Portfolio analysis
+#### Portfolio analysis
 
 - `factor_analysis()` is now the primary function for univariate/factor-level
   portfolio analysis. It returns objects with primary class `"factor_analysis"`
@@ -92,7 +94,7 @@
 - The factor-analysis plot keeps the established package styling and now uses a
   consistent grid, axis-line, tick and secondary-axis style.
 
-### Outlier histograms
+#### Outlier histograms
 
 - `outlier_histogram()` has clearer argument names:
   `lower`, `upper`, `density`, `bar_fill`, `bar_color`, `tail_fill`,
@@ -106,7 +108,7 @@
   variables and all-missing variables.
 - `histbin()` is deprecated and remains available as a compatibility wrapper.
 
-### Risk factor GAMs and tariff segmentation
+#### Risk factor GAMs and tariff segmentation
 
 - `risk_factor_gam()` is the primary spelling for fitting GAMs to continuous
   risk factors. `riskfactor_gam()` and `fit_gam()` remain available for
@@ -130,7 +132,7 @@
 - The tariff-segment plot now recognises confidence interval columns produced
   by the package's own GAM output.
 
-### Rating tables
+#### Rating tables
 
 - `rating_table()` is the primary API for interpreting fitted GLM coefficients
   in tariff-table form. `rating_factors()` and `rating_factors2()` are
@@ -148,7 +150,7 @@
   `add_observed_experience()` and uses cleaner, package-consistent plot
   styling, including a subtle secondary exposure axis.
 
-### Prediction helpers
+#### Prediction helpers
 
 - `add_prediction()` now has clearer naming arguments: `predictions`, `prefix`,
   `confidence`, and `interval_names`.
@@ -159,7 +161,7 @@
   names, name collisions with existing columns, missing models and non-GLM
   inputs.
 
-### Model data and rating grids
+#### Model data and rating grids
 
 - `extract_model_data()` replaces `model_data()` as the primary API for
   extracting model data from fitted models.
@@ -168,10 +170,13 @@
   `data.frame`.
 - Plain GLM metadata extraction has been improved so `rating_grid(glm)` groups
   by model terms as expected.
+- `as_gt()` now formats `rating_table` objects as grouped tariff tables, with
+  optional significance stars and locale-aware formatting for fitted effects
+  and exposure.
 - Refinement metadata is now joined by the related original/new factor columns
   instead of being cross-joined onto every rating-grid row.
 
-### Model refinement
+#### Model refinement
 
 - The refinement API has been clarified around
   `prepare_refinement() |> add_*() |> refit()`.
@@ -193,6 +198,13 @@
   GLM.
 - `add_smoothing()` now uses `model_variable` and `source_variable` as the
   primary argument names.
+- GAM and shape-constrained smoothing now validate the requested basis
+  dimension against the number of unique grouped covariate values before model
+  fitting. Polynomial smoothing similarly validates `degree`, with actionable
+  errors when the requested curve is too complex for the available model levels.
+- `autoplot.rating_refinement()` accepts `x_max` for smoothing steps, allowing
+  users to limit the visible x-axis range without changing the smoothing fit or
+  the underlying refinement data.
 - `edit_smoothing()` now uses clearer in-object editing arguments for adjusting
   smoothing settings without supplying an external data frame.
 - `add_restriction()` can now accept a partial restriction data frame. Missing
@@ -209,7 +221,7 @@
 - The refinement documentation has been expanded with applied examples and a
   clearer explanation of smoothing, restrictions, relativities and refitting.
 
-### Reference levels
+#### Reference levels
 
 - `set_reference_level()` replaces `biggest_reference()` as the primary helper
   for choosing factor reference levels.
@@ -218,7 +230,7 @@
   selected explicitly.
 - `biggest_reference()` remains available as a deprecated compatibility wrapper.
 
-### Time utilities
+#### Time utilities
 
 - `split_periods_to_months()`, `merge_date_ranges()` and
   `active_rows_by_date()` now avoid mutating caller-visible input data.
@@ -231,7 +243,7 @@
 - R CMD check notes from data.table helper columns in `active_rows_by_date()`
   have been resolved.
 
-### Model validation and performance
+#### Model validation and performance
 
 - `bootstrap_performance()` now has an explicit `metric = "rmse"` argument.
 - `sampling = c("bootstrap", "split")` was added to distinguish bootstrap
@@ -257,7 +269,7 @@
 - `autoplot.check_residuals()` now has a controllable `max_points` argument and
   uses ASCII messages and the package plot theme.
 
-### Truncated severity distributions
+#### Truncated severity distributions
 
 - `fit_truncated_severity()` replaces `fit_truncated_dist()` as the primary API
   for fitting distributions to truncated claim severities.
@@ -275,14 +287,14 @@
   `show_title`, `digits` and `truncation_digits`, with old names supported for
   compatibility.
 
-### Fisher-Jenks classification
+#### Fisher-Jenks classification
 
 - `fisher_classify()` and `fisher()` are deprecated because Fisher-Jenks
   classification is a general-purpose grouping method and is not directly tied
   to the insurance-rating workflow.
 - `classInt` moved from `Imports` to `Suggests`.
 
-## Documentation, website and tests
+### Documentation, website and tests
 
 - The README and vignettes have been revised to present the package as a set of
   actuarial pricing building blocks rather than a prescribed pricing method.
@@ -298,91 +310,91 @@
   performance, overdispersion, residual checks, outlier histograms, truncated
   distributions, time utilities and factor analysis.
 
-# insurancerating 0.7.5
+## insurancerating 0.7.5
 
 * `rating_factors()` now always returns correct output when column with exposure in data is not named `exposure`
 * `intercept_only` in `update_glm()` is added to apply the manual changes and refit the intercept, ensuring that the changes have no impact on the other variables.
 * `smoothing` in `smooth_coef()` is added to choose smoothing specification
 * The README has been revised
 
-# insurancerating 0.7.4
+## insurancerating 0.7.4
 
 * `bootstrap_rmse()` now uses `after_stat(density)` instead of the deprecated dot-dot notation
 * `custom_theme` in `autoplot.univariate()` is added to customize the theme
 
-# insurancerating 0.7.3
+## insurancerating 0.7.3
 
 * `autoplot.univariate()` now generates a plot even when there are missing values in the rows
 * `rating_factors()` now always returns the correct coefficients when used
 on a 'refitsmooth' or 'refitrestricted' class of GLM. 
 
-# insurancerating 0.7.2
+## insurancerating 0.7.2
 
 * `update_glm()` now always returns the correct interval in case the function is used in combination with `smooth_coef()`
 
-# insurancerating 0.7.1
+## insurancerating 0.7.1
 
 * `rotate_angle` in `autoplot.univariate()` is added to rotate x-labels
 * `univariate()` now accepts external vectors for `x`; `vec_ext()` must be used
 
-# insurancerating 0.7.0
+## insurancerating 0.7.0
 
 * `smooth_coef()` now gives correct results for intervals with scientific notation
 * `reduce()` now returns no errors anymore for columns with dates in POSIXt format
 
-# insurancerating 0.6.9
+## insurancerating 0.6.9
 
 * `refit_glm()` is renamed to `update_glm()`
 * `construct_model_points()` and `model_data()` are added to create model points 
 
-# insurancerating 0.6.8
+## insurancerating 0.6.8
 
 * `show_total` in `autoplot.univariate()` is added to add line for total of groups in case `by` is used in `univariate()`; `total_color` can be used to change the color of the line, and `total_name` is added to change the name of the legend for the line
 * `rating_factors()` now accepts GLMs with an intercept only
 * `fit_truncated_dist()` is added to fit the original distribution (gamma, lognormal) from truncated severity data
 * `join_to_nearest()` now returns NA in case NA is used as input
 
-# insurancerating 0.6.7
+## insurancerating 0.6.7
 
 * `smooth_coef()` now returns an error message when intervals are not obtained by cut()
 * `get_data()` is added to return the data used in `refit_glm()`
 
-# insurancerating 0.6.6
+## insurancerating 0.6.6
 
 * `summary.reduce()` now gives correct aggregation for periods "months" and "quarters" 
 * `rows_per_date()` is added to determine active portfolio for a certain date
 
-# insurancerating 0.6.5
+## insurancerating 0.6.5
 
 * `smooth_coef()` and `restrict_coef()` are added for model refinement
 * `histbin()` now uses darkblue as default fill color 
 
-# insurancerating 0.6.4
+## insurancerating 0.6.4
 
 * In `summary.reduce()`, `name` can be used to change the name of the new column in the output.
 * Dataset `MTPL` now contains extra columns for `power`, `bm`, and `zip`. 
 * Some functions in `insight` are renamed, therefore `insight::format_table()` is replaced with `insight::export_table()`.
 
-# insurancerating 0.6.3
+## insurancerating 0.6.3
 
 * `fit_gam()` for pure premium is now using average premium for each x calculated as sum(pure_premium * exposure) / sum(exposure) instead of sum(pure_premium) / sum(exposure) (#2).
 * `histbin()` is added to create histograms with outliers
 * `reduce` now returns a data.frame as output 
 
-# insurancerating 0.6.2
+## insurancerating 0.6.2
 
 * `check_normality()` is now depreciated; use `check_residuals()` instead to detect overall deviations from the expected distribution
 * `rating_factors()` now shows significance stars for p-values
 * `period_to_months()` arithmetic operations with dates are rewritten; much faster
 * `univariate()` now has argument `by` to determine summary statistics for different subgroups 
 
-# insurancerating 0.6.1
+## insurancerating 0.6.1
 
 * `univariate_all()` and `autoplot.univ_all()` are now depreciated; use `univariate()` and `autoplot.univariate()` instead
 * `check_overdispersion()`, `check_normality()`, `model_performance()`, `bootstrap_rmse()`, and `add_prediction()` are added to test model quality and return performance metrics
 * `reduce()` is added to reduce an insurance portfolio by merging redundant date ranges
 
-# insurancerating 0.6.0
+## insurancerating 0.6.0
 
 * `label_width` in `autoplot()` is added to wrap long labels in multiple lines
 * `sort_manual` in `autoplot()` is added to sort risk factors into an own ordering
@@ -390,26 +402,26 @@ on a 'refitsmooth' or 'refitrestricted' class of GLM.
 * `rating_factors()` now returns an object of class `riskfactor`
 * `autoplot.riskfactor()` is added to create the corresponding plots to the output given by `rating_factors()`
 
-# insurancerating 0.5.2
+## insurancerating 0.5.2
 
 * `autoplot.univ_all()` now gives correct labels on the x-axis when `ncol` > 1. 
 
-# insurancerating 0.5.1
+## insurancerating 0.5.1
 
 * A package website is added using pkgdown.
 * `construct_tariff_classes()` and `fit_gam()` now only returns tariff classes and fitted gam respectively; other items are stored as attributes.
 * `univariate_frequency()`, `univariate_average_severity()`, `univariate_risk_premium()`, `univariate_loss_ratio()`, `univariate_average_premium()`, `univariate_exposure()`, and `univariate_all()` are added to perform an univariate analysis on an insurance portfolio.
 * `autoplot()` creates the corresponding plots to the summary statistics calculated by `univariate_*`.
 
-# insurancerating 0.5.0
+## insurancerating 0.5.0
 
 * `construct_tariff_classes()` is now split in `fit_gam()` and `construct_tariff_classes()`.
 * A vignette is added on how to use the package.
 
-# insurancerating 0.4.3
+## insurancerating 0.4.3
  
 * `period_to_months()` is added to split rows with a time period longer than one month to multiple rows with a time period of exactly one month each.
 
-# insurancerating 0.4.2
+## insurancerating 0.4.2
 
 * In `construct_tariff_classes()`, `model` now also accepts 'severity' as specification.   

@@ -124,3 +124,7 @@ rating_table(
 )
 
 }
+\seealso{
+\code{\link[=as_gt]{as_gt()}} for a grouped presentation table and
+\code{\link[=autoplot.rating_table]{autoplot.rating_table()}} for a graphical comparison of fitted effects.
+}

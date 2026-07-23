@@ -418,6 +418,154 @@ testthat::test_that(
 )
 
 testthat::test_that(
+  "add_smoothing explains infeasible GAM basis dimensions", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4, 2, 3),
+      exposure = rep(1, 8),
+      insured_amount = c(50, 75, 125, 175, 225, 275, 325, 375)
+    )
+    df$insured_amount_band <- cut(
+      df$insured_amount,
+      breaks = c(0, 100, 200, 300, 400),
+      include.lowest = TRUE
+    )
+    model <- glm(
+      y ~ insured_amount_band + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+    ref <- prepare_refinement(model, data = df)
+
+    error <- tryCatch(
+      add_smoothing(
+        ref,
+        model_variable = "insured_amount_band",
+        source_variable = "insured_amount",
+        breaks = c(0, 100, 200, 300, 400),
+        smoothing = "gam",
+        k = 5
+      ),
+      error = identity
+    )
+    message <- conditionMessage(error)
+
+    testthat::expect_match(
+      message,
+      "Cannot fit GAM smoothing for source variable `insured_amount`",
+      fixed = TRUE
+    )
+    testthat::expect_match(message, "only 4 unique values")
+    testthat::expect_match(message, "requires 5 degrees of freedom")
+    testthat::expect_false(grepl(
+      "fewer unique covariate combinations",
+      message,
+      fixed = TRUE
+    ))
+
+    testthat::expect_error(
+      add_smoothing(
+        ref,
+        model_variable = "insured_amount_band",
+        source_variable = "insured_amount",
+        breaks = c(0, 100, 200, 300, 400),
+        smoothing = "gam"
+      ),
+      "requires 10 degrees of freedom"
+    )
+
+    valid_refinement <- add_smoothing(
+      ref,
+      model_variable = "insured_amount_band",
+      source_variable = "insured_amount",
+      breaks = c(0, 100, 200, 300, 400),
+      smoothing = "gam",
+      k = 4
+    )
+    testthat::expect_s3_class(valid_refinement, "rating_refinement")
+    testthat::expect_s3_class(refit(valid_refinement), "glm")
+
+    testthat::expect_error(
+      add_smoothing(
+        ref,
+        model_variable = "insured_amount_band",
+        source_variable = "insured_amount",
+        breaks = c(0, 100, 200, 300, 400),
+        smoothing = "mpi",
+        k = 5
+      ),
+      "Cannot fit shape-constrained `mpi` smoothing.*only 4 unique values"
+    )
+
+    testthat::expect_error(
+      add_smoothing(
+        ref,
+        model_variable = "insured_amount_band",
+        source_variable = "insured_amount",
+        breaks = c(0, 100, 200, 300, 400),
+        smoothing = "spline",
+        degree = 4
+      ),
+      "polynomial degree 4 requires at least 5 unique values"
+    )
+  }
+)
+
+testthat::test_that(
+  "autoplot can limit the visible smoothing range with x_max", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4, 2, 3),
+      exposure = rep(1, 8),
+      insured_amount = c(
+        500000, 1000000, 2500000, 5000000,
+        7500000, 10000000, 50000000, 100000000
+      )
+    )
+    df$insured_amount_band <- cut(
+      df$insured_amount,
+      breaks = c(0, 2500000, 10000000, 50000000, 100000000),
+      include.lowest = TRUE
+    )
+    model <- glm(
+      y ~ insured_amount_band + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+    ref <- prepare_refinement(model, data = df) |>
+      add_smoothing(
+        model_variable = "insured_amount_band",
+        source_variable = "insured_amount",
+        breaks = c(0, 2500000, 5000000, 10000000, 50000000, 100000000),
+        smoothing = "gam",
+        k = 4
+      )
+
+    full_plot <- ggplot2::autoplot(ref)
+    limited_plot <- ggplot2::autoplot(ref, x_max = 10000000)
+
+    testthat::expect_s3_class(limited_plot, "ggplot")
+    testthat::expect_null(full_plot$coordinates$limits$x)
+    testthat::expect_equal(
+      limited_plot$coordinates$limits$x,
+      c(NA_real_, 10000000)
+    )
+    testthat::expect_error(
+      ggplot2::autoplot(ref, x_max = Inf),
+      "x_max"
+    )
+
+    restriction_ref <- prepare_refinement(model, data = df) |>
+      add_restriction(data.frame(
+        insured_amount_band = levels(df$insured_amount_band)[1],
+        relativity = 1
+      ))
+    testthat::expect_error(
+      ggplot2::autoplot(restriction_ref, x_max = 10000000),
+      "only available when plotting a smoothing step"
+    )
+  }
+)
+
+testthat::test_that(
   "edit_smoothing stores edits with public argument names", {
     df <- data.frame(
       y = c(1, 2, 1, 3, 2, 4),

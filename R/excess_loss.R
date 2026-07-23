@@ -1088,7 +1088,9 @@ assess_excess_threshold <- function(data,
 #' Generic presentation helper. Methods return a `gt` table for objects where a
 #' formatted reporting table is more useful than another plot.
 #'
-#' @param x An object.
+#' @param x A supported object to convert, such as a `threshold_assessment`
+#'   returned by [assess_excess_threshold()] or a `rating_table` returned by
+#'   [rating_table()].
 #' @param ... Arguments passed to methods.
 #'
 #' @return A `gt_tbl` object for supported methods.
@@ -1107,7 +1109,6 @@ as_gt <- function(x, ...) {
 #' `data.frame` subclass; `as_gt()` is only used when a presentation table is
 #' needed for a report, tariff note or pricing review.
 #'
-#' @param x An object returned by [assess_excess_threshold()].
 #' @param claims Logical. If `TRUE`, include claim-count columns.
 #' @param loss Logical. If `TRUE`, include loss amount columns. The default is
 #'   `FALSE` to keep the threshold comparison compact.
@@ -1125,10 +1126,6 @@ as_gt <- function(x, ...) {
 #'   added.
 #' @param subtitle Optional character. Table subtitle. If `NULL`, no table
 #'   subtitle is added.
-#' @param ... Unused.
-#'
-#' @return A `gt_tbl` object.
-#'
 #' @author Martin Haringa
 #' @rdname as_gt
 #'

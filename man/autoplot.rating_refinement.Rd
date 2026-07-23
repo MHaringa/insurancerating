@@ -8,6 +8,7 @@
   object,
   variable = NULL,
   step = NULL,
+  x_max = NULL,
   remove_underscores = FALSE,
   rotate_angle = NULL,
   custom_theme = NULL,
@@ -32,6 +33,14 @@ This is mainly relevant when multiple refinement steps have been applied
 
 This makes it possible to inspect intermediate refinement stages before
 calling \code{refit()}.}
+
+\item{x_max}{Optional single finite numeric value. Maximum value displayed on
+the x-axis of a smoothing plot. This changes only the visible plotting
+range; it does not remove observations, alter the fitted smoothing curve or
+affect \code{\link[=refit]{refit()}}. It is useful when a small number of extreme values would
+otherwise compress the range containing most portfolio risks. For example,
+use \code{x_max = 1e7} to display insured values up to 10 million. This argument
+is only available for smoothing steps.}
 
 \item{remove_underscores}{Logical; if \code{TRUE}, underscores are replaced by
 spaces in the x-axis label. Default is \code{FALSE}.}

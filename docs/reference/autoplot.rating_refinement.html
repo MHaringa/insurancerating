@@ -72,6 +72,7 @@ the segment.</p>
 <span>  <span class="va">object</span>,</span>
 <span>  variable <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  step <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  x_max <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  remove_underscores <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  rotate_angle <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  custom_theme <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -101,6 +102,16 @@ This is mainly relevant when multiple refinement steps have been applied
 <li><p>If specified, the corresponding step in the refinement sequence is used.</p></li>
 </ul><p>This makes it possible to inspect intermediate refinement stages before
 calling <code><a href="refit.html">refit()</a></code>.</p></dd>
+
+
+<dt id="arg-x-max">x_max<a class="anchor" aria-label="anchor" href="#arg-x-max"></a></dt>
+<dd><p>Optional single finite numeric value. Maximum value displayed on
+the x-axis of a smoothing plot. This changes only the visible plotting
+range; it does not remove observations, alter the fitted smoothing curve or
+affect <code><a href="refit.html">refit()</a></code>. It is useful when a small number of extreme values would
+otherwise compress the range containing most portfolio risks. For example,
+use <code>x_max = 1e7</code> to display insured values up to 10 million. This argument
+is only available for smoothing steps.</p></dd>
 
 
 <dt id="arg-remove-underscores">remove_underscores<a class="anchor" aria-label="anchor" href="#arg-remove-underscores"></a></dt>

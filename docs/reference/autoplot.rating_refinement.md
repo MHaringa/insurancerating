@@ -21,6 +21,7 @@ autoplot(
   object,
   variable = NULL,
   step = NULL,
+  x_max = NULL,
   remove_underscores = FALSE,
   rotate_angle = NULL,
   custom_theme = NULL,
@@ -58,6 +59,18 @@ autoplot(
   This makes it possible to inspect intermediate refinement stages
   before calling
   [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+
+- x_max:
+
+  Optional single finite numeric value. Maximum value displayed on the
+  x-axis of a smoothing plot. This changes only the visible plotting
+  range; it does not remove observations, alter the fitted smoothing
+  curve or affect
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+  It is useful when a small number of extreme values would otherwise
+  compress the range containing most portfolio risks. For example, use
+  `x_max = 1e7` to display insured values up to 10 million. This
+  argument is only available for smoothing steps.
 
 - remove_underscores:
 

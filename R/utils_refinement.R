@@ -158,6 +158,91 @@ cut_borders_model <- function(model, x_cut) {
 }
 
 #' @noRd
+.validate_smoothing_complexity <- function(covariates, source_variable,
+                                           smoothing, k = NULL, degree = NULL,
+                                           response = NULL, weights = NULL) {
+  covariates <- as.data.frame(covariates)
+  usable <- stats::complete.cases(covariates)
+
+  numeric_covariates <- vapply(covariates, is.numeric, logical(1))
+  if (any(numeric_covariates)) {
+    usable <- usable & apply(
+      covariates[, numeric_covariates, drop = FALSE],
+      1,
+      function(x) all(is.finite(x))
+    )
+  }
+  if (!is.null(response)) {
+    usable <- usable & !is.na(response)
+    if (is.numeric(response)) {
+      usable <- usable & is.finite(response)
+    }
+  }
+  if (!is.null(weights)) {
+    usable <- usable & !is.na(weights)
+    if (is.numeric(weights)) {
+      usable <- usable & is.finite(weights)
+    }
+  }
+
+  n_unique <- nrow(unique(covariates[usable, , drop = FALSE]))
+  basis_methods <- c(
+    "gam", "mpi", "mpd", "cx", "cv", "micx", "micv", "mdcx", "mdcv"
+  )
+
+  if (smoothing %in% basis_methods) {
+    effective_k <- if (is.null(k)) 10L else as.integer(k)
+    method_label <- if (identical(smoothing, "gam")) {
+      "GAM"
+    } else {
+      paste0("shape-constrained `", smoothing, "`")
+    }
+
+    if (n_unique >= effective_k) {
+      return(invisible(list(n_unique = n_unique, k = effective_k)))
+    }
+
+    stop(
+      "Cannot fit ", method_label, " smoothing for source variable `",
+      source_variable, "`.\n\n",
+      "The variable contains only ", n_unique,
+      " unique values after applying the selected breaks, while the requested ",
+      "smoothing requires ", effective_k,
+      " degrees of freedom (basis dimension).\n\n",
+      "Please choose a lower value for `k`, reduce the number of breakpoints, ",
+      "or use a simpler smoothing specification.",
+      call. = FALSE
+    )
+  }
+
+  if (identical(smoothing, "spline")) {
+    effective_degree <- if (is.null(degree)) n_unique - 1L else as.integer(degree)
+    required_unique <- effective_degree + 1L
+
+    if (n_unique < required_unique) {
+      stop(
+        "Cannot fit polynomial smoothing for source variable `",
+        source_variable, "`.\n\n",
+        "The variable contains only ", n_unique,
+        " unique values after applying the selected breaks, while polynomial ",
+        "degree ", effective_degree, " requires at least ", required_unique,
+        " unique values.\n\n",
+        "Please choose a lower value for `degree`, revise the tariff grouping, ",
+        "or use a simpler smoothing specification.",
+        call. = FALSE
+      )
+    }
+
+    return(invisible(list(
+      n_unique = n_unique,
+      degree = effective_degree
+    )))
+  }
+
+  invisible(list(n_unique = n_unique))
+}
+
+#' @noRd
 #'
 #' @importFrom scam scam
 #' @importFrom stats lm
@@ -186,6 +271,16 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL,
     stop("Invalid smoothing: must be one of ",
          paste(valid_methods, collapse = ", "), call. = FALSE)
   }
+
+  .validate_smoothing_complexity(
+    covariates = borders_model["avg_"],
+    source_variable = x_org,
+    smoothing = smoothing,
+    k = k,
+    degree = degree,
+    response = borders_model$estimate,
+    weights = weights
+  )
 
   # Model fitten
   if (smoothing == "spline") {

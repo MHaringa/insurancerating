@@ -165,6 +165,8 @@
 <li>
 <code><a href="../reference/rating_grid.html">rating_grid()</a></code> now uses base R internally and returns a regular <code>data.frame</code>.</li>
 <li>Plain GLM metadata extraction has been improved so <code>rating_grid(glm)</code> groups by model terms as expected.</li>
+<li>
+<code><a href="../reference/as_gt.html">as_gt()</a></code> now formats <code>rating_table</code> objects as grouped tariff tables, with optional significance stars and locale-aware formatting for fitted effects and exposure.</li>
 <li>Refinement metadata is now joined by the related original/new factor columns instead of being cross-joined onto every rating-grid row.</li>
 </ul></div>
 <div class="section level4">
@@ -181,6 +183,9 @@
 <li>Redistribution always preserves the total observed claim cost and returns an adjusted average claim amount suitable for a claim-count-weighted severity GLM.</li>
 <li>
 <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> now uses <code>model_variable</code> and <code>source_variable</code> as the primary argument names.</li>
+<li>GAM and shape-constrained smoothing now validate the requested basis dimension against the number of unique grouped covariate values before model fitting. Polynomial smoothing similarly validates <code>degree</code>, with actionable errors when the requested curve is too complex for the available model levels.</li>
+<li>
+<code><a href="../reference/autoplot.rating_refinement.html">autoplot.rating_refinement()</a></code> accepts <code>x_max</code> for smoothing steps, allowing users to limit the visible x-axis range without changing the smoothing fit or the underlying refinement data.</li>
 <li>
 <code><a href="../reference/edit_smoothing.html">edit_smoothing()</a></code> now uses clearer in-object editing arguments for adjusting smoothing settings without supplying an external data frame.</li>
 <li>

@@ -209,7 +209,11 @@ The key arguments are:
 ```{r}
 
 print(ref)
-autoplot(ref, variable = "age_policyholder_freq_cat")
+autoplot(
+  ref,
+  variable = "age_policyholder_freq_cat",
+  x_max = 90
+)
 
 ```
 
