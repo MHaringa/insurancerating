@@ -22,6 +22,7 @@ autoplot(
   variable = NULL,
   step = NULL,
   x_max = NULL,
+  y_max = NULL,
   remove_underscores = FALSE,
   rotate_angle = NULL,
   custom_theme = NULL,
@@ -71,6 +72,15 @@ autoplot(
   compress the range containing most portfolio risks. For example, use
   `x_max = 1e7` to display insured values up to 10 million. This
   argument is only available for smoothing steps.
+
+- y_max:
+
+  Optional single finite numeric value. Maximum relativity displayed on
+  the y-axis of a smoothing plot. Like `x_max`, this changes only the
+  visible plotting range and does not alter the smoothing fit,
+  refinement data or
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+  This argument is only available for smoothing steps.
 
 - remove_underscores:
 
