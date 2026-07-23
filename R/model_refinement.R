@@ -957,7 +957,7 @@ restrict_coef <- function(model, restrictions) {
 #'   )
 #'
 #' # Limit the visible range without changing the fitted smoothing curve.
-#' autoplot(ref, x_max = 80)
+#' autoplot(ref, x_max = 80, y_max = 1.5)
 #' }
 #'
 #' @export

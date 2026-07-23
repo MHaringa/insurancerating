@@ -212,7 +212,8 @@ print(ref)
 autoplot(
   ref,
   variable = "age_policyholder_freq_cat",
-  x_max = 90
+  x_max = 90,
+  y_max = 1.5
 )
 
 ```

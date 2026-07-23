@@ -202,9 +202,9 @@
   dimension against the number of unique grouped covariate values before model
   fitting. Polynomial smoothing similarly validates `degree`, with actionable
   errors when the requested curve is too complex for the available model levels.
-- `autoplot.rating_refinement()` accepts `x_max` for smoothing steps, allowing
-  users to limit the visible x-axis range without changing the smoothing fit or
-  the underlying refinement data.
+- `autoplot.rating_refinement()` accepts `x_max` and `y_max` for smoothing
+  steps, allowing users to limit the visible axis ranges without changing the
+  smoothing fit or the underlying refinement data.
 - `edit_smoothing()` now uses clearer in-object editing arguments for adjusting
   smoothing settings without supplying an external data frame.
 - `add_restriction()` can now accept a partial restriction data frame. Missing

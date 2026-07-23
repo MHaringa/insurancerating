@@ -127,6 +127,11 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #'   otherwise compress the range containing most portfolio risks. For example,
 #'   use `x_max = 1e7` to display insured values up to 10 million. This argument
 #'   is only available for smoothing steps.
+#' @param y_max Optional single finite numeric value. Maximum relativity
+#'   displayed on the y-axis of a smoothing plot. Like `x_max`, this changes
+#'   only the visible plotting range and does not alter the smoothing fit,
+#'   refinement data or [refit()]. This argument is only available for
+#'   smoothing steps.
 #' @param remove_underscores Logical; if `TRUE`, underscores are replaced by
 #'   spaces in the x-axis label. Default is `FALSE`.
 #' @param rotate_angle Optional numeric value for the angle of x-axis labels.
@@ -145,12 +150,14 @@ autoplot.rating_refinement <- function(object,
                                        variable = NULL,
                                        step = NULL,
                                        x_max = NULL,
+                                       y_max = NULL,
                                        remove_underscores = FALSE,
                                        rotate_angle = NULL,
                                        custom_theme = NULL,
                                        ...) {
   .assert_refinement(object)
   .assert_single_numeric(x_max, "x_max", allow_null = TRUE)
+  .assert_single_numeric(y_max, "y_max", allow_null = TRUE)
 
   if (length(object$steps) == 0) {
     stop("No refinement steps available to plot.", call. = FALSE)
@@ -168,18 +175,28 @@ autoplot.rating_refinement <- function(object,
         state = state,
         step = selected_step,
         x_max = x_max,
+        y_max = y_max,
         ...
       )
     )
   }
 
   if (selected_step$type %in% c("restriction", "relativities")) {
-    if (!is.null(x_max)) {
-      stop(
-        "'x_max' is only available when plotting a smoothing step.",
-        call. = FALSE
-      )
-    }
+    if (!is.null(x_max) || !is.null(y_max)) {
+    supplied_limits <- c(
+      if (!is.null(x_max)) "`x_max`",
+      if (!is.null(y_max)) "`y_max`"
+    )
+    limit_verb <- if (length(supplied_limits) == 1L) " is " else " are "
+    stop(
+      paste0(
+        paste(supplied_limits, collapse = " and "),
+        limit_verb,
+        "only available when plotting a smoothing step."
+      ),
+      call. = FALSE
+    )
+  }
     return(
       .plot_restriction_step(
         state = state,
@@ -230,7 +247,7 @@ autoplot.rating_refinement <- function(object,
 # Plot smoothing step
 # -----------------------------------------------------------------------------
 
-.plot_smoothing_step <- function(state, step, x_max = NULL, ...) {
+.plot_smoothing_step <- function(state, step, x_max = NULL, y_max = NULL, ...) {
   rf2 <- state$borders
   new <- state$new
   new_line <- state$new_line
@@ -372,8 +389,10 @@ autoplot.rating_refinement <- function(object,
     ggplot2::theme_minimal() +
     grid_theme
 
-  if (!is.null(x_max)) {
-    p <- p + ggplot2::coord_cartesian(xlim = c(NA_real_, x_max))
+  if (!is.null(x_max) || !is.null(y_max)) {
+    x_limits <- if (is.null(x_max)) NULL else c(NA_real_, x_max)
+    y_limits <- if (is.null(y_max)) NULL else c(NA_real_, y_max)
+    p <- p + ggplot2::coord_cartesian(xlim = x_limits, ylim = y_limits)
   }
 
   p

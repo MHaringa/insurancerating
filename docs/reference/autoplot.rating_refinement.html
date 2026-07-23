@@ -73,6 +73,7 @@ the segment.</p>
 <span>  variable <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  step <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  x_max <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  y_max <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  remove_underscores <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  rotate_angle <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  custom_theme <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -112,6 +113,14 @@ affect <code><a href="refit.html">refit()</a></code>. It is useful when a small 
 otherwise compress the range containing most portfolio risks. For example,
 use <code>x_max = 1e7</code> to display insured values up to 10 million. This argument
 is only available for smoothing steps.</p></dd>
+
+
+<dt id="arg-y-max">y_max<a class="anchor" aria-label="anchor" href="#arg-y-max"></a></dt>
+<dd><p>Optional single finite numeric value. Maximum relativity
+displayed on the y-axis of a smoothing plot. Like <code>x_max</code>, this changes
+only the visible plotting range and does not alter the smoothing fit,
+refinement data or <code><a href="refit.html">refit()</a></code>. This argument is only available for
+smoothing steps.</p></dd>
 
 
 <dt id="arg-remove-underscores">remove_underscores<a class="anchor" aria-label="anchor" href="#arg-remove-underscores"></a></dt>

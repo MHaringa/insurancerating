@@ -511,7 +511,7 @@ testthat::test_that(
 )
 
 testthat::test_that(
-  "autoplot can limit the visible smoothing range with x_max", {
+  "autoplot can limit the visible smoothing range with x_max and y_max", {
     df <- data.frame(
       y = c(1, 2, 1, 3, 2, 4, 2, 3),
       exposure = rep(1, 8),
@@ -540,7 +540,11 @@ testthat::test_that(
       )
 
     full_plot <- ggplot2::autoplot(ref)
-    limited_plot <- ggplot2::autoplot(ref, x_max = 10000000)
+    limited_plot <- ggplot2::autoplot(
+      ref,
+      x_max = 10000000,
+      y_max = 1.5
+    )
 
     testthat::expect_s3_class(limited_plot, "ggplot")
     testthat::expect_null(full_plot$coordinates$limits$x)
@@ -548,9 +552,17 @@ testthat::test_that(
       limited_plot$coordinates$limits$x,
       c(NA_real_, 10000000)
     )
+    testthat::expect_equal(
+      limited_plot$coordinates$limits$y,
+      c(NA_real_, 1.5)
+    )
     testthat::expect_error(
       ggplot2::autoplot(ref, x_max = Inf),
       "x_max"
+    )
+    testthat::expect_error(
+      ggplot2::autoplot(ref, y_max = NA_real_),
+      "y_max"
     )
 
     restriction_ref <- prepare_refinement(model, data = df) |>
@@ -559,7 +571,11 @@ testthat::test_that(
         relativity = 1
       ))
     testthat::expect_error(
-      ggplot2::autoplot(restriction_ref, x_max = 10000000),
+      ggplot2::autoplot(
+        restriction_ref,
+        x_max = 10000000,
+        y_max = 1.5
+      ),
       "only available when plotting a smoothing step"
     )
   }

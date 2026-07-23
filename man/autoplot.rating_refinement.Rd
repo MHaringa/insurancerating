@@ -9,6 +9,7 @@
   variable = NULL,
   step = NULL,
   x_max = NULL,
+  y_max = NULL,
   remove_underscores = FALSE,
   rotate_angle = NULL,
   custom_theme = NULL,
@@ -41,6 +42,12 @@ affect \code{\link[=refit]{refit()}}. It is useful when a small number of extrem
 otherwise compress the range containing most portfolio risks. For example,
 use \code{x_max = 1e7} to display insured values up to 10 million. This argument
 is only available for smoothing steps.}
+
+\item{y_max}{Optional single finite numeric value. Maximum relativity
+displayed on the y-axis of a smoothing plot. Like \code{x_max}, this changes
+only the visible plotting range and does not alter the smoothing fit,
+refinement data or \code{\link[=refit]{refit()}}. This argument is only available for
+smoothing steps.}
 
 \item{remove_underscores}{Logical; if \code{TRUE}, underscores are replaced by
 spaces in the x-axis label. Default is \code{FALSE}.}
