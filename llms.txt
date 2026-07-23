@@ -293,7 +293,7 @@ relativities.
 - [`autoplot(`*`<rating_refinement>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
   : Plot a model refinement step
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
-  : Add smoothing to a refinement workflow
+  : Smooth grouped tariff relativities
 - [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
   : Edit an existing smoothing step in a refinement workflow
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)

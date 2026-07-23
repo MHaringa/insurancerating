@@ -9,6 +9,12 @@ The original object remains a regular `data.frame` subclass; `as_gt()`
 is only used when a presentation table is needed for a report, tariff
 note or pricing review.
 
+Create a formatted `gt` table from an object returned by
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
+Risk factors are presented as row groups, while fitted model effects are
+shown as relativities or coefficients depending on the scale selected in
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
+
 ## Usage
 
 ``` r
@@ -29,18 +35,33 @@ as_gt(
   subtitle = NULL,
   ...
 )
+
+# S3 method for class 'rating_table'
+as_gt(
+  x,
+  significance = NULL,
+  locale = "nl-NL",
+  estimate_decimals = 3,
+  exposure_decimals = 0,
+  title = NULL,
+  subtitle = NULL,
+  ...
+)
 ```
 
 ## Arguments
 
 - x:
 
-  An object returned by
-  [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md).
+  A supported object to convert, such as a `threshold_assessment`
+  returned by
+  [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
+  or a `rating_table` returned by
+  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
 
 - ...:
 
-  Unused.
+  Arguments passed to methods.
 
 - claims:
 
@@ -58,8 +79,8 @@ as_gt(
 
 - locale:
 
-  Character. Locale used for number formatting, for example `"nl-NL"` or
-  `"en-US"`.
+  Character. Locale used to format model effects and exposure, for
+  example `"nl-NL"` or `"en-US"`.
 
 - loss_decimals, premium_decimals, ratio_decimals:
 
@@ -73,18 +94,49 @@ as_gt(
 
 - title:
 
-  Optional character. Table title. If `NULL`, no table title is added.
+  Optional character. Table title. If `NULL`, no title is added.
 
 - subtitle:
 
-  Optional character. Table subtitle. If `NULL`, no table subtitle is
-  added.
+  Optional character. Table subtitle. If `NULL`, no subtitle is added.
+
+- significance:
+
+  Optional logical. If `NULL`, use the significance setting stored on
+  `x`. If `TRUE`, append the stored significance stars to the model
+  effects and add the significance-level note. If `FALSE`, show fitted
+  effects without stars.
+
+- estimate_decimals:
+
+  Non-negative whole number. Number of decimals shown for fitted
+  coefficients or relativities.
+
+- exposure_decimals:
+
+  Non-negative whole number. Number of decimals shown for the exposure
+  column, when available.
 
 ## Value
 
 A `gt_tbl` object for supported methods.
 
-A `gt_tbl` object.
+## Details
+
+The first column of a `rating_table` identifies the model risk factor.
+`as_gt()` uses this column as `groupname_col` and sets
+`row_group_as_column = TRUE`. Levels belonging to the same risk factor
+are therefore kept together in a compact format suitable for a tariff
+note, model review or technical appendix.
+
+With `significance = TRUE`, significance stars are appended to the
+fitted effects and the significance levels are shown below the table.
+This requires an object originally created with
+`rating_table(significance = TRUE)`, because p-value information is
+deliberately not retained when significance is disabled during table
+construction. Significance stars are a statistical diagnostic and should
+be interpreted together with exposure, effect size, model stability and
+actuarial relevance.
 
 ## Author
 

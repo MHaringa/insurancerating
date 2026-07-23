@@ -112,6 +112,13 @@ This is useful when comparing unrestricted and refined models, or
 frequency, severity and pure premium models built on the same rating
 factors.
 
+## See also
+
+[`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+for a grouped presentation table and
+[`autoplot.rating_table()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
+for a graphical comparison of fitted effects.
+
 ## Examples
 
 ``` r

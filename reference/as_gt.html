@@ -10,12 +10,20 @@ formatted reporting table is more useful than another plot.
 Create a formatted gt table from an object returned by
 assess_excess_threshold(). The original object remains a regular
 data.frame subclass; as_gt() is only used when a presentation table is
-needed for a report, tariff note or pricing review."><meta property="og:description" content="Generic presentation helper. Methods return a gt table for objects where a
+needed for a report, tariff note or pricing review.
+Create a formatted gt table from an object returned by rating_table().
+Risk factors are presented as row groups, while fitted model effects are
+shown as relativities or coefficients depending on the scale selected in
+rating_table()."><meta property="og:description" content="Generic presentation helper. Methods return a gt table for objects where a
 formatted reporting table is more useful than another plot.
 Create a formatted gt table from an object returned by
 assess_excess_threshold(). The original object remains a regular
 data.frame subclass; as_gt() is only used when a presentation table is
-needed for a report, tariff note or pricing review."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"><!-- dependencies from examples --></head><body>
+needed for a report, tariff note or pricing review.
+Create a formatted gt table from an object returned by rating_table().
+Risk factors are presented as row groups, while fitted model effects are
+shown as relativities or coefficients depending on the scale selected in
+rating_table()."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"><!-- dependencies from examples --></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -43,7 +51,7 @@ needed for a report, tariff note or pricing review."><meta property="og:image" c
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Convert an object to a gt table</h1>
-      <small class="dont-index">Source: <a href="https://github.com/MHaringa/insurancerating/blob/master/R/excess_loss.R" class="external-link"><code>R/excess_loss.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/MHaringa/insurancerating/blob/master/R/excess_loss.R" class="external-link"><code>R/excess_loss.R</code></a>, <a href="https://github.com/MHaringa/insurancerating/blob/master/R/model_rating_table_gt.R" class="external-link"><code>R/model_rating_table_gt.R</code></a></small>
       <div class="d-none name"><code>as_gt.Rd</code></div>
     </div>
 
@@ -54,6 +62,10 @@ formatted reporting table is more useful than another plot.</p>
 <code><a href="assess_excess_threshold.html">assess_excess_threshold()</a></code>. The original object remains a regular
 <code>data.frame</code> subclass; <code>as_gt()</code> is only used when a presentation table is
 needed for a report, tariff note or pricing review.</p>
+<p>Create a formatted <code>gt</code> table from an object returned by <code><a href="rating_table.html">rating_table()</a></code>.
+Risk factors are presented as row groups, while fitted model effects are
+shown as relativities or coefficients depending on the scale selected in
+<code><a href="rating_table.html">rating_table()</a></code>.</p>
     </div>
 
     <div class="section level2">
@@ -74,6 +86,18 @@ needed for a report, tariff note or pricing review.</p>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  subtitle <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'rating_table'</span></span>
+<span><span class="fu">as_gt</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  significance <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  locale <span class="op">=</span> <span class="st">"nl-NL"</span>,</span>
+<span>  estimate_decimals <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  exposure_decimals <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  subtitle <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -82,11 +106,13 @@ needed for a report, tariff note or pricing review.</p>
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>An object returned by <code><a href="assess_excess_threshold.html">assess_excess_threshold()</a></code>.</p></dd>
+<dd><p>A supported object to convert, such as a <code>threshold_assessment</code>
+returned by <code><a href="assess_excess_threshold.html">assess_excess_threshold()</a></code> or a <code>rating_table</code> returned by
+<code><a href="rating_table.html">rating_table()</a></code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Unused.</p></dd>
+<dd><p>Arguments passed to methods.</p></dd>
 
 
 <dt id="arg-claims">claims<a class="anchor" aria-label="anchor" href="#arg-claims"></a></dt>
@@ -104,8 +130,8 @@ columns.</p></dd>
 
 
 <dt id="arg-locale">locale<a class="anchor" aria-label="anchor" href="#arg-locale"></a></dt>
-<dd><p>Character. Locale used for number formatting, for example
-<code>"nl-NL"</code> or <code>"en-US"</code>.</p></dd>
+<dd><p>Character. Locale used to format model effects and exposure,
+for example <code>"nl-NL"</code> or <code>"en-US"</code>.</p></dd>
 
 
 <dt id="arg-loss-decimals-premium-decimals-ratio-decimals">loss_decimals, premium_decimals, ratio_decimals<a class="anchor" aria-label="anchor" href="#arg-loss-decimals-premium-decimals-ratio-decimals"></a></dt>
@@ -121,19 +147,49 @@ presentation table.</p></dd>
 
 
 <dt id="arg-title">title<a class="anchor" aria-label="anchor" href="#arg-title"></a></dt>
-<dd><p>Optional character. Table title. If <code>NULL</code>, no table title is
-added.</p></dd>
+<dd><p>Optional character. Table title. If <code>NULL</code>, no title is added.</p></dd>
 
 
 <dt id="arg-subtitle">subtitle<a class="anchor" aria-label="anchor" href="#arg-subtitle"></a></dt>
-<dd><p>Optional character. Table subtitle. If <code>NULL</code>, no table
-subtitle is added.</p></dd>
+<dd><p>Optional character. Table subtitle. If <code>NULL</code>, no subtitle is
+added.</p></dd>
+
+
+<dt id="arg-significance">significance<a class="anchor" aria-label="anchor" href="#arg-significance"></a></dt>
+<dd><p>Optional logical. If <code>NULL</code>, use the significance setting
+stored on <code>x</code>. If <code>TRUE</code>, append the stored significance stars to the model
+effects and add the significance-level note. If <code>FALSE</code>, show fitted
+effects without stars.</p></dd>
+
+
+<dt id="arg-estimate-decimals">estimate_decimals<a class="anchor" aria-label="anchor" href="#arg-estimate-decimals"></a></dt>
+<dd><p>Non-negative whole number. Number of decimals shown
+for fitted coefficients or relativities.</p></dd>
+
+
+<dt id="arg-exposure-decimals">exposure_decimals<a class="anchor" aria-label="anchor" href="#arg-exposure-decimals"></a></dt>
+<dd><p>Non-negative whole number. Number of decimals shown
+for the exposure column, when available.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>gt_tbl</code> object for supported methods.</p>
-<p>A <code>gt_tbl</code> object.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The first column of a <code>rating_table</code> identifies the model risk factor.
+<code>as_gt()</code> uses this column as <code>groupname_col</code> and sets
+<code>row_group_as_column = TRUE</code>. Levels belonging to the same risk factor are
+therefore kept together in a compact format suitable for a tariff note,
+model review or technical appendix.</p>
+<p>With <code>significance = TRUE</code>, significance stars are appended to the fitted
+effects and the significance levels are shown below the table. This requires
+an object originally created with <code>rating_table(significance = TRUE)</code>,
+because p-value information is deliberately not retained when significance
+is disabled during table construction. Significance stars are a statistical
+diagnostic and should be interpreted together with exposure, effect size,
+model stability and actuarial relevance.</p>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
@@ -244,6 +300,51 @@ subtitle is added.</p></dd>
 <td headers="Retail stub_2_8 pure_premium_after" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums;" valign="middle" align="right">86.000</td>
 <td headers="Retail stub_2_8 premium_reduction" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums;" valign="middle" align="right">30.000</td>
 <td headers="Retail stub_2_8 premium_reduction_ratio" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums; background-color: #FFF9D5; color: #000000;" bgcolor="#FFF9D5" valign="middle" align="right">25,9%</td></tr></tbody></table></div></div><span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="va">MTPL</span></span></span>
+<span class="r-in"><span><span class="va">portfolio</span><span class="op">$</span><span class="va">zip</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">portfolio</span><span class="op">$</span><span class="va">zip</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">frequency_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">bm</span> <span class="op">+</span> <span class="va">zip</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">portfolio</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">fitted_tariff</span> <span class="op">&lt;-</span> <span class="fu"><a href="rating_table.html">rating_table</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">frequency_model</span>,</span></span>
+<span class="r-in"><span>  model_data <span class="op">=</span> <span class="va">portfolio</span>,</span></span>
+<span class="r-in"><span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span></span>
+<span class="r-in"><span>  significance <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"gt"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="fu">as_gt</span><span class="op">(</span><span class="va">fitted_tariff</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">as_gt</span><span class="op">(</span><span class="va">fitted_tariff</span>, significance <span class="op">=</span> <span class="cn">FALSE</span>, locale <span class="op">=</span> <span class="st">"en-US"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<div class="gt-table"><div id="eexombwkke" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+
+  <table class="table gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false" style="-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3;" bgcolor="#FFFFFF"><thead style="border-style: none;"><tr class="gt_col_headings gt_spanner_row" style="border-style: none; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; border-bottom-style: hidden;"><th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" scope="col" id="a::stub" style="border-style: none; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; text-align: left;" bgcolor="#FFFFFF" valign="bottom" align="left">Risk factor</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" scope="col" id="level" style="border-style: none; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; text-align: left;" bgcolor="#FFFFFF" valign="bottom" align="left">Level</th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="1" scope="col" id="Relativities" style="border-style: none; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; text-align: center;" bgcolor="#FFFFFF" align="center">
+        <div class="gt_column_spanner" style="border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; overflow-x: hidden; display: inline-block; width: 100%;">Relativities</div>
+      </th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="2" colspan="1" scope="col" id="exposure" style="border-style: none; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums;" bgcolor="#FFFFFF" valign="bottom" align="right">Exposure</th>
+    </tr><tr class="gt_col_headings" style="border-style: none; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3;"><th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="est_frequency_model" style="border-style: none; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums;" bgcolor="#FFFFFF" valign="bottom" align="right">Frequency Model</th>
+    </tr></thead><tbody class="gt_table_body" style="border-style: none; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3;"><tr class="gt_row_group_first" style="border-style: none;"><td headers="(Intercept) stub_2_1 stub_1" rowspan="1" class="gt_row gt_left gt_stub_row_group" style="border-style: none; padding-top: 8px; padding-bottom: 8px; margin: 10px; border-top-style: solid; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; overflow-x: hidden; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; text-align: left; border-top-width: 2px;" bgcolor="#FFFFFF" valign="top" align="left">(Intercept)</td>
+<td headers="(Intercept) stub_2_1 level" class="gt_row gt_left" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: left; border-top-width: 2px;" valign="middle" align="left">(Intercept)</td>
+<td headers="(Intercept) stub_2_1 est_frequency_model" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums; border-top-width: 2px;" valign="middle" align="right">0.142</td>
+<td headers="(Intercept) stub_2_1 exposure" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums; border-top-width: 2px;" valign="middle" align="right">NA</td></tr><tr class="gt_row_group_first" style="border-style: none;"><td headers="zip stub_2_2 stub_1" rowspan="4" class="gt_row gt_left gt_stub_row_group" style="border-style: none; padding-top: 8px; padding-bottom: 8px; margin: 10px; border-top-style: solid; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; overflow-x: hidden; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; text-align: left; border-top-width: 2px;" bgcolor="#FFFFFF" valign="top" align="left">zip</td>
+<td headers="zip stub_2_2 level" class="gt_row gt_left" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: left; border-top-width: 2px;" valign="middle" align="left">0</td>
+<td headers="zip stub_2_2 est_frequency_model" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums; border-top-width: 2px;" valign="middle" align="right">1.000</td>
+<td headers="zip stub_2_2 exposure" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums; border-top-width: 2px;" valign="middle" align="right">207</td></tr><tr style="border-style: none;"><td headers="zip stub_2_3 level" class="gt_row gt_left" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: left;" valign="middle" align="left">1</td>
+<td headers="zip stub_2_3 est_frequency_model" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums;" valign="middle" align="right">1.025</td>
+<td headers="zip stub_2_3 exposure" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums;" valign="middle" align="right">11,081</td></tr><tr style="border-style: none;"><td headers="zip stub_2_4 level" class="gt_row gt_left" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: left;" valign="middle" align="left">2</td>
+<td headers="zip stub_2_4 est_frequency_model" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums;" valign="middle" align="right">0.924</td>
+<td headers="zip stub_2_4 exposure" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums;" valign="middle" align="right">7,783</td></tr><tr style="border-style: none;"><td headers="zip stub_2_5 level" class="gt_row gt_left" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: left;" valign="middle" align="left">3</td>
+<td headers="zip stub_2_5 est_frequency_model" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums;" valign="middle" align="right">0.976</td>
+<td headers="zip stub_2_5 exposure" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums;" valign="middle" align="right">7,588</td></tr><tr class="gt_row_group_first" style="border-style: none;"><td headers="bm stub_2_6 stub_1" rowspan="1" class="gt_row gt_left gt_stub_row_group" style="border-style: none; padding-top: 8px; padding-bottom: 8px; margin: 10px; border-top-style: solid; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; overflow-x: hidden; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; text-align: left; border-top-width: 2px;" bgcolor="#FFFFFF" valign="top" align="left">bm</td>
+<td headers="bm stub_2_6 level" class="gt_row gt_left" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: left; border-top-width: 2px;" valign="middle" align="left">bm</td>
+<td headers="bm stub_2_6 est_frequency_model" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums; border-top-width: 2px;" valign="middle" align="right">0.998</td>
+<td headers="bm stub_2_6 exposure" class="gt_row gt_right" style="border-style: none; padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums; border-top-width: 2px;" valign="middle" align="right">NA</td></tr></tbody></table></div></div><span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
