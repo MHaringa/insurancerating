@@ -28,8 +28,12 @@ add_relativities(
 
 - model_variable:
 
-  Character string. Existing variable in the GLM. Levels of this
-  variable can be split into more detailed tariff segments.
+  Character string. Existing variable in the GLM, or a restricted
+  version created by an earlier
+  [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+  step. Levels of the underlying model variable can be split into more
+  detailed tariff segments. When an earlier restriction exists, its
+  coefficients are used automatically.
 
 - split_variable:
 
@@ -75,6 +79,16 @@ normalised using exposure so that the refined split keeps the original
 level effect on average. This helps prevent an expert split from
 unintentionally changing the total premium level for the original model
 group.
+
+If `model_variable` was restricted in an earlier
+[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+step, the restricted coefficients are automatically used as the basis
+for the derived relativities. The user can continue to supply the
+original model variable; no additional argument is needed. Supplying the
+restricted variable explicitly gives the same coefficient basis and does
+not apply the restriction a second time. Refinement steps are
+order-dependent, so a restriction added after `add_relativities()` does
+not affect an earlier relativity step.
 
 **When to use**
 
@@ -129,6 +143,11 @@ relativities <- relativities(
     "residential",
     new_levels = c("flat", "house"),
     relativities = c(0.95, 1.05)
+  ),
+  split_level(
+    "commercial",
+    new_levels = c("shop", "office"),
+    relativities = c(1.10, 0.90)
   )
 )
 

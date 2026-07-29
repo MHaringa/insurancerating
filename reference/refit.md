@@ -36,8 +36,9 @@ refit(object, intercept_only = FALSE, ...)
 
 ## Value
 
-A refitted object of class `glm`. The returned model also stores
-attributes used by
+A refitted object that inherits from `glm` and additionally from
+`refitrestricted`, `refitsmooth`, or both, depending on the applied
+refinement steps. The returned model stores attributes used by
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
 and
 [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
@@ -62,6 +63,16 @@ effects are fixed as offsets based on the existing fitted relativities.
 The refit then estimates only the intercept. This can be useful when the
 relative tariff structure should remain fixed and only the overall
 premium level should be recalibrated.
+
+Printing the returned model first shows the original and refitted
+formulas, the model family, whether an intercept-only refit was used,
+and a concise description of every restriction, smoothing or relativity
+step. This is followed by the regular `glm` output with the model call,
+coefficients, degrees of freedom, deviance and AIC. The object continues
+to inherit from `glm`, so standard methods such as
+[`stats::predict.glm()`](https://rdrr.io/r/stats/predict.glm.html) and
+[`summary.glm()`](https://rdrr.io/r/stats/summary.glm.html) remain
+available.
 
 ## Author
 

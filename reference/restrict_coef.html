@@ -63,7 +63,12 @@ prepare_refinement(model) |&amp;gt;
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">restrict_coef</span><span class="op">(</span><span class="va">model</span>, <span class="va">restrictions</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">restrict_coef</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  <span class="va">restrictions</span>,</span>
+<span>  allow_new_levels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  allow_new_risk_factors <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -77,11 +82,26 @@ prepare_refinement(model) |&amp;gt;
 <dt id="arg-restrictions">restrictions<a class="anchor" aria-label="anchor" href="#arg-restrictions"></a></dt>
 <dd><p>data.frame with exactly two columns.</p></dd>
 
+
+<dt id="arg-allow-new-levels">allow_new_levels<a class="anchor" aria-label="anchor" href="#arg-allow-new-levels"></a></dt>
+<dd><p>Logical. If <code>TRUE</code> (default), restrictions may
+include tariff levels that were not observed when the model was fitted.
+See <code><a href="add_restriction.html">add_restriction()</a></code>.</p></dd>
+
+
+<dt id="arg-allow-new-risk-factors">allow_new_risk_factors<a class="anchor" aria-label="anchor" href="#arg-allow-new-risk-factors"></a></dt>
+<dd><p>Logical. Whether a fixed tariff factor that is
+available in the model data but absent from the fitted model may be added.
+The default is <code>TRUE</code> to preserve the historical behaviour of
+<code>restrict_coef()</code>. New code using <code><a href="add_restriction.html">add_restriction()</a></code> requires an explicit
+opt-in because its default is <code>FALSE</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A legacy restricted object. New code should use
-<code><a href="prepare_refinement.html">prepare_refinement()</a></code>, <code><a href="add_restriction.html">add_restriction()</a></code>, and <code><a href="refit.html">refit()</a></code>.</p>
+    <p>A <code>rating_refinement</code> object containing the restriction step. Call
+<code><a href="refit.html">refit()</a></code> to apply the restriction and return the refined GLM. New code
+should use <code><a href="prepare_refinement.html">prepare_refinement()</a></code> followed by <code><a href="add_restriction.html">add_restriction()</a></code> directly.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

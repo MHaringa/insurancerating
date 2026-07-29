@@ -75,8 +75,11 @@ externally agreed relativities.</p>
 
 
 <dt id="arg-model-variable">model_variable<a class="anchor" aria-label="anchor" href="#arg-model-variable"></a></dt>
-<dd><p>Character string. Existing variable in the GLM. Levels
-of this variable can be split into more detailed tariff segments.</p></dd>
+<dd><p>Character string. Existing variable in the GLM, or a
+restricted version created by an earlier <code><a href="add_restriction.html">add_restriction()</a></code> step. Levels
+of the underlying model variable can be split into more detailed tariff
+segments. When an earlier restriction exists, its coefficients are used
+automatically.</p></dd>
 
 
 <dt id="arg-split-variable">split_variable<a class="anchor" aria-label="anchor" href="#arg-split-variable"></a></dt>
@@ -115,6 +118,14 @@ a named list describing those splits, usually built with <code><a href="relativi
 normalised using exposure so that the refined split keeps the original level
 effect on average. This helps prevent an expert split from unintentionally
 changing the total premium level for the original model group.</p>
+<p>If <code>model_variable</code> was restricted in an earlier <code><a href="add_restriction.html">add_restriction()</a></code> step,
+the restricted coefficients are automatically used as the basis for the
+derived relativities. The user can continue to supply the original model
+variable; no additional argument is needed. Supplying the restricted
+variable explicitly gives the same coefficient basis and does not apply the
+restriction a second time. Refinement steps are order-dependent, so a
+restriction added after <code>add_relativities()</code> does not affect an earlier
+relativity step.</p>
 <p><strong>When to use</strong></p>
 <p><code>add_relativities()</code> is intended for refinement within an already reasonably
 homogeneous GLM segment. It redistributes an existing coefficient across
@@ -164,6 +175,11 @@ acceptation rules, instead of relying only on <code>add_relativities()</code>.</
 <span class="r-in"><span>    <span class="st">"residential"</span>,</span></span>
 <span class="r-in"><span>    new_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"flat"</span>, <span class="st">"house"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>    relativities <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.95</span>, <span class="fl">1.05</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="fu"><a href="split_level.html">split_level</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="st">"commercial"</span>,</span></span>
+<span class="r-in"><span>    new_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"shop"</span>, <span class="st">"office"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    relativities <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.10</span>, <span class="fl">0.90</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
