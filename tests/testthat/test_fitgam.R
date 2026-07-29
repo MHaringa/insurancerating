@@ -121,6 +121,42 @@ test_that("deprecated fit_gam wrapper still works", {
   expect_equal(fit$model, "frequency")
 })
 
+test_that("deprecated fit_gam preserves the supplied amount column", {
+  data <- MTPL
+  names(data)[names(data) == "amount"] <- "incurred_loss"
+
+  fit <- suppressWarnings(
+    fit_gam(
+      data,
+      nclaims = nclaims,
+      x = age_policyholder,
+      exposure = exposure,
+      amount = incurred_loss,
+      model = "severity",
+      round_x = 5
+    )
+  )
+
+  expect_s3_class(fit, "riskfactor_gam")
+  expect_equal(fit$model, "severity")
+  expect_true("avg_claimsize" %in% names(fit$data))
+  expect_false("amount" %in% names(data))
+
+  fit_strings <- suppressWarnings(
+    fit_gam(
+      data,
+      nclaims = "nclaims",
+      x = "age_policyholder",
+      exposure = "exposure",
+      amount = "incurred_loss",
+      model = "severity",
+      round_x = 5
+    )
+  )
+
+  expect_equal(fit_strings$data$avg_claimsize, fit$data$avg_claimsize)
+})
+
 test_that("deprecated riskfactor_gam name and argument aliases still work", {
   fit <- expect_warning(
     riskfactor_gam(MTPL,

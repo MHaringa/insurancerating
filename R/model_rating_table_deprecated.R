@@ -63,19 +63,41 @@ rating_factors <- function(..., model_data = NULL, exposure = TRUE,
                            exposure_name = NULL,
                            signif_stars = FALSE,
                            exponentiate = TRUE, round_exposure = 0) {
+  mc <- match.call(expand.dots = FALSE)
   lifecycle::deprecate_warn("0.8.0", "rating_factors()", "rating_table()")
 
   if (!missing(exposure) && is.symbol(substitute(exposure))) {
     exposure <- deparse(substitute(exposure))
   }
 
-  rating_table(
-    ...,
-    model_data = model_data,
-    exposure = exposure,
-    exposure_output = exposure_name,
-    exponentiate = exponentiate,
-    significance = signif_stars,
-    round_exposure = round_exposure
+  model_calls <- as.list(mc$...)
+  evaluation_env <- list2env(
+    list(
+      .legacy_model_data = model_data,
+      .legacy_exposure = exposure,
+      .legacy_exposure_name = exposure_name,
+      .legacy_exponentiate = exponentiate,
+      .legacy_signif_stars = signif_stars,
+      .legacy_round_exposure = round_exposure
+    ),
+    parent = parent.frame()
+  )
+
+  forwarded_call <- as.call(c(
+    list(quote(rating_table)),
+    model_calls,
+    alist(
+      model_data = .legacy_model_data,
+      exposure = .legacy_exposure,
+      exposure_output = .legacy_exposure_name,
+      exponentiate = .legacy_exponentiate,
+      significance = .legacy_signif_stars,
+      round_exposure = .legacy_round_exposure
+    )
+  ))
+
+  eval(
+    forwarded_call,
+    envir = evaluation_env
   )
 }

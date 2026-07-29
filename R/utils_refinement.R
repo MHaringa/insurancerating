@@ -397,11 +397,14 @@ join_to_nearest <- function(dat, reference, x) {
 #' @param restrictions_df data.frame with two columns, column 1 must include
 #'   the levels of the risk factor, and column 2 must include the new restricted
 #'   coefficients.
+#' @param allow_new_levels Logical. Whether restriction levels absent from the
+#'   model data are intentional.
 #'
 #' @importFrom dplyr left_join
 #'
 #' @keywords internal
-add_restrictions_df <- function(model_data, restrictions_df) {
+add_restrictions_df <- function(model_data, restrictions_df,
+                                allow_new_levels = FALSE) {
 
   rcol1 <- names(restrictions_df)[1]
   rcol2 <- names(restrictions_df)[2]
@@ -445,7 +448,7 @@ add_restrictions_df <- function(model_data, restrictions_df) {
     )
   }
 
-  if (length(restricted_not_present) > 0) {
+  if (length(restricted_not_present) > 0 && !isTRUE(allow_new_levels)) {
     warning(
       "Levels in restriction data for '", rcol1,
       "' not present in model data: ",

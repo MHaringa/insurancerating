@@ -76,9 +76,11 @@ relativities fixed as offsets and estimate only the intercept.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A refitted object of class <code>glm</code>. The returned model also stores
-attributes used by <code><a href="rating_table.html">rating_table()</a></code> and <code><a href="rating_grid.html">rating_grid()</a></code> to recognise
-refined rating factors, fixed relativities and smoothing metadata.</p>
+    <p>A refitted object that inherits from <code>glm</code> and additionally from
+<code>refitrestricted</code>, <code>refitsmooth</code>, or both, depending on the applied
+refinement steps. The returned model stores attributes used by
+<code><a href="rating_table.html">rating_table()</a></code> and <code><a href="rating_grid.html">rating_grid()</a></code> to recognise refined rating factors,
+fixed relativities and smoothing metadata.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -94,6 +96,13 @@ With <code>intercept_only = TRUE</code>, remaining original model effects are fi
 offsets based on the existing fitted relativities. The refit then estimates
 only the intercept. This can be useful when the relative tariff structure
 should remain fixed and only the overall premium level should be recalibrated.</p>
+<p>Printing the returned model first shows the original and refitted formulas,
+the model family, whether an intercept-only refit was used, and a concise
+description of every restriction, smoothing or relativity step. This is
+followed by the regular <code>glm</code> output with the model call, coefficients,
+degrees of freedom, deviance and AIC. The object continues to inherit from
+<code>glm</code>, so standard methods such as <code><a href="https://rdrr.io/r/stats/predict.glm.html" class="external-link">stats::predict.glm()</a></code> and
+<code><a href="https://rdrr.io/r/stats/summary.glm.html" class="external-link">summary.glm()</a></code> remain available.</p>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>

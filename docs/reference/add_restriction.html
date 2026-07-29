@@ -55,7 +55,12 @@ structure easier to explain.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">add_restriction</span><span class="op">(</span><span class="va">model</span>, <span class="va">restrictions</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">add_restriction</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  <span class="va">restrictions</span>,</span>
+<span>  allow_new_levels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  allow_new_risk_factors <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -73,6 +78,21 @@ must have the same name as the model variable to restrict and contains the
 levels to adjust. The second column contains the replacement relativities.
 Levels that are not supplied are filled with the currently fitted GLM
 relativities.</p></dd>
+
+
+<dt id="arg-allow-new-levels">allow_new_levels<a class="anchor" aria-label="anchor" href="#arg-allow-new-levels"></a></dt>
+<dd><p>Logical. If <code>TRUE</code> (default), <code>restrictions</code> may
+contain levels that were not observed in the model data. Their supplied
+relativities are treated as explicit tariff assumptions rather than model
+estimates. If <code>FALSE</code>, an unknown level results in an error.</p></dd>
+
+
+<dt id="arg-allow-new-risk-factors">allow_new_risk_factors<a class="anchor" aria-label="anchor" href="#arg-allow-new-risk-factors"></a></dt>
+<dd><p>Logical. If <code>FALSE</code> (default), the first column
+of <code>restrictions</code> must identify a variable included in the fitted GLM. Set
+this to <code>TRUE</code> to add a variable that is present in the refinement data but
+absent from the model. All observed levels must then have supplied
+relativities, which are treated as fixed tariff assumptions.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -94,6 +114,27 @@ the levels that need a manual adjustment. If only a subset is supplied, the
 missing levels are automatically filled with their current fitted GLM
 relativities. This makes it possible to fix one level explicitly while keeping
 the other levels at their already estimated values.</p>
+<p>Levels that were not observed when the GLM was fitted can also be supplied.
+Such a level has no coefficient estimate from the model data. Its relativity
+is therefore an explicit tariff assumption, for example based on expert
+judgement, external experience or a planned extension of the tariff. Existing
+levels that are not supplied remain fixed at their fitted relativities.</p>
+<p>With <code>allow_new_levels = TRUE</code>, which is the default, these new tariff levels
+are retained in the refinement metadata and subsequently shown by
+<code><a href="rating_table.html">rating_table()</a></code>. Set <code>allow_new_levels = FALSE</code> when the restriction table
+should be checked strictly against the levels observed by the fitted model,
+for example to detect spelling errors in level names.</p>
+<p>A variable that is present in the refinement data but was not included in the
+fitted GLM can be added with <code>allow_new_risk_factors = TRUE</code>. In that case all
+observed levels must have a supplied relativity. The new factor is applied as
+a fixed tariff factor during <code><a href="refit.html">refit()</a></code>; its effects are not estimated from the
+model data. This can be appropriate when an external classification or expert
+assumption must be incorporated, such as a hail zone derived from geographic
+information.</p>
+<p><code>allow_new_risk_factors</code> does not create the portfolio variable itself. The
+refinement data must already contain a column assigning every observation to
+a level. This is required to apply the supplied relativities to individual
+records.</p>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
@@ -115,12 +156,62 @@ the other levels at their already estimated values.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">restrictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  postal_area <span class="op">=</span> <span class="st">"C"</span>,</span></span>
-<span class="r-in"><span>  relativity <span class="op">=</span> <span class="fl">1.10</span></span></span>
+<span class="r-in"><span>  postal_area <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"C"</span>, <span class="st">"D"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  relativity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.10</span>, <span class="fl">1.20</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">refined</span> <span class="op">&lt;-</span> <span class="fu"><a href="prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">add_restriction</span><span class="op">(</span><span class="va">restrictions</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Postal area D was not observed in the portfolio. Its relativity is an</span></span></span>
+<span class="r-in"><span><span class="co"># explicit tariff assumption and becomes available after refitting.</span></span></span>
+<span class="r-in"><span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="va">refined</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">refined_model</span>, exposure <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   risk_factor       level est_refined_model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (Intercept) (Intercept)          2.096774</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  relativity           A          1.000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  relativity           B          1.000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  relativity           C          1.100000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  relativity           D          1.200000</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A risk factor absent from the fitted GLM can be added explicitly. The</span></span></span>
+<span class="r-in"><span><span class="co"># portfolio must already assign every observation to a hail zone.</span></span></span>
+<span class="r-in"><span><span class="va">portfolio</span><span class="op">$</span><span class="va">hail_zone</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"low"</span>, <span class="st">"high"</span>, <span class="st">"low"</span>, <span class="st">"high"</span>, <span class="st">"low"</span>, <span class="st">"high"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">hail_restrictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  hail_zone <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"low"</span>, <span class="st">"high"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  hail_relativity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.00</span>, <span class="fl">1.20</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">add_restriction</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="va">hail_restrictions</span>,</span></span>
+<span class="r-in"><span>    allow_new_risk_factors <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Refined generalized linear model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Original formula:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   claims ~ postal_area + offset(log(exposure))</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Refitted formula:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   claims ~ postal_area + offset(log(hail_relativity) + log(exposure))</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Family: poisson (link: log)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept-only refit: no</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Refinement steps:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1. Restriction: hail_zone -&gt; hail_relativity (2 levels) [expert-specified new risk factor]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Call:  glm(formula = claims ~ postal_area + offset(log(hail_relativity) + </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     log(exposure)), family = poisson(link = "log"), data = refined_data)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  (Intercept)  postal_areaB  postal_areaC  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.978e-01    -1.179e-11     2.231e-01  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Degrees of Freedom: 5 Total (i.e. Null);  3 Residual</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Null Deviance:	    2.321 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Residual Deviance: 2.17 	AIC: 23.66</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

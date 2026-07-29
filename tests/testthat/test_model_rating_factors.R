@@ -315,6 +315,53 @@ testthat::test_that(
 )
 
 testthat::test_that(
+  "rating_factors preserves dynamic model names from rating_table", {
+    model_data <- MTPL2
+    model_data$area <- as.factor(model_data$area)
+
+    freq <- glm(
+      nclaims ~ area,
+      family = poisson(),
+      data = model_data
+    )
+    freq1 <- glm(
+      nclaims ~ area + premium,
+      family = poisson(),
+      data = model_data
+    )
+
+    legacy_freq <- suppressWarnings(
+      rating_factors(freq, exposure = FALSE)
+    )
+    legacy_freq1 <- suppressWarnings(
+      rating_factors(freq1, exposure = FALSE)
+    )
+
+    current_freq <- rating_table(freq, exposure = FALSE)
+    current_freq1 <- rating_table(freq1, exposure = FALSE)
+
+    testthat::expect_named(
+      legacy_freq$df,
+      c("risk_factor", "level", "est_freq")
+    )
+    testthat::expect_named(
+      legacy_freq1$df,
+      c("risk_factor", "level", "est_freq1")
+    )
+    testthat::expect_identical(
+      names(legacy_freq$df)[3],
+      names(current_freq$df)[3]
+    )
+    testthat::expect_identical(
+      names(legacy_freq1$df)[3],
+      names(current_freq1$df)[3]
+    )
+    testthat::expect_false(any(grepl("\\.\\.", names(legacy_freq$df))))
+    testthat::expect_false(any(grepl("\\.\\.", names(legacy_freq1$df))))
+  }
+)
+
+testthat::test_that(
   "rating_table rejects pre-refit refinement objects", {
     testthat::expect_error(
       rating_table(prepare_refinement(mod1)),

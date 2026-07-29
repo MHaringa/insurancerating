@@ -1,10 +1,13 @@
-globalVariables(c("n", "y", "x", "predicted", "lwr_95", "upr_95", "frequency",
-                  ".SD", ".N", ".", "density", "avg_claimsize",
-                  "avg_premium", ":=", "difference", "maanden", "maanden_tot",
-                  "id", "..count..", "level", "Coef", "type", "fm_no_offset",
-                  "start_", "estimate", "end_", "col1", "yhat", "breaks_min",
-                  "breaks_max", "count", "sd", "left", "right", "xvar",
-                  "index_dates", "index_df", "average_severity", "risk_premium",
-                  "loss_ratio", "average_premium", "fitted", "Gamma",
-                  "exposure", "nclaims", "weighted_premium", "conf_low",
-                  "conf_high", "name", "x_num", "x_start", "x_end", "label"))
+utils::globalVariables(c(
+  "n", "y", "x", "predicted", "lwr_95", "upr_95", "frequency",
+  ".SD", ".N", ".", "density", "avg_claimsize", "avg_premium", ":=",
+  "difference", "maanden", "maanden_tot", "id", "..count..", "level",
+  "Coef", "type", "fm_no_offset", "start_", "estimate", "end_", "col1",
+  "yhat", "breaks_min", "breaks_max", "count", "sd", "left", "right",
+  "xvar", "index_dates", "index_df", "average_severity", "risk_premium",
+  "loss_ratio", "average_premium", "fitted", "Gamma", "exposure",
+  "nclaims", "weighted_premium", "conf_low", "conf_high", "name", "x_num",
+  "x_start", "x_end", "label", ".legacy_model_data", ".legacy_exposure",
+  ".legacy_exposure_name", ".legacy_exponentiate", ".legacy_signif_stars",
+  ".legacy_round_exposure"
+))

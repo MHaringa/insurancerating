@@ -92,10 +92,13 @@ normalise_gam_model <- function(model) {
 }
 
 #' @keywords internal
-arg_to_string_or_null <- function(arg) {
-  expr <- substitute(arg)
+legacy_gam_column_name <- function(expr) {
   if (identical(expr, quote(NULL))) {
     NULL
+  } else if (is.character(expr) && length(expr) == 1L) {
+    expr
+  } else if (is.name(expr)) {
+    as.character(expr)
   } else {
     deparse(expr)
   }
@@ -451,6 +454,11 @@ riskfactor_gam <- function(data, nclaims = NULL, x = NULL, exposure = NULL,
 #' @keywords internal
 fit_gam <- function(data, nclaims, x, exposure, amount = NULL,
                     pure_premium = NULL, model = "frequency", round_x = NULL) {
+  claim_count <- legacy_gam_column_name(substitute(nclaims))
+  risk_factor <- legacy_gam_column_name(substitute(x))
+  exposure_column <- legacy_gam_column_name(substitute(exposure))
+  claim_amount <- legacy_gam_column_name(substitute(amount))
+  pure_premium_column <- legacy_gam_column_name(substitute(pure_premium))
 
   lifecycle::deprecate_warn(
     when = "0.8.0",
@@ -461,16 +469,16 @@ fit_gam <- function(data, nclaims, x, exposure, amount = NULL,
 column names must be supplied as character strings, e.g.
 `risk_factor_gam(df, claim_count = \"nclaims\", risk_factor = \"age\", exposure = \"exposure\")`.
 The old NSE-style (`fit_gam(df, nclaims = nclaims, x = age, exposure = exposure)`)
-is no longer supported."
+remains available through the deprecated wrapper."
   )
 
   risk_factor_gam(
     data = data,
-    claim_count = deparse(substitute(nclaims)),
-    risk_factor = deparse(substitute(x)),
-    exposure = deparse(substitute(exposure)),
-    claim_amount = arg_to_string_or_null(amount),
-    pure_premium = arg_to_string_or_null(pure_premium),
+    claim_count = claim_count,
+    risk_factor = risk_factor,
+    exposure = exposure_column,
+    claim_amount = claim_amount,
+    pure_premium = pure_premium_column,
     model = model,
     round_risk_factor = round_x
   )

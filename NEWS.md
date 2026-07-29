@@ -1,5 +1,3 @@
-# insurancerating
-
 ## insurancerating 0.8.0.9000 (development version)
 
 ### Overview of changes since 0.8.0
@@ -26,6 +24,18 @@
 - `add_smoothing()` now stops early with the affected column and missing-value
   count when `model_variable` contains `NA`. `add_prediction()` preserves `NA`
   predictions and reports their number in a warning.
+- `add_restriction()` and deprecated `restrict_coef()` can include tariff
+  levels that were not observed when the GLM was fitted. Their supplied
+  relativities are treated as explicit tariff assumptions. Set
+  `allow_new_levels = FALSE` for strict matching against observed levels.
+- `add_restriction()` can add a fixed, expert-specified tariff factor that is
+  present in the refinement data but absent from the fitted GLM. This requires
+  the explicit opt-in `allow_new_risk_factors = TRUE`; the default remains
+  `FALSE`. Deprecated `restrict_coef()` keeps its historical permissive
+  behaviour and therefore uses `TRUE` by default.
+- Models returned by `refit()` now print a concise refinement summary followed
+  by the regular GLM output. The stored call is shown as a readable `glm(...)`
+  call instead of the internal function definition.
 
 #### Rating tables
 

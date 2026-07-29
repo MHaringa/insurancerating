@@ -230,7 +230,22 @@ testthat::test_that(
     refined <- refit(ref)
     testthat::expect_s3_class(refined, "glm")
     testthat::expect_s3_class(refined, "refitrestricted")
+    testthat::expect_identical(class(refined)[1], "refitrestricted")
+    testthat::expect_identical(as.character(refined$call[[1]]), "glm")
     testthat::expect_equal(as.character(refined$call$data), "refined_data")
+
+    printed <- paste(capture.output(print(refined)), collapse = "\n")
+    testthat::expect_match(printed, "Refined generalized linear model")
+    testthat::expect_match(printed, "Original formula:")
+    testthat::expect_match(printed, "Refitted formula:")
+    testthat::expect_match(printed, "Restriction: zip -> zip_rst \\(3 levels\\)")
+    testthat::expect_match(printed, "Intercept-only refit: no")
+    testthat::expect_match(printed, "Call:")
+    testthat::expect_match(printed, "Coefficients:")
+    testthat::expect_false(any(grepl(
+      "function \\(formula, family",
+      printed
+    )))
 
     testthat::expect_s3_class(ggplot2::autoplot(ref), "ggplot")
   }
@@ -294,7 +309,60 @@ testthat::test_that(
 )
 
 testthat::test_that(
-  "add_restriction validates partial restriction levels", {
+  "add_restriction supports new tariff levels", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      postal_area = factor(c("A", "B", "C", "A", "B", "C"))
+    )
+    model <- glm(y ~ postal_area + offset(log(exposure)),
+                 family = poisson(),
+                 data = df)
+    ref <- prepare_refinement(model, data = df)
+    restrictions <- data.frame(
+      postal_area = c("C", "D"),
+      relativity = c(1.1, 1.2)
+    )
+
+    refined <- add_restriction(ref, restrictions)
+    completed <- refined$steps[[1]]$restrictions
+
+    testthat::expect_equal(
+      as.character(completed$postal_area),
+      c("A", "B", "C", "D")
+    )
+    testthat::expect_equal(
+      completed$relativity[completed$postal_area == "D"],
+      1.2
+    )
+    testthat::expect_identical(refined$steps[[1]]$new_levels, "D")
+    testthat::expect_true(refined$steps[[1]]$allow_new_levels)
+
+    fitted <- refit(refined)
+    tariff <- rating_table(fitted, exposure = FALSE)$df
+
+    testthat::expect_s3_class(fitted, "refitrestricted")
+    testthat::expect_equal(
+      tariff$est_fitted[
+        tariff$risk_factor == "relativity" & tariff$level == "D"
+      ],
+      1.2
+    )
+
+    legacy <- suppressWarnings(
+      restrict_coef(
+        model,
+        restrictions
+      )
+    )
+    testthat::expect_s3_class(legacy, "rating_refinement")
+    testthat::expect_identical(legacy$steps[[1]]$new_levels, "D")
+    testthat::expect_s3_class(refit(legacy), "refitrestricted")
+  }
+)
+
+testthat::test_that(
+  "add_restriction validates restriction inputs and strict level matching", {
     df <- data.frame(
       y = c(1, 2, 1, 3),
       exposure = rep(1, 4),
@@ -306,8 +374,20 @@ testthat::test_that(
     ref <- prepare_refinement(model, data = df)
 
     testthat::expect_error(
-      add_restriction(ref, data.frame(zip = "missing", zip_rst = 1.2)),
+      add_restriction(
+        ref,
+        data.frame(zip = "missing", zip_rst = 1.2),
+        allow_new_levels = FALSE
+      ),
       "not found"
+    )
+    testthat::expect_error(
+      add_restriction(
+        ref,
+        data.frame(zip = "missing", zip_rst = 1.2),
+        allow_new_levels = NA
+      ),
+      "allow_new_levels"
     )
     testthat::expect_error(
       add_restriction(ref, data.frame(zip = c("a", "a"), zip_rst = c(1, 1.1))),
@@ -316,6 +396,167 @@ testthat::test_that(
     testthat::expect_error(
       add_restriction(ref, data.frame(zip = "a", zip_rst = NA_real_)),
       "finite numeric"
+    )
+  }
+)
+
+testthat::test_that(
+  "add_restriction can add an expert-specified risk factor", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      postal_area = factor(c("A", "B", "C", "A", "B", "C")),
+      hail_zone = factor(c("low", "high", "low", "high", "low", "high"))
+    )
+    model <- glm(
+      y ~ postal_area + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+    ref <- prepare_refinement(model, data = df)
+    restrictions <- data.frame(
+      hail_zone = c("low", "high"),
+      hail_relativity = c(1, 1.2)
+    )
+
+    testthat::expect_error(
+      add_restriction(ref, restrictions),
+      "allow_new_risk_factors = TRUE",
+      fixed = TRUE
+    )
+
+    refined <- add_restriction(
+      ref,
+      restrictions,
+      allow_new_risk_factors = TRUE
+    )
+
+    testthat::expect_true(refined$steps[[1]]$new_risk_factor)
+    testthat::expect_true(refined$steps[[1]]$allow_new_risk_factors)
+    testthat::expect_equal(
+      refined$steps[[1]]$restrictions,
+      restrictions
+    )
+
+    fitted <- refit(refined)
+    tariff <- rating_table(fitted, exposure = FALSE)$df
+
+    testthat::expect_s3_class(fitted, "refitrestricted")
+    testthat::expect_match(
+      paste(deparse(stats::formula(fitted)), collapse = ""),
+      "offset\\(log\\(hail_relativity\\) \\+ log\\(exposure\\)\\)"
+    )
+    testthat::expect_equal(
+      tariff$est_fitted[
+        tariff$risk_factor == "hail_relativity" & tariff$level == "low"
+      ],
+      1
+    )
+    testthat::expect_equal(
+      tariff$est_fitted[
+        tariff$risk_factor == "hail_relativity" & tariff$level == "high"
+      ],
+      1.2
+    )
+    testthat::expect_equal(
+      attr(fitted, "restriction_map"),
+      data.frame(
+        source_var = "hail_zone",
+        risk_factor = "hail_relativity",
+        stringsAsFactors = FALSE
+      )
+    )
+    testthat::expect_s3_class(ggplot2::autoplot(refined), "ggplot")
+
+    legacy <- suppressWarnings(
+      restrict_coef(
+        model,
+        restrictions
+      )
+    )
+    testthat::expect_true(legacy$steps[[1]]$new_risk_factor)
+    testthat::expect_s3_class(refit(legacy), "refitrestricted")
+  }
+)
+
+testthat::test_that(
+  "new restriction risk factors require data and a complete level mapping", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3),
+      exposure = rep(1, 4),
+      postal_area = factor(c("A", "B", "A", "B")),
+      hail_zone = factor(c("low", "high", "low", "high"))
+    )
+    model <- glm(
+      y ~ postal_area + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+    ref <- prepare_refinement(model, data = df)
+
+    testthat::expect_error(
+      add_restriction(
+        ref,
+        data.frame(unknown_zone = "low", relativity = 1),
+        allow_new_risk_factors = TRUE
+      ),
+      "Add a column assigning each observation to a level"
+    )
+    testthat::expect_error(
+      add_restriction(
+        ref,
+        data.frame(hail_zone = "low", relativity = 1),
+        allow_new_risk_factors = TRUE
+      ),
+      "Missing level\\(s\\): high"
+    )
+    testthat::expect_error(
+      add_restriction(
+        ref,
+        data.frame(
+          hail_zone = c("low", "high", "future"),
+          relativity = c(1, 1.2, 1.3)
+        ),
+        allow_new_levels = FALSE,
+        allow_new_risk_factors = TRUE
+      ),
+      "allow_new_levels = TRUE",
+      fixed = TRUE
+    )
+    missing_factor <- ref
+    missing_factor$base$data$hail_zone[1] <- NA
+    testthat::expect_error(
+      add_restriction(
+        missing_factor,
+        data.frame(
+          hail_zone = c("low", "high"),
+          relativity = c(1, 1.2)
+        ),
+        allow_new_risk_factors = TRUE
+      ),
+      "contains 1 missing value"
+    )
+    testthat::expect_error(
+      add_restriction(
+        ref,
+        data.frame(
+          hail_zone = c("low", "high"),
+          relativity = c(1, 0)
+        ),
+        allow_new_risk_factors = TRUE
+      ),
+      "greater than zero"
+    )
+    testthat::expect_error(
+      add_restriction(
+        ref,
+        data.frame(
+          hail_zone = c("low", "high"),
+          relativity = c(1, 1.2)
+        ),
+        allow_new_risk_factors = NA
+      ),
+      "allow_new_risk_factors"
     )
   }
 )
@@ -482,7 +723,20 @@ testthat::test_that(
       k = 4
     )
     testthat::expect_s3_class(valid_refinement, "rating_refinement")
-    testthat::expect_s3_class(refit(valid_refinement), "glm")
+    smoothed_model <- refit(valid_refinement)
+    testthat::expect_s3_class(smoothed_model, "glm")
+    testthat::expect_identical(class(smoothed_model)[1], "refitsmooth")
+
+    smoothing_output <- paste(
+      capture.output(print(smoothed_model)),
+      collapse = "\n"
+    )
+    testthat::expect_match(
+      smoothing_output,
+      "Smoothing: insured_amount_band from insured_amount"
+    )
+    testthat::expect_match(smoothing_output, "method: gam, k: 4")
+    testthat::expect_match(smoothing_output, "Call:")
 
     testthat::expect_error(
       add_smoothing(
@@ -688,6 +942,211 @@ testthat::test_that(
       add_relativities(ref, model_variable = "zip", split_variable = "zip_split",
                        relativities = rel, exposure = "exposure"),
       "rating_refinement"
+    )
+  }
+)
+
+testthat::test_that(
+  "add_relativities resolves earlier restrictions as its coefficient basis", {
+    portfolio <- data.frame(
+      claims = c(1, 2, 3, 4, 2, 3, 4, 5),
+      exposure = rep(1, 8),
+      industry_group = factor(rep(c("A", "B"), each = 4)),
+      industry_detail = factor(c(
+        "A1", "A2", "A1", "A2",
+        "B1", "B2", "B1", "B2"
+      ))
+    )
+    model <- glm(
+      claims ~ industry_group + offset(log(exposure)),
+      family = poisson(),
+      data = portfolio
+    )
+    restrictions <- data.frame(
+      industry_group = c("A", "B"),
+      industry_group_restricted = c(0.8, 1.4)
+    )
+    rel <- relativities(
+      split_level("A", c("A1", "A2"), c(0.9, 1.1))
+    )
+
+    unrestricted <- prepare_refinement(model, data = portfolio) |>
+      add_relativities(
+        model_variable = "industry_group",
+        split_variable = "industry_detail",
+        relativities = rel,
+        exposure = "exposure",
+        normalize = FALSE
+      )
+    unrestricted_preview <- preview_refinement(unrestricted, 1)
+
+    restricted <- prepare_refinement(model, data = portfolio) |>
+      add_restriction(restrictions) |>
+      add_relativities(
+        model_variable = "industry_group",
+        split_variable = "industry_detail",
+        relativities = rel,
+        exposure = "exposure",
+        normalize = FALSE
+      )
+    restricted_step <- restricted$steps[[2]]
+    restricted_preview <- preview_refinement(restricted, 2)
+
+    testthat::expect_identical(
+      restricted_step$model_variable,
+      "industry_group"
+    )
+    testthat::expect_identical(
+      restricted_step$source_model_variable,
+      "industry_group"
+    )
+    testthat::expect_identical(
+      restricted_step$effective_model_variable,
+      "industry_group_restricted"
+    )
+    testthat::expect_equal(
+      unrestricted_preview$state$relativities_df$estimate,
+      c(0.9, 1.1)
+    )
+    testthat::expect_equal(
+      restricted_preview$state$relativities_df$estimate,
+      c(0.72, 0.88)
+    )
+    testthat::expect_false(
+      isTRUE(all.equal(
+        unrestricted_preview$state$relativities_df$estimate,
+        restricted_preview$state$relativities_df$estimate
+      ))
+    )
+    testthat::expect_match(
+      paste(deparse(restricted_preview$state$formula), collapse = " "),
+      "log\\(industry_group_rel\\)"
+    )
+    testthat::expect_false(grepl(
+      "log\\(industry_group_restricted\\)",
+      paste(deparse(restricted_preview$state$formula), collapse = " ")
+    ))
+
+    fitted <- refit(restricted)
+    tariff <- rating_table(fitted, exposure = FALSE)
+    testthat::expect_equal(
+      tariff$df$est_fitted[
+        tariff$df$risk_factor == "industry_detail" &
+          tariff$df$level == "A1"
+      ],
+      0.72
+    )
+    testthat::expect_equal(
+      tariff$df$est_fitted[
+        tariff$df$risk_factor == "industry_detail" &
+          tariff$df$level == "A2"
+      ],
+      0.88
+    )
+  }
+)
+
+testthat::test_that(
+  "add_relativities accepts an explicitly restricted variable once", {
+    portfolio <- data.frame(
+      claims = c(1, 2, 3, 4, 2, 3, 4, 5),
+      exposure = rep(1, 8),
+      portfolio_band = factor(rep(c("A", "B"), each = 4)),
+      portfolio_detail = factor(c(
+        "A1", "A2", "A1", "A2",
+        "B1", "B2", "B1", "B2"
+      ))
+    )
+    model <- glm(
+      claims ~ portfolio_band + offset(log(exposure)),
+      family = poisson(),
+      data = portfolio
+    )
+    restrictions <- data.frame(
+      portfolio_band = c("A", "B"),
+      fixed_band_effect = c(0.8, 1.4)
+    )
+    rel <- relativities(
+      split_level("A", c("A1", "A2"), c(0.9, 1.1))
+    )
+
+    refinement <- prepare_refinement(model, data = portfolio) |>
+      add_restriction(restrictions) |>
+      add_relativities(
+        model_variable = "fixed_band_effect",
+        split_variable = "portfolio_detail",
+        relativities = rel,
+        exposure = "exposure",
+        normalize = FALSE
+      )
+
+    step <- refinement$steps[[2]]
+    preview <- preview_refinement(refinement, 2)
+
+    testthat::expect_identical(step$model_variable, "fixed_band_effect")
+    testthat::expect_identical(
+      step$source_model_variable,
+      "portfolio_band"
+    )
+    testthat::expect_identical(
+      step$effective_model_variable,
+      "fixed_band_effect"
+    )
+    testthat::expect_equal(
+      preview$state$relativities_df$estimate,
+      c(0.72, 0.88)
+    )
+    testthat::expect_equal(
+      lengths(regmatches(
+        preview$state$offset,
+        gregexpr("fixed_band_effect", preview$state$offset, fixed = TRUE)
+      )),
+      0
+    )
+  }
+)
+
+testthat::test_that(
+  "only restrictions added before add_relativities affect its source", {
+    portfolio <- data.frame(
+      claims = c(1, 2, 3, 4, 2, 3, 4, 5),
+      exposure = rep(1, 8),
+      territory = factor(rep(c("A", "B"), each = 4)),
+      territory_detail = factor(c(
+        "A1", "A2", "A1", "A2",
+        "B1", "B2", "B1", "B2"
+      ))
+    )
+    model <- glm(
+      claims ~ territory + offset(log(exposure)),
+      family = poisson(),
+      data = portfolio
+    )
+    restrictions <- data.frame(
+      territory = c("A", "B"),
+      territory_restricted = c(0.8, 1.4)
+    )
+    rel <- relativities(
+      split_level("A", c("A1", "A2"), c(0.9, 1.1))
+    )
+
+    refinement <- prepare_refinement(model, data = portfolio) |>
+      add_relativities(
+        model_variable = "territory",
+        split_variable = "territory_detail",
+        relativities = rel,
+        exposure = "exposure",
+        normalize = FALSE
+      ) |>
+      add_restriction(restrictions)
+
+    testthat::expect_identical(
+      refinement$steps[[1]]$effective_model_variable,
+      "territory"
+    )
+    testthat::expect_equal(
+      preview_refinement(refinement, 1)$state$relativities_df$estimate,
+      c(0.9, 1.1)
     )
   }
 )

@@ -4,16 +4,32 @@
 \alias{restrict_coef}
 \title{Deprecated restriction helper}
 \usage{
-restrict_coef(model, restrictions)
+restrict_coef(
+  model,
+  restrictions,
+  allow_new_levels = TRUE,
+  allow_new_risk_factors = TRUE
+)
 }
 \arguments{
 \item{model}{A fitted model object.}
 
 \item{restrictions}{data.frame with exactly two columns.}
+
+\item{allow_new_levels}{Logical. If \code{TRUE} (default), restrictions may
+include tariff levels that were not observed when the model was fitted.
+See \code{\link[=add_restriction]{add_restriction()}}.}
+
+\item{allow_new_risk_factors}{Logical. Whether a fixed tariff factor that is
+available in the model data but absent from the fitted model may be added.
+The default is \code{TRUE} to preserve the historical behaviour of
+\code{restrict_coef()}. New code using \code{\link[=add_restriction]{add_restriction()}} requires an explicit
+opt-in because its default is \code{FALSE}.}
 }
 \value{
-A legacy restricted object. New code should use
-\code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_restriction]{add_restriction()}}, and \code{\link[=refit]{refit()}}.
+A \code{rating_refinement} object containing the restriction step. Call
+\code{\link[=refit]{refit()}} to apply the restriction and return the refined GLM. New code
+should use \code{\link[=prepare_refinement]{prepare_refinement()}} followed by \code{\link[=add_restriction]{add_restriction()}} directly.
 }
 \description{
 \code{restrict_coef()} is deprecated as of version 0.9.0. Use

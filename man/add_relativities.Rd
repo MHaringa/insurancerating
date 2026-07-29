@@ -17,8 +17,11 @@ add_relativities(
 \item{model}{Object of class \code{rating_refinement}, usually created with
 \code{\link[=prepare_refinement]{prepare_refinement()}}.}
 
-\item{model_variable}{Character string. Existing variable in the GLM. Levels
-of this variable can be split into more detailed tariff segments.}
+\item{model_variable}{Character string. Existing variable in the GLM, or a
+restricted version created by an earlier \code{\link[=add_restriction]{add_restriction()}} step. Levels
+of the underlying model variable can be split into more detailed tariff
+segments. When an earlier restriction exists, its coefficients are used
+automatically.}
 
 \item{split_variable}{Character string. More granular portfolio variable that
 defines the detailed groups inside \code{model_variable}.}
@@ -54,6 +57,15 @@ The step is stored on the \code{rating_refinement} object and is applied when
 normalised using exposure so that the refined split keeps the original level
 effect on average. This helps prevent an expert split from unintentionally
 changing the total premium level for the original model group.
+
+If \code{model_variable} was restricted in an earlier \code{\link[=add_restriction]{add_restriction()}} step,
+the restricted coefficients are automatically used as the basis for the
+derived relativities. The user can continue to supply the original model
+variable; no additional argument is needed. Supplying the restricted
+variable explicitly gives the same coefficient basis and does not apply the
+restriction a second time. Refinement steps are order-dependent, so a
+restriction added after \code{add_relativities()} does not affect an earlier
+relativity step.
 
 \strong{When to use}
 
@@ -102,6 +114,11 @@ relativities <- relativities(
     "residential",
     new_levels = c("flat", "house"),
     relativities = c(0.95, 1.05)
+  ),
+  split_level(
+    "commercial",
+    new_levels = c("shop", "office"),
+    relativities = c(1.10, 0.90)
   )
 )
 

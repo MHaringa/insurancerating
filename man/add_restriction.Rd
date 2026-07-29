@@ -4,7 +4,12 @@
 \alias{add_restriction}
 \title{Add coefficient restrictions to a refinement workflow}
 \usage{
-add_restriction(model, restrictions)
+add_restriction(
+  model,
+  restrictions,
+  allow_new_levels = TRUE,
+  allow_new_risk_factors = FALSE
+)
 }
 \arguments{
 \item{model}{Object of class \code{rating_refinement}, usually created with
@@ -15,6 +20,17 @@ must have the same name as the model variable to restrict and contains the
 levels to adjust. The second column contains the replacement relativities.
 Levels that are not supplied are filled with the currently fitted GLM
 relativities.}
+
+\item{allow_new_levels}{Logical. If \code{TRUE} (default), \code{restrictions} may
+contain levels that were not observed in the model data. Their supplied
+relativities are treated as explicit tariff assumptions rather than model
+estimates. If \code{FALSE}, an unknown level results in an error.}
+
+\item{allow_new_risk_factors}{Logical. If \code{FALSE} (default), the first column
+of \code{restrictions} must identify a variable included in the fitted GLM. Set
+this to \code{TRUE} to add a variable that is present in the refinement data but
+absent from the model. All observed levels must then have supplied
+relativities, which are treated as fixed tariff assumptions.}
 }
 \value{
 Object of class \code{rating_refinement}.
@@ -42,6 +58,31 @@ the levels that need a manual adjustment. If only a subset is supplied, the
 missing levels are automatically filled with their current fitted GLM
 relativities. This makes it possible to fix one level explicitly while keeping
 the other levels at their already estimated values.
+
+Levels that were not observed when the GLM was fitted can also be supplied.
+Such a level has no coefficient estimate from the model data. Its relativity
+is therefore an explicit tariff assumption, for example based on expert
+judgement, external experience or a planned extension of the tariff. Existing
+levels that are not supplied remain fixed at their fitted relativities.
+
+With \code{allow_new_levels = TRUE}, which is the default, these new tariff levels
+are retained in the refinement metadata and subsequently shown by
+\code{\link[=rating_table]{rating_table()}}. Set \code{allow_new_levels = FALSE} when the restriction table
+should be checked strictly against the levels observed by the fitted model,
+for example to detect spelling errors in level names.
+
+A variable that is present in the refinement data but was not included in the
+fitted GLM can be added with \code{allow_new_risk_factors = TRUE}. In that case all
+observed levels must have a supplied relativity. The new factor is applied as
+a fixed tariff factor during \code{\link[=refit]{refit()}}; its effects are not estimated from the
+model data. This can be appropriate when an external classification or expert
+assumption must be incorporated, such as a hail zone derived from geographic
+information.
+
+\code{allow_new_risk_factors} does not create the portfolio variable itself. The
+refinement data must already contain a column assigning every observation to
+a level. This is required to apply the supplied relativities to individual
+records.
 }
 \examples{
 portfolio <- data.frame(
@@ -57,12 +98,32 @@ model <- glm(
 )
 
 restrictions <- data.frame(
-  postal_area = "C",
-  relativity = 1.10
+  postal_area = c("C", "D"),
+  relativity = c(1.10, 1.20)
 )
 
 refined <- prepare_refinement(model, data = portfolio) |>
   add_restriction(restrictions)
+
+# Postal area D was not observed in the portfolio. Its relativity is an
+# explicit tariff assumption and becomes available after refitting.
+refined_model <- refit(refined)
+rating_table(refined_model, exposure = FALSE)
+
+# A risk factor absent from the fitted GLM can be added explicitly. The
+# portfolio must already assign every observation to a hail zone.
+portfolio$hail_zone <- factor(c("low", "high", "low", "high", "low", "high"))
+hail_restrictions <- data.frame(
+  hail_zone = c("low", "high"),
+  hail_relativity = c(1.00, 1.20)
+)
+
+prepare_refinement(model, data = portfolio) |>
+  add_restriction(
+    hail_restrictions,
+    allow_new_risk_factors = TRUE
+  ) |>
+  refit()
 
 }
 \author{

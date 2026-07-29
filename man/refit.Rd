@@ -17,9 +17,11 @@ relativities fixed as offsets and estimate only the intercept.}
 \item{...}{Additional arguments passed to \code{\link[stats:glm]{stats::glm()}}, such as \code{control}.}
 }
 \value{
-A refitted object of class \code{glm}. The returned model also stores
-attributes used by \code{\link[=rating_table]{rating_table()}} and \code{\link[=rating_grid]{rating_grid()}} to recognise
-refined rating factors, fixed relativities and smoothing metadata.
+A refitted object that inherits from \code{glm} and additionally from
+\code{refitrestricted}, \code{refitsmooth}, or both, depending on the applied
+refinement steps. The returned model stores attributes used by
+\code{\link[=rating_table]{rating_table()}} and \code{\link[=rating_grid]{rating_grid()}} to recognise refined rating factors,
+fixed relativities and smoothing metadata.
 }
 \description{
 Applies the refinement steps stored in a \code{rating_refinement} object and
@@ -41,6 +43,14 @@ With \code{intercept_only = TRUE}, remaining original model effects are fixed as
 offsets based on the existing fitted relativities. The refit then estimates
 only the intercept. This can be useful when the relative tariff structure
 should remain fixed and only the overall premium level should be recalibrated.
+
+Printing the returned model first shows the original and refitted formulas,
+the model family, whether an intercept-only refit was used, and a concise
+description of every restriction, smoothing or relativity step. This is
+followed by the regular \code{glm} output with the model call, coefficients,
+degrees of freedom, deviance and AIC. The object continues to inherit from
+\code{glm}, so standard methods such as \code{\link[stats:predict.glm]{stats::predict.glm()}} and
+\code{\link[=summary.glm]{summary.glm()}} remain available.
 }
 \examples{
 zip_df <- data.frame(

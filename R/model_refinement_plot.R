@@ -415,7 +415,6 @@ autoplot.rating_refinement <- function(object,
 
   if (identical(step$type, "relativities")) {
     rel_df <- state$relativities_df
-    rf <- as.data.frame(state$rating_factors)
     base_rf <- state$base_risk_factor
     display_rf <- state$display_risk_factor
 
@@ -425,7 +424,15 @@ autoplot.rating_refinement <- function(object,
 
     rel_df <- as.data.frame(rel_df)
 
-    rf_base <- rf[rf$risk_factor == base_rf, c("level", "estimate"), drop = FALSE]
+    rf_base <- state$relativities_base_df
+    if (is.null(rf_base)) {
+      rf <- as.data.frame(state$rating_factors)
+      rf_base <- rf[
+        rf$risk_factor == base_rf,
+        c("level", "estimate"),
+        drop = FALSE
+      ]
+    }
     names(rf_base)[2] <- "Coef"
     rf_base$type <- "Original fit"
 

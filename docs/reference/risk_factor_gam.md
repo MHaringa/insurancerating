@@ -274,7 +274,7 @@ fit_gam(MTPL,
 #>   column names must be supplied as character strings, e.g. `risk_factor_gam(df,
 #>   claim_count = "nclaims", risk_factor = "age", exposure = "exposure")`. The
 #>   old NSE-style (`fit_gam(df, nclaims = nclaims, x = age, exposure =
-#>   exposure)`) is no longer supported.
+#>   exposure)`) remains available through the deprecated wrapper.
 #> Predictions from riskfactor_gam object:
 #>            x     fitted   conf_low conf_high
 #> 1   18.00000 0.33683705 0.27271478 0.4160361
