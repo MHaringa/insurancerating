@@ -65,7 +65,9 @@ variable; no additional argument is needed. Supplying the restricted
 variable explicitly gives the same coefficient basis and does not apply the
 restriction a second time. Refinement steps are order-dependent, so a
 restriction added after \code{add_relativities()} does not affect an earlier
-relativity step.
+relativity step. Once the restricted coefficients have been used to derive
+the final split, \code{\link[=rating_table]{rating_table()}} reports the \code{split_variable} as the tariff
+factor and does not also show the intermediate restricted variable.
 
 \strong{When to use}
 

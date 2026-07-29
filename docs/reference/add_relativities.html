@@ -125,7 +125,9 @@ variable; no additional argument is needed. Supplying the restricted
 variable explicitly gives the same coefficient basis and does not apply the
 restriction a second time. Refinement steps are order-dependent, so a
 restriction added after <code>add_relativities()</code> does not affect an earlier
-relativity step.</p>
+relativity step. Once the restricted coefficients have been used to derive
+the final split, <code><a href="rating_table.html">rating_table()</a></code> reports the <code>split_variable</code> as the tariff
+factor and does not also show the intermediate restricted variable.</p>
 <p><strong>When to use</strong></p>
 <p><code>add_relativities()</code> is intended for refinement within an already reasonably
 homogeneous GLM segment. It redistributes an existing coefficient across

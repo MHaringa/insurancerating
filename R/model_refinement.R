@@ -1615,7 +1615,9 @@ edit_smoothing <- function(model,
 #' variable explicitly gives the same coefficient basis and does not apply the
 #' restriction a second time. Refinement steps are order-dependent, so a
 #' restriction added after `add_relativities()` does not affect an earlier
-#' relativity step.
+#' relativity step. Once the restricted coefficients have been used to derive
+#' the final split, [rating_table()] reports the `split_variable` as the tariff
+#' factor and does not also show the intermediate restricted variable.
 #'
 #' **When to use**
 #'
@@ -2135,6 +2137,18 @@ add_relativities <- function(model,
 
   restricted_df_new <- unique(restricted_df_new)
   rownames(restricted_df_new) <- NULL
+
+  if (!identical(effective_model_variable, source_model_variable) &&
+      !is.null(state$rf_restricted_df)) {
+    state$rf_restricted_df <- state$rf_restricted_df[
+      state$rf_restricted_df$risk_factor != effective_model_variable,
+      ,
+      drop = FALSE
+    ]
+    if (nrow(state$rf_restricted_df) == 0L) {
+      state$rf_restricted_df <- NULL
+    }
+  }
 
   if (is.null(state$rf_restricted_df)) {
     state$rf_restricted_df <- restricted_df_new

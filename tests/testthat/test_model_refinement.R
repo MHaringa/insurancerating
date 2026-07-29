@@ -1029,6 +1029,13 @@ testthat::test_that(
 
     fitted <- refit(restricted)
     tariff <- rating_table(fitted, exposure = FALSE)
+    testthat::expect_setequal(
+      setdiff(unique(tariff$df$risk_factor), "(Intercept)"),
+      "industry_detail"
+    )
+    testthat::expect_false(
+      "industry_group_restricted" %in% tariff$df$risk_factor
+    )
     testthat::expect_equal(
       tariff$df$est_fitted[
         tariff$df$risk_factor == "industry_detail" &
