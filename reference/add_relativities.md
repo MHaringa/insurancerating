@@ -88,7 +88,11 @@ original model variable; no additional argument is needed. Supplying the
 restricted variable explicitly gives the same coefficient basis and does
 not apply the restriction a second time. Refinement steps are
 order-dependent, so a restriction added after `add_relativities()` does
-not affect an earlier relativity step.
+not affect an earlier relativity step. Once the restricted coefficients
+have been used to derive the final split,
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+reports the `split_variable` as the tariff factor and does not also show
+the intermediate restricted variable.
 
 **When to use**
 
