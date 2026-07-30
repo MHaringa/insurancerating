@@ -19,9 +19,10 @@ edit_smoothing(
 )
 }
 \arguments{
-\item{model}{Object of class \code{rating_refinement}, usually created with
-\code{\link[=prepare_refinement]{prepare_refinement()}}. Legacy \code{smooth} and \code{restricted} objects are still
-accepted for backwards compatibility.}
+\item{model}{Object of class \code{rating_refinement}, created with
+\code{\link[=prepare_refinement]{prepare_refinement()}} and containing an existing smoothing step. Ordinary
+and refitted GLMs are not accepted directly. Legacy \code{smooth} and
+\code{restricted} objects are still accepted for backwards compatibility.}
 
 \item{model_variable}{Character string. The \code{model_variable} of the smoothing
 step to edit. Required when more than one smoothing step exists and \code{step}
@@ -63,6 +64,14 @@ that should be changed. \code{from_value} and \code{to_value} can be used to for
 curve values at the interval boundaries. \code{control_positions} and
 \code{control_values} add additional points that the edited curve should follow
 inside the interval.
+
+\code{edit_smoothing()} changes the stored smoothing specification; it does not
+edit a fitted GLM in place. Keep the \code{rating_refinement} object, call
+\code{\link[=refit]{refit()}} to assess the current specification, edit that same refinement
+object, and call \code{\link[=refit]{refit()}} again. The previously fitted model remains an
+unchanged model result. This separation makes the sequence of actuarial
+adjustments reproducible and avoids reconstructing refinement choices from
+transformed columns in a refitted model.
 }
 \examples{
 set.seed(42)
@@ -89,14 +98,20 @@ model <- glm(
   data = portfolio
 )
 
-refined <- prepare_refinement(model, data = portfolio) |>
+refinement <- prepare_refinement(model, data = portfolio) |>
   add_smoothing(
     model_variable = "age_band",
     source_variable = "driver_age",
     breaks = c(18, 30, 40, 50, 60),
     degree = 2,
     weights = "exposure"
-  ) |>
+  )
+
+# Fit and inspect the initial smoothing specification.
+initial_model <- refit(refinement)
+
+# Edit the retained specification and fit it again.
+refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
     from = 30,
@@ -107,7 +122,7 @@ refined <- prepare_refinement(model, data = portfolio) |>
     control_values = c(1.05)
   )
 
-refined_model <- refit(refined)
+refined_model <- refit(refinement)
 
 }
 \author{

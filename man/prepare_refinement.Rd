@@ -16,10 +16,47 @@ the original unfiltered data. If \code{NULL}, the data are retrieved from the
 model object.}
 }
 \value{
-Object of class \code{rating_refinement}.
+Object of class \code{rating_refinement}. Retain this object when
+refinement steps may need to be reviewed or edited after fitting.
 }
 \description{
 Start a refinement workflow for a fitted GLM. Refinement steps such as
 smoothing, restrictions and expert-based relativities can be added
 sequentially and are only applied once \code{\link[=refit]{refit()}} is called.
+}
+\details{
+\code{prepare_refinement()} creates a persistent refinement specification. This
+object contains the original GLM, the corresponding model data and the
+ordered smoothing, restriction and relativity steps. It is the object that
+should be retained and edited during actuarial review.
+
+\code{\link[=refit]{refit()}} applies the stored specification and returns a fitted GLM for model
+diagnostics, prediction and tariff reporting. The returned GLM is a result,
+not an editable refinement specification. Functions such as
+\code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=edit_smoothing]{edit_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}} and
+\code{\link[=add_relativities]{add_relativities()}} therefore accept a \code{rating_refinement} object and do not
+accept an ordinary or refitted GLM directly.
+
+A practical iterative workflow keeps both objects:
+
+\preformatted{
+refinement <- prepare_refinement(model) |>
+  add_smoothing(...)
+
+fitted_model <- refit(refinement)
+
+refinement <- refinement |>
+  edit_smoothing(...)
+
+fitted_model <- refit(refinement)
+}
+
+\code{prepare_refinement()} is normally required only once for such an iteration.
+Calling it on a model returned by \code{refit()} deliberately starts a new
+refinement workflow with the already refined model as its baseline; it does
+not recover the earlier smoothing or restriction steps for further editing.
+}
+\seealso{
+\code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=edit_smoothing]{edit_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}},
+\code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}
 }

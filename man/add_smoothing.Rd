@@ -20,8 +20,10 @@ add_smoothing(
 )
 }
 \arguments{
-\item{model}{Object of class \code{rating_refinement}, usually created with
-\code{\link[=prepare_refinement]{prepare_refinement()}}.}
+\item{model}{Object of class \code{rating_refinement}, created with
+\code{\link[=prepare_refinement]{prepare_refinement()}}. A fitted GLM, including a model returned by
+\code{\link[=refit]{refit()}}, is not accepted directly; retain and modify the corresponding
+refinement specification instead.}
 
 \item{model_variable}{Character string. Existing grouped or binned variable
 in the GLM. This is the model term that will be replaced by a smoothed

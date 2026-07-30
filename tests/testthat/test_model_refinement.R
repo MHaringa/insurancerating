@@ -70,6 +70,89 @@ testthat::test_that(
 )
 
 testthat::test_that(
+  "refinement steps require a retained rating_refinement specification", {
+    portfolio <- data.frame(
+      claims = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      risk_group = factor(c("A", "B", "C", "A", "B", "C")),
+      risk_detail = factor(c("A1", "B1", "C1", "A2", "B2", "C2"))
+    )
+    model <- glm(
+      claims ~ risk_group + offset(log(exposure)),
+      family = poisson(),
+      data = portfolio
+    )
+    restrictions <- data.frame(
+      risk_group = c("A", "B", "C"),
+      risk_group_restricted = c(0.9, 1.0, 1.1)
+    )
+    rel <- relativities(
+      split_level("A", c("A1", "A2"), c(0.9, 1.1))
+    )
+
+    refinement <- prepare_refinement(model, data = portfolio) |>
+      add_restriction(restrictions)
+    refitted_model <- refit(refinement)
+
+    ordinary_glm_error <- "cannot be added to or edited on a fitted GLM"
+    refitted_glm_error <- paste0(
+      "cannot be added to or edited on a refitted GLM returned by ",
+      "`refit\\(\\)`"
+    )
+
+    testthat::expect_error(
+      add_smoothing(model),
+      ordinary_glm_error
+    )
+    testthat::expect_error(
+      add_restriction(model, restrictions),
+      ordinary_glm_error
+    )
+    testthat::expect_error(
+      add_relativities(
+        model,
+        model_variable = "risk_group",
+        split_variable = "risk_detail",
+        relativities = rel,
+        exposure = "exposure"
+      ),
+      ordinary_glm_error
+    )
+    testthat::expect_error(
+      edit_smoothing(model, from = 0, to = 1),
+      ordinary_glm_error
+    )
+
+    testthat::expect_error(
+      add_smoothing(refitted_model),
+      refitted_glm_error
+    )
+    testthat::expect_error(
+      add_restriction(refitted_model, restrictions),
+      refitted_glm_error
+    )
+    testthat::expect_error(
+      add_relativities(
+        refitted_model,
+        model_variable = "risk_group",
+        split_variable = "risk_detail",
+        relativities = rel,
+        exposure = "exposure"
+      ),
+      refitted_glm_error
+    )
+    testthat::expect_error(
+      edit_smoothing(refitted_model, from = 0, to = 1),
+      refitted_glm_error
+    )
+
+    new_round <- prepare_refinement(refitted_model)
+    testthat::expect_s3_class(new_round, "rating_refinement")
+    testthat::expect_length(new_round$steps, 0)
+  }
+)
+
+testthat::test_that(
   "prepare_refinement explains rows omitted by missing model values", {
     df <- data.frame(
       y = c(1, 2, 1, 3, 2, 4),

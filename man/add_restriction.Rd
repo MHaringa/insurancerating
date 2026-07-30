@@ -12,8 +12,10 @@ add_restriction(
 )
 }
 \arguments{
-\item{model}{Object of class \code{rating_refinement}, usually created with
-\code{\link[=prepare_refinement]{prepare_refinement()}}.}
+\item{model}{Object of class \code{rating_refinement}, created with
+\code{\link[=prepare_refinement]{prepare_refinement()}}. A fitted GLM, including a model returned by
+\code{\link[=refit]{refit()}}, is not accepted directly; retain and modify the corresponding
+refinement specification instead.}
 
 \item{restrictions}{Data frame with exactly two columns. The first column
 must have the same name as the model variable to restrict and contains the

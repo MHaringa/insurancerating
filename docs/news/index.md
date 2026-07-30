@@ -1,6 +1,6 @@
 # Changelog
 
-## insurancerating 0.8.0.9000 (development version)
+## insurancerating 0.8.1
 
 ### Overview of changes since 0.8.0
 
@@ -57,6 +57,39 @@
   now print a concise refinement summary followed by the regular GLM
   output. The stored call is shown as a readable `glm(...)` call instead
   of the internal function definition.
+- [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+  now uses coefficients from an earlier
+  [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+  step automatically. The requested model variable and the effective
+  restricted variable remain separately recorded, restrictions are not
+  applied twice, and refinement-step ordering remains explicit. The
+  final
+  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+  reports only the derived split variable rather than also showing the
+  intermediate restricted variable.
+- Refinement documentation now distinguishes the editable
+  `rating_refinement` specification from the fitted GLM returned by
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+  Functions that add or edit refinement steps reject ordinary and
+  refitted GLMs with an actionable error. Iterative smoothing therefore
+  retains the refinement specification and calls
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+  after each adjustment.
+- The
+  [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+  example now demonstrates that several original model levels can be
+  refined in one
+  [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
+  specification by using multiple
+  [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md)
+  calls.
+- Deprecated
+  [`rating_factors()`](https://mharinga.github.io/insurancerating/reference/rating_factors.md)
+  again preserves the dynamic estimated-column name produced by
+  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md),
+  and deprecated
+  [`fit_gam()`](https://mharinga.github.io/insurancerating/reference/fit_gam.md)
+  correctly forwards a user-supplied `amount` column.
 
 #### Rating tables
 
@@ -96,9 +129,9 @@
   now accepts `redistribution_weight` for risk-sensitive shares and
   `receives_redistribution` for selecting which claim-bearing rows
   receive redistributed excess loss.
-- `redistribute_excess` can now identify large losses that should remain
-  unadjusted and should not contribute their excess to the
-  redistribution pool.
+- [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
+  can now identify large losses that should remain unadjusted and should
+  not contribute their excess to the redistribution pool.
 - The redistribution choice is now expressed through
   `redistribution_method = "portfolio"`, `"risk_factor"` or `"partial"`.
 - Results now inherit from `"excess_redistribution"`. Their

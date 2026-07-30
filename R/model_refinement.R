@@ -9,9 +9,27 @@
 
 .assert_refinement <- function(x) {
   if (!inherits(x, "rating_refinement")) {
-    stop("Input must be of class 'rating_refinement'. Start with prepare_refinement().",
-         call. = FALSE)
+    if (inherits(x, "glm")) {
+      model_type <- if (inherits(x, c("refitrestricted", "refitsmooth"))) {
+        "a refitted GLM returned by `refit()`"
+      } else {
+        "a fitted GLM"
+      }
+      stop(
+        "Refinement steps cannot be added to or edited on ", model_type, ". ",
+        "Call `prepare_refinement()` first and retain the returned ",
+        "`rating_refinement` object. Use `refit()` to create a fitted GLM ",
+        "without replacing the refinement specification.",
+        call. = FALSE
+      )
+    }
+    stop(
+      "Input must be a `rating_refinement` object created with ",
+      "`prepare_refinement()`.",
+      call. = FALSE
+    )
   }
+  invisible(TRUE)
 }
 
 .get_model_data <- function(model) {
@@ -646,6 +664,38 @@ as_refinement.restricted <- function(x, ...) {
 #' smoothing, restrictions and expert-based relativities can be added
 #' sequentially and are only applied once [refit()] is called.
 #'
+#' @details
+#' `prepare_refinement()` creates a persistent refinement specification. This
+#' object contains the original GLM, the corresponding model data and the
+#' ordered smoothing, restriction and relativity steps. It is the object that
+#' should be retained and edited during actuarial review.
+#'
+#' [refit()] applies the stored specification and returns a fitted GLM for model
+#' diagnostics, prediction and tariff reporting. The returned GLM is a result,
+#' not an editable refinement specification. Functions such as
+#' [add_smoothing()], [edit_smoothing()], [add_restriction()] and
+#' [add_relativities()] therefore accept a `rating_refinement` object and do not
+#' accept an ordinary or refitted GLM directly.
+#'
+#' A practical iterative workflow keeps both objects:
+#'
+#' \preformatted{
+#' refinement <- prepare_refinement(model) |>
+#'   add_smoothing(...)
+#'
+#' fitted_model <- refit(refinement)
+#'
+#' refinement <- refinement |>
+#'   edit_smoothing(...)
+#'
+#' fitted_model <- refit(refinement)
+#' }
+#'
+#' `prepare_refinement()` is normally required only once for such an iteration.
+#' Calling it on a model returned by `refit()` deliberately starts a new
+#' refinement workflow with the already refined model as its baseline; it does
+#' not recover the earlier smoothing or restriction steps for further editing.
+#'
 #' @param model Object of class `glm`.
 #' @param data Optional data.frame containing exactly the observations retained
 #'   in the fitted GLM and all required model variables. If model fitting omitted
@@ -653,7 +703,11 @@ as_refinement.restricted <- function(x, ...) {
 #'   the original unfiltered data. If `NULL`, the data are retrieved from the
 #'   model object.
 #'
-#' @return Object of class `rating_refinement`.
+#' @return Object of class `rating_refinement`. Retain this object when
+#'   refinement steps may need to be reviewed or edited after fitting.
+#'
+#' @seealso [add_smoothing()], [edit_smoothing()], [add_restriction()],
+#'   [add_relativities()], [refit()]
 #' @export
 prepare_refinement <- function(model, data = NULL) {
   as_refinement(model, data = data)
@@ -770,8 +824,10 @@ print.summary.rating_refinement <- function(x, ...) {
 #' a level. This is required to apply the supplied relativities to individual
 #' records.
 #'
-#' @param model Object of class `rating_refinement`, usually created with
-#'   [prepare_refinement()].
+#' @param model Object of class `rating_refinement`, created with
+#'   [prepare_refinement()]. A fitted GLM, including a model returned by
+#'   [refit()], is not accepted directly; retain and modify the corresponding
+#'   refinement specification instead.
 #' @param restrictions Data frame with exactly two columns. The first column
 #'   must have the same name as the model variable to restrict and contains the
 #'   levels to adjust. The second column contains the replacement relativities.
@@ -1140,8 +1196,10 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #' The deprecated [smooth_coef()] wrapper remains available for backwards
 #' compatibility.
 #'
-#' @param model Object of class `rating_refinement`, usually created with
-#'   [prepare_refinement()].
+#' @param model Object of class `rating_refinement`, created with
+#'   [prepare_refinement()]. A fitted GLM, including a model returned by
+#'   [refit()], is not accepted directly; retain and modify the corresponding
+#'   refinement specification instead.
 #' @param model_variable Character string. Existing grouped or binned variable
 #'   in the GLM. This is the model term that will be replaced by a smoothed
 #'   tariff factor. The column must not contain missing values; remove or impute
@@ -1440,9 +1498,18 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #' `control_values` add additional points that the edited curve should follow
 #' inside the interval.
 #'
-#' @param model Object of class `rating_refinement`, usually created with
-#'   [prepare_refinement()]. Legacy `smooth` and `restricted` objects are still
-#'   accepted for backwards compatibility.
+#' `edit_smoothing()` changes the stored smoothing specification; it does not
+#' edit a fitted GLM in place. Keep the `rating_refinement` object, call
+#' [refit()] to assess the current specification, edit that same refinement
+#' object, and call [refit()] again. The previously fitted model remains an
+#' unchanged model result. This separation makes the sequence of actuarial
+#' adjustments reproducible and avoids reconstructing refinement choices from
+#' transformed columns in a refitted model.
+#'
+#' @param model Object of class `rating_refinement`, created with
+#'   [prepare_refinement()] and containing an existing smoothing step. Ordinary
+#'   and refitted GLMs are not accepted directly. Legacy `smooth` and
+#'   `restricted` objects are still accepted for backwards compatibility.
 #' @param model_variable Character string. The `model_variable` of the smoothing
 #'   step to edit. Required when more than one smoothing step exists and `step`
 #'   is not supplied.
@@ -1488,14 +1555,20 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #'   data = portfolio
 #' )
 #'
-#' refined <- prepare_refinement(model, data = portfolio) |>
+#' refinement <- prepare_refinement(model, data = portfolio) |>
 #'   add_smoothing(
 #'     model_variable = "age_band",
 #'     source_variable = "driver_age",
 #'     breaks = c(18, 30, 40, 50, 60),
 #'     degree = 2,
 #'     weights = "exposure"
-#'   ) |>
+#'   )
+#'
+#' # Fit and inspect the initial smoothing specification.
+#' initial_model <- refit(refinement)
+#'
+#' # Edit the retained specification and fit it again.
+#' refinement <- refinement |>
 #'   edit_smoothing(
 #'     model_variable = "age_band",
 #'     from = 30,
@@ -1506,7 +1579,7 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #'     control_values = c(1.05)
 #'   )
 #'
-#' refined_model <- refit(refined)
+#' refined_model <- refit(refinement)
 #'
 #' @export
 edit_smoothing <- function(model,
@@ -1645,8 +1718,10 @@ edit_smoothing <- function(model,
 #' derive a separate tariff segment, or apply explicit segmentation or
 #' acceptation rules, instead of relying only on `add_relativities()`.
 #'
-#' @param model Object of class `rating_refinement`, usually created with
-#'   [prepare_refinement()].
+#' @param model Object of class `rating_refinement`, created with
+#'   [prepare_refinement()]. A fitted GLM, including a model returned by
+#'   [refit()], is not accepted directly; retain and modify the corresponding
+#'   refinement specification instead.
 #' @param model_variable Character string. Existing variable in the GLM, or a
 #'   restricted version created by an earlier [add_restriction()] step. Levels
 #'   of the underlying model variable can be split into more detailed tariff

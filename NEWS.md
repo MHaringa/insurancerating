@@ -1,4 +1,4 @@
-## insurancerating 0.8.0.9000 (development version)
+## insurancerating 0.8.1
 
 ### Overview of changes since 0.8.0
 
@@ -36,6 +36,23 @@
 - Models returned by `refit()` now print a concise refinement summary followed
   by the regular GLM output. The stored call is shown as a readable `glm(...)`
   call instead of the internal function definition.
+- `add_relativities()` now uses coefficients from an earlier
+  `add_restriction()` step automatically. The requested model variable and the
+  effective restricted variable remain separately recorded, restrictions are
+  not applied twice, and refinement-step ordering remains explicit. The final
+  `rating_table()` reports only the derived split variable rather than also
+  showing the intermediate restricted variable.
+- Refinement documentation now distinguishes the editable
+  `rating_refinement` specification from the fitted GLM returned by `refit()`.
+  Functions that add or edit refinement steps reject ordinary and refitted
+  GLMs with an actionable error. Iterative smoothing therefore retains the
+  refinement specification and calls `refit()` after each adjustment.
+- The `add_relativities()` example now demonstrates that several original
+  model levels can be refined in one `relativities()` specification by using
+  multiple `split_level()` calls.
+- Deprecated `rating_factors()` again preserves the dynamic estimated-column
+  name produced by `rating_table()`, and deprecated `fit_gam()` correctly
+  forwards a user-supplied `amount` column.
 
 #### Rating tables
 
@@ -63,7 +80,7 @@
 - `redistribute_excess_loss()` now accepts `redistribution_weight` for
   risk-sensitive shares and `receives_redistribution` for selecting which
   claim-bearing rows receive redistributed excess loss.
-- `redistribute_excess` can now identify large losses that should remain
+- `redistribute_excess_loss()` can now identify large losses that should remain
   unadjusted and should not contribute their excess to the redistribution pool.
 - The redistribution choice is now expressed through
   `redistribution_method = "portfolio"`, `"risk_factor"` or `"partial"`.

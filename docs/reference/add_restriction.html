@@ -21,7 +21,7 @@ structure easier to explain."><meta property="og:image" content="https://mharing
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,8 +68,10 @@ structure easier to explain.</p>
 
 
 <dl><dt id="arg-model">model<a class="anchor" aria-label="anchor" href="#arg-model"></a></dt>
-<dd><p>Object of class <code>rating_refinement</code>, usually created with
-<code><a href="prepare_refinement.html">prepare_refinement()</a></code>.</p></dd>
+<dd><p>Object of class <code>rating_refinement</code>, created with
+<code><a href="prepare_refinement.html">prepare_refinement()</a></code>. A fitted GLM, including a model returned by
+<code><a href="refit.html">refit()</a></code>, is not accepted directly; retain and modify the corresponding
+refinement specification instead.</p></dd>
 
 
 <dt id="arg-restrictions">restrictions<a class="anchor" aria-label="anchor" href="#arg-restrictions"></a></dt>

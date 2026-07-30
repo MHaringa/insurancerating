@@ -1,46 +1,27 @@
-## Resubmission
-
-This is a resubmission.
-
-The previously reported invalid vignette URI has been fixed.
-
-The accidentally included hidden .github directory has been excluded from the package tarball.
-
-Thank you for your review.
-
 ## Release summary
 
-This is a major update of insurancerating. The release modernises the public API
-while retaining deprecated compatibility wrappers for older workflows.
+This is a new release of insurancerating, version 0.8.1.
 
 Main changes include:
 
-* Added `factor_analysis()` as the primary portfolio analysis function.
-* Added tariff segmentation helpers through `risk_factor_gam()`,
-  `derive_tariff_segments()` and `add_tariff_segments()`.
 * Added a large-loss severity workflow with `assess_excess_threshold()` and
   `redistribute_excess_loss()`.
-* Added exploratory severity distribution plots and expanded model validation
-  helpers.
-* Renamed and documented several APIs for consistency, with deprecated wrappers
-  retained where needed.
-* Expanded tests and documentation across the package.
+* Improved the model-refinement workflow for smoothing, restrictions and
+  expert-based relativities.
+* Added portfolio-experience support for rating tables and expanded
+  report-ready `gt` output.
+* Improved validation, documentation and backwards compatibility across the
+  public API.
+* Expanded the package test suite.
 
 ## Test environments
-* local macOS Tahoe 26.5, R 4.5.3
+
+* local macOS Tahoe 26.5, R 4.6.1
 
 ## R CMD check results
 
-Local check with vignette rebuilding:
-
-0 errors | 0 warnings | 1 note
-
-The note is a local environment note:
-
-* the current time could not be verified locally.
-
-CRAN incoming checks, URL checks, examples, tests, vignettes and manual checks
-completed successfully.
+0 errors | 0 warnings | 0 notes
 
 ## Downstream dependencies
+
 There are no downstream dependencies listed for insurancerating on CRAN.
