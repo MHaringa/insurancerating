@@ -17,7 +17,7 @@ sequentially and are only applied once refit() is called."><meta property="og:im
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,7 +70,42 @@ model object.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Object of class <code>rating_refinement</code>.</p>
+    <p>Object of class <code>rating_refinement</code>. Retain this object when
+refinement steps may need to be reviewed or edited after fitting.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p><code>prepare_refinement()</code> creates a persistent refinement specification. This
+object contains the original GLM, the corresponding model data and the
+ordered smoothing, restriction and relativity steps. It is the object that
+should be retained and edited during actuarial review.</p>
+<p><code><a href="refit.html">refit()</a></code> applies the stored specification and returns a fitted GLM for model
+diagnostics, prediction and tariff reporting. The returned GLM is a result,
+not an editable refinement specification. Functions such as
+<code><a href="add_smoothing.html">add_smoothing()</a></code>, <code><a href="edit_smoothing.html">edit_smoothing()</a></code>, <code><a href="add_restriction.html">add_restriction()</a></code> and
+<code><a href="add_relativities.html">add_relativities()</a></code> therefore accept a <code>rating_refinement</code> object and do not
+accept an ordinary or refitted GLM directly.</p>
+<p>A practical iterative workflow keeps both objects:</p>
+<div class="sourceCode"><pre><code><span></span>
+<span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_smoothing.html">add_smoothing</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fitted_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/edit_smoothing.html">edit_smoothing</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fitted_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span></code></pre></div>
+
+<p><code>prepare_refinement()</code> is normally required only once for such an iteration.
+Calling it on a model returned by <code><a href="refit.html">refit()</a></code> deliberately starts a new
+refinement workflow with the already refined model as its baseline; it does
+not recover the earlier smoothing or restriction steps for further editing.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="add_smoothing.html">add_smoothing()</a></code>, <code><a href="edit_smoothing.html">edit_smoothing()</a></code>, <code><a href="add_restriction.html">add_restriction()</a></code>,
+<code><a href="add_relativities.html">add_relativities()</a></code>, <code><a href="refit.html">refit()</a></code></p></div>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

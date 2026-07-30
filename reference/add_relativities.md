@@ -23,8 +23,12 @@ add_relativities(
 
 - model:
 
-  Object of class `rating_refinement`, usually created with
+  Object of class `rating_refinement`, created with
   [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md).
+  A fitted GLM, including a model returned by
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
+  is not accepted directly; retain and modify the corresponding
+  refinement specification instead.
 
 - model_variable:
 
