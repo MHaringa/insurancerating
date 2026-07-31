@@ -85,6 +85,27 @@ information.
 refinement data must already contain a column assigning every observation to
 a level. This is required to apply the supplied relativities to individual
 records.
+\subsection{Updating an existing restriction}{
+
+A later call to \code{add_restriction()} for the same risk factor and the same
+restricted model variable updates the restriction already stored in the
+refinement. Relativities supplied in the later call replace the previously
+stored values for those levels. Restrictions for levels that are not supplied
+again are retained.
+
+The existing and new values are first combined and the resulting restriction
+table is then validated as one specification. This is useful when an
+actuarial assumption is revised during model refinement: only the affected
+levels need to be supplied again, while the remaining tariff assumptions
+stay unchanged. The restriction step keeps its original position in the
+workflow, so subsequent steps such as \code{\link[=add_relativities]{add_relativities()}} use the revised
+restricted coefficients.
+
+The second column must retain the same name when an existing restriction is
+updated, because that name identifies the restricted model variable used by
+\code{\link[=refit]{refit()}}. A message reports levels whose previously supplied relativity is
+changed.
+}
 }
 \examples{
 portfolio <- data.frame(
@@ -124,8 +145,23 @@ prepare_refinement(model, data = portfolio) |>
   add_restriction(
     hail_restrictions,
     allow_new_risk_factors = TRUE
+  )
+
+# A later actuarial review changes only the relativity for the low hail zone.
+# The high-zone relativity remains 1.20 and the existing step is updated.
+revised_hail_restrictions <- data.frame(
+  hail_zone = "low",
+  hail_relativity = 1.10
+)
+
+hail_refinement <- prepare_refinement(model, data = portfolio) |>
+  add_restriction(
+    hail_restrictions,
+    allow_new_risk_factors = TRUE
   ) |>
-  refit()
+  add_restriction(revised_hail_restrictions)
+
+refit(hail_refinement)
 
 }
 \author{

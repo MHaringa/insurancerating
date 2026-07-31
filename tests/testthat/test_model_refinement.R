@@ -392,6 +392,107 @@ testthat::test_that(
 )
 
 testthat::test_that(
+  "add_restriction updates stored levels and retains other restrictions", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      zip = factor(c("a", "b", "c", "a", "b", "c"))
+    )
+    model <- glm(
+      y ~ zip + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+
+    refinement <- prepare_refinement(model, data = df) |>
+      add_restriction(data.frame(
+        zip = c("a", "c"),
+        zip_restricted = c(0.9, 1.2)
+      ))
+    original_id <- refinement$steps[[1]]$id
+
+    testthat::expect_message(
+      refinement <- add_restriction(
+        refinement,
+        data.frame(zip = "a", zip_restricted = 1.1)
+      ),
+      "Updated existing restriction.*zip.*a"
+    )
+
+    stored <- refinement$steps[[1]]$restrictions
+    testthat::expect_length(refinement$steps, 1)
+    testthat::expect_identical(refinement$steps[[1]]$id, original_id)
+    testthat::expect_equal(
+      stored$zip_restricted[stored$zip == "a"],
+      1.1
+    )
+    testthat::expect_equal(
+      stored$zip_restricted[stored$zip == "c"],
+      1.2
+    )
+    testthat::expect_setequal(
+      refinement$steps[[1]]$supplied_levels,
+      c("a", "c")
+    )
+
+    testthat::expect_error(
+      add_restriction(
+        refinement,
+        data.frame(zip = "a", another_restriction = 1.05)
+      ),
+      "already has a restriction stored"
+    )
+  }
+)
+
+testthat::test_that(
+  "restriction updates retain settings for a new expert risk factor", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      zip = factor(c("a", "b", "c", "a", "b", "c")),
+      hail_zone = factor(c("low", "high", "low", "high", "low", "high"))
+    )
+    model <- glm(
+      y ~ zip + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+
+    refinement <- prepare_refinement(model, data = df) |>
+      add_restriction(
+        data.frame(
+          hail_zone = c("low", "high"),
+          hail_relativity = c(1, 1.2)
+        ),
+        allow_new_risk_factors = TRUE
+      )
+
+    testthat::expect_message(
+      refinement <- add_restriction(
+        refinement,
+        data.frame(hail_zone = "low", hail_relativity = 1.1)
+      ),
+      "Updated existing restriction.*hail_zone.*low"
+    )
+
+    stored <- refinement$steps[[1]]$restrictions
+    testthat::expect_true(
+      refinement$steps[[1]]$allow_new_risk_factors
+    )
+    testthat::expect_equal(
+      stored$hail_relativity[stored$hail_zone == "low"],
+      1.1
+    )
+    testthat::expect_equal(
+      stored$hail_relativity[stored$hail_zone == "high"],
+      1.2
+    )
+    testthat::expect_s3_class(refit(refinement), "refitrestricted")
+  }
+)
+
+testthat::test_that(
   "add_restriction supports new tariff levels", {
     df <- data.frame(
       y = c(1, 2, 1, 3, 2, 4),
@@ -1132,6 +1233,79 @@ testthat::test_that(
           tariff$df$level == "A2"
       ],
       0.88
+    )
+  }
+)
+
+testthat::test_that(
+  "restriction updates retain step order for later relativities", {
+    portfolio <- data.frame(
+      claims = c(1, 2, 3, 4, 2, 3, 4, 5),
+      exposure = rep(1, 8),
+      industry_group = factor(rep(c("A", "B"), each = 4)),
+      industry_detail = factor(c(
+        "A1", "A2", "A1", "A2",
+        "B1", "B2", "B1", "B2"
+      ))
+    )
+    model <- glm(
+      claims ~ industry_group + offset(log(exposure)),
+      family = poisson(),
+      data = portfolio
+    )
+    rel <- relativities(
+      split_level("A", c("A1", "A2"), c(0.9, 1.1))
+    )
+
+    refinement <- prepare_refinement(model, data = portfolio) |>
+      add_restriction(data.frame(
+        industry_group = c("A", "B"),
+        industry_group_restricted = c(0.8, 1.4)
+      )) |>
+      add_relativities(
+        model_variable = "industry_group",
+        split_variable = "industry_detail",
+        relativities = rel,
+        exposure = "exposure",
+        normalize = FALSE
+      )
+
+    testthat::expect_message(
+      refinement <- add_restriction(
+        refinement,
+        data.frame(
+          industry_group = "A",
+          industry_group_restricted = 0.9
+        )
+      ),
+      "Updated existing restriction"
+    )
+
+    preview <- preview_refinement(refinement, 2)
+    testthat::expect_identical(
+      vapply(refinement$steps, `[[`, character(1), "type"),
+      c("restriction", "relativities")
+    )
+    testthat::expect_equal(
+      preview$state$relativities_df$estimate,
+      c(0.81, 0.99)
+    )
+
+    fitted <- refit(refinement)
+    tariff <- rating_table(fitted, exposure = FALSE)$df
+    testthat::expect_equal(
+      tariff$est_fitted[
+        tariff$risk_factor == "industry_detail" &
+          tariff$level == "A1"
+      ],
+      0.81
+    )
+    testthat::expect_equal(
+      tariff$est_fitted[
+        tariff$risk_factor == "industry_detail" &
+          tariff$level == "A2"
+      ],
+      0.99
     )
   }
 )

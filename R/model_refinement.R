@@ -824,6 +824,27 @@ print.summary.rating_refinement <- function(x, ...) {
 #' a level. This is required to apply the supplied relativities to individual
 #' records.
 #'
+#' ## Updating an existing restriction
+#'
+#' A later call to `add_restriction()` for the same risk factor and the same
+#' restricted model variable updates the restriction already stored in the
+#' refinement. Relativities supplied in the later call replace the previously
+#' stored values for those levels. Restrictions for levels that are not supplied
+#' again are retained.
+#'
+#' The existing and new values are first combined and the resulting restriction
+#' table is then validated as one specification. This is useful when an
+#' actuarial assumption is revised during model refinement: only the affected
+#' levels need to be supplied again, while the remaining tariff assumptions
+#' stay unchanged. The restriction step keeps its original position in the
+#' workflow, so subsequent steps such as [add_relativities()] use the revised
+#' restricted coefficients.
+#'
+#' The second column must retain the same name when an existing restriction is
+#' updated, because that name identifies the restricted model variable used by
+#' [refit()]. A message reports levels whose previously supplied relativity is
+#' changed.
+#'
 #' @param model Object of class `rating_refinement`, created with
 #'   [prepare_refinement()]. A fitted GLM, including a model returned by
 #'   [refit()], is not accepted directly; retain and modify the corresponding
@@ -885,21 +906,141 @@ print.summary.rating_refinement <- function(x, ...) {
 #'   add_restriction(
 #'     hail_restrictions,
 #'     allow_new_risk_factors = TRUE
+#'   )
+#'
+#' # A later actuarial review changes only the relativity for the low hail zone.
+#' # The high-zone relativity remains 1.20 and the existing step is updated.
+#' revised_hail_restrictions <- data.frame(
+#'   hail_zone = "low",
+#'   hail_relativity = 1.10
+#' )
+#'
+#' hail_refinement <- prepare_refinement(model, data = portfolio) |>
+#'   add_restriction(
+#'     hail_restrictions,
+#'     allow_new_risk_factors = TRUE
 #'   ) |>
-#'   refit()
+#'   add_restriction(revised_hail_restrictions)
+#'
+#' refit(hail_refinement)
 #'
 #' @export
 add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
                             allow_new_risk_factors = FALSE) {
+  allow_new_levels_missing <- missing(allow_new_levels)
+  allow_new_risk_factors_missing <- missing(allow_new_risk_factors)
+
   .assert_refinement(model)
-  .assert_single_logical(allow_new_levels, "allow_new_levels")
-  .assert_single_logical(allow_new_risk_factors, "allow_new_risk_factors")
 
   if (!is.data.frame(restrictions) || ncol(restrictions) != 2) {
     stop("'restrictions' must be a data.frame with exactly two columns.", call. = FALSE)
   }
 
   variable <- names(restrictions)[1]
+  value_col <- names(restrictions)[2]
+  if (length(unique(restrictions[[variable]])) != nrow(restrictions)) {
+    stop("`", variable, "` in `restrictions` must have unique values.",
+         call. = FALSE)
+  }
+  if (anyNA(restrictions[[variable]])) {
+    stop("The first column of `restrictions` must not contain missing levels.",
+         call. = FALSE)
+  }
+  if (!is.numeric(restrictions[[value_col]]) ||
+      any(!is.finite(restrictions[[value_col]]))) {
+    stop(
+      "The second column of `restrictions` must contain finite numeric relativities.",
+      call. = FALSE
+    )
+  }
+
+  requested_levels <- as.character(restrictions[[variable]])
+  updated_restrictions <- list()
+  restriction_steps <- which(vapply(
+    model$steps,
+    function(step) {
+      identical(step$type, "restriction") &&
+        identical(step$variable, variable)
+    },
+    logical(1)
+  ))
+
+  if (length(restriction_steps) > 1) {
+    stop(
+      "Multiple restriction steps are stored for risk factor `", variable,
+      "`. Combine these restrictions into one specification before updating it.",
+      call. = FALSE
+    )
+  }
+
+  existing_step <- if (length(restriction_steps) == 1) {
+    model$steps[[restriction_steps]]
+  } else {
+    NULL
+  }
+
+  if (!is.null(existing_step)) {
+    existing_value_col <- names(existing_step$restrictions)[2]
+    incoming_value_col <- names(restrictions)[2]
+
+    if (!identical(incoming_value_col, existing_value_col)) {
+      stop(
+        "Risk factor `", variable, "` already has a restriction stored as `",
+        existing_value_col, "`. Use `", existing_value_col,
+        "` as the second column to update that restriction.",
+        call. = FALSE
+      )
+    }
+
+    if (allow_new_levels_missing) {
+      allow_new_levels <- existing_step$allow_new_levels %||% TRUE
+    }
+    if (allow_new_risk_factors_missing) {
+      allow_new_risk_factors <-
+        existing_step$allow_new_risk_factors %||% FALSE
+    }
+
+    existing <- existing_step$restrictions
+    existing_levels <- as.character(existing[[variable]])
+    incoming_levels <- as.character(restrictions[[variable]])
+    supplied_before <- existing_step$supplied_levels %||% existing_levels
+    matching <- match(incoming_levels, existing_levels)
+    previously_supplied <- incoming_levels %in% supplied_before
+    changed <- !is.na(matching) & previously_supplied &
+      existing[[existing_value_col]][matching] !=
+        restrictions[[incoming_value_col]]
+
+    if (any(changed)) {
+      updated_restrictions <- lapply(which(changed), function(i) {
+        list(
+          level = incoming_levels[i],
+          old = existing[[existing_value_col]][matching[i]],
+          new = restrictions[[incoming_value_col]][i]
+        )
+      })
+    }
+
+    replace <- !is.na(matching)
+    existing[[existing_value_col]][matching[replace]] <-
+      restrictions[[incoming_value_col]][replace]
+
+    if (any(!replace)) {
+      additions <- stats::setNames(
+        data.frame(
+          incoming_levels[!replace],
+          restrictions[[incoming_value_col]][!replace],
+          stringsAsFactors = FALSE
+        ),
+        c(variable, incoming_value_col)
+      )
+      existing <- rbind(existing, additions)
+    }
+
+    restrictions <- existing
+  }
+
+  .assert_single_logical(allow_new_levels, "allow_new_levels")
+  .assert_single_logical(allow_new_risk_factors, "allow_new_risk_factors")
 
   if (!variable %in% names(model$base$data)) {
     stop(
@@ -918,16 +1059,44 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
     allow_new_risk_factors = allow_new_risk_factors
   )
 
-  .add_step(model, list(
-    id = .next_step_id(model),
+  if (length(updated_restrictions) > 0) {
+    for (update in updated_restrictions) {
+      message(
+        "Updated existing restriction for `", variable, " = \"",
+        update$level, "\"`: ",
+        format(update$old, trim = TRUE),
+        " -> ",
+        format(update$new, trim = TRUE)
+      )
+    }
+  }
+
+  restriction_step <- list(
+    id = if (is.null(existing_step)) {
+      .next_step_id(model)
+    } else {
+      existing_step$id
+    },
     type = "restriction",
     variable = variable,
     restrictions = completed$restrictions,
+    supplied_levels = unique(c(
+      existing_step$supplied_levels %||% character(),
+      requested_levels
+    )),
     new_levels = completed$new_levels,
     allow_new_levels = allow_new_levels,
     new_risk_factor = completed$new_risk_factor,
     allow_new_risk_factors = allow_new_risk_factors
-  ))
+  )
+
+  if (is.null(existing_step)) {
+    restriction_step$supplied_levels <- requested_levels
+    return(.add_step(model, restriction_step))
+  }
+
+  model$steps[[restriction_steps]] <- restriction_step
+  model
 }
 
 .complete_restrictions_from_model <- function(model, restrictions,
