@@ -59,6 +59,10 @@ A \code{ggplot2} object.
 Creates a plot of the empirical cumulative distribution
 function (ECDF) of the observed truncated claim amounts together with the
 fitted truncated CDF.
+
+The comparison assesses whether the fitted conditional severity distribution
+represents the shape of the observed claims within the same truncation
+interval.
 }
 \details{
 The plot compares the empirical distribution of the observed, truncated
@@ -66,6 +70,14 @@ claim severities with the fitted distribution conditional on the same
 truncation interval. This is a visual check of whether the selected severity
 distribution is plausible for the part of the portfolio that is actually
 observed.
+
+Systematic separation between the empirical and fitted curves can indicate
+that the selected gamma or lognormal distribution does not adequately
+represent the observed severity shape. The plot does not assess the
+unobserved parts of the distribution outside the truncation bounds.
+}
+\seealso{
+\code{\link[=fit_truncated_severity]{fit_truncated_severity()}}, \code{\link[=rlnormt]{rlnormt()}}, \code{\link[=rgammat]{rgammat()}}
 }
 \author{
 Martin Haringa

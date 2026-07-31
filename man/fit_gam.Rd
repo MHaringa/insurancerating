@@ -16,22 +16,24 @@ fit_gam(
 )
 }
 \arguments{
-\item{data}{A data.frame containing the insurance portfolio.}
+\item{data}{A data frame containing portfolio observations.}
 
 \item{nclaims}{Deprecated NSE argument for claim counts.}
 
 \item{x}{Deprecated NSE argument for the continuous risk factor.}
 
-\item{exposure}{Character, name of column in \code{data} with the exposure.}
+\item{exposure}{Character string. Exposure column used as an offset or
+aggregation weight.}
 
 \item{amount}{Deprecated NSE argument for claim amounts.}
 
-\item{pure_premium}{(Optional) Character, column name in \code{data} with the pure
-premium. Required for \code{model = "pure_premium"}.}
+\item{pure_premium}{Optional character string. Row-level risk-premium column.
+Required for \code{model = "pure_premium"} and aggregated using exposure
+weights.}
 
-\item{model}{Character string specifying the model type. One of
-\code{"frequency"}, \code{"severity"}, or \code{"pure_premium"}. Default is \code{"frequency"}.
-The old value \code{"burning"} is deprecated and maps to \code{"pure_premium"}.}
+\item{model}{Character string. Response context: \code{"frequency"},
+\code{"severity"} or \code{"pure_premium"}. The deprecated value \code{"burning"} maps
+to \code{"pure_premium"}.}
 
 \item{round_x}{Deprecated. Use \code{round_risk_factor} instead.}
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/gam_construct_tariff_classes.R
 \name{derive_tariff_segments}
 \alias{derive_tariff_segments}
-\title{Derive insurance tariff segments}
+\title{Derive candidate tariff segments from a smooth risk-factor effect}
 \usage{
 derive_tariff_segments(
   object,
@@ -16,20 +16,21 @@ derive_tariff_segments(
 )
 }
 \arguments{
-\item{object}{An object of class \code{"riskfactor_gam"}, produced by
-\code{\link[=risk_factor_gam]{risk_factor_gam()}}. Objects with the old \code{"fitgam"} class are still
-supported for backward compatibility.}
+\item{object}{A \code{"risk_factor_gam"} object returned by
+\code{\link[=risk_factor_gam]{risk_factor_gam()}}. Legacy \code{"riskfactor_gam"} and \code{"fitgam"} classes are
+accepted for compatibility.}
 
-\item{complexity}{Numeric. Controls the complexity penalty used when deriving
-segments. Higher values generally yield fewer tariff segments. Default = 0.}
+\item{complexity}{Non-negative numeric complexity penalty for the
+evolutionary tree. Larger values generally favour fewer internal
+boundaries.}
 
-\item{max_iterations}{Integer. Maximum number of search iterations used by
-the underlying grouping algorithm. Default = 10000.}
+\item{max_iterations}{Positive integer. Maximum number of evolutionary search
+iterations.}
 
-\item{population_size}{Integer. Number of candidate trees used by the
-underlying grouping algorithm. Default = 200.}
+\item{population_size}{Positive integer. Number of candidate trees maintained
+during the evolutionary search.}
 
-\item{seed}{Integer, seed for the random number generator (for reproducibility).}
+\item{seed}{Numeric random seed used by the grouping algorithm.}
 
 \item{alpha}{Deprecated. Use \code{complexity} instead.}
 
@@ -54,28 +55,50 @@ For backward compatibility, the old components \code{prediction}, \code{x}, \cod
 \code{tariff_classes} are also returned.
 }
 \description{
-Derives data-driven tariff segments for a continuous risk factor from a fitted
-\code{"riskfactor_gam"} object produced by \code{\link[=risk_factor_gam]{risk_factor_gam()}}. The segments help
-translate a smooth GAM response pattern into practical categorical rating
-factors for a GLM tariff.
+Approximate the smooth effect estimated by \code{\link[=risk_factor_gam]{risk_factor_gam()}} with intervals
+for a continuous risk factor. The resulting boundaries provide a candidate
+categorical representation that can be inspected before inclusion in a
+pricing GLM or tariff structure.
 }
 \details{
-Evolutionary trees (via \code{\link[evtree:evtree]{evtree::evtree()}}) are used as a technique to bin the
-fitted GAM object into candidate tariff segments.
-This method is based on the work by Henckaerts et al. (2018).
-See Grubinger et al. (2014) for details on the parameters controlling the
-evtree fit.
+\subsection{Method}{
+
+An evolutionary regression tree from \code{\link[evtree:evtree]{evtree::evtree()}} is fitted to the
+GAM response over the observed risk-factor values. Internal tree split
+points are translated into interval boundaries. If no internal split is
+supported by the fitted search, one interval spanning the observed range is
+returned.
+
+The method follows the data-driven binning approach described by Henckaerts
+et al. (2018). \code{complexity}, \code{population_size}, \code{max_iterations} and \code{seed}
+control the search rather than an actuarial minimum-volume rule.
+}
+
+\subsection{Actuarial interpretation}{
+
+The returned segments approximate the shape of the fitted univariate GAM;
+they are not automatically a final tariff classification. Before use in a
+multivariate model, the boundaries should be assessed against exposure and
+claim volume, stability across periods, operational rounding and the
+interaction with other risk factors. Particular care is required for
+boundaries in sparsely populated tails.
+
+Use \code{\link[=autoplot.tariff_segments]{autoplot.tariff_segments()}} to compare the smooth curve and boundaries.
+Use \code{\link[=add_tariff_segments]{add_tariff_segments()}} to attach the resulting factor to the portfolio
+rows used for the GAM.
+}
 }
 \examples{
 \dontrun{
-library(dplyr)
-
-# Recommended new usage (SE)
-age_segments <- risk_factor_gam(MTPL,
-                                risk_factor = "age_policyholder",
-                                claim_count = "nclaims",
-                                exposure = "exposure") |>
+age_segments <- risk_factor_gam(
+  MTPL,
+  risk_factor = "age_policyholder",
+  claim_count = "nclaims",
+  exposure = "exposure"
+) |>
   derive_tariff_segments()
+
+autoplot(age_segments, show_observations = TRUE)
 
 MTPL |>
   add_tariff_segments(age_segments, name = "age_policyholder_segment")
@@ -100,6 +123,10 @@ tariff classes. \emph{Scandinavian Actuarial Journal}, 2018(8), 681–705.
 Wood, S.N. (2011). Fast stable restricted maximum likelihood and
 marginal likelihood estimation of semiparametric generalized linear models.
 \emph{JRSS B}, 73(1), 3–36. \doi{doi:10.1111/j.1467-9868.2010.00749.x}
+}
+\seealso{
+\code{\link[=risk_factor_gam]{risk_factor_gam()}}, \code{\link[=autoplot.tariff_segments]{autoplot.tariff_segments()}},
+\code{\link[=add_tariff_segments]{add_tariff_segments()}}
 }
 \author{
 Martin Haringa

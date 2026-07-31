@@ -77,7 +77,6 @@ reference:
       - add_relativities
       - relativities
       - split_level
-      - split_relativities
       - refit
 
   - title: "Validation"
@@ -136,6 +135,7 @@ reference:
       - smooth_coef
       - refit_glm
       - update_glm
+      - split_relativities
       - period_to_months
       - rows_per_date
       - reduce

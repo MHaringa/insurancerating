@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_refinement.R
 \name{refit}
 \alias{refit}
-\title{Refit a prepared refinement workflow}
+\title{Fit a prepared refinement specification}
 \usage{
 refit(object, intercept_only = FALSE, ...)
 }
@@ -17,32 +17,45 @@ relativities fixed as offsets and estimate only the intercept.}
 \item{...}{Additional arguments passed to \code{\link[stats:glm]{stats::glm()}}, such as \code{control}.}
 }
 \value{
-A refitted object that inherits from \code{glm} and additionally from
-\code{refitrestricted}, \code{refitsmooth}, or both, depending on the applied
-refinement steps. The returned model stores attributes used by
-\code{\link[=rating_table]{rating_table()}} and \code{\link[=rating_grid]{rating_grid()}} to recognise refined rating factors,
-fixed relativities and smoothing metadata.
+A fitted object inheriting from \code{glm}. Compatibility classes
+\code{refitrestricted}, \code{refitsmooth}, or both are added when relevant. The
+object stores refinement metadata used by \code{\link[=rating_table]{rating_table()}} and
+\code{\link[=rating_grid]{rating_grid()}} to identify fixed relativities, smoothed variables and
+derived tariff factors.
 }
 \description{
-Applies the refinement steps stored in a \code{rating_refinement} object and
-returns a refitted GLM. This is the final step in the refinement workflow
-after \code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}} or
-\code{\link[=add_relativities]{add_relativities()}} have been used to define the proposed tariff structure.
+Apply the ordered steps stored in a \code{rating_refinement} object and fit the
+resulting pricing GLM. This evaluates the current refinement specification;
+it may be called repeatedly while smoothing, restrictions or sublevel
+relativities are being reviewed.
 }
 \details{
-Refinement steps are not applied to the fitted model immediately. They are
-collected on the \code{rating_refinement} object so they can be inspected first,
-for example with \code{\link[=autoplot.rating_refinement]{autoplot.rating_refinement()}}. \code{refit()} then applies the
-steps in order, updates the model formula and data, and calls \code{\link[stats:glm]{stats::glm()}}
-with the original model family and any additional arguments passed through
-\code{...}.
+\code{refit()} applies the stored steps in their recorded order, constructs the
+required tariff variables and offsets, updates the model formula and calls
+\code{\link[stats:glm]{stats::glm()}} with the original model family. Additional fitting arguments
+can be supplied through \code{...}.
+\subsection{Actuarial interpretation}{
+
+The refitted model represents the combined effect of the original GLM
+structure and the explicit actuarial assumptions stored in the refinement.
+Its coefficients and predictions should be assessed against exposure,
+observed experience, model diagnostics and the unrestricted model. A refit
+does not establish that a manual restriction or curve edit is statistically
+estimated; it applies that assumption as specified.
+}
+
+\subsection{Intercept-only recalibration}{
 
 With \code{intercept_only = FALSE}, the refined GLM is fitted with the remaining
 free model terms that are still present after applying the refinement steps.
 With \code{intercept_only = TRUE}, remaining original model effects are fixed as
-offsets based on the existing fitted relativities. The refit then estimates
-only the intercept. This can be useful when the relative tariff structure
-should remain fixed and only the overall premium level should be recalibrated.
+offsets based on their existing fitted relativities. Only the intercept is
+then estimated. Consequently, relative differences between those fixed
+effects remain unchanged while the overall expected premium level is
+recalibrated to the supplied model data.
+}
+
+\subsection{Model result and further refinement}{
 
 Printing the returned model first shows the original and refitted formulas,
 the model family, whether an intercept-only refit was used, and a concise
@@ -51,6 +64,13 @@ followed by the regular \code{glm} output with the model call, coefficients,
 degrees of freedom, deviance and AIC. The object continues to inherit from
 \code{glm}, so standard methods such as \code{\link[stats:predict.glm]{stats::predict.glm()}} and
 \code{\link[=summary.glm]{summary.glm()}} remain available.
+
+The returned GLM is a fitted result, not an editable refinement
+specification. Retain the original \code{rating_refinement} object when further
+changes may be required. Passing the refitted GLM to \code{\link[=prepare_refinement]{prepare_refinement()}}
+starts a new workflow from that model and does not reconstruct the earlier
+sequence of refinement steps.
+}
 }
 \examples{
 zip_df <- data.frame(
@@ -64,10 +84,16 @@ model <- glm(
   data = MTPL
 )
 
-refined_model <- prepare_refinement(model) |>
-  add_restriction(zip_df) |>
-  refit(intercept_only = TRUE)
+refinement <- prepare_refinement(model) |>
+  add_restriction(zip_df)
 
+refined_model <- refit(refinement, intercept_only = TRUE)
+
+}
+\seealso{
+\code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=edit_smoothing]{edit_smoothing()}},
+\code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_relativities]{add_relativities()}}, \code{\link[=rating_table]{rating_table()}},
+\code{\link[=rating_grid]{rating_grid()}}
 }
 \author{
 Martin Haringa

@@ -20,37 +20,40 @@ riskfactor_gam(
 )
 }
 \arguments{
-\item{data}{A data.frame containing the insurance portfolio.}
+\item{data}{A data frame containing portfolio observations.}
 
 \item{nclaims}{Deprecated. Use \code{claim_count} instead.}
 
 \item{x}{Deprecated. Use \code{risk_factor} instead.}
 
-\item{exposure}{Character, name of column in \code{data} with the exposure.}
+\item{exposure}{Character string. Exposure column used as an offset or
+aggregation weight.}
 
 \item{amount}{Deprecated. Use \code{claim_amount} instead.}
 
-\item{pure_premium}{(Optional) Character, column name in \code{data} with the pure
-premium. Required for \code{model = "pure_premium"}.}
+\item{pure_premium}{Optional character string. Row-level risk-premium column.
+Required for \code{model = "pure_premium"} and aggregated using exposure
+weights.}
 
-\item{model}{Character string specifying the model type. One of
-\code{"frequency"}, \code{"severity"}, or \code{"pure_premium"}. Default is \code{"frequency"}.
-The old value \code{"burning"} is deprecated and maps to \code{"pure_premium"}.}
+\item{model}{Character string. Response context: \code{"frequency"},
+\code{"severity"} or \code{"pure_premium"}. The deprecated value \code{"burning"} maps
+to \code{"pure_premium"}.}
 
 \item{round_x}{Deprecated. Use \code{round_risk_factor} instead.}
 
-\item{risk_factor}{Character, name of column in \code{data} with the continuous
-risk factor.}
+\item{risk_factor}{Character string. Numeric continuous risk-factor column
+in \code{data}.}
 
-\item{claim_count}{Character, name of column in \code{data} with the number of
-claims.}
+\item{claim_count}{Character string. Claim-count column. Required for
+\code{model = "frequency"} and \code{model = "severity"}.}
 
-\item{claim_amount}{(Optional) Character, column name in \code{data} with the
-claim amount. Required for \code{model = "severity"}.}
+\item{claim_amount}{Optional character string. Total claim-amount column.
+Required for \code{model = "severity"}.}
 
-\item{round_risk_factor}{(Optional) Numeric value to round the risk factor to
-a multiple of \code{round_risk_factor}. Can speed up fitting for factors with
-many distinct values.}
+\item{round_risk_factor}{Optional positive numeric value. The continuous risk
+factor is rounded to multiples of this value before aggregation and model
+fitting. This can reduce computation and local volatility when the variable
+has many distinct values, but it also removes detail.}
 }
 \value{
 See \code{\link[=risk_factor_gam]{risk_factor_gam()}}.

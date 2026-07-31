@@ -1,6 +1,8 @@
-# Performance of fitted GLMs
+# Compare fitted GLMs using common performance measures
 
-Computes model performance indices for one or more fitted GLMs.
+Compare one or more fitted GLMs using AIC, BIC and response-scale RMSE.
+The resulting table provides a concise first comparison of alternative
+pricing-model specifications fitted to the same portfolio outcome.
 
 ## Usage
 
@@ -36,21 +38,43 @@ A data frame of class `"model_performance"`, with columns:
 
 ## Details
 
-The following indices are reported:
+The following measures are reported:
 
 - AIC:
 
-  Akaike's Information Criterion.
+  Akaike information criterion, balancing likelihood fit and model
+  complexity.
 
 - BIC:
 
-  Bayesian Information Criterion.
+  Bayesian information criterion, applying a stronger
+  sample-size-dependent complexity penalty.
 
 - RMSE:
 
-  Root mean squared error, computed from observed and predicted values.
+  Root mean squared error between observed and response-scale predicted
+  values.
 
-This function is adapted from `performance::model_performance()`.
+Lower values are preferred within each measure, but the measures answer
+different questions. AIC and BIC depend on the model likelihood, whereas
+RMSE measures error on the response scale. Comparisons are therefore
+most meaningful when models use the same response, estimation records,
+weights and offsets.
+
+The table does not select a pricing model automatically. In actuarial
+model assessment, statistical fit should be considered together with
+portfolio calibration, residual behaviour, coefficient stability,
+exposure by level and the practical interpretability of the resulting
+tariff structure.
+
+The implementation is adapted from `performance::model_performance()`.
+
+## See also
+
+[`rmse()`](https://mharinga.github.io/insurancerating/reference/rmse.md),
+[`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md),
+[`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md),
+[`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
 
 ## Author
 

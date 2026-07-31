@@ -2,7 +2,7 @@
 % Please edit documentation in R/gam_construct_tariff_classes.R
 \name{autoplot.tariff_segments}
 \alias{autoplot.tariff_segments}
-\title{Autoplot for tariff segment objects}
+\title{Inspect derived tariff-segment boundaries}
 \usage{
 \method{autoplot}{tariff_segments}(
   object,
@@ -22,40 +22,67 @@
 \item{object}{An object of class \code{"tariff_segments"}, produced by
 \code{\link[=derive_tariff_segments]{derive_tariff_segments()}}.}
 
-\item{confidence}{Logical, whether to plot 95\% confidence intervals.
-Default = \code{FALSE}.}
+\item{confidence}{Logical. If \code{TRUE}, show pointwise 95 percent confidence
+intervals where finite values are available.}
 
-\item{color_gam}{Color of the fitted GAM line. Default = \code{"steelblue"}.}
+\item{color_gam}{Colour of the fitted GAM line.}
 
-\item{show_observations}{Logical, whether to add observed data points for each
-level of the risk factor. Default = \code{FALSE}.}
+\item{show_observations}{Logical. If \code{TRUE}, add the aggregated observed
+experience used for the GAM.}
 
-\item{color_splits}{Color of the vertical split lines. Default = \code{"grey50"}.}
+\item{color_splits}{Colour of the vertical segment boundaries.}
 
-\item{size_points}{Numeric, size of points if \code{show_observations = TRUE}.
-Default = 1.}
+\item{size_points}{Numeric point size for observed experience.}
 
-\item{color_points}{Color of observed points. Default = \code{"black"}.}
+\item{color_points}{Colour for observed experience.}
 
-\item{rotate_labels}{Logical, whether to rotate x-axis labels by 45 degrees.
-Default = \code{FALSE}.}
+\item{rotate_labels}{Logical. If \code{TRUE}, rotate x-axis labels by 45 degrees.}
 
-\item{remove_outliers}{Numeric, exclude observations above this value from
-the plot (helps with extreme outliers). Default = \code{NULL}.}
+\item{remove_outliers}{Optional single numeric upper display limit for
+observed points.}
 
 \item{conf_int}{Deprecated. Use \code{confidence} instead.}
 
-\item{...}{Additional arguments passed to \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}.}
+\item{...}{Additional arguments reserved for method compatibility.}
 }
 \value{
-A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
+A \code{ggplot2} object.
 }
 \description{
-\code{autoplot()} method for objects created by \code{\link[=derive_tariff_segments]{derive_tariff_segments()}}.
-Produces a \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} of the fitted GAM together with the derived
-tariff segment boundaries. Optionally, confidence intervals and observed data
-points
-can be added.
+Plot the fitted continuous risk-factor effect together with the boundaries
+returned by \code{\link[=derive_tariff_segments]{derive_tariff_segments()}}. Observed aggregated experience and
+pointwise confidence intervals can be added to support review of the proposed
+segmentation.
+}
+\details{
+Vertical lines indicate the derived interval boundaries; the fitted GAM line
+remains the underlying continuous effect. The plot can be used to assess
+whether boundaries occur at plausible changes in the fitted pattern and
+whether tail segments have visible empirical support.
+
+The visualisation does not refit a categorical GLM and does not establish
+that adjacent segments are statistically or commercially distinct. Exposure,
+claim volume, temporal stability and operational tariff constraints remain
+separate considerations. \code{remove_outliers} affects displayed observed points
+only and does not alter either the GAM or the derived boundaries.
+}
+\examples{
+\dontrun{
+segments <- risk_factor_gam(
+  MTPL,
+  risk_factor = "age_policyholder",
+  claim_count = "nclaims",
+  exposure = "exposure"
+) |>
+  derive_tariff_segments()
+
+autoplot(segments, confidence = TRUE, show_observations = TRUE)
+}
+
+}
+\seealso{
+\code{\link[=derive_tariff_segments]{derive_tariff_segments()}}, \code{\link[=risk_factor_gam]{risk_factor_gam()}},
+\code{\link[=add_tariff_segments]{add_tariff_segments()}}
 }
 \author{
 Martin Haringa

@@ -15,12 +15,14 @@ rating_factors(
 )
 }
 \arguments{
-\item{...}{glm object(s) produced by \code{glm()}, \code{refit()} or \code{refit_glm()}}
+\item{...}{One or more fitted \code{glm} objects, including models returned by
+\code{\link[=refit]{refit()}}. Object expressions are used to construct the dynamic estimate
+column names.}
 
-\item{model_data}{Optional data.frame used to create the model(s). If \code{NULL},
+\item{model_data}{Optional data frame used to fit the models. If \code{NULL},
 the function tries to use \code{model$data} for each supplied model.}
 
-\item{exposure}{Logical or character. If \code{TRUE} (default), exposure is added
+\item{exposure}{Logical or character string. If \code{TRUE}, exposure is added
 if it can be inferred from the model. If \code{FALSE}, no exposure is added.
 If a character string is supplied, it is interpreted as the exposure column
 name.}
@@ -31,11 +33,11 @@ instead.}
 \item{signif_stars}{Deprecated. Use \code{significance} in \code{\link[=rating_table]{rating_table()}}
 instead.}
 
-\item{exponentiate}{Logical. If \code{TRUE} (default), coefficients are
+\item{exponentiate}{Logical. If \code{TRUE}, coefficients are
 exponentiated and shown as relativities. If \code{FALSE}, coefficients are shown
 on the model scale.}
 
-\item{round_exposure}{number of digits for exposure (defaults to 0)}
+\item{round_exposure}{Non-negative number of digits used to round exposure.}
 }
 \value{
 See \code{\link[=rating_table]{rating_table()}}.

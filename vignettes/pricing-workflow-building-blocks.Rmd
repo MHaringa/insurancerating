@@ -48,10 +48,11 @@ fa <- factor_analysis(
 head(fa)
 ```
 
-The output helps answer practical questions such as:
+The output supports questions such as:
 
 - where exposure is concentrated
-- whether observed differences are credible or noisy
+- whether observed differences are supported by sufficient volume or are likely
+  to be volatile
 - whether a segment is driven by a small number of claims
 - which risk factors may need closer modelling or refinement
 
@@ -144,9 +145,10 @@ severity_model <- glm(
 ```
 
 The adjusted average claim amount already contains the redistributed cost of
-large losses. A separate excess-premium component must therefore not be added
-again. This is a concise workflow and generally works well when modelled groups
-contain sufficient claims and sparse factor levels have been combined.
+large losses. A separate excess-premium component should therefore not be added
+again. This workflow uses one severity response and can be appropriate when
+modelled groups contain sufficient claims and sparse factor levels have been
+combined.
 
 The amount allocated to an individual row is not an observed claim amount for
 that row. In a sparse sector, a severity model can therefore interpret allocated
@@ -232,8 +234,8 @@ head(portfolio[, c("age_policyholder", "age_policyholder_segment")])
 ```
 
 These functions are intended to support actuarial judgement, not replace it.
-Candidate segment boundaries should still be reviewed for credibility,
-stability and practical usability.
+Candidate segment boundaries should still be reviewed against exposure, claim
+volume, stability and practical usability.
 
 ## 4. Fit and interpret a GLM
 
@@ -277,9 +279,9 @@ rt |>
 
 ## 5. Refine tariff effects when needed
 
-Raw model output may be statistically valid but still unsuitable for direct
-tariff use. Sparse levels, noisy estimates or non-monotonic adjacent effects can
-make a tariff hard to explain or maintain.
+Estimated coefficients may require further actuarial review before direct
+tariff use. Sparse levels, sampling variation or non-monotonic adjacent effects
+can produce a structure that is unstable or difficult to support.
 
 The refinement workflow makes these adjustments explicit:
 
@@ -311,7 +313,8 @@ Pricing models should be checked before their output is used in a tariff.
 
 - `check_overdispersion()` for Poisson frequency models
 - `check_residuals()` for simulation-based residual diagnostics using DHARMa
-- `bootstrap_performance()` for predictive stability with metrics such as RMSE
+- `bootstrap_performance()` for sensitivity of performance under repeated
+  sampling
 - `rating_grid()` to inspect observed rating-grid combinations
 
 For example:
@@ -339,7 +342,7 @@ One possible workflow is:
    response or to calculate a separate excess loading per exposure unit.
 4. Analyse continuous risk factors with `risk_factor_gam()`.
 5. Create candidate tariff segments with `derive_tariff_segments()`.
-6. Fit GLMs for frequency, severity or pure premium.
+6. Fit GLMs for frequency, severity or risk premium.
 7. Interpret coefficients with `rating_table()`.
 8. Compare fitted relativities with observed experience using
    `add_portfolio_experience()`.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_refinement_plot.R
 \name{autoplot.rating_refinement}
 \alias{autoplot.rating_refinement}
-\title{Plot a model refinement step}
+\title{Inspect a model refinement step}
 \usage{
 \method{autoplot}{rating_refinement}(
   object,
@@ -19,21 +19,12 @@
 \arguments{
 \item{object}{Object of class \code{rating_refinement}.}
 
-\item{variable}{Optional character string specifying the risk factor to plot.
-If \code{NULL} (default), all available variables in the refinement object are
-shown. If specified, only the selected risk factor is plotted.}
+\item{variable}{Optional character string identifying the model or derived
+variable whose refinement step should be shown. An error is returned when
+no step or more than one step matches.}
 
-\item{step}{Optional integer specifying which refinement step to plot.
-This is mainly relevant when multiple refinement steps have been applied
-(e.g. multiple calls to \code{add_smoothing()}, \code{add_restriction()}, or
-\code{add_relativities()}).
-\itemize{
-\item If \code{NULL} (default), the latest refinement step is shown.
-\item If specified, the corresponding step in the refinement sequence is used.
-}
-
-This makes it possible to inspect intermediate refinement stages before
-calling \code{refit()}.}
+\item{step}{Optional positive integer identifying a step in the stored
+refinement sequence. This takes precedence over \code{variable}.}
 
 \item{x_max}{Optional single finite numeric value. Maximum value displayed on
 the x-axis of a smoothing plot. This changes only the visible plotting
@@ -62,16 +53,60 @@ spaces in the x-axis label. Default is \code{FALSE}.}
 A \code{ggplot2} object.
 }
 \description{
-Takes a \code{rating_refinement} object and plots one refinement step before
-\code{\link[=refit]{refit()}} is called. This is useful for checking whether manual tariff
-restrictions, smoothing or expert-based relativities behave as intended
-before they are used in a refined pricing model.
+Visualise one stored step of a \code{rating_refinement} specification before
+fitting the revised GLM with \code{\link[=refit]{refit()}}. The plot compares the original
+fitted tariff effect with the smoothing, restriction or sublevel relativity
+specification produced by the selected step.
+}
+\details{
+Refinement steps are evaluated in their stored order up to and including the
+selected step. The plot is a diagnostic preview: it does not refit the GLM
+and does not modify the refinement specification.
 
-For objects produced by \code{add_relativities()}, original levels that are split
-into new levels are removed from the connected original line and from the
-x-axis. Instead, the original level is shown as a horizontal blue segment
-spanning all child categories, with the original level label centred above
-the segment.
+If \code{step} is supplied, that position in the refinement sequence is shown. If
+only \code{variable} is supplied, exactly one stored step must match that variable.
+When neither is supplied, the object must contain exactly one refinement
+step. Otherwise the function asks the user to select a step explicitly.
+\subsection{Actuarial interpretation}{
+
+The plot supports review of the proposed tariff structure before estimation.
+It can be used to assess the local shape and magnitude of a smoothing curve,
+the effect of fixed relativities, and the differentiation introduced within
+a broader GLM level. This visual assessment does not by itself establish
+statistical adequacy; claim volume, exposure, stability over time and model
+diagnostics should also be considered.
+
+For a sublevel split created by \code{\link[=add_relativities]{add_relativities()}}, the original parent
+level is shown as a horizontal segment across its child levels. This makes
+the parent GLM effect and the proposed within-level differentiation directly
+comparable.
+}
+}
+\examples{
+portfolio <- data.frame(
+  claims = c(1, 2, 1, 3, 2, 4),
+  exposure = rep(1, 6),
+  risk_class = factor(c("A", "B", "C", "A", "B", "C"))
+)
+
+model <- glm(
+  claims ~ risk_class + offset(log(exposure)),
+  family = poisson(),
+  data = portfolio
+)
+
+refinement <- prepare_refinement(model, data = portfolio) |>
+  add_restriction(data.frame(
+    risk_class = "C",
+    risk_class_restricted = 1.10
+  ))
+
+autoplot(refinement)
+
+}
+\seealso{
+\code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=edit_smoothing]{edit_smoothing()}},
+\code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}
 }
 \author{
 Martin Haringa

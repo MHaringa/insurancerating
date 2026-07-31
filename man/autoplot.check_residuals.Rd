@@ -2,30 +2,42 @@
 % Please edit documentation in R/model_performance_residuals.R
 \name{autoplot.check_residuals}
 \alias{autoplot.check_residuals}
-\title{Autoplot for check_residuals objects}
+\title{Inspect simulation-based residual uniformity}
 \usage{
 \method{autoplot}{check_residuals}(object, show_message = TRUE, max_points = 1000, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"check_residuals"}, produced by \code{\link[=check_residuals]{check_residuals()}}.}
+\item{object}{An object produced by \code{\link[=check_residuals]{check_residuals()}}.}
 
-\item{show_message}{Logical. If TRUE (default), prints a short message based on
-the p-value from the KS test.}
+\item{show_message}{Logical. If \code{TRUE}, print a concise interpretation of
+the Kolmogorov-Smirnov p-value.}
 
 \item{max_points}{Maximum number of QQ-plot points to display. If the
-residual check contains more points, an evenly spaced subset is shown. Use
-\code{Inf} to plot all points.}
+residual check contains more points, an evenly spaced subset is shown.
+Use \code{Inf} to display all points.}
 
-\item{...}{Additional arguments passed to \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}.}
+\item{...}{Currently unused.}
 }
 \value{
 A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
 }
 \description{
-\code{autoplot()} method for objects created by \code{\link[=check_residuals]{check_residuals()}}.
-Produces a simulation-based uniform QQ-plot of the residuals, with the
-Kolmogorov-Smirnov p-value shown in the subtitle.
-Optionally prints a message about whether deviations are detected.
+Plot the scaled residuals returned by \code{\link[=check_residuals]{check_residuals()}} against their
+theoretical uniform quantiles. Systematic departures from the diagonal can
+indicate remaining structure, distributional mismatch or influential
+observations in a fitted pricing model.
+}
+\details{
+The subtitle reports the uniformity-test p-value stored in \code{object}. This
+p-value is a diagnostic signal rather than a stand-alone model acceptance
+criterion. The shape and location of deviations should be assessed together
+with exposure, fitted values and relevant risk-factor levels.
+
+Reducing \code{max_points} affects only the displayed QQ points; it does not
+change the residual calculation or the reported test.
+}
+\seealso{
+\code{\link[=check_residuals]{check_residuals()}}, \code{\link[=check_overdispersion]{check_overdispersion()}}
 }
 \author{
 Martin Haringa

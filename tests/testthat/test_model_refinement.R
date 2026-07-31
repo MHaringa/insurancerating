@@ -44,6 +44,37 @@ testthat::test_that(
 )
 
 testthat::test_that(
+  "relativity helpers define named parent-level splits", {
+    residential <- split_level(
+      "residential",
+      new_levels = c("flat", "house"),
+      relativities = c(0.95, 1.05)
+    )
+    commercial <- split_level(
+      "commercial",
+      new_levels = c("shop", "office"),
+      relativities = c(1.10, 0.90)
+    )
+
+    specification <- relativities(residential, commercial)
+
+    testthat::expect_named(specification, c("residential", "commercial"))
+    testthat::expect_named(
+      specification$residential,
+      c("new_level", "relativity")
+    )
+    testthat::expect_warning(
+      legacy <- split_relativities(
+        new_levels = c("flat", "house"),
+        relativities = c(0.95, 1.05)
+      ),
+      "deprecated"
+    )
+    testthat::expect_named(legacy, c("new_level", "relativity"))
+  }
+)
+
+testthat::test_that(
   "prepare_refinement validates supplied model data", {
     df <- data.frame(
       y = c(1, 2, 1, 3),
@@ -789,7 +820,8 @@ testthat::test_that(
     )
     testthat::expect_s3_class(
       add_smoothing(ref, model_variable = "age_band", source_variable = "age",
-                    breaks = c(20, 35, 50)),
+                    breaks = c(20, 35, 50),
+                    smoothing = "poly", degree = 1),
       "rating_refinement"
     )
     ref_with_missing <- ref
@@ -805,12 +837,14 @@ testthat::test_that(
     )
     testthat::expect_warning(
       add_smoothing(ref, tariff_class = "age_band", rating_variable = "age",
-                    breaks = c(20, 35, 50)),
+                    breaks = c(20, 35, 50),
+                    smoothing = "poly", degree = 1),
       "deprecated"
     )
     testthat::expect_warning(
       add_smoothing(ref, x_cut = "age_band", x_org = "age",
-                    breaks = c(20, 35, 50)),
+                    breaks = c(20, 35, 50),
+                    smoothing = "poly", degree = 1),
       "deprecated"
     )
     testthat::expect_error(
@@ -861,6 +895,65 @@ testthat::test_that(
     )
     ref <- prepare_refinement(model, data = df)
 
+    default_refinement <- add_smoothing(
+      ref,
+      model_variable = "insured_amount_band",
+      source_variable = "insured_amount",
+      breaks = c(0, 100, 200, 300, 400)
+    )
+    testthat::expect_identical(
+      default_refinement$steps[[1]]$smoothing,
+      "spline"
+    )
+    testthat::expect_identical(default_refinement$steps[[1]]$k, 4L)
+
+    polynomial_refinement <- add_smoothing(
+      ref,
+      model_variable = "insured_amount_band",
+      source_variable = "insured_amount",
+      breaks = c(0, 100, 200, 300, 400),
+      smoothing = "poly",
+      degree = 2
+    )
+    testthat::expect_identical(
+      polynomial_refinement$steps[[1]]$smoothing,
+      "poly"
+    )
+
+    testthat::expect_error(
+      add_smoothing(
+        ref,
+        model_variable = "insured_amount_band",
+        source_variable = "insured_amount",
+        breaks = c(0, 100, 200, 300, 400),
+        smoothing = "spline",
+        degree = 2
+      ),
+      "degree.*only used.*poly"
+    )
+    testthat::expect_error(
+      add_smoothing(
+        ref,
+        model_variable = "insured_amount_band",
+        source_variable = "insured_amount",
+        breaks = c(0, 100, 200, 300, 400),
+        smoothing = "poly",
+        k = 4
+      ),
+      "k.*only used"
+    )
+    testthat::expect_error(
+      add_smoothing(
+        ref,
+        model_variable = "insured_amount_band",
+        source_variable = "insured_amount",
+        breaks = c(0, 100, 200, 300, 400),
+        smoothing = "spline",
+        k = 2
+      ),
+      "k.*at least 3"
+    )
+
     error <- tryCatch(
       add_smoothing(
         ref,
@@ -887,16 +980,14 @@ testthat::test_that(
       fixed = TRUE
     ))
 
-    testthat::expect_error(
-      add_smoothing(
-        ref,
-        model_variable = "insured_amount_band",
-        source_variable = "insured_amount",
-        breaks = c(0, 100, 200, 300, 400),
-        smoothing = "gam"
-      ),
-      "requires 10 degrees of freedom"
+    automatic_k <- add_smoothing(
+      ref,
+      model_variable = "insured_amount_band",
+      source_variable = "insured_amount",
+      breaks = c(0, 100, 200, 300, 400),
+      smoothing = "gam"
     )
+    testthat::expect_identical(automatic_k$steps[[1]]$k, 4L)
 
     valid_refinement <- add_smoothing(
       ref,
@@ -940,7 +1031,7 @@ testthat::test_that(
         model_variable = "insured_amount_band",
         source_variable = "insured_amount",
         breaks = c(0, 100, 200, 300, 400),
-        smoothing = "spline",
+        smoothing = "poly",
         degree = 4
       ),
       "polynomial degree 4 requires at least 5 unique values"
@@ -1306,6 +1397,104 @@ testthat::test_that(
           tariff$level == "A2"
       ],
       0.99
+    )
+  }
+)
+
+testthat::test_that(
+  "add_restriction recognises a factor derived by add_relativities", {
+    portfolio <- data.frame(
+      claims = c(1, 2, 3, 4, 2, 3, 4, 5),
+      exposure = rep(1, 8),
+      industry_group = factor(rep(c("A", "B"), each = 4)),
+      industry_detail = factor(c(
+        "A1", "A2", "A1", "A2",
+        "B1", "B2", "B1", "B2"
+      ))
+    )
+    model <- glm(
+      claims ~ industry_group + offset(log(exposure)),
+      family = poisson(),
+      data = portfolio
+    )
+    rel <- relativities(
+      split_level("A", c("A1", "A2"), c(0.9, 1.1))
+    )
+
+    refinement <- prepare_refinement(model, data = portfolio) |>
+      add_relativities(
+        model_variable = "industry_group",
+        split_variable = "industry_detail",
+        relativities = rel,
+        exposure = "exposure",
+        normalize = FALSE
+      ) |>
+      add_restriction(data.frame(
+        industry_detail = "A1",
+        industry_detail_restricted = 0.75
+      ))
+
+    restriction_step <- refinement$steps[[2]]
+    stored <- restriction_step$restrictions
+
+    testthat::expect_false(restriction_step$new_risk_factor)
+    testthat::expect_false(restriction_step$allow_new_risk_factors)
+    testthat::expect_true(restriction_step$replace_refinement_offset)
+    testthat::expect_identical(
+      restriction_step$model_term,
+      "industry_group_rel"
+    )
+    testthat::expect_equal(
+      stored$industry_detail_restricted[
+        stored$industry_detail == "A1"
+      ],
+      0.75
+    )
+    testthat::expect_equal(
+      stored$industry_detail_restricted[
+        stored$industry_detail == "A2"
+      ],
+      1.1
+    )
+    testthat::expect_equal(
+      stored$industry_detail_restricted[
+        stored$industry_detail == "B"
+      ],
+      1.4
+    )
+
+    fitted <- refit(refinement)
+    formula_text <- paste(deparse(stats::formula(fitted)), collapse = " ")
+    tariff <- rating_table(fitted, exposure = FALSE)$df
+
+    testthat::expect_match(
+      formula_text,
+      "log\\(industry_detail_restricted\\)"
+    )
+    testthat::expect_false(grepl(
+      "log\\(industry_group_rel\\)",
+      formula_text
+    ))
+    testthat::expect_equal(
+      tariff$est_fitted[
+        tariff$risk_factor == "industry_detail_restricted" &
+          tariff$level == "A1"
+      ],
+      0.75
+    )
+    testthat::expect_equal(
+      tariff$est_fitted[
+        tariff$risk_factor == "industry_detail_restricted" &
+          tariff$level == "A2"
+      ],
+      1.1
+    )
+    testthat::expect_equal(
+      tariff$est_fitted[
+        tariff$risk_factor == "industry_detail_restricted" &
+          tariff$level == "B"
+      ],
+      1.4
     )
   }
 )

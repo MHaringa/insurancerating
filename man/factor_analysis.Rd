@@ -2,7 +2,7 @@
 % Please edit documentation in R/univariate.R
 \name{factor_analysis}
 \alias{factor_analysis}
-\title{Factor analysis for discrete risk factors}
+\title{Summarise observed portfolio experience by risk factor}
 \usage{
 factor_analysis(
   data = NULL,
@@ -20,89 +20,93 @@ factor_analysis(
 )
 }
 \arguments{
-\item{data}{A \code{data.frame} with the insurance portfolio.}
+\item{data}{A data frame containing portfolio observations.}
 
-\item{risk_factors}{Character vector: column(s) in \code{data} with the risk
-factor(s).}
+\item{risk_factors}{Non-empty character vector naming the discrete risk
+factors to analyse.}
 
-\item{claim_amount}{Character, column in \code{data} with claim amounts
-(default = NULL).}
+\item{claim_amount}{Optional character string naming the total claim-amount
+column.}
 
-\item{claim_count}{Character, column in \code{data} with number of claims
-(default = NULL).}
+\item{claim_count}{Optional character string naming the claim-count column.}
 
-\item{exposure}{Character, column in \code{data} with exposures (default = NULL).}
+\item{exposure}{Optional character string naming the exposure column.}
 
-\item{premium}{Character, column in \code{data} with premiums (default = NULL).}
+\item{premium}{Optional character string naming the premium-amount column.}
 
-\item{group_by}{Character vector of column(s) in \code{data} to group by in
-addition to \code{risk_factors}.}
+\item{group_by}{Optional character vector naming additional grouping
+variables, such as underwriting year or product segment.}
 
 \item{df, x, severity, nclaims, by}{Deprecated argument names. Use \code{data},
 \code{risk_factors}, \code{claim_amount}, \code{claim_count}, and \code{group_by} instead.}
 }
 \value{
-An object of class \code{"factor_analysis"} and \code{"univariate"} with
-summary statistics.
+A data frame with classes \code{"factor_analysis"}, \code{"univariate"} and
+\code{"data.frame"}. It contains the grouping columns, aggregated input columns
+and all actuarial measures supported by the supplied inputs. The original
+column names are retained for claim amount, claim count, exposure and
+premium.
 }
 \description{
-Performs a factor analysis for discrete risk factors in an insurance
-portfolio. The following summary statistics are calculated:
-\itemize{
-\item frequency = number of claims / exposure
-\item average severity = severity / number of claims
-\item risk premium = severity / exposure
-\item loss ratio = severity / premium
-\item average premium = premium / exposure
-}
+Aggregate observed claim, exposure and premium experience for one or more
+discrete risk factors. The result supports exploratory pricing analysis by
+showing how portfolio volume and unadjusted actuarial metrics vary across
+factor levels.
 }
 \details{
-The function computes summary statistics for discrete risk factors.
+\subsection{Calculated measures}{
+
+Depending on the supplied columns, the function calculates:
 \itemize{
-\item \strong{Frequency}: number of claims / exposure
-\item \strong{Average severity}: severity / number of claims
-\item \strong{Risk premium}: severity / exposure
-\item \strong{Loss ratio}: severity / premium
-\item \strong{Average premium}: premium / exposure
+\item \code{frequency = claim_count / exposure};
+\item \code{average_severity = claim_amount / claim_count};
+\item \code{risk_premium = claim_amount / exposure};
+\item \code{loss_ratio = claim_amount / premium};
+\item \code{average_premium = premium / exposure}.
 }
 
-If one or more input arguments are not specified, the related statistics are
-omitted from the results.
-\subsection{Migration from \code{univariate()}}{
-
-The function \code{\link[=univariate]{univariate()}} is deprecated as of version 0.8.0 and replaced by
-\code{\link[=factor_analysis]{factor_analysis()}}. In addition to the name change, the interface has also
-changed:
-\itemize{
-\item \code{univariate()} used \strong{non-standard evaluation (NSE)}, so column names could be
-passed unquoted (e.g. \code{x = area}).
-\item \code{factor_analysis()} uses \strong{standard evaluation (SE)}, so column names must
-be passed as character strings (e.g. \code{x = "area"}).
+Input amount columns are summed before ratios are calculated. A measure is
+omitted when its required inputs were not supplied. A zero or missing
+denominator produces \code{NA_real_} rather than an infinite value.
 }
 
-This makes the function easier to use in programmatic workflows.
+\subsection{Actuarial interpretation}{
 
-\code{univariate()} is still available for backward compatibility but will emit a
-deprecation warning and will be removed in a future release.
+These are observed, univariate or stratified portfolio measures. They are not
+adjusted for correlation between rating factors and should not be interpreted
+as conditional GLM effects. Differences between levels may reflect portfolio
+mix, small exposure, claim volatility or changes over time. Claim counts,
+exposure and stability should therefore be reviewed alongside the ratios.
+
+\code{group_by} can be used to compare the same risk-factor pattern across
+periods or portfolio segments. \code{\link[=autoplot.factor_analysis]{autoplot.factor_analysis()}} provides the
+corresponding graphical review. Modelled effects can subsequently be
+inspected with \code{\link[=rating_table]{rating_table()}}.
+}
+
+\subsection{Column interface}{
+
+Column names are supplied as character strings. Deprecated \code{\link[=univariate]{univariate()}}
+remains available for compatibility with its former interface.
 }
 }
 \examples{
-## --- New usage (SE) ---
-factor_analysis(MTPL2,
-                risk_factors = "area",
-                claim_amount = "amount",
-                claim_count = "nclaims",
-                exposure = "exposure",
-                premium = "premium")
+area_experience <- factor_analysis(
+  MTPL2,
+  risk_factors = "area",
+  claim_amount = "amount",
+  claim_count = "nclaims",
+  exposure = "exposure",
+  premium = "premium"
+)
 
-## --- Deprecated usage (NSE) ---
-univariate(MTPL2,
-           x = area,
-           severity = amount,
-           nclaims = nclaims,
-           exposure = exposure,
-           premium = premium)
+area_experience
+autoplot(area_experience, metrics = c("frequency", "risk_premium"))
 
+}
+\seealso{
+\code{\link[=autoplot.factor_analysis]{autoplot.factor_analysis()}}, \code{\link[=rating_table]{rating_table()}},
+\code{\link[=add_portfolio_experience]{add_portfolio_experience()}}
 }
 \author{
 Martin Haringa

@@ -7,6 +7,10 @@
 #' portfolio. Use `method = "manual"` with `reference_level` when a specific
 #' business category should be the reference level.
 #'
+#' Choosing a reference level does not change fitted values or the overall model
+#' fit. It changes the coefficient parameterisation and therefore the level
+#' against which the remaining factor relativities are expressed.
+#'
 #' @param x A factor (unordered). Character vectors should be converted to
 #'   factor before use.
 #' @param weight A numeric vector of the same length as \code{x},
@@ -16,6 +20,16 @@
 #'   Supported methods are `"largest_weight"` and `"manual"`.
 #' @param reference_level Character string with the level to use as reference
 #'   when `method = "manual"`.
+#'
+#' @details
+#' `method = "largest_weight"` is useful when the reference category should
+#' represent a substantial and relatively stable part of the portfolio. The
+#' supplied `weight` is commonly earned exposure, but another actuarially
+#' meaningful volume measure may be used.
+#'
+#' `method = "manual"` is appropriate when the reference category is determined
+#' by tariff interpretation, governance or an established pricing convention.
+#' The selected category must already be an observed factor level.
 #'
 #' @author Martin Haringa
 #'
@@ -29,14 +43,23 @@
 #'   level set as the first level.
 #'
 #' @examples
-#' \dontrun{
+#' portfolio <- data.frame(
+#'   region = factor(c("North", "North", "South", "West")),
+#'   exposure = c(120, 80, 60, 40)
+#' )
+#'
+#' set_reference_level(portfolio$region, portfolio$exposure)
+#' set_reference_level(
+#'   portfolio$region,
+#'   method = "manual",
+#'   reference_level = "South"
+#' )
+#'
+#' # Apply the largest-weight reference rule to every factor in a data frame
 #' library(dplyr)
 #' df <- chickwts |>
-#' mutate(across(where(is.character), as.factor)) |>
-#' mutate(across(where(is.factor), ~set_reference_level(., weight)))
-#'
-#' set_reference_level(df$feed, method = "manual", reference_level = "casein")
-#' }
+#'   mutate(across(where(is.character), as.factor)) |>
+#'   mutate(across(where(is.factor), ~set_reference_level(., weight)))
 #'
 #' @export
 set_reference_level <- function(x,

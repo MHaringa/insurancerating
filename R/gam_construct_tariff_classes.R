@@ -1,31 +1,51 @@
-#' Derive insurance tariff segments
+#' Derive candidate tariff segments from a smooth risk-factor effect
 #'
 #' @description
-#' Derives data-driven tariff segments for a continuous risk factor from a fitted
-#' `"riskfactor_gam"` object produced by [risk_factor_gam()]. The segments help
-#' translate a smooth GAM response pattern into practical categorical rating
-#' factors for a GLM tariff.
+#' Approximate the smooth effect estimated by [risk_factor_gam()] with intervals
+#' for a continuous risk factor. The resulting boundaries provide a candidate
+#' categorical representation that can be inspected before inclusion in a
+#' pricing GLM or tariff structure.
 #'
-#' @param object An object of class `"riskfactor_gam"`, produced by
-#'   [risk_factor_gam()]. Objects with the old `"fitgam"` class are still
-#'   supported for backward compatibility.
-#' @param complexity Numeric. Controls the complexity penalty used when deriving
-#'   segments. Higher values generally yield fewer tariff segments. Default = 0.
-#' @param max_iterations Integer. Maximum number of search iterations used by
-#'   the underlying grouping algorithm. Default = 10000.
-#' @param population_size Integer. Number of candidate trees used by the
-#'   underlying grouping algorithm. Default = 200.
-#' @param seed Integer, seed for the random number generator (for reproducibility).
+#' @param object A `"risk_factor_gam"` object returned by
+#'   [risk_factor_gam()]. Legacy `"riskfactor_gam"` and `"fitgam"` classes are
+#'   accepted for compatibility.
+#' @param complexity Non-negative numeric complexity penalty for the
+#'   evolutionary tree. Larger values generally favour fewer internal
+#'   boundaries.
+#' @param max_iterations Positive integer. Maximum number of evolutionary search
+#'   iterations.
+#' @param population_size Positive integer. Number of candidate trees maintained
+#'   during the evolutionary search.
+#' @param seed Numeric random seed used by the grouping algorithm.
 #' @param alpha Deprecated. Use `complexity` instead.
 #' @param niterations Deprecated. Use `max_iterations` instead.
 #' @param ntrees Deprecated. Use `population_size` instead.
 #'
 #' @details
-#' Evolutionary trees (via [evtree::evtree()]) are used as a technique to bin the
-#' fitted GAM object into candidate tariff segments.
-#' This method is based on the work by Henckaerts et al. (2018).
-#' See Grubinger et al. (2014) for details on the parameters controlling the
-#' evtree fit.
+#' ## Method
+#'
+#' An evolutionary regression tree from [evtree::evtree()] is fitted to the
+#' GAM response over the observed risk-factor values. Internal tree split
+#' points are translated into interval boundaries. If no internal split is
+#' supported by the fitted search, one interval spanning the observed range is
+#' returned.
+#'
+#' The method follows the data-driven binning approach described by Henckaerts
+#' et al. (2018). `complexity`, `population_size`, `max_iterations` and `seed`
+#' control the search rather than an actuarial minimum-volume rule.
+#'
+#' ## Actuarial interpretation
+#'
+#' The returned segments approximate the shape of the fitted univariate GAM;
+#' they are not automatically a final tariff classification. Before use in a
+#' multivariate model, the boundaries should be assessed against exposure and
+#' claim volume, stability across periods, operational rounding and the
+#' interaction with other risk factors. Particular care is required for
+#' boundaries in sparsely populated tails.
+#'
+#' Use [autoplot.tariff_segments()] to compare the smooth curve and boundaries.
+#' Use [add_tariff_segments()] to attach the resulting factor to the portfolio
+#' rows used for the GAM.
 #'
 #' @return A `list` of class `"tariff_segments"` with components:
 #' \describe{
@@ -43,6 +63,9 @@
 #' `tariff_classes` are also returned.
 #'
 #' @author Martin Haringa
+#'
+#' @seealso [risk_factor_gam()], [autoplot.tariff_segments()],
+#'   [add_tariff_segments()]
 #'
 #' @references Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a
 #' priori and a posteriori risk classification in insurance. *Advances in
@@ -64,14 +87,15 @@
 #'
 #' @examples
 #' \dontrun{
-#' library(dplyr)
-#'
-#' # Recommended new usage (SE)
-#' age_segments <- risk_factor_gam(MTPL,
-#'                                 risk_factor = "age_policyholder",
-#'                                 claim_count = "nclaims",
-#'                                 exposure = "exposure") |>
+#' age_segments <- risk_factor_gam(
+#'   MTPL,
+#'   risk_factor = "age_policyholder",
+#'   claim_count = "nclaims",
+#'   exposure = "exposure"
+#' ) |>
 #'   derive_tariff_segments()
+#'
+#' autoplot(age_segments, show_observations = TRUE)
 #'
 #' MTPL |>
 #'   add_tariff_segments(age_segments, name = "age_policyholder_segment")
@@ -284,6 +308,10 @@ as.vector.constructtariffclasses <- as.vector.tariff_segments
 #' tariff segments to the same portfolio rows that were used to fit the risk
 #' factor GAM.
 #'
+#' The helper preserves row alignment between the portfolio and the assigned
+#' segments. It does not re-estimate the GAM or reconstruct the segment
+#' boundaries.
+#'
 #' @param data A data frame to which the tariff segments should be added.
 #' @param segments Object of class `"tariff_segments"`, produced by
 #'   [derive_tariff_segments()]. Old `"tariff_classes"` objects are accepted for
@@ -295,6 +323,12 @@ as.vector.constructtariffclasses <- as.vector.tariff_segments
 #'   exists in `data`.
 #'
 #' @return A data frame with the derived tariff segment column added.
+#'
+#' @details
+#' `segments$assigned_segments` contains one segment for each observation used
+#' to estimate the risk-factor effect. `data` must therefore contain the same
+#' number of rows in the same order. The resulting factor can be used in a GLM
+#' or retained as a candidate grouping for further actuarial review.
 #'
 #' @author Martin Haringa
 #'
@@ -311,6 +345,8 @@ as.vector.constructtariffclasses <- as.vector.tariff_segments
 #' MTPL |>
 #'   add_tariff_segments(age_segments, name = "age_policyholder_segment")
 #' }
+#'
+#' @seealso [risk_factor_gam()], [derive_tariff_segments()]
 #'
 #' @export
 add_tariff_segments <- function(data, segments, name = NULL, overwrite = FALSE) {
@@ -358,36 +394,61 @@ add_tariff_segments <- function(data, segments, name = NULL, overwrite = FALSE) 
 }
 
 
-#' Autoplot for tariff segment objects
+#' Inspect derived tariff-segment boundaries
 #'
 #' @description
-#' `autoplot()` method for objects created by [derive_tariff_segments()].
-#' Produces a [ggplot2::ggplot()] of the fitted GAM together with the derived
-#' tariff segment boundaries. Optionally, confidence intervals and observed data
-#' points
-#' can be added.
+#' Plot the fitted continuous risk-factor effect together with the boundaries
+#' returned by [derive_tariff_segments()]. Observed aggregated experience and
+#' pointwise confidence intervals can be added to support review of the proposed
+#' segmentation.
+#'
+#' @details
+#' Vertical lines indicate the derived interval boundaries; the fitted GAM line
+#' remains the underlying continuous effect. The plot can be used to assess
+#' whether boundaries occur at plausible changes in the fitted pattern and
+#' whether tail segments have visible empirical support.
+#'
+#' The visualisation does not refit a categorical GLM and does not establish
+#' that adjacent segments are statistically or commercially distinct. Exposure,
+#' claim volume, temporal stability and operational tariff constraints remain
+#' separate considerations. `remove_outliers` affects displayed observed points
+#' only and does not alter either the GAM or the derived boundaries.
 #'
 #' @param object An object of class `"tariff_segments"`, produced by
 #'   [derive_tariff_segments()].
-#' @param confidence Logical, whether to plot 95% confidence intervals.
-#'   Default = `FALSE`.
+#' @param confidence Logical. If `TRUE`, show pointwise 95 percent confidence
+#'   intervals where finite values are available.
 #' @param conf_int Deprecated. Use `confidence` instead.
-#' @param color_gam Color of the fitted GAM line. Default = `"steelblue"`.
-#' @param color_splits Color of the vertical split lines. Default = `"grey50"`.
-#' @param show_observations Logical, whether to add observed data points for each
-#'   level of the risk factor. Default = `FALSE`.
-#' @param size_points Numeric, size of points if `show_observations = TRUE`.
-#'   Default = 1.
-#' @param color_points Color of observed points. Default = `"black"`.
-#' @param rotate_labels Logical, whether to rotate x-axis labels by 45 degrees.
-#'   Default = `FALSE`.
-#' @param remove_outliers Numeric, exclude observations above this value from
-#'   the plot (helps with extreme outliers). Default = `NULL`.
-#' @param ... Additional arguments passed to [ggplot2::autoplot()].
+#' @param color_gam Colour of the fitted GAM line.
+#' @param color_splits Colour of the vertical segment boundaries.
+#' @param show_observations Logical. If `TRUE`, add the aggregated observed
+#'   experience used for the GAM.
+#' @param size_points Numeric point size for observed experience.
+#' @param color_points Colour for observed experience.
+#' @param rotate_labels Logical. If `TRUE`, rotate x-axis labels by 45 degrees.
+#' @param remove_outliers Optional single numeric upper display limit for
+#'   observed points.
+#' @param ... Additional arguments reserved for method compatibility.
 #'
-#' @return A [ggplot2::ggplot] object.
+#' @return A `ggplot2` object.
 #'
 #' @author Martin Haringa
+#'
+#' @seealso [derive_tariff_segments()], [risk_factor_gam()],
+#'   [add_tariff_segments()]
+#'
+#' @examples
+#' \dontrun{
+#' segments <- risk_factor_gam(
+#'   MTPL,
+#'   risk_factor = "age_policyholder",
+#'   claim_count = "nclaims",
+#'   exposure = "exposure"
+#' ) |>
+#'   derive_tariff_segments()
+#'
+#' autoplot(segments, confidence = TRUE, show_observations = TRUE)
+#' }
 #'
 #' @import ggplot2
 #'

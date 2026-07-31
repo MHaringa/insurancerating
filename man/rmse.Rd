@@ -2,34 +2,50 @@
 % Please edit documentation in R/model_performance.R
 \name{rmse}
 \alias{rmse}
-\title{Root Mean Squared Error (RMSE)}
+\title{Calculate response-scale prediction error}
 \usage{
 rmse(x, data = NULL)
 }
 \arguments{
-\item{x}{A fitted model object (e.g. of class \code{"glm"}).}
+\item{x}{A fitted model object, for example a \code{"glm"}.}
 
-\item{data}{A data frame containing the variables used in the model. Required
-if not already stored in \code{object}.}
+\item{data}{Optional data frame on which the observed response and predictions
+are evaluated. If \code{NULL}, the data stored with the fitted model are used.}
 }
 \value{
 A numeric value: the root mean squared error.
 }
 \description{
-Computes the root mean squared error (RMSE) for a fitted model, defined as the
-square root of the mean of squared differences between predictions and observed values.
+Calculate the root mean squared error (RMSE) between observed outcomes and
+response-scale predictions from a fitted model. RMSE summarises the typical
+absolute prediction error in the same unit as the model response.
 }
 \details{
-The RMSE indicates the absolute fit of the model to the data.
-It can be interpreted as the standard deviation of the unexplained variance,
-and is expressed in the same units as the response variable.
-Lower values indicate better model fit.
+RMSE is defined as
+
+\deqn{\sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i-\hat{y}_i)^2}.}
+
+In pricing work, RMSE can be used to compare alternative specifications for
+the same response, portfolio and exposure treatment. Lower values indicate
+smaller response-scale errors. Because errors are squared, individual large
+deviations receive relatively high weight. This can be relevant for severity
+models, but it also makes RMSE sensitive to large claims.
+
+RMSE values should not be compared across responses with different units or
+scales. A value calculated on the estimation data is an in-sample diagnostic,
+not an estimate of future predictive performance. Use resampling or separate
+validation data when out-of-sample performance is required, and interpret
+RMSE together with calibration, residual and distributional diagnostics.
 }
 \examples{
 x <- glm(nclaims ~ area, offset = log(exposure),
          family = poisson(), data = MTPL2)
 rmse(x, MTPL2)
 
+}
+\seealso{
+\code{\link[=model_performance]{model_performance()}}, \code{\link[=bootstrap_performance]{bootstrap_performance()}},
+\code{\link[=check_residuals]{check_residuals()}}
 }
 \author{
 Martin Haringa

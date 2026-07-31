@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_performance.R
 \name{model_performance}
 \alias{model_performance}
-\title{Performance of fitted GLMs}
+\title{Compare fitted GLMs using common performance measures}
 \usage{
 model_performance(...)
 }
@@ -19,17 +19,33 @@ A data frame of class \code{"model_performance"}, with columns:
 }
 }
 \description{
-Computes model performance indices for one or more fitted GLMs.
+Compare one or more fitted GLMs using AIC, BIC and response-scale RMSE.
+The resulting table provides a concise first comparison of alternative
+pricing-model specifications fitted to the same portfolio outcome.
 }
 \details{
-The following indices are reported:
+The following measures are reported:
 \describe{
-\item{AIC}{Akaike's Information Criterion.}
-\item{BIC}{Bayesian Information Criterion.}
-\item{RMSE}{Root mean squared error, computed from observed and predicted values.}
+\item{AIC}{Akaike information criterion, balancing likelihood fit and
+model complexity.}
+\item{BIC}{Bayesian information criterion, applying a stronger
+sample-size-dependent complexity penalty.}
+\item{RMSE}{Root mean squared error between observed and response-scale
+predicted values.}
 }
 
-This function is adapted from \code{performance::model_performance()}.
+Lower values are preferred within each measure, but the measures answer
+different questions. AIC and BIC depend on the model likelihood, whereas
+RMSE measures error on the response scale. Comparisons are therefore most
+meaningful when models use the same response, estimation records, weights
+and offsets.
+
+The table does not select a pricing model automatically. In actuarial model
+assessment, statistical fit should be considered together with portfolio
+calibration, residual behaviour, coefficient stability, exposure by level
+and the practical interpretability of the resulting tariff structure.
+
+The implementation is adapted from \code{performance::model_performance()}.
 }
 \examples{
 m1 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
@@ -38,6 +54,10 @@ m2 <- glm(nclaims ~ area + premium, offset = log(exposure), family = poisson(),
           data = MTPL2)
 model_performance(m1, m2)
 
+}
+\seealso{
+\code{\link[=rmse]{rmse()}}, \code{\link[=bootstrap_performance]{bootstrap_performance()}}, \code{\link[=check_overdispersion]{check_overdispersion()}},
+\code{\link[=check_residuals]{check_residuals()}}
 }
 \author{
 Martin Haringa

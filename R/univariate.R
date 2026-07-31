@@ -1,81 +1,82 @@
-#' Factor analysis for discrete risk factors
+#' Summarise observed portfolio experience by risk factor
 #'
 #' @description
-#' Performs a factor analysis for discrete risk factors in an insurance
-#' portfolio. The following summary statistics are calculated:
-#' \itemize{
-#'   \item frequency = number of claims / exposure
-#'   \item average severity = severity / number of claims
-#'   \item risk premium = severity / exposure
-#'   \item loss ratio = severity / premium
-#'   \item average premium = premium / exposure
-#' }
+#' Aggregate observed claim, exposure and premium experience for one or more
+#' discrete risk factors. The result supports exploratory pricing analysis by
+#' showing how portfolio volume and unadjusted actuarial metrics vary across
+#' factor levels.
 #'
-#' @param data A `data.frame` with the insurance portfolio.
-#' @param risk_factors Character vector: column(s) in `data` with the risk
-#'   factor(s).
-#' @param claim_amount Character, column in `data` with claim amounts
-#'   (default = NULL).
-#' @param claim_count Character, column in `data` with number of claims
-#'   (default = NULL).
-#' @param premium Character, column in `data` with premiums (default = NULL).
-#' @param exposure Character, column in `data` with exposures (default = NULL).
-#' @param group_by Character vector of column(s) in `data` to group by in
-#'   addition to `risk_factors`.
+#' @param data A data frame containing portfolio observations.
+#' @param risk_factors Non-empty character vector naming the discrete risk
+#'   factors to analyse.
+#' @param claim_amount Optional character string naming the total claim-amount
+#'   column.
+#' @param claim_count Optional character string naming the claim-count column.
+#' @param premium Optional character string naming the premium-amount column.
+#' @param exposure Optional character string naming the exposure column.
+#' @param group_by Optional character vector naming additional grouping
+#'   variables, such as underwriting year or product segment.
 #' @param df,x,severity,nclaims,by Deprecated argument names. Use `data`,
 #'   `risk_factors`, `claim_amount`, `claim_count`, and `group_by` instead.
 #'
 #' @details
-#' The function computes summary statistics for discrete risk factors.
+#' ## Calculated measures
 #'
-#' - **Frequency**: number of claims / exposure
-#' - **Average severity**: severity / number of claims
-#' - **Risk premium**: severity / exposure
-#' - **Loss ratio**: severity / premium
-#' - **Average premium**: premium / exposure
+#' Depending on the supplied columns, the function calculates:
 #'
-#' If one or more input arguments are not specified, the related statistics are
-#' omitted from the results.
+#' - `frequency = claim_count / exposure`;
+#' - `average_severity = claim_amount / claim_count`;
+#' - `risk_premium = claim_amount / exposure`;
+#' - `loss_ratio = claim_amount / premium`;
+#' - `average_premium = premium / exposure`.
 #'
-#' ## Migration from `univariate()`
+#' Input amount columns are summed before ratios are calculated. A measure is
+#' omitted when its required inputs were not supplied. A zero or missing
+#' denominator produces `NA_real_` rather than an infinite value.
 #'
-#' The function [univariate()] is deprecated as of version 0.8.0 and replaced by
-#' [factor_analysis()]. In addition to the name change, the interface has also
-#' changed:
+#' ## Actuarial interpretation
 #'
-#' - `univariate()` used **non-standard evaluation (NSE)**, so column names could be
-#'   passed unquoted (e.g. `x = area`).
-#' - `factor_analysis()` uses **standard evaluation (SE)**, so column names must
-#'   be passed as character strings (e.g. `x = "area"`).
+#' These are observed, univariate or stratified portfolio measures. They are not
+#' adjusted for correlation between rating factors and should not be interpreted
+#' as conditional GLM effects. Differences between levels may reflect portfolio
+#' mix, small exposure, claim volatility or changes over time. Claim counts,
+#' exposure and stability should therefore be reviewed alongside the ratios.
 #'
-#' This makes the function easier to use in programmatic workflows.
+#' `group_by` can be used to compare the same risk-factor pattern across
+#' periods or portfolio segments. [autoplot.factor_analysis()] provides the
+#' corresponding graphical review. Modelled effects can subsequently be
+#' inspected with [rating_table()].
 #'
-#' `univariate()` is still available for backward compatibility but will emit a
-#' deprecation warning and will be removed in a future release.
+#' ## Column interface
 #'
-#' @return An object of class `"factor_analysis"` and `"univariate"` with
-#' summary statistics.
+#' Column names are supplied as character strings. Deprecated [univariate()]
+#' remains available for compatibility with its former interface.
+#'
+#' @return A data frame with classes `"factor_analysis"`, `"univariate"` and
+#' `"data.frame"`. It contains the grouping columns, aggregated input columns
+#' and all actuarial measures supported by the supplied inputs. The original
+#' column names are retained for claim amount, claim count, exposure and
+#' premium.
 #'
 #' @author Martin Haringa
+#'
+#' @seealso [autoplot.factor_analysis()], [rating_table()],
+#'   [add_portfolio_experience()]
 #'
 #' @importFrom data.table data.table
 #'
 #' @examples
-#' ## --- New usage (SE) ---
-#' factor_analysis(MTPL2,
-#'                 risk_factors = "area",
-#'                 claim_amount = "amount",
-#'                 claim_count = "nclaims",
-#'                 exposure = "exposure",
-#'                 premium = "premium")
+#' area_experience <- factor_analysis(
+#'   MTPL2,
+#'   risk_factors = "area",
+#'   claim_amount = "amount",
+#'   claim_count = "nclaims",
+#'   exposure = "exposure",
+#'   premium = "premium"
+#' )
 #'
-#' ## --- Deprecated usage (NSE) ---
-#' univariate(MTPL2,
-#'            x = area,
-#'            severity = amount,
-#'            nclaims = nclaims,
-#'            exposure = exposure,
-#'            premium = premium)
+#' area_experience
+#' autoplot(area_experience, metrics = c("frequency", "risk_premium"))
 #'
 #' @export
 factor_analysis <- function(data = NULL, risk_factors = NULL,
@@ -340,31 +341,37 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 
 
 
-#' Automatically create a ggplot for objects obtained from factor analysis
+#' Plot observed portfolio experience by risk factor
 #'
 #' @description
-#' Takes an object produced by [factor_analysis()] or [univariate()]
-#' (deprecated NSE interface) and plots the available statistics.
+#' Visualise the exposure and observed actuarial metrics calculated by
+#' [factor_analysis()]. The plots support assessment of portfolio composition,
+#' observed frequency, severity, risk premium and loss ratio across risk-factor
+#' levels.
+#'
+#' The observed patterns are descriptive. They do not adjust for correlations
+#' with other risk factors and should therefore not be interpreted as
+#' multivariate tariff relativities.
 #'
 #' @param object A `factor_analysis` or `univariate` object produced by
 #' [factor_analysis()] or [univariate()].
 #' @param metrics Numeric or character vector specifying which metrics to plot
 #'   (default is all available metrics). The numeric positions are:
 #' \itemize{
-#'   \item{1. Frequency (`nclaims / exposure`)}
-#'   \item{2. Average severity (`severity / nclaims`)}
-#'   \item{3. Risk premium (`severity / exposure`)}
-#'   \item{4. Loss ratio (`severity / premium`)}
-#'   \item{5. Average premium (`premium / exposure`)}
-#'   \item{6. Exposure}
-#'   \item{7. Severity}
-#'   \item{8. Number of claims}
-#'   \item{9. Premium}
+#'   \item 1. Frequency (`nclaims / exposure`)
+#'   \item 2. Average severity (`severity / nclaims`)
+#'   \item 3. Risk premium (`severity / exposure`)
+#'   \item 4. Loss ratio (`severity / premium`)
+#'   \item 5. Average premium (`premium / exposure`)
+#'   \item 6. Exposure
+#'   \item 7. Severity
+#'   \item 8. Number of claims
+#'   \item 9. Premium
 #' }
 #' Character values can be `"frequency"`, `"average_severity"`,
 #' `"risk_premium"`, `"loss_ratio"`, `"average_premium"`, `"exposure"`,
 #' `"claim_amount"`, `"claim_count"`, and `"premium"`.
-#' @param ncol Number of columns in output (default = 1).
+#' @param ncol Positive whole number. Number of columns in the plot composition.
 #' @param show_exposure Show exposure as background bars behind line plots
 #'   (default = TRUE).
 #' @param show_exposure_labels Show labels with the exposure bars
@@ -411,28 +418,36 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' @param color_bg Deprecated alias for `bar_fill`.
 #' @param coord_flip Deprecated alias for `flip_bars`.
 #' @param remove_x_elements Deprecated alias for `compact_x_axis`.
-#' @param ... Other plotting parameters.
+#' @param ... Currently unused.
+#'
+#' @details
+#' For rate-based metrics, exposure can be shown as background bars so that
+#' observed level differences can be interpreted together with portfolio
+#' volume. Levels with little exposure or few claims can produce volatile
+#' observed metrics and should be assessed accordingly.
+#'
+#' When the factor analysis contains one or more `by` variables, separate
+#' observed series are shown. `show_total = TRUE` adds the aggregate portfolio
+#' series for comparison. Sorting and manual level ordering affect only the
+#' presentation; the underlying summaries are unchanged.
 #'
 #' @import patchwork
 #' @import ggplot2
 #'
 #' @author Marc Haine, Martin Haringa
 #'
-#' @return A `ggplot2` object.
+#' @return A `patchwork` composition containing the requested ggplot panels.
 #'
 #' @examples
-#' ## --- New usage (SE, recommended) ---
+#' # Plot observed frequency and risk premium
 #' x <- factor_analysis(MTPL2,
 #'                      x = "area",
 #'                      severity = "amount",
 #'                      nclaims = "nclaims",
 #'                      exposure = "exposure")
-#' autoplot(x)
+#' autoplot(x, metrics = c("frequency", "risk_premium"))
 #'
-#' ## --- Deprecated usage (NSE) ---
-#' x_old <- univariate(MTPL2, x = area, severity = amount,
-#'                     nclaims = nclaims, exposure = exposure)
-#' autoplot(x_old)
+#' @seealso [factor_analysis()], [add_portfolio_experience()]
 #'
 #' @export
 autoplot.factor_analysis <- function(object,

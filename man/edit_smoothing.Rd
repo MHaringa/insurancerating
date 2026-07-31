@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_refinement.R
 \name{edit_smoothing}
 \alias{edit_smoothing}
-\title{Edit an existing smoothing step in a refinement workflow}
+\title{Edit a smoothing curve in a refinement workflow}
 \usage{
 edit_smoothing(
   model,
@@ -47,31 +47,42 @@ observed source-variable range.}
 spacing of extra break points when extrapolation is allowed.}
 }
 \value{
-Object of class \code{rating_refinement}.
+A \code{rating_refinement} object containing the edited smoothing
+specification. The pricing GLM is not fitted again until \code{\link[=refit]{refit()}} is
+called.
 }
 \description{
-Manually adjusts a smoothing step that was previously added with
-\code{\link[=add_smoothing]{add_smoothing()}}. This is intended for actuarial review of a smoothed tariff
-curve, for example to flatten an unstable segment, align the end points of an
-interval, or add extra control points where expert judgement should guide the
-curve.
-The adjusted smoothing is applied when \code{\link[=refit]{refit()}} is called.
+Modify a specified interval of a smoothing curve previously added with
+\code{\link[=add_smoothing]{add_smoothing()}}. The function can fix boundary values and introduce
+internal control points, for example when actuarial review supports a flatter
+local effect or a documented transition between tariff segments.
 }
 \details{
+\code{edit_smoothing()} stores an edit on the selected smoothing step of a
+\code{rating_refinement} object. It does not alter the fitted GLM immediately.
+The edited curve is evaluated in the recorded step order and applied when
+\code{\link[=refit]{refit()}} is called.
+
 Use \code{model_variable} or \code{step} to identify the smoothing step to edit. The
 interval from \code{from} to \code{to} defines the part of the source variable range
 that should be changed. \code{from_value} and \code{to_value} can be used to force the
 curve values at the interval boundaries. \code{control_positions} and
 \code{control_values} add additional points that the edited curve should follow
 inside the interval.
+\subsection{Actuarial interpretation}{
 
-\code{edit_smoothing()} changes the stored smoothing specification; it does not
-edit a fitted GLM in place. Keep the \code{rating_refinement} object, call
-\code{\link[=refit]{refit()}} to assess the current specification, edit that same refinement
-object, and call \code{\link[=refit]{refit()}} again. The previously fitted model remains an
-unchanged model result. This separation makes the sequence of actuarial
-adjustments reproducible and avoids reconstructing refinement choices from
-transformed columns in a refitted model.
+The edited interval is an explicit tariff assumption layered on the
+statistically fitted smoothing curve. It should be supported by an actuarial
+rationale and reviewed against exposure, observed experience and the
+continuity of adjacent segments. The edit does not add information to sparse
+parts of the portfolio and should not be interpreted as a new model estimate.
+
+Keep the \code{rating_refinement} object, call \code{\link[=refit]{refit()}} to assess the current
+specification, edit that same refinement object, and call \code{\link[=refit]{refit()}} again.
+The previously fitted GLM remains unchanged. This retains the order and
+content of manual adjustments as part of the reproducible refinement
+specification.
+}
 }
 \examples{
 set.seed(42)
@@ -103,7 +114,6 @@ refinement <- prepare_refinement(model, data = portfolio) |>
     model_variable = "age_band",
     source_variable = "driver_age",
     breaks = c(18, 30, 40, 50, 60),
-    degree = 2,
     weights = "exposure"
   )
 
@@ -124,6 +134,10 @@ refinement <- refinement |>
 
 refined_model <- refit(refinement)
 
+}
+\seealso{
+\code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}},
+\code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}
 }
 \author{
 Martin Haringa

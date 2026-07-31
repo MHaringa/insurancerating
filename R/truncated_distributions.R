@@ -718,11 +718,11 @@ fit_truncated_dist <- function(losses = NULL,
 }
 
 
-#' Generate random samples from a truncated lognormal distribution
+#' Simulate severities from a truncated lognormal distribution
 #'
-#' @description Generates random observations from a lognormal distribution
-#' truncated to the interval \eqn{(lower, upper)} using inverse transform
-#' sampling.
+#' @description
+#' Generate random claim severities from a lognormal distribution conditional
+#' on the result falling inside the interval \eqn{(lower, upper)}.
 #'
 #' @param n Integer. Number of observations to generate.
 #' @param meanlog Numeric. Mean of the underlying normal distribution.
@@ -735,11 +735,14 @@ fit_truncated_dist <- function(losses = NULL,
 #' interval \eqn{[F(lower), F(upper)]}, where \eqn{F} is the CDF of the
 #' lognormal distribution, and then applying the inverse CDF.
 #'
-#' This approach ensures that the generated values follow the truncated
-#' distribution exactly.
+#' The resulting sample follows the specified conditional distribution; values
+#' outside the truncation interval are not generated.
 #'
-#' The implementation is based on the inverse transform method as described in:
-#' \url{https://www.r-bloggers.com/2020/08/generating-data-from-a-truncated-distribution/}
+#' In severity analysis, this can be used for simulation and model checking when
+#' the available claims are observed only between a lower reporting threshold
+#' and an upper modelling limit. Truncation should not be confused with
+#' censoring or capping: the function assumes that values outside the interval
+#' are absent rather than recorded at a boundary.
 #'
 #' @return A numeric vector of length \code{n} containing random draws from the
 #' truncated lognormal distribution.
@@ -747,6 +750,8 @@ fit_truncated_dist <- function(losses = NULL,
 #' @importFrom stats plnorm runif qlnorm
 #'
 #' @author Martin Haringa
+#'
+#' @seealso [fit_truncated_severity()], [rgammat()]
 #'
 #' @export
 rlnormt <- function(n, meanlog, sdlog, lower, upper) {
@@ -771,11 +776,11 @@ rlnormt <- function(n, meanlog, sdlog, lower, upper) {
 }
 
 
-#' Generate random samples from a truncated gamma distribution
+#' Simulate severities from a truncated gamma distribution
 #'
-#' @description Generates random observations from a gamma distribution
-#' truncated to the interval \eqn{(lower, upper)} using inverse transform
-#' sampling.
+#' @description
+#' Generate random claim severities from a gamma distribution conditional on
+#' the result falling inside the interval \eqn{(lower, upper)}.
 #'
 #' @param n Integer. Number of observations to generate.
 #' @param shape Numeric. Shape parameter of the gamma distribution.
@@ -788,11 +793,14 @@ rlnormt <- function(n, meanlog, sdlog, lower, upper) {
 #' interval \eqn{[F(lower), F(upper)]}, where \eqn{F} is the CDF of the gamma
 #' distribution, and then applying the inverse CDF.
 #'
-#' This approach ensures that the generated values follow the truncated
-#' distribution exactly.
+#' The resulting sample follows the specified conditional distribution; values
+#' outside the truncation interval are not generated.
 #'
-#' The implementation is based on the inverse transform method as described in:
-#' \url{https://www.r-bloggers.com/2020/08/generating-data-from-a-truncated-distribution/}
+#' In severity analysis, this can be used for simulation and model checking when
+#' the available claims are observed only between a lower reporting threshold
+#' and an upper modelling limit. Truncation should not be confused with
+#' censoring or capping: the function assumes that values outside the interval
+#' are absent rather than recorded at a boundary.
 #'
 #' @return A numeric vector of length \code{n} containing random draws from the
 #' truncated gamma distribution.
@@ -800,6 +808,8 @@ rlnormt <- function(n, meanlog, sdlog, lower, upper) {
 #' @importFrom stats pgamma runif qgamma
 #'
 #' @author Martin Haringa
+#'
+#' @seealso [fit_truncated_severity()], [rlnormt()]
 #'
 #' @export
 rgammat <- function(n, shape, scale, lower, upper) {
@@ -831,6 +841,10 @@ rgammat <- function(n, shape, scale, lower, upper) {
 #' function (ECDF) of the observed truncated claim amounts together with the
 #' fitted truncated CDF.
 #'
+#' The comparison assesses whether the fitted conditional severity distribution
+#' represents the shape of the observed claims within the same truncation
+#' interval.
+#'
 #' @param object An object produced by \code{fit_truncated_severity()}.
 #' @param ecdf_geom Character string indicating how to display the empirical
 #' CDF. Must be one of `"point"` or `"step"`.
@@ -854,6 +868,11 @@ rgammat <- function(n, shape, scale, lower, upper) {
 #' distribution is plausible for the part of the portfolio that is actually
 #' observed.
 #'
+#' Systematic separation between the empirical and fitted curves can indicate
+#' that the selected gamma or lognormal distribution does not adequately
+#' represent the observed severity shape. The plot does not assess the
+#' unobserved parts of the distribution outside the truncation bounds.
+#'
 #' @return A \code{ggplot2} object.
 #'
 #' @importFrom ggplot2 ggplot aes stat_ecdf stat_function theme_minimal labs
@@ -861,6 +880,8 @@ rgammat <- function(n, shape, scale, lower, upper) {
 #' @importFrom rlang .data
 #'
 #' @author Martin Haringa
+#'
+#' @seealso [fit_truncated_severity()], [rlnormt()], [rgammat()]
 #'
 #' @aliases autoplot.truncated_dist
 #' @export

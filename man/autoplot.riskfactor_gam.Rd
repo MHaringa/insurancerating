@@ -2,7 +2,7 @@
 % Please edit documentation in R/gam_riskfactor.R
 \name{autoplot.riskfactor_gam}
 \alias{autoplot.riskfactor_gam}
-\title{Autoplot for GAM objects from \code{risk_factor_gam()}}
+\title{Inspect a smooth continuous risk-factor effect}
 \usage{
 \method{autoplot}{riskfactor_gam}(
   object,
@@ -25,48 +25,66 @@
 \item{confidence}{Logical. If \code{TRUE}, add 95\% confidence intervals around
 the fitted curve. Default is \code{FALSE}.}
 
-\item{color_gam}{Color for the fitted GAM line, specified by name (e.g.,
-\code{"red"}) or hex code (e.g., \code{"#FF1234"}). Default is \code{"steelblue"}.}
+\item{color_gam}{Colour for the fitted GAM line.}
 
 \item{show_observations}{Logical. If \code{TRUE}, add observed frequency/severity
-points corresponding to the underlying data.}
+or risk-premium values used for fitting.}
 
 \item{x_stepsize}{Numeric. Step size for tick marks on the x-axis. If
 \code{NULL}, breaks are determined automatically.}
 
-\item{size_points}{Numeric. Point size for observed data. Default is \code{1}.}
+\item{size_points}{Numeric. Point size for observed experience.}
 
-\item{color_points}{Color for the observed data points. Default is \code{"black"}.}
+\item{color_points}{Colour for observed experience.}
 
 \item{rotate_labels}{Logical. If \code{TRUE}, rotate x-axis labels by 45 degrees
 to reduce overlap.}
 
-\item{remove_outliers}{Numeric. If specified, observations greater than this
-threshold are omitted from the plot.}
+\item{remove_outliers}{Optional numeric upper display limit for observed
+points. The fitted curve remains unchanged.}
 
 \item{conf_int}{Deprecated. Use \code{confidence} instead.}
 
-\item{...}{Additional arguments passed to underlying \code{ggplot2} functions.}
+\item{...}{Additional arguments reserved for method compatibility.}
 }
 \value{
-A \code{ggplot} object representing the fitted GAM.
+A \code{ggplot2} object.
 }
 \description{
-Generates a \code{ggplot2} visualization of a fitted GAM created with
-\code{\link[=risk_factor_gam]{risk_factor_gam()}}. The plot shows the fitted curve, and optionally confidence
-intervals and observed data points.
+Plot the smooth effect estimated by \code{\link[=risk_factor_gam]{risk_factor_gam()}}. Observed aggregated
+experience and pointwise confidence intervals can be added to assess how the
+fitted pattern relates to the available portfolio information.
+}
+\details{
+The line is the fitted response on its natural scale: frequency, average
+severity or risk premium. Observed points represent experience aggregated at
+the continuous risk-factor values used for fitting.
+
+Confidence intervals describe uncertainty in the fitted curve conditional on
+the selected GAM specification. They do not include uncertainty from model
+selection, omitted risk factors or future portfolio changes. Wide intervals
+and isolated observations in the tails should therefore be reviewed together
+with exposure and claim volume.
+
+\code{remove_outliers} affects only displayed observed points. It does not remove
+data from the fitted GAM or alter the prediction curve.
 }
 \examples{
 \dontrun{
-library(ggplot2)
-fit <- risk_factor_gam(MTPL,
-                       risk_factor = "age_policyholder",
-                       claim_count = "nclaims",
-                       exposure = "exposure")
+fit <- risk_factor_gam(
+  MTPL,
+  risk_factor = "age_policyholder",
+  claim_count = "nclaims",
+  exposure = "exposure"
+)
 
-autoplot(fit, show_observations = TRUE)
+autoplot(fit, confidence = TRUE, show_observations = TRUE)
 }
 
+}
+\seealso{
+\code{\link[=risk_factor_gam]{risk_factor_gam()}}, \code{\link[=derive_tariff_segments]{derive_tariff_segments()}},
+\code{\link[=autoplot.tariff_segments]{autoplot.tariff_segments()}}
 }
 \author{
 Martin Haringa

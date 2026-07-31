@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_rating_table.R
 \name{rating_table}
 \alias{rating_table}
-\title{Build rating tables from fitted pricing models}
+\title{Present fitted pricing-model effects as a rating table}
 \usage{
 rating_table(
   ...,
@@ -17,68 +17,88 @@ rating_table(
 )
 }
 \arguments{
-\item{...}{glm object(s) produced by \code{glm()}, \code{refit()} or \code{refit_glm()}}
+\item{...}{One or more fitted \code{glm} objects, including models returned by
+\code{\link[=refit]{refit()}}. Object expressions are used to construct the dynamic estimate
+column names.}
 
-\item{model_data}{Optional data.frame used to create the model(s). If \code{NULL},
+\item{model_data}{Optional data frame used to fit the models. If \code{NULL},
 the function tries to use \code{model$data} for each supplied model.}
 
-\item{exposure}{Logical or character. If \code{TRUE} (default), exposure is added
+\item{exposure}{Logical or character string. If \code{TRUE}, exposure is added
 if it can be inferred from the model. If \code{FALSE}, no exposure is added.
 If a character string is supplied, it is interpreted as the exposure column
 name.}
 
-\item{exposure_output}{Optional name for the exposure column in the output.
+\item{exposure_output}{Optional character string naming the exposure column
+in the output.
 If \code{NULL}, the original exposure column name is used.}
 
-\item{exponentiate}{Logical. If \code{TRUE} (default), coefficients are
+\item{exponentiate}{Logical. If \code{TRUE}, coefficients are
 exponentiated and shown as relativities. If \code{FALSE}, coefficients are shown
 on the model scale.}
 
-\item{significance}{Logical; if \code{TRUE}, show significance stars for p-values.}
+\item{significance}{Logical. If \code{TRUE}, append significance indicators based
+on model coefficient p-values.}
 
-\item{round_exposure}{number of digits for exposure (defaults to 0)}
+\item{round_exposure}{Non-negative number of digits used to round exposure.}
 
 \item{exposure_name}{Deprecated. Use \code{exposure_output} instead.}
 
 \item{signif_stars}{Deprecated. Use \code{significance} instead.}
 }
 \value{
-Object of class \code{"rating_table"} and legacy class \code{"riskfactor"}.
+A data frame-like object with classes \code{"rating_table"} and legacy
+\code{"riskfactor"}. It contains:
+\describe{
+\item{risk_factor}{Model term or risk-factor name.}
+\item{level}{Factor level or term representation.}
+\item{\verb{est_*}}{Coefficient or exponentiated relativity for each supplied
+model. The suffix is derived from the model expression.}
+\item{\verb{signif_*}}{Optional significance indicator for each model.}
+\item{Exposure column}{Optional aggregated exposure, retaining the
+requested output name.}
+}
 }
 \description{
-\code{rating_table()} extracts model coefficients in tariff-table form. It adds
-the reference level for factor variables, can exponentiate GLM coefficients
-into relativities, and can add exposure by risk-factor level when the model
-data are available.
-
-In pricing work, this function is useful after fitting or refining a GLM. It
-turns model output into a table that is easier to inspect, compare and use in
-tariff notes. When \code{exponentiate = TRUE}, coefficients are shown as
-relativities. This is often the most practical scale for multiplicative GLM
-tariffs, because each level is expressed relative to the reference level.
-
-\code{rating_table()} is intended for fitted models:
-\itemize{
-\item plain \code{glm} objects
-\item models obtained after \code{refit()}
-\item models obtained after \code{refit_glm()}
-}
-
-For pre-refit objects (\code{rating_refinement}, \code{restricted}, \code{smooth}) use
-\code{print()}, \code{summary()} and \code{autoplot()} instead.
+Extract coefficients from one or more fitted GLMs and organise them by risk
+factor and level. Reference levels are made explicit, coefficients can be
+expressed as multiplicative relativities, and portfolio exposure can be
+attached to support actuarial review.
 }
 \details{
-A \code{rating_table} contains one row per model term level. For factor variables,
+\subsection{Coefficients and relativities}{
+
+The table contains one row per model term level. For factor variables,
 the reference level is added explicitly with relativity \code{1} when
 \code{exponentiate = TRUE}, or coefficient \code{0} when \code{exponentiate = FALSE}.
+Numeric model terms are retained on the scale supplied by the fitted model
+structure.
 
-If exposure is supplied or can be inferred from the model data, exposure is
-aggregated by risk-factor level. This helps to assess whether fitted
-relativities are supported by enough portfolio volume.
+Estimate columns are named from the supplied model expressions, for example
+\code{est_frequency} for an object named \code{frequency}. When several models are
+supplied, their effects are joined by risk factor and level.
+}
 
-Multiple models can be supplied to compare fitted effects side by side. This
-is useful when comparing unrestricted and refined models, or frequency,
-severity and pure premium models built on the same rating factors.
+\subsection{Actuarial interpretation}{
+
+With a log-link GLM, exponentiated coefficients represent conditional
+multiplicative effects relative to the model reference level. They should be
+interpreted together with the model specification and should not be confused
+with the unadjusted observed measures returned by \code{\link[=factor_analysis]{factor_analysis()}}.
+
+Exposure by level provides context for the amount of portfolio information
+supporting each fitted effect. Significance indicators describe evidence
+conditional on the fitted model; they do not measure practical materiality,
+temporal stability or suitability for direct tariff implementation.
+
+Comparing multiple models is useful for assessing changes between
+unrestricted and refined specifications, or between alternative model
+formulations. Comparable response definitions and coefficient scales remain
+the responsibility of the analyst.
+
+\code{rating_table()} accepts fitted models only. A \code{rating_refinement}
+specification must first be fitted with \code{\link[=refit]{refit()}}.
+}
 }
 \examples{
 df <- MTPL
@@ -90,8 +110,16 @@ freq <- glm(
   data = df
 )
 
-# Inspect fitted relativities by risk-factor level
-rating_table(freq, model_data = df, exposure = "exposure")
+fitted_effects <- rating_table(
+  freq,
+  model_data = df,
+  exposure = "exposure"
+)
+
+fitted_effects
+if (requireNamespace("gt", quietly = TRUE)) {
+  as_gt(fitted_effects)
+}
 
 # Keep coefficients on the model scale instead of exponentiating
 rating_table(
@@ -101,7 +129,7 @@ rating_table(
   exponentiate = FALSE
 )
 
-# Add significance indicators when reviewing model terms
+# Significance is supplementary to exposure and stability assessment
 rating_table(
   freq,
   model_data = df,
@@ -125,6 +153,11 @@ rating_table(
 
 }
 \seealso{
-\code{\link[=as_gt]{as_gt()}} for a grouped presentation table and
-\code{\link[=autoplot.rating_table]{autoplot.rating_table()}} for a graphical comparison of fitted effects.
+\code{\link[=as_gt]{as_gt()}} for grouped tabular presentation,
+\code{\link[=autoplot.rating_table]{autoplot.rating_table()}} for graphical comparison,
+\code{\link[=factor_analysis]{factor_analysis()}} for observed portfolio experience, and \code{\link[=refit]{refit()}} for
+fitting a refinement specification.
+}
+\author{
+Martin Haringa
 }

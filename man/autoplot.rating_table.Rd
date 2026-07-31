@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_rating_table_plot.R
 \name{autoplot.rating_table}
 \alias{autoplot.rating_table}
-\title{Plot risk factor effects from \code{rating_table()} results}
+\title{Compare fitted risk-factor effects graphically}
 \usage{
 \method{autoplot}{rating_table}(
   object,
@@ -28,40 +28,41 @@
 )
 }
 \arguments{
-\item{object}{A \code{rating_table} object returned by \code{\link[=rating_table]{rating_table()}}.}
+\item{object}{A \code{"rating_table"} object returned by \code{\link[=rating_table]{rating_table()}}.}
 
-\item{risk_factors}{Character vector specifying which risk factors to plot.
-Defaults to all risk factors.}
+\item{risk_factors}{Optional character vector specifying the risk factors to
+plot. If \code{NULL}, all available risk factors are shown.}
 
 \item{metric}{Optional character string. Observed-experience metric to plot
 when observed experience has been attached with
 \code{\link[=add_portfolio_experience]{add_portfolio_experience()}}. Common choices are \code{"frequency"},
 \code{"severity"}/\code{"average_severity"} and \code{"risk_premium"}.}
 
-\item{ncol}{Number of columns in the patchwork layout. Default is 1.}
+\item{ncol}{Positive integer specifying the number of columns in the
+patchwork layout.}
 
-\item{show_exposure_labels}{Logical; if \code{TRUE}, show exposure values as
-labels on the bars. Default is \code{TRUE}.}
+\item{show_exposure_labels}{Logical. If \code{TRUE}, print exposure values on the
+background bars.}
 
-\item{decimal_mark}{Character; decimal separator, either \code{","} (default) or
-\code{"."}.}
+\item{decimal_mark}{Character string, either \code{","} or \code{"."}, controlling
+number labels.}
 
-\item{y_label}{Character; label for the y-axis. Default is \code{"Relativity"}.}
+\item{y_label}{Character string for the primary y-axis.}
 
-\item{bar_fill}{Fill color for the exposure bars. If \code{NULL}, taken from the
-internal palette.}
+\item{bar_fill}{Optional colour for exposure bars. If \code{NULL}, the package
+palette is used.}
 
-\item{model_color}{Optional override for model line colors. If \code{NULL}, colors
-are taken from the internal discrete palette.}
+\item{model_color}{Optional single colour overriding the model-line palette.}
 
-\item{use_linetype}{Logical; if \code{TRUE}, use different line types for models.
-Default is \code{FALSE}.}
+\item{use_linetype}{Logical. If \code{TRUE}, distinguish fitted models by line
+type as well as colour.}
 
-\item{rotate_angle}{Numeric value for angle of labels on the x-axis (degrees).}
+\item{rotate_angle}{Optional numeric angle for risk-factor level labels.}
 
-\item{custom_theme}{List with customised theme options.}
+\item{custom_theme}{Optional named list passed to \code{\link[ggplot2:theme]{ggplot2::theme()}}.}
 
-\item{remove_underscores}{Logical; remove underscores from labels.}
+\item{remove_underscores}{Logical. If \code{TRUE}, replace underscores with spaces
+in risk-factor axis labels.}
 
 \item{labels}{Deprecated alias for \code{show_exposure_labels}.}
 
@@ -75,17 +76,69 @@ Default is \code{FALSE}.}
 
 \item{linetype}{Deprecated alias for \code{use_linetype}.}
 
-\item{...}{Additional arguments passed to ggplot2 layers.}
+\item{...}{Additional arguments reserved for method compatibility.}
 }
 \value{
-A \code{ggplot}/\code{patchwork} object.
+A \code{patchwork} object containing one \code{ggplot2} panel per selected risk
+factor.
 }
 \description{
-Create a ggplot visualisation of a \code{rating_table} object produced by
-\code{\link[=rating_table]{rating_table()}}. Estimates are plotted per risk factor, with optional
-exposure bars. Observed portfolio experience can be added first with
-\code{\link[=add_portfolio_experience]{add_portfolio_experience()}}.
+Plot the coefficients or relativities stored in a \code{\link[=rating_table]{rating_table()}} object by
+risk factor. Multiple fitted models can be compared, exposure can be shown as
+background bars, and observed portfolio experience attached with
+\code{\link[=add_portfolio_experience]{add_portfolio_experience()}} can be added as a separate line.
+}
+\details{
+\subsection{Plot contents}{
 
-When observed experience is attached, it is plotted as an additional line.
-The scaling is controlled by \code{\link[=add_portfolio_experience]{add_portfolio_experience()}}.
+One panel is produced for each selected risk factor. Model effects use the
+primary y-axis. When exposure is available, bars are rescaled to the plotting
+range and the original exposure scale is shown on the secondary y-axis.
+
+Observed experience is plotted only after it has been attached with
+\code{\link[=add_portfolio_experience]{add_portfolio_experience()}}. The selected \code{metric} is converted to the
+relative scale recorded in that object, using either the model reference
+level or the portfolio mean.
+}
+
+\subsection{Actuarial interpretation}{
+
+The plot supports comparison of fitted tariff effects, portfolio volume and
+unadjusted observed experience. Differences between the observed and modelled
+lines may indicate portfolio-mix effects, sparse levels, model smoothing or
+genuine lack of fit. The chart does not separate these explanations and
+should be reviewed together with claim counts, residual diagnostics and
+stability across periods.
+
+When models are compared, the analyst should ensure that response
+definitions, link functions and relativity scales are sufficiently
+comparable. Exposure bars provide volume context but are not confidence
+intervals.
+}
+}
+\examples{
+portfolio <- MTPL
+portfolio$zip <- as.factor(portfolio$zip)
+
+frequency <- glm(
+  nclaims ~ bm + zip + offset(log(exposure)),
+  family = poisson(),
+  data = portfolio
+)
+
+effects <- rating_table(
+  frequency,
+  model_data = portfolio,
+  exposure = "exposure"
+)
+
+autoplot(effects, risk_factors = "zip", show_exposure_labels = FALSE)
+
+}
+\seealso{
+\code{\link[=rating_table]{rating_table()}}, \code{\link[=add_portfolio_experience]{add_portfolio_experience()}},
+\code{\link[=factor_analysis]{factor_analysis()}}, \code{\link[=as_gt.rating_table]{as_gt.rating_table()}}
+}
+\author{
+Martin Haringa
 }

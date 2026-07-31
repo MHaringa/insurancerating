@@ -549,62 +549,86 @@
 }
 
 
-#' Build rating tables from fitted pricing models
+#' Present fitted pricing-model effects as a rating table
 #'
 #' @description
-#' `rating_table()` extracts model coefficients in tariff-table form. It adds
-#' the reference level for factor variables, can exponentiate GLM coefficients
-#' into relativities, and can add exposure by risk-factor level when the model
-#' data are available.
+#' Extract coefficients from one or more fitted GLMs and organise them by risk
+#' factor and level. Reference levels are made explicit, coefficients can be
+#' expressed as multiplicative relativities, and portfolio exposure can be
+#' attached to support actuarial review.
 #'
-#' In pricing work, this function is useful after fitting or refining a GLM. It
-#' turns model output into a table that is easier to inspect, compare and use in
-#' tariff notes. When `exponentiate = TRUE`, coefficients are shown as
-#' relativities. This is often the most practical scale for multiplicative GLM
-#' tariffs, because each level is expressed relative to the reference level.
-#'
-#' `rating_table()` is intended for fitted models:
-#' - plain `glm` objects
-#' - models obtained after `refit()`
-#' - models obtained after `refit_glm()`
-#'
-#' For pre-refit objects (`rating_refinement`, `restricted`, `smooth`) use
-#' `print()`, `summary()` and `autoplot()` instead.
-#'
-#' @param ... glm object(s) produced by `glm()`, `refit()` or `refit_glm()`
-#' @param model_data Optional data.frame used to create the model(s). If `NULL`,
+#' @param ... One or more fitted `glm` objects, including models returned by
+#'   [refit()]. Object expressions are used to construct the dynamic estimate
+#'   column names.
+#' @param model_data Optional data frame used to fit the models. If `NULL`,
 #'   the function tries to use `model$data` for each supplied model.
-#' @param exposure Logical or character. If `TRUE` (default), exposure is added
+#' @param exposure Logical or character string. If `TRUE`, exposure is added
 #'   if it can be inferred from the model. If `FALSE`, no exposure is added.
 #'   If a character string is supplied, it is interpreted as the exposure column
 #'   name.
-#' @param exposure_output Optional name for the exposure column in the output.
+#' @param exposure_output Optional character string naming the exposure column
+#'   in the output.
 #'   If `NULL`, the original exposure column name is used.
-#' @param exponentiate Logical. If `TRUE` (default), coefficients are
+#' @param exponentiate Logical. If `TRUE`, coefficients are
 #'   exponentiated and shown as relativities. If `FALSE`, coefficients are shown
 #'   on the model scale.
-#' @param significance Logical; if `TRUE`, show significance stars for p-values.
-#' @param round_exposure number of digits for exposure (defaults to 0)
+#' @param significance Logical. If `TRUE`, append significance indicators based
+#'   on model coefficient p-values.
+#' @param round_exposure Non-negative number of digits used to round exposure.
 #' @param exposure_name Deprecated. Use `exposure_output` instead.
 #' @param signif_stars Deprecated. Use `significance` instead.
 #'
-#' @return Object of class `"rating_table"` and legacy class `"riskfactor"`.
-#'
-#' @seealso [as_gt()] for a grouped presentation table and
-#'   [autoplot.rating_table()] for a graphical comparison of fitted effects.
-#'
 #' @details
-#' A `rating_table` contains one row per model term level. For factor variables,
+#' ## Coefficients and relativities
+#'
+#' The table contains one row per model term level. For factor variables,
 #' the reference level is added explicitly with relativity `1` when
 #' `exponentiate = TRUE`, or coefficient `0` when `exponentiate = FALSE`.
+#' Numeric model terms are retained on the scale supplied by the fitted model
+#' structure.
 #'
-#' If exposure is supplied or can be inferred from the model data, exposure is
-#' aggregated by risk-factor level. This helps to assess whether fitted
-#' relativities are supported by enough portfolio volume.
+#' Estimate columns are named from the supplied model expressions, for example
+#' `est_frequency` for an object named `frequency`. When several models are
+#' supplied, their effects are joined by risk factor and level.
 #'
-#' Multiple models can be supplied to compare fitted effects side by side. This
-#' is useful when comparing unrestricted and refined models, or frequency,
-#' severity and pure premium models built on the same rating factors.
+#' ## Actuarial interpretation
+#'
+#' With a log-link GLM, exponentiated coefficients represent conditional
+#' multiplicative effects relative to the model reference level. They should be
+#' interpreted together with the model specification and should not be confused
+#' with the unadjusted observed measures returned by [factor_analysis()].
+#'
+#' Exposure by level provides context for the amount of portfolio information
+#' supporting each fitted effect. Significance indicators describe evidence
+#' conditional on the fitted model; they do not measure practical materiality,
+#' temporal stability or suitability for direct tariff implementation.
+#'
+#' Comparing multiple models is useful for assessing changes between
+#' unrestricted and refined specifications, or between alternative model
+#' formulations. Comparable response definitions and coefficient scales remain
+#' the responsibility of the analyst.
+#'
+#' `rating_table()` accepts fitted models only. A `rating_refinement`
+#' specification must first be fitted with [refit()].
+#'
+#' @return A data frame-like object with classes `"rating_table"` and legacy
+#' `"riskfactor"`. It contains:
+#' \describe{
+#'   \item{risk_factor}{Model term or risk-factor name.}
+#'   \item{level}{Factor level or term representation.}
+#'   \item{`est_*`}{Coefficient or exponentiated relativity for each supplied
+#'   model. The suffix is derived from the model expression.}
+#'   \item{`signif_*`}{Optional significance indicator for each model.}
+#'   \item{Exposure column}{Optional aggregated exposure, retaining the
+#'   requested output name.}
+#' }
+#'
+#' @author Martin Haringa
+#'
+#' @seealso [as_gt()] for grouped tabular presentation,
+#'   [autoplot.rating_table()] for graphical comparison,
+#'   [factor_analysis()] for observed portfolio experience, and [refit()] for
+#'   fitting a refinement specification.
 #'
 #' @importFrom dplyr full_join
 #' @importFrom utils stack
@@ -620,8 +644,16 @@
 #'   data = df
 #' )
 #'
-#' # Inspect fitted relativities by risk-factor level
-#' rating_table(freq, model_data = df, exposure = "exposure")
+#' fitted_effects <- rating_table(
+#'   freq,
+#'   model_data = df,
+#'   exposure = "exposure"
+#' )
+#'
+#' fitted_effects
+#' if (requireNamespace("gt", quietly = TRUE)) {
+#'   as_gt(fitted_effects)
+#' }
 #'
 #' # Keep coefficients on the model scale instead of exponentiating
 #' rating_table(
@@ -631,7 +663,7 @@
 #'   exponentiate = FALSE
 #' )
 #'
-#' # Add significance indicators when reviewing model terms
+#' # Significance is supplementary to exposure and stability assessment
 #' rating_table(
 #'   freq,
 #'   model_data = df,

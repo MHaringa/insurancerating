@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_refinement.R
 \name{split_relativities}
 \alias{split_relativities}
-\title{Construct a relativities mapping for level splitting}
+\title{Deprecated low-level relativity constructor}
 \usage{
 split_relativities(new_levels, relativities)
 }
@@ -13,27 +13,26 @@ split_relativities(new_levels, relativities)
 sublevel. Must have the same length as \code{new_levels}.}
 }
 \value{
-A data.frame with columns:
-\describe{
-\item{new_level}{Character. Name of the new sublevel.}
-\item{relativity}{Numeric. Multiplicative factor relative to the base level.}
-}
+A data frame with columns \code{new_level} and \code{relativity}. New code
+should use \code{\link[=split_level]{split_level()}}, which also records the parent model level
+required by \code{\link[=add_relativities]{add_relativities()}}.
 }
 \description{
-Helper function to create a standardized data.frame defining relativities
-for sublevels within a risk factor level. This function is intended to be
-used as input for \code{add_relativities()}.
-}
-\details{
-This function provides a convenient and safe way to construct the required
-input structure for \code{add_relativities()}. Each call defines how a single
-level of a risk factor is split into multiple sublevels with corresponding
-relativities.
+\code{split_relativities()} is deprecated. Use \code{\link[=split_level]{split_level()}} to define a named
+parent-level split and combine multiple splits with \code{\link[=relativities]{relativities()}}.
 }
 \examples{
-split_relativities(
+split_level(
+  level = "construction",
   new_levels = c("residential", "commercial", "civil"),
   relativities = c(1.00, 1.10, 1.25)
 )
 
 }
+\seealso{
+\code{\link[=split_level]{split_level()}}, \code{\link[=relativities]{relativities()}}, \code{\link[=add_relativities]{add_relativities()}}
+}
+\author{
+Martin Haringa
+}
+\keyword{internal}

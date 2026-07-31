@@ -28,6 +28,16 @@ Adds the tariff segments derived by \code{\link[=derive_tariff_segments]{derive_
 column to a portfolio data set. This is the recommended way to attach derived
 tariff segments to the same portfolio rows that were used to fit the risk
 factor GAM.
+
+The helper preserves row alignment between the portfolio and the assigned
+segments. It does not re-estimate the GAM or reconstruct the segment
+boundaries.
+}
+\details{
+\code{segments$assigned_segments} contains one segment for each observation used
+to estimate the risk-factor effect. \code{data} must therefore contain the same
+number of rows in the same order. The resulting factor can be used in a GLM
+or retained as a candidate grouping for further actuarial review.
 }
 \examples{
 \dontrun{
@@ -43,6 +53,9 @@ MTPL |>
   add_tariff_segments(age_segments, name = "age_policyholder_segment")
 }
 
+}
+\seealso{
+\code{\link[=risk_factor_gam]{risk_factor_gam()}}, \code{\link[=derive_tariff_segments]{derive_tariff_segments()}}
 }
 \author{
 Martin Haringa

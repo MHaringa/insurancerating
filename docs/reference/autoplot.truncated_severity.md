@@ -4,6 +4,10 @@ Creates a plot of the empirical cumulative distribution function (ECDF)
 of the observed truncated claim amounts together with the fitted
 truncated CDF.
 
+The comparison assesses whether the fitted conditional severity
+distribution represents the shape of the observed claims within the same
+truncation interval.
+
 ## Usage
 
 ``` r
@@ -90,6 +94,18 @@ claim severities with the fitted distribution conditional on the same
 truncation interval. This is a visual check of whether the selected
 severity distribution is plausible for the part of the portfolio that is
 actually observed.
+
+Systematic separation between the empirical and fitted curves can
+indicate that the selected gamma or lognormal distribution does not
+adequately represent the observed severity shape. The plot does not
+assess the unobserved parts of the distribution outside the truncation
+bounds.
+
+## See also
+
+[`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md),
+[`rlnormt()`](https://mharinga.github.io/insurancerating/reference/rlnormt.md),
+[`rgammat()`](https://mharinga.github.io/insurancerating/reference/rgammat.md)
 
 ## Author
 

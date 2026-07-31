@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,14 +50,14 @@
           <code><a href="factor_analysis.html">factor_analysis()</a></code>
 
         </dt>
-        <dd>Factor analysis for discrete risk factors</dd>
+        <dd>Summarise observed portfolio experience by risk factor</dd>
 
         <dt>
 
           <code><a href="autoplot.factor_analysis.html">autoplot(<i>&lt;factor_analysis&gt;</i>)</a></code>
 
         </dt>
-        <dd>Automatically create a ggplot for objects obtained from factor analysis</dd>
+        <dd>Plot observed portfolio experience by risk factor</dd>
 
         <dt>
 
@@ -122,14 +122,14 @@
           <code><a href="rlnormt.html">rlnormt()</a></code>
 
         </dt>
-        <dd>Generate random samples from a truncated lognormal distribution</dd>
+        <dd>Simulate severities from a truncated lognormal distribution</dd>
 
         <dt>
 
           <code><a href="rgammat.html">rgammat()</a></code>
 
         </dt>
-        <dd>Generate random samples from a truncated gamma distribution</dd>
+        <dd>Simulate severities from a truncated gamma distribution</dd>
       </dl></div><div class="section level2">
       <h2 id="tariff-segments">Tariff segments<a class="anchor" aria-label="anchor" href="#tariff-segments"></a></h2>
 
@@ -145,21 +145,21 @@
           <code><a href="risk_factor_gam.html">risk_factor_gam()</a></code>
 
         </dt>
-        <dd>Fit a GAM for a continuous risk factor</dd>
+        <dd>Estimate a smooth effect for a continuous risk factor</dd>
 
         <dt>
 
           <code><a href="autoplot.riskfactor_gam.html">autoplot(<i>&lt;riskfactor_gam&gt;</i>)</a></code>
 
         </dt>
-        <dd>Autoplot for GAM objects from <code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code></dd>
+        <dd>Inspect a smooth continuous risk-factor effect</dd>
 
         <dt>
 
           <code><a href="derive_tariff_segments.html">derive_tariff_segments()</a></code>
 
         </dt>
-        <dd>Derive insurance tariff segments</dd>
+        <dd>Derive candidate tariff segments from a smooth risk-factor effect</dd>
 
         <dt>
 
@@ -173,7 +173,7 @@
           <code><a href="autoplot.tariff_segments.html">autoplot(<i>&lt;tariff_segments&gt;</i>)</a></code>
 
         </dt>
-        <dd>Autoplot for tariff segment objects</dd>
+        <dd>Inspect derived tariff-segment boundaries</dd>
       </dl></div><div class="section level2">
       <h2 id="modelling-and-interpretation">Modelling and interpretation<a class="anchor" aria-label="anchor" href="#modelling-and-interpretation"></a></h2>
 
@@ -189,7 +189,7 @@
           <code><a href="rating_table.html">rating_table()</a></code>
 
         </dt>
-        <dd>Build rating tables from fitted pricing models</dd>
+        <dd>Present fitted pricing-model effects as a rating table</dd>
 
         <dt>
 
@@ -203,7 +203,7 @@
           <code><a href="autoplot.rating_table.html">autoplot(<i>&lt;rating_table&gt;</i>)</a></code>
 
         </dt>
-        <dd>Plot risk factor effects from <code><a href="../reference/rating_table.html">rating_table()</a></code> results</dd>
+        <dd>Compare fitted risk-factor effects graphically</dd>
 
         <dt>
 
@@ -233,21 +233,21 @@
           <code><a href="autoplot.rating_refinement.html">autoplot(<i>&lt;rating_refinement&gt;</i>)</a></code>
 
         </dt>
-        <dd>Plot a model refinement step</dd>
+        <dd>Inspect a model refinement step</dd>
 
         <dt>
 
           <code><a href="add_smoothing.html">add_smoothing()</a></code>
 
         </dt>
-        <dd>Smooth grouped tariff relativities</dd>
+        <dd>Smooth grouped tariff relativities in a refinement workflow</dd>
 
         <dt>
 
           <code><a href="edit_smoothing.html">edit_smoothing()</a></code>
 
         </dt>
-        <dd>Edit an existing smoothing step in a refinement workflow</dd>
+        <dd>Edit a smoothing curve in a refinement workflow</dd>
 
         <dt>
 
@@ -261,35 +261,28 @@
           <code><a href="add_relativities.html">add_relativities()</a></code>
 
         </dt>
-        <dd>Add expert-based relativities to a refinement workflow</dd>
+        <dd>Add sublevel relativities to a refinement workflow</dd>
 
         <dt>
 
           <code><a href="relativities.html">relativities()</a></code>
 
         </dt>
-        <dd>Combine multiple level splits into relativities</dd>
+        <dd>Combine sublevel splits into a relativity specification</dd>
 
         <dt>
 
           <code><a href="split_level.html">split_level()</a></code>
 
         </dt>
-        <dd>Define a level split with relativities</dd>
-
-        <dt>
-
-          <code><a href="split_relativities.html">split_relativities()</a></code>
-
-        </dt>
-        <dd>Construct a relativities mapping for level splitting</dd>
+        <dd>Define a sublevel split for a model level</dd>
 
         <dt>
 
           <code><a href="refit.html">refit()</a></code>
 
         </dt>
-        <dd>Refit a prepared refinement workflow</dd>
+        <dd>Fit a prepared refinement specification</dd>
       </dl></div><div class="section level2">
       <h2 id="validation">Validation<a class="anchor" aria-label="anchor" href="#validation"></a></h2>
 
@@ -305,28 +298,28 @@
           <code><a href="model_performance.html">model_performance()</a></code>
 
         </dt>
-        <dd>Performance of fitted GLMs</dd>
+        <dd>Compare fitted GLMs using common performance measures</dd>
 
         <dt>
 
           <code><a href="rmse.html">rmse()</a></code>
 
         </dt>
-        <dd>Root Mean Squared Error (RMSE)</dd>
+        <dd>Calculate response-scale prediction error</dd>
 
         <dt>
 
           <code><a href="bootstrap_performance.html">bootstrap_performance()</a></code>
 
         </dt>
-        <dd>Bootstrapped model performance</dd>
+        <dd>Assess predictive stability by repeated resampling</dd>
 
         <dt>
 
           <code><a href="autoplot.bootstrap_performance.html">autoplot(<i>&lt;bootstrap_performance&gt;</i>)</a></code>
 
         </dt>
-        <dd>Autoplot for bootstrap_performance objects</dd>
+        <dd>Plot the resampled performance distribution</dd>
 
         <dt>
 
@@ -347,7 +340,7 @@
           <code><a href="autoplot.check_residuals.html">autoplot(<i>&lt;check_residuals&gt;</i>)</a></code>
 
         </dt>
-        <dd>Autoplot for check_residuals objects</dd>
+        <dd>Inspect simulation-based residual uniformity</dd>
       </dl></div><div class="section level2">
       <h2 id="model-structure">Model structure<a class="anchor" aria-label="anchor" href="#model-structure"></a></h2>
 
@@ -363,14 +356,14 @@
           <code><a href="extract_model_data.html">extract_model_data()</a></code>
           <span class="badge lifecycle lifecycle-experimental">experimental</span>
         </dt>
-        <dd>Extract model data</dd>
+        <dd>Recover the portfolio data used by a fitted model</dd>
 
         <dt>
 
           <code><a href="rating_grid.html">rating_grid()</a></code>
 
         </dt>
-        <dd>Construct observed rating-grid points from model data or a data frame</dd>
+        <dd>Construct observed rating-grid points</dd>
       </dl></div><div class="section level2">
       <h2 id="utilities">Utilities<a class="anchor" aria-label="anchor" href="#utilities"></a></h2>
 
@@ -573,6 +566,13 @@
 
         </dt>
         <dd>Deprecated alias for <code><a href="../reference/refit_glm.html">refit_glm()</a></code></dd>
+
+        <dt>
+
+          <code><a href="split_relativities.html">split_relativities()</a></code>
+
+        </dt>
+        <dd>Deprecated low-level relativity constructor</dd>
 
         <dt>
 

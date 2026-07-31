@@ -1,12 +1,10 @@
-# Autoplot for tariff segment objects
+# Inspect derived tariff-segment boundaries
 
-[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
-method for objects created by
+Plot the fitted continuous risk-factor effect together with the
+boundaries returned by
 [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md).
-Produces a
-[`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
-of the fitted GAM together with the derived tariff segment boundaries.
-Optionally, confidence intervals and observed data points can be added.
+Observed aggregated experience and pointwise confidence intervals can be
+added to support review of the proposed segmentation.
 
 ## Usage
 
@@ -36,38 +34,37 @@ autoplot(
 
 - confidence:
 
-  Logical, whether to plot 95% confidence intervals. Default = `FALSE`.
+  Logical. If `TRUE`, show pointwise 95 percent confidence intervals
+  where finite values are available.
 
 - color_gam:
 
-  Color of the fitted GAM line. Default = `"steelblue"`.
+  Colour of the fitted GAM line.
 
 - show_observations:
 
-  Logical, whether to add observed data points for each level of the
-  risk factor. Default = `FALSE`.
+  Logical. If `TRUE`, add the aggregated observed experience used for
+  the GAM.
 
 - color_splits:
 
-  Color of the vertical split lines. Default = `"grey50"`.
+  Colour of the vertical segment boundaries.
 
 - size_points:
 
-  Numeric, size of points if `show_observations = TRUE`. Default = 1.
+  Numeric point size for observed experience.
 
 - color_points:
 
-  Color of observed points. Default = `"black"`.
+  Colour for observed experience.
 
 - rotate_labels:
 
-  Logical, whether to rotate x-axis labels by 45 degrees. Default =
-  `FALSE`.
+  Logical. If `TRUE`, rotate x-axis labels by 45 degrees.
 
 - remove_outliers:
 
-  Numeric, exclude observations above this value from the plot (helps
-  with extreme outliers). Default = `NULL`.
+  Optional single numeric upper display limit for observed points.
 
 - conf_int:
 
@@ -75,14 +72,48 @@ autoplot(
 
 - ...:
 
-  Additional arguments passed to
-  [`ggplot2::autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html).
+  Additional arguments reserved for method compatibility.
 
 ## Value
 
-A [ggplot2::ggplot](https://ggplot2.tidyverse.org/reference/ggplot.html)
-object.
+A `ggplot2` object.
+
+## Details
+
+Vertical lines indicate the derived interval boundaries; the fitted GAM
+line remains the underlying continuous effect. The plot can be used to
+assess whether boundaries occur at plausible changes in the fitted
+pattern and whether tail segments have visible empirical support.
+
+The visualisation does not refit a categorical GLM and does not
+establish that adjacent segments are statistically or commercially
+distinct. Exposure, claim volume, temporal stability and operational
+tariff constraints remain separate considerations. `remove_outliers`
+affects displayed observed points only and does not alter either the GAM
+or the derived boundaries.
+
+## See also
+
+[`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md),
+[`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md),
+[`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md)
 
 ## Author
 
 Martin Haringa
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+segments <- risk_factor_gam(
+  MTPL,
+  risk_factor = "age_policyholder",
+  claim_count = "nclaims",
+  exposure = "exposure"
+) |>
+  derive_tariff_segments()
+
+autoplot(segments, confidence = TRUE, show_observations = TRUE)
+} # }
+```

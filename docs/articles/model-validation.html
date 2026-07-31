@@ -34,7 +34,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,9 +74,9 @@
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
 <p>Model validation is a common part of actuarial pricing work.</p>
-<p>After model estimation and coefficient interpretation, it is
-necessary to assess whether the model performs adequately and behaves in
-a stable and interpretable way.</p>
+<p>After model estimation and coefficient interpretation, validation
+assesses whether the fitted model behaves consistently with its
+statistical assumptions and intended pricing use.</p>
 <p>In practice, model validation typically considers several
 dimensions:</p>
 <ul>
@@ -88,9 +88,10 @@ dimensions:</p>
 </ul>
 <p><code>insurancerating</code> provides tools for several of these
 validation tasks.</p>
-<p>The purpose of validation is not only to assess statistical fit, but
-also to determine whether a model is suitable for use in a pricing
-context.</p>
+<p>No single diagnostic establishes that a model is suitable for
+pricing. The results need to be interpreted together with data quality,
+portfolio structure, coefficient stability and the intended tariff
+application.</p>
 </div>
 <div class="section level2">
 <h2 id="example-setup">Example setup<a class="anchor" aria-label="anchor" href="#example-setup"></a>
@@ -142,12 +143,14 @@ specifications.</p>
 <span><span class="co">#&gt; ------+----------+----------+------ </span></span>
 <span><span class="co">#&gt;  mod1 |  2287.25 | 2311.275 | 0.356 </span></span>
 <span><span class="co">#&gt;  mod2 | 2289.054 | 2319.086 | 0.356</span></span></code></pre></div>
-<p>This provides commonly used summary measures of model fit, such as
-RMSE.</p>
+<p>This reports AIC, BIC and response-scale RMSE. AIC and BIC compare
+likelihood fit with model complexity, while RMSE measures prediction
+error in the response unit.</p>
 <p>The purpose of this step is to assess whether the addition or removal
 of model terms leads to a materially different fit.</p>
-<p>In practice, this comparison is often used to support modelling
-choices before moving to tariff interpretation.</p>
+<p>The measures are comparable only when the models use the same
+response, estimation records, weights and offsets. They support model
+comparison but do not select a specification automatically.</p>
 </div>
 <div class="section level2">
 <h2 id="step-2-coefficient-inspection">Step 2 — Coefficient inspection<a class="anchor" aria-label="anchor" href="#step-2-coefficient-inspection"></a>
@@ -179,11 +182,20 @@ pricing contexts, it is also relevant to assess how stable that
 performance is under small variations in the data.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span><span class="va">mod1</span>, <span class="va">df</span>, n_resamples <span class="op">=</span> <span class="fl">100</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span></span>
+<span>  <span class="va">mod1</span>,</span>
+<span>  <span class="va">df</span>,</span>
+<span>  n_resamples <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  sample_fraction <span class="op">=</span> <span class="fl">0.8</span>,</span>
+<span>  sampling <span class="op">=</span> <span class="st">"bootstrap"</span>,</span>
+<span>  show_progress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="model-validation_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="700"></p>
-<p>This evaluates predictive stability by repeatedly refitting the model
-on bootstrap samples and storing the resulting RMSE values.</p>
+<p>This repeatedly refits the model on bootstrap samples and evaluates
+RMSE on out-of-bag records. The resulting distribution measures
+sensitivity to portfolio sampling rather than the full uncertainty in
+future claims.</p>
 <p>The output is used to assess:</p>
 <ul>
 <li>the variability of model performance</li>
@@ -234,9 +246,9 @@ consistent with the fitted model assumptions.</p>
 <p>In GLM settings, simulation-based residual diagnostics are often more
 useful than classical residual plots, because they allow the fitted
 model to be evaluated relative to its own implied distribution.</p>
-<p>The purpose of this step is not to search for perfect residual
-behaviour, but to identify material deviations that may be relevant for
-pricing.</p>
+<p>The uniformity-test p-value is a diagnostic signal, not a stand-alone
+acceptance rule. Its interpretation should be combined with the shape of
+the QQ plot, exposure and relevant risk-factor levels.</p>
 </div>
 <div class="section level2">
 <h2 id="step-6-portfolio-level-structure">Step 6 — Portfolio-level structure<a class="anchor" aria-label="anchor" href="#step-6-portfolio-level-structure"></a>
@@ -284,8 +296,8 @@ statistic.</p>
 <li>diagnostics assess model adequacy</li>
 <li>portfolio review assesses practical usability</li>
 </ul>
-<p>Taken together, they provide a structured basis for deciding whether
-a model is suitable for pricing use.</p>
+<p>Taken together, they provide evidence for actuarial review of the
+fitted model.</p>
 </div>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
@@ -300,14 +312,9 @@ is:</p>
 <span><span class="fu"><a href="../reference/check_overdispersion.html">check_overdispersion</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span>     <span class="co"># assess dispersion</span></span>
 <span><span class="fu"><a href="../reference/check_residuals.html">check_residuals</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span>          <span class="co"># inspect residual behaviour</span></span>
 <span><span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span>              <span class="co"># review model-point structure</span></span></code></pre></div>
-<p>The purpose of validation is not only to assess model fit, but to
-determine whether the fitted model is:</p>
-<ul>
-<li>statistically adequate</li>
-<li>stable under data variation</li>
-<li>interpretable in tariff terms</li>
-<li>suitable for practical pricing use</li>
-</ul>
+<p>The diagnostics address different aspects of model behaviour. Their
+relevance and materiality depend on the portfolio, model purpose and
+validation criteria.</p>
 </div>
 <div class="section level2">
 <h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>

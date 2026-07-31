@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_performance_bootstrap_rmse.R
 \name{autoplot.bootstrap_performance}
 \alias{autoplot.bootstrap_performance}
-\title{Autoplot for bootstrap_performance objects}
+\title{Plot the resampled performance distribution}
 \usage{
 \method{autoplot}{bootstrap_performance}(object, fill = "#E6E6E6", color = NA, ...)
 }
@@ -10,21 +10,27 @@
 \item{object}{An object of class \code{"bootstrap_performance"}, produced by
 \code{\link[=bootstrap_performance]{bootstrap_performance()}}.}
 
-\item{fill}{Fill color of the histogram bars. Default = \code{"#E6E6E6"}.}
+\item{fill}{Fill colour of the histogram bars. Default is \code{"#E6E6E6"}.}
 
-\item{color}{Border color of the histogram bars. Default = \code{NA}, which
+\item{color}{Border colour of the histogram bars. Default is \code{NA}, which
 removes bar borders.}
 
-\item{...}{Additional arguments passed to \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}.}
+\item{...}{Currently unused.}
 }
 \value{
 A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
 }
 \description{
-\code{autoplot()} method for objects created by \code{\link[=bootstrap_performance]{bootstrap_performance()}}.
-Produces a histogram and density plot of the bootstrapped RMSE values,
-with the RMSE of the original fitted model shown as a dashed vertical line.
-Optionally, 95\% quantile bounds are shown as dotted vertical lines.
+Display the empirical distribution of resampled RMSE values from
+\code{\link[=bootstrap_performance]{bootstrap_performance()}}. The histogram shows the observed resampling
+distribution, while the density curve provides a smooth visual summary.
+}
+\details{
+The dashed orange line marks the RMSE of the original fitted model. The
+dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles of the
+resampled values when these can be calculated. Their distance provides a
+practical indication of sampling variability; it is not a formal prediction
+interval for future portfolio performance.
 }
 \examples{
 \dontrun{
@@ -35,6 +41,9 @@ x <- bootstrap_performance(mod1, MTPL, n_resamples = 100,
 autoplot(x)
 }
 
+}
+\seealso{
+\code{\link[=bootstrap_performance]{bootstrap_performance()}}, \code{\link[=rmse]{rmse()}}
 }
 \author{
 Martin Haringa

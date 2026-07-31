@@ -34,7 +34,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,8 +73,8 @@
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p><code>insurancerating</code> provides actuarial building blocks for
-insurance pricing in R.</p>
+<p><code>insurancerating</code> provides functions for common actuarial
+pricing tasks in R.</p>
 <p>A common GLM-based pricing exercise often combines several tasks:</p>
 <ol style="list-style-type: decimal">
 <li>portfolio analysis</li>
@@ -82,8 +82,8 @@ insurance pricing in R.</p>
 <li>interpretation of fitted coefficients</li>
 <li>refinement of tariff structure</li>
 </ol>
-<p>This vignette illustrates one way to combine the main building
-blocks:</p>
+<p>This vignette presents one possible GLM-based analysis and
+illustrates how the functions can be combined:</p>
 <ul>
 <li>analyse risk factors with <code><a href="../reference/factor_analysis.html">factor_analysis()</a></code>
 </li>
@@ -95,8 +95,9 @@ blocks:</p>
 <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code>
 </li>
 </ul>
-<p>The focus is on the transition from portfolio data to an
-interpretable tariff structure.</p>
+<p>The focus is on the transition from observed portfolio experience to
+fitted effects and a tariff structure that can be reviewed
+actuarially.</p>
 </div>
 <div class="section level2">
 <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
@@ -132,12 +133,13 @@ portfolio with:</p>
 <div class="section level3">
 <h3 id="factor-analysis">Factor analysis<a class="anchor" aria-label="anchor" href="#factor-analysis"></a>
 </h3>
-<p>A pricing analysis often starts with an analysis of the
+<p>A pricing analysis commonly starts with a descriptive review of the
 portfolio.</p>
-<p>Before fitting a model, it is necessary to understand:</p>
+<p>Before fitting a model, it is useful to assess:</p>
 <ul>
 <li>how experience differs across factor levels</li>
-<li>whether differences are credible</li>
+<li>whether differences are supported by sufficient exposure and claim
+volume</li>
 <li>whether exposure is sufficient</li>
 <li>whether the observed pattern is plausible</li>
 </ul>
@@ -185,9 +187,9 @@ portfolio.</p>
 <li>the variation in claim frequency</li>
 <li>the variation in risk premium</li>
 </ul>
-<p>At this stage, the purpose is not yet to fit a model, but to
-understand whether the factor behaves in a way that is suitable for
-pricing.</p>
+<p>These are descriptive, univariate results. They show the observed
+experience and volume by level, but do not control for correlations with
+other risk factors.</p>
 </div>
 </div>
 <div class="section level2">
@@ -196,15 +198,17 @@ pricing.</p>
 <div class="section level3">
 <h3 id="why-continuous-variables-are-treated-separately">Why continuous variables are treated separately<a class="anchor" aria-label="anchor" href="#why-continuous-variables-are-treated-separately"></a>
 </h3>
-<p>Continuous variables are typically not used directly in a tariff. In
-pricing practice, they are usually:</p>
+<p>Continuous variables can be modelled directly or translated into
+grouped tariff variables, depending on the model and implementation
+environment. This example uses the following sequence:</p>
 <ol style="list-style-type: decimal">
 <li>analysed as continuous variables</li>
 <li>translated into tariff segments</li>
 <li>used in a GLM as categorical rating factors</li>
 </ol>
-<p>This ensures that the final tariff remains interpretable and
-implementable.</p>
+<p>Grouping makes the resulting tariff effect discrete and directly
+implementable, but introduces a segmentation choice that should be
+reviewed.</p>
 </div>
 <div class="section level3">
 <h3 id="analysing-the-shape-with-a-gam">Analysing the shape with a GAM<a class="anchor" aria-label="anchor" href="#analysing-the-shape-with-a-gam"></a>
@@ -236,10 +240,11 @@ implementable.</p>
 <span><span class="va">age_segments</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_tariff_segments.html">derive_tariff_segments</a></span><span class="op">(</span><span class="va">age_freq</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">age_segments</span><span class="op">)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="700"></p>
-<p>This converts the continuous variable into risk-homogeneous tariff
-segments.</p>
-<p>The resulting segments should reflect differences in risk, while
-remaining suitable for use in a tariff.</p>
+<p>This derives candidate segment boundaries from the fitted continuous
+effect.</p>
+<p>The resulting segments should be reviewed against exposure, observed
+experience, stability and practical tariff requirements before they are
+used in a model.</p>
 </div>
 <div class="section level3">
 <h3 id="adding-tariff-segments-to-the-data">Adding tariff segments to the data<a class="anchor" aria-label="anchor" href="#adding-tariff-segments-to-the-data"></a>
@@ -251,8 +256,10 @@ remaining suitable for use in a tariff.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">as.factor</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.factor</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="../reference/set_reference_level.html">set_reference_level</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">exposure</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/set_reference_level.html">set_reference_level()</a></code> sets the reference level to the
-level with the highest exposure. In pricing models, this is often the
-most stable and interpretable baseline.</p>
+level with the highest exposure. This changes the coefficient
+parameterisation, not the fitted values. A high-exposure level is often
+a useful baseline because its relativity is supported by a substantial
+part of the portfolio.</p>
 </div>
 </div>
 <div class="section level2">
@@ -261,8 +268,8 @@ most stable and interpretable baseline.</p>
 <div class="section level3">
 <h3 id="why-glms-are-used">Why GLMs are used<a class="anchor" aria-label="anchor" href="#why-glms-are-used"></a>
 </h3>
-<p>Generalized linear models are widely used in insurance pricing
-because they:</p>
+<p>Generalized linear models are widely used in insurance pricing. They
+can:</p>
 <ul>
 <li>accommodate non-normal response distributions</li>
 <li>produce interpretable multiplicative effects</li>
@@ -324,8 +331,10 @@ different aspects of the loss process.</p>
 <span><span class="co">#&gt; 4            0.13595893            72328.67 9833.729</span></span>
 <span><span class="co">#&gt; 5            0.09746194            57782.98 5631.642</span></span>
 <span><span class="co">#&gt; 6            0.04593697            67736.95 3111.630</span></span></code></pre></div>
-<p>This produces a pure premium estimate, i.e. expected loss per unit of
-exposure.</p>
+<p>This produces an expected-loss proxy from the fitted frequency and
+severity components. Its precise unit depends on the exposure treatment
+in the frequency prediction and should be checked before it is used as a
+model response.</p>
 </div>
 </div>
 <div class="section level2">
@@ -342,11 +351,11 @@ exposure.</p>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>,</span>
 <span>  data <span class="op">=</span> <span class="va">premium_df</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>This model combines the rating factors into a single premium
+<p>This model combines the rating factors into one fitted risk-premium
 structure.</p>
-<p>In practice, this is often the model that is closest to the final
-tariff logic, because it reflects the premium level rather than only
-individual model components such as frequency or severity.</p>
+<p>It can be used to inspect the combined effect of the frequency and
+severity components. Commercial loadings and other premium components
+are outside this technical risk-premium model.</p>
 </div>
 </div>
 <div class="section level2">
@@ -385,7 +394,7 @@ the original factor levels, including the reference level.</p>
 <span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/unnamed-chunk-13-1.png" class="r-plt" alt="" width="700"></p>
-<p>This plot is typically used to assess:</p>
+<p>This plot can be used to assess:</p>
 <ul>
 <li>the relative size of coefficients</li>
 <li>the structure across levels</li>
@@ -414,18 +423,29 @@ the original factor levels, including the reference level.</p>
 <span><span class="co">#&gt;  Model   |   AIC    |    BIC    | RMSE  </span></span>
 <span><span class="co">#&gt; ---------+----------+-----------+------ </span></span>
 <span><span class="co">#&gt; mod_freq | 22949.04 | 23015.512 | 0.362</span></span></code></pre></div>
-<p>This provides summary measures of model fit, such as RMSE.</p>
+<p>This reports AIC, BIC and response-scale RMSE. These measures are
+most meaningful when models use the same response, records, weights and
+offsets.</p>
 </div>
 <div class="section level3">
 <h3 id="bootstrap-performance">Bootstrap performance<a class="anchor" aria-label="anchor" href="#bootstrap-performance"></a>
 </h3>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="va">bp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span><span class="va">mod_freq</span>, <span class="va">dat</span>, n_resamples <span class="op">=</span> <span class="fl">50</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">bp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span></span>
+<span>  <span class="va">mod_freq</span>,</span>
+<span>  <span class="va">dat</span>,</span>
+<span>  n_resamples <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  sample_fraction <span class="op">=</span> <span class="fl">0.8</span>,</span>
+<span>  sampling <span class="op">=</span> <span class="st">"bootstrap"</span>,</span>
+<span>  show_progress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">bp</span><span class="op">)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/unnamed-chunk-15-1.png" class="r-plt" alt="" width="700"></p>
-<p>This provides a view of predictive stability by evaluating how
-performance changes across bootstrap samples.</p>
+<p>This refits the model on repeated bootstrap samples and evaluates
+RMSE on out-of-bag records. The resulting distribution describes
+sensitivity to the sampled portfolio records; it is not a prediction
+interval for future claims.</p>
 <p>A single fit statistic is usually not sufficient. In pricing
 practice, it is also relevant to assess whether the model behaves
 consistently under small data perturbations.</p>
@@ -465,13 +485,9 @@ be used as a tariff.</p>
 <span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="op">)</span>                <span class="co"># interpret fitted coefficients</span></span>
 <span><span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span><span class="op">)</span>       <span class="co"># assess stability</span></span>
 <span><span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="op">)</span>          <span class="co"># refine tariff structure if needed</span></span></code></pre></div>
-<p>The aim is to move from raw portfolio data to a tariff structure that
-is:</p>
-<ul>
-<li>interpretable</li>
-<li>reproducible</li>
-<li>and suitable for practical pricing use</li>
-</ul>
+<p>The sequence distinguishes observed experience, fitted model effects,
+candidate tariff segmentation and model diagnostics. The final modelling
+choices remain dependent on the portfolio and pricing objective.</p>
 </div>
 <div class="section level2">
 <h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>

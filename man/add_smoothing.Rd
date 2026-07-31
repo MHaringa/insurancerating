@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_refinement.R
 \name{add_smoothing}
 \alias{add_smoothing}
-\title{Smooth grouped tariff relativities}
+\title{Smooth grouped tariff relativities in a refinement workflow}
 \usage{
 add_smoothing(
   model,
@@ -35,7 +35,7 @@ underlying \code{model_variable}. Its name is also used for the resulting
 smoothed tariff variable.}
 
 \item{degree}{Optional single whole number. Polynomial degree, used by
-\code{smoothing = "spline"}. The degree must be feasible for the number of unique
+\code{smoothing = "poly"}. The degree must be feasible for the number of unique
 grouped model points.}
 
 \item{breaks}{Numeric vector with the tariff segment boundaries to use after
@@ -44,16 +44,18 @@ the number of portfolio observations used to estimate the curve. Values
 must be finite and strictly increasing.}
 
 \item{smoothing}{Character string selecting the smoothing method. Available
-values are \code{"spline"}, \code{"gam"}, \code{"mpi"}, \code{"mpd"}, \code{"cx"}, \code{"cv"},
-\code{"micx"}, \code{"micv"}, \code{"mdcx"} and \code{"mdcv"}. See Details for the shape
-restrictions represented by these codes.}
+values are \code{"spline"} (default), \code{"poly"}, \code{"mpi"}, \code{"mpd"}, \code{"gam"},
+\code{"cx"}, \code{"cv"}, \code{"micx"}, \code{"micv"}, \code{"mdcx"} and \code{"mdcv"}. See
+Details for the statistical interpretation and shape restrictions.}
 
 \item{k}{Optional single positive whole number. Basis dimension for smoothing
-methods other than \code{"spline"}. It sets the maximum flexibility available
-to the smooth and is not necessarily equal to its estimated effective
-degrees of freedom. \code{NULL} uses an effective default of 10. The basis
-dimension cannot exceed the number of unique grouped covariate values
-available for fitting.}
+methods \code{"spline"}, \code{"gam"}, \code{"mpi"}, \code{"mpd"}, \code{"cx"}, \code{"cv"},
+\code{"micx"}, \code{"micv"}, \code{"mdcx"} and \code{"mdcv"}. It sets the maximum
+flexibility available to the smooth and is not necessarily equal to its
+estimated effective degrees of freedom. \code{NULL} uses the smaller of 10 and
+the number of unique grouped model points. At least three unique grouped
+values are required. The basis dimension cannot exceed the number of
+unique grouped covariate values available for fitting.}
 
 \item{weights}{Optional character string. Numeric volume column, usually
 exposure, used to weight the grouped GLM relativities during smoothing.}
@@ -70,15 +72,17 @@ smoothing specification. The pricing GLM is not fitted again until
 \code{\link[=refit]{refit()}} is called.
 }
 \description{
-Replace the estimated relativities of a grouped numeric model variable by a
-smooth tariff curve. In actuarial pricing this can be useful for ordered risk
-factors such as age, vehicle age, insured value or bonus-malus years, where
-independently estimated factor levels may show sampling variation that is
-not considered suitable for the final tariff structure.
+Replace independently estimated relativities of an ordered, grouped model
+variable with a smooth tariff curve. This can reduce sampling variation
+between adjacent levels of risk factors such as age, vehicle age, insured
+value or bonus-malus years while retaining the broad effect estimated by the
+GLM.
 }
 \details{
 \code{add_smoothing()} stores a smoothing specification on a
-\code{rating_refinement} object. It does not immediately refit the pricing GLM.
+\code{rating_refinement} object. It does not alter the fitted GLM immediately.
+The smoothing is evaluated in the recorded step order and applied when
+\code{\link[=refit]{refit()}} is called.
 The original GLM contains \code{model_variable}, usually a factor created by
 grouping a continuous risk factor. \code{source_variable} identifies the original
 numeric variable represented by those groups.
@@ -92,58 +96,80 @@ with more portfolio volume have greater influence on the fitted curve.
 
 The fitted curve is evaluated using \code{breaks} and converted back to a grouped
 tariff variable. The original model term is replaced by that smoothed tariff
-variable when \code{\link[=refit]{refit()}} is called. The usual sequence is therefore
-\code{\link[=prepare_refinement]{prepare_refinement()}}, \code{add_smoothing()}, optionally \code{\link[=edit_smoothing]{edit_smoothing()}}, and
-finally \code{\link[=refit]{refit()}}.
+variable during refitting.
+\subsection{Actuarial interpretation}{
+
+Smoothing introduces a structural assumption: adjacent values of the source
+variable are expected to have related tariff effects. The selected method,
+basis dimension and breaks should therefore be assessed against exposure,
+observed experience, coefficient uncertainty and stability over time. A
+smooth curve should not be interpreted as evidence that the underlying risk
+relationship is itself known without uncertainty.
+}
+
 \subsection{Smoothing methods}{
 
 The available methods represent different assumptions about the shape of the
 tariff effect:
 
 \describe{
-\item{\code{"spline"}}{Fits an unconstrained global polynomial through the
-grouped GLM relativities. \code{degree} determines its order. A low degree is
-generally easier to interpret and less sensitive near the boundaries;
-higher degrees can follow more local variation but may introduce
-oscillation.}
-\item{\code{"gam"}}{Fits an unconstrained penalized smooth with \code{\link[mgcv:gam]{mgcv::gam()}}.
-This allows the tariff curve to adapt to the observed pattern while the
-smoothing penalty limits unnecessary variation.}
+\item{\code{"spline"}}{The general-purpose default. Fits an unconstrained
+penalized cubic regression spline. It is suitable when the tariff effect
+should be smooth but no monotonicity or curvature restriction is
+justified.}
+\item{\code{"poly"}}{Fits a global polynomial through the grouped GLM
+relativities. \code{degree} determines its order. A low degree gives a compact
+parametric trend; higher degrees can follow more local variation but may
+oscillate, particularly near the boundaries.}
 \item{\code{"mpi"} and \code{"mpd"}}{Fit monotone increasing and monotone decreasing
-P-splines, respectively.}
-\item{\code{"cx"} and \code{"cv"}}{Fit convex and concave P-splines, respectively.}
+smooths. These are often useful when actuarial reasoning implies that the
+tariff effect should move in only one direction.}
+\item{\code{"cx"} and \code{"cv"}}{Fit convex and concave smooths, respectively.}
 \item{\code{"micx"} and \code{"micv"}}{Fit monotone increasing curves that are,
 respectively, convex and concave.}
 \item{\code{"mdcx"} and \code{"mdcv"}}{Fit monotone decreasing curves that are,
 respectively, convex and concave.}
+\item{\code{"gam"}}{Fits an unconstrained thin-plate regression spline with
+\code{\link[mgcv:gam]{mgcv::gam()}}. It is mainly intended as a flexible reference when comparing
+the general spline and shape-constrained specifications. It does not impose
+the actuarial shape assumptions represented by the constrained methods.}
 }
 
 The shape-constrained methods are fitted with \code{\link[scam:scam]{scam::scam()}}. A constraint
 should reflect an actuarial or pricing assumption that is defensible for the
 risk factor; it should not be selected solely because it produces a smoother
-visual result.
+visual result. The combined monotonicity and curvature methods are advanced
+specifications and are most appropriate when both assumptions can be
+supported independently.
 }
 
 \subsection{Basis dimension and polynomial degree}{
 
-For \code{"gam"} and the shape-constrained methods, \code{k} specifies the basis
-dimension. It controls the maximum flexibility available to the smooth, but
-it is not the final effective degrees of freedom of the fitted curve. For a
-penalized GAM, the estimated smoothing penalty can reduce the effective
-degrees of freedom below this maximum.
+For \code{"spline"}, \code{"gam"} and the shape-constrained methods, \code{k} specifies the
+basis dimension. It controls the maximum flexibility available to the smooth,
+but it is not the final effective degrees of freedom of the fitted curve.
+The estimated smoothing penalty can reduce the effective degrees of freedom
+below this maximum.
 
 A smaller \code{k} restricts the curve to broad movements. A larger \code{k} permits
 more local variation, but requires enough distinct grouped covariate values
 and may be unstable when only a few tariff levels are available. If \code{k} is
-\code{NULL}, an effective default basis dimension of 10 is used. The function
-checks this dimension against the grouped values before fitting and reports
-the observed number of unique values when the requested complexity is not
-feasible.
+\code{NULL}, the function uses the smaller of 10 and the number of unique grouped
+model points. Spline, GAM and shape-constrained smoothing require at least
+three unique grouped values. The function checks this dimension before
+fitting and reports the observed number of unique values when the requested
+complexity is not feasible.
 
-For \code{"spline"}, \code{degree} has the corresponding complexity role. A polynomial
+For \code{"poly"}, \code{degree} has the corresponding complexity role. A polynomial
 of degree \eqn{d} requires at least \eqn{d + 1} unique grouped values. When
 \code{degree} is omitted, the existing behaviour uses the highest degree supported
-by the grouped model points.
+by the grouped model points. In practice, an explicit low degree is generally
+preferable when a stable global trend is intended.
+
+\code{degree} is only accepted for \code{smoothing = "poly"}. Conversely, \code{k} is only
+accepted for \code{"spline"}, \code{"gam"} and the shape-constrained methods. This
+separation prevents a complexity argument from being supplied but silently
+ignored.
 
 The deprecated \code{\link[=smooth_coef]{smooth_coef()}} wrapper remains available for backwards
 compatibility.
@@ -197,7 +223,7 @@ ref <- prepare_refinement(burn_unrestricted) |>
     model_variable = "age_policyholder_freq_cat",
     source_variable = "age_policyholder",
     breaks = seq(18, 95, 5),
-    smoothing = "gam",
+    smoothing = "spline",
     k = 6,
     weights = "exposure"
   )
@@ -208,8 +234,8 @@ autoplot(ref, x_max = 80, y_max = 1.5)
 
 }
 \seealso{
-\code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=edit_smoothing]{edit_smoothing()}}, \code{\link[=refit]{refit()}},
-\code{\link[=risk_factor_gam]{risk_factor_gam()}}
+\code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=edit_smoothing]{edit_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}},
+\code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}, \code{\link[=risk_factor_gam]{risk_factor_gam()}}
 }
 \author{
 Martin Haringa

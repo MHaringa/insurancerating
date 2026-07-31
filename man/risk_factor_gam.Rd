@@ -2,7 +2,7 @@
 % Please edit documentation in R/gam_riskfactor.R
 \name{risk_factor_gam}
 \alias{risk_factor_gam}
-\title{Fit a GAM for a continuous risk factor}
+\title{Estimate a smooth effect for a continuous risk factor}
 \usage{
 risk_factor_gam(
   data,
@@ -20,92 +20,106 @@ risk_factor_gam(
 )
 }
 \arguments{
-\item{data}{A data.frame containing the insurance portfolio.}
+\item{data}{A data frame containing portfolio observations.}
 
-\item{risk_factor}{Character, name of column in \code{data} with the continuous
-risk factor.}
+\item{risk_factor}{Character string. Numeric continuous risk-factor column
+in \code{data}.}
 
-\item{claim_count}{Character, name of column in \code{data} with the number of
-claims.}
+\item{claim_count}{Character string. Claim-count column. Required for
+\code{model = "frequency"} and \code{model = "severity"}.}
 
-\item{exposure}{Character, name of column in \code{data} with the exposure.}
+\item{exposure}{Character string. Exposure column used as an offset or
+aggregation weight.}
 
-\item{claim_amount}{(Optional) Character, column name in \code{data} with the
-claim amount. Required for \code{model = "severity"}.}
+\item{claim_amount}{Optional character string. Total claim-amount column.
+Required for \code{model = "severity"}.}
 
-\item{pure_premium}{(Optional) Character, column name in \code{data} with the pure
-premium. Required for \code{model = "pure_premium"}.}
+\item{pure_premium}{Optional character string. Row-level risk-premium column.
+Required for \code{model = "pure_premium"} and aggregated using exposure
+weights.}
 
-\item{model}{Character string specifying the model type. One of
-\code{"frequency"}, \code{"severity"}, or \code{"pure_premium"}. Default is \code{"frequency"}.
-The old value \code{"burning"} is deprecated and maps to \code{"pure_premium"}.}
+\item{model}{Character string. Response context: \code{"frequency"},
+\code{"severity"} or \code{"pure_premium"}. The deprecated value \code{"burning"} maps
+to \code{"pure_premium"}.}
 
-\item{round_risk_factor}{(Optional) Numeric value to round the risk factor to
-a multiple of \code{round_risk_factor}. Can speed up fitting for factors with
-many distinct values.}
+\item{round_risk_factor}{Optional positive numeric value. The continuous risk
+factor is rounded to multiples of this value before aggregation and model
+fitting. This can reduce computation and local volatility when the variable
+has many distinct values, but it also removes detail.}
 
 \item{x, nclaims, amount, round_x}{Deprecated argument names. Use \code{risk_factor},
 \code{claim_count}, \code{claim_amount}, and \code{round_risk_factor} instead.}
 }
 \value{
-A \code{list} of class \code{"riskfactor_gam"} with the following elements:
-\item{prediction}{A data frame with predicted values and confidence intervals.}
+A list of class \code{"risk_factor_gam"} with compatibility classes
+\code{"riskfactor_gam"} and \code{"fitgam"}. It contains:
+\describe{
+\item{prediction}{Prediction grid with fitted values and pointwise
+confidence limits.}
 \item{x}{Name of the continuous risk factor.}
-\item{model}{The model type: \code{"frequency"}, \code{"severity"}, or \code{"pure_premium"}.}
-\item{data}{Merged data frame with predictions and observed values.}
-\item{x_obs}{Observed values of the continuous risk factor.}
+\item{model}{Response context: \code{"frequency"}, \code{"severity"} or
+\code{"pure_premium"}.}
+\item{data}{Aggregated observed experience and fitted values at observed
+risk-factor values.}
+\item{x_obs}{Risk-factor values in the original portfolio row order, after
+optional rounding.}
+}
 }
 \description{
-Fits a generalized additive model (GAM) to a continuous risk factor in one of
-three insurance pricing contexts: claim frequency, claim severity, or pure
-premium. The fitted curve helps assess non-linear rating effects before a
-continuous variable is grouped into tariff segments or used in a GLM workflow.
+Estimate the relationship between a continuous risk factor and claim
+frequency, average severity or risk premium with a generalized additive
+model (GAM). The fitted curve is intended for exploratory risk-factor
+analysis before selecting a functional form, applying refinement or deriving
+categorical tariff segments.
 }
 \details{
+\subsection{Statistical specification}{
 \itemize{
-\item \strong{Frequency model}: Fits a Poisson GAM to the number of claims. The log of
-the exposure is used as an offset so the expected number of claims is
-proportional to exposure.
-\item \strong{Severity model}: Fits a Gamma GAM with log link to the average claim
-size (total amount divided by number of claims). The number of claims is
-included as a weight.
-\item \strong{Pure premium model}: Fits a Gamma GAM with log link to the pure premium
-(risk premium). Implemented by aggregating exposure-weighted pure premiums.
-The deprecated model value \code{"burning"} is still accepted for backward
-compatibility.
-}
-\subsection{Migration from \code{fit_gam()}}{
-
-The function \code{\link[=fit_gam]{fit_gam()}} is deprecated as of version 0.8.0 and replaced by
-\code{\link[=risk_factor_gam]{risk_factor_gam()}}. In addition to the name change, the interface has also
-changed:
-\itemize{
-\item \code{fit_gam()} used \strong{non-standard evaluation (NSE)}, so column names could be
-passed unquoted (e.g. \code{x = age_policyholder}).
-\item \code{risk_factor_gam()} uses \strong{standard evaluation (SE)}, so column names must
-be passed as character strings (e.g. \code{risk_factor = "age_policyholder"}).
+\item \code{"frequency"} fits a Poisson GAM to aggregated claim counts with
+\code{log(exposure)} as offset.
+\item \code{"severity"} fits a Gamma GAM with log link to average claim amount. The
+response is total claim amount divided by claim count and claim count is
+used as model weight.
+\item \code{"pure_premium"} fits a Gamma GAM with log link to exposure-weighted risk
+premium.
 }
 
-This makes the function easier to use in programmatic workflows.
+Observations are first aggregated by the risk-factor value after optional
+rounding. Predictions and pointwise confidence intervals are then evaluated
+over the observed range.
+}
 
-\code{riskfactor_gam()} and \code{fit_gam()} are still available for backward
-compatibility but will emit deprecation warnings.
+\subsection{Actuarial interpretation}{
+
+The fitted curve describes the marginal pattern in the selected portfolio
+data. It can reveal non-linearity, broad turning points and areas with sparse
+support, but it is not by itself a final tariff structure. Correlation with
+other risk factors, exposure concentration, claim volume, tail observations
+and stability across periods should be considered before using the pattern
+in a multivariate GLM.
+
+\code{\link[=autoplot.riskfactor_gam]{autoplot.riskfactor_gam()}} can be used to inspect the curve and observed
+experience. \code{\link[=derive_tariff_segments]{derive_tariff_segments()}} can subsequently translate the smooth
+pattern into candidate intervals. Alternatively, \code{\link[=add_smoothing]{add_smoothing()}} supports
+smoothing within the structured refinement workflow.
+}
+
+\subsection{Column interface and compatibility}{
+
+Column names are supplied as character strings. Deprecated \code{\link[=fit_gam]{fit_gam()}} and
+\code{\link[=riskfactor_gam]{riskfactor_gam()}} interfaces remain available for compatibility.
 }
 }
 \examples{
-## --- Recommended new usage (SE) ---
-# Column names must be passed as strings
-risk_factor_gam(MTPL,
-                risk_factor = "age_policyholder",
-                claim_count = "nclaims",
-                exposure = "exposure")
+age_frequency <- risk_factor_gam(
+  MTPL,
+  risk_factor = "age_policyholder",
+  claim_count = "nclaims",
+  exposure = "exposure",
+  model = "frequency"
+)
 
-## --- Deprecated usage (NSE) ---
-# This still works but will show a warning
-fit_gam(MTPL,
-        nclaims = nclaims,
-        x = age_policyholder,
-        exposure = exposure)
+autoplot(age_frequency, show_observations = TRUE)
 
 }
 \references{
@@ -120,6 +134,10 @@ tariff classes. Scandinavian Actuarial Journal, 2018:8, 681–705.
 Wood, S.N. (2011). Fast stable restricted maximum likelihood and
 marginal likelihood estimation of semiparametric generalized linear models.
 Journal of the Royal Statistical Society (B) 73(1):3–36.
+}
+\seealso{
+\code{\link[=autoplot.riskfactor_gam]{autoplot.riskfactor_gam()}}, \code{\link[=derive_tariff_segments]{derive_tariff_segments()}},
+\code{\link[=add_smoothing]{add_smoothing()}}
 }
 \author{
 Martin Haringa

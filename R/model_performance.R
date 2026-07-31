@@ -1,18 +1,30 @@
-#' Root Mean Squared Error (RMSE)
+#' Calculate response-scale prediction error
 #'
 #' @description
-#' Computes the root mean squared error (RMSE) for a fitted model, defined as the
-#' square root of the mean of squared differences between predictions and observed values.
+#' Calculate the root mean squared error (RMSE) between observed outcomes and
+#' response-scale predictions from a fitted model. RMSE summarises the typical
+#' absolute prediction error in the same unit as the model response.
 #'
-#' @param x A fitted model object (e.g. of class `"glm"`).
-#' @param data A data frame containing the variables used in the model. Required
-#'   if not already stored in `object`.
+#' @param x A fitted model object, for example a `"glm"`.
+#' @param data Optional data frame on which the observed response and predictions
+#'   are evaluated. If `NULL`, the data stored with the fitted model are used.
 #'
 #' @details
-#' The RMSE indicates the absolute fit of the model to the data.
-#' It can be interpreted as the standard deviation of the unexplained variance,
-#' and is expressed in the same units as the response variable.
-#' Lower values indicate better model fit.
+#' RMSE is defined as
+#'
+#' \deqn{\sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i-\hat{y}_i)^2}.}
+#'
+#' In pricing work, RMSE can be used to compare alternative specifications for
+#' the same response, portfolio and exposure treatment. Lower values indicate
+#' smaller response-scale errors. Because errors are squared, individual large
+#' deviations receive relatively high weight. This can be relevant for severity
+#' models, but it also makes RMSE sensitive to large claims.
+#'
+#' RMSE values should not be compared across responses with different units or
+#' scales. A value calculated on the estimation data is an in-sample diagnostic,
+#' not an estimate of future predictive performance. Use resampling or separate
+#' validation data when out-of-sample performance is required, and interpret
+#' RMSE together with calibration, residual and distributional diagnostics.
 #'
 #' @return A numeric value: the root mean squared error.
 #'
@@ -25,6 +37,9 @@
 #'          family = poisson(), data = MTPL2)
 #' rmse(x, MTPL2)
 #'
+#' @seealso [model_performance()], [bootstrap_performance()],
+#'   [check_residuals()]
+#'
 #' @export
 rmse <- function(x, data = NULL) {
   res_var <- stats::formula(x)[[2L]]
@@ -34,22 +49,38 @@ rmse <- function(x, data = NULL) {
 }
 
 
-#' Performance of fitted GLMs
+#' Compare fitted GLMs using common performance measures
 #'
 #' @description
-#' Computes model performance indices for one or more fitted GLMs.
+#' Compare one or more fitted GLMs using AIC, BIC and response-scale RMSE.
+#' The resulting table provides a concise first comparison of alternative
+#' pricing-model specifications fitted to the same portfolio outcome.
 #'
 #' @param ... One or more objects of class `"glm"`.
 #'
 #' @details
-#' The following indices are reported:
+#' The following measures are reported:
 #' \describe{
-#'   \item{AIC}{Akaike's Information Criterion.}
-#'   \item{BIC}{Bayesian Information Criterion.}
-#'   \item{RMSE}{Root mean squared error, computed from observed and predicted values.}
+#'   \item{AIC}{Akaike information criterion, balancing likelihood fit and
+#'   model complexity.}
+#'   \item{BIC}{Bayesian information criterion, applying a stronger
+#'   sample-size-dependent complexity penalty.}
+#'   \item{RMSE}{Root mean squared error between observed and response-scale
+#'   predicted values.}
 #' }
 #'
-#' This function is adapted from `performance::model_performance()`.
+#' Lower values are preferred within each measure, but the measures answer
+#' different questions. AIC and BIC depend on the model likelihood, whereas
+#' RMSE measures error on the response scale. Comparisons are therefore most
+#' meaningful when models use the same response, estimation records, weights
+#' and offsets.
+#'
+#' The table does not select a pricing model automatically. In actuarial model
+#' assessment, statistical fit should be considered together with portfolio
+#' calibration, residual behaviour, coefficient stability, exposure by level
+#' and the practical interpretability of the resulting tariff structure.
+#'
+#' The implementation is adapted from `performance::model_performance()`.
 #'
 #' @return A data frame of class `"model_performance"`, with columns:
 #' \describe{
@@ -69,6 +100,9 @@ rmse <- function(x, data = NULL) {
 #' m2 <- glm(nclaims ~ area + premium, offset = log(exposure), family = poisson(),
 #'           data = MTPL2)
 #' model_performance(m1, m2)
+#'
+#' @seealso [rmse()], [bootstrap_performance()], [check_overdispersion()],
+#'   [check_residuals()]
 #'
 #' @export
 model_performance <- function(...) {

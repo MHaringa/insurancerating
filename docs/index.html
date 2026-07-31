@@ -37,7 +37,7 @@
 
     <a class="navbar-brand me-2" href="index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,8 +67,8 @@
 <!-- badges: start -->
 
 <!-- badges: end -->
-<p><code>insurancerating</code> provides actuarial tools and building blocks for analysing, modelling, refining, and validating insurance rating models in R.</p>
-<p>The package is designed around common GLM-based pricing tasks and focuses on the translation of statistical model output into interpretable and controllable tariff structures.</p>
+<p><code>insurancerating</code> provides functions for common actuarial pricing tasks in R, including portfolio analysis, GLM estimation, coefficient refinement and model diagnostics.</p>
+<p>The package is organised around GLM-based pricing work and the translation of statistical model output into tariff structures that can be reviewed, documented and implemented. The functions can be used independently or combined into a workflow appropriate for the portfolio and pricing question.</p>
 <div class="section level2">
 <h2 id="scope">Scope<a class="anchor" aria-label="anchor" href="#scope"></a>
 </h2>
@@ -80,7 +80,7 @@
 <li>construction and interpretation of tariff structures</li>
 <li>evaluation of model performance and stability</li>
 </ul>
-<p>The focus is on reproducibility, interpretability, and consistency across models.</p>
+<p>The appropriate combination of model choice, segmentation, refinement and validation depends on the product, data, portfolio composition and intended use of the tariff.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -149,7 +149,7 @@
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="do">## 5     zip_adj           3        1.100000     7588</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="combining-building-blocks">Combining Building Blocks<a class="anchor" aria-label="anchor" href="#combining-building-blocks"></a>
+<h2 id="combining-building-blocks">Combining building blocks<a class="anchor" aria-label="anchor" href="#combining-building-blocks"></a>
 </h2>
 <p>A possible sequence of steps is:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
@@ -171,7 +171,7 @@
 <li>risk premium</li>
 <li>loss ratio</li>
 </ul>
-<p>These are used to assess the behaviour and credibility of risk factors.</p>
+<p>These summaries describe observed portfolio experience. They help identify volume, heterogeneity and potentially unstable levels, but they do not adjust for correlations with other risk factors and are not fitted tariff relativities.</p>
 </div>
 <div class="section level3">
 <h3 id="rating-models">Rating models<a class="anchor" aria-label="anchor" href="#rating-models"></a>
@@ -180,9 +180,9 @@
 <ul>
 <li>Poisson for frequency</li>
 <li>Gamma for severity</li>
-<li>Gamma (log-link) for premium</li>
+<li>Gamma with a log link for severity or risk premium</li>
 </ul>
-<p><code><a href="reference/rating_table.html">rating_table()</a></code> expresses model output in terms of original factor levels.</p>
+<p><code><a href="reference/rating_table.html">rating_table()</a></code> expresses fitted coefficients in terms of the original factor levels. When coefficients are exponentiated, they are shown as relativities.</p>
 </div>
 <div class="section level3">
 <h3 id="refinement">Refinement<a class="anchor" aria-label="anchor" href="#refinement"></a>
@@ -194,7 +194,7 @@
 <span>  <span class="fu"><a href="reference/add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/add_relativities.html">add_relativities</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>This step is used to impose structure or incorporate expert judgement.</p>
+<p>Refinement records smoothing, restrictions or sublevel relativities explicitly before the model is refitted. These adjustments should be supported by the available experience, tariff interpretation or documented expert judgement.</p>
 </div>
 <div class="section level3">
 <h3 id="model-structure">Model structure<a class="anchor" aria-label="anchor" href="#model-structure"></a>
@@ -202,7 +202,7 @@
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/extract_model_data.html">extract_model_data</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/rating_grid.html">rating_grid</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></code></pre></div>
-<p>These functions expose the underlying model structure and allow aggregation at model-point level.</p>
+<p>These functions recover the data represented by a fitted model and construct observed model-point combinations. They are useful when predictions and tariff reviews must remain aligned with the estimation portfolio.</p>
 </div>
 </div>
 <div class="section level2">
@@ -211,13 +211,13 @@
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/model_performance.html">model_performance</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">data</span><span class="op">)</span></span></code></pre></div>
-<p>Used to assess predictive accuracy and stability.</p>
+<p>These functions compare response-scale error and information criteria and assess sensitivity under repeated sampling. They provide complementary diagnostics rather than an automatic model-selection rule.</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="notes">Notes<a class="anchor" aria-label="anchor" href="#notes"></a>
 </h2>
-<p>This package is intended for general actuarial pricing work. It does not contain proprietary models, data, or business logic.</p>
+<p>The examples represent general actuarial pricing applications. Their modelling choices and thresholds are illustrative and should be assessed against the portfolio, data quality and governance requirements of the intended use.</p>
 </div>
 <div class="section level2">
 <h2 id="learn-more">Learn more<a class="anchor" aria-label="anchor" href="#learn-more"></a>

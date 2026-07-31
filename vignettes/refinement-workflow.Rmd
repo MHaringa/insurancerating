@@ -44,13 +44,16 @@ For this reason, actuarial pricing work often distinguishes between:
 4.	inspect these steps before refit
 5.	call `refit()` to obtain the final fitted model
 
-This separation can make tariff adjustments easier to understand, reproduce, and audit.
+This separation records which adjustments are proposed before they are included
+in the fitted model. It also distinguishes estimated GLM effects from explicit
+tariff assumptions.
 
 
 ## When refinement can help
 
-Refinement can help when the estimated model output is useful, but the fitted
-coefficient pattern needs additional structure before it is used in a tariff.
+Refinement can be considered when the estimated model captures the main risk
+structure, but selected coefficient patterns require additional structure
+before tariff implementation.
 
 Typical use cases include:
 
@@ -61,7 +64,7 @@ Typical use cases include:
 -	simplifying the final tariff for practical implementation
 
 In many workflows, refinement is applied to the model that represents the final
-pricing signal, such as a premium or pure-premium model. In other cases, it may
+pricing signal, such as a premium or risk-premium model. In other cases, it may
 also be useful for selected frequency or severity effects. The relevant question
 is whether the adjusted coefficient pattern is intended to support the tariff
 structure that will be reviewed or implemented.
@@ -178,8 +181,9 @@ For example, a coefficient pattern such as:
 -	age 34–38 higher
 -	age 38–42 lower again
 
-may be statistically possible, but difficult to explain or maintain. Smoothing
-adds a more stable structure to the rating factor.
+may be compatible with the observed sample, but unstable across periods or
+difficult to support actuarially. Smoothing replaces local variation with an
+explicitly regularised coefficient pattern.
 
 
 ### Adding smoothing
@@ -201,9 +205,18 @@ The key arguments are:
 -	`model_variable`: the grouped variable present in the GLM
 -	`source_variable`: the original continuous portfolio variable
 -	`breaks`: the preferred commercial cut points
--	`smoothing`: the smoothing specification
+-	`smoothing`: the smoothing specification; `"spline"` is the general-purpose
+  default
 -	`weights`: optional weighting, typically exposure
-	
+
+Use `"mpi"` or `"mpd"` when the tariff effect is required to increase or
+decrease monotonically. Convex, concave and combined shape constraints are
+available for cases where that additional assumption can be supported
+actuarially. `"poly"` fits a global polynomial and uses `degree`; `"gam"` fits
+a thin-plate smooth that can be used as an unconstrained comparison. For spline
+methods, `k` limits the available curve flexibility but is not the fitted
+effective number of degrees of freedom.
+
 ### Inspecting smoothing before refit
 
 ```{r}
@@ -230,12 +243,17 @@ into the final fitted model.
 
 Typical smoothing choices are:
 
--	`"spline"`: polynomial-style smoothing
--	`"gam"`: flexible smooth curve
+-	`"spline"`: unconstrained penalised cubic regression spline; the
+  general-purpose default
+-	`"poly"`: global polynomial controlled by `degree`
+-	`"gam"`: thin-plate regression spline fitted with `mgcv`, mainly useful as
+  an unconstrained comparison
 -	`"mpi"`: monotone increasing
 -	`"mpd"`: monotone decreasing
 
-The appropriate choice depends on the pricing context.
+Convex, concave and combined monotonicity-curvature constraints are also
+available as advanced options. They should be used only when the assumed shape
+has an actuarial or economic basis.
 
 For example:
 
@@ -324,6 +342,11 @@ relativities_activity <- relativities(
     "construction",
     c("residential_construction", "commercial_construction"),
     c(1.00, 1.15)
+  ),
+  split_level(
+    "services",
+    c("professional_services", "personal_services"),
+    c(0.95, 1.05)
   )
 )
 
@@ -342,6 +365,9 @@ If `normalize = TRUE`, the relativities are scaled so that their
 exposure-weighted average remains equal to 1 within the original level.
 
 This preserves the original model signal while introducing finer structure.
+When `model_variable` has already been restricted with `add_restriction()`, the
+restricted coefficients are used automatically as the basis for these
+relativities. Refinement order is therefore part of the specification.
 
 
 ## Refit
@@ -492,13 +518,11 @@ The refinement interface helps separate:
 -	tariff adjustments
 -	final fitted output
 
-This makes it easier to document and inspect adjustments before the model is
-refitted. In practice, this can support tariff structures that are:
-
--	statistically grounded
--	interpretable
--	commercially usable
--	easier to implement
+The refinement specification records which parts of the final coefficient
+structure originate from the fitted model and which parts result from
+smoothing, restrictions or expert-based sublevel relativities. These choices
+should be assessed using exposure, claim volume, stability and the intended
+tariff application.
 
 
 ## Next steps

@@ -11,13 +11,15 @@ Status](https://www.r-pkg.org/badges/version/insurancerating)](https://cran.r-pr
 
 <!-- badges: end -->
 
-`insurancerating` provides actuarial tools and building blocks for
-analysing, modelling, refining, and validating insurance rating models
-in R.
+`insurancerating` provides functions for common actuarial pricing tasks
+in R, including portfolio analysis, GLM estimation, coefficient
+refinement and model diagnostics.
 
-The package is designed around common GLM-based pricing tasks and
-focuses on the translation of statistical model output into
-interpretable and controllable tariff structures.
+The package is organised around GLM-based pricing work and the
+translation of statistical model output into tariff structures that can
+be reviewed, documented and implemented. The functions can be used
+independently or combined into a workflow appropriate for the portfolio
+and pricing question.
 
 ## Scope
 
@@ -30,8 +32,9 @@ work:
 - construction and interpretation of tariff structures
 - evaluation of model performance and stability
 
-The focus is on reproducibility, interpretability, and consistency
-across models.
+The appropriate combination of model choice, segmentation, refinement
+and validation depends on the product, data, portfolio composition and
+intended use of the tariff.
 
 ## Installation
 
@@ -110,7 +113,7 @@ rating_table(mod_refined)
     ## 4     zip_adj           2        1.000000     7783
     ## 5     zip_adj           3        1.100000     7588
 
-## Combining Building Blocks
+## Combining building blocks
 
 A possible sequence of steps is:
 
@@ -132,7 +135,10 @@ rating_table()         # interpret coefficients
 - risk premium
 - loss ratio
 
-These are used to assess the behaviour and credibility of risk factors.
+These summaries describe observed portfolio experience. They help
+identify volume, heterogeneity and potentially unstable levels, but they
+do not adjust for correlations with other risk factors and are not
+fitted tariff relativities.
 
 ### Rating models
 
@@ -140,10 +146,11 @@ Models are estimated using widely used GLM specifications:
 
 - Poisson for frequency
 - Gamma for severity
-- Gamma (log-link) for premium
+- Gamma with a log link for severity or risk premium
 
-`rating_table()` expresses model output in terms of original factor
-levels.
+`rating_table()` expresses fitted coefficients in terms of the original
+factor levels. When coefficients are exponentiated, they are shown as
+relativities.
 
 ### Refinement
 
@@ -157,7 +164,10 @@ prepare_refinement(model) |>
   refit()
 ```
 
-This step is used to impose structure or incorporate expert judgement.
+Refinement records smoothing, restrictions or sublevel relativities
+explicitly before the model is refitted. These adjustments should be
+supported by the available experience, tariff interpretation or
+documented expert judgement.
 
 ### Model structure
 
@@ -166,8 +176,10 @@ extract_model_data(model)
 rating_grid(model)
 ```
 
-These functions expose the underlying model structure and allow
-aggregation at model-point level.
+These functions recover the data represented by a fitted model and
+construct observed model-point combinations. They are useful when
+predictions and tariff reviews must remain aligned with the estimation
+portfolio.
 
 ## Validation
 
@@ -176,14 +188,18 @@ model_performance(model)
 bootstrap_performance(model, data)
 ```
 
-Used to assess predictive accuracy and stability.
+These functions compare response-scale error and information criteria
+and assess sensitivity under repeated sampling. They provide
+complementary diagnostics rather than an automatic model-selection rule.
 
 ------------------------------------------------------------------------
 
 ## Notes
 
-This package is intended for general actuarial pricing work. It does not
-contain proprietary models, data, or business logic.
+The examples represent general actuarial pricing applications. Their
+modelling choices and thresholds are illustrative and should be assessed
+against the portfolio, data quality and governance requirements of the
+intended use.
 
 ## Learn more
 

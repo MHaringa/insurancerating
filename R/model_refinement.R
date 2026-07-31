@@ -294,7 +294,8 @@
 }
 
 .allowed_smoothing_methods <- c(
-  "spline", "mpi", "mpd", "gam", "cx", "cv", "micx", "micv", "mdcx", "mdcv"
+  "spline", "poly", "mpi", "mpd", "gam", "cx", "cv", "micx", "micv",
+  "mdcx", "mdcv"
 )
 
 .assert_smoothing_interval_levels <- function(model, model_variable) {
@@ -505,6 +506,77 @@
   ]
 }
 
+.resolve_restriction_context <- function(model, variable, before_step = NULL) {
+  if (is.null(before_step)) {
+    before_step <- length(model$steps) + 1L
+  }
+
+  prior_indices <- seq_along(model$steps)
+  prior_indices <- prior_indices[prior_indices < before_step]
+  relativity_indices <- prior_indices[vapply(
+    model$steps[prior_indices],
+    function(step) {
+      identical(step$type, "relativities") &&
+        identical(
+          step$split_variable %||% step$risk_factor_split,
+          variable
+        )
+    },
+    logical(1)
+  )]
+
+  if (length(relativity_indices) == 0L) {
+    return(NULL)
+  }
+
+  relativity_index <- utils::tail(relativity_indices, 1L)
+  relativity_step <- model$steps[[relativity_index]]
+  source_model_variable <- relativity_step$source_model_variable %||%
+    relativity_step$model_variable %||%
+    relativity_step$risk_factor
+  derived_model_variable <- relativity_step$derived_model_variable %||%
+    paste0(source_model_variable, "_rel")
+
+  state <- .make_exec_state(model)
+  if (before_step > 1L) {
+    for (i in seq_len(before_step - 1L)) {
+      state <- .apply_refinement_step(state, model$steps[[i]])
+    }
+  }
+
+  coefficients <- state$rf_restricted_df
+  if (is.null(coefficients)) {
+    return(NULL)
+  }
+  coefficients <- coefficients[
+    coefficients$risk_factor == variable,
+    c("level", "yhat"),
+    drop = FALSE
+  ]
+  names(coefficients)[2] <- "estimate"
+
+  if (nrow(coefficients) == 0L) {
+    return(NULL)
+  }
+  if (anyDuplicated(coefficients$level)) {
+    stop(
+      "The current refinement contains multiple relativities for level(s) of `",
+      variable, "`. Resolve the preceding relativity specification before ",
+      "adding a restriction.",
+      call. = FALSE
+    )
+  }
+
+  list(
+    coefficients = coefficients,
+    model_term = derived_model_variable,
+    derived_from_step = relativity_step$id,
+    derived_source_model_variable = source_model_variable,
+    derived_split_levels = names(relativity_step$relativities),
+    derived_from_relativities = TRUE
+  )
+}
+
 .refinement_base_from_glm <- function(model, data = NULL) {
   if (!inherits(model, "glm")) {
     stop("'model' must be of class glm.", call. = FALSE)
@@ -660,15 +732,26 @@ as_refinement.restricted <- function(x, ...) {
 #' Prepare a model refinement workflow
 #'
 #' @description
-#' Start a refinement workflow for a fitted GLM. Refinement steps such as
-#' smoothing, restrictions and expert-based relativities can be added
-#' sequentially and are only applied once [refit()] is called.
+#' Create an editable refinement specification from a fitted pricing GLM.
+#' Smoothing, coefficient restrictions and sublevel relativities can then be
+#' added in a defined order. These steps do not alter the fitted GLM until
+#' [refit()] is called.
 #'
 #' @details
 #' `prepare_refinement()` creates a persistent refinement specification. This
 #' object contains the original GLM, the corresponding model data and the
-#' ordered smoothing, restriction and relativity steps. It is the object that
-#' should be retained and edited during actuarial review.
+#' ordered smoothing, restriction and relativity steps. Retain this object
+#' during actuarial review so that assumptions can be inspected, revised and
+#' applied again in the same order.
+#'
+#' ## Actuarial interpretation
+#'
+#' Preparing a refinement does not change coefficients, fitted values or the
+#' tariff structure. It separates the original statistical model from
+#' subsequent actuarial adjustments. Each adjustment remains an explicit step
+#' rather than being embedded directly in transformed data or overwritten model
+#' coefficients. This supports comparison between the unrestricted model and
+#' alternative refinement specifications.
 #'
 #' [refit()] applies the stored specification and returns a fitted GLM for model
 #' diagnostics, prediction and tariff reporting. The returned GLM is a result,
@@ -677,7 +760,7 @@ as_refinement.restricted <- function(x, ...) {
 #' [add_relativities()] therefore accept a `rating_refinement` object and do not
 #' accept an ordinary or refitted GLM directly.
 #'
-#' A practical iterative workflow keeps both objects:
+#' A practical iterative workflow therefore keeps both objects:
 #'
 #' \preformatted{
 #' refinement <- prepare_refinement(model) |>
@@ -703,11 +786,44 @@ as_refinement.restricted <- function(x, ...) {
 #'   the original unfiltered data. If `NULL`, the data are retrieved from the
 #'   model object.
 #'
-#' @return Object of class `rating_refinement`. Retain this object when
-#'   refinement steps may need to be reviewed or edited after fitting.
+#' @author Martin Haringa
+#'
+#' @return A `rating_refinement` object containing the original GLM, retained
+#'   model data and ordered refinement specification. No GLM is fitted again
+#'   until [refit()] is called.
 #'
 #' @seealso [add_smoothing()], [edit_smoothing()], [add_restriction()],
 #'   [add_relativities()], [refit()]
+#'
+#' @examples
+#' portfolio <- data.frame(
+#'   claims = c(1, 2, 1, 3, 2, 4),
+#'   exposure = rep(1, 6),
+#'   risk_class = factor(c("A", "B", "A", "B", "A", "B"))
+#' )
+#'
+#' model <- glm(
+#'   claims ~ risk_class + offset(log(exposure)),
+#'   family = poisson(),
+#'   data = portfolio
+#' )
+#'
+#' refinement <- prepare_refinement(model, data = portfolio) |>
+#'   add_restriction(data.frame(
+#'     risk_class = "B",
+#'     risk_class_restricted = 1.15
+#'   ))
+#'
+#' fitted_model <- refit(refinement)
+#'
+#' # Retain and revise the specification rather than editing fitted_model.
+#' refinement <- refinement |>
+#'   add_restriction(data.frame(
+#'     risk_class = "B",
+#'     risk_class_restricted = 1.10
+#'   ))
+#'
+#' updated_model <- refit(refinement)
 #' @export
 prepare_refinement <- function(model, data = NULL) {
   as_refinement(model, data = data)
@@ -741,7 +857,8 @@ summary.rating_refinement <- function(object, ...) {
       s[intersect(names(s), c(
         "id", "type", "variable", "x_cut", "x_org", "model_variable",
         "source_variable", "source_model_variable",
-        "effective_model_variable", "split_variable", "smoothing", "risk_factor",
+        "effective_model_variable", "derived_model_variable",
+        "split_variable", "smoothing", "risk_factor",
         "risk_factor_split", "normalize", "allow_new_levels",
         "allow_new_risk_factors", "new_risk_factor"
       ))]
@@ -776,28 +893,32 @@ print.summary.rating_refinement <- function(x, ...) {
 #' Add coefficient restrictions to a refinement workflow
 #'
 #' @description
-#' Fixes selected model levels to user-supplied relativities in a refinement
-#' workflow. This is useful when the fitted GLM coefficients need to be adjusted
-#' before the final tariff is refitted, for example to apply expert judgement,
-#' enforce a business rule, remove an implausible local effect, or make a tariff
-#' structure easier to explain.
+#' Fix selected risk-factor levels at user-supplied relativities before the
+#' refined pricing GLM is fitted. This can be appropriate when sampling
+#' variation produces an implausible local effect, when an actuarial assumption
+#' is supported by additional information, or when a documented tariff
+#' constraint must be applied consistently.
 #'
 #' @details
 #' `add_restriction()` stores a restriction step on a `rating_refinement`
-#' object. It does not refit the GLM immediately. The restrictions are applied
-#' when [refit()] is called.
+#' object. It does not alter the fitted GLM immediately. The restriction is
+#' evaluated in the recorded step order and applied when [refit()] is called.
+#' Retain the refinement object when reviewing or revising the specification.
 #'
-#' The `restrictions` data frame identifies the model variable to restrict by
-#' its first column. The second column contains the relativities that should be
-#' used for those levels in the refined model. New code should use this function
-#' after [prepare_refinement()]; the deprecated [restrict_coef()] wrapper is
-#' only kept for backwards compatibility.
+#' The `restrictions` data frame identifies the risk factor to restrict by its
+#' first column. This may be a variable from the original GLM or a tariff factor
+#' created by an earlier refinement step. The second column contains the
+#' relativities used for those levels in the refined model.
+#'
+#' ## Actuarial interpretation
 #'
 #' The restriction table may contain all levels of the model variable, or only
 #' the levels that need a manual adjustment. If only a subset is supplied, the
-#' missing levels are automatically filled with their current fitted GLM
-#' relativities. This makes it possible to fix one level explicitly while keeping
-#' the other levels at their already estimated values.
+#' missing levels are automatically filled with their current effective
+#' relativities at that point in the refinement workflow. These may be the
+#' original fitted GLM relativities or values produced by preceding refinement
+#' steps. This makes it possible to change one level explicitly while fixing all
+#' other levels at their current values.
 #'
 #' Levels that were not observed when the GLM was fitted can also be supplied.
 #' Such a level has no coefficient estimate from the model data. Its relativity
@@ -845,28 +966,57 @@ print.summary.rating_refinement <- function(x, ...) {
 #' [refit()]. A message reports levels whose previously supplied relativity is
 #' changed.
 #'
+#' ## Restricting a factor created by add_relativities()
+#'
+#' A `split_variable` introduced by an earlier [add_relativities()] step is
+#' already part of the ordered refinement specification. It is therefore not
+#' treated as a new external risk factor and does not require
+#' `allow_new_risk_factors = TRUE`. `add_restriction()` identifies the preceding
+#' relativity step from its stored metadata and replaces the corresponding
+#' derived tariff effect during [refit()].
+#'
+#' When only one level of such a split variable is supplied, that level receives
+#' the new relativity and every other level is fixed at the relativity produced
+#' by `add_relativities()`. Mathematically, the resulting restriction therefore
+#' covers all current levels. Only the explicitly supplied level changes. This
+#' is useful when actuarial review supports a local adjustment but the remaining
+#' expert split should not be re-estimated.
+#'
+#' Refinement order remains material. A restriction added after
+#' `add_relativities()` operates on the derived split relativities. A
+#' restriction added before `add_relativities()` instead changes the coefficient
+#' basis from which the split is derived.
+#'
 #' @param model Object of class `rating_refinement`, created with
 #'   [prepare_refinement()]. A fitted GLM, including a model returned by
 #'   [refit()], is not accepted directly; retain and modify the corresponding
 #'   refinement specification instead.
 #' @param restrictions Data frame with exactly two columns. The first column
-#'   must have the same name as the model variable to restrict and contains the
-#'   levels to adjust. The second column contains the replacement relativities.
-#'   Levels that are not supplied are filled with the currently fitted GLM
-#'   relativities.
+#'   must have the same name as the risk factor to restrict and contains the
+#'   levels to adjust. This can also be the `split_variable` from an earlier
+#'   [add_relativities()] step. The second column contains the replacement
+#'   relativities. Levels that are not supplied are fixed at their current
+#'   effective relativities.
 #' @param allow_new_levels Logical. If `TRUE` (default), `restrictions` may
 #'   contain levels that were not observed in the model data. Their supplied
 #'   relativities are treated as explicit tariff assumptions rather than model
 #'   estimates. If `FALSE`, an unknown level results in an error.
 #' @param allow_new_risk_factors Logical. If `FALSE` (default), the first column
-#'   of `restrictions` must identify a variable included in the fitted GLM. Set
-#'   this to `TRUE` to add a variable that is present in the refinement data but
-#'   absent from the model. All observed levels must then have supplied
-#'   relativities, which are treated as fixed tariff assumptions.
+#'   of `restrictions` must identify a variable included in the fitted GLM or a
+#'   tariff factor created by an earlier refinement step. Set this to `TRUE` to
+#'   add an external variable that is present in the refinement data but absent
+#'   from both the model and preceding refinement steps. All observed levels
+#'   must then have supplied relativities, which are treated as fixed tariff
+#'   assumptions.
 #'
 #' @author Martin Haringa
 #'
-#' @return Object of class `rating_refinement`.
+#' @return A `rating_refinement` object containing the stored restriction
+#'   specification. The pricing GLM is not fitted again until [refit()] is
+#'   called.
+#'
+#' @seealso [prepare_refinement()], [add_smoothing()], [add_relativities()],
+#'   [refit()], [rating_table()]
 #'
 #' @examples
 #' portfolio <- data.frame(
@@ -978,6 +1128,15 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
   } else {
     NULL
   }
+  restriction_context <- .resolve_restriction_context(
+    model,
+    variable,
+    before_step = if (length(restriction_steps) == 1L) {
+      restriction_steps
+    } else {
+      NULL
+    }
+  )
 
   if (!is.null(existing_step)) {
     existing_value_col <- names(existing_step$restrictions)[2]
@@ -1056,7 +1215,8 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
     model,
     restrictions,
     allow_new_levels = allow_new_levels,
-    allow_new_risk_factors = allow_new_risk_factors
+    allow_new_risk_factors = allow_new_risk_factors,
+    current_coefficients = restriction_context$coefficients %||% NULL
   )
 
   if (length(updated_restrictions) > 0) {
@@ -1087,7 +1247,23 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
     new_levels = completed$new_levels,
     allow_new_levels = allow_new_levels,
     new_risk_factor = completed$new_risk_factor,
-    allow_new_risk_factors = allow_new_risk_factors
+    allow_new_risk_factors = allow_new_risk_factors,
+    model_term = existing_step$model_term %||%
+      restriction_context$model_term %||%
+      variable,
+    replace_refinement_offset =
+      existing_step$replace_refinement_offset %||%
+      isTRUE(restriction_context$derived_from_relativities),
+    derived_from_step = existing_step$derived_from_step %||%
+      restriction_context$derived_from_step %||%
+      NULL,
+    derived_source_model_variable =
+      existing_step$derived_source_model_variable %||%
+      restriction_context$derived_source_model_variable %||%
+      NULL,
+    derived_split_levels = existing_step$derived_split_levels %||%
+      restriction_context$derived_split_levels %||%
+      NULL
   )
 
   if (is.null(existing_step)) {
@@ -1101,7 +1277,8 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
 
 .complete_restrictions_from_model <- function(model, restrictions,
                                               allow_new_levels = TRUE,
-                                              allow_new_risk_factors = FALSE) {
+                                              allow_new_risk_factors = FALSE,
+                                              current_coefficients = NULL) {
   variable <- names(restrictions)[1]
   value_col <- names(restrictions)[2]
 
@@ -1120,8 +1297,16 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
          call. = FALSE)
   }
 
-  rf <- model$base$rating_factors
-  rf_var <- rf[rf$risk_factor == variable, c("level", "estimate"), drop = FALSE]
+  if (is.null(current_coefficients)) {
+    rf <- model$base$rating_factors
+    rf_var <- rf[
+      rf$risk_factor == variable,
+      c("level", "estimate"),
+      drop = FALSE
+    ]
+  } else {
+    rf_var <- current_coefficients[, c("level", "estimate"), drop = FALSE]
+  }
 
   if (nrow(rf_var) == 0) {
     if (!isTRUE(allow_new_risk_factors)) {
@@ -1284,18 +1469,20 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 }
 
 
-#' Smooth grouped tariff relativities
+#' Smooth grouped tariff relativities in a refinement workflow
 #'
 #' @description
-#' Replace the estimated relativities of a grouped numeric model variable by a
-#' smooth tariff curve. In actuarial pricing this can be useful for ordered risk
-#' factors such as age, vehicle age, insured value or bonus-malus years, where
-#' independently estimated factor levels may show sampling variation that is
-#' not considered suitable for the final tariff structure.
+#' Replace independently estimated relativities of an ordered, grouped model
+#' variable with a smooth tariff curve. This can reduce sampling variation
+#' between adjacent levels of risk factors such as age, vehicle age, insured
+#' value or bonus-malus years while retaining the broad effect estimated by the
+#' GLM.
 #'
 #' @details
 #' `add_smoothing()` stores a smoothing specification on a
-#' `rating_refinement` object. It does not immediately refit the pricing GLM.
+#' `rating_refinement` object. It does not alter the fitted GLM immediately.
+#' The smoothing is evaluated in the recorded step order and applied when
+#' [refit()] is called.
 #' The original GLM contains `model_variable`, usually a factor created by
 #' grouping a continuous risk factor. `source_variable` identifies the original
 #' numeric variable represented by those groups.
@@ -1309,9 +1496,16 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'
 #' The fitted curve is evaluated using `breaks` and converted back to a grouped
 #' tariff variable. The original model term is replaced by that smoothed tariff
-#' variable when [refit()] is called. The usual sequence is therefore
-#' [prepare_refinement()], `add_smoothing()`, optionally [edit_smoothing()], and
-#' finally [refit()].
+#' variable during refitting.
+#'
+#' ## Actuarial interpretation
+#'
+#' Smoothing introduces a structural assumption: adjacent values of the source
+#' variable are expected to have related tariff effects. The selected method,
+#' basis dimension and breaks should therefore be assessed against exposure,
+#' observed experience, coefficient uncertainty and stability over time. A
+#' smooth curve should not be interpreted as evidence that the underlying risk
+#' relationship is itself known without uncertainty.
 #'
 #' ## Smoothing methods
 #'
@@ -1319,48 +1513,62 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #' tariff effect:
 #'
 #' \describe{
-#'   \item{`"spline"`}{Fits an unconstrained global polynomial through the
-#'   grouped GLM relativities. `degree` determines its order. A low degree is
-#'   generally easier to interpret and less sensitive near the boundaries;
-#'   higher degrees can follow more local variation but may introduce
-#'   oscillation.}
-#'   \item{`"gam"`}{Fits an unconstrained penalized smooth with [mgcv::gam()].
-#'   This allows the tariff curve to adapt to the observed pattern while the
-#'   smoothing penalty limits unnecessary variation.}
+#'   \item{`"spline"`}{The general-purpose default. Fits an unconstrained
+#'   penalized cubic regression spline. It is suitable when the tariff effect
+#'   should be smooth but no monotonicity or curvature restriction is
+#'   justified.}
+#'   \item{`"poly"`}{Fits a global polynomial through the grouped GLM
+#'   relativities. `degree` determines its order. A low degree gives a compact
+#'   parametric trend; higher degrees can follow more local variation but may
+#'   oscillate, particularly near the boundaries.}
 #'   \item{`"mpi"` and `"mpd"`}{Fit monotone increasing and monotone decreasing
-#'   P-splines, respectively.}
-#'   \item{`"cx"` and `"cv"`}{Fit convex and concave P-splines, respectively.}
+#'   smooths. These are often useful when actuarial reasoning implies that the
+#'   tariff effect should move in only one direction.}
+#'   \item{`"cx"` and `"cv"`}{Fit convex and concave smooths, respectively.}
 #'   \item{`"micx"` and `"micv"`}{Fit monotone increasing curves that are,
 #'   respectively, convex and concave.}
 #'   \item{`"mdcx"` and `"mdcv"`}{Fit monotone decreasing curves that are,
 #'   respectively, convex and concave.}
+#'   \item{`"gam"`}{Fits an unconstrained thin-plate regression spline with
+#'   [mgcv::gam()]. It is mainly intended as a flexible reference when comparing
+#'   the general spline and shape-constrained specifications. It does not impose
+#'   the actuarial shape assumptions represented by the constrained methods.}
 #' }
 #'
 #' The shape-constrained methods are fitted with [scam::scam()]. A constraint
 #' should reflect an actuarial or pricing assumption that is defensible for the
 #' risk factor; it should not be selected solely because it produces a smoother
-#' visual result.
+#' visual result. The combined monotonicity and curvature methods are advanced
+#' specifications and are most appropriate when both assumptions can be
+#' supported independently.
 #'
 #' ## Basis dimension and polynomial degree
 #'
-#' For `"gam"` and the shape-constrained methods, `k` specifies the basis
-#' dimension. It controls the maximum flexibility available to the smooth, but
-#' it is not the final effective degrees of freedom of the fitted curve. For a
-#' penalized GAM, the estimated smoothing penalty can reduce the effective
-#' degrees of freedom below this maximum.
+#' For `"spline"`, `"gam"` and the shape-constrained methods, `k` specifies the
+#' basis dimension. It controls the maximum flexibility available to the smooth,
+#' but it is not the final effective degrees of freedom of the fitted curve.
+#' The estimated smoothing penalty can reduce the effective degrees of freedom
+#' below this maximum.
 #'
 #' A smaller `k` restricts the curve to broad movements. A larger `k` permits
 #' more local variation, but requires enough distinct grouped covariate values
 #' and may be unstable when only a few tariff levels are available. If `k` is
-#' `NULL`, an effective default basis dimension of 10 is used. The function
-#' checks this dimension against the grouped values before fitting and reports
-#' the observed number of unique values when the requested complexity is not
-#' feasible.
+#' `NULL`, the function uses the smaller of 10 and the number of unique grouped
+#' model points. Spline, GAM and shape-constrained smoothing require at least
+#' three unique grouped values. The function checks this dimension before
+#' fitting and reports the observed number of unique values when the requested
+#' complexity is not feasible.
 #'
-#' For `"spline"`, `degree` has the corresponding complexity role. A polynomial
+#' For `"poly"`, `degree` has the corresponding complexity role. A polynomial
 #' of degree \eqn{d} requires at least \eqn{d + 1} unique grouped values. When
 #' `degree` is omitted, the existing behaviour uses the highest degree supported
-#' by the grouped model points.
+#' by the grouped model points. In practice, an explicit low degree is generally
+#' preferable when a stable global trend is intended.
+#'
+#' `degree` is only accepted for `smoothing = "poly"`. Conversely, `k` is only
+#' accepted for `"spline"`, `"gam"` and the shape-constrained methods. This
+#' separation prevents a complexity argument from being supplied but silently
+#' ignored.
 #'
 #' The deprecated [smooth_coef()] wrapper remains available for backwards
 #' compatibility.
@@ -1377,22 +1585,24 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'   underlying `model_variable`. Its name is also used for the resulting
 #'   smoothed tariff variable.
 #' @param degree Optional single whole number. Polynomial degree, used by
-#'   `smoothing = "spline"`. The degree must be feasible for the number of unique
+#'   `smoothing = "poly"`. The degree must be feasible for the number of unique
 #'   grouped model points.
 #' @param breaks Numeric vector with the tariff segment boundaries to use after
 #'   smoothing. These boundaries determine the final tariff segmentation, not
 #'   the number of portfolio observations used to estimate the curve. Values
 #'   must be finite and strictly increasing.
 #' @param smoothing Character string selecting the smoothing method. Available
-#'   values are `"spline"`, `"gam"`, `"mpi"`, `"mpd"`, `"cx"`, `"cv"`,
-#'   `"micx"`, `"micv"`, `"mdcx"` and `"mdcv"`. See Details for the shape
-#'   restrictions represented by these codes.
+#'   values are `"spline"` (default), `"poly"`, `"mpi"`, `"mpd"`, `"gam"`,
+#'   `"cx"`, `"cv"`, `"micx"`, `"micv"`, `"mdcx"` and `"mdcv"`. See
+#'   Details for the statistical interpretation and shape restrictions.
 #' @param k Optional single positive whole number. Basis dimension for smoothing
-#'   methods other than `"spline"`. It sets the maximum flexibility available
-#'   to the smooth and is not necessarily equal to its estimated effective
-#'   degrees of freedom. `NULL` uses an effective default of 10. The basis
-#'   dimension cannot exceed the number of unique grouped covariate values
-#'   available for fitting.
+#'   methods `"spline"`, `"gam"`, `"mpi"`, `"mpd"`, `"cx"`, `"cv"`,
+#'   `"micx"`, `"micv"`, `"mdcx"` and `"mdcv"`. It sets the maximum
+#'   flexibility available to the smooth and is not necessarily equal to its
+#'   estimated effective degrees of freedom. `NULL` uses the smaller of 10 and
+#'   the number of unique grouped model points. At least three unique grouped
+#'   values are required. The basis dimension cannot exceed the number of
+#'   unique grouped covariate values available for fitting.
 #' @param weights Optional character string. Numeric volume column, usually
 #'   exposure, used to weight the grouped GLM relativities during smoothing.
 #' @param tariff_class,rating_variable Deprecated. Use `model_variable` and
@@ -1406,8 +1616,8 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'   smoothing specification. The pricing GLM is not fitted again until
 #'   [refit()] is called.
 #'
-#' @seealso [prepare_refinement()], [edit_smoothing()], [refit()],
-#'   [risk_factor_gam()]
+#' @seealso [prepare_refinement()], [edit_smoothing()], [add_restriction()],
+#'   [add_relativities()], [refit()], [risk_factor_gam()]
 #'
 #' @examples
 #' \dontrun{
@@ -1457,7 +1667,7 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'     model_variable = "age_policyholder_freq_cat",
 #'     source_variable = "age_policyholder",
 #'     breaks = seq(18, 95, 5),
-#'     smoothing = "gam",
+#'     smoothing = "spline",
 #'     k = 6,
 #'     weights = "exposure"
 #'   )
@@ -1521,6 +1731,14 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
     source_variable <- x_org
   }
 
+  if (!.is_single_string(smoothing) ||
+      !smoothing %in% .allowed_smoothing_methods) {
+    stop(
+      "'smoothing' must be one of: ",
+      paste(.allowed_smoothing_methods, collapse = ", "),
+      call. = FALSE
+    )
+  }
   if (!is.numeric(breaks) || length(breaks) == 0 ||
       anyNA(breaks) || any(!is.finite(breaks))) {
     stop("'breaks' must be a numeric vector with finite values.", call. = FALSE)
@@ -1553,19 +1771,33 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
   .assert_single_numeric(degree, "degree", allow_null = TRUE, positive = TRUE, whole = TRUE)
   .assert_single_numeric(k, "k", allow_null = TRUE, positive = TRUE, whole = TRUE)
 
-  if (!.is_single_string(smoothing) || !smoothing %in% .allowed_smoothing_methods) {
+  basis_methods <- c(
+    "spline", "gam", "mpi", "mpd", "cx", "cv", "micx", "micv", "mdcx",
+    "mdcv"
+  )
+  if (!is.null(degree) && !identical(smoothing, "poly")) {
     stop(
-      "'smoothing' must be one of: ",
-      paste(.allowed_smoothing_methods, collapse = ", "),
+      "'degree' is only used with `smoothing = \"poly\"`.",
+      call. = FALSE
+    )
+  }
+  if (!is.null(k) && !smoothing %in% basis_methods) {
+    stop(
+      "'k' is only used with `smoothing = \"spline\"`, `\"gam\"` or a ",
+      "shape-constrained smoothing method.",
+      call. = FALSE
+    )
+  }
+  if (!is.null(k) && smoothing %in% basis_methods && k < 3) {
+    stop(
+      "'k' must be at least 3 for `smoothing = \"", smoothing, "\"`.",
       call. = FALSE
     )
   }
 
-  if (smoothing %in% c(
-    "spline", "gam", "mpi", "mpd", "cx", "cv", "micx", "micv", "mdcx", "mdcv"
-  )) {
+  if (smoothing %in% c("poly", basis_methods)) {
     borders_model <- cut_borders_model(model$base$model, model_variable)
-    .validate_smoothing_complexity(
+    complexity <- .validate_smoothing_complexity(
       covariates = borders_model["avg_"],
       source_variable = source_variable,
       smoothing = smoothing,
@@ -1573,6 +1805,9 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
       degree = degree,
       response = borders_model$estimate
     )
+    if (smoothing %in% basis_methods && is.null(k)) {
+      k <- complexity$k
+    }
   }
 
   .add_step(model, list(
@@ -1649,17 +1884,20 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
   )
 }
 
-#' Edit an existing smoothing step in a refinement workflow
+#' Edit a smoothing curve in a refinement workflow
 #'
 #' @description
-#' Manually adjusts a smoothing step that was previously added with
-#' [add_smoothing()]. This is intended for actuarial review of a smoothed tariff
-#' curve, for example to flatten an unstable segment, align the end points of an
-#' interval, or add extra control points where expert judgement should guide the
-#' curve.
-#' The adjusted smoothing is applied when [refit()] is called.
+#' Modify a specified interval of a smoothing curve previously added with
+#' [add_smoothing()]. The function can fix boundary values and introduce
+#' internal control points, for example when actuarial review supports a flatter
+#' local effect or a documented transition between tariff segments.
 #'
 #' @details
+#' `edit_smoothing()` stores an edit on the selected smoothing step of a
+#' `rating_refinement` object. It does not alter the fitted GLM immediately.
+#' The edited curve is evaluated in the recorded step order and applied when
+#' [refit()] is called.
+#'
 #' Use `model_variable` or `step` to identify the smoothing step to edit. The
 #' interval from `from` to `to` defines the part of the source variable range
 #' that should be changed. `from_value` and `to_value` can be used to force the
@@ -1667,13 +1905,19 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #' `control_values` add additional points that the edited curve should follow
 #' inside the interval.
 #'
-#' `edit_smoothing()` changes the stored smoothing specification; it does not
-#' edit a fitted GLM in place. Keep the `rating_refinement` object, call
-#' [refit()] to assess the current specification, edit that same refinement
-#' object, and call [refit()] again. The previously fitted model remains an
-#' unchanged model result. This separation makes the sequence of actuarial
-#' adjustments reproducible and avoids reconstructing refinement choices from
-#' transformed columns in a refitted model.
+#' ## Actuarial interpretation
+#'
+#' The edited interval is an explicit tariff assumption layered on the
+#' statistically fitted smoothing curve. It should be supported by an actuarial
+#' rationale and reviewed against exposure, observed experience and the
+#' continuity of adjacent segments. The edit does not add information to sparse
+#' parts of the portfolio and should not be interpreted as a new model estimate.
+#'
+#' Keep the `rating_refinement` object, call [refit()] to assess the current
+#' specification, edit that same refinement object, and call [refit()] again.
+#' The previously fitted GLM remains unchanged. This retains the order and
+#' content of manual adjustments as part of the reproducible refinement
+#' specification.
 #'
 #' @param model Object of class `rating_refinement`, created with
 #'   [prepare_refinement()] and containing an existing smoothing step. Ordinary
@@ -1697,7 +1941,12 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #'
 #' @author Martin Haringa
 #'
-#' @return Object of class `rating_refinement`.
+#' @return A `rating_refinement` object containing the edited smoothing
+#'   specification. The pricing GLM is not fitted again until [refit()] is
+#'   called.
+#'
+#' @seealso [prepare_refinement()], [add_smoothing()], [add_restriction()],
+#'   [add_relativities()], [refit()]
 #'
 #' @examples
 #' set.seed(42)
@@ -1729,7 +1978,6 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #'     model_variable = "age_band",
 #'     source_variable = "driver_age",
 #'     breaks = c(18, 30, 40, 50, 60),
-#'     degree = 2,
 #'     weights = "exposure"
 #'   )
 #'
@@ -1828,27 +2076,33 @@ edit_smoothing <- function(model,
 }
 
 
-#' Add expert-based relativities to a refinement workflow
+#' Add sublevel relativities to a refinement workflow
 #'
 #' @description
-#' Splits an existing model variable into more detailed tariff segments using
-#' supplied relativities. This is useful when the GLM is fitted on a coarser
-#' rating factor for credibility or stability, but the final tariff needs a
-#' more detailed split that is based on portfolio exposure, expert judgement or
-#' externally agreed relativities.
+#' Divide one or more levels of an existing GLM risk factor into more detailed
+#' tariff levels using supplied relativities. This can be appropriate when the
+#' GLM is estimated on a coarser factor for statistical stability, while a
+#' documented actuarial segmentation is required within sufficiently
+#' homogeneous model levels.
 #'
 #' @details
+#' `add_relativities()` stores a relativity step on a `rating_refinement`
+#' object. It does not alter the fitted GLM immediately. The split is evaluated
+#' in the recorded step order and applied when [refit()] is called.
+#'
 #' `model_variable` is the variable already used in the GLM. `split_variable` is
 #' the more detailed variable in the portfolio data that will be used to split
 #' one or more levels of `model_variable`. The `relativities` argument should be
 #' a named list describing those splits, usually built with [relativities()] and
 #' [split_level()].
 #'
-#' The step is stored on the `rating_refinement` object and is applied when
-#' [refit()] is called. When `normalize = TRUE`, the supplied relativities are
-#' normalised using exposure so that the refined split keeps the original level
-#' effect on average. This helps prevent an expert split from unintentionally
-#' changing the total premium level for the original model group.
+#' When `normalize = TRUE`, the supplied relativities are normalised using
+#' exposure so that their exposure-weighted mean equals one within the split
+#' model level. They then redistribute the existing model coefficient across
+#' the sublevels without changing its exposure-weighted average. With
+#' `normalize = FALSE`, the supplied relativities are applied directly.
+#'
+#' ## Step order and restrictions
 #'
 #' If `model_variable` was restricted in an earlier [add_restriction()] step,
 #' the restricted coefficients are automatically used as the basis for the
@@ -1861,17 +2115,23 @@ edit_smoothing <- function(model,
 #' the final split, [rating_table()] reports the `split_variable` as the tariff
 #' factor and does not also show the intermediate restricted variable.
 #'
-#' **When to use**
+#' Conversely, [add_restriction()] can be called after `add_relativities()` to
+#' adjust selected levels of the derived `split_variable`. The split variable is
+#' then recognised as an existing refinement factor; users do not need to set
+#' `allow_new_risk_factors = TRUE`. Levels omitted from the restriction table
+#' are fixed at the relativities calculated by this step.
+#'
+#' ## Appropriate use
 #'
 #' `add_relativities()` is intended for refinement within an already reasonably
 #' homogeneous GLM segment. It redistributes an existing coefficient across
 #' sublevels using exposure-weighted relativities, while preserving the overall
-#' level of the original coefficient. This is useful for mild heterogeneity,
-#' commercial refinement, monotonic tariff differentiation, or expert-based
-#' segmentation within a stable risk group where the original GLM coefficient is
-#' broadly representative.
+#' level of the original coefficient when normalisation is used. Appropriate
+#' applications include mild residual heterogeneity, monotonic tariff
+#' differentiation and expert-based segmentation within a stable risk group
+#' where the original GLM coefficient remains broadly representative.
 #'
-#' **Limitations**
+#' ## Limitations
 #'
 #' The method is not a substitute for creating a separate risk segment when the
 #' original GLM coefficient is itself distorted. For example, suppose a broad
@@ -1907,7 +2167,12 @@ edit_smoothing <- function(model,
 #'
 #' @author Martin Haringa
 #'
-#' @return Object of class `rating_refinement`.
+#' @return A `rating_refinement` object containing the stored relativity
+#'   specification. The pricing GLM is not fitted again until [refit()] is
+#'   called.
+#'
+#' @seealso [prepare_refinement()], [relativities()], [split_level()],
+#'   [add_restriction()], [add_smoothing()], [refit()], [rating_table()]
 #'
 #' @examples
 #' portfolio <- data.frame(
@@ -1946,6 +2211,17 @@ edit_smoothing <- function(model,
 #'     exposure = "exposure"
 #'   )
 #'
+#' # A subsequent restriction can revise one derived level. The remaining
+#' # construction-detail levels are fixed at the relativities calculated above.
+#' refined <- refined |>
+#'   add_restriction(data.frame(
+#'     construction_detail = "flat",
+#'     construction_detail_restricted = 1.00
+#'   ))
+#'
+#' refined_model <- refit(refined)
+#' rating_table(refined_model, exposure = FALSE)
+#'
 #' @export
 add_relativities <- function(model,
                              model_variable,
@@ -1983,6 +2259,10 @@ add_relativities <- function(model,
     requested_model_variable = resolved_source$requested_model_variable,
     source_model_variable = resolved_source$source_model_variable,
     effective_model_variable = resolved_source$effective_model_variable,
+    derived_model_variable = paste0(
+      resolved_source$source_model_variable,
+      "_rel"
+    ),
     split_variable = split_variable,
     risk_factor = model_variable,
     risk_factor_split = split_variable,
@@ -2042,6 +2322,7 @@ add_relativities <- function(model,
 .apply_restriction_step <- function(state, step) {
   restrictions <- step$restrictions
   variable <- names(restrictions)[1]
+  model_term <- step$model_term %||% variable
   restricted_df <- restrict_df(restrictions)
 
   if (isTRUE(step$new_risk_factor)) {
@@ -2055,10 +2336,17 @@ add_relativities <- function(model,
       formula_no_offset = state$formula_no_offset,
       offset = fm_add[[2]]
     )
+  } else if (isTRUE(step$replace_refinement_offset)) {
+    fm_replace <- .replace_refinement_offset(
+      formula_no_offset = state$formula_no_offset,
+      offset_term = state$offset,
+      old_term = model_term,
+      new_term = names(restrictions)[2]
+    )
   } else {
     fm_replace <- .replace_formula_term(
       formula = state$formula_no_offset,
-      old_term = variable,
+      old_term = model_term,
       new_term = names(restrictions)[2],
       offset_term = state$offset
     )
@@ -2067,16 +2355,49 @@ add_relativities <- function(model,
   state$formula <- fm_replace$formula
   state$formula_no_offset <- fm_replace$formula_no_offset
   state$offset <- fm_replace$offset
-  state$data <- add_restrictions_df(
-    state$data,
-    restrictions,
-    allow_new_levels = isTRUE(step$allow_new_levels)
-  )
+  if (isTRUE(step$replace_refinement_offset) &&
+      !is.null(step$derived_source_model_variable)) {
+    source_values <- as.character(
+      state$data[[step$derived_source_model_variable]]
+    )
+    split_values <- as.character(state$data[[variable]])
+    effective_levels <- ifelse(
+      source_values %in% (step$derived_split_levels %||% character()),
+      split_values,
+      source_values
+    )
+    restriction_values <- restrictions[[2]][match(
+      effective_levels,
+      as.character(restrictions[[1]])
+    )]
+    if (anyNA(restriction_values)) {
+      missing_levels <- unique(effective_levels[is.na(restriction_values)])
+      stop(
+        "No restriction is available for refined level(s) of `", variable,
+        "`: ", paste(missing_levels, collapse = ", "),
+        call. = FALSE
+      )
+    }
+    state$data[[names(restrictions)[2]]] <- restriction_values
+  } else {
+    state$data <- add_restrictions_df(
+      state$data,
+      restrictions,
+      allow_new_levels = isTRUE(step$allow_new_levels)
+    )
+  }
   state$restrictions_lst[[variable]] <- restrictions
 
   if (is.null(state$rf_restricted_df)) {
     state$rf_restricted_df <- restricted_df
   } else {
+    if (isTRUE(step$replace_refinement_offset)) {
+      state$rf_restricted_df <- state$rf_restricted_df[
+        state$rf_restricted_df$risk_factor != variable,
+        ,
+        drop = FALSE
+      ]
+    }
     state$rf_restricted_df <- rbind(state$rf_restricted_df, restricted_df)
   }
 
@@ -2107,12 +2428,12 @@ add_relativities <- function(model,
 
   borders_x_cut <- cut_borders_model(state$model_out, x_cut)
 
-  if (is.null(degree)) {
+  if (identical(smoothing, "poly") && is.null(degree)) {
     degree <- nrow(borders_x_cut) - 1
   }
 
-  if (smoothing %in% c("mpi", "mpd", "cx", "cv", "micx", "micv", "mdcx",
-                       "mdcv", "gam")) {
+  if (smoothing %in% c("spline", "poly", "mpi", "mpd", "cx", "cv", "micx",
+                       "micv", "mdcx", "mdcv", "gam")) {
     if (is.null(weights)) {
       exposur0 <- rep(1, nrow(borders_x_cut))
     } else {
@@ -2128,7 +2449,7 @@ add_relativities <- function(model,
     exposur0 <- NULL
   }
 
-  fit_poly <- fit_polynomial(
+  fit_poly <- fit_smoothing_curve(
     borders_model = borders_x_cut,
     x_org = x_org,
     degree = degree,
@@ -2782,28 +3103,40 @@ add_relativities <- function(model,
   .legacy_refit_glm(legacy_obj, intercept_only = intercept_only, ...)
 }
 
-#' Refit a prepared refinement workflow
+#' Fit a prepared refinement specification
 #'
 #' @description
-#' Applies the refinement steps stored in a `rating_refinement` object and
-#' returns a refitted GLM. This is the final step in the refinement workflow
-#' after [prepare_refinement()], [add_smoothing()], [add_restriction()] or
-#' [add_relativities()] have been used to define the proposed tariff structure.
+#' Apply the ordered steps stored in a `rating_refinement` object and fit the
+#' resulting pricing GLM. This evaluates the current refinement specification;
+#' it may be called repeatedly while smoothing, restrictions or sublevel
+#' relativities are being reviewed.
 #'
 #' @details
-#' Refinement steps are not applied to the fitted model immediately. They are
-#' collected on the `rating_refinement` object so they can be inspected first,
-#' for example with [autoplot.rating_refinement()]. `refit()` then applies the
-#' steps in order, updates the model formula and data, and calls [stats::glm()]
-#' with the original model family and any additional arguments passed through
-#' `...`.
+#' `refit()` applies the stored steps in their recorded order, constructs the
+#' required tariff variables and offsets, updates the model formula and calls
+#' [stats::glm()] with the original model family. Additional fitting arguments
+#' can be supplied through `...`.
+#'
+#' ## Actuarial interpretation
+#'
+#' The refitted model represents the combined effect of the original GLM
+#' structure and the explicit actuarial assumptions stored in the refinement.
+#' Its coefficients and predictions should be assessed against exposure,
+#' observed experience, model diagnostics and the unrestricted model. A refit
+#' does not establish that a manual restriction or curve edit is statistically
+#' estimated; it applies that assumption as specified.
+#'
+#' ## Intercept-only recalibration
 #'
 #' With `intercept_only = FALSE`, the refined GLM is fitted with the remaining
 #' free model terms that are still present after applying the refinement steps.
 #' With `intercept_only = TRUE`, remaining original model effects are fixed as
-#' offsets based on the existing fitted relativities. The refit then estimates
-#' only the intercept. This can be useful when the relative tariff structure
-#' should remain fixed and only the overall premium level should be recalibrated.
+#' offsets based on their existing fitted relativities. Only the intercept is
+#' then estimated. Consequently, relative differences between those fixed
+#' effects remain unchanged while the overall expected premium level is
+#' recalibrated to the supplied model data.
+#'
+#' ## Model result and further refinement
 #'
 #' Printing the returned model first shows the original and refitted formulas,
 #' the model family, whether an intercept-only refit was used, and a concise
@@ -2812,6 +3145,12 @@ add_relativities <- function(model,
 #' degrees of freedom, deviance and AIC. The object continues to inherit from
 #' `glm`, so standard methods such as [stats::predict.glm()] and
 #' [summary.glm()] remain available.
+#'
+#' The returned GLM is a fitted result, not an editable refinement
+#' specification. Retain the original `rating_refinement` object when further
+#' changes may be required. Passing the refitted GLM to [prepare_refinement()]
+#' starts a new workflow from that model and does not reconstruct the earlier
+#' sequence of refinement steps.
 #'
 #' @param object Object of class `rating_refinement`, usually created with
 #'   [prepare_refinement()].
@@ -2822,11 +3161,15 @@ add_relativities <- function(model,
 #'
 #' @author Martin Haringa
 #'
-#' @return A refitted object that inherits from `glm` and additionally from
-#'   `refitrestricted`, `refitsmooth`, or both, depending on the applied
-#'   refinement steps. The returned model stores attributes used by
-#'   [rating_table()] and [rating_grid()] to recognise refined rating factors,
-#'   fixed relativities and smoothing metadata.
+#' @return A fitted object inheriting from `glm`. Compatibility classes
+#'   `refitrestricted`, `refitsmooth`, or both are added when relevant. The
+#'   object stores refinement metadata used by [rating_table()] and
+#'   [rating_grid()] to identify fixed relativities, smoothed variables and
+#'   derived tariff factors.
+#'
+#' @seealso [prepare_refinement()], [add_smoothing()], [edit_smoothing()],
+#'   [add_restriction()], [add_relativities()], [rating_table()],
+#'   [rating_grid()]
 #'
 #' @examples
 #' zip_df <- data.frame(
@@ -2840,9 +3183,10 @@ add_relativities <- function(model,
 #'   data = MTPL
 #' )
 #'
-#' refined_model <- prepare_refinement(model) |>
-#'   add_restriction(zip_df) |>
-#'   refit(intercept_only = TRUE)
+#' refinement <- prepare_refinement(model) |>
+#'   add_restriction(zip_df)
+#'
+#' refined_model <- refit(refinement, intercept_only = TRUE)
 #'
 #' @export
 refit <- function(object, intercept_only = FALSE, ...) {

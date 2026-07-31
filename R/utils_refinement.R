@@ -187,15 +187,35 @@ cut_borders_model <- function(model, x_cut) {
 
   n_unique <- nrow(unique(covariates[usable, , drop = FALSE]))
   basis_methods <- c(
-    "gam", "mpi", "mpd", "cx", "cv", "micx", "micv", "mdcx", "mdcv"
+    "spline", "gam", "mpi", "mpd", "cx", "cv", "micx", "micv", "mdcx",
+    "mdcv"
   )
 
   if (smoothing %in% basis_methods) {
-    effective_k <- if (is.null(k)) 10L else as.integer(k)
+    effective_k <- if (is.null(k)) {
+      min(10L, n_unique)
+    } else {
+      as.integer(k)
+    }
     method_label <- if (identical(smoothing, "gam")) {
       "GAM"
+    } else if (identical(smoothing, "spline")) {
+      "spline"
     } else {
       paste0("shape-constrained `", smoothing, "`")
+    }
+
+    if (n_unique < 3L) {
+      stop(
+        "Cannot fit ", method_label, " smoothing for source variable `",
+        source_variable, "`.\n\n",
+        "The variable contains only ", n_unique,
+        " unique values after applying the selected breaks, while this ",
+        "smoothing method requires at least 3 unique values.\n\n",
+        "Use `smoothing = \"poly\"` for a simple low-degree trend, or revise ",
+        "the tariff grouping.",
+        call. = FALSE
+      )
     }
 
     if (n_unique >= effective_k) {
@@ -215,7 +235,7 @@ cut_borders_model <- function(model, x_cut) {
     )
   }
 
-  if (identical(smoothing, "spline")) {
+  if (identical(smoothing, "poly")) {
     effective_degree <- if (is.null(degree)) n_unique - 1L else as.integer(degree)
     required_unique <- effective_degree + 1L
 
@@ -248,8 +268,9 @@ cut_borders_model <- function(model, x_cut) {
 #' @importFrom stats lm
 #'
 #' @keywords internal
-fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL,
-                           smoothing = "spline", k = NULL, weights) {
+fit_smoothing_curve <- function(borders_model, x_org, degree = NULL,
+                                breaks = NULL, smoothing = "spline", k = NULL,
+                                weights) {
 
   if (is.null(breaks)) {
     breaks <- seq(min(borders_model$start_), max(borders_model$end_),
@@ -265,7 +286,7 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL,
                                include.lowest = TRUE, dig.lab = 9))
 
   # Checks
-  valid_methods <- c("spline", "mpi", "mpd", "gam",
+  valid_methods <- c("gam", "poly", "spline", "mpi", "mpd",
                      "cx","cv","micx","micv","mdcx","mdcv")
   if (!smoothing %in% valid_methods) {
     stop("Invalid smoothing: must be one of ",
@@ -283,8 +304,18 @@ fit_polynomial <- function(borders_model, x_org, degree = NULL, breaks = NULL,
   )
 
   # Model fitten
-  if (smoothing == "spline") {
-    lm_poly <- lm(estimate ~ poly(avg_, degree = degree), data = borders_model)
+  if (identical(smoothing, "poly")) {
+    lm_poly <- lm(
+      estimate ~ poly(avg_, degree = degree),
+      data = borders_model,
+      weights = weights
+    )
+  } else if (smoothing == "spline") {
+    lm_poly <- mgcv::gam(
+      estimate ~ s(avg_, bs = "cr", k = k),
+      weights = weights,
+      data = borders_model
+    )
   } else if (smoothing == "gam") {
     if (is.null(k)) {
       lm_poly <- mgcv::gam(estimate ~ s(avg_),
@@ -837,20 +868,35 @@ change_xy <- function(borders_model, x_org,
 }
 
 
-#' Define a level split with relativities
+#' Define a sublevel split for a model level
 #'
 #' @description
-#' Helper function to define how one level of a risk factor should be split
-#' into sublevels with corresponding relativities. Intended for use inside
-#' \code{relativities()} and \code{add_relativities()}.
+#' Define how one level of a GLM risk factor is divided into more detailed
+#' portfolio levels with specified multiplicative relativities. The resulting
+#' object is intended to be combined with [relativities()] and supplied to
+#' [add_relativities()].
+#'
+#' @details
+#' `level` identifies the existing parent level in `model_variable`.
+#' `new_levels` identifies the corresponding levels of `split_variable`.
+#' `relativities` gives their relative tariff effects before any optional
+#' exposure normalisation by [add_relativities()].
+#'
+#' This helper defines a tariff assumption; it does not estimate relativities
+#' from claim experience and does not alter a fitted GLM.
 #'
 #' @param level Character string. Existing level of the risk factor to split.
-#' @param new_levels Character vector. Names of the new sublevels.
-#' @param relativities Numeric vector. Relativities corresponding to each
-#'   sublevel. Must have the same length as \code{new_levels}.
+#' @param new_levels Character vector. Levels of the more detailed portfolio
+#'   variable within `level`.
+#' @param relativities Numeric vector. Multiplicative relativities corresponding
+#'   to `new_levels`. Must have the same length as `new_levels`.
 #'
-#' @return A named list of length 1, where the name is \code{level} and the
-#'   value is a data.frame with columns \code{new_level} and \code{relativity}.
+#' @author Martin Haringa
+#'
+#' @return A named list of length one. Its name is `level`; its value is a data
+#'   frame with columns `new_level` and `relativity`.
+#'
+#' @seealso [relativities()], [add_relativities()]
 #'
 #' @examples
 #' split_level(
@@ -865,7 +911,7 @@ split_level <- function(level, new_levels, relativities) {
     stop("`level` must be a single character string.", call. = FALSE)
   }
 
-  out <- split_relativities(
+  out <- .new_split_relativities(
     new_levels = new_levels,
     relativities = relativities
   )
@@ -874,22 +920,43 @@ split_level <- function(level, new_levels, relativities) {
 }
 
 
-#' Combine multiple level splits into relativities
+#' Combine sublevel splits into a relativity specification
 #'
 #' @description
-#' Helper function to combine multiple level split definitions into a single
-#' named list suitable for use in \code{add_relativities()}.
+#' Combine one or more definitions created by [split_level()] into the named
+#' relativity specification expected by [add_relativities()].
 #'
-#' @param ... One or more objects created by \code{split_level()}.
+#' @details
+#' Each input represents one existing level of `model_variable` and the detailed
+#' `split_variable` levels that replace it. Parent levels must be unique within
+#' the combined specification. Levels of the original model variable that are
+#' not included remain unsplit.
 #'
-#' @return A named list of data.frames suitable for the \code{relativities}
-#'   argument in \code{add_relativities()}.
+#' `relativities()` only assembles and validates the specification. It does not
+#' estimate, normalise or apply the supplied relativities. Exposure
+#' normalisation, when requested, is performed by [add_relativities()].
+#'
+#' @param ... One or more objects created by [split_level()].
+#'
+#' @author Martin Haringa
+#'
+#' @return A named list of data frames suitable for the `relativities` argument
+#'   of [add_relativities()].
+#'
+#' @seealso [split_level()], [add_relativities()]
 #'
 #' @examples
 #' relativities(
-#'   split_level("construction",
-#'               c("residential", "commercial", "civil"),
-#'               c(1.00, 1.10, 1.25))
+#'   split_level(
+#'     "residential",
+#'     new_levels = c("flat", "house"),
+#'     relativities = c(0.95, 1.05)
+#'   ),
+#'   split_level(
+#'     "commercial",
+#'     new_levels = c("shop", "office"),
+#'     relativities = c(1.10, 0.90)
+#'   )
 #' )
 #'
 #' @export
@@ -919,37 +986,45 @@ relativities <- function(...) {
 }
 
 
-#' Construct a relativities mapping for level splitting
+#' Deprecated low-level relativity constructor
 #'
 #' @description
-#' Helper function to create a standardized data.frame defining relativities
-#' for sublevels within a risk factor level. This function is intended to be
-#' used as input for \code{add_relativities()}.
+#' `split_relativities()` is deprecated. Use [split_level()] to define a named
+#' parent-level split and combine multiple splits with [relativities()].
 #'
 #' @param new_levels Character vector. Names of the new sublevels.
 #' @param relativities Numeric vector. Relativities corresponding to each
-#'   sublevel. Must have the same length as \code{new_levels}.
+#'   sublevel. Must have the same length as `new_levels`.
 #'
-#' @return A data.frame with columns:
-#'   \describe{
-#'     \item{new_level}{Character. Name of the new sublevel.}
-#'     \item{relativity}{Numeric. Multiplicative factor relative to the base level.}
-#'   }
+#' @return A data frame with columns `new_level` and `relativity`. New code
+#'   should use [split_level()], which also records the parent model level
+#'   required by [add_relativities()].
 #'
-#' @details
-#' This function provides a convenient and safe way to construct the required
-#' input structure for \code{add_relativities()}. Each call defines how a single
-#' level of a risk factor is split into multiple sublevels with corresponding
-#' relativities.
+#' @author Martin Haringa
+#'
+#' @seealso [split_level()], [relativities()], [add_relativities()]
 #'
 #' @examples
-#' split_relativities(
+#' split_level(
+#'   level = "construction",
 #'   new_levels = c("residential", "commercial", "civil"),
 #'   relativities = c(1.00, 1.10, 1.25)
 #' )
 #'
 #' @export
+#' @keywords internal
 split_relativities <- function(new_levels, relativities) {
+  lifecycle::deprecate_warn(
+    when = "0.9.0",
+    what = "split_relativities()",
+    with = "split_level()"
+  )
+
+  .new_split_relativities(new_levels, relativities)
+}
+
+#' @noRd
+.new_split_relativities <- function(new_levels, relativities) {
   if (!is.character(new_levels)) {
     stop("`new_levels` must be a character vector.", call. = FALSE)
   }

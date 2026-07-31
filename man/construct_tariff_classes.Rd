@@ -16,20 +16,21 @@ construct_tariff_classes(
 )
 }
 \arguments{
-\item{object}{An object of class \code{"riskfactor_gam"}, produced by
-\code{\link[=risk_factor_gam]{risk_factor_gam()}}. Objects with the old \code{"fitgam"} class are still
-supported for backward compatibility.}
+\item{object}{A \code{"risk_factor_gam"} object returned by
+\code{\link[=risk_factor_gam]{risk_factor_gam()}}. Legacy \code{"riskfactor_gam"} and \code{"fitgam"} classes are
+accepted for compatibility.}
 
-\item{complexity}{Numeric. Controls the complexity penalty used when deriving
-segments. Higher values generally yield fewer tariff segments. Default = 0.}
+\item{complexity}{Non-negative numeric complexity penalty for the
+evolutionary tree. Larger values generally favour fewer internal
+boundaries.}
 
-\item{max_iterations}{Integer. Maximum number of search iterations used by
-the underlying grouping algorithm. Default = 10000.}
+\item{max_iterations}{Positive integer. Maximum number of evolutionary search
+iterations.}
 
-\item{population_size}{Integer. Number of candidate trees used by the
-underlying grouping algorithm. Default = 200.}
+\item{population_size}{Positive integer. Number of candidate trees maintained
+during the evolutionary search.}
 
-\item{seed}{Integer, seed for the random number generator (for reproducibility).}
+\item{seed}{Numeric random seed used by the grouping algorithm.}
 
 \item{alpha}{Deprecated. Use \code{complexity} instead.}
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_get_data.R
 \name{extract_model_data}
 \alias{extract_model_data}
-\title{Extract model data}
+\title{Recover the portfolio data used by a fitted model}
 \usage{
 extract_model_data(x)
 }
@@ -12,30 +12,48 @@ extract_model_data(x)
 \value{
 A \code{data.frame} of class \code{"model_data"} with additional attributes:
 \itemize{
-\item \code{response} — response variable in the model;
-\item \code{rf} — names of risk factors in the model;
-\item \code{offweights} — weight and offset variables if present;
-\item \code{terms} — model terms object for plain GLMs;
-\item \code{mgd_rst}, \code{mgd_smt} — merged restrictions/smooths for refit objects;
-\item \code{new_nm}, \code{old_nm} — new and old column names for refit objects.
+\item \code{response}: response variable in the model;
+\item \code{rf}: names of risk factors in the model;
+\item \code{offweights}: weight and offset variables if present;
+\item \code{terms}: model terms object for plain GLMs;
+\item \code{mgd_rst}, \code{mgd_smt}: merged restrictions and smooths for refit
+objects;
+\item \code{new_nm}, \code{old_nm}: new and old column names for refit objects.
 }
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-\code{extract_model_data()} retrieves the modelling data and metadata from fitted
-models. It works for objects of class \code{"glm"}, as well as objects produced by
-refitting procedures (\code{"refitsmooth"} or \code{"refitrestricted"}).
+Recover the estimation data and pricing metadata stored with a fitted GLM or
+a model produced by the refinement workflow. The result provides a
+reproducible basis for rating grids, coefficient tables and portfolio-level
+model diagnostics.
 
 \code{model_data()} is kept as a deprecated compatibility wrapper.
 }
 \details{
-For GLM objects, the function returns the model data and attaches attributes
-with the response, rating factors, terms object, and any weights or offsets.
+\subsection{Data represented by the result}{
 
-For refit objects, the function removes auxiliary columns used during
-smoothing or restriction and attaches attributes with rating factors, merged
-smooths, restrictions, and offsets.
+For an ordinary GLM, the function recovers the data stored with the model or
+its model frame and records the response, model terms, risk factors, weights
+and offsets. The recovered data represent the observations available to the
+fitted model. Rows omitted during fitting, for example because of missing
+model variables, may therefore not be present.
+
+For a refined model, technical columns used to construct smoothing and
+restriction terms are removed from the returned data. The mappings required
+to interpret the refined coefficients are retained as attributes.
+}
+
+\subsection{Actuarial use}{
+
+The extracted object is intended for downstream calculations that must remain
+consistent with the fitted pricing model, such as \code{\link[=rating_grid]{rating_grid()}} and
+\code{\link[=rating_table]{rating_table()}}. It should not be interpreted as a replacement for the
+original raw portfolio extract: preprocessing, filtering and missing-value
+handling applied before or during model fitting remain part of the data
+provenance.
+}
 }
 \examples{
 \dontrun{
@@ -50,6 +68,9 @@ pmodel <- glm(
 extract_model_data(pmodel)
 }
 
+}
+\seealso{
+\code{\link[=rating_grid]{rating_grid()}}, \code{\link[=rating_table]{rating_table()}}, \code{\link[=prepare_refinement]{prepare_refinement()}}
 }
 \author{
 Martin Haringa

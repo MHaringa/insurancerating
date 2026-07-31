@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_performance_bootstrap_rmse.R
 \name{bootstrap_performance}
 \alias{bootstrap_performance}
-\title{Bootstrapped model performance}
+\title{Assess predictive stability by repeated resampling}
 \usage{
 bootstrap_performance(
   model,
@@ -18,35 +18,38 @@ bootstrap_performance(
 )
 }
 \arguments{
-\item{model}{A fitted model object.}
+\item{model}{A fitted model object that can be updated on resampled data.}
 
-\item{data}{Data used to fit the model object.}
+\item{data}{Data frame containing the model response and predictors.}
 
-\item{n_resamples}{Integer. Number of resampling replicates. Default = 50.}
+\item{n_resamples}{Positive whole number. Number of resampling replicates.
+Default is 50.}
 
 \item{sample_fraction}{Fraction of the data used in the training sample. Must
-be in \verb{(0, 1]}. Default = 1.}
+be in \verb{(0, 1]}. Default is 1.}
 
-\item{metric}{Character. Performance metric to compute. Currently only
+\item{metric}{Character string. Performance metric to compute. Currently only
 \code{"rmse"} is supported.}
 
-\item{sampling}{Character. Sampling scheme. \code{"bootstrap"} samples training
+\item{sampling}{Character string. Sampling scheme. \code{"bootstrap"} samples
+training
 rows with replacement and evaluates on out-of-bag rows when
 \code{sample_fraction < 1}.
 \code{"split"} samples training rows without replacement and evaluates on the
 remaining rows when \code{sample_fraction < 1}.}
 
-\item{show_progress}{Logical. Show progress bar during bootstrap iterations.
-Default = TRUE.}
+\item{show_progress}{Logical. Show a progress bar during resampling.
+Default is \code{TRUE}.}
 
-\item{rmse_model}{Optional numeric RMSE of the fitted (original) model.
-If NULL (default), it is computed automatically.}
+\item{rmse_model}{Optional finite numeric RMSE for the original fitted model.
+If \code{NULL}, it is calculated from \code{model} and \code{data}.}
 
 \item{n, frac}{Deprecated argument names. Use \code{n_resamples} and
 \code{sample_fraction} instead.}
 }
 \value{
-An object of class \code{"bootstrap_performance"}, which is a list with components:
+An object of class \code{"bootstrap_performance"}, which is a list with
+components:
 \describe{
 \item{rmse_bs}{Numeric vector with \code{n_resamples} bootstrap RMSE values.}
 \item{rmse_mod}{Root mean squared error for the original fitted model.}
@@ -55,20 +58,19 @@ An object of class \code{"bootstrap_performance"}, which is a list with componen
 }
 }
 \description{
-Generate repeated train/evaluation samples to compute model performance.
-Currently, the supported metric is root mean squared error (RMSE).
+Refit a pricing model on repeated samples and record the resulting
+response-scale prediction error. The distribution of RMSE values describes
+how sensitive model performance is to changes in the observed portfolio
+sample.
 }
 \details{
-To test the predictive stability of a fitted model it can be helpful to
-assess the variation in a performance metric. The variation is calculated by
-refitting the model on repeated samples and storing the resulting metric
-values.
-\itemize{
-\item If \code{sample_fraction = 1}, the metric is evaluated on the sampled training
-data.
-\item If \code{sample_fraction < 1}, the metric is evaluated on rows that were not
-used for training.
-}
+\subsection{Resampling design}{
+
+With \code{sampling = "bootstrap"}, training rows are sampled with replacement.
+With \code{sampling = "split"}, they are sampled without replacement. When
+\code{sample_fraction < 1}, performance is evaluated on records not used for
+fitting. When \code{sample_fraction = 1}, performance is evaluated on the sampled
+training data and should be interpreted as an in-sample stability measure.
 
 Character columns and factor columns are converted to factors with levels
 taken from the full input data before resampling. For factor variables used
@@ -76,6 +78,23 @@ in the model, the training sample is augmented when needed so every observed
 level is represented at least once. This prevents prediction failures when a
 level is present in the evaluation data but absent from a particular training
 sample.
+}
+
+\subsection{Actuarial interpretation}{
+
+The resampled RMSE distribution is useful for comparing the stability of
+alternative frequency, severity or risk-premium specifications under
+repeated portfolio sampling. A narrow distribution indicates that the
+measured error is relatively insensitive to the sampled records; a wide
+distribution indicates greater sampling sensitivity.
+
+This is an experience-based diagnostic and does not by itself represent the
+full uncertainty in future claims, trend, portfolio mix or model
+specification. Sparse factor levels are retained in training samples where
+necessary to avoid new-level prediction failures. That protection is useful
+operationally, but should be considered when interpreting the resampling
+design.
+}
 }
 \examples{
 \dontrun{
@@ -95,6 +114,10 @@ x_frac <- bootstrap_performance(mod1, MTPL, n_resamples = 50,
 autoplot(x_frac)
 }
 
+}
+\seealso{
+\code{\link[=rmse]{rmse()}}, \code{\link[=model_performance]{model_performance()}},
+\code{\link[=autoplot.bootstrap_performance]{autoplot.bootstrap_performance()}}
 }
 \author{
 Martin Haringa

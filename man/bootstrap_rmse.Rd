@@ -16,29 +16,30 @@ bootstrap_rmse(
 )
 }
 \arguments{
-\item{model}{A fitted model object.}
+\item{model}{A fitted model object that can be updated on resampled data.}
 
-\item{data}{Data used to fit the model object.}
+\item{data}{Data frame containing the model response and predictors.}
 
 \item{n}{Deprecated. Use \code{n_resamples} in \code{\link[=bootstrap_performance]{bootstrap_performance()}} instead.}
 
 \item{frac}{Deprecated. Use \code{sample_fraction} in \code{\link[=bootstrap_performance]{bootstrap_performance()}}
 instead.}
 
-\item{metric}{Character. Performance metric to compute. Currently only
+\item{metric}{Character string. Performance metric to compute. Currently only
 \code{"rmse"} is supported.}
 
-\item{sampling}{Character. Sampling scheme. \code{"bootstrap"} samples training
+\item{sampling}{Character string. Sampling scheme. \code{"bootstrap"} samples
+training
 rows with replacement and evaluates on out-of-bag rows when
 \code{sample_fraction < 1}.
 \code{"split"} samples training rows without replacement and evaluates on the
 remaining rows when \code{sample_fraction < 1}.}
 
-\item{show_progress}{Logical. Show progress bar during bootstrap iterations.
-Default = TRUE.}
+\item{show_progress}{Logical. Show a progress bar during resampling.
+Default is \code{TRUE}.}
 
-\item{rmse_model}{Optional numeric RMSE of the fitted (original) model.
-If NULL (default), it is computed automatically.}
+\item{rmse_model}{Optional finite numeric RMSE for the original fitted model.
+If \code{NULL}, it is calculated from \code{model} and \code{data}.}
 }
 \value{
 See \code{\link[=bootstrap_performance]{bootstrap_performance()}}.

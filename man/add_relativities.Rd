@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_refinement.R
 \name{add_relativities}
 \alias{add_relativities}
-\title{Add expert-based relativities to a refinement workflow}
+\title{Add sublevel relativities to a refinement workflow}
 \usage{
 add_relativities(
   model,
@@ -38,27 +38,34 @@ when requested, normalisation.}
 exposure within each split model level.}
 }
 \value{
-Object of class \code{rating_refinement}.
+A \code{rating_refinement} object containing the stored relativity
+specification. The pricing GLM is not fitted again until \code{\link[=refit]{refit()}} is
+called.
 }
 \description{
-Splits an existing model variable into more detailed tariff segments using
-supplied relativities. This is useful when the GLM is fitted on a coarser
-rating factor for credibility or stability, but the final tariff needs a
-more detailed split that is based on portfolio exposure, expert judgement or
-externally agreed relativities.
+Divide one or more levels of an existing GLM risk factor into more detailed
+tariff levels using supplied relativities. This can be appropriate when the
+GLM is estimated on a coarser factor for statistical stability, while a
+documented actuarial segmentation is required within sufficiently
+homogeneous model levels.
 }
 \details{
+\code{add_relativities()} stores a relativity step on a \code{rating_refinement}
+object. It does not alter the fitted GLM immediately. The split is evaluated
+in the recorded step order and applied when \code{\link[=refit]{refit()}} is called.
+
 \code{model_variable} is the variable already used in the GLM. \code{split_variable} is
 the more detailed variable in the portfolio data that will be used to split
 one or more levels of \code{model_variable}. The \code{relativities} argument should be
 a named list describing those splits, usually built with \code{\link[=relativities]{relativities()}} and
 \code{\link[=split_level]{split_level()}}.
 
-The step is stored on the \code{rating_refinement} object and is applied when
-\code{\link[=refit]{refit()}} is called. When \code{normalize = TRUE}, the supplied relativities are
-normalised using exposure so that the refined split keeps the original level
-effect on average. This helps prevent an expert split from unintentionally
-changing the total premium level for the original model group.
+When \code{normalize = TRUE}, the supplied relativities are normalised using
+exposure so that their exposure-weighted mean equals one within the split
+model level. They then redistribute the existing model coefficient across
+the sublevels without changing its exposure-weighted average. With
+\code{normalize = FALSE}, the supplied relativities are applied directly.
+\subsection{Step order and restrictions}{
 
 If \code{model_variable} was restricted in an earlier \code{\link[=add_restriction]{add_restriction()}} step,
 the restricted coefficients are automatically used as the basis for the
@@ -71,17 +78,25 @@ relativity step. Once the restricted coefficients have been used to derive
 the final split, \code{\link[=rating_table]{rating_table()}} reports the \code{split_variable} as the tariff
 factor and does not also show the intermediate restricted variable.
 
-\strong{When to use}
+Conversely, \code{\link[=add_restriction]{add_restriction()}} can be called after \code{add_relativities()} to
+adjust selected levels of the derived \code{split_variable}. The split variable is
+then recognised as an existing refinement factor; users do not need to set
+\code{allow_new_risk_factors = TRUE}. Levels omitted from the restriction table
+are fixed at the relativities calculated by this step.
+}
+
+\subsection{Appropriate use}{
 
 \code{add_relativities()} is intended for refinement within an already reasonably
 homogeneous GLM segment. It redistributes an existing coefficient across
 sublevels using exposure-weighted relativities, while preserving the overall
-level of the original coefficient. This is useful for mild heterogeneity,
-commercial refinement, monotonic tariff differentiation, or expert-based
-segmentation within a stable risk group where the original GLM coefficient is
-broadly representative.
+level of the original coefficient when normalisation is used. Appropriate
+applications include mild residual heterogeneity, monotonic tariff
+differentiation and expert-based segmentation within a stable risk group
+where the original GLM coefficient remains broadly representative.
+}
 
-\strong{Limitations}
+\subsection{Limitations}{
 
 The method is not a substitute for creating a separate risk segment when the
 original GLM coefficient is itself distorted. For example, suppose a broad
@@ -96,6 +111,7 @@ subgroup.
 In that situation it is often better to create a separate GLM factor level,
 derive a separate tariff segment, or apply explicit segmentation or
 acceptation rules, instead of relying only on \code{add_relativities()}.
+}
 }
 \examples{
 portfolio <- data.frame(
@@ -134,6 +150,21 @@ refined <- prepare_refinement(model, data = portfolio) |>
     exposure = "exposure"
   )
 
+# A subsequent restriction can revise one derived level. The remaining
+# construction-detail levels are fixed at the relativities calculated above.
+refined <- refined |>
+  add_restriction(data.frame(
+    construction_detail = "flat",
+    construction_detail_restricted = 1.00
+  ))
+
+refined_model <- refit(refined)
+rating_table(refined_model, exposure = FALSE)
+
+}
+\seealso{
+\code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=relativities]{relativities()}}, \code{\link[=split_level]{split_level()}},
+\code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=refit]{refit()}}, \code{\link[=rating_table]{rating_table()}}
 }
 \author{
 Martin Haringa

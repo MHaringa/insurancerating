@@ -1,11 +1,10 @@
-# Smooth grouped tariff relativities
+# Smooth grouped tariff relativities in a refinement workflow
 
-Replace the estimated relativities of a grouped numeric model variable
-by a smooth tariff curve. In actuarial pricing this can be useful for
-ordered risk factors such as age, vehicle age, insured value or
-bonus-malus years, where independently estimated factor levels may show
-sampling variation that is not considered suitable for the final tariff
-structure.
+Replace independently estimated relativities of an ordered, grouped
+model variable with a smooth tariff curve. This can reduce sampling
+variation between adjacent levels of risk factors such as age, vehicle
+age, insured value or bonus-malus years while retaining the broad effect
+estimated by the GLM.
 
 ## Usage
 
@@ -53,7 +52,7 @@ add_smoothing(
 - degree:
 
   Optional single whole number. Polynomial degree, used by
-  `smoothing = "spline"`. The degree must be feasible for the number of
+  `smoothing = "poly"`. The degree must be feasible for the number of
   unique grouped model points.
 
 - breaks:
@@ -66,18 +65,20 @@ add_smoothing(
 - smoothing:
 
   Character string selecting the smoothing method. Available values are
-  `"spline"`, `"gam"`, `"mpi"`, `"mpd"`, `"cx"`, `"cv"`, `"micx"`,
-  `"micv"`, `"mdcx"` and `"mdcv"`. See Details for the shape
-  restrictions represented by these codes.
+  `"spline"` (default), `"poly"`, `"mpi"`, `"mpd"`, `"gam"`, `"cx"`,
+  `"cv"`, `"micx"`, `"micv"`, `"mdcx"` and `"mdcv"`. See Details for the
+  statistical interpretation and shape restrictions.
 
 - k:
 
   Optional single positive whole number. Basis dimension for smoothing
-  methods other than `"spline"`. It sets the maximum flexibility
-  available to the smooth and is not necessarily equal to its estimated
-  effective degrees of freedom. `NULL` uses an effective default of 10.
-  The basis dimension cannot exceed the number of unique grouped
-  covariate values available for fitting.
+  methods `"spline"`, `"gam"`, `"mpi"`, `"mpd"`, `"cx"`, `"cv"`,
+  `"micx"`, `"micv"`, `"mdcx"` and `"mdcv"`. It sets the maximum
+  flexibility available to the smooth and is not necessarily equal to
+  its estimated effective degrees of freedom. `NULL` uses the smaller of
+  10 and the number of unique grouped model points. At least three
+  unique grouped values are required. The basis dimension cannot exceed
+  the number of unique grouped covariate values available for fitting.
 
 - weights:
 
@@ -102,8 +103,11 @@ is called.
 ## Details
 
 `add_smoothing()` stores a smoothing specification on a
-`rating_refinement` object. It does not immediately refit the pricing
-GLM. The original GLM contains `model_variable`, usually a factor
+`rating_refinement` object. It does not alter the fitted GLM
+immediately. The smoothing is evaluated in the recorded step order and
+applied when
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+is called. The original GLM contains `model_variable`, usually a factor
 created by grouping a continuous risk factor. `source_variable`
 identifies the original numeric variable represented by those groups.
 
@@ -117,14 +121,17 @@ influence on the fitted curve.
 
 The fitted curve is evaluated using `breaks` and converted back to a
 grouped tariff variable. The original model term is replaced by that
-smoothed tariff variable when
-[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-is called. The usual sequence is therefore
-[`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
-`add_smoothing()`, optionally
-[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md),
-and finally
-[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+smoothed tariff variable during refitting.
+
+### Actuarial interpretation
+
+Smoothing introduces a structural assumption: adjacent values of the
+source variable are expected to have related tariff effects. The
+selected method, basis dimension and breaks should therefore be assessed
+against exposure, observed experience, coefficient uncertainty and
+stability over time. A smooth curve should not be interpreted as
+evidence that the underlying risk relationship is itself known without
+uncertainty.
 
 ### Smoothing methods
 
@@ -133,26 +140,26 @@ the tariff effect:
 
 - `"spline"`:
 
-  Fits an unconstrained global polynomial through the grouped GLM
-  relativities. `degree` determines its order. A low degree is generally
-  easier to interpret and less sensitive near the boundaries; higher
-  degrees can follow more local variation but may introduce oscillation.
+  The general-purpose default. Fits an unconstrained penalized cubic
+  regression spline. It is suitable when the tariff effect should be
+  smooth but no monotonicity or curvature restriction is justified.
 
-- `"gam"`:
+- `"poly"`:
 
-  Fits an unconstrained penalized smooth with
-  [`mgcv::gam()`](https://rdrr.io/pkg/mgcv/man/gam.html). This allows
-  the tariff curve to adapt to the observed pattern while the smoothing
-  penalty limits unnecessary variation.
+  Fits a global polynomial through the grouped GLM relativities.
+  `degree` determines its order. A low degree gives a compact parametric
+  trend; higher degrees can follow more local variation but may
+  oscillate, particularly near the boundaries.
 
 - `"mpi"` and `"mpd"`:
 
-  Fit monotone increasing and monotone decreasing P-splines,
-  respectively.
+  Fit monotone increasing and monotone decreasing smooths. These are
+  often useful when actuarial reasoning implies that the tariff effect
+  should move in only one direction.
 
 - `"cx"` and `"cv"`:
 
-  Fit convex and concave P-splines, respectively.
+  Fit convex and concave smooths, respectively.
 
 - `"micx"` and `"micv"`:
 
@@ -164,32 +171,50 @@ the tariff effect:
   Fit monotone decreasing curves that are, respectively, convex and
   concave.
 
+- `"gam"`:
+
+  Fits an unconstrained thin-plate regression spline with
+  [`mgcv::gam()`](https://rdrr.io/pkg/mgcv/man/gam.html). It is mainly
+  intended as a flexible reference when comparing the general spline and
+  shape-constrained specifications. It does not impose the actuarial
+  shape assumptions represented by the constrained methods.
+
 The shape-constrained methods are fitted with
 [`scam::scam()`](https://rdrr.io/pkg/scam/man/scam.html). A constraint
 should reflect an actuarial or pricing assumption that is defensible for
 the risk factor; it should not be selected solely because it produces a
-smoother visual result.
+smoother visual result. The combined monotonicity and curvature methods
+are advanced specifications and are most appropriate when both
+assumptions can be supported independently.
 
 ### Basis dimension and polynomial degree
 
-For `"gam"` and the shape-constrained methods, `k` specifies the basis
-dimension. It controls the maximum flexibility available to the smooth,
-but it is not the final effective degrees of freedom of the fitted
-curve. For a penalized GAM, the estimated smoothing penalty can reduce
-the effective degrees of freedom below this maximum.
+For `"spline"`, `"gam"` and the shape-constrained methods, `k` specifies
+the basis dimension. It controls the maximum flexibility available to
+the smooth, but it is not the final effective degrees of freedom of the
+fitted curve. The estimated smoothing penalty can reduce the effective
+degrees of freedom below this maximum.
 
 A smaller `k` restricts the curve to broad movements. A larger `k`
 permits more local variation, but requires enough distinct grouped
 covariate values and may be unstable when only a few tariff levels are
-available. If `k` is `NULL`, an effective default basis dimension of 10
-is used. The function checks this dimension against the grouped values
-before fitting and reports the observed number of unique values when the
-requested complexity is not feasible.
+available. If `k` is `NULL`, the function uses the smaller of 10 and the
+number of unique grouped model points. Spline, GAM and shape-constrained
+smoothing require at least three unique grouped values. The function
+checks this dimension before fitting and reports the observed number of
+unique values when the requested complexity is not feasible.
 
-For `"spline"`, `degree` has the corresponding complexity role. A
+For `"poly"`, `degree` has the corresponding complexity role. A
 polynomial of degree \\d\\ requires at least \\d + 1\\ unique grouped
 values. When `degree` is omitted, the existing behaviour uses the
-highest degree supported by the grouped model points.
+highest degree supported by the grouped model points. In practice, an
+explicit low degree is generally preferable when a stable global trend
+is intended.
+
+`degree` is only accepted for `smoothing = "poly"`. Conversely, `k` is
+only accepted for `"spline"`, `"gam"` and the shape-constrained methods.
+This separation prevents a complexity argument from being supplied but
+silently ignored.
 
 The deprecated
 [`smooth_coef()`](https://mharinga.github.io/insurancerating/reference/smooth_coef.md)
@@ -199,6 +224,8 @@ wrapper remains available for backwards compatibility.
 
 [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md),
+[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
 [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
 
@@ -256,7 +283,7 @@ ref <- prepare_refinement(burn_unrestricted) |>
     model_variable = "age_policyholder_freq_cat",
     source_variable = "age_policyholder",
     breaks = seq(18, 95, 5),
-    smoothing = "gam",
+    smoothing = "spline",
     k = 6,
     weights = "exposure"
   )

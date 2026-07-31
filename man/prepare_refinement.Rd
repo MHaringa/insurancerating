@@ -16,19 +16,30 @@ the original unfiltered data. If \code{NULL}, the data are retrieved from the
 model object.}
 }
 \value{
-Object of class \code{rating_refinement}. Retain this object when
-refinement steps may need to be reviewed or edited after fitting.
+A \code{rating_refinement} object containing the original GLM, retained
+model data and ordered refinement specification. No GLM is fitted again
+until \code{\link[=refit]{refit()}} is called.
 }
 \description{
-Start a refinement workflow for a fitted GLM. Refinement steps such as
-smoothing, restrictions and expert-based relativities can be added
-sequentially and are only applied once \code{\link[=refit]{refit()}} is called.
+Create an editable refinement specification from a fitted pricing GLM.
+Smoothing, coefficient restrictions and sublevel relativities can then be
+added in a defined order. These steps do not alter the fitted GLM until
+\code{\link[=refit]{refit()}} is called.
 }
 \details{
 \code{prepare_refinement()} creates a persistent refinement specification. This
 object contains the original GLM, the corresponding model data and the
-ordered smoothing, restriction and relativity steps. It is the object that
-should be retained and edited during actuarial review.
+ordered smoothing, restriction and relativity steps. Retain this object
+during actuarial review so that assumptions can be inspected, revised and
+applied again in the same order.
+\subsection{Actuarial interpretation}{
+
+Preparing a refinement does not change coefficients, fitted values or the
+tariff structure. It separates the original statistical model from
+subsequent actuarial adjustments. Each adjustment remains an explicit step
+rather than being embedded directly in transformed data or overwritten model
+coefficients. This supports comparison between the unrestricted model and
+alternative refinement specifications.
 
 \code{\link[=refit]{refit()}} applies the stored specification and returns a fitted GLM for model
 diagnostics, prediction and tariff reporting. The returned GLM is a result,
@@ -37,7 +48,7 @@ not an editable refinement specification. Functions such as
 \code{\link[=add_relativities]{add_relativities()}} therefore accept a \code{rating_refinement} object and do not
 accept an ordinary or refitted GLM directly.
 
-A practical iterative workflow keeps both objects:
+A practical iterative workflow therefore keeps both objects:
 
 \preformatted{
 refinement <- prepare_refinement(model) |>
@@ -56,7 +67,41 @@ Calling it on a model returned by \code{refit()} deliberately starts a new
 refinement workflow with the already refined model as its baseline; it does
 not recover the earlier smoothing or restriction steps for further editing.
 }
+}
+\examples{
+portfolio <- data.frame(
+  claims = c(1, 2, 1, 3, 2, 4),
+  exposure = rep(1, 6),
+  risk_class = factor(c("A", "B", "A", "B", "A", "B"))
+)
+
+model <- glm(
+  claims ~ risk_class + offset(log(exposure)),
+  family = poisson(),
+  data = portfolio
+)
+
+refinement <- prepare_refinement(model, data = portfolio) |>
+  add_restriction(data.frame(
+    risk_class = "B",
+    risk_class_restricted = 1.15
+  ))
+
+fitted_model <- refit(refinement)
+
+# Retain and revise the specification rather than editing fitted_model.
+refinement <- refinement |>
+  add_restriction(data.frame(
+    risk_class = "B",
+    risk_class_restricted = 1.10
+  ))
+
+updated_model <- refit(refinement)
+}
 \seealso{
 \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=edit_smoothing]{edit_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}},
 \code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}
+}
+\author{
+Martin Haringa
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/univariate.R
 \name{autoplot.factor_analysis}
 \alias{autoplot.factor_analysis}
-\title{Automatically create a ggplot for objects obtained from factor analysis}
+\title{Plot observed portfolio experience by risk factor}
 \usage{
 \method{autoplot}{factor_analysis}(
   object,
@@ -44,21 +44,21 @@
 \item{metrics}{Numeric or character vector specifying which metrics to plot
 (default is all available metrics). The numeric positions are:
 \itemize{
-\item{1. Frequency (\code{nclaims / exposure})}
-\item{2. Average severity (\code{severity / nclaims})}
-\item{3. Risk premium (\code{severity / exposure})}
-\item{4. Loss ratio (\code{severity / premium})}
-\item{5. Average premium (\code{premium / exposure})}
-\item{6. Exposure}
-\item{7. Severity}
-\item{8. Number of claims}
-\item{9. Premium}
+\item 1. Frequency (\code{nclaims / exposure})
+\item 2. Average severity (\code{severity / nclaims})
+\item 3. Risk premium (\code{severity / exposure})
+\item 4. Loss ratio (\code{severity / premium})
+\item 5. Average premium (\code{premium / exposure})
+\item 6. Exposure
+\item 7. Severity
+\item 8. Number of claims
+\item 9. Premium
 }
 Character values can be \code{"frequency"}, \code{"average_severity"},
 \code{"risk_premium"}, \code{"loss_ratio"}, \code{"average_premium"}, \code{"exposure"},
 \code{"claim_amount"}, \code{"claim_count"}, and \code{"premium"}.}
 
-\item{ncol}{Number of columns in output (default = 1).}
+\item{ncol}{Positive whole number. Number of columns in the plot composition.}
 
 \item{show_exposure}{Show exposure as background bars behind line plots
 (default = TRUE).}
@@ -132,29 +132,44 @@ Defaults to \code{TRUE}.}
 
 \item{remove_x_elements}{Deprecated alias for \code{compact_x_axis}.}
 
-\item{...}{Other plotting parameters.}
+\item{...}{Currently unused.}
 }
 \value{
-A \code{ggplot2} object.
+A \code{patchwork} composition containing the requested ggplot panels.
 }
 \description{
-Takes an object produced by \code{\link[=factor_analysis]{factor_analysis()}} or \code{\link[=univariate]{univariate()}}
-(deprecated NSE interface) and plots the available statistics.
+Visualise the exposure and observed actuarial metrics calculated by
+\code{\link[=factor_analysis]{factor_analysis()}}. The plots support assessment of portfolio composition,
+observed frequency, severity, risk premium and loss ratio across risk-factor
+levels.
+
+The observed patterns are descriptive. They do not adjust for correlations
+with other risk factors and should therefore not be interpreted as
+multivariate tariff relativities.
+}
+\details{
+For rate-based metrics, exposure can be shown as background bars so that
+observed level differences can be interpreted together with portfolio
+volume. Levels with little exposure or few claims can produce volatile
+observed metrics and should be assessed accordingly.
+
+When the factor analysis contains one or more \code{by} variables, separate
+observed series are shown. \code{show_total = TRUE} adds the aggregate portfolio
+series for comparison. Sorting and manual level ordering affect only the
+presentation; the underlying summaries are unchanged.
 }
 \examples{
-## --- New usage (SE, recommended) ---
+# Plot observed frequency and risk premium
 x <- factor_analysis(MTPL2,
                      x = "area",
                      severity = "amount",
                      nclaims = "nclaims",
                      exposure = "exposure")
-autoplot(x)
+autoplot(x, metrics = c("frequency", "risk_premium"))
 
-## --- Deprecated usage (NSE) ---
-x_old <- univariate(MTPL2, x = area, severity = amount,
-                    nclaims = nclaims, exposure = exposure)
-autoplot(x_old)
-
+}
+\seealso{
+\code{\link[=factor_analysis]{factor_analysis()}}, \code{\link[=add_portfolio_experience]{add_portfolio_experience()}}
 }
 \author{
 Marc Haine, Martin Haringa

@@ -35,16 +35,39 @@ Relevels a factor so that the selected category becomes the reference
 the largest total weight, for example the largest exposure in an insurance
 portfolio. Use \code{method = "manual"} with \code{reference_level} when a specific
 business category should be the reference level.
+
+Choosing a reference level does not change fitted values or the overall model
+fit. It changes the coefficient parameterisation and therefore the level
+against which the remaining factor relativities are expressed.
+}
+\details{
+\code{method = "largest_weight"} is useful when the reference category should
+represent a substantial and relatively stable part of the portfolio. The
+supplied \code{weight} is commonly earned exposure, but another actuarially
+meaningful volume measure may be used.
+
+\code{method = "manual"} is appropriate when the reference category is determined
+by tariff interpretation, governance or an established pricing convention.
+The selected category must already be an observed factor level.
 }
 \examples{
-\dontrun{
+portfolio <- data.frame(
+  region = factor(c("North", "North", "South", "West")),
+  exposure = c(120, 80, 60, 40)
+)
+
+set_reference_level(portfolio$region, portfolio$exposure)
+set_reference_level(
+  portfolio$region,
+  method = "manual",
+  reference_level = "South"
+)
+
+# Apply the largest-weight reference rule to every factor in a data frame
 library(dplyr)
 df <- chickwts |>
-mutate(across(where(is.character), as.factor)) |>
-mutate(across(where(is.factor), ~set_reference_level(., weight)))
-
-set_reference_level(df$feed, method = "manual", reference_level = "casein")
-}
+  mutate(across(where(is.character), as.factor)) |>
+  mutate(across(where(is.factor), ~set_reference_level(., weight)))
 
 }
 \references{

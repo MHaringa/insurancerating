@@ -15,7 +15,7 @@ derive_tariff_segments() instead."><meta property="og:image" content="https://mh
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,28 +63,29 @@ derive_tariff_segments() instead."><meta property="og:image" content="https://mh
 
 
 <dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
-<dd><p>An object of class <code>"riskfactor_gam"</code>, produced by
-<code><a href="risk_factor_gam.html">risk_factor_gam()</a></code>. Objects with the old <code>"fitgam"</code> class are still
-supported for backward compatibility.</p></dd>
+<dd><p>A <code>"risk_factor_gam"</code> object returned by
+<code><a href="risk_factor_gam.html">risk_factor_gam()</a></code>. Legacy <code>"riskfactor_gam"</code> and <code>"fitgam"</code> classes are
+accepted for compatibility.</p></dd>
 
 
 <dt id="arg-complexity">complexity<a class="anchor" aria-label="anchor" href="#arg-complexity"></a></dt>
-<dd><p>Numeric. Controls the complexity penalty used when deriving
-segments. Higher values generally yield fewer tariff segments. Default = 0.</p></dd>
+<dd><p>Non-negative numeric complexity penalty for the
+evolutionary tree. Larger values generally favour fewer internal
+boundaries.</p></dd>
 
 
 <dt id="arg-max-iterations">max_iterations<a class="anchor" aria-label="anchor" href="#arg-max-iterations"></a></dt>
-<dd><p>Integer. Maximum number of search iterations used by
-the underlying grouping algorithm. Default = 10000.</p></dd>
+<dd><p>Positive integer. Maximum number of evolutionary search
+iterations.</p></dd>
 
 
 <dt id="arg-population-size">population_size<a class="anchor" aria-label="anchor" href="#arg-population-size"></a></dt>
-<dd><p>Integer. Number of candidate trees used by the
-underlying grouping algorithm. Default = 200.</p></dd>
+<dd><p>Positive integer. Number of candidate trees maintained
+during the evolutionary search.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>Integer, seed for the random number generator (for reproducibility).</p></dd>
+<dd><p>Numeric random seed used by the grouping algorithm.</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>

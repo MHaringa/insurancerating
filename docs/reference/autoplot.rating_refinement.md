@@ -1,17 +1,11 @@
-# Plot a model refinement step
+# Inspect a model refinement step
 
-Takes a `rating_refinement` object and plots one refinement step before
-[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-is called. This is useful for checking whether manual tariff
-restrictions, smoothing or expert-based relativities behave as intended
-before they are used in a refined pricing model.
-
-For objects produced by
-[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
-original levels that are split into new levels are removed from the
-connected original line and from the x-axis. Instead, the original level
-is shown as a horizontal blue segment spanning all child categories,
-with the original level label centred above the segment.
+Visualise one stored step of a `rating_refinement` specification before
+fitting the revised GLM with
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+The plot compares the original fitted tariff effect with the smoothing,
+restriction or sublevel relativity specification produced by the
+selected step.
 
 ## Usage
 
@@ -38,28 +32,14 @@ autoplot(
 
 - variable:
 
-  Optional character string specifying the risk factor to plot. If
-  `NULL` (default), all available variables in the refinement object are
-  shown. If specified, only the selected risk factor is plotted.
+  Optional character string identifying the model or derived variable
+  whose refinement step should be shown. An error is returned when no
+  step or more than one step matches.
 
 - step:
 
-  Optional integer specifying which refinement step to plot. This is
-  mainly relevant when multiple refinement steps have been applied (e.g.
-  multiple calls to
-  [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
-  [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
-  or
-  [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)).
-
-  - If `NULL` (default), the latest refinement step is shown.
-
-  - If specified, the corresponding step in the refinement sequence is
-    used.
-
-  This makes it possible to inspect intermediate refinement stages
-  before calling
-  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+  Optional positive integer identifying a step in the stored refinement
+  sequence. This takes precedence over `variable`.
 
 - x_max:
 
@@ -104,6 +84,68 @@ autoplot(
 
 A `ggplot2` object.
 
+## Details
+
+Refinement steps are evaluated in their stored order up to and including
+the selected step. The plot is a diagnostic preview: it does not refit
+the GLM and does not modify the refinement specification.
+
+If `step` is supplied, that position in the refinement sequence is
+shown. If only `variable` is supplied, exactly one stored step must
+match that variable. When neither is supplied, the object must contain
+exactly one refinement step. Otherwise the function asks the user to
+select a step explicitly.
+
+### Actuarial interpretation
+
+The plot supports review of the proposed tariff structure before
+estimation. It can be used to assess the local shape and magnitude of a
+smoothing curve, the effect of fixed relativities, and the
+differentiation introduced within a broader GLM level. This visual
+assessment does not by itself establish statistical adequacy; claim
+volume, exposure, stability over time and model diagnostics should also
+be considered.
+
+For a sublevel split created by
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
+the original parent level is shown as a horizontal segment across its
+child levels. This makes the parent GLM effect and the proposed
+within-level differentiation directly comparable.
+
+## See also
+
+[`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
+[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md),
+[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+
 ## Author
 
 Martin Haringa
+
+## Examples
+
+``` r
+portfolio <- data.frame(
+  claims = c(1, 2, 1, 3, 2, 4),
+  exposure = rep(1, 6),
+  risk_class = factor(c("A", "B", "C", "A", "B", "C"))
+)
+
+model <- glm(
+  claims ~ risk_class + offset(log(exposure)),
+  family = poisson(),
+  data = portfolio
+)
+
+refinement <- prepare_refinement(model, data = portfolio) |>
+  add_restriction(data.frame(
+    risk_class = "C",
+    risk_class_restricted = 1.10
+  ))
+
+autoplot(refinement)
+
+```

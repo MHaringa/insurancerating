@@ -6,10 +6,9 @@ Analyse portfolio behaviour and inspect risk factors before model
 estimation.
 
 - [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-  : Factor analysis for discrete risk factors
+  : Summarise observed portfolio experience by risk factor
 - [`autoplot(`*`<factor_analysis>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.factor_analysis.md)
-  : Automatically create a ggplot for objects obtained from factor
-  analysis
+  : Plot observed portfolio experience by risk factor
 - [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
   : Portfolio histogram with tail bins
 
@@ -32,31 +31,24 @@ large losses before fitting severity models.
 - [`autoplot(`*`<truncated_severity>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.truncated_severity.md)
   : Plot a fitted truncated severity distribution
 - [`rlnormt()`](https://mharinga.github.io/insurancerating/reference/rlnormt.md)
-  : Generate random samples from a truncated lognormal distribution
+  : Simulate severities from a truncated lognormal distribution
 - [`rgammat()`](https://mharinga.github.io/insurancerating/reference/rgammat.md)
-  : Generate random samples from a truncated gamma distribution
+  : Simulate severities from a truncated gamma distribution
 
 ## Tariff segments
 
 Analyse continuous risk factors and convert them to tariff segments.
 
 - [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
-  : Fit a GAM for a continuous risk factor
-
+  : Estimate a smooth effect for a continuous risk factor
 - [`autoplot(`*`<riskfactor_gam>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.riskfactor_gam.md)
-  :
-
-  Autoplot for GAM objects from
-  [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
-
+  : Inspect a smooth continuous risk-factor effect
 - [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md)
-  : Derive insurance tariff segments
-
+  : Derive candidate tariff segments from a smooth risk-factor effect
 - [`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md)
   : Add derived tariff segments to portfolio data
-
 - [`autoplot(`*`<tariff_segments>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.tariff_segments.md)
-  : Autoplot for tariff segment objects
+  : Inspect derived tariff-segment boundaries
 
 ## Modelling and interpretation
 
@@ -64,18 +56,11 @@ Estimate pricing models and interpret fitted coefficients in tariff
 terms.
 
 - [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-  : Build rating tables from fitted pricing models
-
+  : Present fitted pricing-model effects as a rating table
 - [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
   : Add portfolio experience to a rating table
-
 - [`autoplot(`*`<rating_table>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
-  :
-
-  Plot risk factor effects from
-  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-  results
-
+  : Compare fitted risk-factor effects graphically
 - [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md)
   : Add model predictions to a pricing data set
 
@@ -87,23 +72,21 @@ relativities.
 - [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md)
   : Prepare a model refinement workflow
 - [`autoplot(`*`<rating_refinement>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
-  : Plot a model refinement step
+  : Inspect a model refinement step
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
-  : Smooth grouped tariff relativities
+  : Smooth grouped tariff relativities in a refinement workflow
 - [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
-  : Edit an existing smoothing step in a refinement workflow
+  : Edit a smoothing curve in a refinement workflow
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   : Add coefficient restrictions to a refinement workflow
 - [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
-  : Add expert-based relativities to a refinement workflow
+  : Add sublevel relativities to a refinement workflow
 - [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
-  : Combine multiple level splits into relativities
+  : Combine sublevel splits into a relativity specification
 - [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md)
-  : Define a level split with relativities
-- [`split_relativities()`](https://mharinga.github.io/insurancerating/reference/split_relativities.md)
-  : Construct a relativities mapping for level splitting
+  : Define a sublevel split for a model level
 - [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-  : Refit a prepared refinement workflow
+  : Fit a prepared refinement specification
 
 ## Validation
 
@@ -111,29 +94,29 @@ Assess model fit, predictive stability, dispersion, and residual
 behaviour.
 
 - [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md)
-  : Performance of fitted GLMs
+  : Compare fitted GLMs using common performance measures
 - [`rmse()`](https://mharinga.github.io/insurancerating/reference/rmse.md)
-  : Root Mean Squared Error (RMSE)
+  : Calculate response-scale prediction error
 - [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
-  : Bootstrapped model performance
+  : Assess predictive stability by repeated resampling
 - [`autoplot(`*`<bootstrap_performance>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.md)
-  : Autoplot for bootstrap_performance objects
+  : Plot the resampled performance distribution
 - [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md)
   : Check overdispersion of a Poisson claim frequency model
 - [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
   : Check simulation-based model residuals
 - [`autoplot(`*`<check_residuals>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.check_residuals.md)
-  : Autoplot for check_residuals objects
+  : Inspect simulation-based residual uniformity
 
 ## Model structure
 
 Extract model data and analyse observed rating-grid combinations.
 
 - [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
-  **\[experimental\]** : Extract model data
+  **\[experimental\]** : Recover the portfolio data used by a fitted
+  model
 - [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-  : Construct observed rating-grid points from model data or a data
-  frame
+  : Construct observed rating-grid points
 
 ## Utilities
 
@@ -258,6 +241,9 @@ use the updated API.
 
   Deprecated alias for
   [`refit_glm()`](https://mharinga.github.io/insurancerating/reference/refit_glm.md)
+
+- [`split_relativities()`](https://mharinga.github.io/insurancerating/reference/split_relativities.md)
+  : Deprecated low-level relativity constructor
 
 - [`period_to_months()`](https://mharinga.github.io/insurancerating/reference/period_to_months.md)
   :

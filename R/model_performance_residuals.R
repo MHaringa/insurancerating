@@ -144,27 +144,37 @@ print.check_residuals <- function(x, digits = 3, ...) {
 }
 
 
-#' Autoplot for check_residuals objects
+#' Inspect simulation-based residual uniformity
 #'
 #' @description
-#' `autoplot()` method for objects created by [check_residuals()].
-#' Produces a simulation-based uniform QQ-plot of the residuals, with the
-#' Kolmogorov-Smirnov p-value shown in the subtitle.
-#' Optionally prints a message about whether deviations are detected.
+#' Plot the scaled residuals returned by [check_residuals()] against their
+#' theoretical uniform quantiles. Systematic departures from the diagonal can
+#' indicate remaining structure, distributional mismatch or influential
+#' observations in a fitted pricing model.
 #'
-#' @param object An object of class `"check_residuals"`, produced by [check_residuals()].
-#' @param show_message Logical. If TRUE (default), prints a short message based on
-#'   the p-value from the KS test.
+#' @param object An object produced by [check_residuals()].
+#' @param show_message Logical. If `TRUE`, print a concise interpretation of
+#'   the Kolmogorov-Smirnov p-value.
 #' @param max_points Maximum number of QQ-plot points to display. If the
-#' residual check contains more points, an evenly spaced subset is shown. Use
-#' `Inf` to plot all points.
-#' @param ... Additional arguments passed to [ggplot2::autoplot()].
+#'   residual check contains more points, an evenly spaced subset is shown.
+#'   Use `Inf` to display all points.
+#' @param ... Currently unused.
+#'
+#' @details
+#' The subtitle reports the uniformity-test p-value stored in `object`. This
+#' p-value is a diagnostic signal rather than a stand-alone model acceptance
+#' criterion. The shape and location of deviations should be assessed together
+#' with exposure, fitted values and relevant risk-factor levels.
+#'
+#' Reducing `max_points` affects only the displayed QQ points; it does not
+#' change the residual calculation or the reported test.
 #'
 #' @return A [ggplot2::ggplot] object.
 #'
 #' @author Martin Haringa
 #'
 #' @import ggplot2
+#' @seealso [check_residuals()], [check_overdispersion()]
 #' @export
 autoplot.check_residuals <- function(object, show_message = TRUE,
                                      max_points = 1000, ...) {

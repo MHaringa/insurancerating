@@ -1,38 +1,40 @@
-#' Bootstrapped model performance
+#' Assess predictive stability by repeated resampling
 #'
 #' @description
-#' Generate repeated train/evaluation samples to compute model performance.
-#' Currently, the supported metric is root mean squared error (RMSE).
+#' Refit a pricing model on repeated samples and record the resulting
+#' response-scale prediction error. The distribution of RMSE values describes
+#' how sensitive model performance is to changes in the observed portfolio
+#' sample.
 #'
-#' @param model A fitted model object.
-#' @param data Data used to fit the model object.
-#' @param n_resamples Integer. Number of resampling replicates. Default = 50.
+#' @param model A fitted model object that can be updated on resampled data.
+#' @param data Data frame containing the model response and predictors.
+#' @param n_resamples Positive whole number. Number of resampling replicates.
+#'   Default is 50.
 #' @param sample_fraction Fraction of the data used in the training sample. Must
-#'   be in `(0, 1]`. Default = 1.
-#' @param metric Character. Performance metric to compute. Currently only
+#'   be in `(0, 1]`. Default is 1.
+#' @param metric Character string. Performance metric to compute. Currently only
 #'   `"rmse"` is supported.
-#' @param sampling Character. Sampling scheme. `"bootstrap"` samples training
+#' @param sampling Character string. Sampling scheme. `"bootstrap"` samples
+#'   training
 #'   rows with replacement and evaluates on out-of-bag rows when
 #'   `sample_fraction < 1`.
 #'   `"split"` samples training rows without replacement and evaluates on the
 #'   remaining rows when `sample_fraction < 1`.
-#' @param show_progress Logical. Show progress bar during bootstrap iterations.
-#'   Default = TRUE.
-#' @param rmse_model Optional numeric RMSE of the fitted (original) model.
-#'   If NULL (default), it is computed automatically.
+#' @param show_progress Logical. Show a progress bar during resampling.
+#'   Default is `TRUE`.
+#' @param rmse_model Optional finite numeric RMSE for the original fitted model.
+#'   If `NULL`, it is calculated from `model` and `data`.
 #' @param n,frac Deprecated argument names. Use `n_resamples` and
 #'   `sample_fraction` instead.
 #'
 #' @details
-#' To test the predictive stability of a fitted model it can be helpful to
-#' assess the variation in a performance metric. The variation is calculated by
-#' refitting the model on repeated samples and storing the resulting metric
-#' values.
+#' ## Resampling design
 #'
-#' - If `sample_fraction = 1`, the metric is evaluated on the sampled training
-#'   data.
-#' - If `sample_fraction < 1`, the metric is evaluated on rows that were not
-#'   used for training.
+#' With `sampling = "bootstrap"`, training rows are sampled with replacement.
+#' With `sampling = "split"`, they are sampled without replacement. When
+#' `sample_fraction < 1`, performance is evaluated on records not used for
+#' fitting. When `sample_fraction = 1`, performance is evaluated on the sampled
+#' training data and should be interpreted as an in-sample stability measure.
 #'
 #' Character columns and factor columns are converted to factors with levels
 #' taken from the full input data before resampling. For factor variables used
@@ -41,7 +43,23 @@
 #' level is present in the evaluation data but absent from a particular training
 #' sample.
 #'
-#' @return An object of class `"bootstrap_performance"`, which is a list with components:
+#' ## Actuarial interpretation
+#'
+#' The resampled RMSE distribution is useful for comparing the stability of
+#' alternative frequency, severity or risk-premium specifications under
+#' repeated portfolio sampling. A narrow distribution indicates that the
+#' measured error is relatively insensitive to the sampled records; a wide
+#' distribution indicates greater sampling sensitivity.
+#'
+#' This is an experience-based diagnostic and does not by itself represent the
+#' full uncertainty in future claims, trend, portfolio mix or model
+#' specification. Sparse factor levels are retained in training samples where
+#' necessary to avoid new-level prediction failures. That protection is useful
+#' operationally, but should be considered when interpreting the resampling
+#' design.
+#'
+#' @return An object of class `"bootstrap_performance"`, which is a list with
+#' components:
 #' \describe{
 #'   \item{rmse_bs}{Numeric vector with `n_resamples` bootstrap RMSE values.}
 #'   \item{rmse_mod}{Root mean squared error for the original fitted model.}
@@ -70,6 +88,9 @@
 #'                                 show_progress = FALSE)
 #' autoplot(x_frac)
 #' }
+#'
+#' @seealso [rmse()], [model_performance()],
+#'   [autoplot.bootstrap_performance()]
 #'
 #' @export
 bootstrap_performance <- function(model, data, n_resamples = 50,
@@ -313,20 +334,26 @@ as.vector.bootstrap_performance <- function(x, ...) {
 }
 
 
-#' Autoplot for bootstrap_performance objects
+#' Plot the resampled performance distribution
 #'
 #' @description
-#' `autoplot()` method for objects created by [bootstrap_performance()].
-#' Produces a histogram and density plot of the bootstrapped RMSE values,
-#' with the RMSE of the original fitted model shown as a dashed vertical line.
-#' Optionally, 95% quantile bounds are shown as dotted vertical lines.
+#' Display the empirical distribution of resampled RMSE values from
+#' [bootstrap_performance()]. The histogram shows the observed resampling
+#' distribution, while the density curve provides a smooth visual summary.
 #'
 #' @param object An object of class `"bootstrap_performance"`, produced by
 #'   [bootstrap_performance()].
-#' @param fill Fill color of the histogram bars. Default = `"#E6E6E6"`.
-#' @param color Border color of the histogram bars. Default = `NA`, which
+#' @param fill Fill colour of the histogram bars. Default is `"#E6E6E6"`.
+#' @param color Border colour of the histogram bars. Default is `NA`, which
 #'   removes bar borders.
-#' @param ... Additional arguments passed to [ggplot2::autoplot()].
+#' @param ... Currently unused.
+#'
+#' @details
+#' The dashed orange line marks the RMSE of the original fitted model. The
+#' dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles of the
+#' resampled values when these can be calculated. Their distance provides a
+#' practical indication of sampling variability; it is not a formal prediction
+#' interval for future portfolio performance.
 #'
 #' @return A [ggplot2::ggplot] object.
 #'
@@ -344,6 +371,8 @@ as.vector.bootstrap_performance <- function(x, ...) {
 #'                            show_progress = FALSE)
 #' autoplot(x)
 #' }
+#'
+#' @seealso [bootstrap_performance()], [rmse()]
 #'
 #' @export
 autoplot.bootstrap_performance <- function(object,

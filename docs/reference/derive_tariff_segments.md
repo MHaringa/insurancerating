@@ -1,10 +1,10 @@
-# Derive insurance tariff segments
+# Derive candidate tariff segments from a smooth risk-factor effect
 
-Derives data-driven tariff segments for a continuous risk factor from a
-fitted `"riskfactor_gam"` object produced by
-[`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md).
-The segments help translate a smooth GAM response pattern into practical
-categorical rating factors for a GLM tariff.
+Approximate the smooth effect estimated by
+[`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
+with intervals for a continuous risk factor. The resulting boundaries
+provide a candidate categorical representation that can be inspected
+before inclusion in a pricing GLM or tariff structure.
 
 ## Usage
 
@@ -25,29 +25,28 @@ derive_tariff_segments(
 
 - object:
 
-  An object of class `"riskfactor_gam"`, produced by
+  A `"risk_factor_gam"` object returned by
   [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md).
-  Objects with the old `"fitgam"` class are still supported for backward
+  Legacy `"riskfactor_gam"` and `"fitgam"` classes are accepted for
   compatibility.
 
 - complexity:
 
-  Numeric. Controls the complexity penalty used when deriving segments.
-  Higher values generally yield fewer tariff segments. Default = 0.
+  Non-negative numeric complexity penalty for the evolutionary tree.
+  Larger values generally favour fewer internal boundaries.
 
 - max_iterations:
 
-  Integer. Maximum number of search iterations used by the underlying
-  grouping algorithm. Default = 10000.
+  Positive integer. Maximum number of evolutionary search iterations.
 
 - population_size:
 
-  Integer. Number of candidate trees used by the underlying grouping
-  algorithm. Default = 200.
+  Positive integer. Number of candidate trees maintained during the
+  evolutionary search.
 
 - seed:
 
-  Integer, seed for the random number generator (for reproducibility).
+  Numeric random seed used by the grouping algorithm.
 
 - alpha:
 
@@ -100,12 +99,34 @@ For backward compatibility, the old components `prediction`, `x`,
 
 ## Details
 
-Evolutionary trees (via
-[`evtree::evtree()`](https://rdrr.io/pkg/evtree/man/evtree.html)) are
-used as a technique to bin the fitted GAM object into candidate tariff
-segments. This method is based on the work by Henckaerts et al. (2018).
-See Grubinger et al. (2014) for details on the parameters controlling
-the evtree fit.
+### Method
+
+An evolutionary regression tree from
+[`evtree::evtree()`](https://rdrr.io/pkg/evtree/man/evtree.html) is
+fitted to the GAM response over the observed risk-factor values.
+Internal tree split points are translated into interval boundaries. If
+no internal split is supported by the fitted search, one interval
+spanning the observed range is returned.
+
+The method follows the data-driven binning approach described by
+Henckaerts et al. (2018). `complexity`, `population_size`,
+`max_iterations` and `seed` control the search rather than an actuarial
+minimum-volume rule.
+
+### Actuarial interpretation
+
+The returned segments approximate the shape of the fitted univariate
+GAM; they are not automatically a final tariff classification. Before
+use in a multivariate model, the boundaries should be assessed against
+exposure and claim volume, stability across periods, operational
+rounding and the interaction with other risk factors. Particular care is
+required for boundaries in sparsely populated tails.
+
+Use
+[`autoplot.tariff_segments()`](https://mharinga.github.io/insurancerating/reference/autoplot.tariff_segments.md)
+to compare the smooth curve and boundaries. Use
+[`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md)
+to attach the resulting factor to the portfolio rows used for the GAM.
 
 ## References
 
@@ -129,6 +150,12 @@ marginal likelihood estimation of semiparametric generalized linear
 models. *JRSS B*, 73(1), 3–36.
 [doi:10.1111/j.1467-9868.2010.00749.x](https://doi.org/10.1111/j.1467-9868.2010.00749.x)
 
+## See also
+
+[`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md),
+[`autoplot.tariff_segments()`](https://mharinga.github.io/insurancerating/reference/autoplot.tariff_segments.md),
+[`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md)
+
 ## Author
 
 Martin Haringa
@@ -137,14 +164,15 @@ Martin Haringa
 
 ``` r
 if (FALSE) { # \dontrun{
-library(dplyr)
-
-# Recommended new usage (SE)
-age_segments <- risk_factor_gam(MTPL,
-                                risk_factor = "age_policyholder",
-                                claim_count = "nclaims",
-                                exposure = "exposure") |>
+age_segments <- risk_factor_gam(
+  MTPL,
+  risk_factor = "age_policyholder",
+  claim_count = "nclaims",
+  exposure = "exposure"
+) |>
   derive_tariff_segments()
+
+autoplot(age_segments, show_observations = TRUE)
 
 MTPL |>
   add_tariff_segments(age_segments, name = "age_policyholder_segment")

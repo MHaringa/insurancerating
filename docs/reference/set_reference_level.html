@@ -9,11 +9,17 @@
 (first) level. By default, the reference level is chosen as the level with
 the largest total weight, for example the largest exposure in an insurance
 portfolio. Use method = "manual" with reference_level when a specific
-business category should be the reference level.'><meta property="og:description" content='Relevels a factor so that the selected category becomes the reference
+business category should be the reference level.
+Choosing a reference level does not change fitted values or the overall model
+fit. It changes the coefficient parameterisation and therefore the level
+against which the remaining factor relativities are expressed.'><meta property="og:description" content='Relevels a factor so that the selected category becomes the reference
 (first) level. By default, the reference level is chosen as the level with
 the largest total weight, for example the largest exposure in an insurance
 portfolio. Use method = "manual" with reference_level when a specific
-business category should be the reference level.'><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+business category should be the reference level.
+Choosing a reference level does not change fitted values or the overall model
+fit. It changes the coefficient parameterisation and therefore the level
+against which the remaining factor relativities are expressed.'><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -21,7 +27,7 @@ business category should be the reference level.'><meta property="og:image" cont
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,6 +57,9 @@ business category should be the reference level.'><meta property="og:image" cont
 the largest total weight, for example the largest exposure in an insurance
 portfolio. Use <code>method = "manual"</code> with <code>reference_level</code> when a specific
 business category should be the reference level.</p>
+<p>Choosing a reference level does not change fitted values or the overall model
+fit. It changes the coefficient parameterisation and therefore the level
+against which the remaining factor relativities are expressed.</p>
     </div>
 
     <div class="section level2">
@@ -94,6 +103,16 @@ when <code>method = "manual"</code>.</p></dd>
 level set as the first level.</p>
     </div>
     <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p><code>method = "largest_weight"</code> is useful when the reference category should
+represent a substantial and relatively stable part of the portfolio. The
+supplied <code>weight</code> is commonly earned exposure, but another actuarially
+meaningful volume measure may be used.</p>
+<p><code>method = "manual"</code> is appropriate when the reference category is determined
+by tariff interpretation, governance or an established pricing convention.
+The selected category must already be an observed factor level.</p>
+    </div>
+    <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
     <p>Kaas, Rob &amp; Goovaerts, Marc &amp; Dhaene, Jan &amp; Denuit, Michel.
 (2008). Modern Actuarial Risk Theory: Using R.
@@ -106,14 +125,39 @@ level set as the first level.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="va">chickwts</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">as.factor</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.factor</span><span class="op">)</span>, <span class="op">~</span><span class="fu">set_reference_level</span><span class="op">(</span><span class="va">.</span>, <span class="va">weight</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  region <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"North"</span>, <span class="st">"North"</span>, <span class="st">"South"</span>, <span class="st">"West"</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  exposure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">120</span>, <span class="fl">80</span>, <span class="fl">60</span>, <span class="fl">40</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu">set_reference_level</span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">feed</span>, method <span class="op">=</span> <span class="st">"manual"</span>, reference_level <span class="op">=</span> <span class="st">"casein"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="fu">set_reference_level</span><span class="op">(</span><span class="va">portfolio</span><span class="op">$</span><span class="va">region</span>, <span class="va">portfolio</span><span class="op">$</span><span class="va">exposure</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] North North South West </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"xoriginal")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] North South West </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Levels: North South West</span>
+<span class="r-in"><span><span class="fu">set_reference_level</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">portfolio</span><span class="op">$</span><span class="va">region</span>,</span></span>
+<span class="r-in"><span>  method <span class="op">=</span> <span class="st">"manual"</span>,</span></span>
+<span class="r-in"><span>  reference_level <span class="op">=</span> <span class="st">"South"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] North North South West </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"xoriginal")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] North South West </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Levels: South North West</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Apply the largest-weight reference rule to every factor in a data frame</span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Attaching package: ‘dplyr’</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The following objects are masked from ‘package:stats’:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>     filter, lag</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The following objects are masked from ‘package:base’:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>     intersect, setdiff, setequal, union</span>
+<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="va">chickwts</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">as.factor</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.factor</span><span class="op">)</span>, <span class="op">~</span><span class="fu">set_reference_level</span><span class="op">(</span><span class="va">.</span>, <span class="va">weight</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

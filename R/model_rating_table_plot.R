@@ -1,45 +1,93 @@
-#' Plot risk factor effects from `rating_table()` results
+#' Compare fitted risk-factor effects graphically
 #'
 #' @description
-#' Create a ggplot visualisation of a `rating_table` object produced by
-#' [rating_table()]. Estimates are plotted per risk factor, with optional
-#' exposure bars. Observed portfolio experience can be added first with
-#' [add_portfolio_experience()].
+#' Plot the coefficients or relativities stored in a [rating_table()] object by
+#' risk factor. Multiple fitted models can be compared, exposure can be shown as
+#' background bars, and observed portfolio experience attached with
+#' [add_portfolio_experience()] can be added as a separate line.
 #'
-#' When observed experience is attached, it is plotted as an additional line.
-#' The scaling is controlled by [add_portfolio_experience()].
+#' @details
+#' ## Plot contents
 #'
-#' @param object A `rating_table` object returned by [rating_table()].
-#' @param risk_factors Character vector specifying which risk factors to plot.
-#'   Defaults to all risk factors.
+#' One panel is produced for each selected risk factor. Model effects use the
+#' primary y-axis. When exposure is available, bars are rescaled to the plotting
+#' range and the original exposure scale is shown on the secondary y-axis.
+#'
+#' Observed experience is plotted only after it has been attached with
+#' [add_portfolio_experience()]. The selected `metric` is converted to the
+#' relative scale recorded in that object, using either the model reference
+#' level or the portfolio mean.
+#'
+#' ## Actuarial interpretation
+#'
+#' The plot supports comparison of fitted tariff effects, portfolio volume and
+#' unadjusted observed experience. Differences between the observed and modelled
+#' lines may indicate portfolio-mix effects, sparse levels, model smoothing or
+#' genuine lack of fit. The chart does not separate these explanations and
+#' should be reviewed together with claim counts, residual diagnostics and
+#' stability across periods.
+#'
+#' When models are compared, the analyst should ensure that response
+#' definitions, link functions and relativity scales are sufficiently
+#' comparable. Exposure bars provide volume context but are not confidence
+#' intervals.
+#'
+#' @param object A `"rating_table"` object returned by [rating_table()].
+#' @param risk_factors Optional character vector specifying the risk factors to
+#'   plot. If `NULL`, all available risk factors are shown.
 #' @param metric Optional character string. Observed-experience metric to plot
 #'   when observed experience has been attached with
 #'   [add_portfolio_experience()]. Common choices are `"frequency"`,
 #'   `"severity"`/`"average_severity"` and `"risk_premium"`.
-#' @param ncol Number of columns in the patchwork layout. Default is 1.
-#' @param show_exposure_labels Logical; if `TRUE`, show exposure values as
-#'   labels on the bars. Default is `TRUE`.
-#' @param decimal_mark Character; decimal separator, either `","` (default) or
-#'   `"."`.
-#' @param y_label Character; label for the y-axis. Default is `"Relativity"`.
-#' @param bar_fill Fill color for the exposure bars. If `NULL`, taken from the
-#'   internal palette.
-#' @param model_color Optional override for model line colors. If `NULL`, colors
-#'   are taken from the internal discrete palette.
-#' @param use_linetype Logical; if `TRUE`, use different line types for models.
-#'   Default is `FALSE`.
-#' @param rotate_angle Numeric value for angle of labels on the x-axis (degrees).
-#' @param custom_theme List with customised theme options.
-#' @param remove_underscores Logical; remove underscores from labels.
+#' @param ncol Positive integer specifying the number of columns in the
+#'   patchwork layout.
+#' @param show_exposure_labels Logical. If `TRUE`, print exposure values on the
+#'   background bars.
+#' @param decimal_mark Character string, either `","` or `"."`, controlling
+#'   number labels.
+#' @param y_label Character string for the primary y-axis.
+#' @param bar_fill Optional colour for exposure bars. If `NULL`, the package
+#'   palette is used.
+#' @param model_color Optional single colour overriding the model-line palette.
+#' @param use_linetype Logical. If `TRUE`, distinguish fitted models by line
+#'   type as well as colour.
+#' @param rotate_angle Optional numeric angle for risk-factor level labels.
+#' @param custom_theme Optional named list passed to [ggplot2::theme()].
+#' @param remove_underscores Logical. If `TRUE`, replace underscores with spaces
+#'   in risk-factor axis labels.
 #' @param labels Deprecated alias for `show_exposure_labels`.
 #' @param dec.mark Deprecated alias for `decimal_mark`.
 #' @param ylab Deprecated alias for `y_label`.
 #' @param fill Deprecated alias for `bar_fill`.
 #' @param color Deprecated alias for `model_color`.
 #' @param linetype Deprecated alias for `use_linetype`.
-#' @param ... Additional arguments passed to ggplot2 layers.
+#' @param ... Additional arguments reserved for method compatibility.
 #'
-#' @return A `ggplot`/`patchwork` object.
+#' @return A `patchwork` object containing one `ggplot2` panel per selected risk
+#' factor.
+#'
+#' @author Martin Haringa
+#'
+#' @seealso [rating_table()], [add_portfolio_experience()],
+#'   [factor_analysis()], [as_gt.rating_table()]
+#'
+#' @examples
+#' portfolio <- MTPL
+#' portfolio$zip <- as.factor(portfolio$zip)
+#'
+#' frequency <- glm(
+#'   nclaims ~ bm + zip + offset(log(exposure)),
+#'   family = poisson(),
+#'   data = portfolio
+#' )
+#'
+#' effects <- rating_table(
+#'   frequency,
+#'   model_data = portfolio,
+#'   exposure = "exposure"
+#' )
+#'
+#' autoplot(effects, risk_factors = "zip", show_exposure_labels = FALSE)
 #'
 #' @import ggplot2
 #' @importFrom patchwork wrap_plots

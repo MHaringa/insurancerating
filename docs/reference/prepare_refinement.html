@@ -5,11 +5,13 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Prepare a model refinement workflow — prepare_refinement"><meta name="description" content="Start a refinement workflow for a fitted GLM. Refinement steps such as
-smoothing, restrictions and expert-based relativities can be added
-sequentially and are only applied once refit() is called."><meta property="og:description" content="Start a refinement workflow for a fitted GLM. Refinement steps such as
-smoothing, restrictions and expert-based relativities can be added
-sequentially and are only applied once refit() is called."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Prepare a model refinement workflow — prepare_refinement"><meta name="description" content="Create an editable refinement specification from a fitted pricing GLM.
+Smoothing, coefficient restrictions and sublevel relativities can then be
+added in a defined order. These steps do not alter the fitted GLM until
+refit() is called."><meta property="og:description" content="Create an editable refinement specification from a fitted pricing GLM.
+Smoothing, coefficient restrictions and sublevel relativities can then be
+added in a defined order. These steps do not alter the fitted GLM until
+refit() is called."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -17,7 +19,7 @@ sequentially and are only applied once refit() is called."><meta property="og:im
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,9 +44,10 @@ sequentially and are only applied once refit() is called."><meta property="og:im
     </div>
 
     <div class="ref-description section level2">
-    <p>Start a refinement workflow for a fitted GLM. Refinement steps such as
-smoothing, restrictions and expert-based relativities can be added
-sequentially and are only applied once <code><a href="refit.html">refit()</a></code> is called.</p>
+    <p>Create an editable refinement specification from a fitted pricing GLM.
+Smoothing, coefficient restrictions and sublevel relativities can then be
+added in a defined order. These steps do not alter the fitted GLM until
+<code><a href="refit.html">refit()</a></code> is called.</p>
     </div>
 
     <div class="section level2">
@@ -70,22 +73,33 @@ model object.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Object of class <code>rating_refinement</code>. Retain this object when
-refinement steps may need to be reviewed or edited after fitting.</p>
+    <p>A <code>rating_refinement</code> object containing the original GLM, retained
+model data and ordered refinement specification. No GLM is fitted again
+until <code><a href="refit.html">refit()</a></code> is called.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>prepare_refinement()</code> creates a persistent refinement specification. This
 object contains the original GLM, the corresponding model data and the
-ordered smoothing, restriction and relativity steps. It is the object that
-should be retained and edited during actuarial review.</p>
+ordered smoothing, restriction and relativity steps. Retain this object
+during actuarial review so that assumptions can be inspected, revised and
+applied again in the same order.</p><div class="section">
+<h3 id="actuarial-interpretation">Actuarial interpretation<a class="anchor" aria-label="anchor" href="#actuarial-interpretation"></a></h3>
+
+
+<p>Preparing a refinement does not change coefficients, fitted values or the
+tariff structure. It separates the original statistical model from
+subsequent actuarial adjustments. Each adjustment remains an explicit step
+rather than being embedded directly in transformed data or overwritten model
+coefficients. This supports comparison between the unrestricted model and
+alternative refinement specifications.</p>
 <p><code><a href="refit.html">refit()</a></code> applies the stored specification and returns a fitted GLM for model
 diagnostics, prediction and tariff reporting. The returned GLM is a result,
 not an editable refinement specification. Functions such as
 <code><a href="add_smoothing.html">add_smoothing()</a></code>, <code><a href="edit_smoothing.html">edit_smoothing()</a></code>, <code><a href="add_restriction.html">add_restriction()</a></code> and
 <code><a href="add_relativities.html">add_relativities()</a></code> therefore accept a <code>rating_refinement</code> object and do not
 accept an ordinary or refitted GLM directly.</p>
-<p>A practical iterative workflow keeps both objects:</p>
+<p>A practical iterative workflow therefore keeps both objects:</p>
 <div class="sourceCode"><pre><code><span></span>
 <span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_smoothing.html">add_smoothing</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span>
@@ -101,13 +115,52 @@ accept an ordinary or refitted GLM directly.</p>
 Calling it on a model returned by <code><a href="refit.html">refit()</a></code> deliberately starts a new
 refinement workflow with the already refined model as its baseline; it does
 not recover the earlier smoothing or restriction steps for further editing.</p>
+</div>
+
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="add_smoothing.html">add_smoothing()</a></code>, <code><a href="edit_smoothing.html">edit_smoothing()</a></code>, <code><a href="add_restriction.html">add_restriction()</a></code>,
 <code><a href="add_relativities.html">add_relativities()</a></code>, <code><a href="refit.html">refit()</a></code></p></div>
     </div>
+    <div class="section level2">
+    <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
+    <p>Martin Haringa</p>
+    </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  claims <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">2</span>, <span class="fl">4</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  exposure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">6</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  risk_class <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">claims</span> <span class="op">~</span> <span class="va">risk_class</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">portfolio</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="fu">prepare_refinement</span><span class="op">(</span><span class="va">model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    risk_class <span class="op">=</span> <span class="st">"B"</span>,</span></span>
+<span class="r-in"><span>    risk_class_restricted <span class="op">=</span> <span class="fl">1.15</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">fitted_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Retain and revise the specification rather than editing fitted_model.</span></span></span>
+<span class="r-in"><span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    risk_class <span class="op">=</span> <span class="st">"B"</span>,</span></span>
+<span class="r-in"><span>    risk_class_restricted <span class="op">=</span> <span class="fl">1.10</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Updated existing restriction for `risk_class = "B"`: 1.15 -&gt; 1.1</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">updated_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

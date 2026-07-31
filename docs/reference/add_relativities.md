@@ -1,10 +1,10 @@
-# Add expert-based relativities to a refinement workflow
+# Add sublevel relativities to a refinement workflow
 
-Splits an existing model variable into more detailed tariff segments
-using supplied relativities. This is useful when the GLM is fitted on a
-coarser rating factor for credibility or stability, but the final tariff
-needs a more detailed split that is based on portfolio exposure, expert
-judgement or externally agreed relativities.
+Divide one or more levels of an existing GLM risk factor into more
+detailed tariff levels using supplied relativities. This can be
+appropriate when the GLM is estimated on a coarser factor for
+statistical stability, while a documented actuarial segmentation is
+required within sufficiently homogeneous model levels.
 
 ## Usage
 
@@ -63,9 +63,18 @@ add_relativities(
 
 ## Value
 
-Object of class `rating_refinement`.
+A `rating_refinement` object containing the stored relativity
+specification. The pricing GLM is not fitted again until
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+is called.
 
 ## Details
+
+`add_relativities()` stores a relativity step on a `rating_refinement`
+object. It does not alter the fitted GLM immediately. The split is
+evaluated in the recorded step order and applied when
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+is called.
 
 `model_variable` is the variable already used in the GLM.
 `split_variable` is the more detailed variable in the portfolio data
@@ -76,13 +85,14 @@ usually built with
 and
 [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md).
 
-The step is stored on the `rating_refinement` object and is applied when
-[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-is called. When `normalize = TRUE`, the supplied relativities are
-normalised using exposure so that the refined split keeps the original
-level effect on average. This helps prevent an expert split from
-unintentionally changing the total premium level for the original model
-group.
+When `normalize = TRUE`, the supplied relativities are normalised using
+exposure so that their exposure-weighted mean equals one within the
+split model level. They then redistribute the existing model coefficient
+across the sublevels without changing its exposure-weighted average.
+With `normalize = FALSE`, the supplied relativities are applied
+directly.
+
+### Step order and restrictions
 
 If `model_variable` was restricted in an earlier
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
@@ -98,17 +108,26 @@ have been used to derive the final split,
 reports the `split_variable` as the tariff factor and does not also show
 the intermediate restricted variable.
 
-**When to use**
+Conversely,
+[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+can be called after `add_relativities()` to adjust selected levels of
+the derived `split_variable`. The split variable is then recognised as
+an existing refinement factor; users do not need to set
+`allow_new_risk_factors = TRUE`. Levels omitted from the restriction
+table are fixed at the relativities calculated by this step.
+
+### Appropriate use
 
 `add_relativities()` is intended for refinement within an already
 reasonably homogeneous GLM segment. It redistributes an existing
 coefficient across sublevels using exposure-weighted relativities, while
-preserving the overall level of the original coefficient. This is useful
-for mild heterogeneity, commercial refinement, monotonic tariff
-differentiation, or expert-based segmentation within a stable risk group
-where the original GLM coefficient is broadly representative.
+preserving the overall level of the original coefficient when
+normalisation is used. Appropriate applications include mild residual
+heterogeneity, monotonic tariff differentiation and expert-based
+segmentation within a stable risk group where the original GLM
+coefficient remains broadly representative.
 
-**Limitations**
+### Limitations
 
 The method is not a substitute for creating a separate risk segment when
 the original GLM coefficient is itself distorted. For example, suppose a
@@ -123,6 +142,16 @@ pulled upward by the outlier subgroup.
 In that situation it is often better to create a separate GLM factor
 level, derive a separate tariff segment, or apply explicit segmentation
 or acceptation rules, instead of relying only on `add_relativities()`.
+
+## See also
+
+[`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
+[`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md),
+[`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md),
+[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
 
 ## Author
 
@@ -166,4 +195,21 @@ refined <- prepare_refinement(model, data = portfolio) |>
     relativities = relativities,
     exposure = "exposure"
   )
+
+# A subsequent restriction can revise one derived level. The remaining
+# construction-detail levels are fixed at the relativities calculated above.
+refined <- refined |>
+  add_restriction(data.frame(
+    construction_detail = "flat",
+    construction_detail_restricted = 1.00
+  ))
+
+refined_model <- refit(refined)
+rating_table(refined_model, exposure = FALSE)
+#>                      risk_factor       level est_refined_model
+#> 1                    (Intercept) (Intercept)         2.3746130
+#> 2 construction_detail_restricted        shop         1.0645161
+#> 3 construction_detail_restricted      office         0.8709677
+#> 4 construction_detail_restricted        flat         1.0000000
+#> 5 construction_detail_restricted       house         0.4745763
 ```

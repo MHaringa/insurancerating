@@ -1,32 +1,48 @@
-#' Extract model data
+#' Recover the portfolio data used by a fitted model
 #'
 #' @description
 #' `r lifecycle::badge('experimental')`
 #'
-#' `extract_model_data()` retrieves the modelling data and metadata from fitted
-#' models. It works for objects of class `"glm"`, as well as objects produced by
-#' refitting procedures (`"refitsmooth"` or `"refitrestricted"`).
+#' Recover the estimation data and pricing metadata stored with a fitted GLM or
+#' a model produced by the refinement workflow. The result provides a
+#' reproducible basis for rating grids, coefficient tables and portfolio-level
+#' model diagnostics.
 #'
 #' `model_data()` is kept as a deprecated compatibility wrapper.
 #'
 #' @param x An object of class `"glm"`, `"refitsmooth"`, or `"refitrestricted"`.
 #'
 #' @details
-#' For GLM objects, the function returns the model data and attaches attributes
-#' with the response, rating factors, terms object, and any weights or offsets.
+#' ## Data represented by the result
 #'
-#' For refit objects, the function removes auxiliary columns used during
-#' smoothing or restriction and attaches attributes with rating factors, merged
-#' smooths, restrictions, and offsets.
+#' For an ordinary GLM, the function recovers the data stored with the model or
+#' its model frame and records the response, model terms, risk factors, weights
+#' and offsets. The recovered data represent the observations available to the
+#' fitted model. Rows omitted during fitting, for example because of missing
+#' model variables, may therefore not be present.
+#'
+#' For a refined model, technical columns used to construct smoothing and
+#' restriction terms are removed from the returned data. The mappings required
+#' to interpret the refined coefficients are retained as attributes.
+#'
+#' ## Actuarial use
+#'
+#' The extracted object is intended for downstream calculations that must remain
+#' consistent with the fitted pricing model, such as [rating_grid()] and
+#' [rating_table()]. It should not be interpreted as a replacement for the
+#' original raw portfolio extract: preprocessing, filtering and missing-value
+#' handling applied before or during model fitting remain part of the data
+#' provenance.
 #'
 #' @return A `data.frame` of class `"model_data"` with additional attributes:
 #' \itemize{
-#'   \item `response` — response variable in the model;
-#'   \item `rf` — names of risk factors in the model;
-#'   \item `offweights` — weight and offset variables if present;
-#'   \item `terms` — model terms object for plain GLMs;
-#'   \item `mgd_rst`, `mgd_smt` — merged restrictions/smooths for refit objects;
-#'   \item `new_nm`, `old_nm` — new and old column names for refit objects.
+#'   \item `response`: response variable in the model;
+#'   \item `rf`: names of risk factors in the model;
+#'   \item `offweights`: weight and offset variables if present;
+#'   \item `terms`: model terms object for plain GLMs;
+#'   \item `mgd_rst`, `mgd_smt`: merged restrictions and smooths for refit
+#'   objects;
+#'   \item `new_nm`, `old_nm`: new and old column names for refit objects.
 #' }
 #'
 #' @author Martin Haringa
@@ -43,6 +59,8 @@
 #'
 #' extract_model_data(pmodel)
 #' }
+#'
+#' @seealso [rating_grid()], [rating_table()], [prepare_refinement()]
 #'
 #' @export
 extract_model_data <- function(x) {
@@ -249,11 +267,13 @@ model_data <- function(x) {
 }
 
 
-#' Construct observed rating-grid points from model data or a data frame
+#' Construct observed rating-grid points
 #'
 #' @description
-#' `rating_grid()` constructs rating-grid points by collapsing rows with
-#' identical combinations of grouping variables to a single row.
+#' Collapse portfolio records with identical risk-factor combinations into
+#' observed rating-grid points. Exposure and other numeric measures can be
+#' aggregated alongside the combinations for prediction, tariff comparison and
+#' portfolio diagnostics.
 #'
 #' The function returns only combinations that are actually observed in the input
 #' data. It does **not** create the full Cartesian product of all unique values.
@@ -284,8 +304,13 @@ model_data <- function(x) {
 #'   `aggregate_cols` instead.
 #'
 #' @details
-#' The implementation uses base R only. Output is always a regular
-#' `data.frame`, not a tibble or data.table.
+#' ## Observed combinations
+#'
+#' The grid represents the combinations present in the supplied portfolio or
+#' model data. It deliberately does not construct combinations that were not
+#' observed. This avoids creating artificial model points and is particularly
+#' relevant when risk factors are structurally related, such as product,
+#' coverage and distribution channel.
 #'
 #' If `exposure_by` is supplied, exposure or row counts are split across levels
 #' of that variable and returned in wide format, for example
@@ -293,6 +318,9 @@ model_data <- function(x) {
 #'
 #' For objects returned by [extract_model_data()], refinement mappings are joined
 #' by their original factor column. They are not cross-joined onto every row.
+#'
+#' The implementation uses base R only. The output is a regular `data.frame`,
+#' irrespective of the class of the input data.
 #'
 #' @return
 #' A `data.frame` with one row per observed rating-grid point.
@@ -321,6 +349,8 @@ model_data <- function(x) {
 #'   extract_model_data() |>
 #'   rating_grid()
 #' }
+#'
+#' @seealso [extract_model_data()], [rating_table()]
 #'
 #' @export
 rating_grid <- function(x,

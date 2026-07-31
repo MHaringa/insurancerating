@@ -105,69 +105,72 @@ legacy_gam_column_name <- function(expr) {
 }
 
 
-#' Fit a GAM for a continuous risk factor
+#' Estimate a smooth effect for a continuous risk factor
 #'
 #' @description
-#' Fits a generalized additive model (GAM) to a continuous risk factor in one of
-#' three insurance pricing contexts: claim frequency, claim severity, or pure
-#' premium. The fitted curve helps assess non-linear rating effects before a
-#' continuous variable is grouped into tariff segments or used in a GLM workflow.
+#' Estimate the relationship between a continuous risk factor and claim
+#' frequency, average severity or risk premium with a generalized additive
+#' model (GAM). The fitted curve is intended for exploratory risk-factor
+#' analysis before selecting a functional form, applying refinement or deriving
+#' categorical tariff segments.
 #'
-#' @param data A data.frame containing the insurance portfolio.
-#' @param risk_factor Character, name of column in `data` with the continuous
-#'   risk factor.
-#' @param claim_count Character, name of column in `data` with the number of
-#'   claims.
-#' @param exposure Character, name of column in `data` with the exposure.
-#' @param claim_amount (Optional) Character, column name in `data` with the
-#'   claim amount. Required for `model = "severity"`.
-#' @param pure_premium (Optional) Character, column name in `data` with the pure
-#'   premium. Required for `model = "pure_premium"`.
-#' @param model Character string specifying the model type. One of
-#'   `"frequency"`, `"severity"`, or `"pure_premium"`. Default is `"frequency"`.
-#'   The old value `"burning"` is deprecated and maps to `"pure_premium"`.
-#' @param round_risk_factor (Optional) Numeric value to round the risk factor to
-#'   a multiple of `round_risk_factor`. Can speed up fitting for factors with
-#'   many distinct values.
+#' @param data A data frame containing portfolio observations.
+#' @param risk_factor Character string. Numeric continuous risk-factor column
+#'   in `data`.
+#' @param claim_count Character string. Claim-count column. Required for
+#'   `model = "frequency"` and `model = "severity"`.
+#' @param exposure Character string. Exposure column used as an offset or
+#'   aggregation weight.
+#' @param claim_amount Optional character string. Total claim-amount column.
+#'   Required for `model = "severity"`.
+#' @param pure_premium Optional character string. Row-level risk-premium column.
+#'   Required for `model = "pure_premium"` and aggregated using exposure
+#'   weights.
+#' @param model Character string. Response context: `"frequency"`,
+#'   `"severity"` or `"pure_premium"`. The deprecated value `"burning"` maps
+#'   to `"pure_premium"`.
+#' @param round_risk_factor Optional positive numeric value. The continuous risk
+#'   factor is rounded to multiples of this value before aggregation and model
+#'   fitting. This can reduce computation and local volatility when the variable
+#'   has many distinct values, but it also removes detail.
 #' @param x,nclaims,amount,round_x Deprecated argument names. Use `risk_factor`,
 #'   `claim_count`, `claim_amount`, and `round_risk_factor` instead.
 #'
 #' @details
-#' - **Frequency model**: Fits a Poisson GAM to the number of claims. The log of
-#'   the exposure is used as an offset so the expected number of claims is
-#'   proportional to exposure.
+#' ## Statistical specification
 #'
-#' - **Severity model**: Fits a Gamma GAM with log link to the average claim
-#'   size (total amount divided by number of claims). The number of claims is
-#'   included as a weight.
+#' - `"frequency"` fits a Poisson GAM to aggregated claim counts with
+#'   `log(exposure)` as offset.
 #'
-#' - **Pure premium model**: Fits a Gamma GAM with log link to the pure premium
-#'   (risk premium). Implemented by aggregating exposure-weighted pure premiums.
-#'   The deprecated model value `"burning"` is still accepted for backward
-#'   compatibility.
+#' - `"severity"` fits a Gamma GAM with log link to average claim amount. The
+#'   response is total claim amount divided by claim count and claim count is
+#'   used as model weight.
 #'
-#' ## Migration from `fit_gam()`
+#' - `"pure_premium"` fits a Gamma GAM with log link to exposure-weighted risk
+#'   premium.
 #'
-#' The function [fit_gam()] is deprecated as of version 0.8.0 and replaced by
-#' [risk_factor_gam()]. In addition to the name change, the interface has also
-#' changed:
+#' Observations are first aggregated by the risk-factor value after optional
+#' rounding. Predictions and pointwise confidence intervals are then evaluated
+#' over the observed range.
 #'
-#' - `fit_gam()` used **non-standard evaluation (NSE)**, so column names could be
-#'   passed unquoted (e.g. `x = age_policyholder`).
-#' - `risk_factor_gam()` uses **standard evaluation (SE)**, so column names must
-#'   be passed as character strings (e.g. `risk_factor = "age_policyholder"`).
+#' ## Actuarial interpretation
 #'
-#' This makes the function easier to use in programmatic workflows.
+#' The fitted curve describes the marginal pattern in the selected portfolio
+#' data. It can reveal non-linearity, broad turning points and areas with sparse
+#' support, but it is not by itself a final tariff structure. Correlation with
+#' other risk factors, exposure concentration, claim volume, tail observations
+#' and stability across periods should be considered before using the pattern
+#' in a multivariate GLM.
 #'
-#' `riskfactor_gam()` and `fit_gam()` are still available for backward
-#' compatibility but will emit deprecation warnings.
+#' [autoplot.riskfactor_gam()] can be used to inspect the curve and observed
+#' experience. [derive_tariff_segments()] can subsequently translate the smooth
+#' pattern into candidate intervals. Alternatively, [add_smoothing()] supports
+#' smoothing within the structured refinement workflow.
 #'
+#' ## Column interface and compatibility
 #'
-#' @importFrom mgcv gam predict.gam
-#' @import ggplot2
-#' @importFrom grDevices dev.off png
-#' @importFrom graphics plot
-#' @importFrom stats aggregate gaussian model.frame poisson predict qnorm setNames
+#' Column names are supplied as character strings. Deprecated [fit_gam()] and
+#' [riskfactor_gam()] interfaces remain available for compatibility.
 #'
 #' @references Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a
 #' priori and a posteriori risk classification in insurance. Advances in
@@ -180,29 +183,41 @@ legacy_gam_column_name <- function(expr) {
 #' Journal of the Royal Statistical Society (B) 73(1):3–36.
 #'
 #' @return
-#' A `list` of class `"riskfactor_gam"` with the following elements:
-#' \item{prediction}{A data frame with predicted values and confidence intervals.}
-#' \item{x}{Name of the continuous risk factor.}
-#' \item{model}{The model type: `"frequency"`, `"severity"`, or `"pure_premium"`.}
-#' \item{data}{Merged data frame with predictions and observed values.}
-#' \item{x_obs}{Observed values of the continuous risk factor.}
+#' A list of class `"risk_factor_gam"` with compatibility classes
+#' `"riskfactor_gam"` and `"fitgam"`. It contains:
+#' \describe{
+#'   \item{prediction}{Prediction grid with fitted values and pointwise
+#'   confidence limits.}
+#'   \item{x}{Name of the continuous risk factor.}
+#'   \item{model}{Response context: `"frequency"`, `"severity"` or
+#'   `"pure_premium"`.}
+#'   \item{data}{Aggregated observed experience and fitted values at observed
+#'   risk-factor values.}
+#'   \item{x_obs}{Risk-factor values in the original portfolio row order, after
+#'   optional rounding.}
+#' }
 #'
 #' @author Martin Haringa
 #'
-#' @examples
-#' ## --- Recommended new usage (SE) ---
-#' # Column names must be passed as strings
-#' risk_factor_gam(MTPL,
-#'                 risk_factor = "age_policyholder",
-#'                 claim_count = "nclaims",
-#'                 exposure = "exposure")
+#' @seealso [autoplot.riskfactor_gam()], [derive_tariff_segments()],
+#'   [add_smoothing()]
 #'
-#' ## --- Deprecated usage (NSE) ---
-#' # This still works but will show a warning
-#' fit_gam(MTPL,
-#'         nclaims = nclaims,
-#'         x = age_policyholder,
-#'         exposure = exposure)
+#' @examples
+#' age_frequency <- risk_factor_gam(
+#'   MTPL,
+#'   risk_factor = "age_policyholder",
+#'   claim_count = "nclaims",
+#'   exposure = "exposure",
+#'   model = "frequency"
+#' )
+#'
+#' autoplot(age_frequency, show_observations = TRUE)
+#'
+#' @importFrom mgcv gam predict.gam
+#' @import ggplot2
+#' @importFrom grDevices dev.off png
+#' @importFrom graphics plot
+#' @importFrom stats aggregate gaussian model.frame poisson predict qnorm setNames
 #'
 #' @export
 risk_factor_gam <- function(data, risk_factor = NULL, claim_count = NULL,
@@ -536,48 +551,65 @@ summary.risk_factor_gam <- summary.riskfactor_gam
 #' @export
 summary.fitgam <- summary.riskfactor_gam
 
-#' Autoplot for GAM objects from `risk_factor_gam()`
+#' Inspect a smooth continuous risk-factor effect
 #'
-#' @description Generates a `ggplot2` visualization of a fitted GAM created with
-#' [risk_factor_gam()]. The plot shows the fitted curve, and optionally confidence
-#' intervals and observed data points.
+#' @description
+#' Plot the smooth effect estimated by [risk_factor_gam()]. Observed aggregated
+#' experience and pointwise confidence intervals can be added to assess how the
+#' fitted pattern relates to the available portfolio information.
+#'
+#' @details
+#' The line is the fitted response on its natural scale: frequency, average
+#' severity or risk premium. Observed points represent experience aggregated at
+#' the continuous risk-factor values used for fitting.
+#'
+#' Confidence intervals describe uncertainty in the fitted curve conditional on
+#' the selected GAM specification. They do not include uncertainty from model
+#' selection, omitted risk factors or future portfolio changes. Wide intervals
+#' and isolated observations in the tails should therefore be reviewed together
+#' with exposure and claim volume.
+#'
+#' `remove_outliers` affects only displayed observed points. It does not remove
+#' data from the fitted GAM or alter the prediction curve.
 #'
 #' @param object An object of class `"riskfactor_gam"` returned by
 #'   [risk_factor_gam()].
 #' @param confidence Logical. If `TRUE`, add 95% confidence intervals around
 #'   the fitted curve. Default is `FALSE`.
 #' @param conf_int Deprecated. Use `confidence` instead.
-#' @param color_gam Color for the fitted GAM line, specified by name (e.g.,
-#' `"red"`) or hex code (e.g., `"#FF1234"`). Default is `"steelblue"`.
+#' @param color_gam Colour for the fitted GAM line.
 #' @param x_stepsize Numeric. Step size for tick marks on the x-axis. If
 #' `NULL`, breaks are determined automatically.
 #' @param show_observations Logical. If `TRUE`, add observed frequency/severity
-#' points corresponding to the underlying data.
-#' @param size_points Numeric. Point size for observed data. Default is `1`.
-#' @param color_points Color for the observed data points. Default is `"black"`.
+#' or risk-premium values used for fitting.
+#' @param size_points Numeric. Point size for observed experience.
+#' @param color_points Colour for observed experience.
 #' @param rotate_labels Logical. If `TRUE`, rotate x-axis labels by 45 degrees
 #' to reduce overlap.
-#' @param remove_outliers Numeric. If specified, observations greater than this
-#' threshold are omitted from the plot.
-#' @param ... Additional arguments passed to underlying `ggplot2` functions.
+#' @param remove_outliers Optional numeric upper display limit for observed
+#' points. The fitted curve remains unchanged.
+#' @param ... Additional arguments reserved for method compatibility.
 #'
-#' @return
-#' A `ggplot` object representing the fitted GAM.
-#'
-#' @import ggplot2
+#' @return A `ggplot2` object.
 #'
 #' @examples
 #' \dontrun{
-#' library(ggplot2)
-#' fit <- risk_factor_gam(MTPL,
-#'                        risk_factor = "age_policyholder",
-#'                        claim_count = "nclaims",
-#'                        exposure = "exposure")
+#' fit <- risk_factor_gam(
+#'   MTPL,
+#'   risk_factor = "age_policyholder",
+#'   claim_count = "nclaims",
+#'   exposure = "exposure"
+#' )
 #'
-#' autoplot(fit, show_observations = TRUE)
+#' autoplot(fit, confidence = TRUE, show_observations = TRUE)
 #' }
 #'
 #' @author Martin Haringa
+#'
+#' @seealso [risk_factor_gam()], [derive_tariff_segments()],
+#'   [autoplot.tariff_segments()]
+#'
+#' @import ggplot2
 #'
 #' @export
 autoplot.riskfactor_gam <- function(object, confidence = FALSE,
