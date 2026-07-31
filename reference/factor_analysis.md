@@ -1,17 +1,9 @@
-# Factor analysis for discrete risk factors
+# Summarise observed portfolio experience by risk factor
 
-Performs a factor analysis for discrete risk factors in an insurance
-portfolio. The following summary statistics are calculated:
-
-- frequency = number of claims / exposure
-
-- average severity = severity / number of claims
-
-- risk premium = severity / exposure
-
-- loss ratio = severity / premium
-
-- average premium = premium / exposure
+Aggregate observed claim, exposure and premium experience for one or
+more discrete risk factors. The result supports exploratory pricing
+analysis by showing how portfolio volume and unadjusted actuarial
+metrics vary across factor levels.
 
 ## Usage
 
@@ -36,32 +28,33 @@ factor_analysis(
 
 - data:
 
-  A `data.frame` with the insurance portfolio.
+  A data frame containing portfolio observations.
 
 - risk_factors:
 
-  Character vector: column(s) in `data` with the risk factor(s).
+  Non-empty character vector naming the discrete risk factors to
+  analyse.
 
 - claim_amount:
 
-  Character, column in `data` with claim amounts (default = NULL).
+  Optional character string naming the total claim-amount column.
 
 - claim_count:
 
-  Character, column in `data` with number of claims (default = NULL).
+  Optional character string naming the claim-count column.
 
 - exposure:
 
-  Character, column in `data` with exposures (default = NULL).
+  Optional character string naming the exposure column.
 
 - premium:
 
-  Character, column in `data` with premiums (default = NULL).
+  Optional character string naming the premium-amount column.
 
 - group_by:
 
-  Character vector of column(s) in `data` to group by in addition to
-  `risk_factors`.
+  Optional character vector naming additional grouping variables, such
+  as underwriting year or product segment.
 
 - df, x, severity, nclaims, by:
 
@@ -70,45 +63,59 @@ factor_analysis(
 
 ## Value
 
-An object of class `"factor_analysis"` and `"univariate"` with summary
-statistics.
+A data frame with classes `"factor_analysis"`, `"univariate"` and
+`"data.frame"`. It contains the grouping columns, aggregated input
+columns and all actuarial measures supported by the supplied inputs. The
+original column names are retained for claim amount, claim count,
+exposure and premium.
 
 ## Details
 
-The function computes summary statistics for discrete risk factors.
+### Calculated measures
 
-- **Frequency**: number of claims / exposure
+Depending on the supplied columns, the function calculates:
 
-- **Average severity**: severity / number of claims
+- `frequency = claim_count / exposure`;
 
-- **Risk premium**: severity / exposure
+- `average_severity = claim_amount / claim_count`;
 
-- **Loss ratio**: severity / premium
+- `risk_premium = claim_amount / exposure`;
 
-- **Average premium**: premium / exposure
+- `loss_ratio = claim_amount / premium`;
 
-If one or more input arguments are not specified, the related statistics
-are omitted from the results.
+- `average_premium = premium / exposure`.
 
-### Migration from [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
+Input amount columns are summed before ratios are calculated. A measure
+is omitted when its required inputs were not supplied. A zero or missing
+denominator produces `NA_real_` rather than an infinite value.
 
-The function
+### Actuarial interpretation
+
+These are observed, univariate or stratified portfolio measures. They
+are not adjusted for correlation between rating factors and should not
+be interpreted as conditional GLM effects. Differences between levels
+may reflect portfolio mix, small exposure, claim volatility or changes
+over time. Claim counts, exposure and stability should therefore be
+reviewed alongside the ratios.
+
+`group_by` can be used to compare the same risk-factor pattern across
+periods or portfolio segments.
+[`autoplot.factor_analysis()`](https://mharinga.github.io/insurancerating/reference/autoplot.factor_analysis.md)
+provides the corresponding graphical review. Modelled effects can
+subsequently be inspected with
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
+
+### Column interface
+
+Column names are supplied as character strings. Deprecated
 [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
-is deprecated as of version 0.8.0 and replaced by `factor_analysis()`.
-In addition to the name change, the interface has also changed:
+remains available for compatibility with its former interface.
 
-- [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
-  used **non-standard evaluation (NSE)**, so column names could be
-  passed unquoted (e.g. `x = area`).
+## See also
 
-- `factor_analysis()` uses **standard evaluation (SE)**, so column names
-  must be passed as character strings (e.g. `x = "area"`).
-
-This makes the function easier to use in programmatic workflows.
-
-[`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
-is still available for backward compatibility but will emit a
-deprecation warning and will be removed in a future release.
+[`autoplot.factor_analysis()`](https://mharinga.github.io/insurancerating/reference/autoplot.factor_analysis.md),
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md),
+[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
 
 ## Author
 
@@ -117,31 +124,16 @@ Martin Haringa
 ## Examples
 
 ``` r
-## --- New usage (SE) ---
-factor_analysis(MTPL2,
-                risk_factors = "area",
-                claim_amount = "amount",
-                claim_count = "nclaims",
-                exposure = "exposure",
-                premium = "premium")
-#>   area  amount nclaims   exposure premium  frequency average_severity
-#> 1    2 4063270      98  818.53973   51896 0.11972540         41461.94
-#> 2    3 7945311     113  764.99178   49337 0.14771401         70312.49
-#> 3    1 6896187     146 1065.74795   65753 0.13699299         47234.16
-#> 4    0    6922       1   13.30685     902 0.07514927          6922.00
-#>   risk_premium loss_ratio average_premium
-#> 1    4964.0474  78.296400        63.40071
-#> 2   10386.1390 161.041632        64.49350
-#> 3    6470.7486 104.880188        61.69658
-#> 4     520.1832   7.674058        67.78464
+area_experience <- factor_analysis(
+  MTPL2,
+  risk_factors = "area",
+  claim_amount = "amount",
+  claim_count = "nclaims",
+  exposure = "exposure",
+  premium = "premium"
+)
 
-## --- Deprecated usage (NSE) ---
-univariate(MTPL2,
-           x = area,
-           severity = amount,
-           nclaims = nclaims,
-           exposure = exposure,
-           premium = premium)
+area_experience
 #>   area  amount nclaims   exposure premium  frequency average_severity
 #> 1    2 4063270      98  818.53973   51896 0.11972540         41461.94
 #> 2    3 7945311     113  764.99178   49337 0.14771401         70312.49
@@ -152,4 +144,6 @@ univariate(MTPL2,
 #> 2   10386.1390 161.041632        64.49350
 #> 3    6470.7486 104.880188        61.69658
 #> 4     520.1832   7.674058        67.78464
+autoplot(area_experience, metrics = c("frequency", "risk_premium"))
+
 ```

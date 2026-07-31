@@ -1,7 +1,9 @@
-# Construct observed rating-grid points from model data or a data frame
+# Construct observed rating-grid points
 
-`rating_grid()` constructs rating-grid points by collapsing rows with
-identical combinations of grouping variables to a single row.
+Collapse portfolio records with identical risk-factor combinations into
+observed rating-grid points. Exposure and other numeric measures can be
+aggregated alongside the combinations for prediction, tariff comparison
+and portfolio diagnostics.
 
 The function returns only combinations that are actually observed in the
 input data. It does **not** create the full Cartesian product of all
@@ -76,8 +78,13 @@ A `data.frame` with one row per observed rating-grid point.
 
 ## Details
 
-The implementation uses base R only. Output is always a regular
-`data.frame`, not a tibble or data.table.
+### Observed combinations
+
+The grid represents the combinations present in the supplied portfolio
+or model data. It deliberately does not construct combinations that were
+not observed. This avoids creating artificial model points and is
+particularly relevant when risk factors are structurally related, such
+as product, coverage and distribution channel.
 
 If `exposure_by` is supplied, exposure or row counts are split across
 levels of that variable and returned in wide format, for example
@@ -87,6 +94,14 @@ For objects returned by
 [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md),
 refinement mappings are joined by their original factor column. They are
 not cross-joined onto every row.
+
+The implementation uses base R only. The output is a regular
+`data.frame`, irrespective of the class of the input data.
+
+## See also
+
+[`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md),
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
 
 ## Author
 

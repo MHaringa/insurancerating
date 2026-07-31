@@ -1,10 +1,14 @@
-# Automatically create a ggplot for objects obtained from factor analysis
+# Plot observed portfolio experience by risk factor
 
-Takes an object produced by
-[`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-or
-[`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
-(deprecated NSE interface) and plots the available statistics.
+Visualise the exposure and observed actuarial metrics calculated by
+[`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md).
+The plots support assessment of portfolio composition, observed
+frequency, severity, risk premium and loss ratio across risk-factor
+levels.
+
+The observed patterns are descriptive. They do not adjust for
+correlations with other risk factors and should therefore not be
+interpreted as multivariate tariff relativities.
 
 ## Usage
 
@@ -82,7 +86,7 @@ autoplot(
 
 - ncol:
 
-  Number of columns in output (default = 1).
+  Positive whole number. Number of columns in the plot composition.
 
 - show_exposure:
 
@@ -209,11 +213,28 @@ autoplot(
 
 - ...:
 
-  Other plotting parameters.
+  Currently unused.
 
 ## Value
 
-A `ggplot2` object.
+A `patchwork` composition containing the requested ggplot panels.
+
+## Details
+
+For rate-based metrics, exposure can be shown as background bars so that
+observed level differences can be interpreted together with portfolio
+volume. Levels with little exposure or few claims can produce volatile
+observed metrics and should be assessed accordingly.
+
+When the factor analysis contains one or more `by` variables, separate
+observed series are shown. `show_total = TRUE` adds the aggregate
+portfolio series for comparison. Sorting and manual level ordering
+affect only the presentation; the underlying summaries are unchanged.
+
+## See also
+
+[`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md),
+[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
 
 ## Author
 
@@ -222,7 +243,7 @@ Marc Haine, Martin Haringa
 ## Examples
 
 ``` r
-## --- New usage (SE, recommended) ---
+# Plot observed frequency and risk premium
 x <- factor_analysis(MTPL2,
                      x = "area",
                      severity = "amount",
@@ -246,22 +267,6 @@ x <- factor_analysis(MTPL2,
 #> ℹ The deprecated feature was likely used in the insurancerating package.
 #>   Please report the issue at
 #>   <https://github.com/MHaringa/insurancerating/issues>.
-autoplot(x)
-#> Ignoring plots 4, 5, 9: required column(s) not available in object
-
-
-## --- Deprecated usage (NSE) ---
-x_old <- univariate(MTPL2, x = area, severity = amount,
-                    nclaims = nclaims, exposure = exposure)
-#> Warning: `univariate()` was deprecated in insurancerating 0.8.0.
-#> ℹ Please use `factor_analysis()` instead.
-#> Warning: The `df` argument of `factor_analysis()` is deprecated as of insurancerating
-#> 0.9.0.
-#> ℹ Please use the `data` argument instead.
-#> ℹ The deprecated feature was likely used in the insurancerating package.
-#>   Please report the issue at
-#>   <https://github.com/MHaringa/insurancerating/issues>.
-autoplot(x_old)
-#> Ignoring plots 4, 5, 9: required column(s) not available in object
+autoplot(x, metrics = c("frequency", "risk_premium"))
 
 ```

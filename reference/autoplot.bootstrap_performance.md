@@ -1,12 +1,9 @@
-# Autoplot for bootstrap_performance objects
+# Plot the resampled performance distribution
 
-[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
-method for objects created by
+Display the empirical distribution of resampled RMSE values from
 [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md).
-Produces a histogram and density plot of the bootstrapped RMSE values,
-with the RMSE of the original fitted model shown as a dashed vertical
-line. Optionally, 95% quantile bounds are shown as dotted vertical
-lines.
+The histogram shows the observed resampling distribution, while the
+density curve provides a smooth visual summary.
 
 ## Usage
 
@@ -24,22 +21,34 @@ autoplot(object, fill = "#E6E6E6", color = NA, ...)
 
 - fill:
 
-  Fill color of the histogram bars. Default = `"#E6E6E6"`.
+  Fill colour of the histogram bars. Default is `"#E6E6E6"`.
 
 - color:
 
-  Border color of the histogram bars. Default = `NA`, which removes bar
-  borders.
+  Border colour of the histogram bars. Default is `NA`, which removes
+  bar borders.
 
 - ...:
 
-  Additional arguments passed to
-  [`ggplot2::autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html).
+  Currently unused.
 
 ## Value
 
 A [ggplot2::ggplot](https://ggplot2.tidyverse.org/reference/ggplot.html)
 object.
+
+## Details
+
+The dashed orange line marks the RMSE of the original fitted model. The
+dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles of
+the resampled values when these can be calculated. Their distance
+provides a practical indication of sampling variability; it is not a
+formal prediction interval for future portfolio performance.
+
+## See also
+
+[`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md),
+[`rmse()`](https://mharinga.github.io/insurancerating/reference/rmse.md)
 
 ## Author
 

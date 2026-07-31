@@ -5,15 +5,15 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Add coefficient restrictions to a refinement workflow — add_restriction"><meta name="description" content="Fixes selected model levels to user-supplied relativities in a refinement
-workflow. This is useful when the fitted GLM coefficients need to be adjusted
-before the final tariff is refitted, for example to apply expert judgement,
-enforce a business rule, remove an implausible local effect, or make a tariff
-structure easier to explain."><meta property="og:description" content="Fixes selected model levels to user-supplied relativities in a refinement
-workflow. This is useful when the fitted GLM coefficients need to be adjusted
-before the final tariff is refitted, for example to apply expert judgement,
-enforce a business rule, remove an implausible local effect, or make a tariff
-structure easier to explain."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Add coefficient restrictions to a refinement workflow — add_restriction"><meta name="description" content="Fix selected risk-factor levels at user-supplied relativities before the
+refined pricing GLM is fitted. This can be appropriate when sampling
+variation produces an implausible local effect, when an actuarial assumption
+is supported by additional information, or when a documented tariff
+constraint must be applied consistently."><meta property="og:description" content="Fix selected risk-factor levels at user-supplied relativities before the
+refined pricing GLM is fitted. This can be appropriate when sampling
+variation produces an implausible local effect, when an actuarial assumption
+is supported by additional information, or when a documented tariff
+constraint must be applied consistently."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -46,11 +46,11 @@ structure easier to explain."><meta property="og:image" content="https://mharing
     </div>
 
     <div class="ref-description section level2">
-    <p>Fixes selected model levels to user-supplied relativities in a refinement
-workflow. This is useful when the fitted GLM coefficients need to be adjusted
-before the final tariff is refitted, for example to apply expert judgement,
-enforce a business rule, remove an implausible local effect, or make a tariff
-structure easier to explain.</p>
+    <p>Fix selected risk-factor levels at user-supplied relativities before the
+refined pricing GLM is fitted. This can be appropriate when sampling
+variation produces an implausible local effect, when an actuarial assumption
+is supported by additional information, or when a documented tariff
+constraint must be applied consistently.</p>
     </div>
 
     <div class="section level2">
@@ -76,10 +76,11 @@ refinement specification instead.</p></dd>
 
 <dt id="arg-restrictions">restrictions<a class="anchor" aria-label="anchor" href="#arg-restrictions"></a></dt>
 <dd><p>Data frame with exactly two columns. The first column
-must have the same name as the model variable to restrict and contains the
-levels to adjust. The second column contains the replacement relativities.
-Levels that are not supplied are filled with the currently fitted GLM
-relativities.</p></dd>
+must have the same name as the risk factor to restrict and contains the
+levels to adjust. This can also be the <code>split_variable</code> from an earlier
+<code><a href="add_relativities.html">add_relativities()</a></code> step. The second column contains the replacement
+relativities. Levels that are not supplied are fixed at their current
+effective relativities.</p></dd>
 
 
 <dt id="arg-allow-new-levels">allow_new_levels<a class="anchor" aria-label="anchor" href="#arg-allow-new-levels"></a></dt>
@@ -91,31 +92,40 @@ estimates. If <code>FALSE</code>, an unknown level results in an error.</p></dd>
 
 <dt id="arg-allow-new-risk-factors">allow_new_risk_factors<a class="anchor" aria-label="anchor" href="#arg-allow-new-risk-factors"></a></dt>
 <dd><p>Logical. If <code>FALSE</code> (default), the first column
-of <code>restrictions</code> must identify a variable included in the fitted GLM. Set
-this to <code>TRUE</code> to add a variable that is present in the refinement data but
-absent from the model. All observed levels must then have supplied
-relativities, which are treated as fixed tariff assumptions.</p></dd>
+of <code>restrictions</code> must identify a variable included in the fitted GLM or a
+tariff factor created by an earlier refinement step. Set this to <code>TRUE</code> to
+add an external variable that is present in the refinement data but absent
+from both the model and preceding refinement steps. All observed levels
+must then have supplied relativities, which are treated as fixed tariff
+assumptions.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Object of class <code>rating_refinement</code>.</p>
+    <p>A <code>rating_refinement</code> object containing the stored restriction
+specification. The pricing GLM is not fitted again until <code><a href="refit.html">refit()</a></code> is
+called.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>add_restriction()</code> stores a restriction step on a <code>rating_refinement</code>
-object. It does not refit the GLM immediately. The restrictions are applied
-when <code><a href="refit.html">refit()</a></code> is called.</p>
-<p>The <code>restrictions</code> data frame identifies the model variable to restrict by
-its first column. The second column contains the relativities that should be
-used for those levels in the refined model. New code should use this function
-after <code><a href="prepare_refinement.html">prepare_refinement()</a></code>; the deprecated <code><a href="restrict_coef.html">restrict_coef()</a></code> wrapper is
-only kept for backwards compatibility.</p>
+object. It does not alter the fitted GLM immediately. The restriction is
+evaluated in the recorded step order and applied when <code><a href="refit.html">refit()</a></code> is called.
+Retain the refinement object when reviewing or revising the specification.</p>
+<p>The <code>restrictions</code> data frame identifies the risk factor to restrict by its
+first column. This may be a variable from the original GLM or a tariff factor
+created by an earlier refinement step. The second column contains the
+relativities used for those levels in the refined model.</p><div class="section">
+<h3 id="actuarial-interpretation">Actuarial interpretation<a class="anchor" aria-label="anchor" href="#actuarial-interpretation"></a></h3>
+
+
 <p>The restriction table may contain all levels of the model variable, or only
 the levels that need a manual adjustment. If only a subset is supplied, the
-missing levels are automatically filled with their current fitted GLM
-relativities. This makes it possible to fix one level explicitly while keeping
-the other levels at their already estimated values.</p>
+missing levels are automatically filled with their current effective
+relativities at that point in the refinement workflow. These may be the
+original fitted GLM relativities or values produced by preceding refinement
+steps. This makes it possible to change one level explicitly while fixing all
+other levels at their current values.</p>
 <p>Levels that were not observed when the GLM was fitted can also be supplied.
 Such a level has no coefficient estimate from the model data. Its relativity
 is therefore an explicit tariff assumption, for example based on expert
@@ -136,7 +146,10 @@ information.</p>
 <p><code>allow_new_risk_factors</code> does not create the portfolio variable itself. The
 refinement data must already contain a column assigning every observation to
 a level. This is required to apply the supplied relativities to individual
-records.</p><div class="section">
+records.</p>
+</div>
+
+<div class="section">
 <h3 id="updating-an-existing-restriction">Updating an existing restriction<a class="anchor" aria-label="anchor" href="#updating-an-existing-restriction"></a></h3>
 
 
@@ -158,6 +171,33 @@ updated, because that name identifies the restricted model variable used by
 changed.</p>
 </div>
 
+<div class="section">
+<h3 id="restricting-a-factor-created-by-add-relativities-">Restricting a factor created by add_relativities()<a class="anchor" aria-label="anchor" href="#restricting-a-factor-created-by-add-relativities-"></a></h3>
+
+
+<p>A <code>split_variable</code> introduced by an earlier <code><a href="add_relativities.html">add_relativities()</a></code> step is
+already part of the ordered refinement specification. It is therefore not
+treated as a new external risk factor and does not require
+<code>allow_new_risk_factors = TRUE</code>. <code>add_restriction()</code> identifies the preceding
+relativity step from its stored metadata and replaces the corresponding
+derived tariff effect during <code><a href="refit.html">refit()</a></code>.</p>
+<p>When only one level of such a split variable is supplied, that level receives
+the new relativity and every other level is fixed at the relativity produced
+by <code><a href="add_relativities.html">add_relativities()</a></code>. Mathematically, the resulting restriction therefore
+covers all current levels. Only the explicitly supplied level changes. This
+is useful when actuarial review supports a local adjustment but the remaining
+expert split should not be re-estimated.</p>
+<p>Refinement order remains material. A restriction added after
+<code><a href="add_relativities.html">add_relativities()</a></code> operates on the derived split relativities. A
+restriction added before <code><a href="add_relativities.html">add_relativities()</a></code> instead changes the coefficient
+basis from which the split is derived.</p>
+</div>
+
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="prepare_refinement.html">prepare_refinement()</a></code>, <code><a href="add_smoothing.html">add_smoothing()</a></code>, <code><a href="add_relativities.html">add_relativities()</a></code>,
+<code><a href="refit.html">refit()</a></code>, <code><a href="rating_table.html">rating_table()</a></code></p></div>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>

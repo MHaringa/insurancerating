@@ -1,9 +1,10 @@
-# Autoplot for GAM objects from `risk_factor_gam()`
+# Inspect a smooth continuous risk-factor effect
 
-Generates a `ggplot2` visualization of a fitted GAM created with
+Plot the smooth effect estimated by
 [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md).
-The plot shows the fitted curve, and optionally confidence intervals and
-observed data points.
+Observed aggregated experience and pointwise confidence intervals can be
+added to assess how the fitted pattern relates to the available
+portfolio information.
 
 ## Usage
 
@@ -38,13 +39,12 @@ autoplot(
 
 - color_gam:
 
-  Color for the fitted GAM line, specified by name (e.g., `"red"`) or
-  hex code (e.g., `"#FF1234"`). Default is `"steelblue"`.
+  Colour for the fitted GAM line.
 
 - show_observations:
 
-  Logical. If `TRUE`, add observed frequency/severity points
-  corresponding to the underlying data.
+  Logical. If `TRUE`, add observed frequency/severity or risk-premium
+  values used for fitting.
 
 - x_stepsize:
 
@@ -53,11 +53,11 @@ autoplot(
 
 - size_points:
 
-  Numeric. Point size for observed data. Default is `1`.
+  Numeric. Point size for observed experience.
 
 - color_points:
 
-  Color for the observed data points. Default is `"black"`.
+  Colour for observed experience.
 
 - rotate_labels:
 
@@ -66,8 +66,8 @@ autoplot(
 
 - remove_outliers:
 
-  Numeric. If specified, observations greater than this threshold are
-  omitted from the plot.
+  Optional numeric upper display limit for observed points. The fitted
+  curve remains unchanged.
 
 - conf_int:
 
@@ -75,11 +75,32 @@ autoplot(
 
 - ...:
 
-  Additional arguments passed to underlying `ggplot2` functions.
+  Additional arguments reserved for method compatibility.
 
 ## Value
 
-A `ggplot` object representing the fitted GAM.
+A `ggplot2` object.
+
+## Details
+
+The line is the fitted response on its natural scale: frequency, average
+severity or risk premium. Observed points represent experience
+aggregated at the continuous risk-factor values used for fitting.
+
+Confidence intervals describe uncertainty in the fitted curve
+conditional on the selected GAM specification. They do not include
+uncertainty from model selection, omitted risk factors or future
+portfolio changes. Wide intervals and isolated observations in the tails
+should therefore be reviewed together with exposure and claim volume.
+
+`remove_outliers` affects only displayed observed points. It does not
+remove data from the fitted GAM or alter the prediction curve.
+
+## See also
+
+[`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md),
+[`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md),
+[`autoplot.tariff_segments()`](https://mharinga.github.io/insurancerating/reference/autoplot.tariff_segments.md)
 
 ## Author
 
@@ -89,12 +110,13 @@ Martin Haringa
 
 ``` r
 if (FALSE) { # \dontrun{
-library(ggplot2)
-fit <- risk_factor_gam(MTPL,
-                       risk_factor = "age_policyholder",
-                       claim_count = "nclaims",
-                       exposure = "exposure")
+fit <- risk_factor_gam(
+  MTPL,
+  risk_factor = "age_policyholder",
+  claim_count = "nclaims",
+  exposure = "exposure"
+)
 
-autoplot(fit, show_observations = TRUE)
+autoplot(fit, confidence = TRUE, show_observations = TRUE)
 } # }
 ```

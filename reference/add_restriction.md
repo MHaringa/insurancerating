@@ -1,10 +1,10 @@
 # Add coefficient restrictions to a refinement workflow
 
-Fixes selected model levels to user-supplied relativities in a
-refinement workflow. This is useful when the fitted GLM coefficients
-need to be adjusted before the final tariff is refitted, for example to
-apply expert judgement, enforce a business rule, remove an implausible
-local effect, or make a tariff structure easier to explain.
+Fix selected risk-factor levels at user-supplied relativities before the
+refined pricing GLM is fitted. This can be appropriate when sampling
+variation produces an implausible local effect, when an actuarial
+assumption is supported by additional information, or when a documented
+tariff constraint must be applied consistently.
 
 ## Usage
 
@@ -31,9 +31,11 @@ add_restriction(
 - restrictions:
 
   Data frame with exactly two columns. The first column must have the
-  same name as the model variable to restrict and contains the levels to
-  adjust. The second column contains the replacement relativities.
-  Levels that are not supplied are filled with the currently fitted GLM
+  same name as the risk factor to restrict and contains the levels to
+  adjust. This can also be the `split_variable` from an earlier
+  [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+  step. The second column contains the replacement relativities. Levels
+  that are not supplied are fixed at their current effective
   relativities.
 
 - allow_new_levels:
@@ -46,38 +48,43 @@ add_restriction(
 - allow_new_risk_factors:
 
   Logical. If `FALSE` (default), the first column of `restrictions` must
-  identify a variable included in the fitted GLM. Set this to `TRUE` to
-  add a variable that is present in the refinement data but absent from
-  the model. All observed levels must then have supplied relativities,
-  which are treated as fixed tariff assumptions.
+  identify a variable included in the fitted GLM or a tariff factor
+  created by an earlier refinement step. Set this to `TRUE` to add an
+  external variable that is present in the refinement data but absent
+  from both the model and preceding refinement steps. All observed
+  levels must then have supplied relativities, which are treated as
+  fixed tariff assumptions.
 
 ## Value
 
-Object of class `rating_refinement`.
+A `rating_refinement` object containing the stored restriction
+specification. The pricing GLM is not fitted again until
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+is called.
 
 ## Details
 
 `add_restriction()` stores a restriction step on a `rating_refinement`
-object. It does not refit the GLM immediately. The restrictions are
-applied when
+object. It does not alter the fitted GLM immediately. The restriction is
+evaluated in the recorded step order and applied when
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-is called.
+is called. Retain the refinement object when reviewing or revising the
+specification.
 
-The `restrictions` data frame identifies the model variable to restrict
-by its first column. The second column contains the relativities that
-should be used for those levels in the refined model. New code should
-use this function after
-[`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md);
-the deprecated
-[`restrict_coef()`](https://mharinga.github.io/insurancerating/reference/restrict_coef.md)
-wrapper is only kept for backwards compatibility.
+The `restrictions` data frame identifies the risk factor to restrict by
+its first column. This may be a variable from the original GLM or a
+tariff factor created by an earlier refinement step. The second column
+contains the relativities used for those levels in the refined model.
+
+### Actuarial interpretation
 
 The restriction table may contain all levels of the model variable, or
 only the levels that need a manual adjustment. If only a subset is
 supplied, the missing levels are automatically filled with their current
-fitted GLM relativities. This makes it possible to fix one level
-explicitly while keeping the other levels at their already estimated
-values.
+effective relativities at that point in the refinement workflow. These
+may be the original fitted GLM relativities or values produced by
+preceding refinement steps. This makes it possible to change one level
+explicitly while fixing all other levels at their current values.
 
 Levels that were not observed when the GLM was fitted can also be
 supplied. Such a level has no coefficient estimate from the model data.
@@ -130,6 +137,40 @@ used by
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
 A message reports levels whose previously supplied relativity is
 changed.
+
+### Restricting a factor created by add_relativities()
+
+A `split_variable` introduced by an earlier
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+step is already part of the ordered refinement specification. It is
+therefore not treated as a new external risk factor and does not require
+`allow_new_risk_factors = TRUE`. `add_restriction()` identifies the
+preceding relativity step from its stored metadata and replaces the
+corresponding derived tariff effect during
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+
+When only one level of such a split variable is supplied, that level
+receives the new relativity and every other level is fixed at the
+relativity produced by
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).
+Mathematically, the resulting restriction therefore covers all current
+levels. Only the explicitly supplied level changes. This is useful when
+actuarial review supports a local adjustment but the remaining expert
+split should not be re-estimated.
+
+Refinement order remains material. A restriction added after
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+operates on the derived split relativities. A restriction added before
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+instead changes the coefficient basis from which the split is derived.
+
+## See also
+
+[`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
 
 ## Author
 

@@ -7,9 +7,15 @@
   };
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Plot a fitted truncated severity distribution — autoplot.truncated_severity"><meta name="description" content="Creates a plot of the empirical cumulative distribution
 function (ECDF) of the observed truncated claim amounts together with the
-fitted truncated CDF."><meta property="og:description" content="Creates a plot of the empirical cumulative distribution
+fitted truncated CDF.
+The comparison assesses whether the fitted conditional severity distribution
+represents the shape of the observed claims within the same truncation
+interval."><meta property="og:description" content="Creates a plot of the empirical cumulative distribution
 function (ECDF) of the observed truncated claim amounts together with the
-fitted truncated CDF."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+fitted truncated CDF.
+The comparison assesses whether the fitted conditional severity distribution
+represents the shape of the observed claims within the same truncation
+interval."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -45,6 +51,9 @@ fitted truncated CDF."><meta property="og:image" content="https://mharinga.githu
     <p>Creates a plot of the empirical cumulative distribution
 function (ECDF) of the observed truncated claim amounts together with the
 fitted truncated CDF.</p>
+<p>The comparison assesses whether the fitted conditional severity distribution
+represents the shape of the observed claims within the same truncation
+interval.</p>
     </div>
 
     <div class="section level2">
@@ -134,6 +143,14 @@ claim severities with the fitted distribution conditional on the same
 truncation interval. This is a visual check of whether the selected severity
 distribution is plausible for the part of the portfolio that is actually
 observed.</p>
+<p>Systematic separation between the empirical and fitted curves can indicate
+that the selected gamma or lognormal distribution does not adequately
+represent the observed severity shape. The plot does not assess the
+unobserved parts of the distribution outside the truncation bounds.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="fit_truncated_severity.html">fit_truncated_severity()</a></code>, <code><a href="rlnormt.html">rlnormt()</a></code>, <code><a href="rgammat.html">rgammat()</a></code></p></div>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>

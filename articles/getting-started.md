@@ -2,8 +2,8 @@
 
 ## Introduction
 
-`insurancerating` provides actuarial building blocks for insurance
-pricing in R.
+`insurancerating` provides functions for common actuarial pricing tasks
+in R.
 
 A common GLM-based pricing exercise often combines several tasks:
 
@@ -12,7 +12,8 @@ A common GLM-based pricing exercise often combines several tasks:
 3.  interpretation of fitted coefficients
 4.  refinement of tariff structure
 
-This vignette illustrates one way to combine the main building blocks:
+This vignette presents one possible GLM-based analysis and illustrates
+how the functions can be combined:
 
 - analyse risk factors with
   [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
@@ -25,8 +26,8 @@ This vignette illustrates one way to combine the main building blocks:
   and
   [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
 
-The focus is on the transition from portfolio data to an interpretable
-tariff structure.
+The focus is on the transition from observed portfolio experience to
+fitted effects and a tariff structure that can be reviewed actuarially.
 
 ## Data
 
@@ -61,12 +62,14 @@ head(MTPL2)
 
 ### Factor analysis
 
-A pricing analysis often starts with an analysis of the portfolio.
+A pricing analysis commonly starts with a descriptive review of the
+portfolio.
 
-Before fitting a model, it is necessary to understand:
+Before fitting a model, it is useful to assess:
 
 - how experience differs across factor levels
-- whether differences are credible
+- whether differences are supported by sufficient exposure and claim
+  volume
 - whether exposure is sufficient
 - whether the observed pattern is plausible
 
@@ -120,22 +123,25 @@ This provides a direct view of:
 - the variation in claim frequency
 - the variation in risk premium
 
-At this stage, the purpose is not yet to fit a model, but to understand
-whether the factor behaves in a way that is suitable for pricing.
+These are descriptive, univariate results. They show the observed
+experience and volume by level, but do not control for correlations with
+other risk factors.
 
 ## Step 2 — Continuous variables
 
 ### Why continuous variables are treated separately
 
-Continuous variables are typically not used directly in a tariff. In
-pricing practice, they are usually:
+Continuous variables can be modelled directly or translated into grouped
+tariff variables, depending on the model and implementation environment.
+This example uses the following sequence:
 
 1.  analysed as continuous variables
 2.  translated into tariff segments
 3.  used in a GLM as categorical rating factors
 
-This ensures that the final tariff remains interpretable and
-implementable.
+Grouping makes the resulting tariff effect discrete and directly
+implementable, but introduces a segmentation choice that should be
+reviewed.
 
 ### Analysing the shape with a GAM
 
@@ -172,11 +178,12 @@ autoplot(age_segments)
 
 ![](getting-started_files/figure-html/unnamed-chunk-6-1.png)
 
-This converts the continuous variable into risk-homogeneous tariff
-segments.
+This derives candidate segment boundaries from the fitted continuous
+effect.
 
-The resulting segments should reflect differences in risk, while
-remaining suitable for use in a tariff.
+The resulting segments should be reviewed against exposure, observed
+experience, stability and practical tariff requirements before they are
+used in a model.
 
 ### Adding tariff segments to the data
 
@@ -190,16 +197,17 @@ dat <- MTPL |>
 ```
 
 [`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md)
-sets the reference level to the level with the highest exposure. In
-pricing models, this is often the most stable and interpretable
-baseline.
+sets the reference level to the level with the highest exposure. This
+changes the coefficient parameterisation, not the fitted values. A
+high-exposure level is often a useful baseline because its relativity is
+supported by a substantial part of the portfolio.
 
 ## Step 3 — Model estimation
 
 ### Why GLMs are used
 
-Generalized linear models are widely used in insurance pricing because
-they:
+Generalized linear models are widely used in insurance pricing. They
+can:
 
 - accommodate non-normal response distributions
 - produce interpretable multiplicative effects
@@ -265,8 +273,10 @@ head(premium_df)
 #> 6            0.04593697            67736.95 3111.630
 ```
 
-This produces a pure premium estimate, i.e. expected loss per unit of
-exposure.
+This produces an expected-loss proxy from the fitted frequency and
+severity components. Its precise unit depends on the exposure treatment
+in the frequency prediction and should be checked before it is used as a
+model response.
 
 ## Step 4 — Premium model
 
@@ -283,11 +293,12 @@ burn_unrestricted <- glm(
 )
 ```
 
-This model combines the rating factors into a single premium structure.
+This model combines the rating factors into one fitted risk-premium
+structure.
 
-In practice, this is often the model that is closest to the final tariff
-logic, because it reflects the premium level rather than only individual
-model components such as frequency or severity.
+It can be used to inspect the combined effect of the frequency and
+severity components. Commercial loadings and other premium components
+are outside this technical risk-premium model.
 
 ## Step 5 — Interpreting coefficients
 
@@ -331,7 +342,7 @@ rating_table(burn_unrestricted) |>
 
 ![](getting-started_files/figure-html/unnamed-chunk-13-1.png)
 
-This plot is typically used to assess:
+This plot can be used to assess:
 
 - the relative size of coefficients
 - the structure across levels
@@ -359,21 +370,32 @@ model_performance(mod_freq)
 #> mod_freq | 22949.04 | 23015.512 | 0.362
 ```
 
-This provides summary measures of model fit, such as RMSE.
+This reports AIC, BIC and response-scale RMSE. These measures are most
+meaningful when models use the same response, records, weights and
+offsets.
 
 ### Bootstrap performance
 
 ``` r
 
 
-bp <- bootstrap_performance(mod_freq, dat, n_resamples = 50, show_progress = FALSE)
+bp <- bootstrap_performance(
+  mod_freq,
+  dat,
+  n_resamples = 50,
+  sample_fraction = 0.8,
+  sampling = "bootstrap",
+  show_progress = FALSE
+)
 autoplot(bp)
 ```
 
 ![](getting-started_files/figure-html/unnamed-chunk-15-1.png)
 
-This provides a view of predictive stability by evaluating how
-performance changes across bootstrap samples.
+This refits the model on repeated bootstrap samples and evaluates RMSE
+on out-of-bag records. The resulting distribution describes sensitivity
+to the sampled portfolio records; it is not a prediction interval for
+future claims.
 
 A single fit statistic is usually not sufficient. In pricing practice,
 it is also relevant to assess whether the model behaves consistently
@@ -418,12 +440,9 @@ bootstrap_performance()       # assess stability
 prepare_refinement()          # refine tariff structure if needed
 ```
 
-The aim is to move from raw portfolio data to a tariff structure that
-is:
-
-- interpretable
-- reproducible
-- and suitable for practical pricing use
+The sequence distinguishes observed experience, fitted model effects,
+candidate tariff segmentation and model diagnostics. The final modelling
+choices remain dependent on the portfolio and pricing objective.
 
 ## Next steps
 

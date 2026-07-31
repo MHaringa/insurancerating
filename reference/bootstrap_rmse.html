@@ -66,11 +66,11 @@ backward compatibility and also inherit from <code>"bootstrap_performance"</code
 
 
 <dl><dt id="arg-model">model<a class="anchor" aria-label="anchor" href="#arg-model"></a></dt>
-<dd><p>A fitted model object.</p></dd>
+<dd><p>A fitted model object that can be updated on resampled data.</p></dd>
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>Data used to fit the model object.</p></dd>
+<dd><p>Data frame containing the model response and predictors.</p></dd>
 
 
 <dt id="arg-n">n<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
@@ -83,12 +83,13 @@ instead.</p></dd>
 
 
 <dt id="arg-metric">metric<a class="anchor" aria-label="anchor" href="#arg-metric"></a></dt>
-<dd><p>Character. Performance metric to compute. Currently only
+<dd><p>Character string. Performance metric to compute. Currently only
 <code>"rmse"</code> is supported.</p></dd>
 
 
 <dt id="arg-sampling">sampling<a class="anchor" aria-label="anchor" href="#arg-sampling"></a></dt>
-<dd><p>Character. Sampling scheme. <code>"bootstrap"</code> samples training
+<dd><p>Character string. Sampling scheme. <code>"bootstrap"</code> samples
+training
 rows with replacement and evaluates on out-of-bag rows when
 <code>sample_fraction &lt; 1</code>.
 <code>"split"</code> samples training rows without replacement and evaluates on the
@@ -96,13 +97,13 @@ remaining rows when <code>sample_fraction &lt; 1</code>.</p></dd>
 
 
 <dt id="arg-show-progress">show_progress<a class="anchor" aria-label="anchor" href="#arg-show-progress"></a></dt>
-<dd><p>Logical. Show progress bar during bootstrap iterations.
-Default = TRUE.</p></dd>
+<dd><p>Logical. Show a progress bar during resampling.
+Default is <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-rmse-model">rmse_model<a class="anchor" aria-label="anchor" href="#arg-rmse-model"></a></dt>
-<dd><p>Optional numeric RMSE of the fitted (original) model.
-If NULL (default), it is computed automatically.</p></dd>
+<dd><p>Optional finite numeric RMSE for the original fitted model.
+If <code>NULL</code>, it is calculated from <code>model</code> and <code>data</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

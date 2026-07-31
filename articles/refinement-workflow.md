@@ -34,14 +34,15 @@ For this reason, actuarial pricing work often distinguishes between:
     [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
     to obtain the final fitted model
 
-This separation can make tariff adjustments easier to understand,
-reproduce, and audit.
+This separation records which adjustments are proposed before they are
+included in the fitted model. It also distinguishes estimated GLM
+effects from explicit tariff assumptions.
 
 ## When refinement can help
 
-Refinement can help when the estimated model output is useful, but the
-fitted coefficient pattern needs additional structure before it is used
-in a tariff.
+Refinement can be considered when the estimated model captures the main
+risk structure, but selected coefficient patterns require additional
+structure before tariff implementation.
 
 Typical use cases include:
 
@@ -52,7 +53,7 @@ Typical use cases include:
 - simplifying the final tariff for practical implementation
 
 In many workflows, refinement is applied to the model that represents
-the final pricing signal, such as a premium or pure-premium model. In
+the final pricing signal, such as a premium or risk-premium model. In
 other cases, it may also be useful for selected frequency or severity
 effects. The relevant question is whether the adjusted coefficient
 pattern is intended to support the tariff structure that will be
@@ -187,8 +188,9 @@ For example, a coefficient pattern such as:
 - age 34–38 higher
 - age 38–42 lower again
 
-may be statistically possible, but difficult to explain or maintain.
-Smoothing adds a more stable structure to the rating factor.
+may be compatible with the observed sample, but unstable across periods
+or difficult to support actuarially. Smoothing replaces local variation
+with an explicitly regularised coefficient pattern.
 
 ### Adding smoothing
 
@@ -209,8 +211,18 @@ The key arguments are:
 - `model_variable`: the grouped variable present in the GLM
 - `source_variable`: the original continuous portfolio variable
 - `breaks`: the preferred commercial cut points
-- `smoothing`: the smoothing specification
+- `smoothing`: the smoothing specification; `"spline"` is the
+  general-purpose default
 - `weights`: optional weighting, typically exposure
+
+Use `"mpi"` or `"mpd"` when the tariff effect is required to increase or
+decrease monotonically. Convex, concave and combined shape constraints
+are available for cases where that additional assumption can be
+supported actuarially. `"poly"` fits a global polynomial and uses
+`degree`; `"gam"` fits a thin-plate smooth that can be used as an
+unconstrained comparison. For spline methods, `k` limits the available
+curve flexibility but is not the fitted effective number of degrees of
+freedom.
 
 ### Inspecting smoothing before refit
 
@@ -244,12 +256,17 @@ incorporated into the final fitted model.
 
 Typical smoothing choices are:
 
-- `"spline"`: polynomial-style smoothing
-- `"gam"`: flexible smooth curve
+- `"spline"`: unconstrained penalised cubic regression spline; the
+  general-purpose default
+- `"poly"`: global polynomial controlled by `degree`
+- `"gam"`: thin-plate regression spline fitted with `mgcv`, mainly
+  useful as an unconstrained comparison
 - `"mpi"`: monotone increasing
 - `"mpd"`: monotone decreasing
 
-The appropriate choice depends on the pricing context.
+Convex, concave and combined monotonicity-curvature constraints are also
+available as advanced options. They should be used only when the assumed
+shape has an actuarial or economic basis.
 
 For example:
 
@@ -336,6 +353,11 @@ relativities_activity <- relativities(
     "construction",
     c("residential_construction", "commercial_construction"),
     c(1.00, 1.15)
+  ),
+  split_level(
+    "services",
+    c("professional_services", "personal_services"),
+    c(0.95, 1.05)
   )
 )
 
@@ -353,7 +375,11 @@ If `normalize = TRUE`, the relativities are scaled so that their
 exposure-weighted average remains equal to 1 within the original level.
 
 This preserves the original model signal while introducing finer
-structure.
+structure. When `model_variable` has already been restricted with
+[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
+the restricted coefficients are used automatically as the basis for
+these relativities. Refinement order is therefore part of the
+specification.
 
 ## Refit
 
@@ -387,27 +413,27 @@ After refit, use
 
 rating_table(burn_refined)
 #>          level             risk_factor est_burn_refined exposure
-#> 1  (Intercept)             (Intercept)     1.070848e+04       NA
+#> 1  (Intercept)             (Intercept)     1.068525e+04       NA
 #> 2            0                 zip_adj     8.000000e-01      207
 #> 3            1                 zip_adj     9.000000e-01    11081
 #> 4            2                 zip_adj     1.000000e+00     7783
 #> 5            3                 zip_adj     1.200000e+00     7586
-#> 6      [18,23] age_policyholder_smooth     1.985214e+00      586
-#> 7      (23,28] age_policyholder_smooth     1.524645e+00     2204
-#> 8      (28,33] age_policyholder_smooth     1.193787e+00     2790
+#> 6      [18,23] age_policyholder_smooth     1.991647e+00      586
+#> 7      (23,28] age_policyholder_smooth     1.525996e+00     2204
+#> 8      (28,33] age_policyholder_smooth     1.194587e+00     2790
 #> 9      (33,38] age_policyholder_smooth     1.053848e+00     3021
-#> 10     (38,43] age_policyholder_smooth     1.020715e+00     3089
-#> 11     (43,48] age_policyholder_smooth     9.959711e-01     3041
-#> 12     (48,53] age_policyholder_smooth     9.290435e-01     2978
-#> 13     (53,58] age_policyholder_smooth     8.282178e-01     2186
-#> 14     (58,63] age_policyholder_smooth     7.382691e-01     1974
-#> 15     (63,68] age_policyholder_smooth     7.024490e-01     1973
-#> 16     (68,73] age_policyholder_smooth     7.265697e-01     1558
-#> 17     (73,78] age_policyholder_smooth     7.629301e-01      907
-#> 18     (78,83] age_policyholder_smooth     7.318230e-01      246
-#> 19     (83,88] age_policyholder_smooth     5.983689e-01       93
-#> 20     (88,93] age_policyholder_smooth     5.224158e-01       11
-#> 21          bm                      bm     9.977213e-01       NA
+#> 10     (38,43] age_policyholder_smooth     1.017313e+00     3089
+#> 11     (43,48] age_policyholder_smooth     9.961032e-01     3041
+#> 12     (48,53] age_policyholder_smooth     9.284442e-01     2978
+#> 13     (53,58] age_policyholder_smooth     8.277635e-01     2186
+#> 14     (58,63] age_policyholder_smooth     7.364565e-01     1974
+#> 15     (63,68] age_policyholder_smooth     7.179164e-01     1973
+#> 16     (68,73] age_policyholder_smooth     7.466678e-01     1558
+#> 17     (73,78] age_policyholder_smooth     7.554871e-01      907
+#> 18     (78,83] age_policyholder_smooth     7.030268e-01      246
+#> 19     (83,88] age_policyholder_smooth     6.061124e-01       93
+#> 20     (88,93] age_policyholder_smooth     4.894076e-01       11
+#> 21          bm                      bm     9.977225e-01       NA
 ```
 
 At this point, the output no longer represents a proposed refinement
@@ -447,12 +473,12 @@ After refit, model structure can be extracted with
 md <- extract_model_data(burn_refined)
 head(md)
 #>   age_policyholder age_policyholder_freq_cat_smooth age_policyholder_smooth
-#> 1               18                         1.985214                 [18,23]
-#> 2               18                         1.985214                 [18,23]
-#> 3               18                         1.985214                 [18,23]
-#> 4               18                         1.985214                 [18,23]
-#> 5               19                         1.985214                 [18,23]
-#> 6               19                         1.985214                 [18,23]
+#> 1               18                         1.991647                 [18,23]
+#> 2               18                         1.991647                 [18,23]
+#> 3               18                         1.991647                 [18,23]
+#> 4               18                         1.991647                 [18,23]
+#> 5               19                         1.991647                 [18,23]
+#> 6               19                         1.991647                 [18,23]
 #>   nclaims   exposure amount power bm zip age_policyholder_freq_cat
 #> 1       1 1.00000000 261777    40  3   3                   [18,25]
 #> 2       0 0.09589041      0    68  5   2                   [18,25]
@@ -485,12 +511,12 @@ head(grid)
 #> 5                 (23,28]   1  7    33  28.334247     0.9
 #> 6                 (23,28]   2 13     5   4.041096     1.0
 #>   age_policyholder_freq_cat_smooth
-#> 1                         1.524645
-#> 2                         1.524645
-#> 3                         1.524645
-#> 4                         1.524645
-#> 5                         1.524645
-#> 6                         1.524645
+#> 1                         1.525996
+#> 2                         1.525996
+#> 3                         1.525996
+#> 4                         1.525996
+#> 5                         1.525996
+#> 6                         1.525996
 ```
 
 This is typically used for:
@@ -524,27 +550,27 @@ burn_refined <- prepare_refinement(burn_unrestricted) |>
 
 rating_table(burn_refined)
 #>          level             risk_factor est_burn_refined exposure
-#> 1  (Intercept)             (Intercept)     1.070848e+04       NA
+#> 1  (Intercept)             (Intercept)     1.068525e+04       NA
 #> 2            0                 zip_adj     8.000000e-01      207
 #> 3            1                 zip_adj     9.000000e-01    11081
 #> 4            2                 zip_adj     1.000000e+00     7783
 #> 5            3                 zip_adj     1.200000e+00     7586
-#> 6      [18,23] age_policyholder_smooth     1.985214e+00      586
-#> 7      (23,28] age_policyholder_smooth     1.524645e+00     2204
-#> 8      (28,33] age_policyholder_smooth     1.193787e+00     2790
+#> 6      [18,23] age_policyholder_smooth     1.991647e+00      586
+#> 7      (23,28] age_policyholder_smooth     1.525996e+00     2204
+#> 8      (28,33] age_policyholder_smooth     1.194587e+00     2790
 #> 9      (33,38] age_policyholder_smooth     1.053848e+00     3021
-#> 10     (38,43] age_policyholder_smooth     1.020715e+00     3089
-#> 11     (43,48] age_policyholder_smooth     9.959711e-01     3041
-#> 12     (48,53] age_policyholder_smooth     9.290435e-01     2978
-#> 13     (53,58] age_policyholder_smooth     8.282178e-01     2186
-#> 14     (58,63] age_policyholder_smooth     7.382691e-01     1974
-#> 15     (63,68] age_policyholder_smooth     7.024490e-01     1973
-#> 16     (68,73] age_policyholder_smooth     7.265697e-01     1558
-#> 17     (73,78] age_policyholder_smooth     7.629301e-01      907
-#> 18     (78,83] age_policyholder_smooth     7.318230e-01      246
-#> 19     (83,88] age_policyholder_smooth     5.983689e-01       93
-#> 20     (88,93] age_policyholder_smooth     5.224158e-01       11
-#> 21          bm                      bm     9.977213e-01       NA
+#> 10     (38,43] age_policyholder_smooth     1.017313e+00     3089
+#> 11     (43,48] age_policyholder_smooth     9.961032e-01     3041
+#> 12     (48,53] age_policyholder_smooth     9.284442e-01     2978
+#> 13     (53,58] age_policyholder_smooth     8.277635e-01     2186
+#> 14     (58,63] age_policyholder_smooth     7.364565e-01     1974
+#> 15     (63,68] age_policyholder_smooth     7.179164e-01     1973
+#> 16     (68,73] age_policyholder_smooth     7.466678e-01     1558
+#> 17     (73,78] age_policyholder_smooth     7.554871e-01      907
+#> 18     (78,83] age_policyholder_smooth     7.030268e-01      246
+#> 19     (83,88] age_policyholder_smooth     6.061124e-01       93
+#> 20     (88,93] age_policyholder_smooth     4.894076e-01       11
+#> 21          bm                      bm     9.977225e-01       NA
 
 rating_table(burn_refined) |>
   autoplot()
@@ -588,14 +614,11 @@ The refinement interface helps separate:
 - tariff adjustments
 - final fitted output
 
-This makes it easier to document and inspect adjustments before the
-model is refitted. In practice, this can support tariff structures that
-are:
-
-- statistically grounded
-- interpretable
-- commercially usable
-- easier to implement
+The refinement specification records which parts of the final
+coefficient structure originate from the fitted model and which parts
+result from smoothing, restrictions or expert-based sublevel
+relativities. These choices should be assessed using exposure, claim
+volume, stability and the intended tariff application.
 
 ## Next steps
 

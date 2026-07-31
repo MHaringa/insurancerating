@@ -1,6 +1,39 @@
 # Changelog
 
-## insurancerating (development version)
+## insurancerating 0.8.1.9000 (development version)
+
+### Changes since 0.8.1
+
+- The function documentation, README and vignettes now use a consistent,
+  practical actuarial style. The documentation distinguishes observed
+  portfolio experience, fitted model effects, explicit tariff
+  assumptions and model diagnostics, and states relevant interpretation
+  limits more clearly.
+- [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+  keeps `"spline"` as its general-purpose default and fits it as an
+  unconstrained penalized cubic regression spline. Polynomial smoothing
+  is selected explicitly with `"poly"`, while `"gam"` provides a
+  thin-plate GAM comparison. `degree` is limited to polynomial fits, `k`
+  is limited to spline methods, and an omitted `k` is adapted to the
+  available grouped model points.
+- [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+  recognises a split variable created by an earlier
+  [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+  step without requiring `allow_new_risk_factors = TRUE`. A partial
+  restriction changes the supplied levels and fixes all remaining levels
+  at their current derived relativities.
+- [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md)
+  and
+  [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
+  are now the primary helpers for defining named sublevel splits. The
+  low-level
+  [`split_relativities()`](https://mharinga.github.io/insurancerating/reference/split_relativities.md)
+  constructor is deprecated because it does not record the parent model
+  level required by
+  [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).
+- Spline, GAM and shape-constrained smoothing validate the requested
+  basis dimension against the number of unique grouped covariate values
+  before model fitting.
 
 ## insurancerating 0.8.1
 

@@ -37,7 +37,18 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="insurancerating-development-version">insurancerating (development version)<a class="anchor" aria-label="anchor" href="#insurancerating-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.8.1.9000" id="insurancerating-0819000-development-version">insurancerating 0.8.1.9000 (development version)<a class="anchor" aria-label="anchor" href="#insurancerating-0819000-development-version"></a></h2>
+<div class="section level3">
+<h3 id="changes-since-0-8-1-9000">Changes since 0.8.1<a class="anchor" aria-label="anchor" href="#changes-since-0-8-1-9000"></a></h3>
+<ul><li>The function documentation, README and vignettes now use a consistent, practical actuarial style. The documentation distinguishes observed portfolio experience, fitted model effects, explicit tariff assumptions and model diagnostics, and states relevant interpretation limits more clearly.</li>
+<li>
+<code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> keeps <code>"spline"</code> as its general-purpose default and fits it as an unconstrained penalized cubic regression spline. Polynomial smoothing is selected explicitly with <code>"poly"</code>, while <code>"gam"</code> provides a thin-plate GAM comparison. <code>degree</code> is limited to polynomial fits, <code>k</code> is limited to spline methods, and an omitted <code>k</code> is adapted to the available grouped model points.</li>
+<li>
+<code><a href="../reference/add_restriction.html">add_restriction()</a></code> recognises a split variable created by an earlier <code><a href="../reference/add_relativities.html">add_relativities()</a></code> step without requiring <code>allow_new_risk_factors = TRUE</code>. A partial restriction changes the supplied levels and fixes all remaining levels at their current derived relativities.</li>
+<li>
+<code><a href="../reference/split_level.html">split_level()</a></code> and <code><a href="../reference/relativities.html">relativities()</a></code> are now the primary helpers for defining named sublevel splits. The low-level <code><a href="../reference/split_relativities.html">split_relativities()</a></code> constructor is deprecated because it does not record the parent model level required by <code><a href="../reference/add_relativities.html">add_relativities()</a></code>.</li>
+<li>Spline, GAM and shape-constrained smoothing validate the requested basis dimension against the number of unique grouped covariate values before model fitting.</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.1" id="insurancerating-081">insurancerating 0.8.1<a class="anchor" aria-label="anchor" href="#insurancerating-081"></a></h2><p class="text-muted">CRAN release: 2026-07-30</p>

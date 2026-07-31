@@ -62,16 +62,18 @@ rating_table() instead."><meta property="og:image" content="https://mharinga.git
 
 
 <dl><dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>glm object(s) produced by <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, <code><a href="refit.html">refit()</a></code> or <code><a href="refit_glm.html">refit_glm()</a></code></p></dd>
+<dd><p>One or more fitted <code>glm</code> objects, including models returned by
+<code><a href="refit.html">refit()</a></code>. Object expressions are used to construct the dynamic estimate
+column names.</p></dd>
 
 
 <dt id="arg-model-data">model_data<a class="anchor" aria-label="anchor" href="#arg-model-data"></a></dt>
-<dd><p>Optional data.frame used to create the model(s). If <code>NULL</code>,
+<dd><p>Optional data frame used to fit the models. If <code>NULL</code>,
 the function tries to use <code>model$data</code> for each supplied model.</p></dd>
 
 
 <dt id="arg-exposure">exposure<a class="anchor" aria-label="anchor" href="#arg-exposure"></a></dt>
-<dd><p>Logical or character. If <code>TRUE</code> (default), exposure is added
+<dd><p>Logical or character string. If <code>TRUE</code>, exposure is added
 if it can be inferred from the model. If <code>FALSE</code>, no exposure is added.
 If a character string is supplied, it is interpreted as the exposure column
 name.</p></dd>
@@ -88,13 +90,13 @@ instead.</p></dd>
 
 
 <dt id="arg-exponentiate">exponentiate<a class="anchor" aria-label="anchor" href="#arg-exponentiate"></a></dt>
-<dd><p>Logical. If <code>TRUE</code> (default), coefficients are
+<dd><p>Logical. If <code>TRUE</code>, coefficients are
 exponentiated and shown as relativities. If <code>FALSE</code>, coefficients are shown
 on the model scale.</p></dd>
 
 
 <dt id="arg-round-exposure">round_exposure<a class="anchor" aria-label="anchor" href="#arg-round-exposure"></a></dt>
-<dd><p>number of digits for exposure (defaults to 0)</p></dd>
+<dd><p>Non-negative number of digits used to round exposure.</p></dd>
 
 </dl></div>
     <div class="section level2">

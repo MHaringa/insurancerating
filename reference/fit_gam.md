@@ -26,7 +26,7 @@ fit_gam(
 
 - data:
 
-  A data.frame containing the insurance portfolio.
+  A data frame containing portfolio observations.
 
 - nclaims:
 
@@ -38,7 +38,8 @@ fit_gam(
 
 - exposure:
 
-  Character, name of column in `data` with the exposure.
+  Character string. Exposure column used as an offset or aggregation
+  weight.
 
 - amount:
 
@@ -46,14 +47,14 @@ fit_gam(
 
 - pure_premium:
 
-  (Optional) Character, column name in `data` with the pure premium.
-  Required for `model = "pure_premium"`.
+  Optional character string. Row-level risk-premium column. Required for
+  `model = "pure_premium"` and aggregated using exposure weights.
 
 - model:
 
-  Character string specifying the model type. One of `"frequency"`,
-  `"severity"`, or `"pure_premium"`. Default is `"frequency"`. The old
-  value `"burning"` is deprecated and maps to `"pure_premium"`.
+  Character string. Response context: `"frequency"`, `"severity"` or
+  `"pure_premium"`. The deprecated value `"burning"` maps to
+  `"pure_premium"`.
 
 - round_x:
 

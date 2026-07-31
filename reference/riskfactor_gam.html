@@ -64,7 +64,7 @@
 
 
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>A data.frame containing the insurance portfolio.</p></dd>
+<dd><p>A data frame containing portfolio observations.</p></dd>
 
 
 <dt id="arg-nclaims">nclaims<a class="anchor" aria-label="anchor" href="#arg-nclaims"></a></dt>
@@ -76,7 +76,8 @@
 
 
 <dt id="arg-exposure">exposure<a class="anchor" aria-label="anchor" href="#arg-exposure"></a></dt>
-<dd><p>Character, name of column in <code>data</code> with the exposure.</p></dd>
+<dd><p>Character string. Exposure column used as an offset or
+aggregation weight.</p></dd>
 
 
 <dt id="arg-amount">amount<a class="anchor" aria-label="anchor" href="#arg-amount"></a></dt>
@@ -84,14 +85,15 @@
 
 
 <dt id="arg-pure-premium">pure_premium<a class="anchor" aria-label="anchor" href="#arg-pure-premium"></a></dt>
-<dd><p>(Optional) Character, column name in <code>data</code> with the pure
-premium. Required for <code>model = "pure_premium"</code>.</p></dd>
+<dd><p>Optional character string. Row-level risk-premium column.
+Required for <code>model = "pure_premium"</code> and aggregated using exposure
+weights.</p></dd>
 
 
 <dt id="arg-model">model<a class="anchor" aria-label="anchor" href="#arg-model"></a></dt>
-<dd><p>Character string specifying the model type. One of
-<code>"frequency"</code>, <code>"severity"</code>, or <code>"pure_premium"</code>. Default is <code>"frequency"</code>.
-The old value <code>"burning"</code> is deprecated and maps to <code>"pure_premium"</code>.</p></dd>
+<dd><p>Character string. Response context: <code>"frequency"</code>,
+<code>"severity"</code> or <code>"pure_premium"</code>. The deprecated value <code>"burning"</code> maps
+to <code>"pure_premium"</code>.</p></dd>
 
 
 <dt id="arg-round-x">round_x<a class="anchor" aria-label="anchor" href="#arg-round-x"></a></dt>
@@ -99,24 +101,25 @@ The old value <code>"burning"</code> is deprecated and maps to <code>"pure_premi
 
 
 <dt id="arg-risk-factor">risk_factor<a class="anchor" aria-label="anchor" href="#arg-risk-factor"></a></dt>
-<dd><p>Character, name of column in <code>data</code> with the continuous
-risk factor.</p></dd>
+<dd><p>Character string. Numeric continuous risk-factor column
+in <code>data</code>.</p></dd>
 
 
 <dt id="arg-claim-count">claim_count<a class="anchor" aria-label="anchor" href="#arg-claim-count"></a></dt>
-<dd><p>Character, name of column in <code>data</code> with the number of
-claims.</p></dd>
+<dd><p>Character string. Claim-count column. Required for
+<code>model = "frequency"</code> and <code>model = "severity"</code>.</p></dd>
 
 
 <dt id="arg-claim-amount">claim_amount<a class="anchor" aria-label="anchor" href="#arg-claim-amount"></a></dt>
-<dd><p>(Optional) Character, column name in <code>data</code> with the
-claim amount. Required for <code>model = "severity"</code>.</p></dd>
+<dd><p>Optional character string. Total claim-amount column.
+Required for <code>model = "severity"</code>.</p></dd>
 
 
 <dt id="arg-round-risk-factor">round_risk_factor<a class="anchor" aria-label="anchor" href="#arg-round-risk-factor"></a></dt>
-<dd><p>(Optional) Numeric value to round the risk factor to
-a multiple of <code>round_risk_factor</code>. Can speed up fitting for factors with
-many distinct values.</p></dd>
+<dd><p>Optional positive numeric value. The continuous risk
+factor is rounded to multiples of this value before aggregation and model
+fitting. This can reduce computation and local volatility when the variable
+has many distinct values, but it also removes detail.</p></dd>
 
 </dl></div>
     <div class="section level2">

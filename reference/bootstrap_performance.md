@@ -1,7 +1,9 @@
-# Bootstrapped model performance
+# Assess predictive stability by repeated resampling
 
-Generate repeated train/evaluation samples to compute model performance.
-Currently, the supported metric is root mean squared error (RMSE).
+Refit a pricing model on repeated samples and record the resulting
+response-scale prediction error. The distribution of RMSE values
+describes how sensitive model performance is to changes in the observed
+portfolio sample.
 
 ## Usage
 
@@ -24,43 +26,42 @@ bootstrap_performance(
 
 - model:
 
-  A fitted model object.
+  A fitted model object that can be updated on resampled data.
 
 - data:
 
-  Data used to fit the model object.
+  Data frame containing the model response and predictors.
 
 - n_resamples:
 
-  Integer. Number of resampling replicates. Default = 50.
+  Positive whole number. Number of resampling replicates. Default is 50.
 
 - sample_fraction:
 
   Fraction of the data used in the training sample. Must be in `(0, 1]`.
-  Default = 1.
+  Default is 1.
 
 - metric:
 
-  Character. Performance metric to compute. Currently only `"rmse"` is
-  supported.
+  Character string. Performance metric to compute. Currently only
+  `"rmse"` is supported.
 
 - sampling:
 
-  Character. Sampling scheme. `"bootstrap"` samples training rows with
-  replacement and evaluates on out-of-bag rows when
+  Character string. Sampling scheme. `"bootstrap"` samples training rows
+  with replacement and evaluates on out-of-bag rows when
   `sample_fraction < 1`. `"split"` samples training rows without
   replacement and evaluates on the remaining rows when
   `sample_fraction < 1`.
 
 - show_progress:
 
-  Logical. Show progress bar during bootstrap iterations. Default =
-  TRUE.
+  Logical. Show a progress bar during resampling. Default is `TRUE`.
 
 - rmse_model:
 
-  Optional numeric RMSE of the fitted (original) model. If NULL
-  (default), it is computed automatically.
+  Optional finite numeric RMSE for the original fitted model. If `NULL`,
+  it is calculated from `model` and `data`.
 
 - n, frac:
 
@@ -90,16 +91,14 @@ components:
 
 ## Details
 
-To test the predictive stability of a fitted model it can be helpful to
-assess the variation in a performance metric. The variation is
-calculated by refitting the model on repeated samples and storing the
-resulting metric values.
+### Resampling design
 
-- If `sample_fraction = 1`, the metric is evaluated on the sampled
-  training data.
-
-- If `sample_fraction < 1`, the metric is evaluated on rows that were
-  not used for training.
+With `sampling = "bootstrap"`, training rows are sampled with
+replacement. With `sampling = "split"`, they are sampled without
+replacement. When `sample_fraction < 1`, performance is evaluated on
+records not used for fitting. When `sample_fraction = 1`, performance is
+evaluated on the sampled training data and should be interpreted as an
+in-sample stability measure.
 
 Character columns and factor columns are converted to factors with
 levels taken from the full input data before resampling. For factor
@@ -107,6 +106,27 @@ variables used in the model, the training sample is augmented when
 needed so every observed level is represented at least once. This
 prevents prediction failures when a level is present in the evaluation
 data but absent from a particular training sample.
+
+### Actuarial interpretation
+
+The resampled RMSE distribution is useful for comparing the stability of
+alternative frequency, severity or risk-premium specifications under
+repeated portfolio sampling. A narrow distribution indicates that the
+measured error is relatively insensitive to the sampled records; a wide
+distribution indicates greater sampling sensitivity.
+
+This is an experience-based diagnostic and does not by itself represent
+the full uncertainty in future claims, trend, portfolio mix or model
+specification. Sparse factor levels are retained in training samples
+where necessary to avoid new-level prediction failures. That protection
+is useful operationally, but should be considered when interpreting the
+resampling design.
+
+## See also
+
+[`rmse()`](https://mharinga.github.io/insurancerating/reference/rmse.md),
+[`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
+[`autoplot.bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.md)
 
 ## Author
 

@@ -1,13 +1,10 @@
-# Edit an existing smoothing step in a refinement workflow
+# Edit a smoothing curve in a refinement workflow
 
-Manually adjusts a smoothing step that was previously added with
+Modify a specified interval of a smoothing curve previously added with
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md).
-This is intended for actuarial review of a smoothed tariff curve, for
-example to flatten an unstable segment, align the end points of an
-interval, or add extra control points where expert judgement should
-guide the curve. The adjusted smoothing is applied when
-[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-is called.
+The function can fix boundary values and introduce internal control
+points, for example when actuarial review supports a flatter local
+effect or a documented transition between tariff segments.
 
 ## Usage
 
@@ -74,9 +71,19 @@ edit_smoothing(
 
 ## Value
 
-Object of class `rating_refinement`.
+A `rating_refinement` object containing the edited smoothing
+specification. The pricing GLM is not fitted again until
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+is called.
 
 ## Details
+
+`edit_smoothing()` stores an edit on the selected smoothing step of a
+`rating_refinement` object. It does not alter the fitted GLM
+immediately. The edited curve is evaluated in the recorded step order
+and applied when
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+is called.
 
 Use `model_variable` or `step` to identify the smoothing step to edit.
 The interval from `from` to `to` defines the part of the source variable
@@ -85,17 +92,31 @@ force the curve values at the interval boundaries. `control_positions`
 and `control_values` add additional points that the edited curve should
 follow inside the interval.
 
-`edit_smoothing()` changes the stored smoothing specification; it does
-not edit a fitted GLM in place. Keep the `rating_refinement` object,
-call
+### Actuarial interpretation
+
+The edited interval is an explicit tariff assumption layered on the
+statistically fitted smoothing curve. It should be supported by an
+actuarial rationale and reviewed against exposure, observed experience
+and the continuity of adjacent segments. The edit does not add
+information to sparse parts of the portfolio and should not be
+interpreted as a new model estimate.
+
+Keep the `rating_refinement` object, call
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
 to assess the current specification, edit that same refinement object,
 and call
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-again. The previously fitted model remains an unchanged model result.
-This separation makes the sequence of actuarial adjustments reproducible
-and avoids reconstructing refinement choices from transformed columns in
-a refitted model.
+again. The previously fitted GLM remains unchanged. This retains the
+order and content of manual adjustments as part of the reproducible
+refinement specification.
+
+## See also
+
+[`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
+[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
 
 ## Author
 
@@ -133,7 +154,6 @@ refinement <- prepare_refinement(model, data = portfolio) |>
     model_variable = "age_band",
     source_variable = "driver_age",
     breaks = c(18, 30, 40, 50, 60),
-    degree = 2,
     weights = "exposure"
   )
 

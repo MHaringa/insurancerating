@@ -103,10 +103,11 @@ factors.</p>
 <span><span class="co">#&gt; 2   2  59751985    1008  7782.6301 0.1295192         59277.76     7677.608</span></span>
 <span><span class="co">#&gt; 3   3  58988962    1038  7587.5644 0.1368028         56829.44     7774.427</span></span>
 <span><span class="co">#&gt; 4   0    821510      29   206.8438 0.1402024         28327.93     3971.644</span></span></code></pre></div>
-<p>The output helps answer practical questions such as:</p>
+<p>The output supports questions such as:</p>
 <ul>
 <li>where exposure is concentrated</li>
-<li>whether observed differences are credible or noisy</li>
+<li>whether observed differences are supported by sufficient volume or
+are likely to be volatile</li>
 <li>whether a segment is driven by a small number of claims</li>
 <li>which risk factors may need closer modelling or refinement</li>
 </ul>
@@ -213,10 +214,10 @@ responsiveness and the credibility of observed excess experience.</p>
 <span>  data <span class="op">=</span> <span class="va">severity_data</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The adjusted average claim amount already contains the redistributed
-cost of large losses. A separate excess-premium component must therefore
-not be added again. This is a concise workflow and generally works well
-when modelled groups contain sufficient claims and sparse factor levels
-have been combined.</p>
+cost of large losses. A separate excess-premium component should
+therefore not be added again. This workflow uses one severity response
+and can be appropriate when modelled groups contain sufficient claims
+and sparse factor levels have been combined.</p>
 <p>The amount allocated to an individual row is not an observed claim
 amount for that row. In a sparse sector, a severity model can therefore
 interpret allocated portfolio excess as evidence about that sector.
@@ -307,8 +308,8 @@ boundaries from that pattern.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>               59 (58,65]                 </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>               71 (65,84]</span></span></code></pre></div>
 <p>These functions are intended to support actuarial judgement, not
-replace it. Candidate segment boundaries should still be reviewed for
-credibility, stability and practical usability.</p>
+replace it. Candidate segment boundaries should still be reviewed
+against exposure, claim volume, stability and practical usability.</p>
 </div>
 <div class="section level2">
 <h2 id="fit-and-interpret-a-glm">4. Fit and interpret a GLM<a class="anchor" aria-label="anchor" href="#fit-and-interpret-a-glm"></a>
@@ -358,9 +359,10 @@ between model relativities and observed experience explicit.</p>
 <div class="section level2">
 <h2 id="refine-tariff-effects-when-needed">5. Refine tariff effects when needed<a class="anchor" aria-label="anchor" href="#refine-tariff-effects-when-needed"></a>
 </h2>
-<p>Raw model output may be statistically valid but still unsuitable for
-direct tariff use. Sparse levels, noisy estimates or non-monotonic
-adjacent effects can make a tariff hard to explain or maintain.</p>
+<p>Estimated coefficients may require further actuarial review before
+direct tariff use. Sparse levels, sampling variation or non-monotonic
+adjacent effects can produce a structure that is unstable or difficult
+to support.</p>
 <p>The refinement workflow makes these adjustments explicit:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">freq_model</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -399,8 +401,8 @@ models</li>
 <code><a href="../reference/check_residuals.html">check_residuals()</a></code> for simulation-based residual
 diagnostics using DHARMa</li>
 <li>
-<code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code> for predictive stability with
-metrics such as RMSE</li>
+<code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code> for sensitivity of performance
+under repeated sampling</li>
 <li>
 <code><a href="../reference/rating_grid.html">rating_grid()</a></code> to inspect observed rating-grid
 combinations</li>
@@ -436,7 +438,7 @@ loading per exposure unit.</li>
 <code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code>.</li>
 <li>Create candidate tariff segments with
 <code><a href="../reference/derive_tariff_segments.html">derive_tariff_segments()</a></code>.</li>
-<li>Fit GLMs for frequency, severity or pure premium.</li>
+<li>Fit GLMs for frequency, severity or risk premium.</li>
 <li>Interpret coefficients with <code><a href="../reference/rating_table.html">rating_table()</a></code>.</li>
 <li>Compare fitted relativities with observed experience using
 <code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code>.</li>

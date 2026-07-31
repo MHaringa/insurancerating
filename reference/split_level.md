@@ -1,9 +1,10 @@
-# Define a level split with relativities
+# Define a sublevel split for a model level
 
-Helper function to define how one level of a risk factor should be split
-into sublevels with corresponding relativities. Intended for use inside
+Define how one level of a GLM risk factor is divided into more detailed
+portfolio levels with specified multiplicative relativities. The
+resulting object is intended to be combined with
 [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
-and
+and supplied to
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).
 
 ## Usage
@@ -20,17 +21,38 @@ split_level(level, new_levels, relativities)
 
 - new_levels:
 
-  Character vector. Names of the new sublevels.
+  Character vector. Levels of the more detailed portfolio variable
+  within `level`.
 
 - relativities:
 
-  Numeric vector. Relativities corresponding to each sublevel. Must have
-  the same length as `new_levels`.
+  Numeric vector. Multiplicative relativities corresponding to
+  `new_levels`. Must have the same length as `new_levels`.
 
 ## Value
 
-A named list of length 1, where the name is `level` and the value is a
-data.frame with columns `new_level` and `relativity`.
+A named list of length one. Its name is `level`; its value is a data
+frame with columns `new_level` and `relativity`.
+
+## Details
+
+`level` identifies the existing parent level in `model_variable`.
+`new_levels` identifies the corresponding levels of `split_variable`.
+`relativities` gives their relative tariff effects before any optional
+exposure normalisation by
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).
+
+This helper defines a tariff assumption; it does not estimate
+relativities from claim experience and does not alter a fitted GLM.
+
+## See also
+
+[`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md),
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+
+## Author
+
+Martin Haringa
 
 ## Examples
 

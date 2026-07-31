@@ -26,7 +26,7 @@ riskfactor_gam(
 
 - data:
 
-  A data.frame containing the insurance portfolio.
+  A data frame containing portfolio observations.
 
 - nclaims:
 
@@ -38,7 +38,8 @@ riskfactor_gam(
 
 - exposure:
 
-  Character, name of column in `data` with the exposure.
+  Character string. Exposure column used as an offset or aggregation
+  weight.
 
 - amount:
 
@@ -46,14 +47,14 @@ riskfactor_gam(
 
 - pure_premium:
 
-  (Optional) Character, column name in `data` with the pure premium.
-  Required for `model = "pure_premium"`.
+  Optional character string. Row-level risk-premium column. Required for
+  `model = "pure_premium"` and aggregated using exposure weights.
 
 - model:
 
-  Character string specifying the model type. One of `"frequency"`,
-  `"severity"`, or `"pure_premium"`. Default is `"frequency"`. The old
-  value `"burning"` is deprecated and maps to `"pure_premium"`.
+  Character string. Response context: `"frequency"`, `"severity"` or
+  `"pure_premium"`. The deprecated value `"burning"` maps to
+  `"pure_premium"`.
 
 - round_x:
 
@@ -61,22 +62,24 @@ riskfactor_gam(
 
 - risk_factor:
 
-  Character, name of column in `data` with the continuous risk factor.
+  Character string. Numeric continuous risk-factor column in `data`.
 
 - claim_count:
 
-  Character, name of column in `data` with the number of claims.
+  Character string. Claim-count column. Required for
+  `model = "frequency"` and `model = "severity"`.
 
 - claim_amount:
 
-  (Optional) Character, column name in `data` with the claim amount.
-  Required for `model = "severity"`.
+  Optional character string. Total claim-amount column. Required for
+  `model = "severity"`.
 
 - round_risk_factor:
 
-  (Optional) Numeric value to round the risk factor to a multiple of
-  `round_risk_factor`. Can speed up fitting for factors with many
-  distinct values.
+  Optional positive numeric value. The continuous risk factor is rounded
+  to multiples of this value before aggregation and model fitting. This
+  can reduce computation and local volatility when the variable has many
+  distinct values, but it also removes detail.
 
 ## Value
 

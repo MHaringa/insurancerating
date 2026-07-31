@@ -42,10 +42,11 @@ head(fa)
 #> 4   0    821510      29   206.8438 0.1402024         28327.93     3971.644
 ```
 
-The output helps answer practical questions such as:
+The output supports questions such as:
 
 - where exposure is concentrated
-- whether observed differences are credible or noisy
+- whether observed differences are supported by sufficient volume or are
+  likely to be volatile
 - whether a segment is driven by a small number of claims
 - which risk factors may need closer modelling or refinement
 
@@ -146,10 +147,10 @@ severity_model <- glm(
 ```
 
 The adjusted average claim amount already contains the redistributed
-cost of large losses. A separate excess-premium component must therefore
-not be added again. This is a concise workflow and generally works well
-when modelled groups contain sufficient claims and sparse factor levels
-have been combined.
+cost of large losses. A separate excess-premium component should
+therefore not be added again. This workflow uses one severity response
+and can be appropriate when modelled groups contain sufficient claims
+and sparse factor levels have been combined.
 
 The amount allocated to an individual row is not an observed claim
 amount for that row. In a sparse sector, a severity model can therefore
@@ -253,8 +254,8 @@ head(portfolio[, c("age_policyholder", "age_policyholder_segment")])
 ```
 
 These functions are intended to support actuarial judgement, not replace
-it. Candidate segment boundaries should still be reviewed for
-credibility, stability and practical usability.
+it. Candidate segment boundaries should still be reviewed against
+exposure, claim volume, stability and practical usability.
 
 ## 4. Fit and interpret a GLM
 
@@ -310,9 +311,10 @@ rt |>
 
 ## 5. Refine tariff effects when needed
 
-Raw model output may be statistically valid but still unsuitable for
-direct tariff use. Sparse levels, noisy estimates or non-monotonic
-adjacent effects can make a tariff hard to explain or maintain.
+Estimated coefficients may require further actuarial review before
+direct tariff use. Sparse levels, sampling variation or non-monotonic
+adjacent effects can produce a structure that is unstable or difficult
+to support.
 
 The refinement workflow makes these adjustments explicit:
 
@@ -348,7 +350,7 @@ tariff. `insurancerating` contains helpers for several common checks:
 - [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
   for simulation-based residual diagnostics using DHARMa
 - [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
-  for predictive stability with metrics such as RMSE
+  for sensitivity of performance under repeated sampling
 - [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
   to inspect observed rating-grid combinations
 
@@ -391,7 +393,7 @@ One possible workflow is:
     [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md).
 5.  Create candidate tariff segments with
     [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md).
-6.  Fit GLMs for frequency, severity or pure premium.
+6.  Fit GLMs for frequency, severity or risk premium.
 7.  Interpret coefficients with
     [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
 8.  Compare fitted relativities with observed experience using

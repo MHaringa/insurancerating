@@ -22,20 +22,20 @@ rating_factors(
 
 - ...:
 
-  glm object(s) produced by [`glm()`](https://rdrr.io/r/stats/glm.html),
-  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-  or
-  [`refit_glm()`](https://mharinga.github.io/insurancerating/reference/refit_glm.md)
+  One or more fitted `glm` objects, including models returned by
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+  Object expressions are used to construct the dynamic estimate column
+  names.
 
 - model_data:
 
-  Optional data.frame used to create the model(s). If `NULL`, the
-  function tries to use `model$data` for each supplied model.
+  Optional data frame used to fit the models. If `NULL`, the function
+  tries to use `model$data` for each supplied model.
 
 - exposure:
 
-  Logical or character. If `TRUE` (default), exposure is added if it can
-  be inferred from the model. If `FALSE`, no exposure is added. If a
+  Logical or character string. If `TRUE`, exposure is added if it can be
+  inferred from the model. If `FALSE`, no exposure is added. If a
   character string is supplied, it is interpreted as the exposure column
   name.
 
@@ -53,13 +53,12 @@ rating_factors(
 
 - exponentiate:
 
-  Logical. If `TRUE` (default), coefficients are exponentiated and shown
-  as relativities. If `FALSE`, coefficients are shown on the model
-  scale.
+  Logical. If `TRUE`, coefficients are exponentiated and shown as
+  relativities. If `FALSE`, coefficients are shown on the model scale.
 
 - round_exposure:
 
-  number of digits for exposure (defaults to 0)
+  Non-negative number of digits used to round exposure.
 
 ## Value
 

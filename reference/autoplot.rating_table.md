@@ -1,14 +1,12 @@
-# Plot risk factor effects from `rating_table()` results
+# Compare fitted risk-factor effects graphically
 
-Create a ggplot visualisation of a `rating_table` object produced by
-[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
-Estimates are plotted per risk factor, with optional exposure bars.
-Observed portfolio experience can be added first with
-[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md).
-
-When observed experience is attached, it is plotted as an additional
-line. The scaling is controlled by
-[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md).
+Plot the coefficients or relativities stored in a
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+object by risk factor. Multiple fitted models can be compared, exposure
+can be shown as background bars, and observed portfolio experience
+attached with
+[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+can be added as a separate line.
 
 ## Usage
 
@@ -42,13 +40,13 @@ autoplot(
 
 - object:
 
-  A `rating_table` object returned by
+  A `"rating_table"` object returned by
   [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
 
 - risk_factors:
 
-  Character vector specifying which risk factors to plot. Defaults to
-  all risk factors.
+  Optional character vector specifying the risk factors to plot. If
+  `NULL`, all available risk factors are shown.
 
 - metric:
 
@@ -60,47 +58,48 @@ autoplot(
 
 - ncol:
 
-  Number of columns in the patchwork layout. Default is 1.
+  Positive integer specifying the number of columns in the patchwork
+  layout.
 
 - show_exposure_labels:
 
-  Logical; if `TRUE`, show exposure values as labels on the bars.
-  Default is `TRUE`.
+  Logical. If `TRUE`, print exposure values on the background bars.
 
 - decimal_mark:
 
-  Character; decimal separator, either `","` (default) or `"."`.
+  Character string, either `","` or `"."`, controlling number labels.
 
 - y_label:
 
-  Character; label for the y-axis. Default is `"Relativity"`.
+  Character string for the primary y-axis.
 
 - bar_fill:
 
-  Fill color for the exposure bars. If `NULL`, taken from the internal
-  palette.
+  Optional colour for exposure bars. If `NULL`, the package palette is
+  used.
 
 - model_color:
 
-  Optional override for model line colors. If `NULL`, colors are taken
-  from the internal discrete palette.
+  Optional single colour overriding the model-line palette.
 
 - use_linetype:
 
-  Logical; if `TRUE`, use different line types for models. Default is
-  `FALSE`.
+  Logical. If `TRUE`, distinguish fitted models by line type as well as
+  colour.
 
 - rotate_angle:
 
-  Numeric value for angle of labels on the x-axis (degrees).
+  Optional numeric angle for risk-factor level labels.
 
 - custom_theme:
 
-  List with customised theme options.
+  Optional named list passed to
+  [`ggplot2::theme()`](https://ggplot2.tidyverse.org/reference/theme.html).
 
 - remove_underscores:
 
-  Logical; remove underscores from labels.
+  Logical. If `TRUE`, replace underscores with spaces in risk-factor
+  axis labels.
 
 - labels:
 
@@ -128,8 +127,71 @@ autoplot(
 
 - ...:
 
-  Additional arguments passed to ggplot2 layers.
+  Additional arguments reserved for method compatibility.
 
 ## Value
 
-A `ggplot`/`patchwork` object.
+A `patchwork` object containing one `ggplot2` panel per selected risk
+factor.
+
+## Details
+
+### Plot contents
+
+One panel is produced for each selected risk factor. Model effects use
+the primary y-axis. When exposure is available, bars are rescaled to the
+plotting range and the original exposure scale is shown on the secondary
+y-axis.
+
+Observed experience is plotted only after it has been attached with
+[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md).
+The selected `metric` is converted to the relative scale recorded in
+that object, using either the model reference level or the portfolio
+mean.
+
+### Actuarial interpretation
+
+The plot supports comparison of fitted tariff effects, portfolio volume
+and unadjusted observed experience. Differences between the observed and
+modelled lines may indicate portfolio-mix effects, sparse levels, model
+smoothing or genuine lack of fit. The chart does not separate these
+explanations and should be reviewed together with claim counts, residual
+diagnostics and stability across periods.
+
+When models are compared, the analyst should ensure that response
+definitions, link functions and relativity scales are sufficiently
+comparable. Exposure bars provide volume context but are not confidence
+intervals.
+
+## See also
+
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md),
+[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md),
+[`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md),
+[`as_gt.rating_table()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+
+## Author
+
+Martin Haringa
+
+## Examples
+
+``` r
+portfolio <- MTPL
+portfolio$zip <- as.factor(portfolio$zip)
+
+frequency <- glm(
+  nclaims ~ bm + zip + offset(log(exposure)),
+  family = poisson(),
+  data = portfolio
+)
+
+effects <- rating_table(
+  frequency,
+  model_data = portfolio,
+  exposure = "exposure"
+)
+
+autoplot(effects, risk_factors = "zip", show_exposure_labels = FALSE)
+
+```

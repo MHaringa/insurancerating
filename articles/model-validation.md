@@ -4,9 +4,9 @@
 
 Model validation is a common part of actuarial pricing work.
 
-After model estimation and coefficient interpretation, it is necessary
-to assess whether the model performs adequately and behaves in a stable
-and interpretable way.
+After model estimation and coefficient interpretation, validation
+assesses whether the fitted model behaves consistently with its
+statistical assumptions and intended pricing use.
 
 In practice, model validation typically considers several dimensions:
 
@@ -18,9 +18,9 @@ In practice, model validation typically considers several dimensions:
 
 `insurancerating` provides tools for several of these validation tasks.
 
-The purpose of validation is not only to assess statistical fit, but
-also to determine whether a model is suitable for use in a pricing
-context.
+No single diagnostic establishes that a model is suitable for pricing.
+The results need to be interpreted together with data quality, portfolio
+structure, coefficient stability and the intended tariff application.
 
 ## Example setup
 
@@ -76,13 +76,16 @@ model_performance(mod1, mod2)
 #>  mod2 | 2289.054 | 2319.086 | 0.356
 ```
 
-This provides commonly used summary measures of model fit, such as RMSE.
+This reports AIC, BIC and response-scale RMSE. AIC and BIC compare
+likelihood fit with model complexity, while RMSE measures prediction
+error in the response unit.
 
 The purpose of this step is to assess whether the addition or removal of
 model terms leads to a materially different fit.
 
-In practice, this comparison is often used to support modelling choices
-before moving to tariff interpretation.
+The measures are comparable only when the models use the same response,
+estimation records, weights and offsets. They support model comparison
+but do not select a specification automatically.
 
 ## Step 2 — Coefficient inspection
 
@@ -119,14 +122,22 @@ performance is under small variations in the data.
 ``` r
 
 
-bootstrap_performance(mod1, df, n_resamples = 100, show_progress = FALSE) |>
+bootstrap_performance(
+  mod1,
+  df,
+  n_resamples = 100,
+  sample_fraction = 0.8,
+  sampling = "bootstrap",
+  show_progress = FALSE
+) |>
   autoplot()
 ```
 
 ![](model-validation_files/figure-html/unnamed-chunk-5-1.png)
 
-This evaluates predictive stability by repeatedly refitting the model on
-bootstrap samples and storing the resulting RMSE values.
+This repeatedly refits the model on bootstrap samples and evaluates RMSE
+on out-of-bag records. The resulting distribution measures sensitivity
+to portfolio sampling rather than the full uncertainty in future claims.
 
 The output is used to assess:
 
@@ -186,9 +197,9 @@ In GLM settings, simulation-based residual diagnostics are often more
 useful than classical residual plots, because they allow the fitted
 model to be evaluated relative to its own implied distribution.
 
-The purpose of this step is not to search for perfect residual
-behaviour, but to identify material deviations that may be relevant for
-pricing.
+The uniformity-test p-value is a diagnostic signal, not a stand-alone
+acceptance rule. Its interpretation should be combined with the shape of
+the QQ plot, exposure and relevant risk-factor levels.
 
 ## Step 6 — Portfolio-level structure
 
@@ -238,8 +249,8 @@ These steps serve different purposes:
 - diagnostics assess model adequacy
 - portfolio review assesses practical usability
 
-Taken together, they provide a structured basis for deciding whether a
-model is suitable for pricing use.
+Taken together, they provide evidence for actuarial review of the fitted
+model.
 
 ## Summary
 
@@ -256,13 +267,9 @@ check_residuals(...)          # inspect residual behaviour
 rating_grid(...)              # review model-point structure
 ```
 
-The purpose of validation is not only to assess model fit, but to
-determine whether the fitted model is:
-
-- statistically adequate
-- stable under data variation
-- interpretable in tariff terms
-- suitable for practical pricing use
+The diagnostics address different aspects of model behaviour. Their
+relevance and materiality depend on the portfolio, model purpose and
+validation criteria.
 
 ## Next steps
 

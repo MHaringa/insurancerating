@@ -24,11 +24,11 @@ bootstrap_rmse(
 
 - model:
 
-  A fitted model object.
+  A fitted model object that can be updated on resampled data.
 
 - data:
 
-  Data used to fit the model object.
+  Data frame containing the model response and predictors.
 
 - n:
 
@@ -44,26 +44,25 @@ bootstrap_rmse(
 
 - metric:
 
-  Character. Performance metric to compute. Currently only `"rmse"` is
-  supported.
+  Character string. Performance metric to compute. Currently only
+  `"rmse"` is supported.
 
 - sampling:
 
-  Character. Sampling scheme. `"bootstrap"` samples training rows with
-  replacement and evaluates on out-of-bag rows when
+  Character string. Sampling scheme. `"bootstrap"` samples training rows
+  with replacement and evaluates on out-of-bag rows when
   `sample_fraction < 1`. `"split"` samples training rows without
   replacement and evaluates on the remaining rows when
   `sample_fraction < 1`.
 
 - show_progress:
 
-  Logical. Show progress bar during bootstrap iterations. Default =
-  TRUE.
+  Logical. Show a progress bar during resampling. Default is `TRUE`.
 
 - rmse_model:
 
-  Optional numeric RMSE of the fitted (original) model. If NULL
-  (default), it is computed automatically.
+  Optional finite numeric RMSE for the original fitted model. If `NULL`,
+  it is calculated from `model` and `data`.
 
 ## Value
 
