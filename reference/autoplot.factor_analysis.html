@@ -66,6 +66,7 @@ multivariate tariff relativities.</p>
 <span>  <span class="va">object</span>,</span>
 <span>  metrics <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  legend_position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"right"</span>, <span class="st">"bottom"</span>, <span class="st">"top"</span>, <span class="st">"left"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  show_exposure <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  show_exposure_labels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  sort_by_exposure <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -73,7 +74,9 @@ multivariate tariff relativities.</p>
 <span>  decimal_mark <span class="op">=</span> <span class="st">","</span>,</span>
 <span>  line_color <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  bar_fill <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  label_width <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  abbreviate_labels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  label_width <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  label_abbreviations <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  flip_bars <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  show_total <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  total_color <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -125,6 +128,12 @@ multivariate tariff relativities.</p>
 <dd><p>Positive whole number. Number of columns in the plot composition.</p></dd>
 
 
+<dt id="arg-legend-position">legend_position<a class="anchor" aria-label="anchor" href="#arg-legend-position"></a></dt>
+<dd><p>Character string specifying the legend position.
+Supported values are <code>"right"</code>, <code>"bottom"</code>, <code>"top"</code>, <code>"left"</code> and
+<code>"none"</code>.</p></dd>
+
+
 <dt id="arg-show-exposure">show_exposure<a class="anchor" aria-label="anchor" href="#arg-show-exposure"></a></dt>
 <dd><p>Show exposure as background bars behind line plots
 (default = TRUE).</p></dd>
@@ -161,8 +170,23 @@ If NULL (default), the background color is taken from the internal palette.
 If specified, the chosen color is applied to all background bars.</p></dd>
 
 
+<dt id="arg-abbreviate-labels">abbreviate_labels<a class="anchor" aria-label="anchor" href="#arg-abbreviate-labels"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, long risk-factor level labels
+are shortened to <code>label_width</code> characters. A shortened label ends in one
+period; for example, <code>"Bouwnijverheid"</code> becomes <code>"Bouwn."</code> when
+<code>label_width = 6</code>. Only the displayed axis labels are changed.</p></dd>
+
+
 <dt id="arg-label-width">label_width<a class="anchor" aria-label="anchor" href="#arg-label-width"></a></dt>
-<dd><p>Width of labels on the x-axis (default = 10).</p></dd>
+<dd><p>Positive whole number of at least 2. Maximum number of
+characters in automatically shortened level labels.</p></dd>
+
+
+<dt id="arg-label-abbreviations">label_abbreviations<a class="anchor" aria-label="anchor" href="#arg-label-abbreviations"></a></dt>
+<dd><p>Optional named character vector with explicit
+display labels, for example
+<code>c("Bouwnijverheid" = "Bouwn.", "Onroerend goed" = "Onr. goed")</code>.
+Explicit labels take precedence over automatic shortening.</p></dd>
 
 
 <dt id="arg-flip-bars">flip_bars<a class="anchor" aria-label="anchor" href="#arg-flip-bars"></a></dt>

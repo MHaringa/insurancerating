@@ -17,12 +17,16 @@ autoplot(
   risk_factors = NULL,
   metric = NULL,
   ncol = 1,
+  legend_position = c("right", "bottom", "top", "left", "none"),
   show_exposure_labels = TRUE,
   decimal_mark = ",",
   y_label = "Relativity",
   bar_fill = NULL,
   model_color = NULL,
   use_linetype = FALSE,
+  abbreviate_labels = TRUE,
+  label_width = 10,
+  label_abbreviations = NULL,
   rotate_angle = NULL,
   custom_theme = NULL,
   remove_underscores = FALSE,
@@ -61,6 +65,11 @@ autoplot(
   Positive integer specifying the number of columns in the patchwork
   layout.
 
+- legend_position:
+
+  Character string specifying the legend position. Supported values are
+  `"right"`, `"bottom"`, `"top"`, `"left"` and `"none"`.
+
 - show_exposure_labels:
 
   Logical. If `TRUE`, print exposure values on the background bars.
@@ -86,6 +95,25 @@ autoplot(
 
   Logical. If `TRUE`, distinguish fitted models by line type as well as
   colour.
+
+- abbreviate_labels:
+
+  Logical. If `TRUE`, long risk-factor level labels are shortened to
+  `label_width` characters. A shortened label ends in one period; for
+  example, `"Bouwnijverheid"` becomes `"Bouwn."` when `label_width = 6`.
+  Only the displayed axis labels are changed.
+
+- label_width:
+
+  Positive whole number of at least 2. Maximum number of characters in
+  automatically shortened level labels.
+
+- label_abbreviations:
+
+  Optional named character vector with explicit display labels, for
+  example
+  `c("Bouwnijverheid" = "Bouwn.", "Onroerend goed" = "Onr. goed")`.
+  Explicit labels take precedence over automatic shortening.
 
 - rotate_angle:
 
