@@ -21,7 +21,7 @@ structure easier to explain."><meta property="og:image" content="https://mharing
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,7 +41,7 @@ structure easier to explain."><meta property="og:image" content="https://mharing
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Add coefficient restrictions to a refinement workflow</h1>
-      <small class="dont-index">Source: <a href="https://github.com/MHaringa/insurancerating/blob/v0.8.1/R/model_refinement.R" class="external-link"><code>R/model_refinement.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/MHaringa/insurancerating/blob/master/R/model_refinement.R" class="external-link"><code>R/model_refinement.R</code></a></small>
       <div class="d-none name"><code>add_restriction.Rd</code></div>
     </div>
 
@@ -136,7 +136,28 @@ information.</p>
 <p><code>allow_new_risk_factors</code> does not create the portfolio variable itself. The
 refinement data must already contain a column assigning every observation to
 a level. This is required to apply the supplied relativities to individual
-records.</p>
+records.</p><div class="section">
+<h3 id="updating-an-existing-restriction">Updating an existing restriction<a class="anchor" aria-label="anchor" href="#updating-an-existing-restriction"></a></h3>
+
+
+<p>A later call to <code>add_restriction()</code> for the same risk factor and the same
+restricted model variable updates the restriction already stored in the
+refinement. Relativities supplied in the later call replace the previously
+stored values for those levels. Restrictions for levels that are not supplied
+again are retained.</p>
+<p>The existing and new values are first combined and the resulting restriction
+table is then validated as one specification. This is useful when an
+actuarial assumption is revised during model refinement: only the affected
+levels need to be supplied again, while the remaining tariff assumptions
+stay unchanged. The restriction step keeps its original position in the
+workflow, so subsequent steps such as <code><a href="add_relativities.html">add_relativities()</a></code> use the revised
+restricted coefficients.</p>
+<p>The second column must retain the same name when an existing restriction is
+updated, because that name identifies the restricted model variable used by
+<code><a href="refit.html">refit()</a></code>. A message reports levels whose previously supplied relativity is
+changed.</p>
+</div>
+
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
@@ -188,8 +209,28 @@ records.</p>
 <span class="r-in"><span>  <span class="fu">add_restriction</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    <span class="va">hail_restrictions</span>,</span></span>
 <span class="r-in"><span>    allow_new_risk_factors <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;rating_refinement&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Base model: glm, lm</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Steps: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1. restriction [hail_zone]</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A later actuarial review changes only the relativity for the low hail zone.</span></span></span>
+<span class="r-in"><span><span class="co"># The high-zone relativity remains 1.20 and the existing step is updated.</span></span></span>
+<span class="r-in"><span><span class="va">revised_hail_restrictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  hail_zone <span class="op">=</span> <span class="st">"low"</span>,</span></span>
+<span class="r-in"><span>  hail_relativity <span class="op">=</span> <span class="fl">1.10</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">hail_refinement</span> <span class="op">&lt;-</span> <span class="fu"><a href="prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">add_restriction</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="va">hail_restrictions</span>,</span></span>
+<span class="r-in"><span>    allow_new_risk_factors <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">add_restriction</span><span class="op">(</span><span class="va">revised_hail_restrictions</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Updated existing restriction for `hail_zone = "low"`: 1 -&gt; 1.1</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="va">hail_refinement</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Refined generalized linear model</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Original formula:</span>
@@ -209,11 +250,11 @@ records.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  (Intercept)  postal_areaB  postal_areaC  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    5.978e-01    -1.179e-11     2.231e-01  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5.534e-01    -6.563e-11     2.231e-01  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Degrees of Freedom: 5 Total (i.e. Null);  3 Residual</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Null Deviance:	    2.321 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Residual Deviance: 2.17 	AIC: 23.66</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Null Deviance:	    2.714 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Residual Deviance: 2.563 	AIC: 24.05</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

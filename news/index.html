@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">insurancerating</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,9 +33,12 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/MHaringa/insurancerating/blob/v0.8.1/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/MHaringa/insurancerating/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="insurancerating-development-version">insurancerating (development version)<a class="anchor" aria-label="anchor" href="#insurancerating-development-version"></a></h2>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.1" id="insurancerating-081">insurancerating 0.8.1<a class="anchor" aria-label="anchor" href="#insurancerating-081"></a></h2><p class="text-muted">CRAN release: 2026-07-30</p>
 <div class="section level3">
@@ -54,6 +57,7 @@
 <code><a href="../reference/add_restriction.html">add_restriction()</a></code> and deprecated <code><a href="../reference/restrict_coef.html">restrict_coef()</a></code> can include tariff levels that were not observed when the GLM was fitted. Their supplied relativities are treated as explicit tariff assumptions. Set <code>allow_new_levels = FALSE</code> for strict matching against observed levels.</li>
 <li>
 <code><a href="../reference/add_restriction.html">add_restriction()</a></code> can add a fixed, expert-specified tariff factor that is present in the refinement data but absent from the fitted GLM. This requires the explicit opt-in <code>allow_new_risk_factors = TRUE</code>; the default remains <code>FALSE</code>. Deprecated <code><a href="../reference/restrict_coef.html">restrict_coef()</a></code> keeps its historical permissive behaviour and therefore uses <code>TRUE</code> by default.</li>
+<li>Repeated <code><a href="../reference/add_restriction.html">add_restriction()</a></code> calls for the same risk factor now update the existing restriction in place. Newly supplied relativities replace earlier values for those levels, while restrictions for other levels and the refinement-step order are retained.</li>
 <li>Models returned by <code><a href="../reference/refit.html">refit()</a></code> now print a concise refinement summary followed by the regular GLM output. The stored call is shown as a readable <code>glm(...)</code> call instead of the internal function definition.</li>
 <li>
 <code><a href="../reference/add_relativities.html">add_relativities()</a></code> now uses coefficients from an earlier <code><a href="../reference/add_restriction.html">add_restriction()</a></code> step automatically. The requested model variable and the effective restricted variable remain separately recorded, restrictions are not applied twice, and refinement-step ordering remains explicit. The final <code><a href="../reference/rating_table.html">rating_table()</a></code> reports only the derived split variable rather than also showing the intermediate restricted variable.</li>

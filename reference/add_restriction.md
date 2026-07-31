@@ -107,6 +107,30 @@ The refinement data must already contain a column assigning every
 observation to a level. This is required to apply the supplied
 relativities to individual records.
 
+### Updating an existing restriction
+
+A later call to `add_restriction()` for the same risk factor and the
+same restricted model variable updates the restriction already stored in
+the refinement. Relativities supplied in the later call replace the
+previously stored values for those levels. Restrictions for levels that
+are not supplied again are retained.
+
+The existing and new values are first combined and the resulting
+restriction table is then validated as one specification. This is useful
+when an actuarial assumption is revised during model refinement: only
+the affected levels need to be supplied again, while the remaining
+tariff assumptions stay unchanged. The restriction step keeps its
+original position in the workflow, so subsequent steps such as
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+use the revised restricted coefficients.
+
+The second column must retain the same name when an existing restriction
+is updated, because that name identifies the restricted model variable
+used by
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+A message reports levels whose previously supplied relativity is
+changed.
+
 ## Author
 
 Martin Haringa
@@ -157,8 +181,28 @@ prepare_refinement(model, data = portfolio) |>
   add_restriction(
     hail_restrictions,
     allow_new_risk_factors = TRUE
+  )
+#> <rating_refinement>
+#> Base model: glm, lm
+#> Steps: 1
+#> 1. restriction [hail_zone]
+
+# A later actuarial review changes only the relativity for the low hail zone.
+# The high-zone relativity remains 1.20 and the existing step is updated.
+revised_hail_restrictions <- data.frame(
+  hail_zone = "low",
+  hail_relativity = 1.10
+)
+
+hail_refinement <- prepare_refinement(model, data = portfolio) |>
+  add_restriction(
+    hail_restrictions,
+    allow_new_risk_factors = TRUE
   ) |>
-  refit()
+  add_restriction(revised_hail_restrictions)
+#> Updated existing restriction for `hail_zone = "low"`: 1 -> 1.1
+
+refit(hail_refinement)
 #> Refined generalized linear model
 #> 
 #> Original formula:
@@ -178,9 +222,9 @@ prepare_refinement(model, data = portfolio) |>
 #> 
 #> Coefficients:
 #>  (Intercept)  postal_areaB  postal_areaC  
-#>    5.978e-01    -1.179e-11     2.231e-01  
+#>    5.534e-01    -6.563e-11     2.231e-01  
 #> 
 #> Degrees of Freedom: 5 Total (i.e. Null);  3 Residual
-#> Null Deviance:       2.321 
-#> Residual Deviance: 2.17  AIC: 23.66
+#> Null Deviance:       2.714 
+#> Residual Deviance: 2.563     AIC: 24.05
 ```

@@ -1,5 +1,7 @@
 # Changelog
 
+## insurancerating (development version)
+
 ## insurancerating 0.8.1
 
 CRAN release: 2026-07-30
@@ -54,6 +56,12 @@ CRAN release: 2026-07-30
   [`restrict_coef()`](https://mharinga.github.io/insurancerating/reference/restrict_coef.md)
   keeps its historical permissive behaviour and therefore uses `TRUE` by
   default.
+- Repeated
+  [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+  calls for the same risk factor now update the existing restriction in
+  place. Newly supplied relativities replace earlier values for those
+  levels, while restrictions for other levels and the refinement-step
+  order are retained.
 - Models returned by
   [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
   now print a concise refinement summary followed by the regular GLM
