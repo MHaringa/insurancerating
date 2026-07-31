@@ -2,6 +2,8 @@
 
 ## insurancerating 0.8.1
 
+CRAN release: 2026-07-30
+
 ### Overview of changes since 0.8.0
 
 - The excess-loss workflow has been made more portfolio-oriented and
