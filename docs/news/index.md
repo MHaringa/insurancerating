@@ -34,6 +34,13 @@
 - Spline, GAM and shape-constrained smoothing validate the requested
   basis dimension against the number of unique grouped covariate values
   before model fitting.
+- [`autoplot.rating_table()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
+  and
+  [`autoplot.factor_analysis()`](https://mharinga.github.io/insurancerating/reference/autoplot.factor_analysis.md)
+  abbreviate long risk-factor level labels by default. Shortened labels
+  use one terminal period, can be disabled, and can be replaced by
+  explicitly supplied display labels. Both methods now also provide
+  `legend_position` for consistent legend placement.
 
 ## insurancerating 0.8.1
 

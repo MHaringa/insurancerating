@@ -18,6 +18,7 @@ autoplot(
   object,
   metrics = NULL,
   ncol = 1,
+  legend_position = c("right", "bottom", "top", "left", "none"),
   show_exposure = TRUE,
   show_exposure_labels = TRUE,
   sort_by_exposure = FALSE,
@@ -25,7 +26,9 @@ autoplot(
   decimal_mark = ",",
   line_color = NULL,
   bar_fill = NULL,
-  label_width = 50,
+  abbreviate_labels = TRUE,
+  label_width = 10,
+  label_abbreviations = NULL,
   flip_bars = FALSE,
   show_total = FALSE,
   total_color = NULL,
@@ -88,6 +91,11 @@ autoplot(
 
   Positive whole number. Number of columns in the plot composition.
 
+- legend_position:
+
+  Character string specifying the legend position. Supported values are
+  `"right"`, `"bottom"`, `"top"`, `"left"` and `"none"`.
+
 - show_exposure:
 
   Show exposure as background bars behind line plots (default = TRUE).
@@ -122,9 +130,24 @@ autoplot(
   background color is taken from the internal palette. If specified, the
   chosen color is applied to all background bars.
 
+- abbreviate_labels:
+
+  Logical. If `TRUE`, long risk-factor level labels are shortened to
+  `label_width` characters. A shortened label ends in one period; for
+  example, `"Bouwnijverheid"` becomes `"Bouwn."` when `label_width = 6`.
+  Only the displayed axis labels are changed.
+
 - label_width:
 
-  Width of labels on the x-axis (default = 10).
+  Positive whole number of at least 2. Maximum number of characters in
+  automatically shortened level labels.
+
+- label_abbreviations:
+
+  Optional named character vector with explicit display labels, for
+  example
+  `c("Bouwnijverheid" = "Bouwn.", "Onroerend goed" = "Onr. goed")`.
+  Explicit labels take precedence over automatic shortening.
 
 - flip_bars:
 

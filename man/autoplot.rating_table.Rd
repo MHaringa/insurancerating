@@ -9,12 +9,16 @@
   risk_factors = NULL,
   metric = NULL,
   ncol = 1,
+  legend_position = c("right", "bottom", "top", "left", "none"),
   show_exposure_labels = TRUE,
   decimal_mark = ",",
   y_label = "Relativity",
   bar_fill = NULL,
   model_color = NULL,
   use_linetype = FALSE,
+  abbreviate_labels = TRUE,
+  label_width = 10,
+  label_abbreviations = NULL,
   rotate_angle = NULL,
   custom_theme = NULL,
   remove_underscores = FALSE,
@@ -41,6 +45,10 @@ when observed experience has been attached with
 \item{ncol}{Positive integer specifying the number of columns in the
 patchwork layout.}
 
+\item{legend_position}{Character string specifying the legend position.
+Supported values are \code{"right"}, \code{"bottom"}, \code{"top"}, \code{"left"} and
+\code{"none"}.}
+
 \item{show_exposure_labels}{Logical. If \code{TRUE}, print exposure values on the
 background bars.}
 
@@ -56,6 +64,19 @@ palette is used.}
 
 \item{use_linetype}{Logical. If \code{TRUE}, distinguish fitted models by line
 type as well as colour.}
+
+\item{abbreviate_labels}{Logical. If \code{TRUE}, long risk-factor level labels
+are shortened to \code{label_width} characters. A shortened label ends in one
+period; for example, \code{"Bouwnijverheid"} becomes \code{"Bouwn."} when
+\code{label_width = 6}. Only the displayed axis labels are changed.}
+
+\item{label_width}{Positive whole number of at least 2. Maximum number of
+characters in automatically shortened level labels.}
+
+\item{label_abbreviations}{Optional named character vector with explicit
+display labels, for example
+\code{c("Bouwnijverheid" = "Bouwn.", "Onroerend goed" = "Onr. goed")}.
+Explicit labels take precedence over automatic shortening.}
 
 \item{rotate_angle}{Optional numeric angle for risk-factor level labels.}
 

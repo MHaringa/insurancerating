@@ -372,6 +372,9 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' `"risk_premium"`, `"loss_ratio"`, `"average_premium"`, `"exposure"`,
 #' `"claim_amount"`, `"claim_count"`, and `"premium"`.
 #' @param ncol Positive whole number. Number of columns in the plot composition.
+#' @param legend_position Character string specifying the legend position.
+#'   Supported values are `"right"`, `"bottom"`, `"top"`, `"left"` and
+#'   `"none"`.
 #' @param show_exposure Show exposure as background bars behind line plots
 #'   (default = TRUE).
 #' @param show_exposure_labels Show labels with the exposure bars
@@ -387,7 +390,16 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' @param bar_fill Optional override for background bar color.
 #'   If NULL (default), the background color is taken from the internal palette.
 #'   If specified, the chosen color is applied to all background bars.
-#' @param label_width Width of labels on the x-axis (default = 10).
+#' @param abbreviate_labels Logical. If `TRUE`, long risk-factor level labels
+#'   are shortened to `label_width` characters. A shortened label ends in one
+#'   period; for example, `"Bouwnijverheid"` becomes `"Bouwn."` when
+#'   `label_width = 6`. Only the displayed axis labels are changed.
+#' @param label_width Positive whole number of at least 2. Maximum number of
+#'   characters in automatically shortened level labels.
+#' @param label_abbreviations Optional named character vector with explicit
+#'   display labels, for example
+#'   `c("Bouwnijverheid" = "Bouwn.", "Onroerend goed" = "Onr. goed")`.
+#'   Explicit labels take precedence over automatic shortening.
 #' @param flip_bars Logical. If `TRUE`, flip cartesian coordinates for bar plots
 #'   (metrics 6 to 9). This option does not affect the line-based plots for
 #'   metrics 1 to 5.
@@ -453,6 +465,9 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 autoplot.factor_analysis <- function(object,
                                      metrics = NULL,
                                      ncol = 1,
+                                     legend_position = c(
+                                       "right", "bottom", "top", "left", "none"
+                                     ),
                                      show_exposure = TRUE,
                                      show_exposure_labels = TRUE,
                                      sort_by_exposure = FALSE,
@@ -460,7 +475,9 @@ autoplot.factor_analysis <- function(object,
                                      decimal_mark = ",",
                                      line_color = NULL,
                                      bar_fill = NULL,
-                                     label_width = 50,
+                                     abbreviate_labels = TRUE,
+                                     label_width = 10,
+                                     label_abbreviations = NULL,
                                      flip_bars = FALSE,
                                      show_total = FALSE,
                                      total_color = NULL,
@@ -480,6 +497,8 @@ autoplot.factor_analysis <- function(object,
                                      coord_flip = NULL,
                                      remove_x_elements = NULL,
                                      ...) {
+
+  legend_position <- match.arg(legend_position)
 
   if (!inherits(object, "factor_analysis") && !inherits(object, "univariate")) {
     stop("`object` must be a factor_analysis object.", call. = FALSE)
@@ -543,6 +562,13 @@ autoplot.factor_analysis <- function(object,
   bar_fill <- args$bar_fill
   flip_bars <- args$flip_bars
   compact_x_axis <- args$compact_x_axis
+
+  format_discrete_axis_labels(
+    character(),
+    abbreviate_labels = abbreviate_labels,
+    label_width = label_width,
+    label_abbreviations = label_abbreviations
+  )
 
   if (is.null(metrics)) {
     metrics <- 1:9
@@ -666,13 +692,23 @@ autoplot.factor_analysis <- function(object,
         final_bg, this_line_color, sep_mark, by,
         show_exposure_labels, level_order, label_width,
         show_total, total_color,
-        total_name, remove_underscores
+        total_name, remove_underscores,
+        abbreviate_labels, label_abbreviations
       )
     } else {
-      p <- def$fun(df, xvar, def$var, final_bg, sep_mark, flip_bars)
+      p <- def$fun(
+        df, xvar, def$var, final_bg, sep_mark, flip_bars,
+        level_order, label_width, abbreviate_labels, label_abbreviations
+      )
     }
 
     p <- p + grid_theme
+
+    if (!is.null(custom_theme)) {
+      p <- p + do.call(ggplot2::theme, custom_theme)
+    }
+
+    p <- p + ggplot2::theme(legend.position = legend_position)
     plots[[paste0("p", i)]] <- p
   }
 

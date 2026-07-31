@@ -8,6 +8,7 @@
   object,
   metrics = NULL,
   ncol = 1,
+  legend_position = c("right", "bottom", "top", "left", "none"),
   show_exposure = TRUE,
   show_exposure_labels = TRUE,
   sort_by_exposure = FALSE,
@@ -15,7 +16,9 @@
   decimal_mark = ",",
   line_color = NULL,
   bar_fill = NULL,
-  label_width = 50,
+  abbreviate_labels = TRUE,
+  label_width = 10,
+  label_abbreviations = NULL,
   flip_bars = FALSE,
   show_total = FALSE,
   total_color = NULL,
@@ -60,6 +63,10 @@ Character values can be \code{"frequency"}, \code{"average_severity"},
 
 \item{ncol}{Positive whole number. Number of columns in the plot composition.}
 
+\item{legend_position}{Character string specifying the legend position.
+Supported values are \code{"right"}, \code{"bottom"}, \code{"top"}, \code{"left"} and
+\code{"none"}.}
+
 \item{show_exposure}{Show exposure as background bars behind line plots
 (default = TRUE).}
 
@@ -82,7 +89,18 @@ If specified, the chosen color is applied to all line-based plots.}
 If NULL (default), the background color is taken from the internal palette.
 If specified, the chosen color is applied to all background bars.}
 
-\item{label_width}{Width of labels on the x-axis (default = 10).}
+\item{abbreviate_labels}{Logical. If \code{TRUE}, long risk-factor level labels
+are shortened to \code{label_width} characters. A shortened label ends in one
+period; for example, \code{"Bouwnijverheid"} becomes \code{"Bouwn."} when
+\code{label_width = 6}. Only the displayed axis labels are changed.}
+
+\item{label_width}{Positive whole number of at least 2. Maximum number of
+characters in automatically shortened level labels.}
+
+\item{label_abbreviations}{Optional named character vector with explicit
+display labels, for example
+\code{c("Bouwnijverheid" = "Bouwn.", "Onroerend goed" = "Onr. goed")}.
+Explicit labels take precedence over automatic shortening.}
 
 \item{flip_bars}{Logical. If \code{TRUE}, flip cartesian coordinates for bar plots
 (metrics 6 to 9). This option does not affect the line-based plots for

@@ -41,6 +41,9 @@
 #'   `"severity"`/`"average_severity"` and `"risk_premium"`.
 #' @param ncol Positive integer specifying the number of columns in the
 #'   patchwork layout.
+#' @param legend_position Character string specifying the legend position.
+#'   Supported values are `"right"`, `"bottom"`, `"top"`, `"left"` and
+#'   `"none"`.
 #' @param show_exposure_labels Logical. If `TRUE`, print exposure values on the
 #'   background bars.
 #' @param decimal_mark Character string, either `","` or `"."`, controlling
@@ -51,6 +54,16 @@
 #' @param model_color Optional single colour overriding the model-line palette.
 #' @param use_linetype Logical. If `TRUE`, distinguish fitted models by line
 #'   type as well as colour.
+#' @param abbreviate_labels Logical. If `TRUE`, long risk-factor level labels
+#'   are shortened to `label_width` characters. A shortened label ends in one
+#'   period; for example, `"Bouwnijverheid"` becomes `"Bouwn."` when
+#'   `label_width = 6`. Only the displayed axis labels are changed.
+#' @param label_width Positive whole number of at least 2. Maximum number of
+#'   characters in automatically shortened level labels.
+#' @param label_abbreviations Optional named character vector with explicit
+#'   display labels, for example
+#'   `c("Bouwnijverheid" = "Bouwn.", "Onroerend goed" = "Onr. goed")`.
+#'   Explicit labels take precedence over automatic shortening.
 #' @param rotate_angle Optional numeric angle for risk-factor level labels.
 #' @param custom_theme Optional named list passed to [ggplot2::theme()].
 #' @param remove_underscores Logical. If `TRUE`, replace underscores with spaces
@@ -96,12 +109,18 @@ autoplot.rating_table <- function(object,
                                   risk_factors = NULL,
                                   metric = NULL,
                                   ncol = 1,
+                                  legend_position = c(
+                                    "right", "bottom", "top", "left", "none"
+                                  ),
                                   show_exposure_labels = TRUE,
                                   decimal_mark = ",",
                                   y_label = "Relativity",
                                   bar_fill = NULL,
                                   model_color = NULL,
                                   use_linetype = FALSE,
+                                  abbreviate_labels = TRUE,
+                                  label_width = 10,
+                                  label_abbreviations = NULL,
                                   rotate_angle = NULL,
                                   custom_theme = NULL,
                                   remove_underscores = FALSE,
@@ -112,6 +131,8 @@ autoplot.rating_table <- function(object,
                                   color = NULL,
                                   linetype = NULL,
                                   ...) {
+
+  legend_position <- match.arg(legend_position)
 
   old_args <- resolve_autoplot_rating_table_args(
     show_exposure_labels = show_exposure_labels,
@@ -139,6 +160,13 @@ autoplot.rating_table <- function(object,
   bar_fill <- old_args$bar_fill
   model_color <- old_args$model_color
   use_linetype <- old_args$use_linetype
+
+  format_discrete_axis_labels(
+    character(),
+    abbreviate_labels = abbreviate_labels,
+    label_width = label_width,
+    label_abbreviations = label_abbreviations
+  )
 
   df_full <- object$df
   models <- object$models
@@ -482,6 +510,16 @@ autoplot.rating_table <- function(object,
 
     p <- p +
       ggplot2::scale_color_manual(values = model_cols) +
+      ggplot2::scale_x_discrete(
+        labels = function(x) {
+          format_discrete_axis_labels(
+            x,
+            abbreviate_labels = abbreviate_labels,
+            label_width = label_width,
+            label_abbreviations = label_abbreviations
+          )
+        }
+      ) +
       ggplot2::labs(
         x = if (remove_underscores) gsub("_", " ", rf_i) else rf_i,
         y = y_label
@@ -504,6 +542,8 @@ autoplot.rating_table <- function(object,
     if (!is.null(custom_theme)) {
       p <- p + do.call(ggplot2::theme, custom_theme)
     }
+
+    p <- p + ggplot2::theme(legend.position = legend_position)
 
     fig_list[[paste0("p", i)]] <- p
   }

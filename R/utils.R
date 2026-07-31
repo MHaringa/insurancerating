@@ -107,6 +107,81 @@ set_reference_level <- function(x,
 }
 
 
+# Internal formatter shared by discrete-axis plotting methods.
+format_discrete_axis_labels <- function(labels,
+                                        abbreviate_labels = TRUE,
+                                        label_width = 10L,
+                                        label_abbreviations = NULL) {
+  if (!is.logical(abbreviate_labels) ||
+      length(abbreviate_labels) != 1L ||
+      is.na(abbreviate_labels)) {
+    stop("`abbreviate_labels` must be TRUE or FALSE.", call. = FALSE)
+  }
+  if (!is.numeric(label_width) ||
+      length(label_width) != 1L ||
+      is.na(label_width) ||
+      !is.finite(label_width) ||
+      label_width < 2 ||
+      label_width != floor(label_width)) {
+    stop("`label_width` must be a whole number of at least 2.", call. = FALSE)
+  }
+  if (!is.null(label_abbreviations)) {
+    if (!is.character(label_abbreviations) ||
+        is.null(names(label_abbreviations)) ||
+        anyNA(label_abbreviations) ||
+        anyNA(names(label_abbreviations)) ||
+        any(names(label_abbreviations) == "")) {
+      stop(
+        "`label_abbreviations` must be a named character vector.",
+        call. = FALSE
+      )
+    }
+  }
+
+  original <- as.character(labels)
+  displayed <- original
+  mapped <- rep(FALSE, length(original))
+
+  if (!is.null(label_abbreviations)) {
+    matched <- match(original, names(label_abbreviations))
+    mapped <- !is.na(matched)
+    displayed[mapped] <- unname(label_abbreviations[matched[mapped]])
+  }
+
+  if (isTRUE(abbreviate_labels)) {
+    shorten <- !mapped & !is.na(displayed) & nchar(displayed) > label_width
+    displayed[shorten] <- paste0(
+      substr(displayed[shorten], 1L, label_width - 1L),
+      "."
+    )
+  }
+
+  duplicated_labels <- duplicated(displayed) | duplicated(displayed, fromLast = TRUE)
+  duplicated_labels <- duplicated_labels & !is.na(displayed)
+  if (any(duplicated_labels)) {
+    duplicate_groups <- split(
+      which(duplicated_labels),
+      displayed[duplicated_labels]
+    )
+    for (indices in duplicate_groups) {
+      if (length(unique(original[indices])) < 2L) {
+        next
+      }
+      sequence_number <- seq_along(indices)
+      suffix_length <- nchar(sequence_number) + 1L
+      stem_length <- pmax(1L, label_width - suffix_length)
+      displayed[indices] <- paste0(
+        substr(original[indices], 1L, stem_length),
+        sequence_number,
+        "."
+      )
+    }
+  }
+
+  displayed
+}
+
+
 #' Deprecated alias for `set_reference_level()`
 #'
 #' @description

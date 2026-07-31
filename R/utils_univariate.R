@@ -104,7 +104,10 @@ separation_mark <- function(dec.mark) {
 }
 
 #' @keywords internal
-sort_x_axis <- function(sort_manual = NULL, label_width = 10) {
+sort_x_axis <- function(sort_manual = NULL,
+                        label_width = 10,
+                        abbreviate_labels = TRUE,
+                        label_abbreviations = NULL) {
 
   if (!is.null(sort_manual)) {
     sort_manual <- as.character(sort_manual)
@@ -112,7 +115,14 @@ sort_x_axis <- function(sort_manual = NULL, label_width = 10) {
 
   list(
     ggplot2::scale_x_discrete(
-      labels = function(x) stringr::str_wrap(x, width = label_width),
+      labels = function(x) {
+        format_discrete_axis_labels(
+          x,
+          abbreviate_labels = abbreviate_labels,
+          label_width = label_width,
+          label_abbreviations = label_abbreviations
+        )
+      },
       limits = sort_manual
     )
   )
@@ -309,7 +319,8 @@ ggyscale <- function(background, sep_mark) {
 ggbarline <- function(background, df, dfby, xvar, f_axis,
                       f_axis_name, exposure, color_bg, color,
                       sep_mark, by, labels, sort_manual, label_width,
-                      show_total, total_color, total_name, remove_underscores) {
+                      show_total, total_color, total_name, remove_underscores,
+                      abbreviate_labels, label_abbreviations) {
   df <- scale_second_axis(background, df, dfby, f_axis, exposure, by)
   ggplot2::ggplot() +
     ggbarplot(background, df, dfby, xvar, f_axis, exposure,
@@ -319,12 +330,19 @@ ggbarline <- function(background, df, dfby, xvar, f_axis,
     ggplot2::labs(y = f_axis_name, x = xvar) +
     gglabels(background, labels, df, xvar, sep_mark) +
     ggyscale(background, sep_mark) +
-    sort_x_axis(sort_manual, label_width)
+    sort_x_axis(
+      sort_manual,
+      label_width,
+      abbreviate_labels,
+      label_abbreviations
+    )
 }
 
 
 #' @keywords internal
-ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip) {
+ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip,
+                  sort_manual, label_width, abbreviate_labels,
+                  label_abbreviations) {
   ggplot2::ggplot(data = df) +
     ggplot2::geom_bar(data = df, aes(x = .data[[xvar]], y = .data[[f_axis]]),
                       stat = "identity",
@@ -333,6 +351,12 @@ ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip) {
                       alpha = .7) + #1) +
     ggplot2::theme_minimal() +
     ggplot2::labs(y = f_axis, x = xvar) +
+    sort_x_axis(
+      sort_manual,
+      label_width,
+      abbreviate_labels,
+      label_abbreviations
+    ) +
     ggplot2::scale_y_continuous(labels = sep_mark) +
     ggbarlabels(df, xvar, f_axis, coord_flip, sep_mark) +
     ggcoordflip(coord_flip)
