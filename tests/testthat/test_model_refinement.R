@@ -1227,6 +1227,20 @@ testthat::test_that(
       "`a 2`.*Did you mean `a2`",
       perl = TRUE
     )
+    misspelled_parent <- relativities(
+      split_level("aa", c("a1", "a2"), c(1, 1.2))
+    )
+    testthat::expect_error(
+      add_relativities(
+        ref,
+        model_variable = "zip",
+        split_variable = "zip_split",
+        relativities = misspelled_parent,
+        exposure = "exposure"
+      ),
+      "(?s)category.*`aa`.*Did you mean `a`",
+      perl = TRUE
+    )
     wrong_parent <- relativities(
       split_level("a", c("a1", "b1"), c(1, 1.2))
     )

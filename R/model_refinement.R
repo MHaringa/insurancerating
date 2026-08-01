@@ -526,9 +526,44 @@
   )
 }
 
+.stop_missing_model_levels <- function(levels, model_variable, choices) {
+  entries <- vapply(levels, function(level) {
+    suggestion <- .closest_refinement_level(level, choices)
+    line <- paste0("- `", level, "`")
+    if (!is.null(suggestion)) {
+      line <- paste0(line, ". Did you mean `", suggestion, "`?")
+    }
+    line
+  }, character(1))
+
+  noun <- if (length(levels) == 1L) "category" else "categories"
+  verb <- if (length(levels) == 1L) "does" else "do"
+  stop(
+    "The following ", noun, " supplied in `relativities` ", verb,
+    " not occur in `model_variable` `", model_variable, "`:\n",
+    paste(entries, collapse = "\n"),
+    call. = FALSE
+  )
+}
+
 .validate_relativities_levels <- function(data, source_model_variable,
                                           split_variable, relativities) {
   rel_df <- .build_relativities_df(relativities)
+  model_values <- unique(as.character(data[[source_model_variable]]))
+  model_values <- model_values[!is.na(model_values)]
+  missing_model_levels <- setdiff(
+    unique(as.character(rel_df$level)),
+    model_values
+  )
+
+  if (length(missing_model_levels) > 0L) {
+    .stop_missing_model_levels(
+      missing_model_levels,
+      source_model_variable,
+      model_values
+    )
+  }
+
   split_values <- unique(as.character(data[[split_variable]]))
   split_values <- split_values[!is.na(split_values)]
   missing_levels <- setdiff(unique(as.character(rel_df$new_level)), split_values)
@@ -2189,10 +2224,10 @@ edit_smoothing <- function(model,
 #'
 #' `add_relativities()` validates the supplied sublevel names against the
 #' observed values of `split_variable` before storing the refinement step. A
-#' misspelled or incorrectly spaced level therefore produces an immediate
-#' error, with a suggestion when a closely matching observed level is
+#' misspelled or incorrectly spaced category or sublevel therefore produces an
+#' immediate error, with a suggestion when a closely matching observed value is
 #' available. It also verifies that each sublevel occurs within its specified
-#' parent level of `model_variable`.
+#' parent category of `model_variable`.
 #'
 #' When `normalize = TRUE`, the supplied relativities are normalised using
 #' exposure so that their exposure-weighted mean equals one within the split

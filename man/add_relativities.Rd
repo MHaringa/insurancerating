@@ -62,10 +62,10 @@ a named list describing those splits, usually built with \code{\link[=relativiti
 
 \code{add_relativities()} validates the supplied sublevel names against the
 observed values of \code{split_variable} before storing the refinement step. A
-misspelled or incorrectly spaced level therefore produces an immediate
-error, with a suggestion when a closely matching observed level is
+misspelled or incorrectly spaced category or sublevel therefore produces an
+immediate error, with a suggestion when a closely matching observed value is
 available. It also verifies that each sublevel occurs within its specified
-parent level of \code{model_variable}.
+parent category of \code{model_variable}.
 
 When \code{normalize = TRUE}, the supplied relativities are normalised using
 exposure so that their exposure-weighted mean equals one within the split

@@ -46,7 +46,7 @@
 <li>
 <code><a href="../reference/add_restriction.html">add_restriction()</a></code> recognises a split variable created by an earlier <code><a href="../reference/add_relativities.html">add_relativities()</a></code> step without requiring <code>allow_new_risk_factors = TRUE</code>. A partial restriction changes the supplied levels and fixes all remaining levels at their current derived relativities.</li>
 <li>
-<code><a href="../reference/add_relativities.html">add_relativities()</a></code> now validates sublevels against the observed <code>split_variable</code> before storing a refinement step and suggests a closely matching level for likely spelling or spacing errors.</li>
+<code><a href="../reference/add_relativities.html">add_relativities()</a></code> now validates sublevels against the observed <code>split_variable</code> and parent categories against <code>model_variable</code> before storing a refinement step. Closely matching observed values are suggested for likely spelling or spacing errors.</li>
 <li>
 <code><a href="../reference/split_level.html">split_level()</a></code> and <code><a href="../reference/relativities.html">relativities()</a></code> are now the primary helpers for defining named sublevel splits. The low-level <code><a href="../reference/split_relativities.html">split_relativities()</a></code> constructor is deprecated because it does not record the parent model level required by <code><a href="../reference/add_relativities.html">add_relativities()</a></code>.</li>
 <li>Spline, GAM and shape-constrained smoothing validate the requested basis dimension against the number of unique grouped covariate values before model fitting.</li>

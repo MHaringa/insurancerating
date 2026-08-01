@@ -16,8 +16,9 @@
   `allow_new_risk_factors = TRUE`. A partial restriction changes the supplied
   levels and fixes all remaining levels at their current derived relativities.
 - `add_relativities()` now validates sublevels against the observed
-  `split_variable` before storing a refinement step and suggests a closely
-  matching level for likely spelling or spacing errors.
+  `split_variable` and parent categories against `model_variable` before
+  storing a refinement step. Closely matching observed values are suggested
+  for likely spelling or spacing errors.
 - `split_level()` and `relativities()` are now the primary helpers for defining
   named sublevel splits. The low-level `split_relativities()` constructor is
   deprecated because it does not record the parent model level required by
