@@ -25,7 +25,7 @@ autoplot(
   model_color = NULL,
   use_linetype = FALSE,
   abbreviate_labels = TRUE,
-  label_width = 10,
+  label_width = 20,
   label_abbreviations = NULL,
   rotate_angle = NULL,
   custom_theme = NULL,
