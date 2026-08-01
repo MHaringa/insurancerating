@@ -418,21 +418,21 @@ rating_table(burn_refined)
 #> 3            1                 zip_adj     9.000000e-01    11081
 #> 4            2                 zip_adj     1.000000e+00     7783
 #> 5            3                 zip_adj     1.200000e+00     7586
-#> 6      [18,23] age_policyholder_smooth     1.991647e+00      586
-#> 7      (23,28] age_policyholder_smooth     1.525996e+00     2204
-#> 8      (28,33] age_policyholder_smooth     1.194587e+00     2790
+#> 6      [18,23] age_policyholder_smooth     1.991646e+00      586
+#> 7      (23,28] age_policyholder_smooth     1.525997e+00     2204
+#> 8      (28,33] age_policyholder_smooth     1.194588e+00     2790
 #> 9      (33,38] age_policyholder_smooth     1.053848e+00     3021
 #> 10     (38,43] age_policyholder_smooth     1.017313e+00     3089
 #> 11     (43,48] age_policyholder_smooth     9.961032e-01     3041
-#> 12     (48,53] age_policyholder_smooth     9.284442e-01     2978
-#> 13     (53,58] age_policyholder_smooth     8.277635e-01     2186
-#> 14     (58,63] age_policyholder_smooth     7.364565e-01     1974
-#> 15     (63,68] age_policyholder_smooth     7.179164e-01     1973
-#> 16     (68,73] age_policyholder_smooth     7.466678e-01     1558
+#> 12     (48,53] age_policyholder_smooth     9.284441e-01     2978
+#> 13     (53,58] age_policyholder_smooth     8.277634e-01     2186
+#> 14     (58,63] age_policyholder_smooth     7.364566e-01     1974
+#> 15     (63,68] age_policyholder_smooth     7.179165e-01     1973
+#> 16     (68,73] age_policyholder_smooth     7.466677e-01     1558
 #> 17     (73,78] age_policyholder_smooth     7.554871e-01      907
-#> 18     (78,83] age_policyholder_smooth     7.030268e-01      246
-#> 19     (83,88] age_policyholder_smooth     6.061124e-01       93
-#> 20     (88,93] age_policyholder_smooth     4.894076e-01       11
+#> 18     (78,83] age_policyholder_smooth     7.030270e-01      246
+#> 19     (83,88] age_policyholder_smooth     6.061130e-01       93
+#> 20     (88,93] age_policyholder_smooth     4.894088e-01       11
 #> 21          bm                      bm     9.977225e-01       NA
 ```
 
@@ -473,12 +473,12 @@ After refit, model structure can be extracted with
 md <- extract_model_data(burn_refined)
 head(md)
 #>   age_policyholder age_policyholder_freq_cat_smooth age_policyholder_smooth
-#> 1               18                         1.991647                 [18,23]
-#> 2               18                         1.991647                 [18,23]
-#> 3               18                         1.991647                 [18,23]
-#> 4               18                         1.991647                 [18,23]
-#> 5               19                         1.991647                 [18,23]
-#> 6               19                         1.991647                 [18,23]
+#> 1               18                         1.991646                 [18,23]
+#> 2               18                         1.991646                 [18,23]
+#> 3               18                         1.991646                 [18,23]
+#> 4               18                         1.991646                 [18,23]
+#> 5               19                         1.991646                 [18,23]
+#> 6               19                         1.991646                 [18,23]
 #>   nclaims   exposure amount power bm zip age_policyholder_freq_cat
 #> 1       1 1.00000000 261777    40  3   3                   [18,25]
 #> 2       0 0.09589041      0    68  5   2                   [18,25]
@@ -511,12 +511,12 @@ head(grid)
 #> 5                 (23,28]   1  7    33  28.334247     0.9
 #> 6                 (23,28]   2 13     5   4.041096     1.0
 #>   age_policyholder_freq_cat_smooth
-#> 1                         1.525996
-#> 2                         1.525996
-#> 3                         1.525996
-#> 4                         1.525996
-#> 5                         1.525996
-#> 6                         1.525996
+#> 1                         1.525997
+#> 2                         1.525997
+#> 3                         1.525997
+#> 4                         1.525997
+#> 5                         1.525997
+#> 6                         1.525997
 ```
 
 This is typically used for:
@@ -555,21 +555,21 @@ rating_table(burn_refined)
 #> 3            1                 zip_adj     9.000000e-01    11081
 #> 4            2                 zip_adj     1.000000e+00     7783
 #> 5            3                 zip_adj     1.200000e+00     7586
-#> 6      [18,23] age_policyholder_smooth     1.991647e+00      586
-#> 7      (23,28] age_policyholder_smooth     1.525996e+00     2204
-#> 8      (28,33] age_policyholder_smooth     1.194587e+00     2790
+#> 6      [18,23] age_policyholder_smooth     1.991646e+00      586
+#> 7      (23,28] age_policyholder_smooth     1.525997e+00     2204
+#> 8      (28,33] age_policyholder_smooth     1.194588e+00     2790
 #> 9      (33,38] age_policyholder_smooth     1.053848e+00     3021
 #> 10     (38,43] age_policyholder_smooth     1.017313e+00     3089
 #> 11     (43,48] age_policyholder_smooth     9.961032e-01     3041
-#> 12     (48,53] age_policyholder_smooth     9.284442e-01     2978
-#> 13     (53,58] age_policyholder_smooth     8.277635e-01     2186
-#> 14     (58,63] age_policyholder_smooth     7.364565e-01     1974
-#> 15     (63,68] age_policyholder_smooth     7.179164e-01     1973
-#> 16     (68,73] age_policyholder_smooth     7.466678e-01     1558
+#> 12     (48,53] age_policyholder_smooth     9.284441e-01     2978
+#> 13     (53,58] age_policyholder_smooth     8.277634e-01     2186
+#> 14     (58,63] age_policyholder_smooth     7.364566e-01     1974
+#> 15     (63,68] age_policyholder_smooth     7.179165e-01     1973
+#> 16     (68,73] age_policyholder_smooth     7.466677e-01     1558
 #> 17     (73,78] age_policyholder_smooth     7.554871e-01      907
-#> 18     (78,83] age_policyholder_smooth     7.030268e-01      246
-#> 19     (83,88] age_policyholder_smooth     6.061124e-01       93
-#> 20     (88,93] age_policyholder_smooth     4.894076e-01       11
+#> 18     (78,83] age_policyholder_smooth     7.030270e-01      246
+#> 19     (83,88] age_policyholder_smooth     6.061130e-01       93
+#> 20     (88,93] age_policyholder_smooth     4.894088e-01       11
 #> 21          bm                      bm     9.977225e-01       NA
 
 rating_table(burn_refined) |>

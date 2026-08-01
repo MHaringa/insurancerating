@@ -122,10 +122,10 @@ a named list describing those splits, usually built with <code><a href="relativi
 <code><a href="split_level.html">split_level()</a></code>.</p>
 <p><code>add_relativities()</code> validates the supplied sublevel names against the
 observed values of <code>split_variable</code> before storing the refinement step. A
-misspelled or incorrectly spaced level therefore produces an immediate
-error, with a suggestion when a closely matching observed level is
+misspelled or incorrectly spaced category or sublevel therefore produces an
+immediate error, with a suggestion when a closely matching observed value is
 available. It also verifies that each sublevel occurs within its specified
-parent level of <code>model_variable</code>.</p>
+parent category of <code>model_variable</code>.</p>
 <p>When <code>normalize = TRUE</code>, the supplied relativities are normalised using
 exposure so that their exposure-weighted mean equals one within the split
 model level. They then redistribute the existing model coefficient across

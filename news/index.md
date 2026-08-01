@@ -23,9 +23,10 @@
   restriction changes the supplied levels and fixes all remaining levels
   at their current derived relativities.
 - [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
-  now validates sublevels against the observed `split_variable` before
-  storing a refinement step and suggests a closely matching level for
-  likely spelling or spacing errors.
+  now validates sublevels against the observed `split_variable` and
+  parent categories against `model_variable` before storing a refinement
+  step. Closely matching observed values are suggested for likely
+  spelling or spacing errors.
 - [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md)
   and
   [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
