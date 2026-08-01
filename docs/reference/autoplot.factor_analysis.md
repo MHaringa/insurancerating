@@ -27,7 +27,7 @@ autoplot(
   line_color = NULL,
   bar_fill = NULL,
   abbreviate_labels = TRUE,
-  label_width = 10,
+  label_width = 20,
   label_abbreviations = NULL,
   flip_bars = FALSE,
   show_total = FALSE,

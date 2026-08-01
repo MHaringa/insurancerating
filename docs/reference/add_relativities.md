@@ -85,6 +85,13 @@ usually built with
 and
 [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md).
 
+`add_relativities()` validates the supplied sublevel names against the
+observed values of `split_variable` before storing the refinement step.
+A misspelled or incorrectly spaced level therefore produces an immediate
+error, with a suggestion when a closely matching observed level is
+available. It also verifies that each sublevel occurs within its
+specified parent level of `model_variable`.
+
 When `normalize = TRUE`, the supplied relativities are normalised using
 exposure so that their exposure-weighted mean equals one within the
 split model level. They then redistribute the existing model coefficient

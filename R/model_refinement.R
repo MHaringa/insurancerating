@@ -486,6 +486,97 @@
   )
 }
 
+.closest_refinement_level <- function(level, choices) {
+  choices <- unique(as.character(choices))
+  choices <- choices[!is.na(choices) & nzchar(choices)]
+  if (length(choices) == 0L) {
+    return(NULL)
+  }
+
+  level_cmp <- tolower(trimws(as.character(level)))
+  choices_cmp <- tolower(trimws(choices))
+  distances <- as.numeric(utils::adist(level_cmp, choices_cmp))
+  best <- which.min(distances)
+  scale <- max(nchar(level_cmp), nchar(choices_cmp[best]), 1L)
+
+  if (distances[best] <= 2L || distances[best] / scale <= 0.20) {
+    choices[best]
+  } else {
+    NULL
+  }
+}
+
+.stop_missing_split_levels <- function(levels, split_variable, choices) {
+  entries <- vapply(levels, function(level) {
+    suggestion <- .closest_refinement_level(level, choices)
+    line <- paste0("- `", level, "`")
+    if (!is.null(suggestion)) {
+      line <- paste0(line, ". Did you mean `", suggestion, "`?")
+    }
+    line
+  }, character(1))
+
+  noun <- if (length(levels) == 1L) "level" else "levels"
+  verb <- if (length(levels) == 1L) "does" else "do"
+  stop(
+    "The following ", noun, " supplied in `relativities` ", verb,
+    " not occur in `split_variable` `", split_variable, "`:\n",
+    paste(entries, collapse = "\n"),
+    call. = FALSE
+  )
+}
+
+.validate_relativities_levels <- function(data, source_model_variable,
+                                          split_variable, relativities) {
+  rel_df <- .build_relativities_df(relativities)
+  split_values <- unique(as.character(data[[split_variable]]))
+  split_values <- split_values[!is.na(split_values)]
+  missing_levels <- setdiff(unique(as.character(rel_df$new_level)), split_values)
+
+  if (length(missing_levels) > 0L) {
+    .stop_missing_split_levels(missing_levels, split_variable, split_values)
+  }
+
+  observed_pairs <- unique(data.frame(
+    level = as.character(data[[source_model_variable]]),
+    new_level = as.character(data[[split_variable]]),
+    stringsAsFactors = FALSE
+  ))
+  requested_keys <- paste(rel_df$level, rel_df$new_level, sep = "\r")
+  observed_keys <- paste(
+    observed_pairs$level,
+    observed_pairs$new_level,
+    sep = "\r"
+  )
+  missing_pairs <- !requested_keys %in% observed_keys
+
+  if (any(missing_pairs)) {
+    invalid <- rel_df[missing_pairs, c("level", "new_level"), drop = FALSE]
+    entries <- vapply(seq_len(nrow(invalid)), function(i) {
+      parent <- invalid$level[i]
+      level <- invalid$new_level[i]
+      parent_choices <- observed_pairs$new_level[
+        observed_pairs$level == parent & !is.na(observed_pairs$level)
+      ]
+      suggestion <- .closest_refinement_level(level, parent_choices)
+      line <- paste0("- `", level, "` within `", parent, "`")
+      if (!is.null(suggestion)) {
+        line <- paste0(line, ". Did you mean `", suggestion, "`?")
+      }
+      line
+    }, character(1))
+
+    stop(
+      "The following `split_variable` levels supplied in `relativities` do ",
+      "not occur within their specified `model_variable` levels:\n",
+      paste(entries, collapse = "\n"),
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
 .relativities_base_coefficients <- function(state, effective_model_variable) {
   if (!is.null(state$rf_restricted_df) &&
       effective_model_variable %in%
@@ -2096,6 +2187,13 @@ edit_smoothing <- function(model,
 #' a named list describing those splits, usually built with [relativities()] and
 #' [split_level()].
 #'
+#' `add_relativities()` validates the supplied sublevel names against the
+#' observed values of `split_variable` before storing the refinement step. A
+#' misspelled or incorrectly spaced level therefore produces an immediate
+#' error, with a suggestion when a closely matching observed level is
+#' available. It also verifies that each sublevel occurs within its specified
+#' parent level of `model_variable`.
+#'
 #' When `normalize = TRUE`, the supplied relativities are normalised using
 #' exposure so that their exposure-weighted mean equals one within the split
 #' model level. They then redistribute the existing model coefficient across
@@ -2250,6 +2348,12 @@ add_relativities <- function(model,
   .assert_single_logical(normalize, "normalize")
 
   .check_relativities(relativities)
+  .validate_relativities_levels(
+    data = model$base$data,
+    source_model_variable = resolved_source$source_model_variable,
+    split_variable = split_variable,
+    relativities = relativities
+  )
 
   .add_step(model, list(
     id = .next_step_id(model),
@@ -2599,10 +2703,12 @@ add_relativities <- function(model,
   )
 
   if (any(is.na(rel_df$exposure))) {
-    miss <- unique(rel_df$new_level[is.na(rel_df$exposure)])
+    missing_rows <- is.na(rel_df$exposure)
+    invalid <- rel_df[missing_rows, c("level", "new_level"), drop = FALSE]
     stop(
-      "No matching exposure found in model data for the following new levels in '",
-      risk_factor_split, "': ", paste(miss, collapse = ", "),
+      "The following `split_variable` levels do not occur within their ",
+      "specified `model_variable` levels: ",
+      paste0(invalid$level, " -> ", invalid$new_level, collapse = ", "),
       call. = FALSE
     )
   }

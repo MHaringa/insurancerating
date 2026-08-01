@@ -1213,6 +1213,33 @@ testthat::test_that(
                        relativities = rel, exposure = "exposure"),
       "split_variable"
     )
+    misspelled <- relativities(
+      split_level("a", c("a1", "a 2"), c(1, 1.2))
+    )
+    testthat::expect_error(
+      add_relativities(
+        ref,
+        model_variable = "zip",
+        split_variable = "zip_split",
+        relativities = misspelled,
+        exposure = "exposure"
+      ),
+      "`a 2`.*Did you mean `a2`",
+      perl = TRUE
+    )
+    wrong_parent <- relativities(
+      split_level("a", c("a1", "b1"), c(1, 1.2))
+    )
+    testthat::expect_error(
+      add_relativities(
+        ref,
+        model_variable = "zip",
+        split_variable = "zip_split",
+        relativities = wrong_parent,
+        exposure = "exposure"
+      ),
+      "do not occur within their specified `model_variable` levels"
+    )
     testthat::expect_s3_class(
       add_relativities(ref, model_variable = "zip", split_variable = "zip_split",
                        relativities = rel, exposure = "exposure"),

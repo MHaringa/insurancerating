@@ -105,7 +105,7 @@ separation_mark <- function(dec.mark) {
 
 #' @keywords internal
 sort_x_axis <- function(sort_manual = NULL,
-                        label_width = 10,
+                        label_width = 20,
                         abbreviate_labels = TRUE,
                         label_abbreviations = NULL) {
 

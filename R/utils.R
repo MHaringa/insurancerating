@@ -110,7 +110,7 @@ set_reference_level <- function(x,
 # Internal formatter shared by discrete-axis plotting methods.
 format_discrete_axis_labels <- function(labels,
                                         abbreviate_labels = TRUE,
-                                        label_width = 10L,
+                                        label_width = 20L,
                                         label_abbreviations = NULL) {
   if (!is.logical(abbreviate_labels) ||
       length(abbreviate_labels) != 1L ||
