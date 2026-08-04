@@ -22,8 +22,6 @@ objects;
 }
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-
 Recover the estimation data and pricing metadata stored with a fitted GLM or
 a model produced by the refinement workflow. The result provides a
 reproducible basis for rating grids, coefficient tables and portfolio-level

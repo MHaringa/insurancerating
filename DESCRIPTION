@@ -29,6 +29,7 @@ Imports:
     lubridate,
     mgcv,
     patchwork,
+    partykit,
     rlang,
     scales,
     scam,

@@ -6,10 +6,11 @@
 \usage{
 derive_tariff_segments(
   object,
-  complexity = 0,
+  segmentation_penalty = 0,
+  seed = 1,
   max_iterations = 10000,
   population_size = 200,
-  seed = 1,
+  complexity = NULL,
   alpha = NULL,
   niterations = NULL,
   ntrees = NULL
@@ -20,19 +21,26 @@ derive_tariff_segments(
 \code{\link[=risk_factor_gam]{risk_factor_gam()}}. Legacy \code{"riskfactor_gam"} and \code{"fitgam"} classes are
 accepted for compatibility.}
 
-\item{complexity}{Non-negative numeric complexity penalty for the
-evolutionary tree. Larger values generally favour fewer internal
-boundaries.}
+\item{segmentation_penalty}{Non-negative numeric penalty on additional tree
+splits. Larger values generally favour fewer tariff segments. The default
+\code{0} retains the historical behaviour and applies no explicit split
+penalty; it can therefore produce a relatively detailed candidate
+segmentation. There is no universal actuarial value: compare candidate
+penalties and assess the resulting volume and stability by segment.}
+
+\item{seed}{Single finite whole number used to reproduce the evolutionary
+search.}
 
 \item{max_iterations}{Positive integer. Maximum number of evolutionary search
-iterations.}
+iterations. This is an advanced algorithm-control parameter.}
 
 \item{population_size}{Positive integer. Number of candidate trees maintained
-during the evolutionary search.}
+during the evolutionary search. This is an advanced algorithm-control
+parameter.}
 
-\item{seed}{Numeric random seed used by the grouping algorithm.}
+\item{complexity}{Deprecated. Use \code{segmentation_penalty} instead.}
 
-\item{alpha}{Deprecated. Use \code{complexity} instead.}
+\item{alpha}{Deprecated. Use \code{segmentation_penalty} instead.}
 
 \item{niterations}{Deprecated. Use \code{max_iterations} instead.}
 
@@ -49,6 +57,10 @@ A \code{list} of class \code{"tariff_segments"} with components:
 \item{segment_boundaries}{Numeric vector with segment boundaries.}
 \item{assigned_segments}{Factor with the tariff segment assigned to each
 observed risk factor value.}
+\item{segment_summary}{Data frame with portfolio counts, distinct
+risk-factor values and the observed response components for each candidate
+segment. Use \code{summary()} as the public interface for this table.}
+\item{segmentation_penalty}{Penalty applied to additional tree splits.}
 }
 For backward compatibility, the old components \code{prediction}, \code{x}, \code{model},
 \code{data}, \code{x_obs}, \code{splits}, \code{class_boundaries}, \code{assigned_groups}, and
@@ -64,14 +76,32 @@ pricing GLM or tariff structure.
 \subsection{Method}{
 
 An evolutionary regression tree from \code{\link[evtree:evtree]{evtree::evtree()}} is fitted to the
-GAM response over the observed risk-factor values. Internal tree split
+predicted GAM effect over the distinct observed risk-factor values. The tree
+therefore approximates the estimated univariate curve; it is not fitted
+directly to individual claim outcomes or portfolio loss. Internal tree split
 points are translated into interval boundaries. If no internal split is
 supported by the fitted search, one interval spanning the observed range is
 returned.
 
 The method follows the data-driven binning approach described by Henckaerts
-et al. (2018). \code{complexity}, \code{population_size}, \code{max_iterations} and \code{seed}
-control the search rather than an actuarial minimum-volume rule.
+et al. (2018). \code{segmentation_penalty}, \code{population_size}, \code{max_iterations}
+and \code{seed} control the stochastic search rather than an actuarial
+minimum-volume rule. Reusing the same inputs and \code{seed} makes the result
+reproducible.
+
+Each distinct observed risk-factor value has equal influence when the tree
+approximates the fitted curve. Exposure, claim count or another actuarial
+weight is deliberately not applied again in this step. The relevant
+portfolio information has already influenced the curve through the
+statistical specification used by \code{\link[=risk_factor_gam]{risk_factor_gam()}}, such as the exposure
+offset in a frequency model, claim-count weights in a severity model or
+exposure weights in a risk-premium model. Applying a second weight during
+segmentation would introduce an additional portfolio-distribution choice
+after the GAM has been estimated.
+
+Exposure and claim count remain available through \code{summary()}. They are
+diagnostics for assessing the support and practical stability of candidate
+segments, but they do not influence the estimated boundaries.
 }
 
 \subsection{Actuarial interpretation}{
@@ -83,9 +113,46 @@ claim volume, stability across periods, operational rounding and the
 interaction with other risk factors. Particular care is required for
 boundaries in sparsely populated tails.
 
+\code{summary()} reports the number of portfolio records, number of
+distinct risk-factor values and available exposure and claim volume within
+each proposed segment. These diagnostics support actuarial review but do not
+constitute an automatic acceptance rule. Minimum-volume requirements and
+operational rounding should be selected with reference to portfolio size,
+model purpose and governance standards.
+}
+
+\subsection{A staged GLM refinement workflow}{
+
+In practical pricing work, the candidate boundaries are often used to form
+an initial set of relatively broad model groups. The actuary reviews
+\code{summary()} and, where necessary, combines thinly populated segments or
+increases \code{segmentation_penalty} until the groups have sufficient exposure
+and claim information for stable estimation. The resulting factor can then
+be included in an unrestricted GLM.
+
+This broad first-stage grouping avoids estimating a separate free GLM
+coefficient for every fine tariff interval when observations are unevenly
+distributed over the continuous risk factor. After fitting the GLM,
+\code{\link[=add_smoothing]{add_smoothing()}} can use the broad model effect together with the original
+continuous variable to construct a regularised pattern over finer breaks.
+These finer breaks may reflect operational or commercial tariff boundaries,
+while their relativities remain linked through the smoothing specification
+rather than being estimated independently for every small segment.
+
+The staged approach therefore separates statistical support from final
+tariff granularity: broad groups provide the information used by the GLM,
+while smoothing can translate that information into a finer and more regular
+tariff structure. Smoothing does not create additional observations, so the
+resulting classes should still be assessed for stability, extrapolation and
+commercial suitability.
+
+The first and last boundaries equal the observed range used by the GAM.
+Applying the segmentation to new data outside that range results in an
+informative error rather than silent extrapolation.
+
 Use \code{\link[=autoplot.tariff_segments]{autoplot.tariff_segments()}} to compare the smooth curve and boundaries.
-Use \code{\link[=add_tariff_segments]{add_tariff_segments()}} to attach the resulting factor to the portfolio
-rows used for the GAM.
+Use \code{\link[=add_tariff_segments]{add_tariff_segments()}} to apply the resulting boundaries to portfolio
+data using the original continuous risk factor.
 }
 }
 \examples{
@@ -96,9 +163,13 @@ age_segments <- risk_factor_gam(
   claim_count = "nclaims",
   exposure = "exposure"
 ) |>
-  derive_tariff_segments()
+  derive_tariff_segments(
+    segmentation_penalty = 10,
+    seed = 1
+  )
 
 autoplot(age_segments, show_observations = TRUE)
+summary(age_segments)
 
 MTPL |>
   add_tariff_segments(age_segments, name = "age_policyholder_segment")
@@ -126,7 +197,7 @@ marginal likelihood estimation of semiparametric generalized linear models.
 }
 \seealso{
 \code{\link[=risk_factor_gam]{risk_factor_gam()}}, \code{\link[=autoplot.tariff_segments]{autoplot.tariff_segments()}},
-\code{\link[=add_tariff_segments]{add_tariff_segments()}}
+\code{\link[=add_tariff_segments]{add_tariff_segments()}}, \code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}}
 }
 \author{
 Martin Haringa

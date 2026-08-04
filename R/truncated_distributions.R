@@ -306,7 +306,7 @@ get_start_values_truncated <- function(y,
 
 #' Fit severity distributions to truncated claim data
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description
 #' Estimate an underlying claim severity distribution when the observed claims
 #' are truncated.
 #'

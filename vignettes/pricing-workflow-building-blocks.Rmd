@@ -221,7 +221,14 @@ age_gam <- risk_factor_gam(
 
 age_segments <- derive_tariff_segments(age_gam)
 age_segments
+summary(age_segments)
 ```
+
+The segment boundaries approximate the fitted GAM curve. Exposure and claim
+volume have already influenced that curve through the GAM specification and
+are not applied as a second weight during segmentation. The segment summary
+retains these portfolio measures for assessing the support of each candidate
+segment.
 
 The derived segments can be added back to the portfolio with
 `add_tariff_segments()`.
@@ -234,8 +241,9 @@ head(portfolio[, c("age_policyholder", "age_policyholder_segment")])
 ```
 
 These functions are intended to support actuarial judgement, not replace it.
-Candidate segment boundaries should still be reviewed against exposure, claim
-volume, stability and practical usability.
+The tree approximates the fitted GAM effect and does not directly optimise
+observed claims or portfolio loss. Candidate segment boundaries should still be
+reviewed against exposure, claim volume, stability and practical usability.
 
 ## 4. Fit and interpret a GLM
 
@@ -258,7 +266,7 @@ rt <- rating_table(
   exposure = "exposure"
 )
 
-head(rt$df)
+head(rt)
 ```
 
 Observed portfolio experience can be attached to the rating table with

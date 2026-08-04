@@ -9,15 +9,21 @@
 #' @param object A `"risk_factor_gam"` object returned by
 #'   [risk_factor_gam()]. Legacy `"riskfactor_gam"` and `"fitgam"` classes are
 #'   accepted for compatibility.
-#' @param complexity Non-negative numeric complexity penalty for the
-#'   evolutionary tree. Larger values generally favour fewer internal
-#'   boundaries.
+#' @param segmentation_penalty Non-negative numeric penalty on additional tree
+#'   splits. Larger values generally favour fewer tariff segments. The default
+#'   `0` retains the historical behaviour and applies no explicit split
+#'   penalty; it can therefore produce a relatively detailed candidate
+#'   segmentation. There is no universal actuarial value: compare candidate
+#'   penalties and assess the resulting volume and stability by segment.
+#' @param seed Single finite whole number used to reproduce the evolutionary
+#'   search.
 #' @param max_iterations Positive integer. Maximum number of evolutionary search
-#'   iterations.
+#'   iterations. This is an advanced algorithm-control parameter.
 #' @param population_size Positive integer. Number of candidate trees maintained
-#'   during the evolutionary search.
-#' @param seed Numeric random seed used by the grouping algorithm.
-#' @param alpha Deprecated. Use `complexity` instead.
+#'   during the evolutionary search. This is an advanced algorithm-control
+#'   parameter.
+#' @param complexity Deprecated. Use `segmentation_penalty` instead.
+#' @param alpha Deprecated. Use `segmentation_penalty` instead.
 #' @param niterations Deprecated. Use `max_iterations` instead.
 #' @param ntrees Deprecated. Use `population_size` instead.
 #'
@@ -25,14 +31,32 @@
 #' ## Method
 #'
 #' An evolutionary regression tree from [evtree::evtree()] is fitted to the
-#' GAM response over the observed risk-factor values. Internal tree split
+#' predicted GAM effect over the distinct observed risk-factor values. The tree
+#' therefore approximates the estimated univariate curve; it is not fitted
+#' directly to individual claim outcomes or portfolio loss. Internal tree split
 #' points are translated into interval boundaries. If no internal split is
 #' supported by the fitted search, one interval spanning the observed range is
 #' returned.
 #'
 #' The method follows the data-driven binning approach described by Henckaerts
-#' et al. (2018). `complexity`, `population_size`, `max_iterations` and `seed`
-#' control the search rather than an actuarial minimum-volume rule.
+#' et al. (2018). `segmentation_penalty`, `population_size`, `max_iterations`
+#' and `seed` control the stochastic search rather than an actuarial
+#' minimum-volume rule. Reusing the same inputs and `seed` makes the result
+#' reproducible.
+#'
+#' Each distinct observed risk-factor value has equal influence when the tree
+#' approximates the fitted curve. Exposure, claim count or another actuarial
+#' weight is deliberately not applied again in this step. The relevant
+#' portfolio information has already influenced the curve through the
+#' statistical specification used by [risk_factor_gam()], such as the exposure
+#' offset in a frequency model, claim-count weights in a severity model or
+#' exposure weights in a risk-premium model. Applying a second weight during
+#' segmentation would introduce an additional portfolio-distribution choice
+#' after the GAM has been estimated.
+#'
+#' Exposure and claim count remain available through `summary()`. They are
+#' diagnostics for assessing the support and practical stability of candidate
+#' segments, but they do not influence the estimated boundaries.
 #'
 #' ## Actuarial interpretation
 #'
@@ -43,9 +67,45 @@
 #' interaction with other risk factors. Particular care is required for
 #' boundaries in sparsely populated tails.
 #'
+#' `summary()` reports the number of portfolio records, number of
+#' distinct risk-factor values and available exposure and claim volume within
+#' each proposed segment. These diagnostics support actuarial review but do not
+#' constitute an automatic acceptance rule. Minimum-volume requirements and
+#' operational rounding should be selected with reference to portfolio size,
+#' model purpose and governance standards.
+#'
+#' ## A staged GLM refinement workflow
+#'
+#' In practical pricing work, the candidate boundaries are often used to form
+#' an initial set of relatively broad model groups. The actuary reviews
+#' `summary()` and, where necessary, combines thinly populated segments or
+#' increases `segmentation_penalty` until the groups have sufficient exposure
+#' and claim information for stable estimation. The resulting factor can then
+#' be included in an unrestricted GLM.
+#'
+#' This broad first-stage grouping avoids estimating a separate free GLM
+#' coefficient for every fine tariff interval when observations are unevenly
+#' distributed over the continuous risk factor. After fitting the GLM,
+#' [add_smoothing()] can use the broad model effect together with the original
+#' continuous variable to construct a regularised pattern over finer breaks.
+#' These finer breaks may reflect operational or commercial tariff boundaries,
+#' while their relativities remain linked through the smoothing specification
+#' rather than being estimated independently for every small segment.
+#'
+#' The staged approach therefore separates statistical support from final
+#' tariff granularity: broad groups provide the information used by the GLM,
+#' while smoothing can translate that information into a finer and more regular
+#' tariff structure. Smoothing does not create additional observations, so the
+#' resulting classes should still be assessed for stability, extrapolation and
+#' commercial suitability.
+#'
+#' The first and last boundaries equal the observed range used by the GAM.
+#' Applying the segmentation to new data outside that range results in an
+#' informative error rather than silent extrapolation.
+#'
 #' Use [autoplot.tariff_segments()] to compare the smooth curve and boundaries.
-#' Use [add_tariff_segments()] to attach the resulting factor to the portfolio
-#' rows used for the GAM.
+#' Use [add_tariff_segments()] to apply the resulting boundaries to portfolio
+#' data using the original continuous risk factor.
 #'
 #' @return A `list` of class `"tariff_segments"` with components:
 #' \describe{
@@ -57,6 +117,10 @@
 #'   \item{segment_boundaries}{Numeric vector with segment boundaries.}
 #'   \item{assigned_segments}{Factor with the tariff segment assigned to each
 #'   observed risk factor value.}
+#'   \item{segment_summary}{Data frame with portfolio counts, distinct
+#'   risk-factor values and the observed response components for each candidate
+#'   segment. Use `summary()` as the public interface for this table.}
+#'   \item{segmentation_penalty}{Penalty applied to additional tree splits.}
 #' }
 #' For backward compatibility, the old components `prediction`, `x`, `model`,
 #' `data`, `x_obs`, `splits`, `class_boundaries`, `assigned_groups`, and
@@ -65,7 +129,7 @@
 #' @author Martin Haringa
 #'
 #' @seealso [risk_factor_gam()], [autoplot.tariff_segments()],
-#'   [add_tariff_segments()]
+#'   [add_tariff_segments()], [prepare_refinement()], [add_smoothing()]
 #'
 #' @references Antonio, K. and Valdez, E. A. (2012). Statistical concepts of a
 #' priori and a posteriori risk classification in insurance. *Advances in
@@ -93,9 +157,13 @@
 #'   claim_count = "nclaims",
 #'   exposure = "exposure"
 #' ) |>
-#'   derive_tariff_segments()
+#'   derive_tariff_segments(
+#'     segmentation_penalty = 10,
+#'     seed = 1
+#'   )
 #'
 #' autoplot(age_segments, show_observations = TRUE)
+#' summary(age_segments)
 #'
 #' MTPL |>
 #'   add_tariff_segments(age_segments, name = "age_policyholder_segment")
@@ -104,24 +172,53 @@
 #' @importFrom evtree evtree evtree.control
 #'
 #' @export
-derive_tariff_segments <- function(object, complexity = 0,
-                                 max_iterations = 10000,
-                                 population_size = 200, seed = 1,
-                                 alpha = NULL, niterations = NULL,
-                                 ntrees = NULL) {
+derive_tariff_segments <- function(object, segmentation_penalty = 0,
+                                   seed = 1, max_iterations = 10000,
+                                   population_size = 200, complexity = NULL,
+                                   alpha = NULL, niterations = NULL,
+                                   ntrees = NULL) {
+  segmentation_penalty_supplied <- !missing(segmentation_penalty)
+  max_iterations_supplied <- !missing(max_iterations)
+  population_size_supplied <- !missing(population_size)
 
-  if (!inherits(object, "riskfactor_gam") && !inherits(object, "fitgam")) {
-    stop("Input must be of class 'riskfactor_gam' as returned by risk_factor_gam().",
-         call. = FALSE)
+  if (!inherits(object, "risk_factor_gam") &&
+      !inherits(object, "riskfactor_gam") && !inherits(object, "fitgam")) {
+    stop(
+      "`object` must be a `risk_factor_gam` object returned by ",
+      "`risk_factor_gam()`.",
+      call. = FALSE
+    )
+  }
+
+  if (!is.null(complexity)) {
+    lifecycle::deprecate_warn(
+      "0.8.2",
+      "derive_tariff_segments(complexity = )",
+      "derive_tariff_segments(segmentation_penalty = )"
+    )
+    if (segmentation_penalty_supplied) {
+      stop(
+        "Use only one of `segmentation_penalty` and deprecated `complexity`.",
+        call. = FALSE
+      )
+    }
+    segmentation_penalty <- complexity
+    segmentation_penalty_supplied <- TRUE
   }
 
   if (!is.null(alpha)) {
     lifecycle::deprecate_warn(
       "0.8.0",
       "derive_tariff_segments(alpha = )",
-      "derive_tariff_segments(complexity = )"
+      "derive_tariff_segments(segmentation_penalty = )"
     )
-    complexity <- alpha
+    if (segmentation_penalty_supplied) {
+      stop(
+        "Use only one of `segmentation_penalty` and deprecated `alpha`.",
+        call. = FALSE
+      )
+    }
+    segmentation_penalty <- alpha
   }
   if (!is.null(niterations)) {
     lifecycle::deprecate_warn(
@@ -129,6 +226,12 @@ derive_tariff_segments <- function(object, complexity = 0,
       "derive_tariff_segments(niterations = )",
       "derive_tariff_segments(max_iterations = )"
     )
+    if (max_iterations_supplied) {
+      stop(
+        "Use only one of `max_iterations` and deprecated `niterations`.",
+        call. = FALSE
+      )
+    }
     max_iterations <- niterations
   }
   if (!is.null(ntrees)) {
@@ -137,11 +240,17 @@ derive_tariff_segments <- function(object, complexity = 0,
       "derive_tariff_segments(ntrees = )",
       "derive_tariff_segments(population_size = )"
     )
+    if (population_size_supplied) {
+      stop(
+        "Use only one of `population_size` and deprecated `ntrees`.",
+        call. = FALSE
+      )
+    }
     population_size <- ntrees
   }
 
   validate_tariff_segment_control(
-    complexity = complexity,
+    segmentation_penalty = segmentation_penalty,
     max_iterations = max_iterations,
     population_size = population_size,
     seed = seed
@@ -150,8 +259,57 @@ derive_tariff_segments <- function(object, complexity = 0,
   data_used <- object$data
   x_obs <- object$x_obs
 
+  required_components <- c("prediction", "x", "model", "data", "x_obs")
+  missing_components <- required_components[
+    !vapply(required_components, function(x) !is.null(object[[x]]), logical(1))
+  ]
+  if (length(missing_components) > 0L) {
+    stop(
+      "`object` is not a complete `risk_factor_gam` object. Missing component",
+      if (length(missing_components) == 1L) ": " else "s: ",
+      paste0("`", missing_components, "`", collapse = ", "), ".",
+      call. = FALSE
+    )
+  }
+
+  if (!is.data.frame(data_used) ||
+      !all(c("x", "pred") %in% names(data_used))) {
+    stop(
+      "`object$data` must contain the numeric columns `x` and `pred` created ",
+      "by `risk_factor_gam()`.",
+      call. = FALSE
+    )
+  }
+
   if (!is.numeric(x_obs)) {
     stop("`object$x_obs` must be numeric.", call. = FALSE)
+  }
+
+  invalid_x_obs <- sum(is.na(x_obs) | !is.finite(x_obs))
+  if (invalid_x_obs > 0L) {
+    stop(
+      "The risk factor `", object$x, "` contains ", invalid_x_obs,
+      " missing or non-finite ",
+      if (invalid_x_obs == 1L) "value" else "values",
+      " in `object$x_obs`. Remove or impute these values before deriving ",
+      "tariff segments.",
+      call. = FALSE
+    )
+  }
+
+  if (!is.numeric(data_used$x) || !is.numeric(data_used$pred)) {
+    stop("`object$data$x` and `object$data$pred` must be numeric.",
+         call. = FALSE)
+  }
+  invalid_classification <- !is.finite(data_used$x) |
+    !is.finite(data_used$pred) | is.na(data_used$x) | is.na(data_used$pred)
+  if (any(invalid_classification)) {
+    stop(
+      "`object$data` contains ", sum(invalid_classification),
+      " rows with missing or non-finite GAM values. Tariff segmentation ",
+      "requires finite risk-factor values and fitted effects.",
+      call. = FALSE
+    )
   }
 
   x_range <- range(x_obs, na.rm = TRUE)
@@ -169,7 +327,7 @@ derive_tariff_segments <- function(object, complexity = 0,
       pred ~ x,
       data = data_used,
       control = evtree::evtree.control(
-        alpha = complexity,
+        alpha = segmentation_penalty,
         ntrees = population_size,
         niterations = max_iterations,
         seed = seed
@@ -197,6 +355,18 @@ derive_tariff_segments <- function(object, complexity = 0,
   # Add min and max to binning
   splits <- sort(unique(c(x_range[1], split_x, x_range[2])))
   cuts <- cut(x_obs, breaks = splits, include.lowest = TRUE)
+  classification_segments <- cut(
+    data_used$x,
+    breaks = splits,
+    include.lowest = TRUE
+  )
+  segment_summary <- .summarise_tariff_segments(
+    data_used = data_used,
+    x_obs = x_obs,
+    assigned_segments = cuts,
+    classification_segments = classification_segments,
+    model_type = object$model
+  )
 
   structure(
     list(
@@ -207,6 +377,9 @@ derive_tariff_segments <- function(object, complexity = 0,
       risk_factor_values = x_obs,
       segment_boundaries = splits,
       assigned_segments = cuts,
+      segment_summary = segment_summary,
+      segmentation_penalty = segmentation_penalty,
+      round_risk_factor = object$round_risk_factor %||% NULL,
       class_boundaries = splits,
       assigned_groups = cuts,
       prediction = object$prediction,
@@ -243,42 +416,103 @@ construct_tariff_classes <- function(object, complexity = 0,
     "construct_tariff_classes()",
     "derive_tariff_segments()"
   )
+  if (!is.null(alpha)) {
+    complexity <- alpha
+  }
+  if (!is.null(niterations)) {
+    max_iterations <- niterations
+  }
+  if (!is.null(ntrees)) {
+    population_size <- ntrees
+  }
   derive_tariff_segments(
     object = object,
-    complexity = complexity,
+    segmentation_penalty = complexity,
     max_iterations = max_iterations,
     population_size = population_size,
-    seed = seed,
-    alpha = alpha,
-    niterations = niterations,
-    ntrees = ntrees
+    seed = seed
   )
 }
 
-validate_tariff_segment_control <- function(complexity, max_iterations,
+validate_tariff_segment_control <- function(segmentation_penalty,
+                                            max_iterations,
                                             population_size, seed) {
-  if (!is.numeric(complexity) || length(complexity) != 1L ||
-      !is.finite(complexity) || complexity < 0) {
-    stop("`complexity` must be a single non-negative number.", call. = FALSE)
+  if (!is.numeric(segmentation_penalty) ||
+      length(segmentation_penalty) != 1L ||
+      !is.finite(segmentation_penalty) || segmentation_penalty < 0) {
+    stop(
+      "`segmentation_penalty` must be a single non-negative number.",
+      call. = FALSE
+    )
   }
   if (!is.numeric(max_iterations) || length(max_iterations) != 1L ||
-      !is.finite(max_iterations) || max_iterations <= 0) {
-    stop("`max_iterations` must be a single positive number.", call. = FALSE)
+      !is.finite(max_iterations) || max_iterations <= 0 ||
+      max_iterations != floor(max_iterations)) {
+    stop("`max_iterations` must be a single positive whole number.",
+         call. = FALSE)
   }
   if (!is.numeric(population_size) || length(population_size) != 1L ||
-      !is.finite(population_size) || population_size <= 0) {
-    stop("`population_size` must be a single positive number.", call. = FALSE)
+      !is.finite(population_size) || population_size <= 0 ||
+      population_size != floor(population_size)) {
+    stop("`population_size` must be a single positive whole number.",
+         call. = FALSE)
   }
-  if (!is.numeric(seed) || length(seed) != 1L || !is.finite(seed)) {
-    stop("`seed` must be a single finite number.", call. = FALSE)
+  if (!is.numeric(seed) || length(seed) != 1L || !is.finite(seed) ||
+      seed != floor(seed)) {
+    stop("`seed` must be a single finite whole number.", call. = FALSE)
   }
   invisible(NULL)
 }
 
+.summarise_tariff_segments <- function(data_used, x_obs, assigned_segments,
+                                       classification_segments, model_type) {
+  segment_levels <- levels(assigned_segments)
+  sum_by_segment <- function(values) {
+    vapply(
+      segment_levels,
+      function(level) sum(values[classification_segments == level]),
+      numeric(1)
+    )
+  }
+
+  out <- data.frame(
+    segment = factor(segment_levels, levels = segment_levels),
+    portfolio_records = as.integer(table(
+      factor(assigned_segments, levels = segment_levels)
+    )),
+    risk_factor_values = as.integer(table(
+      factor(classification_segments, levels = segment_levels)
+    )),
+    stringsAsFactors = FALSE
+  )
+
+  if (identical(model_type, "frequency")) {
+    out$exposure <- sum_by_segment(data_used$exposure)
+    out$claim_count <- sum_by_segment(data_used$nclaims)
+    out$frequency <- out$claim_count / out$exposure
+  } else if (identical(model_type, "severity")) {
+    out$claim_count <- sum_by_segment(data_used$nclaims)
+    out$claim_amount <- sum_by_segment(data_used$amount)
+    out$average_severity <- out$claim_amount / out$claim_count
+  } else if (model_type %in% c("pure_premium", "burning")) {
+    out$exposure <- sum_by_segment(data_used$exposure)
+    out$risk_premium_amount <- sum_by_segment(data_used$weighted_premium)
+    out$risk_premium <- out$risk_premium_amount / out$exposure
+  }
+
+  row.names(out) <- NULL
+  out
+}
+
 #' @export
 print.tariff_segments <- function(x, ...) {
-  cat("Tariff segment boundaries:\n")
-  print(x$segment_boundaries %||% x$class_boundaries)
+  boundaries <- x$segment_boundaries %||% x$class_boundaries
+  cat("Tariff segmentation\n")
+  cat("Risk factor:", x$risk_factor %||% x$x, "\n")
+  cat("Candidate segments:", length(boundaries) - 1L, "\n")
+  cat("Segmentation penalty:", x$segmentation_penalty %||% NA_real_, "\n")
+  cat("Boundaries:\n")
+  print(boundaries)
   invisible(x)
 }
 
@@ -287,6 +521,67 @@ print.tariff_classes <- print.tariff_segments
 
 #' @export
 print.constructtariffclasses <- print.tariff_segments
+
+#' Summarise candidate tariff segments
+#'
+#' @description
+#' Return the portfolio diagnostics stored when [derive_tariff_segments()]
+#' created the candidate segmentation. The summary can be used to assess
+#' whether the proposed intervals contain sufficient exposure and claim
+#' information before they are used in a GLM or tariff structure.
+#'
+#' @param object A `"tariff_segments"` object returned by
+#'   [derive_tariff_segments()].
+#' @param ... Additional arguments reserved for method compatibility.
+#'
+#' @return A data frame with one row per candidate segment and the columns:
+#' \describe{
+#'   \item{segment}{Candidate tariff interval.}
+#'   \item{portfolio_records}{Number of portfolio rows assigned to the
+#'   interval.}
+#'   \item{risk_factor_values}{Number of distinct observed risk-factor values
+#'   represented by the interval.}
+#'   \item{exposure}{Total exposure represented in a frequency or risk-premium
+#'   GAM.}
+#'   \item{claim_count}{Total observed claim count for a frequency or severity
+#'   GAM.}
+#'   \item{frequency}{Observed claim frequency, calculated as `claim_count /
+#'   exposure`, for a frequency GAM.}
+#'   \item{claim_amount}{Total observed claim amount for a severity GAM.}
+#'   \item{average_severity}{Observed average severity, calculated as
+#'   `claim_amount / claim_count`, for a severity GAM.}
+#'   \item{risk_premium_amount}{Total exposure-weighted risk-premium amount for
+#'   a risk-premium GAM.}
+#'   \item{risk_premium}{Observed risk premium, calculated as
+#'   `risk_premium_amount / exposure`, for a risk-premium GAM.}
+#' }
+#' The response columns are model dependent. The returned table therefore
+#' contains the numerator, denominator and observed y-axis measure relevant to
+#' the model used by [risk_factor_gam()].
+#'
+#' @author Martin Haringa
+#'
+#' @seealso [derive_tariff_segments()], [add_tariff_segments()]
+#'
+#' @keywords internal
+#' @export
+summary.tariff_segments <- function(object, ...) {
+  out <- object$segment_summary
+  if (!is.data.frame(out)) {
+    stop(
+      "`object` does not contain segment diagnostics. Recreate it with ",
+      "`derive_tariff_segments()` before calling `summary()`.",
+      call. = FALSE
+    )
+  }
+  out
+}
+
+#' @export
+summary.tariff_classes <- summary.tariff_segments
+
+#' @export
+summary.constructtariffclasses <- summary.tariff_segments
 
 #' @export
 as.vector.tariff_segments <- function(x, ...) {
@@ -304,13 +599,14 @@ as.vector.constructtariffclasses <- as.vector.tariff_segments
 #'
 #' @description
 #' Adds the tariff segments derived by [derive_tariff_segments()] as a new factor
-#' column to a portfolio data set. This is the recommended way to attach derived
-#' tariff segments to the same portfolio rows that were used to fit the risk
-#' factor GAM.
+#' column to a portfolio data set. The stored boundaries are applied to the
+#' original continuous risk-factor column, so the result does not depend on the
+#' row order used when the GAM was fitted.
 #'
-#' The helper preserves row alignment between the portfolio and the assigned
-#' segments. It does not re-estimate the GAM or reconstruct the segment
-#' boundaries.
+#' The helper does not re-estimate the GAM or derive new boundaries. It can be
+#' used after filtering or reordering the original portfolio and on new data
+#' whose risk-factor values remain within the range used to derive the
+#' segmentation.
 #'
 #' @param data A data frame to which the tariff segments should be added.
 #' @param segments Object of class `"tariff_segments"`, produced by
@@ -325,10 +621,12 @@ as.vector.constructtariffclasses <- as.vector.tariff_segments
 #' @return A data frame with the derived tariff segment column added.
 #'
 #' @details
-#' `segments$assigned_segments` contains one segment for each observation used
-#' to estimate the risk-factor effect. `data` must therefore contain the same
-#' number of rows in the same order. The resulting factor can be used in a GLM
-#' or retained as a candidate grouping for further actuarial review.
+#' The risk-factor name and optional rounding increment are taken from
+#' `segments`. The risk-factor column in `data` must be numeric and contain only
+#' finite, non-missing values. Values outside the original segmentation range
+#' produce an error because their tariff treatment has not been supported by
+#' the fitted GAM. The resulting factor can be used in a GLM or retained as a
+#' candidate grouping for further actuarial review.
 #'
 #' @author Martin Haringa
 #'
@@ -362,22 +660,71 @@ add_tariff_segments <- function(data, segments, name = NULL, overwrite = FALSE) 
     stop("`overwrite` must be TRUE or FALSE.", call. = FALSE)
   }
 
-  assigned_segments <- segments$assigned_segments %||%
-    segments$assigned_groups %||%
-    segments$tariff_classes
-  if (!is.factor(assigned_segments)) {
-    stop("`segments` does not contain a valid tariff segment factor.",
+  risk_factor <- segments$risk_factor %||% segments$x
+  boundaries <- segments$segment_boundaries %||%
+    segments$class_boundaries %||% segments$splits
+  if (!.is_single_string(risk_factor)) {
+    stop(
+      "`segments` does not contain a valid risk-factor name.",
+      call. = FALSE
+    )
+  }
+  if (!is.numeric(boundaries) || length(boundaries) < 2L ||
+      anyNA(boundaries) || any(!is.finite(boundaries)) ||
+      is.unsorted(boundaries, strictly = TRUE)) {
+    stop("`segments` does not contain valid, strictly increasing boundaries.",
          call. = FALSE)
   }
-  if (nrow(data) != length(assigned_segments)) {
+  if (!risk_factor %in% names(data)) {
     stop(
-      "`data` must have the same number of rows as the assigned tariff segments.",
+      "Column `", risk_factor, "`, used to derive the tariff segments, was ",
+      "not found in `data`.",
+      call. = FALSE
+    )
+  }
+  if (!is.numeric(data[[risk_factor]])) {
+    stop("The risk-factor column `", risk_factor, "` must be numeric.",
+         call. = FALSE)
+  }
+
+  risk_factor_values <- round_x_values(
+    data[[risk_factor]],
+    segments$round_risk_factor %||% NULL
+  )
+  invalid <- is.na(risk_factor_values) | !is.finite(risk_factor_values)
+  if (any(invalid)) {
+    stop(
+      "The risk-factor column `", risk_factor, "` contains ", sum(invalid),
+      " missing or non-finite ", if (sum(invalid) == 1L) "value" else "values",
+      ". Remove or impute these values before adding tariff segments.",
       call. = FALSE
     )
   }
 
+  below <- sum(risk_factor_values < boundaries[1])
+  above <- sum(risk_factor_values > boundaries[length(boundaries)])
+  if (below > 0L || above > 0L) {
+    outside <- c(
+      if (below > 0L) paste0(below, " below the first boundary"),
+      if (above > 0L) paste0(above, " above the last boundary")
+    )
+    stop(
+      "The risk-factor column `", risk_factor,
+      "` contains values outside the tariff-segment range ", boundaries[1],
+      " to ", boundaries[length(boundaries)], ": ",
+      paste(outside, collapse = " and "),
+      ". Review the boundaries before applying them to this portfolio.",
+      call. = FALSE
+    )
+  }
+
+  assigned_segments <- cut(
+    risk_factor_values,
+    breaks = boundaries,
+    include.lowest = TRUE
+  )
+
   if (is.null(name)) {
-    risk_factor <- segments$risk_factor %||% segments$x %||% "tariff"
     name <- paste0(risk_factor, "_segment")
   }
   if (!is.character(name) || length(name) != 1L || is.na(name) || name == "") {
@@ -394,64 +741,7 @@ add_tariff_segments <- function(data, segments, name = NULL, overwrite = FALSE) 
 }
 
 
-#' Inspect derived tariff-segment boundaries
-#'
-#' @description
-#' Plot the fitted continuous risk-factor effect together with the boundaries
-#' returned by [derive_tariff_segments()]. Observed aggregated experience and
-#' pointwise confidence intervals can be added to support review of the proposed
-#' segmentation.
-#'
-#' @details
-#' Vertical lines indicate the derived interval boundaries; the fitted GAM line
-#' remains the underlying continuous effect. The plot can be used to assess
-#' whether boundaries occur at plausible changes in the fitted pattern and
-#' whether tail segments have visible empirical support.
-#'
-#' The visualisation does not refit a categorical GLM and does not establish
-#' that adjacent segments are statistically or commercially distinct. Exposure,
-#' claim volume, temporal stability and operational tariff constraints remain
-#' separate considerations. `remove_outliers` affects displayed observed points
-#' only and does not alter either the GAM or the derived boundaries.
-#'
-#' @param object An object of class `"tariff_segments"`, produced by
-#'   [derive_tariff_segments()].
-#' @param confidence Logical. If `TRUE`, show pointwise 95 percent confidence
-#'   intervals where finite values are available.
-#' @param conf_int Deprecated. Use `confidence` instead.
-#' @param color_gam Colour of the fitted GAM line.
-#' @param color_splits Colour of the vertical segment boundaries.
-#' @param show_observations Logical. If `TRUE`, add the aggregated observed
-#'   experience used for the GAM.
-#' @param size_points Numeric point size for observed experience.
-#' @param color_points Colour for observed experience.
-#' @param rotate_labels Logical. If `TRUE`, rotate x-axis labels by 45 degrees.
-#' @param remove_outliers Optional single numeric upper display limit for
-#'   observed points.
-#' @param ... Additional arguments reserved for method compatibility.
-#'
-#' @return A `ggplot2` object.
-#'
-#' @author Martin Haringa
-#'
-#' @seealso [derive_tariff_segments()], [risk_factor_gam()],
-#'   [add_tariff_segments()]
-#'
-#' @examples
-#' \dontrun{
-#' segments <- risk_factor_gam(
-#'   MTPL,
-#'   risk_factor = "age_policyholder",
-#'   claim_count = "nclaims",
-#'   exposure = "exposure"
-#' ) |>
-#'   derive_tariff_segments()
-#'
-#' autoplot(segments, confidence = TRUE, show_observations = TRUE)
-#' }
-#'
-#' @import ggplot2
-#'
+#' @rdname autoplot.tariff_effect
 #' @export
 autoplot.tariff_segments <- function(object,
                                    confidence = FALSE,
@@ -463,6 +753,8 @@ autoplot.tariff_segments <- function(object,
                                    rotate_labels = FALSE,
                                    remove_outliers = NULL,
                                    conf_int = NULL,
+                                   x_stepsize = NULL,
+                                   show_segments = TRUE,
                                    ...) {
   if (!is.null(conf_int)) {
     lifecycle::deprecate_warn("0.9.0", "autoplot(conf_int)",
@@ -475,112 +767,29 @@ autoplot.tariff_segments <- function(object,
       !inherits(object, "constructtariffclasses")) {
     stop("Input must be of class 'tariff_segments'.", call. = FALSE)
   }
-
-  prediction <- object$gam_prediction %||% object$prediction
-  xlab <- object$risk_factor %||% object$x
-  ylab <- object$model_type %||% object$model
-  points <- object$classification_data %||% object$data
-  splits <- object$segment_boundaries %||% object$class_boundaries %||%
-    object$splits
-
-  # determine fitted-value column robustly
-  y_pred_col <- "fitted"
-  y_pred_col <- y_pred_col[y_pred_col %in% names(prediction)]
-
-  if (length(y_pred_col) == 0) {
-    stop(
-      "Could not find a fitted-value column in `object$prediction`. ",
-      "Expected one of: predicted, pred, fit, yhat.",
-      call. = FALSE
-    )
+  if (!is.logical(show_segments) || length(show_segments) != 1L ||
+      is.na(show_segments)) {
+    stop("`show_segments` must be TRUE or FALSE.", call. = FALSE)
   }
 
-  y_pred_col <- y_pred_col[1]
-
-  # confidence interval column names
-  lwr_col <- c("conf_low", "lwr_95", "lower_95", "lwr", "lower")
-  upr_col <- c("conf_high", "upr_95", "upper_95", "upr", "upper")
-
-  lwr_col <- lwr_col[lwr_col %in% names(prediction)]
-  upr_col <- upr_col[upr_col %in% names(prediction)]
-
-  has_conf <- length(lwr_col) > 0 && length(upr_col) > 0
-  if (has_conf) {
-    lwr_col <- lwr_col[1]
-    upr_col <- upr_col[1]
-  }
-
-  # Filter out outliers if requested
-  if (is.numeric(remove_outliers) && isTRUE(show_observations)) {
-    if (ylab == "frequency" && "frequency" %in% names(points)) {
-      points <- points[points$frequency < remove_outliers, , drop = FALSE]
-    } else if (ylab == "severity" && "avg_claimsize" %in% names(points)) {
-      points <- points[points$avg_claimsize < remove_outliers, , drop = FALSE]
-    } else if (ylab %in% c("pure_premium", "burning") &&
-               "avg_premium" %in% names(points)) {
-      points <- points[points$avg_premium < remove_outliers, , drop = FALSE]
-    }
-  }
-
-  p <- ggplot(
-    prediction,
-    aes(x = .data[["x"]], y = .data[[y_pred_col]])
-  ) +
-    geom_line(color = color_gam) +
-    theme_minimal() +
-    .plot_grid_theme_ir() +
-    geom_vline(xintercept = splits, color = color_splits, linetype = 2) +
-    labs(y = paste0("Predicted ", ylab), x = xlab)
-
-  if (isTRUE(confidence) && has_conf) {
-    ok_ci <- all(is.finite(prediction[[upr_col]])) &&
-      all(prediction[[upr_col]] < 1e9, na.rm = TRUE)
-
-    if (ok_ci) {
-      p <- p + geom_ribbon(
-        aes(
-          ymin = .data[[lwr_col]],
-          ymax = .data[[upr_col]]
-        ),
-        alpha = 0.12
-      )
-    }
-  }
-
-  if (isTRUE(show_observations)) {
-    if (ylab == "frequency" && "frequency" %in% names(points)) {
-      p <- p + geom_point(
-        data = points,
-        aes(x = .data[["x"]], y = .data[["frequency"]]),
-        size = size_points,
-        color = color_points
-      )
-    } else if (ylab == "severity" && "avg_claimsize" %in% names(points)) {
-      p <- p + geom_point(
-        data = points,
-        aes(x = .data[["x"]], y = .data[["avg_claimsize"]]),
-        size = size_points,
-        color = color_points
-      ) +
-        scale_y_continuous(labels = scales::comma)
-    } else if (ylab %in% c("pure_premium", "burning") &&
-               "avg_premium" %in% names(points)) {
-      p <- p + geom_point(
-        data = points,
-        aes(x = .data[["x"]], y = .data[["avg_premium"]]),
-        size = size_points,
-        color = color_points
-      )
-    }
-  }
-
-  if (isTRUE(rotate_labels)) {
-    p <- p + theme(
-      axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
-    )
-  }
-
-  p
+  .plot_risk_factor_curve(
+    prediction = object$gam_prediction %||% object$prediction,
+    points = object$classification_data %||% object$data,
+    risk_factor = object$risk_factor %||% object$x,
+    model_type = object$model_type %||% object$model,
+    confidence = confidence,
+    color_gam = color_gam,
+    show_observations = show_observations,
+    x_stepsize = x_stepsize,
+    size_points = size_points,
+    color_points = color_points,
+    rotate_labels = rotate_labels,
+    remove_outliers = remove_outliers,
+    segment_boundaries = object$segment_boundaries %||%
+      object$class_boundaries %||% object$splits,
+    show_segments = show_segments,
+    color_segments = color_splits
+  )
 }
 
 #' @export

@@ -96,8 +96,10 @@ fitted relativities.
 With `allow_new_levels = TRUE`, which is the default, these new tariff
 levels are retained in the refinement metadata and subsequently shown by
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
-Set `allow_new_levels = FALSE` when the restriction table should be
-checked strictly against the levels observed by the fitted model, for
+An informational message identifies every newly added level, its
+supplied relativity and the fact that it was not observed in the model
+data. Set `allow_new_levels = FALSE` when the restriction table should
+be checked strictly against the levels observed by the fitted model, for
 example to detect spelling errors in level names.
 
 A variable that is present in the refinement data but was not included
@@ -198,6 +200,7 @@ restrictions <- data.frame(
 
 refined <- prepare_refinement(model, data = portfolio) |>
   add_restriction(restrictions)
+#> Added new level `D` to risk factor `postal_area` with relativity 1.2. This level was not observed in the model data.
 
 # Postal area D was not observed in the portfolio. Its relativity is an
 # explicit tariff assumption and becomes available after refitting.
@@ -224,9 +227,9 @@ prepare_refinement(model, data = portfolio) |>
     allow_new_risk_factors = TRUE
   )
 #> <rating_refinement>
-#> Base model: glm, lm
+#> Base model: Poisson GLM (log link)
 #> Steps: 1
-#> 1. restriction [hail_zone]
+#>   1. Restriction: hail_zone -> hail_relativity (2 levels) [expert-specified new risk factor]
 
 # A later actuarial review changes only the relativity for the low hail zone.
 # The high-zone relativity remains 1.20 and the existing step is updated.

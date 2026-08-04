@@ -195,6 +195,8 @@ legacy_gam_column_name <- function(expr) {
 #'   risk-factor values.}
 #'   \item{x_obs}{Risk-factor values in the original portfolio row order, after
 #'   optional rounding.}
+#'   \item{round_risk_factor}{Rounding increment used for the risk factor, or
+#'   `NULL` when no rounding was applied.}
 #' }
 #'
 #' @author Martin Haringa
@@ -351,7 +353,8 @@ risk_factor_gam <- function(data, risk_factor = NULL, claim_count = NULL,
                         x = risk_factor,
                         model = model,
                         data = new,
-                        x_obs = x_vals),
+                        x_obs = x_vals,
+                        round_risk_factor = round_risk_factor),
                    class = c("risk_factor_gam", "riskfactor_gam", "fitgam")))
 }
 
@@ -551,43 +554,166 @@ summary.risk_factor_gam <- summary.riskfactor_gam
 #' @export
 summary.fitgam <- summary.riskfactor_gam
 
-#' Inspect a smooth continuous risk-factor effect
+.plot_risk_factor_curve <- function(prediction, points, risk_factor, model_type,
+                                    confidence, color_gam,
+                                    show_observations, x_stepsize,
+                                    size_points, color_points,
+                                    rotate_labels, remove_outliers,
+                                    segment_boundaries = NULL,
+                                    show_segments = FALSE,
+                                    color_segments = "grey50") {
+  if (!"fitted" %in% names(prediction)) {
+    stop("The plot data must contain a `fitted` column.", call. = FALSE)
+  }
+
+  lower_candidates <- c("conf_low", "lwr_95", "lower_95", "lwr", "lower")
+  upper_candidates <- c("conf_high", "upr_95", "upper_95", "upr", "upper")
+  lower <- lower_candidates[lower_candidates %in% names(prediction)][1]
+  upper <- upper_candidates[upper_candidates %in% names(prediction)][1]
+  has_confidence <- !is.na(lower) && !is.na(upper)
+  confidence_finite <- has_confidence &&
+    all(is.finite(prediction[[lower]])) &&
+    all(is.finite(prediction[[upper]])) &&
+    all(prediction[[upper]] < 1e9)
+
+  if (isTRUE(confidence) && !confidence_finite) {
+    message(
+      "Finite confidence intervals below 1e9 are not available and will not ",
+      "be displayed."
+    )
+  }
+
+  observed_column <- switch(
+    model_type,
+    "frequency" = "frequency",
+    "severity" = "avg_claimsize",
+    "pure_premium" = "avg_premium",
+    "burning" = "avg_premium",
+    NULL
+  )
+
+  if (is.numeric(remove_outliers) && length(remove_outliers) == 1L &&
+      is.finite(remove_outliers) && isTRUE(show_observations) &&
+      !is.null(observed_column) && observed_column %in% names(points)) {
+    points <- points[
+      points[[observed_column]] < remove_outliers,
+      ,
+      drop = FALSE
+    ]
+  }
+
+  p <- ggplot(
+    prediction,
+    aes(x = .data[["x"]], y = .data[["fitted"]])
+  ) +
+    geom_line(color = color_gam) +
+    theme_minimal() +
+    .plot_grid_theme_ir() +
+    labs(y = paste0("Predicted ", model_type), x = risk_factor)
+
+  if (isTRUE(show_segments) && length(segment_boundaries) > 0L) {
+    p <- p + geom_vline(
+      xintercept = segment_boundaries,
+      color = color_segments,
+      linetype = 2
+    )
+  }
+
+  if (isTRUE(confidence) && confidence_finite) {
+    p <- p + geom_ribbon(
+      aes(ymin = .data[[lower]], ymax = .data[[upper]]),
+      alpha = 0.12
+    )
+  }
+
+  if (!is.null(x_stepsize)) {
+    if (!is.numeric(x_stepsize) || length(x_stepsize) != 1L ||
+        is.na(x_stepsize) || !is.finite(x_stepsize) || x_stepsize <= 0) {
+      stop("`x_stepsize` must be NULL or a positive finite number.",
+           call. = FALSE)
+    }
+    p <- p + scale_x_continuous(
+      breaks = seq(
+        floor(min(prediction$x, na.rm = TRUE)),
+        ceiling(max(prediction$x, na.rm = TRUE)),
+        by = x_stepsize
+      )
+    )
+  }
+
+  if (isTRUE(show_observations) && !is.null(observed_column) &&
+      observed_column %in% names(points)) {
+    p <- p + geom_point(
+      data = points,
+      aes(x = .data[["x"]], y = .data[[observed_column]]),
+      size = size_points,
+      color = color_points
+    )
+  }
+
+  if (identical(model_type, "severity")) {
+    p <- p + scale_y_continuous(labels = scales::comma)
+  }
+
+  if (isTRUE(rotate_labels)) {
+    p <- p + theme(
+      axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
+    )
+  }
+
+  p
+}
+
+#' Inspect smooth risk-factor effects and tariff-segment boundaries
 #'
 #' @description
-#' Plot the smooth effect estimated by [risk_factor_gam()]. Observed aggregated
-#' experience and pointwise confidence intervals can be added to assess how the
-#' fitted pattern relates to the available portfolio information.
+#' Plot the smooth effect estimated by [risk_factor_gam()] or inspect that same
+#' effect together with candidate boundaries returned by
+#' [derive_tariff_segments()]. Both methods use the same curve, confidence
+#' interval, observation and axis layers.
 #'
 #' @details
-#' The line is the fitted response on its natural scale: frequency, average
-#' severity or risk premium. Observed points represent experience aggregated at
-#' the continuous risk-factor values used for fitting.
+#' The fitted line is shown on its natural response scale: claim frequency,
+#' average severity or risk premium. Optional observed points represent
+#' portfolio experience aggregated at the continuous risk-factor values used
+#' for fitting.
+#'
+#' For a `tariff_segments` object, vertical lines show the derived interval
+#' boundaries. These lines support actuarial review of where the continuous
+#' effect changes sufficiently to motivate a categorical tariff treatment.
+#' Set `show_segments = FALSE` to inspect only the underlying smooth curve.
 #'
 #' Confidence intervals describe uncertainty in the fitted curve conditional on
 #' the selected GAM specification. They do not include uncertainty from model
-#' selection, omitted risk factors or future portfolio changes. Wide intervals
-#' and isolated observations in the tails should therefore be reviewed together
-#' with exposure and claim volume.
+#' selection, omitted risk factors or future portfolio changes. Segment
+#' boundaries do not by themselves demonstrate that adjacent segments are
+#' statistically or commercially distinct. Exposure, claim volume, temporal
+#' stability and operational tariff constraints should be considered
+#' separately.
 #'
-#' `remove_outliers` affects only displayed observed points. It does not remove
-#' data from the fitted GAM or alter the prediction curve.
+#' `remove_outliers` affects displayed observed points only. It does not remove
+#' observations from the fitted GAM or alter the prediction curve or segment
+#' boundaries.
 #'
-#' @param object An object of class `"riskfactor_gam"` returned by
-#'   [risk_factor_gam()].
-#' @param confidence Logical. If `TRUE`, add 95% confidence intervals around
-#'   the fitted curve. Default is `FALSE`.
+#' @param object An object returned by [risk_factor_gam()] or
+#'   [derive_tariff_segments()].
+#' @param confidence Logical. If `TRUE`, add pointwise 95 percent confidence
+#'   intervals where finite values are available.
 #' @param conf_int Deprecated. Use `confidence` instead.
 #' @param color_gam Colour for the fitted GAM line.
-#' @param x_stepsize Numeric. Step size for tick marks on the x-axis. If
-#' `NULL`, breaks are determined automatically.
-#' @param show_observations Logical. If `TRUE`, add observed frequency/severity
-#' or risk-premium values used for fitting.
-#' @param size_points Numeric. Point size for observed experience.
+#' @param x_stepsize Optional positive numeric step size for x-axis tick marks.
+#'   If `NULL`, breaks are determined automatically.
+#' @param show_observations Logical. If `TRUE`, add the aggregated observed
+#'   experience used for fitting.
+#' @param size_points Numeric point size for observed experience.
 #' @param color_points Colour for observed experience.
-#' @param rotate_labels Logical. If `TRUE`, rotate x-axis labels by 45 degrees
-#' to reduce overlap.
-#' @param remove_outliers Optional numeric upper display limit for observed
-#' points. The fitted curve remains unchanged.
+#' @param rotate_labels Logical. If `TRUE`, rotate x-axis labels by 45 degrees.
+#' @param remove_outliers Optional single numeric upper display limit for
+#'   observed points. The fitted curve remains unchanged.
+#' @param color_splits Colour for segment boundaries. Used only for a
+#'   `tariff_segments` object.
+#' @param show_segments Logical. For a `tariff_segments` object, show the
+#'   candidate segment boundaries when `TRUE`. Default is `TRUE`.
 #' @param ... Additional arguments reserved for method compatibility.
 #'
 #' @return A `ggplot2` object.
@@ -601,16 +727,30 @@ summary.fitgam <- summary.riskfactor_gam
 #'   exposure = "exposure"
 #' )
 #'
+#' # Inspect the continuous effect before deriving tariff segments.
 #' autoplot(fit, confidence = TRUE, show_observations = TRUE)
+#'
+#' segments <- derive_tariff_segments(
+#'   fit,
+#'   segmentation_penalty = 10,
+#'   seed = 1
+#' )
+#'
+#' # Inspect the same effect with the candidate segment boundaries.
+#' autoplot(segments, confidence = TRUE, show_observations = TRUE)
+#' autoplot(segments, show_segments = FALSE)
 #' }
 #'
 #' @author Martin Haringa
 #'
 #' @seealso [risk_factor_gam()], [derive_tariff_segments()],
-#'   [autoplot.tariff_segments()]
+#'   [add_tariff_segments()]
 #'
+#' @name autoplot.tariff_effect
 #' @import ggplot2
-#'
+NULL
+
+#' @rdname autoplot.tariff_effect
 #' @export
 autoplot.riskfactor_gam <- function(object, confidence = FALSE,
                                     color_gam = "steelblue",
@@ -626,67 +766,20 @@ autoplot.riskfactor_gam <- function(object, confidence = FALSE,
     confidence <- conf_int
   }
 
-  prediction <- object$prediction
-  xlab <- object$x
-  ylab <- object$model
-  points <- object$data
-
-  if (isTRUE(confidence) && any(prediction$conf_high > 1e9)) {
-    message("Confidence intervals exceed 1e9 and will not be displayed.")
-  }
-
-
-  if (length(remove_outliers) == 1 && is.numeric(remove_outliers) &&
-      isTRUE(show_observations)) {
-    points <- switch(
-      ylab,
-      "frequency" = points[points$frequency < remove_outliers,],
-      "severity" = points[points$avg_claimsize < remove_outliers,],
-      "pure_premium" = points[points$avg_premium < remove_outliers,],
-      "burning" = points[points$avg_premium < remove_outliers,],
-      points  # default: nothing removed
-    )
-  }
-
-  p <- ggplot(prediction, aes(x = x, y = fitted)) +
-    geom_line(color = color_gam) +
-    theme_minimal() +
-    .plot_grid_theme_ir() +
-    labs(y = paste0("Predicted ", ylab), x = xlab)
-
-  if (isTRUE(confidence) && !any(prediction$conf_high > 1e9)) {
-    p <- p + geom_ribbon(aes(ymin = conf_low, ymax = conf_high), alpha = 0.12)
-  }
-
-  if (is.numeric(x_stepsize)) {
-    p <- p + scale_x_continuous(breaks = seq(floor(min(prediction$x)),
-                                             ceiling(max(prediction$x)),
-                                             by = x_stepsize))
-  }
-
-  if (isTRUE(show_observations)) {
-    yvar <- switch(ylab,
-                   "frequency" = "frequency",
-                   "severity"  = "avg_claimsize",
-                   "pure_premium" = "avg_premium",
-                   "burning" = "avg_premium",
-                   NULL)
-    if (!is.null(yvar)) {
-      p <- p + geom_point(data = points,
-                          aes(x = x, y = .data[[yvar]]),
-                          size = size_points, color = color_points)
-    }
-  }
-
-  if (ylab == "severity") {
-    p <- p + scale_y_continuous(labels = scales::comma)
-  }
-
-  if (isTRUE(rotate_labels)) {
-    p <- p + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-  }
-
-  p
+  .plot_risk_factor_curve(
+    prediction = object$prediction,
+    points = object$data,
+    risk_factor = object$x,
+    model_type = object$model,
+    confidence = confidence,
+    color_gam = color_gam,
+    show_observations = show_observations,
+    x_stepsize = x_stepsize,
+    size_points = size_points,
+    color_points = color_points,
+    rotate_labels = rotate_labels,
+    remove_outliers = remove_outliers
+  )
 }
 
 #' @export

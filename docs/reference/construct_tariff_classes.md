@@ -30,25 +30,25 @@ construct_tariff_classes(
 
 - complexity:
 
-  Non-negative numeric complexity penalty for the evolutionary tree.
-  Larger values generally favour fewer internal boundaries.
+  Deprecated. Use `segmentation_penalty` instead.
 
 - max_iterations:
 
   Positive integer. Maximum number of evolutionary search iterations.
+  This is an advanced algorithm-control parameter.
 
 - population_size:
 
   Positive integer. Number of candidate trees maintained during the
-  evolutionary search.
+  evolutionary search. This is an advanced algorithm-control parameter.
 
 - seed:
 
-  Numeric random seed used by the grouping algorithm.
+  Single finite whole number used to reproduce the evolutionary search.
 
 - alpha:
 
-  Deprecated. Use `complexity` instead.
+  Deprecated. Use `segmentation_penalty` instead.
 
 - niterations:
 

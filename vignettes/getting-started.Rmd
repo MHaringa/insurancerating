@@ -67,8 +67,7 @@ A pricing analysis commonly starts with a descriptive review of the portfolio.
 Before fitting a model, it is useful to assess:
 
 -	how experience differs across factor levels
--	whether differences are supported by sufficient exposure and claim volume
--	whether exposure is sufficient
+-	whether observed differences are supported by sufficient exposure and claim volume
 -	whether the observed pattern is plausible
 
 This is done with `factor_analysis()`.
@@ -163,10 +162,17 @@ This step is used to inspect:
 
 age_segments <- derive_tariff_segments(age_freq)
 autoplot(age_segments)
+summary(age_segments)
 
 ```
 
 This derives candidate segment boundaries from the fitted continuous effect.
+Exposure and claim volume have already informed the GAM estimate. They are
+reported by `summary()` for review, but are not applied again when the
+fitted curve is divided into intervals.
+The evolutionary tree approximates the GAM curve rather than the individual
+claim outcomes. Each distinct risk-factor value on the fitted curve has equal
+influence on this approximation; exposure is not applied as a second weight.
 
 The resulting segments should be reviewed against exposure, observed experience,
 stability and practical tariff requirements before they are used in a model.

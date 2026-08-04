@@ -21,16 +21,34 @@
 #' diagnostic and should be interpreted together with exposure, effect size,
 #' model stability and actuarial relevance.
 #'
+#' In the underlying `rating_table`, estimates and significance indicators are
+#' stored in separate `est_*` and `signif_*` columns. `as_gt()` merges each pair
+#' only for display. The estimates therefore remain numeric in the source
+#' object, including when several models are presented in one table.
+#'
 #' @param significance Optional logical. If `NULL`, use the significance setting
 #'   stored on `x`. If `TRUE`, append the stored significance stars to the model
 #'   effects and add the significance-level note. If `FALSE`, show fitted
 #'   effects without stars.
+#' @param show_effect_spanner Optional logical. If `NULL`, show the
+#'   `"Relativities"` or `"Coefficients"` spanner when multiple models are
+#'   present and omit it for a single model. Use `TRUE` or `FALSE` to override
+#'   this behaviour.
+#' @param model_labels Optional character vector with display labels for the
+#'   fitted models. By default, each model object name is used unchanged. An
+#'   unnamed vector is matched to the model columns in their existing order. A
+#'   named vector can map model object names to labels, for example
+#'   `c(freq = "Frequency", sev = "Severity")`.
 #' @param locale Character. Locale used to format model effects and exposure,
 #'   for example `"nl-NL"` or `"en-US"`.
 #' @param estimate_decimals Non-negative whole number. Number of decimals shown
 #'   for fitted coefficients or relativities.
 #' @param exposure_decimals Non-negative whole number. Number of decimals shown
 #'   for the exposure column, when available.
+#' @param missing_text Single character string used to display missing values.
+#'   The default is an en dash (`"\\u2013"`) so structural missing values, such
+#'   as exposure for the intercept, are visually distinct from observed zero
+#'   values.
 #' @param title Optional character. Table title. If `NULL`, no title is added.
 #' @param subtitle Optional character. Table subtitle. If `NULL`, no subtitle is
 #'   added.
@@ -56,15 +74,19 @@
 #'
 #' if (requireNamespace("gt", quietly = TRUE)) {
 #'   as_gt(fitted_tariff)
+#'   as_gt(fitted_tariff, model_labels = "Frequency model")
 #'   as_gt(fitted_tariff, significance = FALSE, locale = "en-US")
 #' }
 #'
 #' @export
 as_gt.rating_table <- function(x,
                                significance = NULL,
+                               show_effect_spanner = NULL,
+                               model_labels = NULL,
                                locale = "nl-NL",
                                estimate_decimals = 3,
                                exposure_decimals = 0,
+                               missing_text = "\u2013",
                                title = NULL,
                                subtitle = NULL,
                                ...) {
@@ -73,26 +95,35 @@ as_gt.rating_table <- function(x,
   .validate_as_gt_rating_table(
     x = x,
     significance = significance,
+    show_effect_spanner = show_effect_spanner,
+    model_labels = model_labels,
     locale = locale,
     estimate_decimals = estimate_decimals,
     exposure_decimals = exposure_decimals,
+    missing_text = missing_text,
     title = title,
     subtitle = subtitle
   )
 
   show_significance <- if (is.null(significance)) {
-    isTRUE(x$significance) || isTRUE(x$signif_stars)
+    isTRUE(.rating_table_metadata(x, "significance")) ||
+      isTRUE(.rating_table_metadata(x, "signif_stars"))
   } else {
     significance
   }
 
-  table_data <- as.data.frame(x$df)
+  table_data <- .rating_table_data(x)
   estimate_cols <- grep("^est_", names(table_data), value = TRUE)
+  model_names <- sub("^est_", "", estimate_cols)
+  display_model_labels <- .resolve_rating_table_model_labels(
+    model_names,
+    model_labels
+  )
   significance_cols <- paste0(
     "signif_",
     sub("^est_", "", estimate_cols)
   )
-  exposure_col <- x$exposure
+  exposure_col <- .rating_table_metadata(x, "exposure")
 
   display_cols <- c("risk_factor", "level", estimate_cols, exposure_col)
   if (show_significance) {
@@ -114,8 +145,8 @@ as_gt.rating_table <- function(x,
     risk_factor = "Risk factor",
     level = "Level"
   )
-  for (column in estimate_cols) {
-    labels[[column]] <- .rating_table_gt_label(sub("^est_", "", column))
+  for (i in seq_along(estimate_cols)) {
+    labels[[estimate_cols[i]]] <- display_model_labels[i]
   }
   if (!is.null(exposure_col)) {
     labels[[exposure_col]] <- .rating_table_gt_label(exposure_col)
@@ -128,11 +159,22 @@ as_gt.rating_table <- function(x,
   out <- do.call(gt::cols_label, c(list(.data = out), label_args))
   out <- gt::tab_stubhead(out, label = "Risk factor")
 
-  out <- gt::tab_spanner(
-    out,
-    label = if (isTRUE(x$expon)) "Relativities" else "Coefficients",
-    columns = estimate_cols
-  )
+  use_effect_spanner <- if (is.null(show_effect_spanner)) {
+    length(estimate_cols) > 1L
+  } else {
+    show_effect_spanner
+  }
+  if (use_effect_spanner) {
+    out <- gt::tab_spanner(
+      out,
+      label = if (isTRUE(.rating_table_metadata(x, "expon"))) {
+        "Relativities"
+      } else {
+        "Coefficients"
+      },
+      columns = estimate_cols
+    )
+  }
   out <- gt::fmt_number(
     out,
     columns = estimate_cols,
@@ -147,6 +189,11 @@ as_gt.rating_table <- function(x,
       locale = locale
     )
   }
+  out <- gt::sub_missing(
+    out,
+    columns = gt::everything(),
+    missing_text = .rating_table_gt_missing_text(missing_text)
+  )
 
   if (show_significance) {
     for (i in seq_along(estimate_cols)) {
@@ -156,7 +203,7 @@ as_gt.rating_table <- function(x,
         pattern = "{1} {2}"
       )
     }
-    significance_note <- x$signif_levels %||%
+    significance_note <- .rating_table_metadata(x, "signif_levels") %||%
       "Significance levels: *** p < 0.001; ** p < 0.01; * p < 0.05; . p < 0.1"
     out <- gt::tab_source_note(out, source_note = significance_note)
   }
@@ -179,31 +226,39 @@ as_gt.rating_table <- function(x,
   out
 }
 
-.validate_as_gt_rating_table <- function(x, significance, locale,
+.validate_as_gt_rating_table <- function(x, significance,
+                                         show_effect_spanner, model_labels,
+                                         locale,
                                          estimate_decimals,
-                                         exposure_decimals, title, subtitle) {
+                                         exposure_decimals, missing_text,
+                                         title, subtitle) {
   if (!inherits(x, "rating_table")) {
     stop("`x` must be an object returned by `rating_table()`.", call. = FALSE)
   }
   if (!is.null(significance)) {
     validate_single_logical(significance, "significance")
   }
+  if (!is.null(show_effect_spanner)) {
+    validate_single_logical(show_effect_spanner, "show_effect_spanner")
+  }
   validate_single_character(locale, "locale")
   validate_decimal_count(estimate_decimals, "estimate_decimals")
   validate_decimal_count(exposure_decimals, "exposure_decimals")
+  validate_single_character(missing_text, "missing_text")
   if (!is.null(title)) {
     validate_single_character(title, "title")
   }
   if (!is.null(subtitle)) {
     validate_single_character(subtitle, "subtitle")
   }
-  if (!is.data.frame(x$df)) {
+  table_data <- .rating_table_data(x)
+  if (!is.data.frame(table_data)) {
     stop("The `rating_table` object does not contain tabular model output.",
          call. = FALSE)
   }
 
   required <- c("risk_factor", "level")
-  missing_required <- setdiff(required, names(x$df))
+  missing_required <- setdiff(required, names(table_data))
   if (length(missing_required) > 0L) {
     stop(
       "Required rating-table column(s) missing: ",
@@ -212,18 +267,24 @@ as_gt.rating_table <- function(x,
     )
   }
 
-  estimate_cols <- grep("^est_", names(x$df), value = TRUE)
+  estimate_cols <- grep("^est_", names(table_data), value = TRUE)
   if (length(estimate_cols) == 0L) {
     stop("The `rating_table` object contains no fitted model effects.",
          call. = FALSE)
   }
-  if (!is.null(x$exposure) && !x$exposure %in% names(x$df)) {
+  .resolve_rating_table_model_labels(
+    sub("^est_", "", estimate_cols),
+    model_labels
+  )
+  exposure_col <- .rating_table_metadata(x, "exposure")
+  if (!is.null(exposure_col) && !exposure_col %in% names(table_data)) {
     stop("The exposure column stored on `x` is not available in its data.",
          call. = FALSE)
   }
 
   show_significance <- if (is.null(significance)) {
-    isTRUE(x$significance) || isTRUE(x$signif_stars)
+    isTRUE(.rating_table_metadata(x, "significance")) ||
+      isTRUE(.rating_table_metadata(x, "signif_stars"))
   } else {
     significance
   }
@@ -232,7 +293,7 @@ as_gt.rating_table <- function(x,
       "signif_",
       sub("^est_", "", estimate_cols)
     )
-    missing_significance <- setdiff(significance_cols, names(x$df))
+    missing_significance <- setdiff(significance_cols, names(table_data))
     if (length(missing_significance) > 0L) {
       stop(
         "Significance information is not available in `x`. Recreate the ",
@@ -248,4 +309,58 @@ as_gt.rating_table <- function(x,
 
 .rating_table_gt_label <- function(x) {
   tools::toTitleCase(gsub("_+", " ", x))
+}
+
+.resolve_rating_table_model_labels <- function(model_names, model_labels) {
+  if (is.null(model_labels)) {
+    return(model_names)
+  }
+  if (!is.character(model_labels) || anyNA(model_labels) ||
+      any(!nzchar(model_labels))) {
+    stop(
+      "`model_labels` must be a character vector with non-empty labels.",
+      call. = FALSE
+    )
+  }
+
+  supplied_names <- names(model_labels)
+  has_names <- !is.null(supplied_names) && any(nzchar(supplied_names))
+  if (has_names) {
+    if (any(!nzchar(supplied_names)) || anyDuplicated(supplied_names)) {
+      stop(
+        "A named `model_labels` vector must have one unique name for every ",
+        "label.",
+        call. = FALSE
+      )
+    }
+    missing_models <- setdiff(model_names, supplied_names)
+    unknown_models <- setdiff(supplied_names, model_names)
+    if (length(missing_models) > 0L || length(unknown_models) > 0L) {
+      stop(
+        "Names in `model_labels` must match the model object names: ",
+        paste(model_names, collapse = ", "), ".",
+        call. = FALSE
+      )
+    }
+    return(unname(model_labels[model_names]))
+  }
+
+  if (length(model_labels) != length(model_names)) {
+    stop(
+      "`model_labels` must contain exactly ", length(model_names),
+      if (length(model_names) == 1L) " label." else " labels.",
+      call. = FALSE
+    )
+  }
+  unname(model_labels)
+}
+
+.rating_table_gt_missing_text <- function(x) {
+  x <- gsub("&", "&amp;", x, fixed = TRUE)
+  x <- gsub("<", "&lt;", x, fixed = TRUE)
+  x <- gsub(">", "&gt;", x, fixed = TRUE)
+  x <- gsub('"', "&quot;", x, fixed = TRUE)
+  x <- gsub("'", "&#39;", x, fixed = TRUE)
+  x <- gsub("-", "&#45;", x, fixed = TRUE)
+  gt::html(x)
 }

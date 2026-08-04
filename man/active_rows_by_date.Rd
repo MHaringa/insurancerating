@@ -32,19 +32,22 @@ end dates.}
 \item{by}{Character vector with additional columns used to match \code{portfolio}
 and \code{dates}, for example policy number or claim identifier.}
 
-\item{nomatch}{When a row (with interval say, \verb{[a,b]}) in x has no match in
-y, nomatch=NA means NA is returned for y's non-by.y columns for that row of
-x. nomatch=NULL (default) means no rows will be returned for that row of x.}
+\item{nomatch}{Controls event dates for which no active portfolio row is
+found. With \code{NULL}, unmatched events are omitted. With \code{NA}, they are retained
+with missing portfolio information.}
 
-\item{mult}{When multiple rows in y match to the row in x, \code{mult} controls
-which values are returned - "all" (default), "first" or "last".}
+\item{mult}{Controls the result when an event date matches multiple active
+portfolio rows. Use \code{"all"} to retain every match, or \code{"first"} or \code{"last"}
+to retain one matching row. The default is \code{"all"}.}
 }
 \value{
 An object with the same class as \code{portfolio}.
 }
 \description{
 Matches event dates, such as claim dates or portfolio snapshot dates, to the
-rows that were active in the portfolio on those dates.
+policy or risk records that were active on those dates. This allows an event
+to inherit the rating factors and coverage information that applied when it
+occurred.
 }
 \details{
 This is useful when claim records or other dated events need the rating
@@ -52,6 +55,11 @@ factors, premium, exposure, or policy attributes that were active at the event
 date. The function performs an interval join between event dates and
 portfolio coverage periods, optionally within matching identifiers such as a
 policy number.
+
+Multiple matches can be valid, for example when several coverages are active
+on the same date, but may also indicate overlapping portfolio periods. The
+analyst should select \code{mult} in accordance with the structure of the source
+data and the intended event-level analysis.
 }
 \examples{
 library(lubridate)

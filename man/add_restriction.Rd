@@ -77,9 +77,11 @@ levels that are not supplied remain fixed at their fitted relativities.
 
 With \code{allow_new_levels = TRUE}, which is the default, these new tariff levels
 are retained in the refinement metadata and subsequently shown by
-\code{\link[=rating_table]{rating_table()}}. Set \code{allow_new_levels = FALSE} when the restriction table
-should be checked strictly against the levels observed by the fitted model,
-for example to detect spelling errors in level names.
+\code{\link[=rating_table]{rating_table()}}. An informational message identifies every newly added
+level, its supplied relativity and the fact that it was not observed in the
+model data. Set \code{allow_new_levels = FALSE} when the restriction table should
+be checked strictly against the levels observed by the fitted model, for
+example to detect spelling errors in level names.
 
 A variable that is present in the refinement data but was not included in the
 fitted GLM can be added with \code{allow_new_risk_factors = TRUE}. In that case all

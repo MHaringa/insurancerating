@@ -9,7 +9,7 @@
   risk_factors = NULL,
   metric = NULL,
   ncol = 1,
-  legend_position = c("right", "bottom", "top", "left", "none"),
+  legend_position = c("auto", "right", "bottom", "top", "left", "none"),
   show_exposure_labels = TRUE,
   decimal_mark = ",",
   y_label = "Relativity",
@@ -46,8 +46,11 @@ when observed experience has been attached with
 patchwork layout.}
 
 \item{legend_position}{Character string specifying the legend position.
-Supported values are \code{"right"}, \code{"bottom"}, \code{"top"}, \code{"left"} and
-\code{"none"}.}
+The default, \code{"auto"}, hides the legend when only one fitted model is
+shown and no observed-experience line is present. It places the legend on
+the right when multiple fitted models or an observed-experience comparison
+are shown. Use \code{"right"}, \code{"bottom"}, \code{"top"}, \code{"left"} or \code{"none"} to
+override this behaviour.}
 
 \item{show_exposure_labels}{Logical. If \code{TRUE}, print exposure values on the
 background bars.}

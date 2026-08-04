@@ -60,7 +60,7 @@ grouped into one right-tail bin.}
 A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
 }
 \description{
-Visualize the distribution of a numeric portfolio variable while keeping
+Visualise the distribution of a numeric portfolio variable while keeping
 extreme tails readable.
 
 Insurance portfolios often contain skewed variables such as claim amounts,

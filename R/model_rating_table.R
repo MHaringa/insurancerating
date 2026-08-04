@@ -572,8 +572,9 @@
 #' @param exponentiate Logical. If `TRUE`, coefficients are
 #'   exponentiated and shown as relativities. If `FALSE`, coefficients are shown
 #'   on the model scale.
-#' @param significance Logical. If `TRUE`, append significance indicators based
-#'   on model coefficient p-values.
+#' @param significance Logical. If `TRUE`, add a separate `signif_*` column for
+#'   each model containing significance indicators based on coefficient
+#'   p-values. The corresponding `est_*` columns remain numeric.
 #' @param round_exposure Non-negative number of digits used to round exposure.
 #' @param exposure_name Deprecated. Use `exposure_output` instead.
 #' @param signif_stars Deprecated. Use `significance` instead.
@@ -608,11 +609,28 @@
 #' formulations. Comparable response definitions and coefficient scales remain
 #' the responsibility of the analyst.
 #'
+#' ## Significance indicators
+#'
+#' When `significance = TRUE`, every model receives its own `signif_*` column.
+#' For example, models named `frequency` and `severity` produce
+#' `est_frequency`, `signif_frequency`, `est_severity` and
+#' `signif_severity`. Keeping estimates and indicators separate preserves the
+#' numeric type of the fitted effects for subsequent calculations, filtering
+#' and export.
+#'
+#' [as_gt()] combines each estimate with its corresponding significance
+#' indicator for presentation and adds the significance thresholds as a source
+#' note below the table. Reference levels generally have no separate
+#' coefficient test and therefore have no significance indicator.
+#'
 #' `rating_table()` accepts fitted models only. A `rating_refinement`
 #' specification must first be fitted with [refit()].
 #'
-#' @return A data frame-like object with classes `"rating_table"` and legacy
-#' `"riskfactor"`. It contains:
+#' @return A data frame with classes `"rating_table"`, legacy `"riskfactor"`
+#' and `"data.frame"`. It can be inspected and manipulated directly with
+#' ordinary data-frame operations. For backward compatibility, `x$df` returns
+#' the same table without the package-specific class and metadata. The table
+#' contains:
 #' \describe{
 #'   \item{risk_factor}{Model term or risk-factor name.}
 #'   \item{level}{Factor level or term representation.}
@@ -651,6 +669,10 @@
 #' )
 #'
 #' fitted_effects
+#' head(fitted_effects)
+#'
+#' # The historical accessor remains available for existing code
+#' identical(fitted_effects$df, as.data.frame(fitted_effects))
 #' if (requireNamespace("gt", quietly = TRUE)) {
 #'   as_gt(fitted_effects)
 #' }
@@ -880,21 +902,85 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     rf_fj_stars <- rf_fj_stars[, !(names(rf_fj_stars) %in% drop_cols), drop = FALSE]
   }
 
-  structure(
-    list(
-      df = rf_fj,
-      df_stars = rf_fj_stars,
-      models = cols,
-      exposure = exposure_out_nm,
-      model_data = model_data_name_out,
-      expon = exponentiate,
-      significance = significance,
-      signif_stars = significance,
-      signif_levels = signif_levels,
-      observed_experience = NULL
-    ),
-    class = c("rating_table", "riskfactor")
+  .new_rating_table(
+    data = rf_fj,
+    df_stars = rf_fj_stars,
+    models = cols,
+    exposure = exposure_out_nm,
+    model_data = model_data_name_out,
+    exponentiate = exponentiate,
+    significance = significance,
+    signif_levels = signif_levels
   )
+}
+
+.rating_table_metadata_names <- c(
+  "df_stars", "models", "exposure", "model_data", "expon",
+  "significance", "signif_stars", "signif_levels", "observed_experience"
+)
+
+.new_rating_table <- function(data, df_stars, models, exposure, model_data,
+                              exponentiate, significance, signif_levels) {
+  out <- as.data.frame(data)
+  attr(out, "df_stars") <- df_stars
+  attr(out, "models") <- models
+  attr(out, "exposure") <- exposure
+  attr(out, "model_data") <- model_data
+  attr(out, "expon") <- exponentiate
+  attr(out, "significance") <- significance
+  attr(out, "signif_stars") <- significance
+  attr(out, "signif_levels") <- signif_levels
+  attr(out, "observed_experience") <- NULL
+  class(out) <- c("rating_table", "riskfactor", "data.frame")
+  out
+}
+
+.rating_table_data <- function(x) {
+  if (!is.data.frame(x)) {
+    return(x[["df"]])
+  }
+
+  out <- x
+  for (name in .rating_table_metadata_names) {
+    attr(out, name) <- NULL
+  }
+  class(out) <- "data.frame"
+  out
+}
+
+.rating_table_metadata <- function(x, name) {
+  if (is.data.frame(x)) {
+    return(attr(x, name, exact = TRUE))
+  }
+  x[[name]]
+}
+
+#' Backward-compatible access to rating-table contents
+#'
+#' @description
+#' A `rating_table` is a data frame. This method keeps the historical `x$df`
+#' accessor available while allowing ordinary `$` access to table columns.
+#' Package metadata is returned only when the requested name is not a column.
+#'
+#' @param x A `rating_table` object.
+#' @param name Column or legacy component name.
+#'
+#' @return A table column, the underlying data frame for `name = "df"`, or a
+#' stored metadata component.
+#'
+#' @keywords internal
+#' @export
+`$.rating_table` <- function(x, name) {
+  if (identical(name, "df")) {
+    return(.rating_table_data(x))
+  }
+  if (name %in% names(x)) {
+    return(.subset2(x, name))
+  }
+  if (name %in% .rating_table_metadata_names) {
+    return(.rating_table_metadata(x, name))
+  }
+  NULL
 }
 
 
@@ -1064,14 +1150,14 @@ add_portfolio_experience.rating_table <- function(x,
     allow_null = TRUE
   )
 
-  x$observed_experience <- list(
+  observed_experience <- list(
     data = observed_data,
     metric = default_metric,
     label = label,
     color = color,
     scale = scale
   )
-  attr(x, "observed_experience") <- x$observed_experience
+  attr(x, "observed_experience") <- observed_experience
 
   x
 }
@@ -1110,7 +1196,7 @@ calculate_rating_table_observed_experience <- function(x,
          call. = FALSE)
   }
 
-  table_risk_factors <- unique(as.character(x$df$risk_factor))
+  table_risk_factors <- unique(as.character(.rating_table_data(x)$risk_factor))
   if (is.null(risk_factors)) {
     risk_factors <- intersect(table_risk_factors, names(data))
   } else if (!is.character(risk_factors) || length(risk_factors) == 0L ||
@@ -1262,15 +1348,7 @@ resolve_rating_table_observed_metric <- function(metric,
 
 #' @export
 print.rating_table <- function(x, ...) {
-  significance <- isTRUE(x$significance) || isTRUE(x$signif_stars)
-  if (significance && !is.null(x$df_stars)) {
-    if (!is.null(x$signif_levels)) {
-      cat("\033[34m", x$signif_levels, "\033[39m\n", sep = "")
-    }
-    print(x$df_stars, ...)
-  } else {
-    print(x$df, ...)
-  }
+  print(.rating_table_data(x), ...)
   invisible(x)
 }
 
@@ -1279,13 +1357,7 @@ print.riskfactor <- print.rating_table
 
 #' @export
 as.data.frame.rating_table <- function(x, ...) {
-  significance <- isTRUE(x$significance) || isTRUE(x$signif_stars)
-  if (significance && !is.null(x$df_stars)) {
-    df <- x$df_stars
-  } else {
-    df <- x$df
-  }
-  as.data.frame(df)
+  .rating_table_data(x)
 }
 
 #' @export
@@ -1294,13 +1366,15 @@ as.data.frame.riskfactor <- as.data.frame.rating_table
 #' @export
 summary.rating_table <- function(object, ...) {
   out <- list(
-    models = object$models,
-    exposure = object$exposure,
-    model_data = object$model_data,
-    exponentiate = object$expon,
-    significance = isTRUE(object$significance) || isTRUE(object$signif_stars),
-    signif_stars = isTRUE(object$significance) || isTRUE(object$signif_stars),
-    n_rows = if (!is.null(object$df)) nrow(object$df) else 0L
+    models = .rating_table_metadata(object, "models"),
+    exposure = .rating_table_metadata(object, "exposure"),
+    model_data = .rating_table_metadata(object, "model_data"),
+    exponentiate = .rating_table_metadata(object, "expon"),
+    significance = isTRUE(.rating_table_metadata(object, "significance")) ||
+      isTRUE(.rating_table_metadata(object, "signif_stars")),
+    signif_stars = isTRUE(.rating_table_metadata(object, "significance")) ||
+      isTRUE(.rating_table_metadata(object, "signif_stars")),
+    n_rows = nrow(.rating_table_data(object))
   )
   class(out) <- c("summary.rating_table", "summary.riskfactor")
   out

@@ -1,15 +1,9 @@
 # Split policy periods into monthly rows
 
-Splits policy or exposure periods that cross calendar months into
-monthly rows. Numeric columns such as exposure or premium can be
-prorated over the resulting monthly rows.
-
-This function uses **standard evaluation (SE)**: column names must be
-passed as **character strings** (e.g. `period_start = "begin_date"`).
-The older function
-[`period_to_months()`](https://mharinga.github.io/insurancerating/reference/period_to_months.md)
-used non-standard evaluation (NSE) and is deprecated as of version
-0.8.0.
+Split policy or exposure periods that cross calendar-month boundaries
+into monthly rows. Numeric portfolio measures, such as exposure and
+premium, can be prorated over the resulting periods while preserving
+their total per original record.
 
 ## Usage
 
@@ -65,6 +59,12 @@ period that falls in each monthly row. Full months receive weight 1;
 partial months use a 30-day month convention. The total value of each
 prorated column is preserved per original row.
 
+Column names are supplied as character strings, for example
+`period_start = "begin_date"`. The deprecated
+[`period_to_months()`](https://mharinga.github.io/insurancerating/reference/period_to_months.md)
+interface used unquoted column names and is retained only for backward
+compatibility.
+
 ## Author
 
 Martin Haringa
@@ -80,7 +80,7 @@ portfolio <- data.frame(
   premium    = c(125, 150)
 )
 
-# New SE interface
+# Split policy records and prorate premium and exposure by month
 split_periods_to_months(portfolio,
   period_start = "begin_date",
   period_end = "end_date",
@@ -96,7 +96,7 @@ split_periods_to_months(portfolio,
 #> 7  2 2014-04-01 2014-04-30 0.08397656 35.15625
 #> 8  2 2014-05-01 2014-05-10 0.02799219 11.71875
 
-# Old NSE interface (deprecated)
+# Deprecated interface with unquoted column names
 if (FALSE) { # \dontrun{
 period_to_months(portfolio, begin_date, end_date, premium, exposure)
 } # }

@@ -45,7 +45,9 @@
 #' Reduce portfolio periods by merging adjacent date ranges
 #'
 #' @description
-#' Merges overlapping or nearly adjacent policy periods within portfolio groups.
+#' Combine overlapping or nearly adjacent coverage periods for the same policy,
+#' risk or portfolio segment. The result provides a consolidated time basis for
+#' exposure calculations, active-policy counts and period-based reporting.
 #'
 #' @param df A `data.frame` or `data.table`.
 #' @param period_start Character string. Name of the column with period start
@@ -55,10 +57,11 @@
 #' entity or rating segment within which date ranges should be merged.
 #' @param aggregate_cols Character vector with numeric columns to aggregate over
 #' merged ranges, for example premium or exposure.
-#' @param aggregate_fun Aggregation function or function name. Defaults to
-#' `"sum"`.
+#' @param aggregate_fun Function or function name used to combine
+#' `aggregate_cols` within a merged interval. The default, `"sum"`, is generally
+#' appropriate for additive measures such as premium or exposure.
 #' @param merge_gap_days Non-negative whole number. Ranges with a gap smaller
-#' than this number of days are merged. Defaults to 5.
+#' than this number of days are treated as continuous and merged. Defaults to 5.
 #' @param begin,end,...,agg_cols,agg,min.gapwidth Deprecated NSE argument names
 #' kept for backward compatibility.
 #'
@@ -78,7 +81,9 @@
 #' `merge_date_ranges()` merges date ranges within each `group_by` combination.
 #' Ranges with a gap smaller than `merge_gap_days` are treated as one continuous
 #' interval. If `aggregate_cols` is supplied, those columns are aggregated over
-#' the merged interval.
+#' the merged interval. The grouping columns should identify records for which
+#' combining coverage periods is actuarially and operationally meaningful;
+#' periods belonging to different risks or contracts should not be pooled.
 #'
 #' @return A `data.table` of class `"reduce"`, with attributes:
 #' \itemize{

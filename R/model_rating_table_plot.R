@@ -42,8 +42,11 @@
 #' @param ncol Positive integer specifying the number of columns in the
 #'   patchwork layout.
 #' @param legend_position Character string specifying the legend position.
-#'   Supported values are `"right"`, `"bottom"`, `"top"`, `"left"` and
-#'   `"none"`.
+#'   The default, `"auto"`, hides the legend when only one fitted model is
+#'   shown and no observed-experience line is present. It places the legend on
+#'   the right when multiple fitted models or an observed-experience comparison
+#'   are shown. Use `"right"`, `"bottom"`, `"top"`, `"left"` or `"none"` to
+#'   override this behaviour.
 #' @param show_exposure_labels Logical. If `TRUE`, print exposure values on the
 #'   background bars.
 #' @param decimal_mark Character string, either `","` or `"."`, controlling
@@ -110,7 +113,8 @@ autoplot.rating_table <- function(object,
                                   metric = NULL,
                                   ncol = 1,
                                   legend_position = c(
-                                    "right", "bottom", "top", "left", "none"
+                                    "auto", "right", "bottom", "top", "left",
+                                    "none"
                                   ),
                                   show_exposure_labels = TRUE,
                                   decimal_mark = ",",
@@ -168,11 +172,11 @@ autoplot.rating_table <- function(object,
     label_abbreviations = label_abbreviations
   )
 
-  df_full <- object$df
-  models <- object$models
+  df_full <- .rating_table_data(object)
+  models <- .rating_table_metadata(object, "models")
   models_nm <- paste0("est_", models)
-  exposure_nm <- object$exposure
-  expon <- object$expon
+  exposure_nm <- .rating_table_metadata(object, "exposure")
+  expon <- .rating_table_metadata(object, "expon")
 
   plot_palette <- function() {
     list(
@@ -255,12 +259,17 @@ autoplot.rating_table <- function(object,
   grid_theme <- plot_grid_theme()
 
   final_fill <- if (is.null(bar_fill)) pal$bg_bar else bar_fill
-  observed <- object$observed_experience
+  observed <- .rating_table_metadata(object, "observed_experience")
   observed_label <- if (!is.null(observed)) observed$label else NULL
   observed_color <- if (!is.null(observed) && !is.null(observed$color)) {
     observed$color
   } else {
     pal$risk_premium
+  }
+
+  if (identical(legend_position, "auto")) {
+    n_displayed_series <- length(models) + as.integer(!is.null(observed_label))
+    legend_position <- if (n_displayed_series > 1L) "right" else "none"
   }
 
   # remove reference categories from plotted model lines
@@ -528,10 +537,6 @@ autoplot.rating_table <- function(object,
         legend.title = ggplot2::element_blank()
       )
 
-    if (length(unique(df1$model)) == 1) {
-      p <- p + ggplot2::theme(legend.position = "none")
-    }
-
     if (!is.null(rotate_angle)) {
       p <- p +
         ggplot2::theme(
@@ -557,7 +562,12 @@ autoplot.rating_table <- function(object,
     )
   }
 
-  patchwork::wrap_plots(fig_list, ncol = ncol, guides = "collect")
+  plot_out <- patchwork::wrap_plots(
+    fig_list,
+    ncol = ncol,
+    guides = "collect"
+  )
+  plot_out & ggplot2::theme(legend.position = legend_position)
 }
 
 #' @export

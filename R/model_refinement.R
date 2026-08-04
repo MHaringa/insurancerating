@@ -252,12 +252,40 @@
   is.character(x) && length(x) == 1 && !is.na(x) && nzchar(x)
 }
 
+.closest_refinement_value <- function(value, choices) {
+  choices <- unique(as.character(choices))
+  choices <- choices[!is.na(choices) & nzchar(choices)]
+  if (length(choices) == 0L) {
+    return(NULL)
+  }
+
+  value_cmp <- tolower(trimws(as.character(value)))
+  choices_cmp <- tolower(trimws(choices))
+  distances <- as.numeric(utils::adist(value_cmp, choices_cmp))
+  best <- which.min(distances)
+  scale <- max(nchar(value_cmp), nchar(choices_cmp[best]), 1L)
+
+  if (distances[best] <= 2L || distances[best] / scale <= 0.20) {
+    choices[best]
+  } else {
+    NULL
+  }
+}
+
 .assert_column_name <- function(x, arg, data) {
   if (!.is_single_string(x)) {
     stop("'", arg, "' must be a single non-empty character string.", call. = FALSE)
   }
   if (!x %in% names(data)) {
-    stop("'", arg, "' column is not present in refinement data.", call. = FALSE)
+    suggestion <- .closest_refinement_value(x, names(data))
+    message <- paste0(
+      "Column `", x, "`, supplied through `", arg,
+      "`, was not found in the refinement data."
+    )
+    if (!is.null(suggestion)) {
+      message <- paste0(message, " Did you mean `", suggestion, "`?")
+    }
+    stop(message, call. = FALSE)
   }
   invisible(TRUE)
 }
@@ -267,6 +295,65 @@
     return(invisible(TRUE))
   }
   .assert_column_name(x, arg, data)
+}
+
+.assert_smoothing_model_variable <- function(model, model_variable) {
+  if (!.is_single_string(model_variable)) {
+    stop(
+      "'model_variable' must be a single non-empty character string.",
+      call. = FALSE
+    )
+  }
+
+  model_terms <- unique(as.character(model$base$rating_factors$risk_factor))
+  model_terms <- setdiff(model_terms, "(Intercept)")
+  if (!model_variable %in% model_terms) {
+    suggestion <- .closest_refinement_value(model_variable, model_terms)
+    message <- paste0(
+      "Variable `", model_variable, "`, supplied through `model_variable`, ",
+      "is not a model term in the GLM used by `prepare_refinement()`."
+    )
+    if (!is.null(suggestion)) {
+      message <- paste0(message, " Did you mean `", suggestion, "`?")
+    }
+    stop(message, call. = FALSE)
+  }
+
+  if (!model_variable %in% names(model$base$data)) {
+    stop(
+      "Model term `", model_variable, "` is not available as a column in ",
+      "the refinement data.",
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
+.assert_restriction_relativities <- function(restrictions, value_col) {
+  values <- restrictions[[value_col]]
+  if (!is.numeric(values)) {
+    value_type <- class(values)[1]
+    stop(
+      "The relativity column `", value_col, "` must be numeric, but it is ",
+      value_type, ". Supply relativities as numeric values, for example `1` ",
+      "instead of `\"1\"`.",
+      call. = FALSE
+    )
+  }
+
+  invalid <- sum(!is.finite(values))
+  if (invalid > 0L) {
+    value_label <- if (invalid == 1L) "value" else "values"
+    stop(
+      "The relativity column `", value_col, "` must contain finite numeric ",
+      "relativities, but it contains ", invalid, " missing or non-finite ",
+      value_label, ".",
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
 }
 
 .assert_single_logical <- function(x, arg) {
@@ -293,10 +380,48 @@
   invisible(TRUE)
 }
 
-.allowed_smoothing_methods <- c(
-  "spline", "poly", "mpi", "mpd", "gam", "cx", "cv", "micx", "micv",
-  "mdcx", "mdcv"
+.smoothing_method_codes <- c(
+  spline = "spline",
+  poly = "poly",
+  gam = "gam",
+  increasing = "mpi",
+  decreasing = "mpd",
+  convex = "cx",
+  concave = "cv",
+  increasing_convex = "micx",
+  increasing_concave = "micv",
+  decreasing_convex = "mdcx",
+  decreasing_concave = "mdcv"
 )
+
+.smoothing_method_aliases <- c(
+  mpi = "increasing",
+  mpd = "decreasing",
+  cx = "convex",
+  cv = "concave",
+  micx = "increasing_convex",
+  micv = "increasing_concave",
+  mdcx = "decreasing_convex",
+  mdcv = "decreasing_concave"
+)
+
+.allowed_smoothing_methods <- c(
+  names(.smoothing_method_codes),
+  names(.smoothing_method_aliases)
+)
+
+.resolve_smoothing_method <- function(smoothing) {
+  canonical <- if (smoothing %in% names(.smoothing_method_aliases)) {
+    unname(.smoothing_method_aliases[[smoothing]])
+  } else {
+    smoothing
+  }
+
+  list(
+    method = canonical,
+    code = unname(.smoothing_method_codes[[canonical]])
+  )
+}
 
 .assert_smoothing_interval_levels <- function(model, model_variable) {
   borders <- suppressMessages(cut_borders_model(model, model_variable))
@@ -309,6 +434,92 @@
     stop(
       "'model_variable' must be a grouped numeric variable with interval-style ",
       "levels, such as levels created by cut().",
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
+.validate_smoothing_source_and_breaks <- function(data, source_variable, breaks,
+                                                  model, model_variable) {
+  source <- data[[source_variable]]
+
+  if (!is.numeric(source)) {
+    stop(
+      "The `source_variable` column `", source_variable,
+      "` must be numeric to apply smoothing.",
+      call. = FALSE
+    )
+  }
+
+  missing_count <- sum(is.na(source))
+  non_finite_count <- sum(!is.finite(source) & !is.na(source))
+  if (missing_count > 0L || non_finite_count > 0L) {
+    details <- character()
+    if (missing_count > 0L) {
+      details <- c(
+        details,
+        paste0(
+          missing_count, " missing ",
+          if (missing_count == 1L) "value" else "values"
+        )
+      )
+    }
+    if (non_finite_count > 0L) {
+      details <- c(
+        details,
+        paste0(
+          non_finite_count, " non-finite ",
+          if (non_finite_count == 1L) "value" else "values",
+          " (`Inf` or `-Inf`)"
+        )
+      )
+    }
+
+    stop(
+      "The `source_variable` column `", source_variable, "` contains ",
+      paste(details, collapse = " and "), ". Smoothing requires finite ",
+      "numeric values; remove or impute these values first.",
+      call. = FALSE
+    )
+  }
+
+  source_range <- range(source)
+  break_range <- range(breaks)
+  below <- sum(source < break_range[1])
+  above <- sum(source > break_range[2])
+  if (below > 0L || above > 0L) {
+    outside <- c(
+      if (below > 0L) paste0(below, " below the first break"),
+      if (above > 0L) paste0(above, " above the last break")
+    )
+    stop(
+      "`breaks` do not cover all values in the `source_variable` column `",
+      source_variable, "`. The observed range is ",
+      format(source_range[1], trim = TRUE), " to ",
+      format(source_range[2], trim = TRUE), ", while `breaks` cover ",
+      format(break_range[1], trim = TRUE), " to ",
+      format(break_range[2], trim = TRUE), ". There are ",
+      paste(outside, collapse = " and "),
+      ". Extend `breaks` so every portfolio observation is assigned to a ",
+      "tariff segment.",
+      call. = FALSE
+    )
+  }
+
+  borders <- suppressMessages(cut_borders_model(model, model_variable))
+  model_range <- c(min(borders$start_), max(borders$end_))
+  if (break_range[1] < model_range[1] || break_range[2] > model_range[2]) {
+    warning(
+      "`breaks` extend beyond the interval range represented by ",
+      "`model_variable` `", model_variable, "` in the original GLM. The ",
+      "model range is ", format(model_range[1], trim = TRUE), " to ",
+      format(model_range[2], trim = TRUE), ", while `breaks` cover ",
+      format(break_range[1], trim = TRUE), " to ",
+      format(break_range[2], trim = TRUE), ". Smoothed relativities outside ",
+      "the original model range are extrapolated and are not supported by ",
+      "fitted GLM levels.",
       call. = FALSE
     )
   }
@@ -486,24 +697,26 @@
   )
 }
 
+.stop_missing_relativities_source <- function(model, model_variable) {
+  restriction_map <- .restriction_variable_map(model$steps)
+  choices <- unique(c(
+    names(model$base$data),
+    restriction_map$restricted_variable
+  ))
+  suggestion <- .closest_refinement_value(model_variable, choices)
+  message <- paste0(
+    "Column `", model_variable, "`, supplied through `model_variable`, was ",
+    "not found in the refinement data and does not identify a restricted ",
+    "variable created by an earlier `add_restriction()` step."
+  )
+  if (!is.null(suggestion)) {
+    message <- paste0(message, " Did you mean `", suggestion, "`?")
+  }
+  stop(message, call. = FALSE)
+}
+
 .closest_refinement_level <- function(level, choices) {
-  choices <- unique(as.character(choices))
-  choices <- choices[!is.na(choices) & nzchar(choices)]
-  if (length(choices) == 0L) {
-    return(NULL)
-  }
-
-  level_cmp <- tolower(trimws(as.character(level)))
-  choices_cmp <- tolower(trimws(choices))
-  distances <- as.numeric(utils::adist(level_cmp, choices_cmp))
-  best <- which.min(distances)
-  scale <- max(nchar(level_cmp), nchar(choices_cmp[best]), 1L)
-
-  if (distances[best] <= 2L || distances[best] / scale <= 0.20) {
-    choices[best]
-  } else {
-    NULL
-  }
+  .closest_refinement_value(level, choices)
 }
 
 .stop_missing_split_levels <- function(levels, split_variable, choices) {
@@ -952,22 +1165,44 @@ as_refinement.restricted <- function(x, ...) {
 #' updated_model <- refit(refinement)
 #' @export
 prepare_refinement <- function(model, data = NULL) {
+  supported <- inherits(
+    model,
+    c("glm", "rating_refinement", "smooth", "restricted")
+  )
+  if (!supported) {
+    if (!is.data.frame(model)) {
+      stop(
+        "`model` must be a fitted `glm` object. You supplied an object of ",
+        "class `", paste(class(model), collapse = "/"), "`.",
+        call. = FALSE
+      )
+    }
+    stop(
+      "`model` must be a fitted `glm` object, not a data frame. Fit the ",
+      "model first and then call `prepare_refinement(model)`.",
+      call. = FALSE
+    )
+  }
+
   as_refinement(model, data = data)
 }
 
 #' @keywords internal
 #' @export
 print.rating_refinement <- function(x, ...) {
+  family_name <- tools::toTitleCase(x$base$model$family$family)
+  link_name <- x$base$model$family$link
+
   cat("<rating_refinement>\n")
-  cat("Base model: ", paste(class(x$base$model), collapse = ", "), "\n", sep = "")
+  cat(
+    "Base model: ", family_name, " GLM (", link_name, " link)\n",
+    sep = ""
+  )
   cat("Steps: ", length(x$steps), "\n", sep = "")
 
   if (length(x$steps) > 0) {
     for (i in seq_along(x$steps)) {
-      s <- x$steps[[i]]
-      line <- paste0(i, ". ", s$type)
-      if (!is.null(s$variable)) line <- paste0(line, " [", s$variable, "]")
-      cat(line, "\n", sep = "")
+      cat(.format_refinement_step(x$steps[[i]], i), "\n", sep = "")
     }
   }
   invisible(x)
@@ -1054,9 +1289,11 @@ print.summary.rating_refinement <- function(x, ...) {
 #'
 #' With `allow_new_levels = TRUE`, which is the default, these new tariff levels
 #' are retained in the refinement metadata and subsequently shown by
-#' [rating_table()]. Set `allow_new_levels = FALSE` when the restriction table
-#' should be checked strictly against the levels observed by the fitted model,
-#' for example to detect spelling errors in level names.
+#' [rating_table()]. An informational message identifies every newly added
+#' level, its supplied relativity and the fact that it was not observed in the
+#' model data. Set `allow_new_levels = FALSE` when the restriction table should
+#' be checked strictly against the levels observed by the fitted model, for
+#' example to detect spelling errors in level names.
 #'
 #' A variable that is present in the refinement data but was not included in the
 #' fitted GLM can be added with `allow_new_risk_factors = TRUE`. In that case all
@@ -1222,13 +1459,7 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
     stop("The first column of `restrictions` must not contain missing levels.",
          call. = FALSE)
   }
-  if (!is.numeric(restrictions[[value_col]]) ||
-      any(!is.finite(restrictions[[value_col]]))) {
-    stop(
-      "The second column of `restrictions` must contain finite numeric relativities.",
-      call. = FALSE
-    )
-  }
+  .assert_restriction_relativities(restrictions, value_col)
 
   requested_levels <- as.character(restrictions[[variable]])
   updated_restrictions <- list()
@@ -1357,6 +1588,31 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
     }
   }
 
+  previous_new_levels <- existing_step$new_levels %||% character()
+  added_new_levels <- setdiff(completed$new_levels, previous_new_levels)
+  if (length(added_new_levels) > 0L) {
+    level_values <- completed$restrictions[[value_col]][
+      match(added_new_levels, completed$restrictions[[variable]])
+    ]
+    if (length(added_new_levels) == 1L) {
+      message(
+        "Added new level `", added_new_levels, "` to risk factor `", variable,
+        "` with relativity ", format(level_values, trim = TRUE),
+        ". This level was not observed in the model data."
+      )
+    } else {
+      level_details <- paste0(
+        "`", added_new_levels, "` (relativity ",
+        format(level_values, trim = TRUE), ")"
+      )
+      message(
+        "Added new levels to risk factor `", variable, "`: ",
+        paste(level_details, collapse = ", "),
+        ". These levels were not observed in the model data."
+      )
+    }
+  }
+
   restriction_step <- list(
     id = if (is.null(existing_step)) {
       .next_step_id(model)
@@ -1417,11 +1673,7 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
          call. = FALSE)
   }
 
-  if (!is.numeric(restrictions[[value_col]]) ||
-      any(!is.finite(restrictions[[value_col]]))) {
-    stop("The second column of `restrictions` must contain finite numeric relativities.",
-         call. = FALSE)
-  }
+  .assert_restriction_relativities(restrictions, value_col)
 
   if (is.null(current_coefficients)) {
     rf <- model$base$rating_factors
@@ -1647,26 +1899,46 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'   relativities. `degree` determines its order. A low degree gives a compact
 #'   parametric trend; higher degrees can follow more local variation but may
 #'   oscillate, particularly near the boundaries.}
-#'   \item{`"mpi"` and `"mpd"`}{Fit monotone increasing and monotone decreasing
-#'   smooths. These are often useful when actuarial reasoning implies that the
-#'   tariff effect should move in only one direction.}
-#'   \item{`"cx"` and `"cv"`}{Fit convex and concave smooths, respectively.}
-#'   \item{`"micx"` and `"micv"`}{Fit monotone increasing curves that are,
-#'   respectively, convex and concave.}
-#'   \item{`"mdcx"` and `"mdcv"`}{Fit monotone decreasing curves that are,
-#'   respectively, convex and concave.}
+#'   \item{`"increasing"` and `"decreasing"`}{Fit monotone smooths. These
+#'   methods constrain the tariff effect to move in one direction, without
+#'   imposing how quickly its slope changes. They are often the most directly
+#'   interpretable constrained specifications when actuarial reasoning supports
+#'   a consistently increasing or decreasing risk effect.}
+#'   \item{`"convex"` and `"concave"`}{Constrain curvature but not direction.
+#'   For a convex curve, the slope increases as the source variable increases;
+#'   for a concave curve, the slope decreases. A convex curve may therefore be
+#'   U-shaped and a concave curve may be inverted U-shaped. These are advanced
+#'   choices when curvature itself has a defensible interpretation.}
+#'   \item{`"increasing_convex"` and `"increasing_concave"`}{Fit increasing
+#'   curves with an additional curvature constraint. An increasing convex
+#'   effect rises at an increasing rate, for example when upper-tail risk causes
+#'   marginal cost to accelerate. An increasing concave effect rises at a
+#'   decreasing rate and gradually flattens, for example when risk cost rises
+#'   with insured value but less than proportionally.}
+#'   \item{`"decreasing_convex"` and `"decreasing_concave"`}{Fit decreasing
+#'   curves with an additional curvature constraint. A decreasing convex effect
+#'   becomes less steep and tends to flatten. A decreasing concave effect
+#'   becomes progressively steeper.}
 #'   \item{`"gam"`}{Fits an unconstrained thin-plate regression spline with
 #'   [mgcv::gam()]. It is mainly intended as a flexible reference when comparing
 #'   the general spline and shape-constrained specifications. It does not impose
 #'   the actuarial shape assumptions represented by the constrained methods.}
 #' }
 #'
-#' The shape-constrained methods are fitted with [scam::scam()]. A constraint
+#' The shape-constrained methods are fitted with [scam::scam()]. Monotonicity
+#' concerns the direction of the effect, whereas convexity and concavity concern
+#' how its slope changes. In most tariff applications, a directional assumption
+#' is easier to substantiate than a curvature assumption. A constraint
 #' should reflect an actuarial or pricing assumption that is defensible for the
 #' risk factor; it should not be selected solely because it produces a smoother
 #' visual result. The combined monotonicity and curvature methods are advanced
 #' specifications and are most appropriate when both assumptions can be
 #' supported independently.
+#'
+#' The former short codes `"mpi"`, `"mpd"`, `"cx"`, `"cv"`, `"micx"`,
+#' `"micv"`, `"mdcx"` and `"mdcv"` remain accepted as compatibility aliases.
+#' New code should use the readable method names above. Both forms produce the
+#' same smoothing specification.
 #'
 #' ## Basis dimension and polynomial degree
 #'
@@ -1709,26 +1981,35 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'   missing values before adding the smoothing step.
 #' @param source_variable Character string. Original numeric portfolio variable
 #'   underlying `model_variable`. Its name is also used for the resulting
-#'   smoothed tariff variable.
-#' @param degree Optional single whole number. Polynomial degree, used by
-#'   `smoothing = "poly"`. The degree must be feasible for the number of unique
-#'   grouped model points.
+#'   smoothed tariff variable. The column must contain only finite, non-missing
+#'   numeric values.
 #' @param breaks Numeric vector with the tariff segment boundaries to use after
 #'   smoothing. These boundaries determine the final tariff segmentation, not
 #'   the number of portfolio observations used to estimate the curve. Values
-#'   must be finite and strictly increasing.
+#'   must be finite, strictly increasing and cover every observed value of
+#'   `source_variable`. Boundaries outside the interval range represented by
+#'   `model_variable` are allowed, but produce a warning because the resulting
+#'   relativities rely on extrapolation beyond the fitted GLM levels. This
+#'   argument is required.
 #' @param smoothing Character string selecting the smoothing method. Available
-#'   values are `"spline"` (default), `"poly"`, `"mpi"`, `"mpd"`, `"gam"`,
-#'   `"cx"`, `"cv"`, `"micx"`, `"micv"`, `"mdcx"` and `"mdcv"`. See
-#'   Details for the statistical interpretation and shape restrictions.
+#'   values are `"spline"` (default), `"poly"`, `"gam"`, `"increasing"`,
+#'   `"decreasing"`, `"convex"`, `"concave"`, `"increasing_convex"`,
+#'   `"increasing_concave"`, `"decreasing_convex"` and
+#'   `"decreasing_concave"`. The former short SCOP codes remain accepted as
+#'   compatibility aliases. See Details for the statistical interpretation and
+#'   shape restrictions.
 #' @param k Optional single positive whole number. Basis dimension for smoothing
-#'   methods `"spline"`, `"gam"`, `"mpi"`, `"mpd"`, `"cx"`, `"cv"`,
-#'   `"micx"`, `"micv"`, `"mdcx"` and `"mdcv"`. It sets the maximum
+#'   methods `"spline"`, `"gam"`, `"increasing"`, `"decreasing"`,
+#'   `"convex"`, `"concave"` and the combined direction-curvature methods. It
+#'   sets the maximum
 #'   flexibility available to the smooth and is not necessarily equal to its
 #'   estimated effective degrees of freedom. `NULL` uses the smaller of 10 and
 #'   the number of unique grouped model points. At least three unique grouped
 #'   values are required. The basis dimension cannot exceed the number of
 #'   unique grouped covariate values available for fitting.
+#' @param degree Optional single whole number. Polynomial degree, used only by
+#'   `smoothing = "poly"`. The degree must be feasible for the number of unique
+#'   grouped model points.
 #' @param weights Optional character string. Numeric volume column, usually
 #'   exposure, used to weight the grouped GLM relativities during smoothing.
 #' @param tariff_class,rating_variable Deprecated. Use `model_variable` and
@@ -1756,7 +2037,11 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'   exposure = "exposure"
 #' )
 #'
-#' age_segments_freq <- derive_tariff_segments(age_policyholder_frequency)
+#' age_segments_freq <- derive_tariff_segments(
+#'   age_policyholder_frequency,
+#'   segmentation_penalty = 10,
+#'   seed = 1
+#' )
 #'
 #' dat <- MTPL |>
 #'   add_tariff_segments(age_segments_freq, name = "age_policyholder_freq_cat") |>
@@ -1792,8 +2077,20 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'   add_smoothing(
 #'     model_variable = "age_policyholder_freq_cat",
 #'     source_variable = "age_policyholder",
-#'     breaks = seq(18, 95, 5),
+#'     breaks = c(seq(18, 93, 5), 95),
 #'     smoothing = "spline",
+#'     k = 6,
+#'     weights = "exposure"
+#'   )
+#'
+#' # When the tariff effect must not decrease, use the readable constrained
+#' # method name. The former value "mpi" remains accepted for compatibility.
+#' increasing_ref <- prepare_refinement(burn_unrestricted) |>
+#'   add_smoothing(
+#'     model_variable = "age_policyholder_freq_cat",
+#'     source_variable = "age_policyholder",
+#'     breaks = c(seq(18, 93, 5), 95),
+#'     smoothing = "increasing",
 #'     k = 6,
 #'     weights = "exposure"
 #'   )
@@ -1804,8 +2101,8 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'
 #' @export
 add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
-                          degree = NULL, breaks = NULL, smoothing = "spline",
-                          k = NULL, weights = NULL, tariff_class = NULL,
+                          breaks, smoothing = "spline", k = NULL,
+                          degree = NULL, weights = NULL, tariff_class = NULL,
                           rating_variable = NULL, x_cut = NULL, x_org = NULL) {
   .assert_refinement(model)
 
@@ -1857,14 +2154,27 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
     source_variable <- x_org
   }
 
+  if (missing(breaks)) {
+    stop(
+      "`breaks` is required and must contain the tariff segment boundaries.",
+      call. = FALSE
+    )
+  }
+
   if (!.is_single_string(smoothing) ||
       !smoothing %in% .allowed_smoothing_methods) {
     stop(
       "'smoothing' must be one of: ",
-      paste(.allowed_smoothing_methods, collapse = ", "),
+      paste(names(.smoothing_method_codes), collapse = ", "),
+      ". The former aliases ",
+      paste(names(.smoothing_method_aliases), collapse = ", "),
+      " are also accepted for compatibility.",
       call. = FALSE
     )
   }
+  smoothing_spec <- .resolve_smoothing_method(smoothing)
+  smoothing <- smoothing_spec$method
+  smoothing_code <- smoothing_spec$code
   if (!is.numeric(breaks) || length(breaks) == 0 ||
       anyNA(breaks) || any(!is.finite(breaks))) {
     stop("'breaks' must be a numeric vector with finite values.", call. = FALSE)
@@ -1876,7 +2186,7 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
     stop("'breaks' must be strictly increasing.", call. = FALSE)
   }
 
-  .assert_column_name(model_variable, "model_variable", model$base$data)
+  .assert_smoothing_model_variable(model, model_variable)
   .assert_column_name(source_variable, "source_variable", model$base$data)
   .assert_optional_column_name(weights, "weights", model$base$data)
   model_variable_missing <- sum(is.na(model$base$data[[model_variable]]))
@@ -1894,6 +2204,13 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
     )
   }
   .assert_smoothing_interval_levels(model$base$model, model_variable)
+  .validate_smoothing_source_and_breaks(
+    data = model$base$data,
+    source_variable = source_variable,
+    breaks = breaks,
+    model = model$base$model,
+    model_variable = model_variable
+  )
   .assert_single_numeric(degree, "degree", allow_null = TRUE, positive = TRUE, whole = TRUE)
   .assert_single_numeric(k, "k", allow_null = TRUE, positive = TRUE, whole = TRUE)
 
@@ -1901,37 +2218,37 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
     "spline", "gam", "mpi", "mpd", "cx", "cv", "micx", "micv", "mdcx",
     "mdcv"
   )
-  if (!is.null(degree) && !identical(smoothing, "poly")) {
+  if (!is.null(degree) && !identical(smoothing_code, "poly")) {
     stop(
       "'degree' is only used with `smoothing = \"poly\"`.",
       call. = FALSE
     )
   }
-  if (!is.null(k) && !smoothing %in% basis_methods) {
+  if (!is.null(k) && !smoothing_code %in% basis_methods) {
     stop(
       "'k' is only used with `smoothing = \"spline\"`, `\"gam\"` or a ",
       "shape-constrained smoothing method.",
       call. = FALSE
     )
   }
-  if (!is.null(k) && smoothing %in% basis_methods && k < 3) {
+  if (!is.null(k) && smoothing_code %in% basis_methods && k < 3) {
     stop(
       "'k' must be at least 3 for `smoothing = \"", smoothing, "\"`.",
       call. = FALSE
     )
   }
 
-  if (smoothing %in% c("poly", basis_methods)) {
+  if (smoothing_code %in% c("poly", basis_methods)) {
     borders_model <- cut_borders_model(model$base$model, model_variable)
     complexity <- .validate_smoothing_complexity(
       covariates = borders_model["avg_"],
       source_variable = source_variable,
-      smoothing = smoothing,
+      smoothing = smoothing_code,
       k = k,
       degree = degree,
       response = borders_model$estimate
     )
-    if (smoothing %in% basis_methods && is.null(k)) {
+    if (smoothing_code %in% basis_methods && is.null(k)) {
       k <- complexity$k
     }
   }
@@ -1949,6 +2266,7 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
     degree = degree,
     breaks = breaks,
     smoothing = smoothing,
+    smoothing_code = smoothing_code,
     k = k,
     weights = weights,
     edit = NULL
@@ -2372,11 +2690,7 @@ add_relativities <- function(model,
   }
   resolved_source <- .resolve_relativities_source(model, model_variable)
   if (!resolved_source$source_model_variable %in% names(model$base$data)) {
-    stop(
-      "'model_variable' must identify a column in the refinement data or a ",
-      "restricted variable created by an earlier `add_restriction()` step.",
-      call. = FALSE
-    )
+    .stop_missing_relativities_source(model, model_variable)
   }
   .assert_column_name(split_variable, "split_variable", model$base$data)
   .assert_column_name(exposure, "exposure", model$base$data)
@@ -2561,7 +2875,8 @@ add_relativities <- function(model,
   x_org <- step$x_org
   degree <- step$degree
   breaks <- step$breaks
-  smoothing <- step$smoothing
+  smoothing_spec <- .resolve_smoothing_method(step$smoothing %||% "spline")
+  smoothing <- step$smoothing_code %||% smoothing_spec$code
   k <- step$k
   weights <- step$weights
 
@@ -3374,10 +3689,11 @@ refit <- function(object, intercept_only = FALSE, ...) {
   } else if (identical(step$type, "smoothing")) {
     model_variable <- step$model_variable %||% step$x_cut %||% step$variable
     source_variable <- step$source_variable %||% step$x_org
+    smoothing <- .resolve_smoothing_method(step$smoothing %||% "spline")$method
     detail <- paste0(
       "Smoothing: ", model_variable,
       if (!is.null(source_variable)) paste0(" from ", source_variable) else "",
-      " (method: ", step$smoothing %||% "spline"
+      " (method: ", smoothing
     )
     if (!is.null(step$k)) {
       detail <- paste0(detail, ", k: ", step$k)

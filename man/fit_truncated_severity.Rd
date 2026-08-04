@@ -71,7 +71,6 @@ and additional attributes:
 }
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 Estimate an underlying claim severity distribution when the observed claims
 are truncated.
 }

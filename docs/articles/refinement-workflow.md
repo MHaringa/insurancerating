@@ -82,7 +82,10 @@ age_policyholder_frequency <- risk_factor_gam(
   exposure = "exposure"
 )
 
-age_segments_freq <- derive_tariff_segments(age_policyholder_frequency)
+age_segments_freq <- derive_tariff_segments(
+  age_policyholder_frequency,
+  seed = 1
+)
 
 dat <- MTPL |>
   add_tariff_segments(age_segments_freq, name = "age_policyholder_freq_cat") |>
@@ -158,7 +161,7 @@ Refinement begins with:
 ref <- prepare_refinement(burn_unrestricted)
 ref
 #> <rating_refinement>
-#> Base model: glm, lm
+#> Base model: Gamma GLM (log link)
 #> Steps: 0
 ```
 
@@ -201,7 +204,7 @@ ref <- ref |>
   add_smoothing(
     model_variable = "age_policyholder_freq_cat",
     source_variable = "age_policyholder",
-    breaks = seq(18, 95, 5),
+    breaks = c(seq(18, 93, 5), 95),
     weights = "exposure"
   )
 ```
@@ -215,8 +218,8 @@ The key arguments are:
   general-purpose default
 - `weights`: optional weighting, typically exposure
 
-Use `"mpi"` or `"mpd"` when the tariff effect is required to increase or
-decrease monotonically. Convex, concave and combined shape constraints
+Use `"increasing"` or `"decreasing"` when the tariff effect is required
+to move monotonically. Convex, concave and combined shape constraints
 are available for cases where that additional assumption can be
 supported actuarially. `"poly"` fits a global polynomial and uses
 `degree`; `"gam"` fits a thin-plate smooth that can be used as an
@@ -231,9 +234,9 @@ freedom.
 
 print(ref)
 #> <rating_refinement>
-#> Base model: glm, lm
+#> Base model: Gamma GLM (log link)
 #> Steps: 1
-#> 1. smoothing [age_policyholder_freq_cat]
+#>   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)
 autoplot(
   ref,
   variable = "age_policyholder_freq_cat",
@@ -261,12 +264,24 @@ Typical smoothing choices are:
 - `"poly"`: global polynomial controlled by `degree`
 - `"gam"`: thin-plate regression spline fitted with `mgcv`, mainly
   useful as an unconstrained comparison
-- `"mpi"`: monotone increasing
-- `"mpd"`: monotone decreasing
+- `"increasing"`: monotone increasing
+- `"decreasing"`: monotone decreasing
 
-Convex, concave and combined monotonicity-curvature constraints are also
-available as advanced options. They should be used only when the assumed
-shape has an actuarial or economic basis.
+Monotonicity concerns the direction of the tariff effect. Convexity and
+concavity concern how its slope changes. A convex effect has an
+increasing slope and may be U-shaped when its direction is not
+constrained; a concave effect has a decreasing slope and may be inverted
+U-shaped. For an increasing effect, convexity implies acceleration and
+concavity implies flattening. For a decreasing effect, convexity implies
+flattening and concavity implies a steeper decline.
+
+The readable advanced options are `"convex"`, `"concave"`,
+`"increasing_convex"`, `"increasing_concave"`, `"decreasing_convex"` and
+`"decreasing_concave"`. They should be used only when the assumed
+curvature has an actuarial or economic basis in addition to any
+directional assumption. The former short codes `"mpi"`, `"mpd"`, `"cx"`,
+`"cv"`, `"micx"`, `"micv"`, `"mdcx"` and `"mdcv"` remain accepted for
+compatibility.
 
 For example:
 
@@ -413,11 +428,11 @@ After refit, use
 
 rating_table(burn_refined)
 #>          level             risk_factor est_burn_refined exposure
-#> 1  (Intercept)             (Intercept)     1.068525e+04       NA
+#> 1  (Intercept)             (Intercept)     1.068539e+04       NA
 #> 2            0                 zip_adj     8.000000e-01      207
 #> 3            1                 zip_adj     9.000000e-01    11081
 #> 4            2                 zip_adj     1.000000e+00     7783
-#> 5            3                 zip_adj     1.200000e+00     7586
+#> 5            3                 zip_adj     1.200000e+00     7588
 #> 6      [18,23] age_policyholder_smooth     1.991647e+00      586
 #> 7      (23,28] age_policyholder_smooth     1.525996e+00     2204
 #> 8      (28,33] age_policyholder_smooth     1.194587e+00     2790
@@ -433,7 +448,8 @@ rating_table(burn_refined)
 #> 18     (78,83] age_policyholder_smooth     7.030268e-01      246
 #> 19     (83,88] age_policyholder_smooth     6.061124e-01       93
 #> 20     (88,93] age_policyholder_smooth     4.894076e-01       11
-#> 21          bm                      bm     9.977225e-01       NA
+#> 21     (93,95] age_policyholder_smooth     4.062390e-01        1
+#> 22          bm                      bm     9.977166e-01       NA
 ```
 
 At this point, the output no longer represents a proposed refinement
@@ -495,6 +511,14 @@ head(md)
 #> 6        0.01802897        68671.20  1238.071     1.2
 ```
 
+A model point represents a unique observed combination of the
+risk-factor levels used by the fitted model.
+[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+groups portfolio records with the same combination and attaches the
+corresponding refined model effects. It returns combinations observed in
+the portfolio; it does not construct every theoretically possible
+combination of factor levels.
+
 Observed model-point combinations can be obtained with
 [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md):
 
@@ -503,13 +527,13 @@ Observed model-point combinations can be obtained with
 
 grid <- rating_grid(burn_refined)
 head(grid)
-#>   age_policyholder_smooth zip bm count   exposure zip_adj
-#> 1                 (23,28]   1  1   414 342.578082     0.9
-#> 2                 (23,28]   1  4    26  22.315068     0.9
-#> 3                 (23,28]   0  4     1   1.000000     0.8
-#> 4                 (23,28]   0  1     7   5.268493     0.8
-#> 5                 (23,28]   1  7    33  28.334247     0.9
-#> 6                 (23,28]   2 13     5   4.041096     1.0
+#>   age_policyholder_smooth zip bm count  exposure zip_adj
+#> 1                 (23,28]   1  1   414 342.57808     0.9
+#> 2                 (23,28]   2  4    12  10.63836     1.0
+#> 3                 (23,28]   3  1   267 235.07397     1.2
+#> 4                 (23,28]   1 18     1   1.00000     0.9
+#> 5                 (23,28]   2 18     1   1.00000     1.0
+#> 6                 (23,28]   3  6    44  40.35890     1.2
 #>   age_policyholder_freq_cat_smooth
 #> 1                         1.525996
 #> 2                         1.525996
@@ -519,12 +543,29 @@ head(grid)
 #> 6                         1.525996
 ```
 
+Each row can represent several portfolio records. `count` gives the
+number of records with that combination and `exposure` gives their
+aggregated exposure. The remaining refinement columns contain the
+restrictions, smoothed effects or derived relativities that apply to the
+model point.
+
+When a fitted GLM is supplied,
+[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+retrieves the exposure column used as a model weight or offset from the
+model metadata and aggregates it automatically. Supply `exposure`
+explicitly only when that column is not used by the model or when a
+plain data frame is supplied.
+
 This is typically used for:
 
 - tariff review
 - portfolio summaries
-- compact prediction input
+- compact input for tariff calculations or predictions
 - implementation support
+
+Before the grid is used for prediction, the analyst should verify that
+all required model variables are present and decide how combinations not
+observed in the estimation portfolio will be handled.
 
 ## Complete example
 
@@ -542,7 +583,7 @@ burn_refined <- prepare_refinement(burn_unrestricted) |>
   add_smoothing(
     model_variable = "age_policyholder_freq_cat",
     source_variable = "age_policyholder",
-    breaks = seq(18, 95, 5),
+    breaks = c(seq(18, 93, 5), 95),
     weights = "exposure"
   ) |>
   add_restriction(zip_df) |>
@@ -550,11 +591,11 @@ burn_refined <- prepare_refinement(burn_unrestricted) |>
 
 rating_table(burn_refined)
 #>          level             risk_factor est_burn_refined exposure
-#> 1  (Intercept)             (Intercept)     1.068525e+04       NA
+#> 1  (Intercept)             (Intercept)     1.068539e+04       NA
 #> 2            0                 zip_adj     8.000000e-01      207
 #> 3            1                 zip_adj     9.000000e-01    11081
 #> 4            2                 zip_adj     1.000000e+00     7783
-#> 5            3                 zip_adj     1.200000e+00     7586
+#> 5            3                 zip_adj     1.200000e+00     7588
 #> 6      [18,23] age_policyholder_smooth     1.991647e+00      586
 #> 7      (23,28] age_policyholder_smooth     1.525996e+00     2204
 #> 8      (28,33] age_policyholder_smooth     1.194587e+00     2790
@@ -570,7 +611,8 @@ rating_table(burn_refined)
 #> 18     (78,83] age_policyholder_smooth     7.030268e-01      246
 #> 19     (83,88] age_policyholder_smooth     6.061124e-01       93
 #> 20     (88,93] age_policyholder_smooth     4.894076e-01       11
-#> 21          bm                      bm     9.977225e-01       NA
+#> 21     (93,95] age_policyholder_smooth     4.062390e-01        1
+#> 22          bm                      bm     9.977166e-01       NA
 
 rating_table(burn_refined) |>
   autoplot()
@@ -589,7 +631,7 @@ burn_refined_old <- burn_unrestricted |>
   smooth_coef(
     x_cut = "age_policyholder_freq_man",
     x_org = "age_policyholder",
-    breaks = seq(18, 95, 5)
+    breaks = c(seq(18, 93, 5), 95)
   ) |>
   restrict_coef(zip_df) |>
   refit_glm()

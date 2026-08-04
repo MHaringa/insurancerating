@@ -33,14 +33,10 @@ compatibility.}
 A \code{data.frame} with the same columns as in \code{df}, plus an \code{id} column.
 }
 \description{
-Splits policy or exposure periods that cross calendar months into monthly
-rows. Numeric columns such as exposure or premium can be prorated over the
-resulting monthly rows.
-
-This function uses \strong{standard evaluation (SE)}: column names must be passed
-as \strong{character strings} (e.g. \code{period_start = "begin_date"}).
-The older function \code{\link[=period_to_months]{period_to_months()}} used non-standard evaluation (NSE) and
-is deprecated as of version 0.8.0.
+Split policy or exposure periods that cross calendar-month boundaries into
+monthly rows. Numeric portfolio measures, such as exposure and premium, can
+be prorated over the resulting periods while preserving their total per
+original record.
 }
 \details{
 Rating and monitoring work often needs exposure, premium, claim counts, or
@@ -53,6 +49,10 @@ Prorated columns are distributed according to the part of the policy period
 that falls in each monthly row. Full months receive weight 1; partial months
 use a 30-day month convention. The total value of each prorated column is
 preserved per original row.
+
+Column names are supplied as character strings, for example
+\code{period_start = "begin_date"}. The deprecated \code{\link[=period_to_months]{period_to_months()}} interface
+used unquoted column names and is retained only for backward compatibility.
 }
 \examples{
 library(lubridate)
@@ -63,14 +63,14 @@ portfolio <- data.frame(
   premium    = c(125, 150)
 )
 
-# New SE interface
+# Split policy records and prorate premium and exposure by month
 split_periods_to_months(portfolio,
   period_start = "begin_date",
   period_end = "end_date",
   prorate_cols = c("premium", "exposure")
 )
 
-# Old NSE interface (deprecated)
+# Deprecated interface with unquoted column names
 \dontrun{
 period_to_months(portfolio, begin_date, end_date, premium, exposure)
 }

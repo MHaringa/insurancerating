@@ -63,6 +63,8 @@ confidence limits.}
 risk-factor values.}
 \item{x_obs}{Risk-factor values in the original portfolio row order, after
 optional rounding.}
+\item{round_risk_factor}{Rounding increment used for the risk factor, or
+\code{NULL} when no rounding was applied.}
 }
 }
 \description{

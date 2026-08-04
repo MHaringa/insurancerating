@@ -2,7 +2,9 @@
 #'
 #' @description
 #' Matches event dates, such as claim dates or portfolio snapshot dates, to the
-#' rows that were active in the portfolio on those dates.
+#' policy or risk records that were active on those dates. This allows an event
+#' to inherit the rating factors and coverage information that applied when it
+#' occurred.
 #'
 #' @param portfolio A `data.frame` or `data.table` with portfolio rows and
 #' active date intervals.
@@ -14,11 +16,12 @@
 #' @param date Character string. Name of the date column in `dates`.
 #' @param by Character vector with additional columns used to match `portfolio`
 #' and `dates`, for example policy number or claim identifier.
-#' @param nomatch When a row (with interval say, `[a,b]`) in x has no match in
-#' y, nomatch=NA means NA is returned for y's non-by.y columns for that row of
-#' x. nomatch=NULL (default) means no rows will be returned for that row of x.
-#' @param mult When multiple rows in y match to the row in x, `mult` controls
-#' which values are returned - "all" (default), "first" or "last".
+#' @param nomatch Controls event dates for which no active portfolio row is
+#' found. With `NULL`, unmatched events are omitted. With `NA`, they are retained
+#' with missing portfolio information.
+#' @param mult Controls the result when an event date matches multiple active
+#' portfolio rows. Use `"all"` to retain every match, or `"first"` or `"last"`
+#' to retain one matching row. The default is `"all"`.
 #'
 #' @details
 #' This is useful when claim records or other dated events need the rating
@@ -26,6 +29,11 @@
 #' date. The function performs an interval join between event dates and
 #' portfolio coverage periods, optionally within matching identifiers such as a
 #' policy number.
+#'
+#' Multiple matches can be valid, for example when several coverages are active
+#' on the same date, but may also indicate overlapping portfolio periods. The
+#' analyst should select `mult` in accordance with the structure of the source
+#' data and the intended event-level analysis.
 #'
 #' @author Martin Haringa
 #'

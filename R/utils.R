@@ -256,15 +256,19 @@ matchColClasses <- function(df1, df2) {
 #' @param x A party object.
 #'
 get_splits <- function(x) {
+  nodes <- partykit::nodeapply(
+    x,
+    ids = partykit::nodeids(x),
+    FUN = function(node) {
+      split <- partykit::split_node(node)
+      if (is.null(split)) {
+        return(numeric())
+      }
+      as.numeric(split$breaks)
+    }
+  )
 
-  lrp <- utils::getFromNamespace(".list.rules.party", "partykit")
-  splits_list <- lrp(x)
-  split_rules <- unname(splits_list)
-
-  split_pattern <- "-?[[:digit:]]+(\\.[[:digit:]]+)?"
-  splits_vector <- regmatches(split_rules, gregexpr(split_pattern, split_rules))
-
-  sort(unique(as.numeric(unlist(splits_vector))))
+  sort(unique(unlist(nodes, use.names = FALSE)))
 }
 
 

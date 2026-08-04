@@ -1,8 +1,6 @@
 #' Recover the portfolio data used by a fitted model
 #'
 #' @description
-#' `r lifecycle::badge('experimental')`
-#'
 #' Recover the estimation data and pricing metadata stored with a fitted GLM or
 #' a model produced by the refinement workflow. The result provides a
 #' reproducible basis for rating grids, coefficient tables and portfolio-level

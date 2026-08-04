@@ -374,7 +374,10 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' @param ncol Positive whole number. Number of columns in the plot composition.
 #' @param legend_position Character string specifying the legend position.
 #'   Supported values are `"right"`, `"bottom"`, `"top"`, `"left"` and
-#'   `"none"`.
+#'   `"none"`. A legend is present only when the `factor_analysis` object was
+#'   created with `group_by`, because the resulting group-specific series are
+#'   distinguished by colour. Without `group_by`, colours are fixed plot styles
+#'   and no legend is drawn; in that case this argument has no visible effect.
 #' @param show_exposure Show exposure as background bars behind line plots
 #'   (default = TRUE).
 #' @param show_exposure_labels Show labels with the exposure bars
@@ -442,6 +445,12 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' observed series are shown. `show_total = TRUE` adds the aggregate portfolio
 #' series for comparison. Sorting and manual level ordering affect only the
 #' presentation; the underlying summaries are unchanged.
+#'
+#' A rate or ratio is not shown for a risk-factor level when its denominator is
+#' zero or missing. For example, average severity is undefined when claim count
+#' is zero, and loss ratio is undefined when premium is zero. `autoplot()` gives
+#' one combined warning identifying the affected metrics and levels. Other valid
+#' metrics and exposure information remain in the figure.
 #'
 #' @import patchwork
 #' @import ggplot2
@@ -667,6 +676,16 @@ autoplot.factor_analysis <- function(object,
     "9" = list(var = premium, lab = premium, denom = NULL, fun = ggbar)
   )
 
+  warn_factor_analysis_metric_omissions(
+    df = df,
+    dfby = dfby,
+    xvar = xvar,
+    by = by,
+    show_total = show_total,
+    create_plots = create_plots,
+    plot_defs = plot_defs
+  )
+
   if (isTRUE(sort_by_exposure) && is.null(level_order) &&
       !is.null(exposure) && exposure %in% names(df)) {
     exposure_order <- stats::aggregate(
@@ -726,6 +745,9 @@ autoplot.factor_analysis <- function(object,
   }
 
   plot_out <- patchwork::wrap_plots(plots, ncol = ncol, guides = "collect")
+  plot_out <- plot_out & ggplot2::theme(
+    legend.position = legend_position
+  )
 
   if (!is.null(rotate_angle)) {
     plot_out <- plot_out +

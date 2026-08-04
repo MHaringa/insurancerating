@@ -100,6 +100,11 @@ A list of class `"risk_factor_gam"` with compatibility classes
   Risk-factor values in the original portfolio row order, after optional
   rounding.
 
+- round_risk_factor:
+
+  Rounding increment used for the risk factor, or `NULL` when no
+  rounding was applied.
+
 ## Details
 
 ### Statistical specification
@@ -127,7 +132,7 @@ structure. Correlation with other risk factors, exposure concentration,
 claim volume, tail observations and stability across periods should be
 considered before using the pattern in a multivariate GLM.
 
-[`autoplot.riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/autoplot.riskfactor_gam.md)
+[`autoplot.riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/autoplot.tariff_effect.md)
 can be used to inspect the curve and observed experience.
 [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md)
 can subsequently translate the smooth pattern into candidate intervals.
@@ -159,7 +164,7 @@ models. Journal of the Royal Statistical Society (B) 73(1):3–36.
 
 ## See also
 
-[`autoplot.riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/autoplot.riskfactor_gam.md),
+[`autoplot.riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/autoplot.tariff_effect.md),
 [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md),
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
 

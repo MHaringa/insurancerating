@@ -13,10 +13,10 @@ add_smoothing(
   model,
   model_variable = NULL,
   source_variable = NULL,
-  degree = NULL,
-  breaks = NULL,
+  breaks,
   smoothing = "spline",
   k = NULL,
+  degree = NULL,
   weights = NULL,
   tariff_class = NULL,
   rating_variable = NULL,
@@ -47,38 +47,47 @@ add_smoothing(
 
   Character string. Original numeric portfolio variable underlying
   `model_variable`. Its name is also used for the resulting smoothed
-  tariff variable.
-
-- degree:
-
-  Optional single whole number. Polynomial degree, used by
-  `smoothing = "poly"`. The degree must be feasible for the number of
-  unique grouped model points.
+  tariff variable. The column must contain only finite, non-missing
+  numeric values.
 
 - breaks:
 
   Numeric vector with the tariff segment boundaries to use after
   smoothing. These boundaries determine the final tariff segmentation,
   not the number of portfolio observations used to estimate the curve.
-  Values must be finite and strictly increasing.
+  Values must be finite, strictly increasing and cover every observed
+  value of `source_variable`. Boundaries outside the interval range
+  represented by `model_variable` are allowed, but produce a warning
+  because the resulting relativities rely on extrapolation beyond the
+  fitted GLM levels. This argument is required.
 
 - smoothing:
 
   Character string selecting the smoothing method. Available values are
-  `"spline"` (default), `"poly"`, `"mpi"`, `"mpd"`, `"gam"`, `"cx"`,
-  `"cv"`, `"micx"`, `"micv"`, `"mdcx"` and `"mdcv"`. See Details for the
-  statistical interpretation and shape restrictions.
+  `"spline"` (default), `"poly"`, `"gam"`, `"increasing"`,
+  `"decreasing"`, `"convex"`, `"concave"`, `"increasing_convex"`,
+  `"increasing_concave"`, `"decreasing_convex"` and
+  `"decreasing_concave"`. The former short SCOP codes remain accepted as
+  compatibility aliases. See Details for the statistical interpretation
+  and shape restrictions.
 
 - k:
 
   Optional single positive whole number. Basis dimension for smoothing
-  methods `"spline"`, `"gam"`, `"mpi"`, `"mpd"`, `"cx"`, `"cv"`,
-  `"micx"`, `"micv"`, `"mdcx"` and `"mdcv"`. It sets the maximum
-  flexibility available to the smooth and is not necessarily equal to
-  its estimated effective degrees of freedom. `NULL` uses the smaller of
-  10 and the number of unique grouped model points. At least three
-  unique grouped values are required. The basis dimension cannot exceed
-  the number of unique grouped covariate values available for fitting.
+  methods `"spline"`, `"gam"`, `"increasing"`, `"decreasing"`,
+  `"convex"`, `"concave"` and the combined direction-curvature methods.
+  It sets the maximum flexibility available to the smooth and is not
+  necessarily equal to its estimated effective degrees of freedom.
+  `NULL` uses the smaller of 10 and the number of unique grouped model
+  points. At least three unique grouped values are required. The basis
+  dimension cannot exceed the number of unique grouped covariate values
+  available for fitting.
+
+- degree:
+
+  Optional single whole number. Polynomial degree, used only by
+  `smoothing = "poly"`. The degree must be feasible for the number of
+  unique grouped model points.
 
 - weights:
 
@@ -151,25 +160,36 @@ the tariff effect:
   trend; higher degrees can follow more local variation but may
   oscillate, particularly near the boundaries.
 
-- `"mpi"` and `"mpd"`:
+- `"increasing"` and `"decreasing"`:
 
-  Fit monotone increasing and monotone decreasing smooths. These are
-  often useful when actuarial reasoning implies that the tariff effect
-  should move in only one direction.
+  Fit monotone smooths. These methods constrain the tariff effect to
+  move in one direction, without imposing how quickly its slope changes.
+  They are often the most directly interpretable constrained
+  specifications when actuarial reasoning supports a consistently
+  increasing or decreasing risk effect.
 
-- `"cx"` and `"cv"`:
+- `"convex"` and `"concave"`:
 
-  Fit convex and concave smooths, respectively.
+  Constrain curvature but not direction. For a convex curve, the slope
+  increases as the source variable increases; for a concave curve, the
+  slope decreases. A convex curve may therefore be U-shaped and a
+  concave curve may be inverted U-shaped. These are advanced choices
+  when curvature itself has a defensible interpretation.
 
-- `"micx"` and `"micv"`:
+- `"increasing_convex"` and `"increasing_concave"`:
 
-  Fit monotone increasing curves that are, respectively, convex and
-  concave.
+  Fit increasing curves with an additional curvature constraint. An
+  increasing convex effect rises at an increasing rate, for example when
+  upper-tail risk causes marginal cost to accelerate. An increasing
+  concave effect rises at a decreasing rate and gradually flattens, for
+  example when risk cost rises with insured value but less than
+  proportionally.
 
-- `"mdcx"` and `"mdcv"`:
+- `"decreasing_convex"` and `"decreasing_concave"`:
 
-  Fit monotone decreasing curves that are, respectively, convex and
-  concave.
+  Fit decreasing curves with an additional curvature constraint. A
+  decreasing convex effect becomes less steep and tends to flatten. A
+  decreasing concave effect becomes progressively steeper.
 
 - `"gam"`:
 
@@ -180,12 +200,21 @@ the tariff effect:
   shape assumptions represented by the constrained methods.
 
 The shape-constrained methods are fitted with
-[`scam::scam()`](https://rdrr.io/pkg/scam/man/scam.html). A constraint
-should reflect an actuarial or pricing assumption that is defensible for
-the risk factor; it should not be selected solely because it produces a
-smoother visual result. The combined monotonicity and curvature methods
-are advanced specifications and are most appropriate when both
-assumptions can be supported independently.
+[`scam::scam()`](https://rdrr.io/pkg/scam/man/scam.html). Monotonicity
+concerns the direction of the effect, whereas convexity and concavity
+concern how its slope changes. In most tariff applications, a
+directional assumption is easier to substantiate than a curvature
+assumption. A constraint should reflect an actuarial or pricing
+assumption that is defensible for the risk factor; it should not be
+selected solely because it produces a smoother visual result. The
+combined monotonicity and curvature methods are advanced specifications
+and are most appropriate when both assumptions can be supported
+independently.
+
+The former short codes `"mpi"`, `"mpd"`, `"cx"`, `"cv"`, `"micx"`,
+`"micv"`, `"mdcx"` and `"mdcv"` remain accepted as compatibility
+aliases. New code should use the readable method names above. Both forms
+produce the same smoothing specification.
 
 ### Basis dimension and polynomial degree
 
@@ -246,7 +275,11 @@ age_policyholder_frequency <- risk_factor_gam(
   exposure = "exposure"
 )
 
-age_segments_freq <- derive_tariff_segments(age_policyholder_frequency)
+age_segments_freq <- derive_tariff_segments(
+  age_policyholder_frequency,
+  segmentation_penalty = 10,
+  seed = 1
+)
 
 dat <- MTPL |>
   add_tariff_segments(age_segments_freq, name = "age_policyholder_freq_cat") |>
@@ -282,8 +315,20 @@ ref <- prepare_refinement(burn_unrestricted) |>
   add_smoothing(
     model_variable = "age_policyholder_freq_cat",
     source_variable = "age_policyholder",
-    breaks = seq(18, 95, 5),
+    breaks = c(seq(18, 93, 5), 95),
     smoothing = "spline",
+    k = 6,
+    weights = "exposure"
+  )
+
+# When the tariff effect must not decrease, use the readable constrained
+# method name. The former value "mpi" remains accepted for compatibility.
+increasing_ref <- prepare_refinement(burn_unrestricted) |>
+  add_smoothing(
+    model_variable = "age_policyholder_freq_cat",
+    source_variable = "age_policyholder",
+    breaks = c(seq(18, 93, 5), 95),
+    smoothing = "increasing",
     k = 6,
     weights = "exposure"
   )

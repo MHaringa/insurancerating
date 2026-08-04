@@ -59,10 +59,10 @@ GLM.</p>
 <span>  <span class="va">model</span>,</span>
 <span>  model_variable <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  source_variable <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  degree <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  breaks <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">breaks</span>,</span>
 <span>  smoothing <span class="op">=</span> <span class="st">"spline"</span>,</span>
 <span>  k <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  degree <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  tariff_class <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rating_variable <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -92,38 +92,47 @@ missing values before adding the smoothing step.</p></dd>
 <dt id="arg-source-variable">source_variable<a class="anchor" aria-label="anchor" href="#arg-source-variable"></a></dt>
 <dd><p>Character string. Original numeric portfolio variable
 underlying <code>model_variable</code>. Its name is also used for the resulting
-smoothed tariff variable.</p></dd>
-
-
-<dt id="arg-degree">degree<a class="anchor" aria-label="anchor" href="#arg-degree"></a></dt>
-<dd><p>Optional single whole number. Polynomial degree, used by
-<code>smoothing = "poly"</code>. The degree must be feasible for the number of unique
-grouped model points.</p></dd>
+smoothed tariff variable. The column must contain only finite, non-missing
+numeric values.</p></dd>
 
 
 <dt id="arg-breaks">breaks<a class="anchor" aria-label="anchor" href="#arg-breaks"></a></dt>
 <dd><p>Numeric vector with the tariff segment boundaries to use after
 smoothing. These boundaries determine the final tariff segmentation, not
 the number of portfolio observations used to estimate the curve. Values
-must be finite and strictly increasing.</p></dd>
+must be finite, strictly increasing and cover every observed value of
+<code>source_variable</code>. Boundaries outside the interval range represented by
+<code>model_variable</code> are allowed, but produce a warning because the resulting
+relativities rely on extrapolation beyond the fitted GLM levels. This
+argument is required.</p></dd>
 
 
 <dt id="arg-smoothing">smoothing<a class="anchor" aria-label="anchor" href="#arg-smoothing"></a></dt>
 <dd><p>Character string selecting the smoothing method. Available
-values are <code>"spline"</code> (default), <code>"poly"</code>, <code>"mpi"</code>, <code>"mpd"</code>, <code>"gam"</code>,
-<code>"cx"</code>, <code>"cv"</code>, <code>"micx"</code>, <code>"micv"</code>, <code>"mdcx"</code> and <code>"mdcv"</code>. See
-Details for the statistical interpretation and shape restrictions.</p></dd>
+values are <code>"spline"</code> (default), <code>"poly"</code>, <code>"gam"</code>, <code>"increasing"</code>,
+<code>"decreasing"</code>, <code>"convex"</code>, <code>"concave"</code>, <code>"increasing_convex"</code>,
+<code>"increasing_concave"</code>, <code>"decreasing_convex"</code> and
+<code>"decreasing_concave"</code>. The former short SCOP codes remain accepted as
+compatibility aliases. See Details for the statistical interpretation and
+shape restrictions.</p></dd>
 
 
 <dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
 <dd><p>Optional single positive whole number. Basis dimension for smoothing
-methods <code>"spline"</code>, <code>"gam"</code>, <code>"mpi"</code>, <code>"mpd"</code>, <code>"cx"</code>, <code>"cv"</code>,
-<code>"micx"</code>, <code>"micv"</code>, <code>"mdcx"</code> and <code>"mdcv"</code>. It sets the maximum
+methods <code>"spline"</code>, <code>"gam"</code>, <code>"increasing"</code>, <code>"decreasing"</code>,
+<code>"convex"</code>, <code>"concave"</code> and the combined direction-curvature methods. It
+sets the maximum
 flexibility available to the smooth and is not necessarily equal to its
 estimated effective degrees of freedom. <code>NULL</code> uses the smaller of 10 and
 the number of unique grouped model points. At least three unique grouped
 values are required. The basis dimension cannot exceed the number of
 unique grouped covariate values available for fitting.</p></dd>
+
+
+<dt id="arg-degree">degree<a class="anchor" aria-label="anchor" href="#arg-degree"></a></dt>
+<dd><p>Optional single whole number. Polynomial degree, used only by
+<code>smoothing = "poly"</code>. The degree must be feasible for the number of unique
+grouped model points.</p></dd>
 
 
 <dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
@@ -194,21 +203,33 @@ relativities. <code>degree</code> determines its order. A low degree gives a com
 parametric trend; higher degrees can follow more local variation but may
 oscillate, particularly near the boundaries.</p></dd>
 
-<dt><code>"mpi"</code> and <code>"mpd"</code></dt>
-<dd><p>Fit monotone increasing and monotone decreasing
-smooths. These are often useful when actuarial reasoning implies that the
-tariff effect should move in only one direction.</p></dd>
+<dt><code>"increasing"</code> and <code>"decreasing"</code></dt>
+<dd><p>Fit monotone smooths. These
+methods constrain the tariff effect to move in one direction, without
+imposing how quickly its slope changes. They are often the most directly
+interpretable constrained specifications when actuarial reasoning supports
+a consistently increasing or decreasing risk effect.</p></dd>
 
-<dt><code>"cx"</code> and <code>"cv"</code></dt>
-<dd><p>Fit convex and concave smooths, respectively.</p></dd>
+<dt><code>"convex"</code> and <code>"concave"</code></dt>
+<dd><p>Constrain curvature but not direction.
+For a convex curve, the slope increases as the source variable increases;
+for a concave curve, the slope decreases. A convex curve may therefore be
+U-shaped and a concave curve may be inverted U-shaped. These are advanced
+choices when curvature itself has a defensible interpretation.</p></dd>
 
-<dt><code>"micx"</code> and <code>"micv"</code></dt>
-<dd><p>Fit monotone increasing curves that are,
-respectively, convex and concave.</p></dd>
+<dt><code>"increasing_convex"</code> and <code>"increasing_concave"</code></dt>
+<dd><p>Fit increasing
+curves with an additional curvature constraint. An increasing convex
+effect rises at an increasing rate, for example when upper-tail risk causes
+marginal cost to accelerate. An increasing concave effect rises at a
+decreasing rate and gradually flattens, for example when risk cost rises
+with insured value but less than proportionally.</p></dd>
 
-<dt><code>"mdcx"</code> and <code>"mdcv"</code></dt>
-<dd><p>Fit monotone decreasing curves that are,
-respectively, convex and concave.</p></dd>
+<dt><code>"decreasing_convex"</code> and <code>"decreasing_concave"</code></dt>
+<dd><p>Fit decreasing
+curves with an additional curvature constraint. A decreasing convex effect
+becomes less steep and tends to flatten. A decreasing concave effect
+becomes progressively steeper.</p></dd>
 
 <dt><code>"gam"</code></dt>
 <dd><p>Fits an unconstrained thin-plate regression spline with
@@ -217,12 +238,19 @@ the general spline and shape-constrained specifications. It does not impose
 the actuarial shape assumptions represented by the constrained methods.</p></dd>
 
 
-</dl><p>The shape-constrained methods are fitted with <code><a href="https://rdrr.io/pkg/scam/man/scam.html" class="external-link">scam::scam()</a></code>. A constraint
+</dl><p>The shape-constrained methods are fitted with <code><a href="https://rdrr.io/pkg/scam/man/scam.html" class="external-link">scam::scam()</a></code>. Monotonicity
+concerns the direction of the effect, whereas convexity and concavity concern
+how its slope changes. In most tariff applications, a directional assumption
+is easier to substantiate than a curvature assumption. A constraint
 should reflect an actuarial or pricing assumption that is defensible for the
 risk factor; it should not be selected solely because it produces a smoother
 visual result. The combined monotonicity and curvature methods are advanced
 specifications and are most appropriate when both assumptions can be
 supported independently.</p>
+<p>The former short codes <code>"mpi"</code>, <code>"mpd"</code>, <code>"cx"</code>, <code>"cv"</code>, <code>"micx"</code>,
+<code>"micv"</code>, <code>"mdcx"</code> and <code>"mdcv"</code> remain accepted as compatibility aliases.
+New code should use the readable method names above. Both forms produce the
+same smoothing specification.</p>
 </div>
 
 <div class="section">
@@ -278,7 +306,11 @@ compatibility.</p>
 <span class="r-in"><span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">age_segments_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_tariff_segments.html">derive_tariff_segments</a></span><span class="op">(</span><span class="va">age_policyholder_frequency</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">age_segments_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_tariff_segments.html">derive_tariff_segments</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">age_policyholder_frequency</span>,</span></span>
+<span class="r-in"><span>  segmentation_penalty <span class="op">=</span> <span class="fl">10</span>,</span></span>
+<span class="r-in"><span>  seed <span class="op">=</span> <span class="fl">1</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="va">MTPL</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="add_tariff_segments.html">add_tariff_segments</a></span><span class="op">(</span><span class="va">age_segments_freq</span>, name <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
@@ -314,8 +346,20 @@ compatibility.</p>
 <span class="r-in"><span>  <span class="fu">add_smoothing</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    model_variable <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span>,</span></span>
 <span class="r-in"><span>    source_variable <span class="op">=</span> <span class="st">"age_policyholder"</span>,</span></span>
-<span class="r-in"><span>    breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">95</span>, <span class="fl">5</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">93</span>, <span class="fl">5</span><span class="op">)</span>, <span class="fl">95</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>    smoothing <span class="op">=</span> <span class="st">"spline"</span>,</span></span>
+<span class="r-in"><span>    k <span class="op">=</span> <span class="fl">6</span>,</span></span>
+<span class="r-in"><span>    weights <span class="op">=</span> <span class="st">"exposure"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># When the tariff effect must not decrease, use the readable constrained</span></span></span>
+<span class="r-in"><span><span class="co"># method name. The former value "mpi" remains accepted for compatibility.</span></span></span>
+<span class="r-in"><span><span class="va">increasing_ref</span> <span class="op">&lt;-</span> <span class="fu"><a href="prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">add_smoothing</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    model_variable <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span>,</span></span>
+<span class="r-in"><span>    source_variable <span class="op">=</span> <span class="st">"age_policyholder"</span>,</span></span>
+<span class="r-in"><span>    breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">93</span>, <span class="fl">5</span><span class="op">)</span>, <span class="fl">95</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    smoothing <span class="op">=</span> <span class="st">"increasing"</span>,</span></span>
 <span class="r-in"><span>    k <span class="op">=</span> <span class="fl">6</span>,</span></span>
 <span class="r-in"><span>    weights <span class="op">=</span> <span class="st">"exposure"</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>

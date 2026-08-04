@@ -5,7 +5,11 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Reduce portfolio periods by merging adjacent date ranges — merge_date_ranges"><meta name="description" content="Merges overlapping or nearly adjacent policy periods within portfolio groups."><meta property="og:description" content="Merges overlapping or nearly adjacent policy periods within portfolio groups."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Reduce portfolio periods by merging adjacent date ranges — merge_date_ranges"><meta name="description" content="Combine overlapping or nearly adjacent coverage periods for the same policy,
+risk or portfolio segment. The result provides a consolidated time basis for
+exposure calculations, active-policy counts and period-based reporting."><meta property="og:description" content="Combine overlapping or nearly adjacent coverage periods for the same policy,
+risk or portfolio segment. The result provides a consolidated time basis for
+exposure calculations, active-policy counts and period-based reporting."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -38,7 +42,9 @@
     </div>
 
     <div class="ref-description section level2">
-    <p>Merges overlapping or nearly adjacent policy periods within portfolio groups.</p>
+    <p>Combine overlapping or nearly adjacent coverage periods for the same policy,
+risk or portfolio segment. The result provides a consolidated time basis for
+exposure calculations, active-policy counts and period-based reporting.</p>
     </div>
 
     <div class="section level2">
@@ -88,13 +94,14 @@ merged ranges, for example premium or exposure.</p></dd>
 
 
 <dt id="arg-aggregate-fun">aggregate_fun<a class="anchor" aria-label="anchor" href="#arg-aggregate-fun"></a></dt>
-<dd><p>Aggregation function or function name. Defaults to
-<code>"sum"</code>.</p></dd>
+<dd><p>Function or function name used to combine
+<code>aggregate_cols</code> within a merged interval. The default, <code>"sum"</code>, is generally
+appropriate for additive measures such as premium or exposure.</p></dd>
 
 
 <dt id="arg-merge-gap-days">merge_gap_days<a class="anchor" aria-label="anchor" href="#arg-merge-gap-days"></a></dt>
 <dd><p>Non-negative whole number. Ranges with a gap smaller
-than this number of days are merged. Defaults to 5.</p></dd>
+than this number of days are treated as continuous and merged. Defaults to 5.</p></dd>
 
 
 <dt id="arg-begin-end-agg-cols-agg-min-gapwidth">begin, end, ..., agg_cols, agg, min.gapwidth<a class="anchor" aria-label="anchor" href="#arg-begin-end-agg-cols-agg-min-gapwidth"></a></dt>
@@ -118,7 +125,9 @@ coverage intervals.</p>
 <p><code>merge_date_ranges()</code> merges date ranges within each <code>group_by</code> combination.
 Ranges with a gap smaller than <code>merge_gap_days</code> are treated as one continuous
 interval. If <code>aggregate_cols</code> is supplied, those columns are aggregated over
-the merged interval.</p>
+the merged interval. The grouping columns should identify records for which
+combining coverage periods is actuarially and operationally meaningful;
+periods belonging to different risks or contracts should not be pooled.</p>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>

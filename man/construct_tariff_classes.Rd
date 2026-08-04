@@ -20,19 +20,19 @@ construct_tariff_classes(
 \code{\link[=risk_factor_gam]{risk_factor_gam()}}. Legacy \code{"riskfactor_gam"} and \code{"fitgam"} classes are
 accepted for compatibility.}
 
-\item{complexity}{Non-negative numeric complexity penalty for the
-evolutionary tree. Larger values generally favour fewer internal
-boundaries.}
+\item{complexity}{Deprecated. Use \code{segmentation_penalty} instead.}
 
 \item{max_iterations}{Positive integer. Maximum number of evolutionary search
-iterations.}
+iterations. This is an advanced algorithm-control parameter.}
 
 \item{population_size}{Positive integer. Number of candidate trees maintained
-during the evolutionary search.}
+during the evolutionary search. This is an advanced algorithm-control
+parameter.}
 
-\item{seed}{Numeric random seed used by the grouping algorithm.}
+\item{seed}{Single finite whole number used to reproduce the evolutionary
+search.}
 
-\item{alpha}{Deprecated. Use \code{complexity} instead.}
+\item{alpha}{Deprecated. Use \code{segmentation_penalty} instead.}
 
 \item{niterations}{Deprecated. Use \code{max_iterations} instead.}
 

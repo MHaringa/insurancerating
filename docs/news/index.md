@@ -4,18 +4,35 @@
 
 ### Changes since 0.8.1
 
+- [`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md)
+  now assesses GLM coefficient stability by resampling the estimation
+  portfolio rows and refitting the model. Individual failed fits are
+  retained as missing replicates instead of stopping the full run.
+  [`summary()`](https://rdrr.io/r/base/summary.html) reports link-scale
+  or exponentiated results, with `"relativity"` available as an alias,
+  and
+  [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+  provides a formatted coefficient table.
 - The function documentation, README and vignettes now use a consistent,
   practical actuarial style. The documentation distinguishes observed
   portfolio experience, fitted model effects, explicit tariff
   assumptions and model diagnostics, and states relevant interpretation
-  limits more clearly.
+  limits more clearly. Experimental documentation badges have been
+  removed, and the low-level
+  [`rmse()`](https://mharinga.github.io/insurancerating/reference/rmse.md)
+  helper is listed with the package utilities in the reference index.
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   keeps `"spline"` as its general-purpose default and fits it as an
   unconstrained penalized cubic regression spline. Polynomial smoothing
   is selected explicitly with `"poly"`, while `"gam"` provides a
   thin-plate GAM comparison. `degree` is limited to polynomial fits, `k`
   is limited to spline methods, and an omitted `k` is adapted to the
-  available grouped model points.
+  available grouped model points. Its arguments now follow the modelling
+  sequence of variables, required `breaks`, smoothing method, complexity
+  and weights. Shape-constrained methods now use readable values such as
+  `"increasing"`, `"decreasing"`, `"increasing_convex"` and
+  `"increasing_concave"`; the former short SCOP codes remain accepted as
+  compatibility aliases.
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   recognises a split variable created by an earlier
   [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
@@ -27,11 +44,11 @@
   parent categories against `model_variable` before storing a refinement
   step. Closely matching observed values are suggested for likely
   spelling or spacing errors.
-- [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md)
+- [`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
   and
-  [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
-  are now the primary helpers for defining named sublevel splits. The
-  low-level
+  [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
+  are now the primary helpers for defining named sublevel splits and
+  share one reference page describing their combined use. The low-level
   [`split_relativities()`](https://mharinga.github.io/insurancerating/reference/split_relativities.md)
   constructor is deprecated because it does not record the parent model
   level required by
@@ -46,6 +63,26 @@
   use one terminal period, can be disabled, and can be replaced by
   explicitly supplied display labels. Both methods now also provide
   `legend_position` for consistent legend placement.
+- [`autoplot.riskfactor_gam()`](https://mharinga.github.io/insurancerating/reference/autoplot.tariff_effect.md)
+  and
+  [`autoplot.tariff_segments()`](https://mharinga.github.io/insurancerating/reference/autoplot.tariff_effect.md)
+  now use one shared plotting implementation and are documented on one
+  reference page. Segment plots retain their boundaries by default and
+  can show the underlying GAM curve alone with `show_segments = FALSE`.
+- [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md)
+  now uses `segmentation_penalty` as its primary split-control argument;
+  `complexity` remains available as a deprecated alias. The method
+  divides the fitted GAM curve without applying a second exposure or
+  claim-volume weight; these quantities have already informed the GAM
+  estimate and remain available through
+  [`summary()`](https://rdrr.io/r/base/summary.html) as diagnostics.
+  Validation now covers malformed GAM objects, non-finite values and
+  whole-number search controls. Tree splits are read from the fitted
+  tree structure rather than parsed from printed rules.
+  [`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md)
+  reapplies stored boundaries to the continuous risk factor, so
+  filtering or reordering rows no longer misaligns assignments and
+  unsupported values outside the fitted range fail explicitly.
 
 ## insurancerating 0.8.1
 
@@ -134,9 +171,9 @@ CRAN release: 2026-07-30
   [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
   example now demonstrates that several original model levels can be
   refined in one
-  [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
+  [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
   specification by using multiple
-  [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md)
+  [`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
   calls.
 - Deprecated
   [`rating_factors()`](https://mharinga.github.io/insurancerating/reference/rating_factors.md)
@@ -396,7 +433,7 @@ CRAN release: 2026-06-02
   users can adjust only selected levels.
 - [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
   now uses `model_variable` and `split_variable`.
-- [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
+- [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
   replaces `relativities_list()` as the helper for building relativity
   specifications.
 - [`restrict_coef()`](https://mharinga.github.io/insurancerating/reference/restrict_coef.md),

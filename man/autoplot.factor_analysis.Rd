@@ -65,7 +65,10 @@ Character values can be \code{"frequency"}, \code{"average_severity"},
 
 \item{legend_position}{Character string specifying the legend position.
 Supported values are \code{"right"}, \code{"bottom"}, \code{"top"}, \code{"left"} and
-\code{"none"}.}
+\code{"none"}. A legend is present only when the \code{factor_analysis} object was
+created with \code{group_by}, because the resulting group-specific series are
+distinguished by colour. Without \code{group_by}, colours are fixed plot styles
+and no legend is drawn; in that case this argument has no visible effect.}
 
 \item{show_exposure}{Show exposure as background bars behind line plots
 (default = TRUE).}
@@ -175,6 +178,12 @@ When the factor analysis contains one or more \code{by} variables, separate
 observed series are shown. \code{show_total = TRUE} adds the aggregate portfolio
 series for comparison. Sorting and manual level ordering affect only the
 presentation; the underlying summaries are unchanged.
+
+A rate or ratio is not shown for a risk-factor level when its denominator is
+zero or missing. For example, average severity is undefined when claim count
+is zero, and loss ratio is undefined when premium is zero. \code{autoplot()} gives
+one combined warning identifying the affected metrics and levels. Other valid
+metrics and exposure information remain in the figure.
 }
 \examples{
 # Plot observed frequency and risk premium

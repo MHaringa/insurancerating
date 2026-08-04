@@ -97,6 +97,14 @@ testthat::test_that(
       prepare_refinement(model, data = list()),
       "data.frame"
     )
+    testthat::expect_error(
+      prepare_refinement(mtcars),
+      paste0(
+        "`model` must be a fitted `glm` object, not a data frame. ",
+        "Fit the model first"
+      ),
+      fixed = TRUE
+    )
   }
 )
 
@@ -539,8 +547,22 @@ testthat::test_that(
       relativity = c(1.1, 1.2)
     )
 
-    refined <- add_restriction(ref, restrictions)
+    testthat::expect_message(
+      refined <- add_restriction(ref, restrictions),
+      paste0(
+        "Added new level `D` to risk factor `postal_area` with relativity ",
+        "1.2. This level was not observed in the model data."
+      ),
+      fixed = TRUE
+    )
     completed <- refined$steps[[1]]$restrictions
+
+    printed <- testthat::capture_output(print(refined))
+    testthat::expect_match(printed, "Base model: Poisson GLM \\(log link\\)")
+    testthat::expect_match(
+      printed,
+      "Restriction: postal_area -> relativity \\(4 levels\\).*new level: D"
+    )
 
     testthat::expect_equal(
       as.character(completed$postal_area),
@@ -611,6 +633,15 @@ testthat::test_that(
     testthat::expect_error(
       add_restriction(ref, data.frame(zip = "a", zip_rst = NA_real_)),
       "finite numeric"
+    )
+    testthat::expect_error(
+      add_restriction(ref, data.frame(zip = "a", zip_rst = "1")),
+      paste0(
+        "The relativity column `zip_rst` must be numeric, but it is ",
+        "character. Supply relativities as numeric values, for example `1` ",
+        "instead of `\"1\"`."
+      ),
+      fixed = TRUE
     )
   }
 )
@@ -778,6 +809,14 @@ testthat::test_that(
 
 testthat::test_that(
   "add_smoothing validates public arguments before fitting", {
+    testthat::expect_identical(
+      names(formals(add_smoothing))[1:8],
+      c(
+        "model", "model_variable", "source_variable", "breaks", "smoothing",
+        "k", "degree", "weights"
+      )
+    )
+
     df <- data.frame(
       y = c(1, 2, 1, 3),
       exposure = rep(1, 4),
@@ -791,6 +830,16 @@ testthat::test_that(
     ref <- prepare_refinement(model, data = df)
 
     testthat::expect_error(
+      add_smoothing(
+        ref,
+        model_variable = "age_band",
+        source_variable = "age"
+      ),
+      "`breaks` is required",
+      fixed = TRUE
+    )
+
+    testthat::expect_error(
       add_smoothing(ref, model_variable = "age_band", source_variable = "age",
                     breaks = c(20, 35, 50),
                     smoothing = "bad"),
@@ -802,9 +851,46 @@ testthat::test_that(
       "strictly increasing"
     )
     testthat::expect_error(
-      add_smoothing(ref, model_variable = "missing", source_variable = "age",
+      add_smoothing(ref, model_variable = "age_bnd", source_variable = "age",
                     breaks = c(20, 35, 50)),
-      "model_variable"
+      paste0(
+        "Variable `age_bnd`, supplied through `model_variable`, is not a ",
+        "model term in the GLM used by `prepare_refinement()`. Did you mean ",
+        "`age_band`?"
+      ),
+      fixed = TRUE
+    )
+    testthat::expect_error(
+      add_smoothing(ref, model_variable = "age", source_variable = "age",
+                    breaks = c(20, 35, 50)),
+      paste0(
+        "Variable `age`, supplied through `model_variable`, is not a model ",
+        "term in the GLM used by `prepare_refinement()`."
+      ),
+      fixed = TRUE
+    )
+    testthat::expect_error(
+      add_smoothing(ref, model_variable = "age_band", source_variable = "agee",
+                    breaks = c(20, 35, 50)),
+      paste0(
+        "Column `agee`, supplied through `source_variable`, was not found ",
+        "in the refinement data. Did you mean `age`?"
+      ),
+      fixed = TRUE
+    )
+    testthat::expect_error(
+      add_smoothing(
+        ref,
+        model_variable = "age_band",
+        source_variable = "age",
+        breaks = c(20, 35, 50),
+        weights = "exposure1"
+      ),
+      paste0(
+        "Column `exposure1`, supplied through `weights`, was not found in ",
+        "the refinement data. Did you mean `exposure`?"
+      ),
+      fixed = TRUE
     )
     testthat::expect_error(
       add_smoothing(ref, model_variable = "age_band", source_variable = "age",
@@ -872,6 +958,98 @@ testthat::test_that(
       add_smoothing(ref, model_variable = "age_band", source_variable = "age",
                     breaks = c(20, 35, 50)),
       "interval-style"
+    )
+  }
+)
+
+testthat::test_that(
+  "add_smoothing validates source values and break coverage", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      age = c(20, 25, 30, 35, 40, 50)
+    )
+    df$age_band <- cut(
+      df$age,
+      breaks = c(20, 30, 40, 50),
+      include.lowest = TRUE
+    )
+    model <- glm(
+      y ~ age_band + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+    ref <- prepare_refinement(model, data = df)
+
+    missing_source <- ref
+    missing_source$base$data$age[2] <- NA_real_
+    testthat::expect_error(
+      add_smoothing(
+        missing_source,
+        model_variable = "age_band",
+        source_variable = "age",
+        breaks = c(20, 30, 40, 50),
+        smoothing = "poly",
+        degree = 1
+      ),
+      "`source_variable` column `age` contains 1 missing value.*finite numeric values"
+    )
+
+    infinite_source <- ref
+    infinite_source$base$data$age[2] <- Inf
+    testthat::expect_error(
+      add_smoothing(
+        infinite_source,
+        model_variable = "age_band",
+        source_variable = "age",
+        breaks = c(20, 30, 40, 50),
+        smoothing = "poly",
+        degree = 1
+      ),
+      "`source_variable` column `age` contains 1 non-finite value.*`Inf` or `-Inf`"
+    )
+
+    testthat::expect_error(
+      add_smoothing(
+        ref,
+        model_variable = "age_band",
+        source_variable = "age",
+        breaks = c(25, 30, 40, 45),
+        smoothing = "poly",
+        degree = 1
+      ),
+      paste0(
+        "`breaks` do not cover all values in the `source_variable` column ",
+        "`age`.*1 below the first break and 1 above the last break"
+      )
+    )
+
+    testthat::expect_warning(
+      add_smoothing(
+        ref,
+        model_variable = "age_band",
+        source_variable = "age",
+        breaks = c(15, 30, 40, 55),
+        smoothing = "poly",
+        degree = 1
+      ),
+      paste0(
+        "`breaks` extend beyond the interval range represented by ",
+        "`model_variable` `age_band`.*relativities outside the original ",
+        "model range are extrapolated"
+      )
+    )
+
+    testthat::expect_warning(
+      add_smoothing(
+        ref,
+        model_variable = "age_band",
+        source_variable = "age",
+        breaks = c(20, 30, 40, 50),
+        smoothing = "poly",
+        degree = 1
+      ),
+      NA
     )
   }
 )
@@ -1019,10 +1197,58 @@ testthat::test_that(
         model_variable = "insured_amount_band",
         source_variable = "insured_amount",
         breaks = c(0, 100, 200, 300, 400),
-        smoothing = "mpi",
+        smoothing = "increasing",
         k = 5
       ),
-      "Cannot fit shape-constrained `mpi` smoothing.*only 4 unique values"
+      "Cannot fit shape-constrained `increasing` smoothing.*only 4 unique values"
+    )
+
+    readable_method <- add_smoothing(
+      ref,
+      model_variable = "insured_amount_band",
+      source_variable = "insured_amount",
+      breaks = c(0, 100, 200, 300, 400),
+      smoothing = "increasing",
+      k = 4
+    )
+    legacy_alias <- add_smoothing(
+      ref,
+      model_variable = "insured_amount_band",
+      source_variable = "insured_amount",
+      breaks = c(0, 100, 200, 300, 400),
+      smoothing = "mpi",
+      k = 4
+    )
+
+    testthat::expect_identical(
+      readable_method$steps[[1]]$smoothing,
+      "increasing"
+    )
+    testthat::expect_identical(
+      legacy_alias$steps[[1]]$smoothing,
+      "increasing"
+    )
+    testthat::expect_identical(
+      readable_method$steps[[1]]$smoothing_code,
+      "mpi"
+    )
+    testthat::expect_identical(
+      legacy_alias$steps[[1]]$smoothing_code,
+      "mpi"
+    )
+    testthat::expect_match(
+      paste(capture.output(print(legacy_alias)), collapse = "\n"),
+      "method: increasing, k: 4"
+    )
+
+    saved_legacy_object <- legacy_alias
+    saved_legacy_object$steps[[1]]$smoothing <- "mpi"
+    saved_legacy_object$steps[[1]]$smoothing_code <- NULL
+    readable_fit <- refit(readable_method)
+    saved_legacy_fit <- refit(saved_legacy_object)
+    testthat::expect_equal(
+      stats::fitted(readable_fit),
+      stats::fitted(saved_legacy_fit)
     )
 
     testthat::expect_error(
@@ -1038,6 +1264,33 @@ testthat::test_that(
     )
   }
 )
+
+testthat::test_that("readable smoothing methods retain all legacy aliases", {
+  aliases <- c(
+    mpi = "increasing",
+    mpd = "decreasing",
+    cx = "convex",
+    cv = "concave",
+    micx = "increasing_convex",
+    micv = "increasing_concave",
+    mdcx = "decreasing_convex",
+    mdcv = "decreasing_concave"
+  )
+
+  resolved <- vapply(
+    names(aliases),
+    function(method) .resolve_smoothing_method(method)$method,
+    character(1)
+  )
+  codes <- vapply(
+    unname(aliases),
+    function(method) .resolve_smoothing_method(method)$code,
+    character(1)
+  )
+
+  testthat::expect_identical(unname(resolved), unname(aliases))
+  testthat::expect_identical(unname(codes), names(aliases))
+})
 
 testthat::test_that(
   "autoplot can limit the visible smoothing range with x_max and y_max", {
@@ -1212,6 +1465,49 @@ testthat::test_that(
       add_relativities(ref, model_variable = "zip", split_variable = "missing",
                        relativities = rel, exposure = "exposure"),
       "split_variable"
+    )
+    testthat::expect_error(
+      add_relativities(
+        ref,
+        model_variable = "zipp",
+        split_variable = "zip_split",
+        relativities = rel,
+        exposure = "exposure"
+      ),
+      paste0(
+        "Column `zipp`, supplied through `model_variable`, was not found in ",
+        "the refinement data and does not identify a restricted variable ",
+        "created by an earlier `add_restriction()` step. Did you mean `zip`?"
+      ),
+      fixed = TRUE
+    )
+    testthat::expect_error(
+      add_relativities(
+        ref,
+        model_variable = "zip",
+        split_variable = "zip_splitt",
+        relativities = rel,
+        exposure = "exposure"
+      ),
+      paste0(
+        "Column `zip_splitt`, supplied through `split_variable`, was not ",
+        "found in the refinement data. Did you mean `zip_split`?"
+      ),
+      fixed = TRUE
+    )
+    testthat::expect_error(
+      add_relativities(
+        ref,
+        model_variable = "zip",
+        split_variable = "zip_split",
+        relativities = rel,
+        exposure = "exposure2"
+      ),
+      paste0(
+        "Column `exposure2`, supplied through `exposure`, was not found in ",
+        "the refinement data. Did you mean `exposure`?"
+      ),
+      fixed = TRUE
     )
     misspelled <- relativities(
       split_level("a", c("a1", "a 2"), c(1, 1.2))

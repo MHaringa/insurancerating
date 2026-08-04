@@ -93,7 +93,10 @@ age_policyholder_frequency <- risk_factor_gam(
   exposure = "exposure"
 )
 
-age_segments_freq <- derive_tariff_segments(age_policyholder_frequency)
+age_segments_freq <- derive_tariff_segments(
+  age_policyholder_frequency,
+  seed = 1
+)
 
 dat <- MTPL |>
   add_tariff_segments(age_segments_freq, name = "age_policyholder_freq_cat") |>
@@ -194,7 +197,7 @@ ref <- ref |>
   add_smoothing(
     model_variable = "age_policyholder_freq_cat",
     source_variable = "age_policyholder",
-    breaks = seq(18, 95, 5),
+    breaks = c(seq(18, 93, 5), 95),
     weights = "exposure"
   )
 
@@ -209,8 +212,8 @@ The key arguments are:
   default
 -	`weights`: optional weighting, typically exposure
 
-Use `"mpi"` or `"mpd"` when the tariff effect is required to increase or
-decrease monotonically. Convex, concave and combined shape constraints are
+Use `"increasing"` or `"decreasing"` when the tariff effect is required to
+move monotonically. Convex, concave and combined shape constraints are
 available for cases where that additional assumption can be supported
 actuarially. `"poly"` fits a global polynomial and uses `degree`; `"gam"` fits
 a thin-plate smooth that can be used as an unconstrained comparison. For spline
@@ -248,12 +251,23 @@ Typical smoothing choices are:
 -	`"poly"`: global polynomial controlled by `degree`
 -	`"gam"`: thin-plate regression spline fitted with `mgcv`, mainly useful as
   an unconstrained comparison
--	`"mpi"`: monotone increasing
--	`"mpd"`: monotone decreasing
+-	`"increasing"`: monotone increasing
+-	`"decreasing"`: monotone decreasing
 
-Convex, concave and combined monotonicity-curvature constraints are also
-available as advanced options. They should be used only when the assumed shape
-has an actuarial or economic basis.
+Monotonicity concerns the direction of the tariff effect. Convexity and
+concavity concern how its slope changes. A convex effect has an increasing
+slope and may be U-shaped when its direction is not constrained; a concave
+effect has a decreasing slope and may be inverted U-shaped. For an increasing
+effect, convexity implies acceleration and concavity implies flattening. For a
+decreasing effect, convexity implies flattening and concavity implies a steeper
+decline.
+
+The readable advanced options are `"convex"`, `"concave"`,
+`"increasing_convex"`, `"increasing_concave"`, `"decreasing_convex"` and
+`"decreasing_concave"`. They should be used only when the assumed curvature
+has an actuarial or economic basis in addition to any directional assumption.
+The former short codes `"mpi"`, `"mpd"`, `"cx"`, `"cv"`, `"micx"`, `"micv"`,
+`"mdcx"` and `"mdcv"` remain accepted for compatibility.
 
 For example:
 
@@ -433,6 +447,12 @@ head(md)
 
 ```
 
+A model point represents a unique observed combination of the risk-factor
+levels used by the fitted model. `rating_grid()` groups portfolio records with
+the same combination and attaches the corresponding refined model effects. It
+returns combinations observed in the portfolio; it does not construct every
+theoretically possible combination of factor levels.
+
 Observed model-point combinations can be obtained with `rating_grid()`:
 
 ```{r}
@@ -442,12 +462,26 @@ head(grid)
 
 ```
 
+Each row can represent several portfolio records. `count` gives the number of
+records with that combination and `exposure` gives their aggregated exposure.
+The remaining refinement columns contain the restrictions, smoothed effects or
+derived relativities that apply to the model point.
+
+When a fitted GLM is supplied, `rating_grid()` retrieves the exposure column
+used as a model weight or offset from the model metadata and aggregates it
+automatically. Supply `exposure` explicitly only when that column is not used by
+the model or when a plain data frame is supplied.
+
 This is typically used for:
 
 -	tariff review
 -	portfolio summaries
--	compact prediction input
+-	compact input for tariff calculations or predictions
 -	implementation support
+
+Before the grid is used for prediction, the analyst should verify that all
+required model variables are present and decide how combinations not observed
+in the estimation portfolio will be handled.
 	
 	
 ## Complete example
@@ -465,7 +499,7 @@ burn_refined <- prepare_refinement(burn_unrestricted) |>
   add_smoothing(
     model_variable = "age_policyholder_freq_cat",
     source_variable = "age_policyholder",
-    breaks = seq(18, 95, 5),
+    breaks = c(seq(18, 93, 5), 95),
     weights = "exposure"
   ) |>
   add_restriction(zip_df) |>
@@ -489,7 +523,7 @@ burn_refined_old <- burn_unrestricted |>
   smooth_coef(
     x_cut = "age_policyholder_freq_man",
     x_org = "age_policyholder",
-    breaks = seq(18, 95, 5)
+    breaks = c(seq(18, 93, 5), 95)
   ) |>
   restrict_coef(zip_df) |>
   refit_glm()

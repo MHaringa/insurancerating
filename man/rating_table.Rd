@@ -37,8 +37,9 @@ If \code{NULL}, the original exposure column name is used.}
 exponentiated and shown as relativities. If \code{FALSE}, coefficients are shown
 on the model scale.}
 
-\item{significance}{Logical. If \code{TRUE}, append significance indicators based
-on model coefficient p-values.}
+\item{significance}{Logical. If \code{TRUE}, add a separate \verb{signif_*} column for
+each model containing significance indicators based on coefficient
+p-values. The corresponding \verb{est_*} columns remain numeric.}
 
 \item{round_exposure}{Non-negative number of digits used to round exposure.}
 
@@ -47,8 +48,11 @@ on model coefficient p-values.}
 \item{signif_stars}{Deprecated. Use \code{significance} instead.}
 }
 \value{
-A data frame-like object with classes \code{"rating_table"} and legacy
-\code{"riskfactor"}. It contains:
+A data frame with classes \code{"rating_table"}, legacy \code{"riskfactor"}
+and \code{"data.frame"}. It can be inspected and manipulated directly with
+ordinary data-frame operations. For backward compatibility, \code{x$df} returns
+the same table without the package-specific class and metadata. The table
+contains:
 \describe{
 \item{risk_factor}{Model term or risk-factor name.}
 \item{level}{Factor level or term representation.}
@@ -95,6 +99,21 @@ Comparing multiple models is useful for assessing changes between
 unrestricted and refined specifications, or between alternative model
 formulations. Comparable response definitions and coefficient scales remain
 the responsibility of the analyst.
+}
+
+\subsection{Significance indicators}{
+
+When \code{significance = TRUE}, every model receives its own \verb{signif_*} column.
+For example, models named \code{frequency} and \code{severity} produce
+\code{est_frequency}, \code{signif_frequency}, \code{est_severity} and
+\code{signif_severity}. Keeping estimates and indicators separate preserves the
+numeric type of the fitted effects for subsequent calculations, filtering
+and export.
+
+\code{\link[=as_gt]{as_gt()}} combines each estimate with its corresponding significance
+indicator for presentation and adds the significance thresholds as a source
+note below the table. Reference levels generally have no separate
+coefficient test and therefore have no significance indicator.
 
 \code{rating_table()} accepts fitted models only. A \code{rating_refinement}
 specification must first be fitted with \code{\link[=refit]{refit()}}.
@@ -117,6 +136,10 @@ fitted_effects <- rating_table(
 )
 
 fitted_effects
+head(fitted_effects)
+
+# The historical accessor remains available for existing code
+identical(fitted_effects$df, as.data.frame(fitted_effects))
 if (requireNamespace("gt", quietly = TRUE)) {
   as_gt(fitted_effects)
 }

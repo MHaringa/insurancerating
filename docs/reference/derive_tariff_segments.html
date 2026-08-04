@@ -54,10 +54,11 @@ pricing GLM or tariff structure.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">derive_tariff_segments</span><span class="op">(</span></span>
 <span>  <span class="va">object</span>,</span>
-<span>  complexity <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  segmentation_penalty <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  max_iterations <span class="op">=</span> <span class="fl">10000</span>,</span>
 <span>  population_size <span class="op">=</span> <span class="fl">200</span>,</span>
-<span>  seed <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  complexity <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  niterations <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ntrees <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -74,28 +75,37 @@ pricing GLM or tariff structure.</p>
 accepted for compatibility.</p></dd>
 
 
-<dt id="arg-complexity">complexity<a class="anchor" aria-label="anchor" href="#arg-complexity"></a></dt>
-<dd><p>Non-negative numeric complexity penalty for the
-evolutionary tree. Larger values generally favour fewer internal
-boundaries.</p></dd>
+<dt id="arg-segmentation-penalty">segmentation_penalty<a class="anchor" aria-label="anchor" href="#arg-segmentation-penalty"></a></dt>
+<dd><p>Non-negative numeric penalty on additional tree
+splits. Larger values generally favour fewer tariff segments. The default
+<code>0</code> retains the historical behaviour and applies no explicit split
+penalty; it can therefore produce a relatively detailed candidate
+segmentation. There is no universal actuarial value: compare candidate
+penalties and assess the resulting volume and stability by segment.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Single finite whole number used to reproduce the evolutionary
+search.</p></dd>
 
 
 <dt id="arg-max-iterations">max_iterations<a class="anchor" aria-label="anchor" href="#arg-max-iterations"></a></dt>
 <dd><p>Positive integer. Maximum number of evolutionary search
-iterations.</p></dd>
+iterations. This is an advanced algorithm-control parameter.</p></dd>
 
 
 <dt id="arg-population-size">population_size<a class="anchor" aria-label="anchor" href="#arg-population-size"></a></dt>
 <dd><p>Positive integer. Number of candidate trees maintained
-during the evolutionary search.</p></dd>
+during the evolutionary search. This is an advanced algorithm-control
+parameter.</p></dd>
 
 
-<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>Numeric random seed used by the grouping algorithm.</p></dd>
+<dt id="arg-complexity">complexity<a class="anchor" aria-label="anchor" href="#arg-complexity"></a></dt>
+<dd><p>Deprecated. Use <code>segmentation_penalty</code> instead.</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
-<dd><p>Deprecated. Use <code>complexity</code> instead.</p></dd>
+<dd><p>Deprecated. Use <code>segmentation_penalty</code> instead.</p></dd>
 
 
 <dt id="arg-niterations">niterations<a class="anchor" aria-label="anchor" href="#arg-niterations"></a></dt>
@@ -130,6 +140,14 @@ during the evolutionary search.</p></dd>
 <dd><p>Factor with the tariff segment assigned to each
 observed risk factor value.</p></dd>
 
+<dt>segment_summary</dt>
+<dd><p>Data frame with portfolio counts, distinct
+risk-factor values and the observed response components for each candidate
+segment. Use <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> as the public interface for this table.</p></dd>
+
+<dt>segmentation_penalty</dt>
+<dd><p>Penalty applied to additional tree splits.</p></dd>
+
 
 </dl><p>For backward compatibility, the old components <code>prediction</code>, <code>x</code>, <code>model</code>,
 <code>data</code>, <code>x_obs</code>, <code>splits</code>, <code>class_boundaries</code>, <code>assigned_groups</code>, and
@@ -143,13 +161,29 @@ observed risk factor value.</p></dd>
 
 
 <p>An evolutionary regression tree from <code><a href="https://rdrr.io/pkg/evtree/man/evtree.html" class="external-link">evtree::evtree()</a></code> is fitted to the
-GAM response over the observed risk-factor values. Internal tree split
+predicted GAM effect over the distinct observed risk-factor values. The tree
+therefore approximates the estimated univariate curve; it is not fitted
+directly to individual claim outcomes or portfolio loss. Internal tree split
 points are translated into interval boundaries. If no internal split is
 supported by the fitted search, one interval spanning the observed range is
 returned.</p>
 <p>The method follows the data-driven binning approach described by Henckaerts
-et al. (2018). <code>complexity</code>, <code>population_size</code>, <code>max_iterations</code> and <code>seed</code>
-control the search rather than an actuarial minimum-volume rule.</p>
+et al. (2018). <code>segmentation_penalty</code>, <code>population_size</code>, <code>max_iterations</code>
+and <code>seed</code> control the stochastic search rather than an actuarial
+minimum-volume rule. Reusing the same inputs and <code>seed</code> makes the result
+reproducible.</p>
+<p>Each distinct observed risk-factor value has equal influence when the tree
+approximates the fitted curve. Exposure, claim count or another actuarial
+weight is deliberately not applied again in this step. The relevant
+portfolio information has already influenced the curve through the
+statistical specification used by <code><a href="risk_factor_gam.html">risk_factor_gam()</a></code>, such as the exposure
+offset in a frequency model, claim-count weights in a severity model or
+exposure weights in a risk-premium model. Applying a second weight during
+segmentation would introduce an additional portfolio-distribution choice
+after the GAM has been estimated.</p>
+<p>Exposure and claim count remain available through <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>. They are
+diagnostics for assessing the support and practical stability of candidate
+segments, but they do not influence the estimated boundaries.</p>
 </div>
 
 <div class="section">
@@ -162,9 +196,44 @@ multivariate model, the boundaries should be assessed against exposure and
 claim volume, stability across periods, operational rounding and the
 interaction with other risk factors. Particular care is required for
 boundaries in sparsely populated tails.</p>
-<p>Use <code><a href="autoplot.tariff_segments.html">autoplot.tariff_segments()</a></code> to compare the smooth curve and boundaries.
-Use <code><a href="add_tariff_segments.html">add_tariff_segments()</a></code> to attach the resulting factor to the portfolio
-rows used for the GAM.</p>
+<p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reports the number of portfolio records, number of
+distinct risk-factor values and available exposure and claim volume within
+each proposed segment. These diagnostics support actuarial review but do not
+constitute an automatic acceptance rule. Minimum-volume requirements and
+operational rounding should be selected with reference to portfolio size,
+model purpose and governance standards.</p>
+</div>
+
+<div class="section">
+<h3 id="a-staged-glm-refinement-workflow">A staged GLM refinement workflow<a class="anchor" aria-label="anchor" href="#a-staged-glm-refinement-workflow"></a></h3>
+
+
+<p>In practical pricing work, the candidate boundaries are often used to form
+an initial set of relatively broad model groups. The actuary reviews
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and, where necessary, combines thinly populated segments or
+increases <code>segmentation_penalty</code> until the groups have sufficient exposure
+and claim information for stable estimation. The resulting factor can then
+be included in an unrestricted GLM.</p>
+<p>This broad first-stage grouping avoids estimating a separate free GLM
+coefficient for every fine tariff interval when observations are unevenly
+distributed over the continuous risk factor. After fitting the GLM,
+<code><a href="add_smoothing.html">add_smoothing()</a></code> can use the broad model effect together with the original
+continuous variable to construct a regularised pattern over finer breaks.
+These finer breaks may reflect operational or commercial tariff boundaries,
+while their relativities remain linked through the smoothing specification
+rather than being estimated independently for every small segment.</p>
+<p>The staged approach therefore separates statistical support from final
+tariff granularity: broad groups provide the information used by the GLM,
+while smoothing can translate that information into a finer and more regular
+tariff structure. Smoothing does not create additional observations, so the
+resulting classes should still be assessed for stability, extrapolation and
+commercial suitability.</p>
+<p>The first and last boundaries equal the observed range used by the GAM.
+Applying the segmentation to new data outside that range results in an
+informative error rather than silent extrapolation.</p>
+<p>Use <code><a href="autoplot.tariff_effect.html">autoplot.tariff_segments()</a></code> to compare the smooth curve and boundaries.
+Use <code><a href="add_tariff_segments.html">add_tariff_segments()</a></code> to apply the resulting boundaries to portfolio
+data using the original continuous risk factor.</p>
 </div>
 
     </div>
@@ -187,8 +256,8 @@ marginal likelihood estimation of semiparametric generalized linear models.
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="risk_factor_gam.html">risk_factor_gam()</a></code>, <code><a href="autoplot.tariff_segments.html">autoplot.tariff_segments()</a></code>,
-<code><a href="add_tariff_segments.html">add_tariff_segments()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="risk_factor_gam.html">risk_factor_gam()</a></code>, <code><a href="autoplot.tariff_effect.html">autoplot.tariff_segments()</a></code>,
+<code><a href="add_tariff_segments.html">add_tariff_segments()</a></code>, <code><a href="prepare_refinement.html">prepare_refinement()</a></code>, <code><a href="add_smoothing.html">add_smoothing()</a></code></p></div>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
@@ -204,9 +273,13 @@ marginal likelihood estimation of semiparametric generalized linear models.
 <span class="r-in"><span>  claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span></span>
 <span class="r-in"><span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span></span>
 <span class="r-in"><span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span>  <span class="fu">derive_tariff_segments</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">derive_tariff_segments</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    segmentation_penalty <span class="op">=</span> <span class="fl">10</span>,</span></span>
+<span class="r-in"><span>    seed <span class="op">=</span> <span class="fl">1</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">age_segments</span>, show_observations <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">age_segments</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">MTPL</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="add_tariff_segments.html">add_tariff_segments</a></span><span class="op">(</span><span class="va">age_segments</span>, name <span class="op">=</span> <span class="st">"age_policyholder_segment"</span><span class="op">)</span></span></span>

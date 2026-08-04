@@ -43,18 +43,15 @@ reference:
       - redistribute_excess_loss
       - fit_truncated_severity
       - autoplot.truncated_severity
-      - rlnormt
-      - rgammat
 
   - title: "Tariff segments"
     desc: >
       Analyse continuous risk factors and convert them to tariff segments.
     contents:
       - risk_factor_gam
-      - autoplot.riskfactor_gam
+      - autoplot.tariff_effect
       - derive_tariff_segments
       - add_tariff_segments
-      - autoplot.tariff_segments
 
   - title: "Modelling and interpretation"
     desc: >
@@ -75,8 +72,7 @@ reference:
       - edit_smoothing
       - add_restriction
       - add_relativities
-      - relativities
-      - split_level
+      - relativity_specification
       - refit
 
   - title: "Validation"
@@ -84,9 +80,9 @@ reference:
       Assess model fit, predictive stability, dispersion, and residual behaviour.
     contents:
       - model_performance
-      - rmse
       - bootstrap_performance
       - autoplot.bootstrap_performance
+      - bootstrap_coefficients
       - check_overdispersion
       - check_residuals
       - autoplot.check_residuals
@@ -102,6 +98,9 @@ reference:
     desc: >
       Supporting functions used across pricing workflows.
     contents:
+      - rmse
+      - rlnormt
+      - rgammat
       - set_reference_level
       - split_periods_to_months
       - active_rows_by_date

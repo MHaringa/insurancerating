@@ -35,6 +35,114 @@ add_metrics <- function(dt, cols, .nclaims, .exposure, .severity, .premium) {
   dt
 }
 
+
+#' @noRd
+warn_factor_analysis_metric_omissions <- function(df, dfby, xvar, by,
+                                                  show_total, create_plots,
+                                                  plot_defs) {
+  rate_plots <- intersect(create_plots, 1:5)
+  if (length(rate_plots) == 0L) return(invisible(NULL))
+
+  data_sets <- if (identical(by, "NULL")) {
+    list(df)
+  } else {
+    out <- list(dfby)
+    if (isTRUE(show_total)) out <- c(out, list(df))
+    out
+  }
+
+  format_levels <- function(data, rows) {
+    levels <- as.character(data[[xvar]][rows])
+    if (!identical(by, "NULL") && by %in% names(data)) {
+      levels <- paste0(levels, " [", by, " = ", data[[by]][rows], "]")
+    }
+    levels <- unique(levels[!is.na(levels)])
+    if (length(levels) > 8L) {
+      levels <- c(levels[seq_len(8L)], paste0("and ", length(levels) - 8L,
+                                              " more"))
+    }
+    paste0("`", levels, "`", collapse = ", ")
+  }
+
+  details <- character()
+  for (i in rate_plots) {
+    definition <- plot_defs[[as.character(i)]]
+    metric <- definition$var
+    denominator <- definition$denom
+
+    for (data in data_sets) {
+      if (!metric %in% names(data)) next
+      values <- data[[metric]]
+      invalid <- is.na(values) | !is.finite(values)
+      negative <- !invalid & values < 0
+
+      if (!is.null(denominator) && denominator %in% names(data)) {
+        denominator_values <- data[[denominator]]
+        zero_denominator <- invalid & !is.na(denominator_values) &
+          is.finite(denominator_values) & denominator_values == 0
+        missing_denominator <- invalid &
+          (is.na(denominator_values) | !is.finite(denominator_values))
+
+        if (any(zero_denominator)) {
+          details <- c(
+            details,
+            paste0(
+              definition$lab, ": ", format_levels(data, zero_denominator),
+              " (`", denominator, "` denominator is zero)"
+            )
+          )
+        }
+        if (any(missing_denominator)) {
+          details <- c(
+            details,
+            paste0(
+              definition$lab, ": ", format_levels(data, missing_denominator),
+              " (`", denominator, "` denominator is missing or non-finite)"
+            )
+          )
+        }
+        invalid <- invalid & !zero_denominator & !missing_denominator
+      }
+
+      if (any(invalid)) {
+        details <- c(
+          details,
+          paste0(
+            definition$lab, ": ", format_levels(data, invalid),
+            " (metric value is missing or non-finite)"
+          )
+        )
+      }
+      if (any(negative)) {
+        details <- c(
+          details,
+          paste0(
+            definition$lab, ": ", format_levels(data, negative),
+            " (negative value is outside the non-negative plotting range)"
+          )
+        )
+      }
+    }
+  }
+
+  details <- unique(details)
+  if (length(details) > 0L) {
+    warning(
+      paste0(
+        "Some selected actuarial metrics are not shown for all risk-factor ",
+        "levels because the metric is not defined or lies outside the ",
+        "non-negative plotting range. This commonly occurs when exposure, ",
+        "claim count or premium used as a denominator is zero.\n",
+        paste0("- ", details, collapse = "\n"),
+        "\nOther valid metric values and exposure bars remain visible."
+      ),
+      call. = FALSE
+    )
+  }
+
+  invisible(NULL)
+}
+
 #' @importFrom ggplot2 autoplot
 #' @export
 ggplot2::autoplot
@@ -141,7 +249,8 @@ ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg,
                         stat = "identity",
                         color = "white", #color_bg,
                         fill = color_bg, #fill_bg,
-                        alpha = .7), #1),
+                        alpha = .7,
+                        na.rm = TRUE), #1),
       ggplot2::scale_y_continuous(sec.axis = ggplot2::sec_axis(
         ~ . * max(df[[s_axis]], na.rm = TRUE) / max(df[[f_axis]], na.rm = TRUE),
         name = stringr::str_wrap(
@@ -165,7 +274,8 @@ ggbarplot <- function(background, df, dfby, xvar, f_axis, s_axis, color_bg,
                         stat = "identity",
                         color = "white", #color_bg,
                         fill = color_bg, #fill_bg,
-                        alpha = .7), #1),
+                        alpha = .7,
+                        na.rm = TRUE), #1),
       ggplot2::scale_y_continuous(sec.axis = ggplot2::sec_axis(
         ~ . * max(df[[s_axis]], na.rm = TRUE) / max(dfby[[f_axis]], na.rm = T),
         name = s_axis,
@@ -192,7 +302,8 @@ ggpointline <- function(df, dfby, xvar, y, color, by,
                              y = .data[[y]],
                              group = 1),
                          color = color,
-                         linewidth = .8),
+                         linewidth = .8,
+                         na.rm = TRUE),
       ggplot2::geom_point(data = df,
                           aes(x = .data[[xvar]],
                               y = .data[[y]]),
@@ -200,7 +311,8 @@ ggpointline <- function(df, dfby, xvar, y, color, by,
                           shape = 21,
                           stroke = .7,
                           fill = "white",
-                          size = 2.2),
+                          size = 2.2,
+                          na.rm = TRUE),
       ggplot2::theme_minimal()
     )
   } else {
@@ -209,36 +321,42 @@ ggpointline <- function(df, dfby, xvar, y, color, by,
         ggplot2::geom_point(data = dfby,
                             aes(x = .data[[xvar]],
                                 y = .data[[y]],
-                                color = .data[[by]])),
+                                color = .data[[by]]),
+                            na.rm = TRUE),
         ggplot2::geom_line(data = dfby,
                            aes(x = .data[[xvar]],
                                y = .data[[y]],
                                group = .data[[by]],
-                               color = as.factor(.data[[by]]))),
+                               color = as.factor(.data[[by]])),
+                           na.rm = TRUE),
         ggplot2::theme_minimal(),
         ggplot2::labs(color = by, linetype = NULL),
         ggplot2::geom_point(data = df,
                             aes(x = .data[[xvar]],
                                 y = .data[[y]]),
-                            color = total_color),
+                            color = total_color,
+                            na.rm = TRUE),
         ggplot2::geom_line(data = df,
                            aes(x = .data[[xvar]],
                                y = .data[[y]],
                                linetype = total_name,
                                group = "black"),
-                           color = total_color)
+                           color = total_color,
+                           na.rm = TRUE)
       )
     } else {
       list(
         ggplot2::geom_point(data = dfby,
                             aes(x = .data[[xvar]],
                                 y = .data[[y]],
-                                color = .data[[by]])),
+                                color = .data[[by]]),
+                            na.rm = TRUE),
         ggplot2::geom_line(data = dfby,
                            aes(x = .data[[xvar]],
                                y = .data[[y]],
                                group = .data[[by]],
-                               color = as.factor(.data[[by]]))),
+                               color = as.factor(.data[[by]])),
+                           na.rm = TRUE),
         ggplot2::theme_minimal(),
         ggplot2::labs(color = by)
       )
@@ -260,7 +378,8 @@ gglabels <- function(background, labels, df, xvar, sep_mark) {
         ),
         vjust = "inward",
         color = "#6B6B6B",
-        size = 2.6
+        size = 2.6,
+        na.rm = TRUE
       )
     )
   } else {
@@ -296,7 +415,8 @@ ggbarlabels <- function(df, xvar, y, coord_flip, sep_mark) {
             label = sep_mark(.data[["y_print"]])
           ),
           color = "#6B6B6B",
-          size = 2.6
+          size = 2.6,
+          na.rm = TRUE
         ),
         text_args
       )
@@ -348,7 +468,8 @@ ggbar <- function(df, xvar, f_axis, color_bg, sep_mark, coord_flip,
                       stat = "identity",
                       color = "white", #color_bg,
                       fill = color_bg, #fill_bg,
-                      alpha = .7) + #1) +
+                      alpha = .7,
+                      na.rm = TRUE) + #1) +
     ggplot2::theme_minimal() +
     ggplot2::labs(y = f_axis, x = xvar) +
     sort_x_axis(

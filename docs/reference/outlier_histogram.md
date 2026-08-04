@@ -1,6 +1,6 @@
 # Portfolio histogram with tail bins
 
-Visualize the distribution of a numeric portfolio variable while keeping
+Visualise the distribution of a numeric portfolio variable while keeping
 extreme tails readable.
 
 Insurance portfolios often contain skewed variables such as claim

@@ -80,7 +80,7 @@ suppressWarnings({
   burn_smooth <- prepare_refinement(burn_unrestricted) |>
     add_smoothing(model_variable = "age_policyholder_freq_cat",
                   source_variable = "age_policyholder",
-                  breaks = seq(18, 95, 5)) |>
+                  breaks = c(seq(18, 93, 5), 95)) |>
     refit()
 })
 
@@ -95,7 +95,7 @@ suppressWarnings({
   burn2_smooth <- prepare_refinement(burn2_unrestricted) |>
     add_smoothing(model_variable = "age_policyholder_freq_cat",
                   source_variable = "age_policyholder",
-                  breaks = seq(18, 95, 5)) |>
+                  breaks = c(seq(18, 93, 5), 95)) |>
     refit()
 })
 
@@ -170,12 +170,24 @@ testthat::test_that(
 
     testthat::expect_s3_class(rt, "rating_table")
     testthat::expect_s3_class(rt, "riskfactor")
+    testthat::expect_s3_class(rt, "data.frame")
+    testthat::expect_true(is.data.frame(rt))
     testthat::expect_true(rt$significance)
     testthat::expect_true(rt$signif_stars)
     testthat::expect_equal(rt$exposure, "earned_exposure")
     testthat::expect_true(all(c(
       "risk_factor", "level", "est_mod1", "earned_exposure", "signif_mod1"
     ) %in% names(rt$df)))
+    testthat::expect_true(is.numeric(rt$est_mod1))
+    testthat::expect_true(is.character(rt$signif_mod1))
+    printed <- capture.output(print(rt))
+    testthat::expect_true(any(grepl("signif_mod1", printed, fixed = TRUE)))
+    testthat::expect_false(any(grepl("Significance levels", printed,
+                                    fixed = TRUE)))
+    testthat::expect_identical(rt$risk_factor, rt$df$risk_factor)
+    testthat::expect_identical(names(rt), names(rt$df))
+    testthat::expect_identical(as.data.frame(rt), rt$df)
+    testthat::expect_s3_class(utils::head(rt), "data.frame")
     testthat::expect_s3_class(summary(rt), "summary.rating_table")
     testthat::expect_s3_class(summary(rt), "summary.riskfactor")
     testthat::expect_s3_class(as.data.frame(rt), "data.frame")
@@ -221,9 +233,29 @@ testthat::test_that(
     )
 
     html <- suppressWarnings(as.character(gt::as_raw_html(tbl)))
-    testthat::expect_match(html, "Relativities")
+    testthat::expect_no_match(html, "Relativities")
+    testthat::expect_match(html, ">mod1<", fixed = TRUE)
     testthat::expect_match(html, "Significance levels")
     testthat::expect_match(html, "Risk factor")
+    testthat::expect_match(html, "–", fixed = TRUE)
+
+    labelled <- as_gt(rt, model_labels = "Frequency model")
+    labelled_html <- suppressWarnings(as.character(gt::as_raw_html(labelled)))
+    testthat::expect_match(labelled_html, "Frequency model", fixed = TRUE)
+
+    forced_spanner <- as_gt(rt, show_effect_spanner = TRUE)
+    testthat::expect_match(
+      suppressWarnings(as.character(gt::as_raw_html(forced_spanner))),
+      "Relativities",
+      fixed = TRUE
+    )
+
+    custom_missing <- as_gt(rt, missing_text = "Not available")
+    testthat::expect_match(
+      suppressWarnings(as.character(gt::as_raw_html(custom_missing))),
+      "Not available",
+      fixed = TRUE
+    )
 
     without_stars <- as_gt(
       rt,
@@ -245,7 +277,10 @@ testthat::test_that(
       exposure = FALSE,
       exponentiate = FALSE
     )
-    coefficient_gt <- as_gt(coefficient_table)
+    coefficient_gt <- as_gt(
+      coefficient_table,
+      show_effect_spanner = TRUE
+    )
     testthat::expect_match(
       suppressWarnings(as.character(gt::as_raw_html(coefficient_gt))),
       "Coefficients"
@@ -261,6 +296,52 @@ testthat::test_that(
     testthat::expect_true(all(
       c("est_mod1", "est_mod2") %in% names(comparison_gt[["_data"]])
     ))
+    comparison_html <- suppressWarnings(
+      as.character(gt::as_raw_html(comparison_gt))
+    )
+    testthat::expect_match(comparison_html, "Relativities", fixed = TRUE)
+    testthat::expect_match(comparison_html, ">mod1<", fixed = TRUE)
+    testthat::expect_match(comparison_html, ">mod2<", fixed = TRUE)
+
+    renamed_comparison <- as_gt(
+      comparison_table,
+      model_labels = c(mod1 = "Frequency", mod2 = "Alternative")
+    )
+    renamed_html <- suppressWarnings(
+      as.character(gt::as_raw_html(renamed_comparison))
+    )
+    testthat::expect_match(renamed_html, "Frequency", fixed = TRUE)
+    testthat::expect_match(renamed_html, "Alternative", fixed = TRUE)
+
+    comparison_with_significance <- rating_table(
+      mod1,
+      mod2,
+      model_data = df,
+      exposure = FALSE,
+      significance = TRUE
+    )
+    testthat::expect_true(all(c(
+      "est_mod1", "signif_mod1", "est_mod2", "signif_mod2"
+    ) %in% names(comparison_with_significance)))
+    testthat::expect_true(is.numeric(comparison_with_significance$est_mod1))
+    testthat::expect_true(is.numeric(comparison_with_significance$est_mod2))
+    testthat::expect_true(is.character(comparison_with_significance$signif_mod1))
+    testthat::expect_true(is.character(comparison_with_significance$signif_mod2))
+
+    comparison_significance_gt <- as_gt(comparison_with_significance)
+    comparison_significance_html <- suppressWarnings(
+      as.character(gt::as_raw_html(comparison_significance_gt))
+    )
+    testthat::expect_match(
+      comparison_significance_html,
+      "Significance levels",
+      fixed = TRUE
+    )
+    testthat::expect_match(
+      comparison_significance_html,
+      "Relativities",
+      fixed = TRUE
+    )
   }
 )
 
@@ -282,6 +363,18 @@ testthat::test_that(
     testthat::expect_error(
       as_gt(rt, significance = NA),
       "significance"
+    )
+    testthat::expect_error(
+      as_gt(rt, missing_text = NA_character_),
+      "missing_text"
+    )
+    testthat::expect_error(
+      as_gt(rt, show_effect_spanner = NA),
+      "show_effect_spanner"
+    )
+    testthat::expect_error(
+      as_gt(rt, model_labels = c("one", "two")),
+      "exactly 1 label"
     )
   }
 )
@@ -408,6 +501,7 @@ testthat::test_that(
     )
 
     testthat::expect_s3_class(rt_observed, "rating_table")
+    testthat::expect_false("observed_experience" %in% names(rt_observed))
     testthat::expect_identical(
       rt_observed$observed_experience$metric,
       "frequency"

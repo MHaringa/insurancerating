@@ -133,9 +133,11 @@ judgement, external experience or a planned extension of the tariff. Existing
 levels that are not supplied remain fixed at their fitted relativities.</p>
 <p>With <code>allow_new_levels = TRUE</code>, which is the default, these new tariff levels
 are retained in the refinement metadata and subsequently shown by
-<code><a href="rating_table.html">rating_table()</a></code>. Set <code>allow_new_levels = FALSE</code> when the restriction table
-should be checked strictly against the levels observed by the fitted model,
-for example to detect spelling errors in level names.</p>
+<code><a href="rating_table.html">rating_table()</a></code>. An informational message identifies every newly added
+level, its supplied relativity and the fact that it was not observed in the
+model data. Set <code>allow_new_levels = FALSE</code> when the restriction table should
+be checked strictly against the levels observed by the fitted model, for
+example to detect spelling errors in level names.</p>
 <p>A variable that is present in the refinement data but was not included in the
 fitted GLM can be added with <code>allow_new_risk_factors = TRUE</code>. In that case all
 observed levels must have a supplied relativity. The new factor is applied as
@@ -225,6 +227,7 @@ basis from which the split is derived.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">refined</span> <span class="op">&lt;-</span> <span class="fu"><a href="prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">add_restriction</span><span class="op">(</span><span class="va">restrictions</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Added new level `D` to risk factor `postal_area` with relativity 1.2. This level was not observed in the model data.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Postal area D was not observed in the portfolio. Its relativity is an</span></span></span>
 <span class="r-in"><span><span class="co"># explicit tariff assumption and becomes available after refitting.</span></span></span>
@@ -251,9 +254,9 @@ basis from which the split is derived.</p>
 <span class="r-in"><span>    allow_new_risk_factors <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;rating_refinement&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Base model: glm, lm</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Base model: Poisson GLM (log link)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Steps: 1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1. restriction [hail_zone]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1. Restriction: hail_zone -&gt; hail_relativity (2 levels) [expert-specified new risk factor]</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># A later actuarial review changes only the relativity for the low hail zone.</span></span></span>
 <span class="r-in"><span><span class="co"># The high-zone relativity remains 1.20 and the existing step is updated.</span></span></span>

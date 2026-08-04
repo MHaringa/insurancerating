@@ -191,6 +191,42 @@ test_that("autoplot works and show_plots is deprecated", {
   expect_s3_class(p, "ggplot")
 })
 
+test_that("autoplot combines undefined metric warnings", {
+  portfolio <- data.frame(
+    segment = factor(c("No claims", "Observed claims")),
+    claim_amount = c(0, 2000),
+    claim_count = c(0, 2),
+    exposure = c(10, 10),
+    premium = c(0, 2500)
+  )
+  analysis <- factor_analysis(
+    portfolio,
+    risk_factors = "segment",
+    claim_amount = "claim_amount",
+    claim_count = "claim_count",
+    exposure = "exposure",
+    premium = "premium"
+  )
+
+  warnings <- character()
+  plot <- withCallingHandlers(
+    autoplot(
+      analysis,
+      metrics = c("average_severity", "loss_ratio")
+    ),
+    warning = function(warning) {
+      warnings <<- c(warnings, conditionMessage(warning))
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_length(warnings, 1L)
+  expect_match(warnings, "claim_count.*denominator is zero")
+  expect_match(warnings, "premium.*denominator is zero")
+  expect_match(warnings, "No claims")
+  expect_warning(patchwork::patchworkGrob(plot), NA)
+})
+
 test_that("deprecated autoplot.factor_analysis arguments remain available", {
   x <- factor_analysis(
     MTPL,

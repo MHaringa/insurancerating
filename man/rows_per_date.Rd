@@ -28,12 +28,13 @@ rows_per_date(
 
 \item{...}{Deprecated NSE join columns. Use \code{by} instead.}
 
-\item{nomatch}{When a row (with interval say, \verb{[a,b]}) in x has no match in
-y, nomatch=NA means NA is returned for y's non-by.y columns for that row of
-x. nomatch=NULL (default) means no rows will be returned for that row of x.}
+\item{nomatch}{Controls event dates for which no active portfolio row is
+found. With \code{NULL}, unmatched events are omitted. With \code{NA}, they are retained
+with missing portfolio information.}
 
-\item{mult}{When multiple rows in y match to the row in x, \code{mult} controls
-which values are returned - "all" (default), "first" or "last".}
+\item{mult}{Controls the result when an event date matches multiple active
+portfolio rows. Use \code{"all"} to retain every match, or \code{"first"} or \code{"last"}
+to retain one matching row. The default is \code{"all"}.}
 }
 \value{
 See \code{\link[=active_rows_by_date]{active_rows_by_date()}}.

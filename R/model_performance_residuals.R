@@ -9,7 +9,9 @@
 #' @param object A fitted `"glm"` object supported by
 #' [DHARMa::simulateResiduals()].
 #' @param n_simulations Number of simulations used to generate residuals.
-#' Must be a positive whole number. Default is 30.
+#'   Must be a positive whole number. The default of 30 is intended for a quick
+#'   check. For a more stable final assessment, 250 to 1,000 simulations will
+#'   often be more suitable. More simulations increase the calculation time.
 #'
 #' @details
 #' In insurance pricing, residual checks are used to assess whether a model is
@@ -30,6 +32,11 @@
 #' be read as a diagnostic signal, not as a pricing decision rule. A low p-value
 #' indicates that the residual distribution differs from what the fitted model
 #' implies and that the model specification may need review.
+#'
+#' A low p-value does not always mean that the model has an important pricing
+#' problem. In a large portfolio, even a small difference can produce a low
+#' p-value. The result should therefore be reviewed together with the QQ plot,
+#' the size of the difference and its relevance for the tariff.
 #'
 #' @return An object of class `"residual_check"` and `"check_residuals"`,
 #' which is a list with:
@@ -61,7 +68,7 @@
 #' \dontrun{
 #' m1 <- glm(nclaims ~ area, offset = log(exposure),
 #'           family = poisson(), data = MTPL2)
-#' cr <- check_residuals(m1, n_simulations = 50)
+#' cr <- check_residuals(m1, n_simulations = 250)
 #' autoplot(cr)
 #' }
 #'

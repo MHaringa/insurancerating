@@ -1088,9 +1088,8 @@ assess_excess_threshold <- function(data,
 #' Generic presentation helper. Methods return a `gt` table for objects where a
 #' formatted reporting table is more useful than another plot.
 #'
-#' @param x A supported object to convert, such as a `threshold_assessment`
-#'   returned by [assess_excess_threshold()] or a `rating_table` returned by
-#'   [rating_table()].
+#' @param x A supported object to convert, such as a `threshold_assessment`,
+#'   `rating_table` or `bootstrap_coefficients` object.
 #' @param ... Arguments passed to methods.
 #'
 #' @return A `gt_tbl` object for supported methods.

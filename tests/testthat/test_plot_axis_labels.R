@@ -136,8 +136,63 @@ test_that("autoplot methods support explicit legend positions", {
 
   expect_identical(rating_panel$theme$legend.position, "bottom")
   expect_identical(analysis_panel$theme$legend.position, "top")
+  expect_identical(
+    rating_plot$patches$annotation$theme$legend.position,
+    "bottom"
+  )
+  expect_identical(
+    analysis_plot$patches$annotation$theme$legend.position,
+    "top"
+  )
   expect_error(
     autoplot(analysis, metrics = "frequency", legend_position = "inside"),
     "arg"
+  )
+})
+
+test_that("autoplot.rating_table selects the legend automatically", {
+  portfolio <- data.frame(
+    sector = factor(rep(c("Industry", "Retail"), each = 3)),
+    claims = c(0, 1, 0, 1, 0, 1),
+    exposure = rep(1, 6)
+  )
+  model <- glm(
+    claims ~ sector + offset(log(exposure)),
+    family = poisson(),
+    data = portfolio
+  )
+  model_alt <- glm(
+    claims ~ sector + offset(log(exposure)),
+    family = quasipoisson(),
+    data = portfolio
+  )
+
+  single_plot <- autoplot(
+    rating_table(model, model_data = portfolio, exposure = "exposure")
+  )
+  multiple_plot <- autoplot(
+    rating_table(
+      model,
+      model_alt,
+      model_data = portfolio,
+      exposure = "exposure"
+    )
+  )
+  explicit_plot <- autoplot(
+    rating_table(model, model_data = portfolio, exposure = "exposure"),
+    legend_position = "bottom"
+  )
+
+  expect_identical(
+    single_plot$patches$annotation$theme$legend.position,
+    "none"
+  )
+  expect_identical(
+    multiple_plot$patches$annotation$theme$legend.position,
+    "right"
+  )
+  expect_identical(
+    explicit_plot$patches$annotation$theme$legend.position,
+    "bottom"
   )
 })

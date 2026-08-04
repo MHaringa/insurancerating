@@ -2,15 +2,28 @@
 
 ## Changes since 0.8.1
 
+- `bootstrap_coefficients()` now assesses GLM coefficient stability by
+  resampling the estimation portfolio rows and refitting the model. Individual
+  failed fits are retained as missing replicates instead of stopping the full
+  run. `summary()` reports link-scale or exponentiated results, with
+  `"relativity"` available as an alias, and `as_gt()` provides a formatted
+  coefficient table.
 - The function documentation, README and vignettes now use a consistent,
   practical actuarial style. The documentation distinguishes observed portfolio
   experience, fitted model effects, explicit tariff assumptions and model
   diagnostics, and states relevant interpretation limits more clearly.
+  Experimental documentation badges have been removed, and the low-level
+  `rmse()` helper is listed with the package utilities in the reference index.
 - `add_smoothing()` keeps `"spline"` as its general-purpose default and fits it
   as an unconstrained penalized cubic regression spline. Polynomial smoothing
   is selected explicitly with `"poly"`, while `"gam"` provides a thin-plate GAM
   comparison. `degree` is limited to polynomial fits, `k` is limited to spline
   methods, and an omitted `k` is adapted to the available grouped model points.
+  Its arguments now follow the modelling sequence of variables, required
+  `breaks`, smoothing method, complexity and weights. Shape-constrained methods
+  now use readable values such as `"increasing"`, `"decreasing"`,
+  `"increasing_convex"` and `"increasing_concave"`; the former short SCOP codes
+  remain accepted as compatibility aliases.
 - `add_restriction()` recognises a split variable created by an earlier
   `add_relativities()` step without requiring
   `allow_new_risk_factors = TRUE`. A partial restriction changes the supplied
@@ -20,9 +33,9 @@
   storing a refinement step. Closely matching observed values are suggested
   for likely spelling or spacing errors.
 - `split_level()` and `relativities()` are now the primary helpers for defining
-  named sublevel splits. The low-level `split_relativities()` constructor is
-  deprecated because it does not record the parent model level required by
-  `add_relativities()`.
+  named sublevel splits and share one reference page describing their combined
+  use. The low-level `split_relativities()` constructor is deprecated because
+  it does not record the parent model level required by `add_relativities()`.
 - Spline, GAM and shape-constrained smoothing validate the requested basis
   dimension against the number of unique grouped covariate values before model
   fitting.
@@ -31,6 +44,21 @@
   can be disabled, and can be replaced by explicitly supplied display labels.
   Both methods now also provide `legend_position` for consistent legend
   placement.
+- `autoplot.riskfactor_gam()` and `autoplot.tariff_segments()` now use one
+  shared plotting implementation and are documented on one reference page.
+  Segment plots retain their boundaries by default and can show the underlying
+  GAM curve alone with `show_segments = FALSE`.
+- `derive_tariff_segments()` now uses `segmentation_penalty` as its primary
+  split-control argument; `complexity` remains available as a deprecated alias.
+  The method divides the fitted GAM curve without applying a second exposure or
+  claim-volume weight; these quantities have already informed the GAM estimate
+  and remain available through `summary()` as diagnostics. Validation now
+  covers malformed GAM objects, non-finite values and whole-number search
+  controls. Tree splits are read from the fitted tree structure rather than
+  parsed from printed rules.
+  `add_tariff_segments()` reapplies stored boundaries to the continuous risk
+  factor, so filtering or reordering rows no longer misaligns assignments and
+  unsupported values outside the fitted range fail explicitly.
 
 # insurancerating 0.8.1
 

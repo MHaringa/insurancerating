@@ -1,6 +1,5 @@
 #' #' Restrict coefficients in the model
 #' #'
-#' #' @description `r lifecycle::badge('experimental')`
 #' #'  Add restrictions, like a bonus-malus structure, on the risk
 #' #'  factors used in the model. `add_restriction()` must always be followed
 #' #'  by `refit_glm()`.
@@ -154,7 +153,6 @@
 #'
 #' #' Smooth coefficients in the model
 #' #'
-#' #' @description `r lifecycle::badge('experimental')`
 #' #'  Apply smoothing on the risk factors used in the model. `add_smoothing()`
 #' #'  must always be followed by `refit_glm()`.
 #' #'
@@ -417,7 +415,6 @@
 #' #' Automatically create a ggplot for objects obtained from add_restriction()
 #' #'
 #' #' @description
-#' #' `r lifecycle::badge("experimental")`
 #' #' Takes an object produced by `add_restriction()` or `add_relativities()`
 #' #' and creates a plot comparing the adjusted coefficients with the original
 #' #' coefficients obtained from the model.
@@ -769,7 +766,6 @@
 #' #' Automatically create a ggplot for objects obtained from add_smoothing()
 #' #'
 #' #' @description
-#' #' `r lifecycle::badge("experimental")`
 #' #' Takes an object produced by `add_smoothing()` and creates a plot comparing
 #' #' the original model fit, the new clustered values, and the resulting smooth.
 #' #'
@@ -1296,7 +1292,6 @@
 #'
 #' #' Add expert-based relativities to the model
 #' #'
-#' #' @description `r lifecycle::badge('experimental')`
 #' #' Add expert-based relativities to one or more levels of a risk factor by
 #' #' splitting these levels into more granular sublevels. `add_relativities()`
 #' #' must always be followed by `refit_glm()`.

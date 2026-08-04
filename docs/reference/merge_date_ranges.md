@@ -1,7 +1,9 @@
 # Reduce portfolio periods by merging adjacent date ranges
 
-Merges overlapping or nearly adjacent policy periods within portfolio
-groups.
+Combine overlapping or nearly adjacent coverage periods for the same
+policy, risk or portfolio segment. The result provides a consolidated
+time basis for exposure calculations, active-policy counts and
+period-based reporting.
 
 ## Usage
 
@@ -49,12 +51,14 @@ merge_date_ranges(
 
 - aggregate_fun:
 
-  Aggregation function or function name. Defaults to `"sum"`.
+  Function or function name used to combine `aggregate_cols` within a
+  merged interval. The default, `"sum"`, is generally appropriate for
+  additive measures such as premium or exposure.
 
 - merge_gap_days:
 
   Non-negative whole number. Ranges with a gap smaller than this number
-  of days are merged. Defaults to 5.
+  of days are treated as continuous and merged. Defaults to 5.
 
 - begin, end, ..., agg_cols, agg, min.gapwidth:
 
@@ -81,7 +85,10 @@ those rows to stable coverage intervals.
 `merge_date_ranges()` merges date ranges within each `group_by`
 combination. Ranges with a gap smaller than `merge_gap_days` are treated
 as one continuous interval. If `aggregate_cols` is supplied, those
-columns are aggregated over the merged interval.
+columns are aggregated over the merged interval. The grouping columns
+should identify records for which combining coverage periods is
+actuarially and operationally meaningful; periods belonging to different
+risks or contracts should not be pooled.
 
 ## Author
 

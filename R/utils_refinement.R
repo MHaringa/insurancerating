@@ -202,7 +202,8 @@ cut_borders_model <- function(model, x_cut) {
     } else if (identical(smoothing, "spline")) {
       "spline"
     } else {
-      paste0("shape-constrained `", smoothing, "`")
+      readable_method <- .resolve_smoothing_method(smoothing)$method
+      paste0("shape-constrained `", readable_method, "`")
     }
 
     if (n_unique < 3L) {
@@ -868,13 +869,13 @@ change_xy <- function(borders_model, x_org,
 }
 
 
-#' Define a sublevel split for a model level
+#' Define sublevel relativity specifications
 #'
 #' @description
-#' Define how one level of a GLM risk factor is divided into more detailed
-#' portfolio levels with specified multiplicative relativities. The resulting
-#' object is intended to be combined with [relativities()] and supplied to
-#' [add_relativities()].
+#' Use `split_level()` to describe how one existing GLM factor level is divided
+#' into more detailed portfolio levels with specified multiplicative
+#' relativities. Use `relativities()` to combine one or more of these definitions
+#' into the specification supplied to [add_relativities()].
 #'
 #' @details
 #' `level` identifies the existing parent level in `model_variable`.
@@ -882,29 +883,53 @@ change_xy <- function(borders_model, x_org,
 #' `relativities` gives their relative tariff effects before any optional
 #' exposure normalisation by [add_relativities()].
 #'
-#' This helper defines a tariff assumption; it does not estimate relativities
-#' from claim experience and does not alter a fitted GLM.
+#' Each call to `split_level()` represents one parent level. Several parent
+#' levels can be refined in one step by passing their definitions to
+#' `relativities()`. Parent levels must be unique within the combined
+#' specification. Levels of the original model variable that are not included
+#' remain unsplit.
+#'
+#' These helpers assemble and validate explicit tariff assumptions. They do not
+#' estimate, normalise or apply the supplied relativities and do not alter a
+#' fitted GLM. Exposure normalisation, when requested, is performed by
+#' [add_relativities()].
 #'
 #' @param level Character string. Existing level of the risk factor to split.
 #' @param new_levels Character vector. Levels of the more detailed portfolio
 #'   variable within `level`.
 #' @param relativities Numeric vector. Multiplicative relativities corresponding
 #'   to `new_levels`. Must have the same length as `new_levels`.
+#' @param ... One or more objects created by `split_level()`.
 #'
 #' @author Martin Haringa
 #'
-#' @return A named list of length one. Its name is `level`; its value is a data
-#'   frame with columns `new_level` and `relativity`.
+#' @return `split_level()` returns a named list of length one. Its name is
+#'   `level`; its value is a data frame with columns `new_level` and
+#'   `relativity`. `relativities()` returns the combined named list expected by
+#'   the `relativities` argument of [add_relativities()].
 #'
-#' @seealso [relativities()], [add_relativities()]
+#' @seealso [add_relativities()]
 #'
 #' @examples
-#' split_level(
-#'   level = "construction",
-#'   new_levels = c("residential", "commercial", "civil"),
-#'   relativities = c(1.00, 1.10, 1.25)
+#' construction_split <- split_level(
+#'   level = "residential",
+#'   new_levels = c("flat", "house"),
+#'   relativities = c(0.95, 1.05)
 #' )
 #'
+#' relativities(
+#'   construction_split,
+#'   split_level(
+#'     "commercial",
+#'     new_levels = c("shop", "office"),
+#'     relativities = c(1.10, 0.90)
+#'   )
+#' )
+#'
+#' @name relativity_specification
+NULL
+
+#' @rdname relativity_specification
 #' @export
 split_level <- function(level, new_levels, relativities) {
   if (!is.character(level) || length(level) != 1) {
@@ -920,45 +945,7 @@ split_level <- function(level, new_levels, relativities) {
 }
 
 
-#' Combine sublevel splits into a relativity specification
-#'
-#' @description
-#' Combine one or more definitions created by [split_level()] into the named
-#' relativity specification expected by [add_relativities()].
-#'
-#' @details
-#' Each input represents one existing level of `model_variable` and the detailed
-#' `split_variable` levels that replace it. Parent levels must be unique within
-#' the combined specification. Levels of the original model variable that are
-#' not included remain unsplit.
-#'
-#' `relativities()` only assembles and validates the specification. It does not
-#' estimate, normalise or apply the supplied relativities. Exposure
-#' normalisation, when requested, is performed by [add_relativities()].
-#'
-#' @param ... One or more objects created by [split_level()].
-#'
-#' @author Martin Haringa
-#'
-#' @return A named list of data frames suitable for the `relativities` argument
-#'   of [add_relativities()].
-#'
-#' @seealso [split_level()], [add_relativities()]
-#'
-#' @examples
-#' relativities(
-#'   split_level(
-#'     "residential",
-#'     new_levels = c("flat", "house"),
-#'     relativities = c(0.95, 1.05)
-#'   ),
-#'   split_level(
-#'     "commercial",
-#'     new_levels = c("shop", "office"),
-#'     relativities = c(1.10, 0.90)
-#'   )
-#' )
-#'
+#' @rdname relativity_specification
 #' @export
 relativities <- function(...) {
   x <- list(...)

@@ -138,9 +138,8 @@ portfolio.</p>
 <p>Before fitting a model, it is useful to assess:</p>
 <ul>
 <li>how experience differs across factor levels</li>
-<li>whether differences are supported by sufficient exposure and claim
-volume</li>
-<li>whether exposure is sufficient</li>
+<li>whether observed differences are supported by sufficient exposure
+and claim volume</li>
 <li>whether the observed pattern is plausible</li>
 </ul>
 <p>This is done with <code><a href="../reference/factor_analysis.html">factor_analysis()</a></code>.</p>
@@ -240,8 +239,34 @@ reviewed.</p>
 <span><span class="va">age_segments</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_tariff_segments.html">derive_tariff_segments</a></span><span class="op">(</span><span class="va">age_freq</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">age_segments</span><span class="op">)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="700"></p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">age_segments</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   segment portfolio_records risk_factor_values   exposure claim_count</span></span>
+<span><span class="co">#&gt; 1 [18,25]              1543                  8 1331.17534         348</span></span>
+<span><span class="co">#&gt; 2 (25,32]              4254                  7 3648.72055         653</span></span>
+<span><span class="co">#&gt; 3 (32,39]              4919                  7 4247.34795         615</span></span>
+<span><span class="co">#&gt; 4 (39,51]              8366                 12 7421.35890        1009</span></span>
+<span><span class="co">#&gt; 5 (51,58]              3594                  7 3245.45479         372</span></span>
+<span><span class="co">#&gt; 6 (58,65]              3058                  7 2790.83288         272</span></span>
+<span><span class="co">#&gt; 7 (65,84]              4181                 19 3900.75890         394</span></span>
+<span><span class="co">#&gt; 8 (84,95]                85                 10   72.01644           5</span></span>
+<span><span class="co">#&gt;    frequency</span></span>
+<span><span class="co">#&gt; 1 0.26142311</span></span>
+<span><span class="co">#&gt; 2 0.17896684</span></span>
+<span><span class="co">#&gt; 3 0.14479624</span></span>
+<span><span class="co">#&gt; 4 0.13595893</span></span>
+<span><span class="co">#&gt; 5 0.11462184</span></span>
+<span><span class="co">#&gt; 6 0.09746194</span></span>
+<span><span class="co">#&gt; 7 0.10100599</span></span>
+<span><span class="co">#&gt; 8 0.06942859</span></span></code></pre></div>
 <p>This derives candidate segment boundaries from the fitted continuous
-effect.</p>
+effect. Exposure and claim volume have already informed the GAM
+estimate. They are reported by <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> for review, but
+are not applied again when the fitted curve is divided into intervals.
+The evolutionary tree approximates the GAM curve rather than the
+individual claim outcomes. Each distinct risk-factor value on the fitted
+curve has equal influence on this approximation; exposure is not applied
+as a second weight.</p>
 <p>The resulting segments should be reviewed against exposure, observed
 experience, stability and practical tariff requirements before they are
 used in a model.</p>
@@ -249,7 +274,7 @@ used in a model.</p>
 <div class="section level3">
 <h3 id="adding-tariff-segments-to-the-data">Adding tariff segments to the data<a class="anchor" aria-label="anchor" href="#adding-tariff-segments-to-the-data"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="va">MTPL</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_tariff_segments.html">add_tariff_segments</a></span><span class="op">(</span><span class="va">age_segments</span>, name <span class="op">=</span> <span class="st">"age_cat"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -284,7 +309,7 @@ can:</p>
 <div class="section level3">
 <h3 id="frequency-model">Frequency model<a class="anchor" aria-label="anchor" href="#frequency-model"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">mod_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
 <span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">age_cat</span>,</span>
@@ -296,7 +321,7 @@ can:</p>
 <div class="section level3">
 <h3 id="severity-model">Severity model<a class="anchor" aria-label="anchor" href="#severity-model"></a>
 </h3>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">mod_sev</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
 <span>  <span class="va">amount</span> <span class="op">~</span> <span class="va">age_cat</span>,</span>
@@ -310,7 +335,7 @@ different aspects of the loss process.</p>
 <div class="section level3">
 <h3 id="constructing-a-premium-proxy">Constructing a premium proxy<a class="anchor" aria-label="anchor" href="#constructing-a-premium-proxy"></a>
 </h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">premium_df</span> <span class="op">&lt;-</span> <span class="va">dat</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_prediction.html">add_prediction</a></span><span class="op">(</span><span class="va">mod_freq</span>, <span class="va">mod_sev</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -343,7 +368,7 @@ model response.</p>
 <div class="section level3">
 <h3 id="fitting-a-premium-model">Fitting a premium model<a class="anchor" aria-label="anchor" href="#fitting-a-premium-model"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">burn_unrestricted</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
 <span>  <span class="va">premium</span> <span class="op">~</span> <span class="va">age_cat</span> <span class="op">+</span> <span class="va">zip</span>,</span>
@@ -364,7 +389,7 @@ are outside this technical risk-premium model.</p>
 <div class="section level3">
 <h3 id="rating-table">Rating table<a class="anchor" aria-label="anchor" href="#rating-table"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">rt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span></span>
 <span><span class="va">rt</span></span>
@@ -389,7 +414,7 @@ the original factor levels, including the reference level.</p>
 <div class="section level3">
 <h3 id="visualising-coefficients">Visualising coefficients<a class="anchor" aria-label="anchor" href="#visualising-coefficients"></a>
 </h3>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
@@ -415,7 +440,7 @@ the original factor levels, including the reference level.</p>
 <div class="section level3">
 <h3 id="model-performance">Model performance<a class="anchor" aria-label="anchor" href="#model-performance"></a>
 </h3>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="../reference/model_performance.html">model_performance</a></span><span class="op">(</span><span class="va">mod_freq</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Comparison of Model Performance Indices</span></span>
@@ -430,7 +455,7 @@ offsets.</p>
 <div class="section level3">
 <h3 id="bootstrap-performance">Bootstrap performance<a class="anchor" aria-label="anchor" href="#bootstrap-performance"></a>
 </h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">bp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span></span>
 <span>  <span class="va">mod_freq</span>,</span>
@@ -476,7 +501,7 @@ be used as a tariff.</p>
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <p>A possible sequence in <code>insurancerating</code> is:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="../reference/factor_analysis.html">factor_analysis</a></span><span class="op">(</span><span class="op">)</span>             <span class="co"># analyse portfolio behaviour</span></span>
 <span><span class="fu"><a href="../reference/risk_factor_gam.html">risk_factor_gam</a></span><span class="op">(</span><span class="op">)</span>             <span class="co"># analyse continuous variables</span></span>
