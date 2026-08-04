@@ -131,7 +131,10 @@ multivariate tariff relativities.</p>
 <dt id="arg-legend-position">legend_position<a class="anchor" aria-label="anchor" href="#arg-legend-position"></a></dt>
 <dd><p>Character string specifying the legend position.
 Supported values are <code>"right"</code>, <code>"bottom"</code>, <code>"top"</code>, <code>"left"</code> and
-<code>"none"</code>.</p></dd>
+<code>"none"</code>. A legend is present only when the <code>factor_analysis</code> object was
+created with <code>group_by</code>, because the resulting group-specific series are
+distinguished by colour. Without <code>group_by</code>, colours are fixed plot styles
+and no legend is drawn; in that case this argument has no visible effect.</p></dd>
 
 
 <dt id="arg-show-exposure">show_exposure<a class="anchor" aria-label="anchor" href="#arg-show-exposure"></a></dt>
@@ -288,6 +291,11 @@ observed metrics and should be assessed accordingly.</p>
 observed series are shown. <code>show_total = TRUE</code> adds the aggregate portfolio
 series for comparison. Sorting and manual level ordering affect only the
 presentation; the underlying summaries are unchanged.</p>
+<p>A rate or ratio is not shown for a risk-factor level when its denominator is
+zero or missing. For example, average severity is undefined when claim count
+is zero, and loss ratio is undefined when premium is zero. <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> gives
+one combined warning identifying the affected metrics and levels. Other valid
+metrics and exposure information remain in the figure.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

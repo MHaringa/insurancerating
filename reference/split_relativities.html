@@ -40,8 +40,8 @@ parent-level split and combine multiple splits with relativities()."><meta prope
     </div>
 
     <div class="ref-description section level2">
-    <p><code>split_relativities()</code> is deprecated. Use <code><a href="split_level.html">split_level()</a></code> to define a named
-parent-level split and combine multiple splits with <code><a href="relativities.html">relativities()</a></code>.</p>
+    <p><code>split_relativities()</code> is deprecated. Use <code><a href="relativity_specification.html">split_level()</a></code> to define a named
+parent-level split and combine multiple splits with <code><a href="relativity_specification.html">relativities()</a></code>.</p>
     </div>
 
     <div class="section level2">
@@ -65,12 +65,12 @@ sublevel. Must have the same length as <code>new_levels</code>.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with columns <code>new_level</code> and <code>relativity</code>. New code
-should use <code><a href="split_level.html">split_level()</a></code>, which also records the parent model level
+should use <code><a href="relativity_specification.html">split_level()</a></code>, which also records the parent model level
 required by <code><a href="add_relativities.html">add_relativities()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="split_level.html">split_level()</a></code>, <code><a href="relativities.html">relativities()</a></code>, <code><a href="add_relativities.html">add_relativities()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="relativity_specification.html">split_level()</a></code>, <code><a href="relativity_specification.html">relativities()</a></code>, <code><a href="add_relativities.html">add_relativities()</a></code></p></div>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
@@ -79,7 +79,7 @@ required by <code><a href="add_relativities.html">add_relativities()</a></code>.
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="split_level.html">split_level</a></span><span class="op">(</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="relativity_specification.html">split_level</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  level <span class="op">=</span> <span class="st">"construction"</span>,</span></span>
 <span class="r-in"><span>  new_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"residential"</span>, <span class="st">"commercial"</span>, <span class="st">"civil"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  relativities <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.00</span>, <span class="fl">1.10</span>, <span class="fl">1.25</span><span class="op">)</span></span></span>

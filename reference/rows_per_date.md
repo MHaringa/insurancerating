@@ -47,15 +47,15 @@ rows_per_date(
 
 - nomatch:
 
-  When a row (with interval say, `[a,b]`) in x has no match in y,
-  nomatch=NA means NA is returned for y's non-by.y columns for that row
-  of x. nomatch=NULL (default) means no rows will be returned for that
-  row of x.
+  Controls event dates for which no active portfolio row is found. With
+  `NULL`, unmatched events are omitted. With `NA`, they are retained
+  with missing portfolio information.
 
 - mult:
 
-  When multiple rows in y match to the row in x, `mult` controls which
-  values are returned - "all" (default), "first" or "last".
+  Controls the result when an event date matches multiple active
+  portfolio rows. Use `"all"` to retain every match, or `"first"` or
+  `"last"` to retain one matching row. The default is `"all"`.
 
 ## Value
 

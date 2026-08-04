@@ -54,8 +54,9 @@ rating_table(
 
 - significance:
 
-  Logical. If `TRUE`, append significance indicators based on model
-  coefficient p-values.
+  Logical. If `TRUE`, add a separate `signif_*` column for each model
+  containing significance indicators based on coefficient p-values. The
+  corresponding `est_*` columns remain numeric.
 
 - round_exposure:
 
@@ -71,8 +72,11 @@ rating_table(
 
 ## Value
 
-A data frame-like object with classes `"rating_table"` and legacy
-`"riskfactor"`. It contains:
+A data frame with classes `"rating_table"`, legacy `"riskfactor"` and
+`"data.frame"`. It can be inspected and manipulated directly with
+ordinary data-frame operations. For backward compatibility, `x$df`
+returns the same table without the package-specific class and metadata.
+The table contains:
 
 - risk_factor:
 
@@ -128,6 +132,21 @@ unrestricted and refined specifications, or between alternative model
 formulations. Comparable response definitions and coefficient scales
 remain the responsibility of the analyst.
 
+### Significance indicators
+
+When `significance = TRUE`, every model receives its own `signif_*`
+column. For example, models named `frequency` and `severity` produce
+`est_frequency`, `signif_frequency`, `est_severity` and
+`signif_severity`. Keeping estimates and indicators separate preserves
+the numeric type of the fitted effects for subsequent calculations,
+filtering and export.
+
+[`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+combines each estimate with its corresponding significance indicator for
+presentation and adds the significance thresholds as a source note below
+the table. Reference levels generally have no separate coefficient test
+and therefore have no significance indicator.
+
 `rating_table()` accepts fitted models only. A `rating_refinement`
 specification must first be fitted with
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
@@ -173,13 +192,24 @@ fitted_effects
 #> 4         zip           2 0.9237868     7783
 #> 5         zip           3 0.9756337     7588
 #> 6          bm          bm 0.9978465       NA
+head(fitted_effects)
+#>   risk_factor       level  est_freq exposure
+#> 1 (Intercept) (Intercept) 0.1415051       NA
+#> 2         zip           0 1.0000000      207
+#> 3         zip           1 1.0252572    11081
+#> 4         zip           2 0.9237868     7783
+#> 5         zip           3 0.9756337     7588
+#> 6          bm          bm 0.9978465       NA
+
+# The historical accessor remains available for existing code
+identical(fitted_effects$df, as.data.frame(fitted_effects))
+#> [1] TRUE
 if (requireNamespace("gt", quietly = TRUE)) {
   as_gt(fitted_effects)
 }
 
 
   
-
 
 Risk factor
 ```

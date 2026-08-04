@@ -47,9 +47,9 @@ add_relativities(
 - relativities:
 
   Named list of data frames, usually created with
-  [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
+  [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
   and
-  [`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md).
+  [`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md).
 
 - exposure:
 
@@ -81,9 +81,9 @@ is called.
 that will be used to split one or more levels of `model_variable`. The
 `relativities` argument should be a named list describing those splits,
 usually built with
-[`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md)
+[`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
 and
-[`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md).
+[`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md).
 
 `add_relativities()` validates the supplied sublevel names against the
 observed values of `split_variable` before storing the refinement step.
@@ -153,8 +153,8 @@ or acceptation rules, instead of relying only on `add_relativities()`.
 ## See also
 
 [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
-[`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md),
-[`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md),
+[`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md),
+[`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md),
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),

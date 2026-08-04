@@ -1,9 +1,9 @@
 # Deprecated low-level relativity constructor
 
 `split_relativities()` is deprecated. Use
-[`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md)
+[`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
 to define a named parent-level split and combine multiple splits with
-[`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md).
+[`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md).
 
 ## Usage
 
@@ -26,14 +26,14 @@ split_relativities(new_levels, relativities)
 
 A data frame with columns `new_level` and `relativity`. New code should
 use
-[`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md),
+[`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md),
 which also records the parent model level required by
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).
 
 ## See also
 
-[`split_level()`](https://mharinga.github.io/insurancerating/reference/split_level.md),
-[`relativities()`](https://mharinga.github.io/insurancerating/reference/relativities.md),
+[`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md),
+[`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md),
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
 
 ## Author

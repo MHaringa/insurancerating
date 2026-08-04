@@ -17,7 +17,7 @@ autoplot(
   risk_factors = NULL,
   metric = NULL,
   ncol = 1,
-  legend_position = c("right", "bottom", "top", "left", "none"),
+  legend_position = c("auto", "right", "bottom", "top", "left", "none"),
   show_exposure_labels = TRUE,
   decimal_mark = ",",
   y_label = "Relativity",
@@ -67,8 +67,12 @@ autoplot(
 
 - legend_position:
 
-  Character string specifying the legend position. Supported values are
-  `"right"`, `"bottom"`, `"top"`, `"left"` and `"none"`.
+  Character string specifying the legend position. The default,
+  `"auto"`, hides the legend when only one fitted model is shown and no
+  observed-experience line is present. It places the legend on the right
+  when multiple fitted models or an observed-experience comparison are
+  shown. Use `"right"`, `"bottom"`, `"top"`, `"left"` or `"none"` to
+  override this behaviour.
 
 - show_exposure_labels:
 

@@ -87,14 +87,15 @@ active_rows_by_date() instead."><meta property="og:image" content="https://mhari
 
 
 <dt id="arg-nomatch">nomatch<a class="anchor" aria-label="anchor" href="#arg-nomatch"></a></dt>
-<dd><p>When a row (with interval say, <code>[a,b]</code>) in x has no match in
-y, nomatch=NA means NA is returned for y's non-by.y columns for that row of
-x. nomatch=NULL (default) means no rows will be returned for that row of x.</p></dd>
+<dd><p>Controls event dates for which no active portfolio row is
+found. With <code>NULL</code>, unmatched events are omitted. With <code>NA</code>, they are retained
+with missing portfolio information.</p></dd>
 
 
 <dt id="arg-mult">mult<a class="anchor" aria-label="anchor" href="#arg-mult"></a></dt>
-<dd><p>When multiple rows in y match to the row in x, <code>mult</code> controls
-which values are returned - "all" (default), "first" or "last".</p></dd>
+<dd><p>Controls the result when an event date matches multiple active
+portfolio rows. Use <code>"all"</code> to retain every match, or <code>"first"</code> or <code>"last"</code>
+to retain one matching row. The default is <code>"all"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

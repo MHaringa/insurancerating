@@ -58,7 +58,7 @@ background bars, and observed portfolio experience attached with
 <span>  risk_factors <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  metric <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  legend_position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"right"</span>, <span class="st">"bottom"</span>, <span class="st">"top"</span>, <span class="st">"left"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
+<span>  legend_position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"right"</span>, <span class="st">"bottom"</span>, <span class="st">"top"</span>, <span class="st">"left"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  show_exposure_labels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  decimal_mark <span class="op">=</span> <span class="st">","</span>,</span>
 <span>  y_label <span class="op">=</span> <span class="st">"Relativity"</span>,</span>
@@ -108,8 +108,11 @@ patchwork layout.</p></dd>
 
 <dt id="arg-legend-position">legend_position<a class="anchor" aria-label="anchor" href="#arg-legend-position"></a></dt>
 <dd><p>Character string specifying the legend position.
-Supported values are <code>"right"</code>, <code>"bottom"</code>, <code>"top"</code>, <code>"left"</code> and
-<code>"none"</code>.</p></dd>
+The default, <code>"auto"</code>, hides the legend when only one fitted model is
+shown and no observed-experience line is present. It places the legend on
+the right when multiple fitted models or an observed-experience comparison
+are shown. Use <code>"right"</code>, <code>"bottom"</code>, <code>"top"</code>, <code>"left"</code> or <code>"none"</code> to
+override this behaviour.</p></dd>
 
 
 <dt id="arg-show-exposure-labels">show_exposure_labels<a class="anchor" aria-label="anchor" href="#arg-show-exposure-labels"></a></dt>

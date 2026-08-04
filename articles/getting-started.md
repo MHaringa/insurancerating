@@ -68,9 +68,8 @@ portfolio.
 Before fitting a model, it is useful to assess:
 
 - how experience differs across factor levels
-- whether differences are supported by sufficient exposure and claim
-  volume
-- whether exposure is sufficient
+- whether observed differences are supported by sufficient exposure and
+  claim volume
 - whether the observed pattern is plausible
 
 This is done with
@@ -178,8 +177,38 @@ autoplot(age_segments)
 
 ![](getting-started_files/figure-html/unnamed-chunk-6-1.png)
 
+``` r
+
+summary(age_segments)
+#>   segment portfolio_records risk_factor_values   exposure claim_count
+#> 1 [18,25]              1543                  8 1331.17534         348
+#> 2 (25,32]              4254                  7 3648.72055         653
+#> 3 (32,39]              4919                  7 4247.34795         615
+#> 4 (39,51]              8366                 12 7421.35890        1009
+#> 5 (51,58]              3594                  7 3245.45479         372
+#> 6 (58,65]              3058                  7 2790.83288         272
+#> 7 (65,84]              4181                 19 3900.75890         394
+#> 8 (84,95]                85                 10   72.01644           5
+#>    frequency
+#> 1 0.26142311
+#> 2 0.17896684
+#> 3 0.14479624
+#> 4 0.13595893
+#> 5 0.11462184
+#> 6 0.09746194
+#> 7 0.10100599
+#> 8 0.06942859
+```
+
 This derives candidate segment boundaries from the fitted continuous
-effect.
+effect. Exposure and claim volume have already informed the GAM
+estimate. They are reported by
+[`summary()`](https://rdrr.io/r/base/summary.html) for review, but are
+not applied again when the fitted curve is divided into intervals. The
+evolutionary tree approximates the GAM curve rather than the individual
+claim outcomes. Each distinct risk-factor value on the fitted curve has
+equal influence on this approximation; exposure is not applied as a
+second weight.
 
 The resulting segments should be reviewed against exposure, observed
 experience, stability and practical tariff requirements before they are

@@ -229,9 +229,38 @@ age_gam <- risk_factor_gam(
 
 age_segments <- derive_tariff_segments(age_gam)
 age_segments
-#> Tariff segment boundaries:
+#> Tariff segmentation
+#> Risk factor: age_policyholder 
+#> Candidate segments: 8 
+#> Segmentation penalty: 0 
+#> Boundaries:
 #> [1] 18 25 32 39 51 58 65 84 95
+summary(age_segments)
+#>   segment portfolio_records risk_factor_values   exposure claim_count
+#> 1 [18,25]              1543                  8 1331.17534         348
+#> 2 (25,32]              4254                  7 3648.72055         653
+#> 3 (32,39]              4919                  7 4247.34795         615
+#> 4 (39,51]              8366                 12 7421.35890        1009
+#> 5 (51,58]              3594                  7 3245.45479         372
+#> 6 (58,65]              3058                  7 2790.83288         272
+#> 7 (65,84]              4181                 19 3900.75890         394
+#> 8 (84,95]                85                 10   72.01644           5
+#>    frequency
+#> 1 0.26142311
+#> 2 0.17896684
+#> 3 0.14479624
+#> 4 0.13595893
+#> 5 0.11462184
+#> 6 0.09746194
+#> 7 0.10100599
+#> 8 0.06942859
 ```
+
+The segment boundaries approximate the fitted GAM curve. Exposure and
+claim volume have already influenced that curve through the GAM
+specification and are not applied as a second weight during
+segmentation. The segment summary retains these portfolio measures for
+assessing the support of each candidate segment.
 
 The derived segments can be added back to the portfolio with
 [`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md).
@@ -254,8 +283,10 @@ head(portfolio[, c("age_policyholder", "age_policyholder_segment")])
 ```
 
 These functions are intended to support actuarial judgement, not replace
-it. Candidate segment boundaries should still be reviewed against
-exposure, claim volume, stability and practical usability.
+it. The tree approximates the fitted GAM effect and does not directly
+optimise observed claims or portfolio loss. Candidate segment boundaries
+should still be reviewed against exposure, claim volume, stability and
+practical usability.
 
 ## 4. Fit and interpret a GLM
 
@@ -280,7 +311,7 @@ rt <- rating_table(
   exposure = "exposure"
 )
 
-head(rt$df)
+head(rt)
 #>                risk_factor       level est_freq_model exposure
 #> 1              (Intercept) (Intercept)      0.2743790       NA
 #> 2                      zip           0      1.0000000      207

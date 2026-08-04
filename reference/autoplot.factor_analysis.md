@@ -94,7 +94,12 @@ autoplot(
 - legend_position:
 
   Character string specifying the legend position. Supported values are
-  `"right"`, `"bottom"`, `"top"`, `"left"` and `"none"`.
+  `"right"`, `"bottom"`, `"top"`, `"left"` and `"none"`. A legend is
+  present only when the `factor_analysis` object was created with
+  `group_by`, because the resulting group-specific series are
+  distinguished by colour. Without `group_by`, colours are fixed plot
+  styles and no legend is drawn; in that case this argument has no
+  visible effect.
 
 - show_exposure:
 
@@ -253,6 +258,14 @@ When the factor analysis contains one or more `by` variables, separate
 observed series are shown. `show_total = TRUE` adds the aggregate
 portfolio series for comparison. Sorting and manual level ordering
 affect only the presentation; the underlying summaries are unchanged.
+
+A rate or ratio is not shown for a risk-factor level when its
+denominator is zero or missing. For example, average severity is
+undefined when claim count is zero, and loss ratio is undefined when
+premium is zero.
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+gives one combined warning identifying the affected metrics and levels.
+Other valid metrics and exposure information remain in the figure.
 
 ## See also
 

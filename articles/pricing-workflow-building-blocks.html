@@ -289,8 +289,36 @@ boundaries from that pattern.</p>
 <span></span>
 <span><span class="va">age_segments</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_tariff_segments.html">derive_tariff_segments</a></span><span class="op">(</span><span class="va">age_gam</span><span class="op">)</span></span>
 <span><span class="va">age_segments</span></span>
-<span><span class="co">#&gt; Tariff segment boundaries:</span></span>
-<span><span class="co">#&gt; [1] 18 25 32 39 51 58 65 84 95</span></span></code></pre></div>
+<span><span class="co">#&gt; Tariff segmentation</span></span>
+<span><span class="co">#&gt; Risk factor: age_policyholder </span></span>
+<span><span class="co">#&gt; Candidate segments: 8 </span></span>
+<span><span class="co">#&gt; Segmentation penalty: 0 </span></span>
+<span><span class="co">#&gt; Boundaries:</span></span>
+<span><span class="co">#&gt; [1] 18 25 32 39 51 58 65 84 95</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">age_segments</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   segment portfolio_records risk_factor_values   exposure claim_count</span></span>
+<span><span class="co">#&gt; 1 [18,25]              1543                  8 1331.17534         348</span></span>
+<span><span class="co">#&gt; 2 (25,32]              4254                  7 3648.72055         653</span></span>
+<span><span class="co">#&gt; 3 (32,39]              4919                  7 4247.34795         615</span></span>
+<span><span class="co">#&gt; 4 (39,51]              8366                 12 7421.35890        1009</span></span>
+<span><span class="co">#&gt; 5 (51,58]              3594                  7 3245.45479         372</span></span>
+<span><span class="co">#&gt; 6 (58,65]              3058                  7 2790.83288         272</span></span>
+<span><span class="co">#&gt; 7 (65,84]              4181                 19 3900.75890         394</span></span>
+<span><span class="co">#&gt; 8 (84,95]                85                 10   72.01644           5</span></span>
+<span><span class="co">#&gt;    frequency</span></span>
+<span><span class="co">#&gt; 1 0.26142311</span></span>
+<span><span class="co">#&gt; 2 0.17896684</span></span>
+<span><span class="co">#&gt; 3 0.14479624</span></span>
+<span><span class="co">#&gt; 4 0.13595893</span></span>
+<span><span class="co">#&gt; 5 0.11462184</span></span>
+<span><span class="co">#&gt; 6 0.09746194</span></span>
+<span><span class="co">#&gt; 7 0.10100599</span></span>
+<span><span class="co">#&gt; 8 0.06942859</span></span></code></pre></div>
+<p>The segment boundaries approximate the fitted GAM curve. Exposure and
+claim volume have already influenced that curve through the GAM
+specification and are not applied as a second weight during
+segmentation. The segment summary retains these portfolio measures for
+assessing the support of each candidate segment.</p>
 <p>The derived segments can be added back to the portfolio with
 <code><a href="../reference/add_tariff_segments.html">add_tariff_segments()</a></code>.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
@@ -308,8 +336,10 @@ boundaries from that pattern.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>               59 (58,65]                 </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>               71 (65,84]</span></span></code></pre></div>
 <p>These functions are intended to support actuarial judgement, not
-replace it. Candidate segment boundaries should still be reviewed
-against exposure, claim volume, stability and practical usability.</p>
+replace it. The tree approximates the fitted GAM effect and does not
+directly optimise observed claims or portfolio loss. Candidate segment
+boundaries should still be reviewed against exposure, claim volume,
+stability and practical usability.</p>
 </div>
 <div class="section level2">
 <h2 id="fit-and-interpret-a-glm">4. Fit and interpret a GLM<a class="anchor" aria-label="anchor" href="#fit-and-interpret-a-glm"></a>
@@ -333,7 +363,7 @@ form.</p>
 <span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">rt</span><span class="op">$</span><span class="va">df</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">rt</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                risk_factor       level est_freq_model exposure</span></span>
 <span><span class="co">#&gt; 1              (Intercept) (Intercept)      0.2743790       NA</span></span>
 <span><span class="co">#&gt; 2                      zip           0      1.0000000      207</span></span>

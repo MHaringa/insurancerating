@@ -6,18 +6,20 @@
     }
   };
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Add derived tariff segments to portfolio data — add_tariff_segments"><meta name="description" content="Adds the tariff segments derived by derive_tariff_segments() as a new factor
-column to a portfolio data set. This is the recommended way to attach derived
-tariff segments to the same portfolio rows that were used to fit the risk
-factor GAM.
-The helper preserves row alignment between the portfolio and the assigned
-segments. It does not re-estimate the GAM or reconstruct the segment
-boundaries."><meta property="og:description" content="Adds the tariff segments derived by derive_tariff_segments() as a new factor
-column to a portfolio data set. This is the recommended way to attach derived
-tariff segments to the same portfolio rows that were used to fit the risk
-factor GAM.
-The helper preserves row alignment between the portfolio and the assigned
-segments. It does not re-estimate the GAM or reconstruct the segment
-boundaries."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+column to a portfolio data set. The stored boundaries are applied to the
+original continuous risk-factor column, so the result does not depend on the
+row order used when the GAM was fitted.
+The helper does not re-estimate the GAM or derive new boundaries. It can be
+used after filtering or reordering the original portfolio and on new data
+whose risk-factor values remain within the range used to derive the
+segmentation."><meta property="og:description" content="Adds the tariff segments derived by derive_tariff_segments() as a new factor
+column to a portfolio data set. The stored boundaries are applied to the
+original continuous risk-factor column, so the result does not depend on the
+row order used when the GAM was fitted.
+The helper does not re-estimate the GAM or derive new boundaries. It can be
+used after filtering or reordering the original portfolio and on new data
+whose risk-factor values remain within the range used to derive the
+segmentation."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -51,12 +53,13 @@ boundaries."><meta property="og:image" content="https://mharinga.github.io/insur
 
     <div class="ref-description section level2">
     <p>Adds the tariff segments derived by <code><a href="derive_tariff_segments.html">derive_tariff_segments()</a></code> as a new factor
-column to a portfolio data set. This is the recommended way to attach derived
-tariff segments to the same portfolio rows that were used to fit the risk
-factor GAM.</p>
-<p>The helper preserves row alignment between the portfolio and the assigned
-segments. It does not re-estimate the GAM or reconstruct the segment
-boundaries.</p>
+column to a portfolio data set. The stored boundaries are applied to the
+original continuous risk-factor column, so the result does not depend on the
+row order used when the GAM was fitted.</p>
+<p>The helper does not re-estimate the GAM or derive new boundaries. It can be
+used after filtering or reordering the original portfolio and on new data
+whose risk-factor values remain within the range used to derive the
+segmentation.</p>
     </div>
 
     <div class="section level2">
@@ -95,10 +98,12 @@ exists in <code>data</code>.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><code>segments$assigned_segments</code> contains one segment for each observation used
-to estimate the risk-factor effect. <code>data</code> must therefore contain the same
-number of rows in the same order. The resulting factor can be used in a GLM
-or retained as a candidate grouping for further actuarial review.</p>
+    <p>The risk-factor name and optional rounding increment are taken from
+<code>segments</code>. The risk-factor column in <code>data</code> must be numeric and contain only
+finite, non-missing values. Values outside the original segmentation range
+produce an error because their tariff treatment has not been supported by
+the fitted GAM. The resulting factor can be used in a GLM or retained as a
+candidate grouping for further actuarial review.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

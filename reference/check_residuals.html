@@ -66,7 +66,9 @@ GLMs where classical residual plots can be hard to interpret.</p>
 
 <dt id="arg-n-simulations">n_simulations<a class="anchor" aria-label="anchor" href="#arg-n-simulations"></a></dt>
 <dd><p>Number of simulations used to generate residuals.
-Must be a positive whole number. Default is 30.</p></dd>
+Must be a positive whole number. The default of 30 is intended for a quick
+check. For a more stable final assessment, 250 to 1,000 simulations will
+often be more suitable. More simulations increase the calculation time.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -105,6 +107,10 @@ Kolmogorov-Smirnov p-value for a simple uniformity check. The p-value should
 be read as a diagnostic signal, not as a pricing decision rule. A low p-value
 indicates that the residual distribution differs from what the fitted model
 implies and that the model specification may need review.</p>
+<p>A low p-value does not always mean that the model has an important pricing
+problem. In a large portfolio, even a small difference can produce a low
+p-value. The result should therefore be reviewed together with the QQ plot,
+the size of the difference and its relevance for the tariff.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -127,7 +133,7 @@ Cambridge University Press.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="va">m1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">area</span>, offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>          family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">MTPL2</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">cr</span> <span class="op">&lt;-</span> <span class="fu">check_residuals</span><span class="op">(</span><span class="va">m1</span>, n_simulations <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">cr</span> <span class="op">&lt;-</span> <span class="fu">check_residuals</span><span class="op">(</span><span class="va">m1</span>, n_simulations <span class="op">=</span> <span class="fl">250</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">cr</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>

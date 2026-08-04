@@ -1,7 +1,7 @@
 # Fit severity distributions to truncated claim data
 
-**\[experimental\]** Estimate an underlying claim severity distribution
-when the observed claims are truncated.
+Estimate an underlying claim severity distribution when the observed
+claims are truncated.
 
 ## Usage
 

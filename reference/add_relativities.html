@@ -91,7 +91,7 @@ defines the detailed groups inside <code>model_variable</code>.</p></dd>
 
 <dt id="arg-relativities">relativities<a class="anchor" aria-label="anchor" href="#arg-relativities"></a></dt>
 <dd><p>Named list of data frames, usually created with
-<code><a href="relativities.html">relativities()</a></code> and <code><a href="split_level.html">split_level()</a></code>.</p></dd>
+<code><a href="relativity_specification.html">relativities()</a></code> and <code><a href="relativity_specification.html">split_level()</a></code>.</p></dd>
 
 
 <dt id="arg-exposure">exposure<a class="anchor" aria-label="anchor" href="#arg-exposure"></a></dt>
@@ -118,8 +118,8 @@ in the recorded step order and applied when <code><a href="refit.html">refit()</
 <p><code>model_variable</code> is the variable already used in the GLM. <code>split_variable</code> is
 the more detailed variable in the portfolio data that will be used to split
 one or more levels of <code>model_variable</code>. The <code>relativities</code> argument should be
-a named list describing those splits, usually built with <code><a href="relativities.html">relativities()</a></code> and
-<code><a href="split_level.html">split_level()</a></code>.</p>
+a named list describing those splits, usually built with <code><a href="relativity_specification.html">relativities()</a></code> and
+<code><a href="relativity_specification.html">split_level()</a></code>.</p>
 <p><code>add_relativities()</code> validates the supplied sublevel names against the
 observed values of <code>split_variable</code> before storing the refinement step. A
 misspelled or incorrectly spaced category or sublevel therefore produces an
@@ -185,7 +185,7 @@ acceptation rules, instead of relying only on <code>add_relativities()</code>.</
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="prepare_refinement.html">prepare_refinement()</a></code>, <code><a href="relativities.html">relativities()</a></code>, <code><a href="split_level.html">split_level()</a></code>,
+    <div class="dont-index"><p><code><a href="prepare_refinement.html">prepare_refinement()</a></code>, <code><a href="relativity_specification.html">relativities()</a></code>, <code><a href="relativity_specification.html">split_level()</a></code>,
 <code><a href="add_restriction.html">add_restriction()</a></code>, <code><a href="add_smoothing.html">add_smoothing()</a></code>, <code><a href="refit.html">refit()</a></code>, <code><a href="rating_table.html">rating_table()</a></code></p></div>
     </div>
     <div class="section level2">
@@ -210,13 +210,13 @@ acceptation rules, instead of relying only on <code>add_relativities()</code>.</
 <span class="r-in"><span>  data <span class="op">=</span> <span class="va">portfolio</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">relativities</span> <span class="op">&lt;-</span> <span class="fu"><a href="relativities.html">relativities</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="split_level.html">split_level</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span><span class="va">relativities</span> <span class="op">&lt;-</span> <span class="fu"><a href="relativity_specification.html">relativities</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="relativity_specification.html">split_level</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    <span class="st">"residential"</span>,</span></span>
 <span class="r-in"><span>    new_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"flat"</span>, <span class="st">"house"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>    relativities <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.95</span>, <span class="fl">1.05</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span>,</span></span>
-<span class="r-in"><span>  <span class="fu"><a href="split_level.html">split_level</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="relativity_specification.html">split_level</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    <span class="st">"commercial"</span>,</span></span>
 <span class="r-in"><span>    new_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"shop"</span>, <span class="st">"office"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>    relativities <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.10</span>, <span class="fl">0.90</span><span class="op">)</span></span></span>
