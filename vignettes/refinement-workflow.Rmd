@@ -330,6 +330,51 @@ This shows the proposed restricted structure relative to the original fitted
 model.
 
 
+## Shrinkage of categorical relativities
+
+### Purpose
+
+Shrinkage can be used when the ordering of a categorical risk-factor pattern is
+considered credible, but the distance between its highest and lowest
+relativities is too large for the available experience or the intended tariff.
+It differs from a restriction: a restriction supplies selected relativities
+directly, whereas shrinkage systematically moves all current relativities
+towards a common level.
+
+The adjustment is made on the logarithmic scale. With `credibility = 0.9`, each
+level retains 90 percent of its current logarithmic effect and receives 10
+percent of the common effect. The resulting relativities are rescaled to retain
+their weighted arithmetic mean. This reduces differentiation without changing
+the selected weighted level of the risk factor.
+
+```{r}
+
+ref <- ref |>
+  add_shrinkage(
+    model_variable = "zip",
+    credibility = 0.9,
+    weights = "exposure"
+  )
+
+summary(ref)
+autoplot(ref, step = 3)
+
+```
+
+Exposure is generally an appropriate basis for frequency or risk-premium
+relativities. Claim count is generally more appropriate for severity
+relativities. With `weights = NULL`, explicit GLM weights are used first;
+otherwise a simple exposure offset is used when it can be identified without
+ambiguity. Use `weights = "equal"` when every tariff level should receive the
+same weight. Equal weighting is an explicit unweighted level comparison and
+does not necessarily preserve the observed portfolio level.
+
+The `credibility` value is a refinement assumption rather than a formally
+estimated Buhlmann credibility factor. Its selection should be assessed against
+exposure, stability over time and the intended degree of tariff
+differentiation.
+
+
 ## Expert-based relativities
 
 ### Purpose

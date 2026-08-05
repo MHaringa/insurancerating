@@ -96,8 +96,8 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #' @description
 #' Visualise one stored step of a `rating_refinement` specification before
 #' fitting the revised GLM with [refit()]. The plot compares the original
-#' fitted tariff effect with the smoothing, restriction or sublevel relativity
-#' specification produced by the selected step.
+#' fitted tariff effect with the smoothing, restriction, shrinkage or sublevel
+#' relativity specification produced by the selected step.
 #'
 #' @details
 #' Refinement steps are evaluated in their stored order up to and including the
@@ -152,7 +152,7 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #' @author Martin Haringa
 #'
 #' @seealso [prepare_refinement()], [add_smoothing()], [edit_smoothing()],
-#'   [add_restriction()], [add_relativities()], [refit()]
+#'   [add_restriction()], [add_shrinkage()], [add_relativities()], [refit()]
 #'
 #' @examples
 #' portfolio <- data.frame(
@@ -214,7 +214,7 @@ autoplot.rating_refinement <- function(object,
     )
   }
 
-  if (selected_step$type %in% c("restriction", "relativities")) {
+  if (selected_step$type %in% c("restriction", "shrinkage", "relativities")) {
     if (!is.null(x_max) || !is.null(y_max)) {
       supplied_limits <- c(
         if (!is.null(x_max)) "`x_max`",
@@ -445,6 +445,74 @@ autoplot.rating_refinement <- function(object,
 
   pal <- .plot_palette_ir()
   grid_theme <- .plot_grid_theme_ir()
+
+  if (identical(step$type, "shrinkage")) {
+    values <- state$shrinkage_df
+    if (is.null(values) || !all(c(
+      "level", "original_relativity", "adjusted_relativity"
+    ) %in% names(values))) {
+      stop("No shrinkage plot data found for this step.", call. = FALSE)
+    }
+
+    plot_data <- rbind(
+      data.frame(
+        level = values$level,
+        type = "Current relativity",
+        Coef = values$original_relativity,
+        stringsAsFactors = FALSE
+      ),
+      data.frame(
+        level = values$level,
+        type = "Shrunk relativity",
+        Coef = values$adjusted_relativity,
+        stringsAsFactors = FALSE
+      )
+    )
+    level_order <- unique(as.character(values$level))
+    plot_data$x_num <- match(as.character(plot_data$level), level_order)
+
+    x_lab <- step$model_variable
+    if (remove_underscores) {
+      x_lab <- gsub("_", " ", x_lab)
+    }
+
+    p <- ggplot2::ggplot(
+      plot_data,
+      ggplot2::aes(x = x_num, y = Coef, color = type, group = type)
+    ) +
+      ggplot2::geom_line(linewidth = 0.8, ...) +
+      ggplot2::geom_point(
+        shape = 21,
+        fill = "white",
+        stroke = 0.7,
+        size = 2.4,
+        ...
+      ) +
+      ggplot2::scale_x_continuous(
+        breaks = seq_along(level_order),
+        labels = level_order
+      ) +
+      ggplot2::scale_colour_manual(
+        values = c(
+          "Current relativity" = pal$frequency,
+          "Shrunk relativity" = pal$risk_premium
+        ),
+        name = NULL
+      ) +
+      ggplot2::labs(x = x_lab, y = "Relativity") +
+      ggplot2::theme_minimal() +
+      grid_theme
+
+    if (!is.null(rotate_angle)) {
+      p <- p + ggplot2::theme(
+        axis.text.x = ggplot2::element_text(angle = rotate_angle, hjust = 1)
+      )
+    }
+    if (!is.null(custom_theme)) {
+      p <- p + do.call(ggplot2::theme, custom_theme)
+    }
+    return(p)
+  }
 
   if (identical(step$type, "relativities")) {
     rel_df <- state$relativities_df

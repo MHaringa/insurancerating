@@ -158,7 +158,7 @@ Models are estimated using widely used GLM specifications:
 levels. When coefficients are exponentiated, they are shown as relativities.
 
 
-### Refinement 
+### Refinement
 
 Model output can be adjusted using:
 
@@ -167,14 +167,17 @@ Model output can be adjusted using:
 prepare_refinement(model) |>
   add_smoothing(...) |>
   add_restriction(...) |>
+  add_shrinkage(...) |>
   add_relativities(...) |>
   refit()
 
 ```
 
-Refinement records smoothing, restrictions or sublevel relativities explicitly
-before the model is refitted. These adjustments should be supported by the
-available experience, tariff interpretation or documented expert judgement.
+Refinement records smoothing, restrictions, shrinkage or sublevel relativities
+explicitly before the model is refitted. Shrinkage reduces differences between
+categorical relativities while preserving their selected weighted level. These
+adjustments should be supported by the available experience, tariff
+interpretation or documented expert judgement.
 
 
 ### Model structure
@@ -221,6 +224,3 @@ Full documentation and examples are available in the articles:
 - [Refinement building blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.html)
 - [Model validation](https://mharinga.github.io/insurancerating/articles/model-validation.html)
 - [Pricing workflow building blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html)
-
-
-	

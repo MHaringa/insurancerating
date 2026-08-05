@@ -4,8 +4,8 @@ Visualise one stored step of a `rating_refinement` specification before
 fitting the revised GLM with
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
 The plot compares the original fitted tariff effect with the smoothing,
-restriction or sublevel relativity specification produced by the
-selected step.
+restriction, shrinkage or sublevel relativity specification produced by
+the selected step.
 
 ## Usage
 
@@ -118,6 +118,7 @@ within-level differentiation directly comparable.
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md),
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
+[`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md),
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
 

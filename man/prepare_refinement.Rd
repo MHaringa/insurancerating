@@ -22,14 +22,14 @@ until \code{\link[=refit]{refit()}} is called.
 }
 \description{
 Create an editable refinement specification from a fitted pricing GLM.
-Smoothing, coefficient restrictions and sublevel relativities can then be
-added in a defined order. These steps do not alter the fitted GLM until
-\code{\link[=refit]{refit()}} is called.
+Smoothing, coefficient restrictions, shrinkage and sublevel relativities can
+then be added in a defined order. These steps do not alter the fitted GLM
+until \code{\link[=refit]{refit()}} is called.
 }
 \details{
 \code{prepare_refinement()} creates a persistent refinement specification. This
 object contains the original GLM, the corresponding model data and the
-ordered smoothing, restriction and relativity steps. Retain this object
+ordered smoothing, restriction, shrinkage and relativity steps. Retain this object
 during actuarial review so that assumptions can be inspected, revised and
 applied again in the same order.
 \subsection{Actuarial interpretation}{
@@ -44,8 +44,8 @@ alternative refinement specifications.
 \code{\link[=refit]{refit()}} applies the stored specification and returns a fitted GLM for model
 diagnostics, prediction and tariff reporting. The returned GLM is a result,
 not an editable refinement specification. Functions such as
-\code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=edit_smoothing]{edit_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}} and
-\code{\link[=add_relativities]{add_relativities()}} therefore accept a \code{rating_refinement} object and do not
+\code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=edit_smoothing]{edit_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_shrinkage]{add_shrinkage()}}
+and \code{\link[=add_relativities]{add_relativities()}} therefore accept a \code{rating_refinement} object and do not
 accept an ordinary or refitted GLM directly.
 
 A practical iterative workflow therefore keeps both objects:
@@ -102,7 +102,8 @@ updated_model <- refit(refinement)
 }
 \seealso{
 \code{\link[=summary.rating_refinement]{summary.rating_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}},
-\code{\link[=edit_smoothing]{edit_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}
+\code{\link[=edit_smoothing]{edit_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_shrinkage]{add_shrinkage()}},
+\code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}
 }
 \author{
 Martin Haringa

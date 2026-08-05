@@ -199,8 +199,8 @@ refit(hail_refinement)
 
 }
 \seealso{
-\code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=add_relativities]{add_relativities()}},
-\code{\link[=refit]{refit()}}, \code{\link[=rating_table]{rating_table()}}
+\code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=add_shrinkage]{add_shrinkage()}},
+\code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}, \code{\link[=rating_table]{rating_table()}}
 }
 \author{
 Martin Haringa

@@ -170,6 +170,7 @@ instead changes the coefficient basis from which the split is derived.
 
 [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
+[`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md),
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)

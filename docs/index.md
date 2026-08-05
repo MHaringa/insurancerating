@@ -66,6 +66,8 @@ autoplot(
 ![Factor analysis plot showing frequency, average severity and risk
 premium by ZIP code.](reference/figures/unnamed-chunk-3-1.png)
 
+plot of chunk unnamed-chunk-3
+
 ``` r
 
 # Fit model
@@ -79,14 +81,12 @@ mod <- glm(
 rating_table(mod)
 ```
 
-``` R
-##   risk_factor       level   est_mod
-## 1 (Intercept) (Intercept) 0.1402024
-## 2         zip           0 1.0000000
-## 3         zip           1 1.0254064
-## 4         zip           2 0.9238016
-## 5         zip           3 0.9757522
-```
+    ##   risk_factor       level   est_mod
+    ## 1 (Intercept) (Intercept) 0.1402024
+    ## 2         zip           0 1.0000000
+    ## 3         zip           1 1.0254064
+    ## 4         zip           2 0.9238016
+    ## 5         zip           3 0.9757522
 
 ``` r
 
@@ -103,14 +103,12 @@ mod_refined <- prepare_refinement(mod) |>
 rating_table(mod_refined)
 ```
 
-``` R
-##   risk_factor       level est_mod_refined exposure
-## 1 (Intercept) (Intercept)        0.136653       NA
-## 2     zip_adj           0        0.900000      207
-## 3     zip_adj           1        0.950000    11081
-## 4     zip_adj           2        1.000000     7783
-## 5     zip_adj           3        1.100000     7588
-```
+    ##   risk_factor       level est_mod_refined exposure
+    ## 1 (Intercept) (Intercept)        0.136653       NA
+    ## 2     zip_adj           0        0.900000      207
+    ## 3     zip_adj           1        0.950000    11081
+    ## 4     zip_adj           2        1.000000     7783
+    ## 5     zip_adj           3        1.100000     7588
 
 ## Combining building blocks
 
@@ -162,14 +160,17 @@ Model output can be adjusted using:
 prepare_refinement(model) |>
   add_smoothing(...) |>
   add_restriction(...) |>
+  add_shrinkage(...) |>
   add_relativities(...) |>
   refit()
 ```
 
-Refinement records smoothing, restrictions or sublevel relativities
-explicitly before the model is refitted. These adjustments should be
-supported by the available experience, tariff interpretation or
-documented expert judgement.
+Refinement records smoothing, restrictions, shrinkage or sublevel
+relativities explicitly before the model is refitted. Shrinkage reduces
+differences between categorical relativities while preserving their
+selected weighted level. These adjustments should be supported by the
+available experience, tariff interpretation or documented expert
+judgement.
 
 ### Model structure
 

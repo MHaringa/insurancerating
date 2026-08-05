@@ -26,8 +26,8 @@ derived tariff factors.
 \description{
 Apply the ordered steps stored in a \code{rating_refinement} object and fit the
 resulting pricing GLM. This evaluates the current refinement specification;
-it may be called repeatedly while smoothing, restrictions or sublevel
-relativities are being reviewed.
+it may be called repeatedly while smoothing, restrictions, shrinkage or
+sublevel relativities are being reviewed.
 }
 \details{
 \code{refit()} applies the stored steps in their recorded order, constructs the
@@ -59,7 +59,7 @@ recalibrated to the supplied model data.
 
 Printing the returned model first shows the original and refitted formulas,
 the model family, whether an intercept-only refit was used, and a concise
-description of every restriction, smoothing or relativity step. This is
+description of every restriction, smoothing, shrinkage or relativity step. This is
 followed by the regular \code{glm} output with the model call, coefficients,
 degrees of freedom, deviance and AIC. The object continues to inherit from
 \code{glm}, so standard methods such as \code{\link[stats:predict.glm]{stats::predict.glm()}} and
@@ -92,7 +92,7 @@ refined_model <- refit(refinement, intercept_only = TRUE)
 }
 \seealso{
 \code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=edit_smoothing]{edit_smoothing()}},
-\code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_relativities]{add_relativities()}}, \code{\link[=rating_table]{rating_table()}},
+\code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_shrinkage]{add_shrinkage()}}, \code{\link[=add_relativities]{add_relativities()}}, \code{\link[=rating_table]{rating_table()}},
 \code{\link[=rating_grid]{rating_grid()}}, \code{\link[=audit_refinement]{audit_refinement()}}
 }
 \author{

@@ -71,6 +71,7 @@ reference:
       - add_smoothing
       - edit_smoothing
       - add_restriction
+      - add_shrinkage
       - add_relativities
       - relativity_specification
       - refit

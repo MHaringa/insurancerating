@@ -2,6 +2,13 @@
 
 ## Changes since 0.8.1
 
+- `add_shrinkage()` can reduce differences between categorical tariff
+  relativities before refitting. Relativities are blended with a weighted
+  centre on the log scale and rescaled to preserve their weighted arithmetic
+  mean. Explicit GLM weights or a simple exposure offset are detected when
+  possible; a column name or `weights = "equal"` can be supplied directly.
+  The selected credibility, weighting basis and before/after relativities are
+  retained in the ordered refinement specification.
 - `audit_refinement()` now provides a reproducible comparison between the
   unrestricted and refined GLM on common observed model points. It records the
   package version, formulas and ordered refinement steps, and reports the
