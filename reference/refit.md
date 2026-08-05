@@ -2,8 +2,8 @@
 
 Apply the ordered steps stored in a `rating_refinement` object and fit
 the resulting pricing GLM. This evaluates the current refinement
-specification; it may be called repeatedly while smoothing, restrictions
-or sublevel relativities are being reviewed.
+specification; it may be called repeatedly while smoothing,
+restrictions, shrinkage or sublevel relativities are being reviewed.
 
 ## Usage
 
@@ -73,10 +73,10 @@ data.
 
 Printing the returned model first shows the original and refitted
 formulas, the model family, whether an intercept-only refit was used,
-and a concise description of every restriction, smoothing or relativity
-step. This is followed by the regular `glm` output with the model call,
-coefficients, degrees of freedom, deviance and AIC. The object continues
-to inherit from `glm`, so standard methods such as
+and a concise description of every restriction, smoothing, shrinkage or
+relativity step. This is followed by the regular `glm` output with the
+model call, coefficients, degrees of freedom, deviance and AIC. The
+object continues to inherit from `glm`, so standard methods such as
 [`stats::predict.glm()`](https://rdrr.io/r/stats/predict.glm.html) and
 [`summary.glm()`](https://rdrr.io/r/stats/summary.glm.html) remain
 available.
@@ -94,6 +94,7 @@ earlier sequence of refinement steps.
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md),
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
+[`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md),
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md),
 [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md),

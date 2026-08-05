@@ -73,6 +73,8 @@ relativities.
   : Edit a smoothing curve in a refinement workflow
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   : Add coefficient restrictions to a refinement workflow
+- [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md)
+  : Shrink categorical tariff relativities towards a common level
 - [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
   : Add sublevel relativities to a refinement workflow
 - [`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
