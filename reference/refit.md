@@ -3,7 +3,8 @@
 Apply the ordered steps stored in a `rating_refinement` object and fit
 the resulting pricing GLM. This evaluates the current refinement
 specification; it may be called repeatedly while smoothing,
-restrictions, shrinkage or sublevel relativities are being reviewed.
+restrictions, shrinkage, rebasing or sublevel relativities are being
+reviewed.
 
 ## Usage
 
@@ -95,6 +96,7 @@ earlier sequence of refinement steps.
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md),
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
 [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md),
+[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md),
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md),
 [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md),

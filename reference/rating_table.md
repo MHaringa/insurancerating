@@ -15,6 +15,10 @@ rating_table(
   exposure_output = NULL,
   exponentiate = TRUE,
   significance = FALSE,
+  reference_first = TRUE,
+  level_order = c("model", "alphabetical", "estimate_ascending", "estimate_descending"),
+  risk_factor_order = c("model", "alphabetical"),
+  order_model = NULL,
   round_exposure = 0,
   exposure_name = NULL,
   signif_stars = NULL
@@ -57,6 +61,37 @@ rating_table(
   Logical. If `TRUE`, add a separate `signif_*` column for each model
   containing significance indicators based on coefficient p-values. The
   corresponding `est_*` columns remain numeric.
+
+- reference_first:
+
+  Logical. If `TRUE`, place the reference level first within each risk
+  factor. For an ordinary GLM, the reference is obtained from the fitted
+  factor contrasts. After
+  [`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md),
+  the selected rebasing level is used.
+
+- level_order:
+
+  Character string controlling the order of the remaining levels within
+  each risk factor. `"model"` retains the fitted model order,
+  `"alphabetical"` sorts level labels, and `"estimate_ascending"` or
+  `"estimate_descending"` sorts by the fitted effect from `order_model`.
+
+- risk_factor_order:
+
+  Character string controlling risk-factor order. `"model"` retains the
+  order in the fitted model; `"alphabetical"` sorts risk-factor names.
+  The intercept, when present, remains first.
+
+- order_model:
+
+  Optional character string naming the supplied model whose level order,
+  reference levels and estimates are used for sorting. This is mainly
+  relevant when several models are compared. If `NULL`, the first
+  supplied model is used. Both `"frequency"` and `"est_frequency"` are
+  accepted for a model object named `frequency`. If that model does not
+  contain a particular risk factor, the first supplied model containing
+  the factor provides its order and reference level.
 
 - round_exposure:
 
@@ -131,6 +166,26 @@ Comparing multiple models is useful for assessing changes between
 unrestricted and refined specifications, or between alternative model
 formulations. Comparable response definitions and coefficient scales
 remain the responsibility of the analyst.
+
+### Row order and reference levels
+
+By default, risk factors follow the model formula and levels retain
+their model order, with the reference level placed first. This makes the
+tariff basis visible without inferring the reference from a relativity
+equal to one: several levels can legitimately have the same fitted
+effect. A reference selected with
+[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)
+takes precedence over the original GLM contrast reference.
+
+Alternative level ordering is useful for specific review tasks.
+Alphabetical order supports lookup and export, while ordering by
+estimate makes the lowest or highest fitted effects easier to identify.
+With several models, `order_model` defines which fitted specification
+provides that ordering.
+[`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+and
+[`autoplot.rating_table()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
+retain the row order established here.
 
 ### Significance indicators
 

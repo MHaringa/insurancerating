@@ -112,11 +112,7 @@
 <span>  <span class="va">fa</span>,</span>
 <span>  metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"frequency"</span>, <span class="st">"average_severity"</span>, <span class="st">"risk_premium"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<div class="figure">
-<img src="reference/figures/unnamed-chunk-3-1.png" alt="Factor analysis plot showing frequency, average severity and risk premium by ZIP code."><p class="caption">
-plot of chunk unnamed-chunk-3
-</p>
-</div>
+<p><img src="reference/figures/unnamed-chunk-3-1.png" alt="Factor analysis plot showing frequency, average severity and risk premium by ZIP code."></p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit model</span></span>
 <span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
@@ -127,12 +123,12 @@ plot of chunk unnamed-chunk-3
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">mod</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##   risk_factor       level   est_mod</span></span>
-<span><span class="co">## 1 (Intercept) (Intercept) 0.1402024</span></span>
-<span><span class="co">## 2         zip           0 1.0000000</span></span>
-<span><span class="co">## 3         zip           1 1.0254064</span></span>
-<span><span class="co">## 4         zip           2 0.9238016</span></span>
-<span><span class="co">## 5         zip           3 0.9757522</span></span></code></pre>
+<div class="sourceCode" id="cb5"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="do">##   risk_factor       level   est_mod</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="do">## 1 (Intercept) (Intercept) 0.1402024</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="do">## 2         zip           0 1.0000000</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="do">## 3         zip           1 1.0254064</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="do">## 4         zip           2 0.9238016</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="do">## 5         zip           3 0.9757522</span></span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Refine coefficients</span></span>
 <span><span class="va">zip_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -145,12 +141,12 @@ plot of chunk unnamed-chunk-3
 <span>  <span class="fu"><a href="reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">mod_refined</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##   risk_factor       level est_mod_refined exposure</span></span>
-<span><span class="co">## 1 (Intercept) (Intercept)        0.136653       NA</span></span>
-<span><span class="co">## 2     zip_adj           0        0.900000      207</span></span>
-<span><span class="co">## 3     zip_adj           1        0.950000    11081</span></span>
-<span><span class="co">## 4     zip_adj           2        1.000000     7783</span></span>
-<span><span class="co">## 5     zip_adj           3        1.100000     7588</span></span></code></pre>
+<div class="sourceCode" id="cb7"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="do">##   risk_factor       level est_mod_refined exposure</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="do">## 1 (Intercept) (Intercept)        0.136653       NA</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="do">## 2     zip_adj           0        0.900000      207</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="do">## 3     zip_adj           1        0.950000    11081</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="do">## 4     zip_adj           2        1.000000     7783</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="do">## 5     zip_adj           3        1.100000     7588</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="combining-building-blocks">Combining building blocks<a class="anchor" aria-label="anchor" href="#combining-building-blocks"></a>
@@ -198,8 +194,9 @@ plot of chunk unnamed-chunk-3
 <span>  <span class="fu"><a href="reference/add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/add_shrinkage.html">add_shrinkage</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/add_relativities.html">add_relativities</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/add_rebasing.html">add_rebasing</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>Refinement records smoothing, restrictions, shrinkage or sublevel relativities explicitly before the model is refitted. Shrinkage reduces differences between categorical relativities while preserving their selected weighted level. These adjustments should be supported by the available experience, tariff interpretation or documented expert judgement.</p>
+<p>Refinement records smoothing, restrictions, shrinkage, sublevel relativities and rebasing explicitly before the model is refitted. Shrinkage reduces differences between categorical relativities while preserving their selected weighted level. Rebasing changes which resulting tariff level equals 1 without changing the ratios between levels. These adjustments should be supported by the available experience, tariff interpretation or documented expert judgement.</p>
 </div>
 <div class="section level3">
 <h3 id="model-structure">Model structure<a class="anchor" aria-label="anchor" href="#model-structure"></a>

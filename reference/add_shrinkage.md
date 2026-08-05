@@ -110,6 +110,7 @@ the refinement specification and shown by
 [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
+[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md),
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
 [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
@@ -144,7 +145,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-05 13:31:00 UTC
+#> Created: 2026-08-05 14:45:45 UTC
 #> Observations: 8
 #> Family: poisson (log link)
 #> Base formula:

@@ -173,7 +173,12 @@ factor.
 One panel is produced for each selected risk factor. Model effects use
 the primary y-axis. When exposure is available, bars are rescaled to the
 plotting range and the original exposure scale is shown on the secondary
-y-axis.
+y-axis. Panel and level order follow the input
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+object. This keeps the reference level and any explicit actuarial review
+order consistent between the data frame,
+[`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+and the plot.
 
 Observed experience is plotted only after it has been attached with
 [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md).

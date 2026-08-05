@@ -179,6 +179,7 @@ or acceptation rules, instead of relying only on `add_relativities()`.
 [`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md),
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
 [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md),
+[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md),
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)

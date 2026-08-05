@@ -1,9 +1,9 @@
 # Prepare a model refinement workflow
 
 Create an editable refinement specification from a fitted pricing GLM.
-Smoothing, coefficient restrictions, shrinkage and sublevel relativities
-can then be added in a defined order. These steps do not alter the
-fitted GLM until
+Smoothing, coefficient restrictions, shrinkage, rebasing and sublevel
+relativities can then be added in a defined order. These steps do not
+alter the fitted GLM until
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
 is called.
 
@@ -38,9 +38,9 @@ is called.
 
 `prepare_refinement()` creates a persistent refinement specification.
 This object contains the original GLM, the corresponding model data and
-the ordered smoothing, restriction, shrinkage and relativity steps.
-Retain this object during actuarial review so that assumptions can be
-inspected, revised and applied again in the same order.
+the ordered smoothing, restriction, shrinkage, rebasing and relativity
+steps. Retain this object during actuarial review so that assumptions
+can be inspected, revised and applied again in the same order.
 
 ### Actuarial interpretation
 
@@ -58,7 +58,8 @@ result, not an editable refinement specification. Functions such as
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md),
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
-[`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md)
+[`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md),
+[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)
 and
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
 therefore accept a `rating_refinement` object and do not accept an
@@ -91,6 +92,7 @@ restriction steps for further editing.
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md),
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
 [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md),
+[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md),
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
 
@@ -123,7 +125,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-05 13:31:19 UTC
+#> Created: 2026-08-05 14:46:02 UTC
 #> Observations: 6
 #> Family: poisson (log link)
 #> Base formula:

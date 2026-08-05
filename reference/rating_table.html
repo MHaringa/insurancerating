@@ -59,6 +59,10 @@ attached to support actuarial review.</p>
 <span>  exposure_output <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  exponentiate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  significance <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  reference_first <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  level_order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"model"</span>, <span class="st">"alphabetical"</span>, <span class="st">"estimate_ascending"</span>, <span class="st">"estimate_descending"</span><span class="op">)</span>,</span>
+<span>  risk_factor_order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"model"</span>, <span class="st">"alphabetical"</span><span class="op">)</span>,</span>
+<span>  order_model <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  round_exposure <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  exposure_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  signif_stars <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -103,6 +107,36 @@ on the model scale.</p></dd>
 <dd><p>Logical. If <code>TRUE</code>, add a separate <code>signif_*</code> column for
 each model containing significance indicators based on coefficient
 p-values. The corresponding <code>est_*</code> columns remain numeric.</p></dd>
+
+
+<dt id="arg-reference-first">reference_first<a class="anchor" aria-label="anchor" href="#arg-reference-first"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, place the reference level first
+within each risk factor. For an ordinary GLM, the reference is obtained
+from the fitted factor contrasts. After <code><a href="add_rebasing.html">add_rebasing()</a></code>, the selected
+rebasing level is used.</p></dd>
+
+
+<dt id="arg-level-order">level_order<a class="anchor" aria-label="anchor" href="#arg-level-order"></a></dt>
+<dd><p>Character string controlling the order of the remaining
+levels within each risk factor. <code>"model"</code> retains the fitted model order,
+<code>"alphabetical"</code> sorts level labels, and <code>"estimate_ascending"</code> or
+<code>"estimate_descending"</code> sorts by the fitted effect from <code>order_model</code>.</p></dd>
+
+
+<dt id="arg-risk-factor-order">risk_factor_order<a class="anchor" aria-label="anchor" href="#arg-risk-factor-order"></a></dt>
+<dd><p>Character string controlling risk-factor order.
+<code>"model"</code> retains the order in the fitted model; <code>"alphabetical"</code> sorts
+risk-factor names. The intercept, when present, remains first.</p></dd>
+
+
+<dt id="arg-order-model">order_model<a class="anchor" aria-label="anchor" href="#arg-order-model"></a></dt>
+<dd><p>Optional character string naming the supplied model whose
+level order, reference levels and estimates are used for sorting. This is
+mainly relevant when several models are compared. If <code>NULL</code>, the first
+supplied model is used. Both <code>"frequency"</code> and <code>"est_frequency"</code> are
+accepted for a model object named <code>frequency</code>. If that model does not
+contain a particular risk factor, the first supplied model containing the
+factor provides its order and reference level.</p></dd>
 
 
 <dt id="arg-round-exposure">round_exposure<a class="anchor" aria-label="anchor" href="#arg-round-exposure"></a></dt>
@@ -175,6 +209,24 @@ temporal stability or suitability for direct tariff implementation.</p>
 unrestricted and refined specifications, or between alternative model
 formulations. Comparable response definitions and coefficient scales remain
 the responsibility of the analyst.</p>
+</div>
+
+<div class="section">
+<h3 id="row-order-and-reference-levels">Row order and reference levels<a class="anchor" aria-label="anchor" href="#row-order-and-reference-levels"></a></h3>
+
+
+<p>By default, risk factors follow the model formula and levels retain their
+model order, with the reference level placed first. This makes the tariff
+basis visible without inferring the reference from a relativity equal to
+one: several levels can legitimately have the same fitted effect. A
+reference selected with <code><a href="add_rebasing.html">add_rebasing()</a></code> takes precedence over the original
+GLM contrast reference.</p>
+<p>Alternative level ordering is useful for specific review tasks.
+Alphabetical order supports lookup and export, while ordering by estimate
+makes the lowest or highest fitted effects easier to identify. With several
+models, <code>order_model</code> defines which fitted specification provides that
+ordering. <code><a href="as_gt.html">as_gt()</a></code> and <code><a href="autoplot.rating_table.html">autoplot.rating_table()</a></code> retain the row order
+established here.</p>
 </div>
 
 <div class="section">
@@ -320,6 +372,21 @@ fitting a refinement specification.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4         zip           1              NA 1.0252572</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5         zip           2              NA 0.9237868</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6         zip           3              NA 0.9756337</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Keep the reference first and order the other levels by fitted relativity</span></span></span>
+<span class="r-in"><span><span class="fu">rating_table</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">freq</span>,</span></span>
+<span class="r-in"><span>  model_data <span class="op">=</span> <span class="va">df</span>,</span></span>
+<span class="r-in"><span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span></span>
+<span class="r-in"><span>  level_order <span class="op">=</span> <span class="st">"estimate_descending"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   risk_factor       level  est_freq exposure</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (Intercept) (Intercept) 0.1415051       NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2         zip           0 1.0000000      207</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3         zip           1 1.0252572    11081</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4         zip           3 0.9756337     7588</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5         zip           2 0.9237868     7783</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6          bm          bm 0.9978465       NA</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
