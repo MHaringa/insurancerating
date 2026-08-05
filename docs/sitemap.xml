@@ -29,7 +29,9 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/as.vector.bootstrap_performance.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/as.vector.constructtariffclasses.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/as_gt.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/as_gt.refinement_audit.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/audit_refinement.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.check_residuals.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.constructtariffclasses.html</loc></url>
@@ -112,7 +114,9 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/summary.excess_loss_vector.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/summary.excess_redistribution.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/summary.fitgam.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/summary.rating_refinement.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/summary.reduce.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/summary.refinement_audit.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/summary.tariff_segments.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/univariate.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/univariate_summary.html</loc></url>

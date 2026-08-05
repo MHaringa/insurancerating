@@ -74,6 +74,86 @@
 
 
 #' @keywords internal
+.get_relativities_exposure_spec <- function(model, risk_factor) {
+  steps <- attr(model, "refinement_steps")
+  if (is.null(steps) || length(steps) == 0L) {
+    return(NULL)
+  }
+
+  matches <- vapply(steps, function(step) {
+    identical(step$type, "relativities") &&
+      identical(
+        step$output_variable %||% step$display_risk_factor %||%
+          step$split_variable %||% step$risk_factor_split,
+        risk_factor
+      )
+  }, logical(1))
+
+  if (!any(matches)) {
+    return(NULL)
+  }
+
+  step <- steps[[utils::tail(which(matches), 1L)]]
+  source_variable <- step$source_model_variable %||%
+    step$model_variable %||% step$risk_factor
+  split_variable <- step$split_variable %||% step$risk_factor_split
+
+  if (is.null(source_variable) || is.null(split_variable) ||
+      is.null(step$relativities)) {
+    return(NULL)
+  }
+
+  list(
+    source_variable = source_variable,
+    split_variable = split_variable,
+    relativities = step$relativities
+  )
+}
+
+
+#' @keywords internal
+.aggregate_relativities_exposure <- function(model_data, exposure_col,
+                                             risk_factor, output_levels,
+                                             spec) {
+  source_variable <- spec$source_variable
+  split_variable <- spec$split_variable
+
+  if (!all(c(source_variable, split_variable) %in% names(model_data))) {
+    return(NULL)
+  }
+
+  rel_df <- .build_relativities_df(spec$relativities)
+  output_levels <- unique(as.character(output_levels))
+  pieces <- lapply(output_levels, function(output_level) {
+    split_rows <- rel_df[rel_df$new_level == output_level, , drop = FALSE]
+
+    if (nrow(split_rows) > 0L) {
+      selected <- rep(FALSE, nrow(model_data))
+      for (i in seq_len(nrow(split_rows))) {
+        selected <- selected |
+          (as.character(model_data[[source_variable]]) == split_rows$level[i] &
+             as.character(model_data[[split_variable]]) ==
+               split_rows$new_level[i])
+      }
+    } else {
+      selected <- as.character(model_data[[source_variable]]) == output_level
+    }
+
+    data.frame(
+      level = output_level,
+      exposure_value = sum(model_data[[exposure_col]][selected], na.rm = TRUE),
+      risk_factor = risk_factor,
+      stringsAsFactors = FALSE
+    )
+  })
+
+  out <- do.call(rbind, pieces)
+  names(out)[names(out) == "exposure_value"] <- exposure_col
+  out
+}
+
+
+#' @keywords internal
 .map_exposure_source_var <- function(model, risk_factor, model_data_names) {
 
   rf <- as.character(risk_factor)
@@ -94,19 +174,29 @@
     }
   }
 
-  # 2. exact match
+  # 2. hybrid factor created by add_relativities()
+  relativity_spec <- .get_relativities_exposure_spec(model, rf)
+  if (!is.null(relativity_spec) &&
+      all(c(
+        relativity_spec$source_variable,
+        relativity_spec$split_variable
+      ) %in% model_data_names)) {
+    return(relativity_spec$source_variable)
+  }
+
+  # 3. exact match
   if (rf %in% model_data_names) {
     return(rf)
   }
 
-  # 3. fallback for legacy naming conventions
+  # 4. fallback for legacy naming conventions
   rf_base <- sub("_rst99$", "", rf)
   rf_base <- sub("_rst$", "", rf_base)
   if (rf_base %in% model_data_names) {
     return(rf_base)
   }
 
-  # 4. smoothing fallback
+  # 5. smoothing fallback
   rf_base <- sub("_smooth$", "", rf)
   if (rf_base %in% model_data_names) {
     return(rf_base)
@@ -393,6 +483,20 @@
       listexp <- lapply(seq_len(nrow(rf_map_in)), function(i) {
         rf_i  <- rf_map_in$risk_factor[i]
         src_i <- rf_map_in$source_var[i]
+
+        relativity_spec <- .get_relativities_exposure_spec(model, rf_i)
+        if (!is.null(relativity_spec)) {
+          mapped <- .aggregate_relativities_exposure(
+            model_data = model_data_use,
+            exposure_col = exposure_col,
+            risk_factor = rf_i,
+            output_levels = xl_df$level[xl_df$risk_factor == rf_i],
+            spec = relativity_spec
+          )
+          if (!is.null(mapped)) {
+            return(mapped)
+          }
+        }
 
         tmp <- stats::aggregate(
           model_data_use[[exposure_col]],

@@ -87,6 +87,8 @@ refinement <- prepare_refinement(model, data = portfolio) |>
     risk_class_restricted = 1.15
   ))
 
+summary(refinement)
+
 fitted_model <- refit(refinement)
 
 # Retain and revise the specification rather than editing fitted_model.
@@ -99,8 +101,8 @@ refinement <- refinement |>
 updated_model <- refit(refinement)
 }
 \seealso{
-\code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=edit_smoothing]{edit_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}},
-\code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}
+\code{\link[=summary.rating_refinement]{summary.rating_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}},
+\code{\link[=edit_smoothing]{edit_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}
 }
 \author{
 Martin Haringa

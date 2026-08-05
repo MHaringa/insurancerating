@@ -380,6 +380,7 @@ ref <- ref |>
   add_relativities(
     model_variable = "business_activity",
     split_variable = "business_activity_split",
+    output_variable = "business_activity_tariff_segment",
     relativities = relativities_activity,
     exposure = "exposure",
     normalize = TRUE
@@ -388,6 +389,12 @@ ref <- ref |>
 
 If `normalize = TRUE`, the relativities are scaled so that their
 exposure-weighted average remains equal to 1 within the original level.
+
+`output_variable` names the resulting hybrid tariff factor. In this
+example, the explicitly split construction and services levels are
+represented by their detailed levels, while unsplit levels retain their
+original `business_activity` value. A name ending in `_tariff_segment`
+can make this role explicit in later model and reporting steps.
 
 This preserves the original model signal while introducing finer
 structure. When `model_variable` has already been restricted with
@@ -412,11 +419,31 @@ The final step is:
 ``` r
 
 
+summary(ref)
+#> Refinement specification
+#> 
+#> Package: insurancerating 0.8.1.9000
+#> Created: 2026-08-05 11:45:15 CEST
+#> Observations: 30,000
+#> Family: Gamma (log link)
+#> Base formula:
+#>   premium ~ zip + bm + age_policyholder_freq_cat
+#> Offset: none
+#> 
+#> Refinement steps: 2
+#>   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)
+#>      16 intervals over 18 to 95
+#>   2. Restriction: zip -> zip_adj (4 levels)
+#>      0 = 0.8; 1 = 0.9; 2 = 1.0; 3 = 1.2
+
 burn_refined <- refit(ref)
 ```
 
-This refits the model while incorporating the documented refinement
-steps.
+`summary(ref)` describes the base model and the ordered refinement
+specification before a new GLM is fitted. This provides a direct review
+of the assumptions that will be applied.
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+then fits the model while incorporating those documented steps.
 
 ### Inspecting the final fitted result
 
@@ -467,6 +494,76 @@ The distinction is:
 If smoothing, restrictions, and relativities have been applied, they are
 now embedded in the fitted model output.
 
+### Auditing the portfolio effect
+
+Coefficient changes cannot be interpreted independently of the intercept
+and the other model terms. A more direct audit compares fitted values
+from the unrestricted and refined models on the same observed portfolio
+combinations.
+
+``` r
+
+
+refinement_audit <- audit_refinement(
+  burn_refined,
+  exposure = "exposure",
+  metric = "risk_premium"
+)
+#> Warning: Column in `exposure` is already used in model.
+
+summary(refinement_audit)
+#> Refinement audit
+#> 
+#> Package: insurancerating 0.8.1.9000
+#> Prepared: 2026-08-05 11:45:15 CEST
+#> Refitted: 2026-08-05 11:45:16 CEST
+#> Audited: 2026-08-05 11:45:16 CEST
+#> Measure: risk_premium (response)
+#> Exposure: exposure
+#> 
+#> Original formula:
+#>   premium ~ zip + bm + age_policyholder_freq_cat
+#> Refitted formula:
+#>   premium ~ bm + offset(log(zip_adj) + log(age_policyholder_freq_cat_smooth))
+#> 
+#> Refinement steps: 2
+#>   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)
+#>      16 intervals over 18 to 95
+#>   2. Restriction: zip -> zip_adj (4 levels)
+#>      0 = 0.8; 1 = 0.9; 2 = 1.0; 3 = 1.2
+#> 
+#> Portfolio effect
+#>   Before: 10445.1
+#>   After:  10763.4
+#>   Change: 318.25 (3.047%)
+#> 
+#> Largest level changes (10 of 43)
+#>              risk_factor   level    before     after     change change_ratio
+#>                  zip_adj       0  4471.598  8219.356  3747.7578   0.83812489
+#>                  zip_adj       3  9001.374 12731.339  3729.9651   0.41437731
+#>                  zip_adj       1 12325.997  9568.964 -2757.0333  -0.22367629
+#>                       bm      23 10578.429  9030.676 -1547.7533  -0.14631220
+#>                       bm      22  9628.570  8269.979 -1358.5914  -0.14110002
+#>                  zip_adj       2  9333.501 10612.877  1279.3757   0.13707350
+#>  age_policyholder_smooth (93,95]  4526.627  5090.439   563.8119   0.12455454
+#>                       bm      21  8546.635  9487.998   941.3636   0.11014436
+#>  age_policyholder_smooth [18,23] 19598.053 21456.059  1858.0060   0.09480564
+#>                       bm      14  9679.860 10512.915   833.0543   0.08606057
+```
+
+The portfolio result shows the exposure-weighted risk premium before and
+after refinement. `as.data.frame(refinement_audit)` gives the
+corresponding comparison for every final risk factor and level. These
+level results reflect the combined prediction of the full model for the
+observed portfolio mix; they are not isolated coefficient differences.
+
+The audit also records the package version, preparation time, refit
+time, formulas and ordered refinement steps. For a frequency or severity
+model, use a matching metric name such as `"frequency"` or
+`"average_severity"`; a complete risk-premium interpretation requires a
+direct risk-premium model or a combined frequency and severity
+calculation.
+
 ### Visualising the final structure
 
 ``` r
@@ -476,7 +573,7 @@ rating_table(burn_refined) |>
   autoplot()
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-12-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-13-1.png)
 
 ## Model data and rating grids
 
@@ -618,7 +715,7 @@ rating_table(burn_refined) |>
   autoplot()
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-15-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-16-1.png)
 
 ## Legacy interface
 

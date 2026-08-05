@@ -511,15 +511,18 @@
   borders <- suppressMessages(cut_borders_model(model, model_variable))
   model_range <- c(min(borders$start_), max(borders$end_))
   if (break_range[1] < model_range[1] || break_range[2] > model_range[2]) {
+    formatted_model_range <- format(
+      model_range,
+      big.mark = ",",
+      scientific = FALSE,
+      trim = TRUE
+    )
     warning(
-      "`breaks` extend beyond the interval range represented by ",
-      "`model_variable` `", model_variable, "` in the original GLM. The ",
-      "model range is ", format(model_range[1], trim = TRUE), " to ",
-      format(model_range[2], trim = TRUE), ", while `breaks` cover ",
-      format(break_range[1], trim = TRUE), " to ",
-      format(break_range[2], trim = TRUE), ". Smoothed relativities outside ",
-      "the original model range are extrapolated and are not supported by ",
-      "fitted GLM levels.",
+      "The supplied `breaks` extend beyond the fitted GLM range (",
+      formatted_model_range[1], "\u2013", formatted_model_range[2], "). ",
+      "New intervals outside this range are based on extrapolation rather ",
+      "than observed model estimates. Use `edit_smoothing()` to adjust the ",
+      "extrapolated part of the smoothing curve.",
       call. = FALSE
     )
   }
@@ -528,11 +531,21 @@
 }
 
 .make_refinement <- function(base, steps = list(), legacy = list()) {
+  package_version <- tryCatch(
+    as.character(utils::packageVersion("insurancerating")),
+    error = function(e) NA_character_
+  )
+
   structure(
     list(
       base = base,
       steps = steps,
-      legacy = legacy
+      legacy = legacy,
+      metadata = list(
+        package = "insurancerating",
+        package_version = package_version,
+        created_at = Sys.time()
+      )
     ),
     class = "rating_refinement"
   )
@@ -857,7 +870,8 @@
     function(step) {
       identical(step$type, "relativities") &&
         identical(
-          step$split_variable %||% step$risk_factor_split,
+          step$output_variable %||% step$display_risk_factor %||%
+            step$split_variable %||% step$risk_factor_split,
           variable
         )
     },
@@ -1008,6 +1022,9 @@ as_refinement.restricted <- function(x, ...) {
           variable = x$base_risk_factor %||% nm,
           risk_factor = x$base_risk_factor %||% nm,
           risk_factor_split = x$risk_factor_split %||% NULL,
+          split_variable = x$risk_factor_split %||% NULL,
+          output_variable = x$output_variable %||%
+            x$display_risk_factor %||% x$risk_factor_split %||% NULL,
           relativities = obj,
           exposure = x$exposure %||% NULL,
           normalize = isTRUE(x$normalize),
@@ -1131,8 +1148,8 @@ as_refinement.restricted <- function(x, ...) {
 #'   model data and ordered refinement specification. No GLM is fitted again
 #'   until [refit()] is called.
 #'
-#' @seealso [add_smoothing()], [edit_smoothing()], [add_restriction()],
-#'   [add_relativities()], [refit()]
+#' @seealso [summary.rating_refinement()], [add_smoothing()],
+#'   [edit_smoothing()], [add_restriction()], [add_relativities()], [refit()]
 #'
 #' @examples
 #' portfolio <- data.frame(
@@ -1152,6 +1169,8 @@ as_refinement.restricted <- function(x, ...) {
 #'     risk_class = "B",
 #'     risk_class_restricted = 1.15
 #'   ))
+#'
+#' summary(refinement)
 #'
 #' fitted_model <- refit(refinement)
 #'
@@ -1208,22 +1227,124 @@ print.rating_refinement <- function(x, ...) {
   invisible(x)
 }
 
+.format_refinement_time <- function(x) {
+  if (is.null(x) || length(x) != 1L || is.na(x)) {
+    return("unknown")
+  }
+  format(as.POSIXct(x), "%Y-%m-%d %H:%M:%S %Z")
+}
+
+.refinement_step_details <- function(step) {
+  if (identical(step$type, "restriction")) {
+    restrictions <- step$restrictions
+    if (is.null(restrictions) || ncol(restrictions) < 2L) {
+      return(NA_character_)
+    }
+    return(paste0(
+      as.character(restrictions[[1]]), " = ",
+      format(as.numeric(restrictions[[2]]), trim = TRUE),
+      collapse = "; "
+    ))
+  }
+
+  if (identical(step$type, "smoothing")) {
+    details <- character()
+    if (!is.null(step$breaks)) {
+      details <- c(details, paste0(
+        length(step$breaks) - 1L, " intervals over ",
+        format(min(step$breaks), trim = TRUE), " to ",
+        format(max(step$breaks), trim = TRUE)
+      ))
+    }
+    if (!is.null(step$edit)) {
+      details <- c(details, paste0(nrow(step$edit), " edited values"))
+    }
+    return(if (length(details) == 0L) NA_character_ else {
+      paste(details, collapse = "; ")
+    })
+  }
+
+  if (identical(step$type, "relativities")) {
+    specification <- .build_relativities_df(step$relativities)
+    parents <- unique(as.character(specification$level))
+    return(paste0(
+      length(parents), " parent level",
+      if (length(parents) == 1L) "" else "s",
+      " split: ", paste(parents, collapse = ", ")
+    ))
+  }
+
+  NA_character_
+}
+
+.refinement_steps_table <- function(steps) {
+  if (length(steps) == 0L) {
+    return(data.frame(
+      step = integer(), type = character(), variable = character(),
+      description = character(), details = character(),
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  rows <- lapply(seq_along(steps), function(i) {
+    step <- steps[[i]]
+    variable <- if (identical(step$type, "smoothing")) {
+      step$model_variable %||% step$x_cut %||% step$variable
+    } else if (identical(step$type, "relativities")) {
+      step$output_variable %||% step$display_risk_factor %||%
+        step$split_variable %||% step$risk_factor_split
+    } else {
+      step$variable %||% NA_character_
+    }
+    description <- sub(
+      "^  [0-9]+\\. ", "", .format_refinement_step(step, i)
+    )
+    data.frame(
+      step = i,
+      type = step$type %||% "unknown",
+      variable = variable %||% NA_character_,
+      description = description,
+      details = .refinement_step_details(step),
+      stringsAsFactors = FALSE
+    )
+  })
+  out <- do.call(rbind, rows)
+  rownames(out) <- NULL
+  out
+}
+
+#' Summarise a prepared refinement specification
+#'
+#' @description
+#' Describe the original GLM and the ordered actuarial adjustments stored in a
+#' `rating_refinement` object before [refit()] is called. The summary records
+#' what will be applied; it does not compare fitted predictions because the
+#' refined GLM has not yet been estimated.
+#'
+#' @param object A `rating_refinement` object.
+#' @param ... Currently unused.
+#'
+#' @return An object of class `summary.rating_refinement` containing model and
+#' package metadata together with a data frame describing the refinement steps
+#' in their evaluation order.
+#'
+#' @seealso [prepare_refinement()], [refit()], [audit_refinement()]
+#' @keywords internal
 #' @export
 summary.rating_refinement <- function(object, ...) {
+  .check_dots_empty(...)
+  metadata <- object$metadata %||% list()
   out <- list(
+    package = metadata$package %||% "insurancerating",
+    package_version = metadata$package_version %||% NA_character_,
+    created_at = metadata$created_at %||% NA,
     base_formula = object$base$formula,
+    family = object$base$model$family$family,
+    link = object$base$model$family$link,
+    observations = nrow(object$base$data),
     offset = object$base$offset,
     n_steps = length(object$steps),
-    steps = lapply(object$steps, function(s) {
-      s[intersect(names(s), c(
-        "id", "type", "variable", "x_cut", "x_org", "model_variable",
-        "source_variable", "source_model_variable",
-        "effective_model_variable", "derived_model_variable",
-        "split_variable", "smoothing", "risk_factor",
-        "risk_factor_split", "normalize", "allow_new_levels",
-        "allow_new_risk_factors", "new_risk_factor"
-      ))]
-    })
+    steps = .refinement_steps_table(object$steps)
   )
   class(out) <- "summary.rating_refinement"
   out
@@ -1233,14 +1354,23 @@ summary.rating_refinement <- function(object, ...) {
 #' @keywords internal
 #' @export
 print.summary.rating_refinement <- function(x, ...) {
-  cat("Refinement summary\n\n")
-  cat("Base formula:\n")
-  print(x$base_formula)
+  cat("Refinement specification\n\n")
+  cat("Package: ", x$package, " ", x$package_version, "\n", sep = "")
+  cat("Created: ", .format_refinement_time(x$created_at), "\n", sep = "")
+  cat("Observations: ", format(x$observations, big.mark = ","), "\n", sep = "")
+  cat("Family: ", x$family, " (", x$link, " link)\n", sep = "")
+  cat("Base formula:\n  ")
+  cat(paste(deparse(x$base_formula), collapse = "\n  "))
   cat("\nOffset: ", x$offset %||% "none", "\n", sep = "")
-  cat("Steps: ", x$n_steps, "\n", sep = "")
-  if (x$n_steps > 0) {
-    for (i in seq_along(x$steps)) {
-      cat(i, ". ", paste(names(x$steps[[i]]), x$steps[[i]], sep = "=", collapse = ", "), "\n", sep = "")
+  cat("\nRefinement steps: ", x$n_steps, "\n", sep = "")
+  if (x$n_steps == 0L) {
+    cat("  None\n")
+  } else {
+    for (i in seq_len(nrow(x$steps))) {
+      cat("  ", x$steps$step[i], ". ", x$steps$description[i], "\n", sep = "")
+      if (!is.na(x$steps$details[i])) {
+        cat("     ", x$steps$details[i], "\n", sep = "")
+      }
     }
   }
   invisible(x)
@@ -1331,14 +1461,14 @@ print.summary.rating_refinement <- function(x, ...) {
 #'
 #' ## Restricting a factor created by add_relativities()
 #'
-#' A `split_variable` introduced by an earlier [add_relativities()] step is
+#' An `output_variable` introduced by an earlier [add_relativities()] step is
 #' already part of the ordered refinement specification. It is therefore not
 #' treated as a new external risk factor and does not require
 #' `allow_new_risk_factors = TRUE`. `add_restriction()` identifies the preceding
 #' relativity step from its stored metadata and replaces the corresponding
 #' derived tariff effect during [refit()].
 #'
-#' When only one level of such a split variable is supplied, that level receives
+#' When only one level of such a refined variable is supplied, that level receives
 #' the new relativity and every other level is fixed at the relativity produced
 #' by `add_relativities()`. Mathematically, the resulting restriction therefore
 #' covers all current levels. Only the explicitly supplied level changes. This
@@ -1356,7 +1486,7 @@ print.summary.rating_refinement <- function(x, ...) {
 #'   refinement specification instead.
 #' @param restrictions Data frame with exactly two columns. The first column
 #'   must have the same name as the risk factor to restrict and contains the
-#'   levels to adjust. This can also be the `split_variable` from an earlier
+#'   levels to adjust. This can also be the `output_variable` from an earlier
 #'   [add_relativities()] step. The second column contains the replacement
 #'   relativities. Levels that are not supplied are fixed at their current
 #'   effective relativities.
@@ -1558,7 +1688,8 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
   .assert_single_logical(allow_new_levels, "allow_new_levels")
   .assert_single_logical(allow_new_risk_factors, "allow_new_risk_factors")
 
-  if (!variable %in% names(model$base$data)) {
+  if (!variable %in% names(model$base$data) &&
+      is.null(restriction_context)) {
     stop(
       "Risk factor `", variable, "` is not present in the refinement data. ",
       "Add a column assigning each observation to a level before adding this ",
@@ -2538,7 +2669,18 @@ edit_smoothing <- function(model,
 #' the more detailed variable in the portfolio data that will be used to split
 #' one or more levels of `model_variable`. The `relativities` argument should be
 #' a named list describing those splits, usually built with [relativities()] and
-#' [split_level()].
+#' [split_level()]. `output_variable` names the resulting hybrid tariff factor:
+#' levels included in `relativities` are represented by their detailed
+#' `split_variable` level, while all other levels retain their
+#' `model_variable` level.
+#'
+#' Levels of `model_variable` that are not included in `relativities` retain
+#' their existing model coefficient. In [rating_table()], exposure for these
+#' retained levels is aggregated from `model_variable`, while exposure for the
+#' newly split levels is aggregated from `split_variable` within the specified
+#' parent model level. Omitting a model level from `relativities` therefore
+#' means that the level remains unsplit; it is not treated as an incomplete
+#' specification.
 #'
 #' `add_relativities()` validates the supplied sublevel names against the
 #' observed values of `split_variable` before storing the refinement step. A
@@ -2563,14 +2705,14 @@ edit_smoothing <- function(model,
 #' restriction a second time. Refinement steps are order-dependent, so a
 #' restriction added after `add_relativities()` does not affect an earlier
 #' relativity step. Once the restricted coefficients have been used to derive
-#' the final split, [rating_table()] reports the `split_variable` as the tariff
+#' the final split, [rating_table()] reports `output_variable` as the tariff
 #' factor and does not also show the intermediate restricted variable.
 #'
 #' Conversely, [add_restriction()] can be called after `add_relativities()` to
-#' adjust selected levels of the derived `split_variable`. The split variable is
-#' then recognised as an existing refinement factor; users do not need to set
-#' `allow_new_risk_factors = TRUE`. Levels omitted from the restriction table
-#' are fixed at the relativities calculated by this step.
+#' adjust selected levels of the derived `output_variable`. The output variable
+#' is then recognised as an existing refinement factor; users do not need to
+#' set `allow_new_risk_factors = TRUE`. Levels omitted from the restriction
+#' table are fixed at the relativities calculated by this step.
 #'
 #' ## Appropriate use
 #'
@@ -2609,6 +2751,11 @@ edit_smoothing <- function(model,
 #'   automatically.
 #' @param split_variable Character string. More granular portfolio variable that
 #'   defines the detailed groups inside `model_variable`.
+#' @param output_variable Character string naming the resulting hybrid tariff
+#'   factor. The default appends `_refined` to `model_variable`. A more
+#'   application-specific name, such as `sbi_tariff_segment`, can make the
+#'   intended tariff use clearer in model output and reporting. The name must
+#'   not overwrite an existing column in the refinement data.
 #' @param relativities Named list of data frames, usually created with
 #'   [relativities()] and [split_level()].
 #' @param exposure Character string. Exposure column used for weighting and,
@@ -2658,16 +2805,17 @@ edit_smoothing <- function(model,
 #'   add_relativities(
 #'     model_variable = "construction",
 #'     split_variable = "construction_detail",
+#'     output_variable = "construction_tariff_segment",
 #'     relativities = relativities,
 #'     exposure = "exposure"
 #'   )
 #'
 #' # A subsequent restriction can revise one derived level. The remaining
-#' # construction-detail levels are fixed at the relativities calculated above.
+#' # tariff-segment levels are fixed at the relativities calculated above.
 #' refined <- refined |>
 #'   add_restriction(data.frame(
-#'     construction_detail = "flat",
-#'     construction_detail_restricted = 1.00
+#'     construction_tariff_segment = "flat",
+#'     construction_tariff_segment_restricted = 1.00
 #'   ))
 #'
 #' refined_model <- refit(refined)
@@ -2679,12 +2827,30 @@ add_relativities <- function(model,
                              split_variable,
                              relativities,
                              exposure,
-                             normalize = TRUE) {
+                             normalize = TRUE,
+                             output_variable = paste0(model_variable, "_refined")) {
   .assert_refinement(model)
 
   if (!.is_single_string(model_variable)) {
     stop(
       "'model_variable' must be a single non-empty character string.",
+      call. = FALSE
+    )
+  }
+  if (!.is_single_string(output_variable)) {
+    stop(
+      "'output_variable' must be a single non-empty character string.",
+      call. = FALSE
+    )
+  }
+  prior_output_variables <- vapply(model$steps, function(step) {
+    step$output_variable %||% ""
+  }, character(1))
+  if (output_variable %in% c(names(model$base$data), prior_output_variables)) {
+    stop(
+      "Column `", output_variable, "`, supplied through `output_variable`, ",
+      "already exists in the refinement data. Choose a new name for the ",
+      "refined tariff factor.",
       call. = FALSE
     )
   }
@@ -2717,6 +2883,8 @@ add_relativities <- function(model,
       "_rel"
     ),
     split_variable = split_variable,
+    output_variable = output_variable,
+    display_risk_factor = output_variable,
     risk_factor = model_variable,
     risk_factor_split = split_variable,
     relativities = relativities,
@@ -2762,6 +2930,7 @@ add_relativities <- function(model,
     exposure = NULL,
     base_risk_factor = NULL,
     risk_factor_split = NULL,
+    output_variable = NULL,
     display_risk_factor = NULL,
     model_risk_factor = NULL
   )
@@ -2989,6 +3158,8 @@ add_relativities <- function(model,
   effective_model_variable <- step$effective_model_variable %||%
     requested_model_variable
   risk_factor_split <- step$risk_factor_split
+  output_variable <- step$output_variable %||% step$display_risk_factor %||%
+    risk_factor_split
   relativities <- step$relativities
   exposure <- step$exposure
   normalize <- isTRUE(step$normalize)
@@ -3083,7 +3254,7 @@ add_relativities <- function(model,
   rel_df$estimate <- rel_df$estimate_base * rel_df$relativity_final
 
   new_rf_name <- paste0(source_model_variable, "_rel")
-  display_rf_name <- risk_factor_split
+  display_rf_name <- output_variable
 
   map_unsplit <- base_coefficients
   names(map_unsplit) <- c(source_model_variable, "estimate_base")
@@ -3093,6 +3264,16 @@ add_relativities <- function(model,
 
   df_restricted <- df_new
   df_restricted$row_id__tmp <- seq_len(nrow(df_restricted))
+
+  df_restricted[[output_variable]] <- as.character(
+    df_restricted[[source_model_variable]]
+  )
+  for (i in seq_len(nrow(rel_df))) {
+    replace <-
+      as.character(df_restricted[[source_model_variable]]) == rel_df$level[i] &
+      as.character(df_restricted[[risk_factor_split]]) == rel_df$new_level[i]
+    df_restricted[[output_variable]][replace] <- rel_df$new_level[i]
+  }
 
   df_restricted <- merge(
     df_restricted,
@@ -3216,6 +3397,7 @@ add_relativities <- function(model,
   state$exposure <- exposure
   state$base_risk_factor <- source_model_variable
   state$risk_factor_split <- risk_factor_split
+  state$output_variable <- output_variable
   state$display_risk_factor <- display_rf_name
   state$model_risk_factor <- new_rf_name
 
@@ -3266,6 +3448,7 @@ add_relativities <- function(model,
       model_out = state$model_out,
       original_formula = state$original_formula,
       refinement_steps = state$refinement_steps,
+      refinement_created_at = state$refinement_created_at,
       new_col_nm = state$new_col_nm,
       old_col_nm = state$old_col_nm,
       mgd_rst = state$mgd_rst,
@@ -3306,6 +3489,7 @@ add_relativities <- function(model,
     model_out = state$model_out,
     original_formula = state$original_formula,
     refinement_steps = state$refinement_steps,
+    refinement_created_at = state$refinement_created_at,
     new_col_nm = state$new_col_nm,
     old_col_nm = state$old_col_nm,
     mgd_rst = state$mgd_rst,
@@ -3315,6 +3499,7 @@ add_relativities <- function(model,
     exposure = state$exposure,
     base_risk_factor = state$base_risk_factor,
     risk_factor_split = state$risk_factor_split,
+    output_variable = state$output_variable,
     display_risk_factor = state$display_risk_factor,
     model_risk_factor = state$model_risk_factor
   )
@@ -3540,6 +3725,14 @@ add_relativities <- function(model,
   attr(y, "intercept_only") <- isTRUE(intercept_only)
   attr(y, "original_formula") <- x$original_formula %||% x$model_out$formula
   attr(y, "refinement_steps") <- x$refinement_steps %||% list()
+  attr(y, "refinement_base_model") <- x$model_out
+  attr(y, "refinement_package") <- "insurancerating"
+  attr(y, "refinement_package_version") <- tryCatch(
+    as.character(utils::packageVersion("insurancerating")),
+    error = function(e) NA_character_
+  )
+  attr(y, "refinement_created_at") <- x$refinement_created_at %||% Sys.time()
+  attr(y, "refinement_refitted_at") <- Sys.time()
 
   refinement_classes <- c(
     if (inherits(x, "restricted")) "refitrestricted",
@@ -3625,7 +3818,7 @@ add_relativities <- function(model,
 #'
 #' @seealso [prepare_refinement()], [add_smoothing()], [edit_smoothing()],
 #'   [add_restriction()], [add_relativities()], [rating_table()],
-#'   [rating_grid()]
+#'   [rating_grid()], [audit_refinement()]
 #'
 #' @examples
 #' zip_df <- data.frame(
@@ -3659,6 +3852,7 @@ refit <- function(object, intercept_only = FALSE, ...) {
     state <- .apply_refinement_step(state, step)
   }
 
+  state$refinement_created_at <- object$metadata$created_at %||% Sys.time()
   .fit_refined_glm(state, intercept_only = intercept_only, ...)
 }
 
@@ -3706,6 +3900,8 @@ refit <- function(object, intercept_only = FALSE, ...) {
     effective_model_variable <- step$effective_model_variable %||%
       model_variable
     split_variable <- step$split_variable %||% step$risk_factor_split
+    output_variable <- step$output_variable %||% step$display_risk_factor %||%
+      split_variable
     detail <- paste0(
       "Relativities: ", model_variable,
       if (!identical(effective_model_variable, model_variable)) {
@@ -3714,6 +3910,7 @@ refit <- function(object, intercept_only = FALSE, ...) {
         ""
       },
       if (!is.null(split_variable)) paste0(" split by ", split_variable) else "",
+      if (!is.null(output_variable)) paste0(" -> ", output_variable) else "",
       " (normalised: ", if (isTRUE(step$normalize)) "yes" else "no", ")"
     )
   } else {

@@ -2,6 +2,13 @@
 
 ## Changes since 0.8.1
 
+- `audit_refinement()` now provides a reproducible comparison between the
+  unrestricted and refined GLM on common observed model points. It records the
+  package version, formulas and ordered refinement steps, and reports the
+  portfolio and exposure-weighted level effects before and after refinement.
+  `summary()` on a pre-refit `rating_refinement` object now gives a structured
+  review of the proposed specification, while `as_gt()` formats the fitted
+  audit for reporting.
 - `bootstrap_coefficients()` now assesses GLM coefficient stability by
   resampling the estimation portfolio rows and refitting the model. Individual
   failed fits are retained as missing replicates instead of stopping the full
@@ -31,7 +38,10 @@
 - `add_relativities()` now validates sublevels against the observed
   `split_variable` and parent categories against `model_variable` before
   storing a refinement step. Closely matching observed values are suggested
-  for likely spelling or spacing errors.
+  for likely spelling or spacing errors. The resulting hybrid tariff factor is
+  now named with `output_variable`; its default is the model variable followed
+  by `_refined`, while application-specific names such as
+  `sbi_tariff_segment` can be supplied explicitly.
 - `split_level()` and `relativities()` are now the primary helpers for defining
   named sublevel splits and share one reference page describing their combined
   use. The low-level `split_relativities()` constructor is deprecated because

@@ -1034,9 +1034,9 @@ testthat::test_that(
         degree = 1
       ),
       paste0(
-        "`breaks` extend beyond the interval range represented by ",
-        "`model_variable` `age_band`.*relativities outside the original ",
-        "model range are extrapolated"
+        "The supplied `breaks` extend beyond the fitted GLM range ",
+        "\\(20\u201350\\).*based on extrapolation rather than observed ",
+        "model estimates.*Use `edit_smoothing\\(\\)`"
       )
     )
 
@@ -1462,6 +1462,28 @@ testthat::test_that(
       "normalize"
     )
     testthat::expect_error(
+      add_relativities(
+        ref,
+        model_variable = "zip",
+        split_variable = "zip_split",
+        relativities = rel,
+        exposure = "exposure",
+        output_variable = "zip_split"
+      ),
+      "already exists in the refinement data"
+    )
+    testthat::expect_error(
+      add_relativities(
+        ref,
+        model_variable = "zip",
+        split_variable = "zip_split",
+        relativities = rel,
+        exposure = "exposure",
+        output_variable = ""
+      ),
+      "output_variable"
+    )
+    testthat::expect_error(
       add_relativities(ref, model_variable = "zip", split_variable = "missing",
                        relativities = rel, exposure = "exposure"),
       "split_variable"
@@ -1616,6 +1638,10 @@ testthat::test_that(
       restricted_step$effective_model_variable,
       "industry_group_restricted"
     )
+    testthat::expect_identical(
+      restricted_step$output_variable,
+      "industry_group_refined"
+    )
     testthat::expect_equal(
       unrestricted_preview$state$relativities_df$estimate,
       c(0.9, 1.1)
@@ -1643,21 +1669,21 @@ testthat::test_that(
     tariff <- rating_table(fitted, exposure = FALSE)
     testthat::expect_setequal(
       setdiff(unique(tariff$df$risk_factor), "(Intercept)"),
-      "industry_detail"
+      "industry_group_refined"
     )
     testthat::expect_false(
       "industry_group_restricted" %in% tariff$df$risk_factor
     )
     testthat::expect_equal(
       tariff$df$est_fitted[
-        tariff$df$risk_factor == "industry_detail" &
+        tariff$df$risk_factor == "industry_group_refined" &
           tariff$df$level == "A1"
       ],
       0.72
     )
     testthat::expect_equal(
       tariff$df$est_fitted[
-        tariff$df$risk_factor == "industry_detail" &
+        tariff$df$risk_factor == "industry_group_refined" &
           tariff$df$level == "A2"
       ],
       0.88
@@ -1723,14 +1749,14 @@ testthat::test_that(
     tariff <- rating_table(fitted, exposure = FALSE)$df
     testthat::expect_equal(
       tariff$est_fitted[
-        tariff$risk_factor == "industry_detail" &
+        tariff$risk_factor == "industry_group_refined" &
           tariff$level == "A1"
       ],
       0.81
     )
     testthat::expect_equal(
       tariff$est_fitted[
-        tariff$risk_factor == "industry_detail" &
+        tariff$risk_factor == "industry_group_refined" &
           tariff$level == "A2"
       ],
       0.99
@@ -1767,8 +1793,8 @@ testthat::test_that(
         normalize = FALSE
       ) |>
       add_restriction(data.frame(
-        industry_detail = "A1",
-        industry_detail_restricted = 0.75
+        industry_group_refined = "A1",
+        industry_group_refined_restricted = 0.75
       ))
 
     restriction_step <- refinement$steps[[2]]
@@ -1782,20 +1808,20 @@ testthat::test_that(
       "industry_group_rel"
     )
     testthat::expect_equal(
-      stored$industry_detail_restricted[
-        stored$industry_detail == "A1"
+      stored$industry_group_refined_restricted[
+        stored$industry_group_refined == "A1"
       ],
       0.75
     )
     testthat::expect_equal(
-      stored$industry_detail_restricted[
-        stored$industry_detail == "A2"
+      stored$industry_group_refined_restricted[
+        stored$industry_group_refined == "A2"
       ],
       1.1
     )
     testthat::expect_equal(
-      stored$industry_detail_restricted[
-        stored$industry_detail == "B"
+      stored$industry_group_refined_restricted[
+        stored$industry_group_refined == "B"
       ],
       1.4
     )
@@ -1806,7 +1832,7 @@ testthat::test_that(
 
     testthat::expect_match(
       formula_text,
-      "log\\(industry_detail_restricted\\)"
+      "log\\(industry_group_refined_restricted\\)"
     )
     testthat::expect_false(grepl(
       "log\\(industry_group_rel\\)",
@@ -1814,21 +1840,21 @@ testthat::test_that(
     ))
     testthat::expect_equal(
       tariff$est_fitted[
-        tariff$risk_factor == "industry_detail_restricted" &
+        tariff$risk_factor == "industry_group_refined_restricted" &
           tariff$level == "A1"
       ],
       0.75
     )
     testthat::expect_equal(
       tariff$est_fitted[
-        tariff$risk_factor == "industry_detail_restricted" &
+        tariff$risk_factor == "industry_group_refined_restricted" &
           tariff$level == "A2"
       ],
       1.1
     )
     testthat::expect_equal(
       tariff$est_fitted[
-        tariff$risk_factor == "industry_detail_restricted" &
+        tariff$risk_factor == "industry_group_refined_restricted" &
           tariff$level == "B"
       ],
       1.4

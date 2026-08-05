@@ -368,6 +368,7 @@ ref <- ref |>
   add_relativities(
     model_variable = "business_activity",
     split_variable = "business_activity_split",
+    output_variable = "business_activity_tariff_segment",
     relativities = relativities_activity,
     exposure = "exposure",
     normalize = TRUE
@@ -377,6 +378,12 @@ ref <- ref |>
 
 If `normalize = TRUE`, the relativities are scaled so that their
 exposure-weighted average remains equal to 1 within the original level.
+
+`output_variable` names the resulting hybrid tariff factor. In this example,
+the explicitly split construction and services levels are represented by their
+detailed levels, while unsplit levels retain their original
+`business_activity` value. A name ending in `_tariff_segment` can make this
+role explicit in later model and reporting steps.
 
 This preserves the original model signal while introducing finer structure.
 When `model_variable` has already been restricted with `add_restriction()`, the
@@ -396,11 +403,16 @@ For that reason, the sequence does not end with `add_smoothing()` or
 
 ```{r}
 
+summary(ref)
+
 burn_refined <- refit(ref)
 
 ```
 
-This refits the model while incorporating the documented refinement steps.
+`summary(ref)` describes the base model and the ordered refinement specification
+before a new GLM is fitted. This provides a direct review of the assumptions
+that will be applied. `refit()` then fits the model while incorporating those
+documented steps.
 
 
 ### Inspecting the final fitted result
@@ -423,6 +435,37 @@ The distinction is:
 
 If smoothing, restrictions, and relativities have been applied, they are now
 embedded in the fitted model output.
+
+
+### Auditing the portfolio effect
+
+Coefficient changes cannot be interpreted independently of the intercept and
+the other model terms. A more direct audit compares fitted values from the
+unrestricted and refined models on the same observed portfolio combinations.
+
+```{r}
+
+refinement_audit <- audit_refinement(
+  burn_refined,
+  exposure = "exposure",
+  metric = "risk_premium"
+)
+
+summary(refinement_audit)
+
+```
+
+The portfolio result shows the exposure-weighted risk premium before and after
+refinement. `as.data.frame(refinement_audit)` gives the corresponding comparison
+for every final risk factor and level. These level results reflect the combined
+prediction of the full model for the observed portfolio mix; they are not
+isolated coefficient differences.
+
+The audit also records the package version, preparation time, refit time,
+formulas and ordered refinement steps. For a frequency or severity model, use a
+matching metric name such as `"frequency"` or `"average_severity"`; a complete
+risk-premium interpretation requires a direct risk-premium model or a combined
+frequency and severity calculation.
 
 
 ### Visualising the final structure

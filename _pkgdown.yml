@@ -74,6 +74,7 @@ reference:
       - add_relativities
       - relativity_specification
       - refit
+      - audit_refinement
 
   - title: "Validation"
     desc: >

@@ -1089,7 +1089,7 @@ assess_excess_threshold <- function(data,
 #' formatted reporting table is more useful than another plot.
 #'
 #' @param x A supported object to convert, such as a `threshold_assessment`,
-#'   `rating_table` or `bootstrap_coefficients` object.
+#'   `rating_table`, `bootstrap_coefficients` or `refinement_audit` object.
 #' @param ... Arguments passed to methods.
 #'
 #' @return A `gt_tbl` object for supported methods.

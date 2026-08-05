@@ -93,7 +93,7 @@ refined_model <- refit(refinement, intercept_only = TRUE)
 \seealso{
 \code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=edit_smoothing]{edit_smoothing()}},
 \code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_relativities]{add_relativities()}}, \code{\link[=rating_table]{rating_table()}},
-\code{\link[=rating_grid]{rating_grid()}}
+\code{\link[=rating_grid]{rating_grid()}}, \code{\link[=audit_refinement]{audit_refinement()}}
 }
 \author{
 Martin Haringa

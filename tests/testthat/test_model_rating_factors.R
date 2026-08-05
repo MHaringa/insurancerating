@@ -210,6 +210,57 @@ testthat::test_that(
 )
 
 testthat::test_that(
+  "rating_table uses the correct exposure source for derived relativities", {
+    portfolio <- data.frame(
+      claims = c(1, 2, 2, 3, 1, 2, 3, 4),
+      exposure = c(1, 2, 3, 4, 5, 6, 7, 8),
+      industry_group = factor(rep(c("A", "B", "C", "C"), each = 2)),
+      industry_detail = factor(c(
+        "A1", "A2", "A1", "B2", "C1", "C2", "C1", "C2"
+      ))
+    )
+    model <- glm(
+      claims ~ industry_group + offset(log(exposure)),
+      family = poisson(),
+      data = portfolio
+    )
+    rel <- relativities(
+      split_level("A", c("A1", "A2"), c(0.9, 1.1))
+    )
+
+    fitted <- prepare_refinement(model, data = portfolio) |>
+      add_relativities(
+        model_variable = "industry_group",
+        split_variable = "industry_detail",
+        output_variable = "industry_tariff_segment",
+        relativities = rel,
+        exposure = "exposure",
+        normalize = FALSE
+      ) |>
+      refit()
+
+    testthat::expect_warning(
+      tariff <- rating_table(
+        fitted,
+        model_data = portfolio,
+        exposure = "exposure"
+      ),
+      NA
+    )
+
+    derived <- tariff[
+      tariff$risk_factor == "industry_tariff_segment",
+      c("level", "exposure")
+    ]
+    observed <- stats::setNames(derived$exposure, derived$level)
+
+    testthat::expect_equal(unname(observed[c("A1", "A2")]), c(1, 2))
+    testthat::expect_equal(unname(observed[c("B", "C")]), c(7, 26))
+    testthat::expect_false(anyNA(derived$exposure))
+  }
+)
+
+testthat::test_that(
   "as_gt presents rating factors as grouped tariff tables", {
     testthat::skip_if_not_installed("gt")
 

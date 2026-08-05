@@ -19,7 +19,7 @@ refinement specification instead.}
 
 \item{restrictions}{Data frame with exactly two columns. The first column
 must have the same name as the risk factor to restrict and contains the
-levels to adjust. This can also be the \code{split_variable} from an earlier
+levels to adjust. This can also be the \code{output_variable} from an earlier
 \code{\link[=add_relativities]{add_relativities()}} step. The second column contains the replacement
 relativities. Levels that are not supplied are fixed at their current
 effective relativities.}
@@ -121,14 +121,14 @@ changed.
 
 \subsection{Restricting a factor created by add_relativities()}{
 
-A \code{split_variable} introduced by an earlier \code{\link[=add_relativities]{add_relativities()}} step is
+An \code{output_variable} introduced by an earlier \code{\link[=add_relativities]{add_relativities()}} step is
 already part of the ordered refinement specification. It is therefore not
 treated as a new external risk factor and does not require
 \code{allow_new_risk_factors = TRUE}. \code{add_restriction()} identifies the preceding
 relativity step from its stored metadata and replaces the corresponding
 derived tariff effect during \code{\link[=refit]{refit()}}.
 
-When only one level of such a split variable is supplied, that level receives
+When only one level of such a refined variable is supplied, that level receives
 the new relativity and every other level is fixed at the relativity produced
 by \code{add_relativities()}. Mathematically, the resulting restriction therefore
 covers all current levels. Only the explicitly supplied level changes. This

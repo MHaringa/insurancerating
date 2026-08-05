@@ -54,7 +54,7 @@ as_gt(x, ...)
 }
 \arguments{
 \item{x}{A supported object to convert, such as a \code{threshold_assessment},
-\code{rating_table} or \code{bootstrap_coefficients} object.}
+\code{rating_table}, \code{bootstrap_coefficients} or \code{refinement_audit} object.}
 
 \item{...}{Arguments passed to methods.}
 

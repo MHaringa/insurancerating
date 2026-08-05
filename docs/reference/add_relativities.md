@@ -15,7 +15,8 @@ add_relativities(
   split_variable,
   relativities,
   exposure,
-  normalize = TRUE
+  normalize = TRUE,
+  output_variable = paste0(model_variable, "_refined")
 )
 ```
 
@@ -61,6 +62,14 @@ add_relativities(
   Logical. If `TRUE`, normalise the supplied relativities by exposure
   within each split model level.
 
+- output_variable:
+
+  Character string naming the resulting hybrid tariff factor. The
+  default appends `_refined` to `model_variable`. A more
+  application-specific name, such as `sbi_tariff_segment`, can make the
+  intended tariff use clearer in model output and reporting. The name
+  must not overwrite an existing column in the refinement data.
+
 ## Value
 
 A `rating_refinement` object containing the stored relativity
@@ -84,6 +93,19 @@ usually built with
 [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
 and
 [`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md).
+`output_variable` names the resulting hybrid tariff factor: levels
+included in `relativities` are represented by their detailed
+`split_variable` level, while all other levels retain their
+`model_variable` level.
+
+Levels of `model_variable` that are not included in `relativities`
+retain their existing model coefficient. In
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md),
+exposure for these retained levels is aggregated from `model_variable`,
+while exposure for the newly split levels is aggregated from
+`split_variable` within the specified parent model level. Omitting a
+model level from `relativities` therefore means that the level remains
+unsplit; it is not treated as an incomplete specification.
 
 `add_relativities()` validates the supplied sublevel names against the
 observed values of `split_variable` before storing the refinement step.
@@ -112,13 +134,13 @@ order-dependent, so a restriction added after `add_relativities()` does
 not affect an earlier relativity step. Once the restricted coefficients
 have been used to derive the final split,
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-reports the `split_variable` as the tariff factor and does not also show
+reports `output_variable` as the tariff factor and does not also show
 the intermediate restricted variable.
 
 Conversely,
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
 can be called after `add_relativities()` to adjust selected levels of
-the derived `split_variable`. The split variable is then recognised as
+the derived `output_variable`. The output variable is then recognised as
 an existing refinement factor; users do not need to set
 `allow_new_risk_factors = TRUE`. Levels omitted from the restriction
 table are fixed at the relativities calculated by this step.
@@ -199,24 +221,25 @@ refined <- prepare_refinement(model, data = portfolio) |>
   add_relativities(
     model_variable = "construction",
     split_variable = "construction_detail",
+    output_variable = "construction_tariff_segment",
     relativities = relativities,
     exposure = "exposure"
   )
 
 # A subsequent restriction can revise one derived level. The remaining
-# construction-detail levels are fixed at the relativities calculated above.
+# tariff-segment levels are fixed at the relativities calculated above.
 refined <- refined |>
   add_restriction(data.frame(
-    construction_detail = "flat",
-    construction_detail_restricted = 1.00
+    construction_tariff_segment = "flat",
+    construction_tariff_segment_restricted = 1.00
   ))
 
 refined_model <- refit(refined)
 rating_table(refined_model, exposure = FALSE)
-#>                      risk_factor       level est_refined_model
-#> 1                    (Intercept) (Intercept)         2.3746130
-#> 2 construction_detail_restricted        shop         1.0645161
-#> 3 construction_detail_restricted      office         0.8709677
-#> 4 construction_detail_restricted        flat         1.0000000
-#> 5 construction_detail_restricted       house         0.4745763
+#>                              risk_factor       level est_refined_model
+#> 1                            (Intercept) (Intercept)         2.3746130
+#> 2 construction_tariff_segment_restricted        shop         1.0645161
+#> 3 construction_tariff_segment_restricted      office         0.8709677
+#> 4 construction_tariff_segment_restricted        flat         1.0000000
+#> 5 construction_tariff_segment_restricted       house         0.4745763
 ```

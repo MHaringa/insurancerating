@@ -10,7 +10,8 @@ add_relativities(
   split_variable,
   relativities,
   exposure,
-  normalize = TRUE
+  normalize = TRUE,
+  output_variable = paste0(model_variable, "_refined")
 )
 }
 \arguments{
@@ -36,6 +37,12 @@ when requested, normalisation.}
 
 \item{normalize}{Logical. If \code{TRUE}, normalise the supplied relativities by
 exposure within each split model level.}
+
+\item{output_variable}{Character string naming the resulting hybrid tariff
+factor. The default appends \verb{_refined} to \code{model_variable}. A more
+application-specific name, such as \code{sbi_tariff_segment}, can make the
+intended tariff use clearer in model output and reporting. The name must
+not overwrite an existing column in the refinement data.}
 }
 \value{
 A \code{rating_refinement} object containing the stored relativity
@@ -58,7 +65,18 @@ in the recorded step order and applied when \code{\link[=refit]{refit()}} is cal
 the more detailed variable in the portfolio data that will be used to split
 one or more levels of \code{model_variable}. The \code{relativities} argument should be
 a named list describing those splits, usually built with \code{\link[=relativities]{relativities()}} and
-\code{\link[=split_level]{split_level()}}.
+\code{\link[=split_level]{split_level()}}. \code{output_variable} names the resulting hybrid tariff factor:
+levels included in \code{relativities} are represented by their detailed
+\code{split_variable} level, while all other levels retain their
+\code{model_variable} level.
+
+Levels of \code{model_variable} that are not included in \code{relativities} retain
+their existing model coefficient. In \code{\link[=rating_table]{rating_table()}}, exposure for these
+retained levels is aggregated from \code{model_variable}, while exposure for the
+newly split levels is aggregated from \code{split_variable} within the specified
+parent model level. Omitting a model level from \code{relativities} therefore
+means that the level remains unsplit; it is not treated as an incomplete
+specification.
 
 \code{add_relativities()} validates the supplied sublevel names against the
 observed values of \code{split_variable} before storing the refinement step. A
@@ -82,14 +100,14 @@ variable explicitly gives the same coefficient basis and does not apply the
 restriction a second time. Refinement steps are order-dependent, so a
 restriction added after \code{add_relativities()} does not affect an earlier
 relativity step. Once the restricted coefficients have been used to derive
-the final split, \code{\link[=rating_table]{rating_table()}} reports the \code{split_variable} as the tariff
+the final split, \code{\link[=rating_table]{rating_table()}} reports \code{output_variable} as the tariff
 factor and does not also show the intermediate restricted variable.
 
 Conversely, \code{\link[=add_restriction]{add_restriction()}} can be called after \code{add_relativities()} to
-adjust selected levels of the derived \code{split_variable}. The split variable is
-then recognised as an existing refinement factor; users do not need to set
-\code{allow_new_risk_factors = TRUE}. Levels omitted from the restriction table
-are fixed at the relativities calculated by this step.
+adjust selected levels of the derived \code{output_variable}. The output variable
+is then recognised as an existing refinement factor; users do not need to
+set \code{allow_new_risk_factors = TRUE}. Levels omitted from the restriction
+table are fixed at the relativities calculated by this step.
 }
 
 \subsection{Appropriate use}{
@@ -153,16 +171,17 @@ refined <- prepare_refinement(model, data = portfolio) |>
   add_relativities(
     model_variable = "construction",
     split_variable = "construction_detail",
+    output_variable = "construction_tariff_segment",
     relativities = relativities,
     exposure = "exposure"
   )
 
 # A subsequent restriction can revise one derived level. The remaining
-# construction-detail levels are fixed at the relativities calculated above.
+# tariff-segment levels are fixed at the relativities calculated above.
 refined <- refined |>
   add_restriction(data.frame(
-    construction_detail = "flat",
-    construction_detail_restricted = 1.00
+    construction_tariff_segment = "flat",
+    construction_tariff_segment_restricted = 1.00
   ))
 
 refined_model <- refit(refined)
