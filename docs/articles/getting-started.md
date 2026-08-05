@@ -338,20 +338,20 @@ are outside this technical risk-premium model.
 
 rt <- rating_table(burn_unrestricted)
 rt
-#>          level risk_factor est_burn_unrestricted exposure
+#>    risk_factor       level est_burn_unrestricted exposure
 #> 1  (Intercept) (Intercept)          9370.4023322       NA
-#> 2            0         zip             0.9946246      207
-#> 3            1         zip             1.0000000    11081
-#> 4            2         zip             1.0049888     7783
-#> 5            3         zip             1.0028308     7588
-#> 6      [18,25]     age_cat             2.3041459     1331
-#> 7      (25,32]     age_cat             2.4813038     3649
-#> 8      (32,39]     age_cat             0.9246871     4247
-#> 9      (39,51]     age_cat             1.0000000     7421
-#> 10     (51,58]     age_cat             0.5699965     3245
-#> 11     (58,65]     age_cat             0.5798450     2791
-#> 12     (65,84]     age_cat             0.7103948     3901
-#> 13     (84,95]     age_cat             0.5190330       72
+#> 2      age_cat     (39,51]             1.0000000     7421
+#> 3      age_cat     [18,25]             2.3041459     1331
+#> 4      age_cat     (25,32]             2.4813038     3649
+#> 5      age_cat     (32,39]             0.9246871     4247
+#> 6      age_cat     (51,58]             0.5699965     3245
+#> 7      age_cat     (58,65]             0.5798450     2791
+#> 8      age_cat     (65,84]             0.7103948     3901
+#> 9      age_cat     (84,95]             0.5190330       72
+#> 10         zip           1             1.0000000    11081
+#> 11         zip           0             0.9946246      207
+#> 12         zip           2             1.0049888     7783
+#> 13         zip           3             1.0028308     7588
 ```
 
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)

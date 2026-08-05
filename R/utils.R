@@ -42,6 +42,9 @@
 #' @return A factor of the same length as \code{x}, with the selected reference
 #'   level set as the first level.
 #'
+#' @seealso [add_rebasing()] for rescaling current tariff relativities within a
+#'   prepared refinement workflow after a model has been fitted.
+#'
 #' @examples
 #' portfolio <- data.frame(
 #'   region = factor(c("North", "North", "South", "West")),

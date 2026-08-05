@@ -12,6 +12,9 @@
 #' One panel is produced for each selected risk factor. Model effects use the
 #' primary y-axis. When exposure is available, bars are rescaled to the plotting
 #' range and the original exposure scale is shown on the secondary y-axis.
+#' Panel and level order follow the input [rating_table()] object. This keeps
+#' the reference level and any explicit actuarial review order consistent
+#' between the data frame, [as_gt()] and the plot.
 #'
 #' Observed experience is plotted only after it has been attached with
 #' [add_portfolio_experience()]. The selected `metric` is converted to the

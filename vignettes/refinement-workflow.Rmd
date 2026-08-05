@@ -375,6 +375,40 @@ exposure, stability over time and the intended degree of tariff
 differentiation.
 
 
+## Rebasing categorical relativities
+
+### Purpose
+
+After shrinkage, restrictions or a split into more detailed tariff levels, the
+original reference level may no longer be the most useful reporting basis.
+`add_rebasing()` rescales the current factor so that one resulting level equals
+1. It does not reduce or increase the differentiation between levels: every
+ratio between two relativities remains unchanged.
+
+An explicit reference is generally preferable when the tariff has an
+established base class. If no reference is supplied, the level with the largest
+portfolio weight is selected. This gives the most prevalent level relativity 1
+and usually provides a stable reporting basis.
+
+```{r}
+
+ref <- ref |>
+  add_rebasing(
+    model_variable = "zip",
+    reference_level = "1"
+  )
+
+summary(ref)
+autoplot(ref, step = 4)
+
+```
+
+This operation differs from `set_reference_level()`. That helper selects the
+contrast reference before a GLM is fitted. Rebasing is applied to the current
+relativities within an existing refinement workflow, for example after new
+sublevels have been introduced with `add_relativities()`.
+
+
 ## Expert-based relativities
 
 ### Purpose

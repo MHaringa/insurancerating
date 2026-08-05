@@ -190,8 +190,8 @@ rating_table(refined_model, exposure = FALSE)
 }
 \seealso{
 \code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=relativities]{relativities()}}, \code{\link[=split_level]{split_level()}},
-\code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_shrinkage]{add_shrinkage()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=refit]{refit()}},
-\code{\link[=rating_table]{rating_table()}}
+\code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_shrinkage]{add_shrinkage()}}, \code{\link[=add_rebasing]{add_rebasing()}},
+\code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=refit]{refit()}}, \code{\link[=rating_table]{rating_table()}}
 }
 \author{
 Martin Haringa

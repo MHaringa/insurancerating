@@ -280,7 +280,8 @@ autoplot(ref, x_max = 80, y_max = 1.5)
 }
 \seealso{
 \code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=edit_smoothing]{edit_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}},
-\code{\link[=add_shrinkage]{add_shrinkage()}}, \code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}, \code{\link[=risk_factor_gam]{risk_factor_gam()}}
+\code{\link[=add_shrinkage]{add_shrinkage()}}, \code{\link[=add_rebasing]{add_rebasing()}}, \code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}},
+\code{\link[=risk_factor_gam]{risk_factor_gam()}}
 }
 \author{
 Martin Haringa

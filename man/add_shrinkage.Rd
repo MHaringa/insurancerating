@@ -122,7 +122,7 @@ equal_level_refinement <- prepare_refinement(model, data = portfolio) |>
 }
 \seealso{
 \code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=add_restriction]{add_restriction()}},
-\code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}, \code{\link[=audit_refinement]{audit_refinement()}}
+\code{\link[=add_rebasing]{add_rebasing()}}, \code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}, \code{\link[=audit_refinement]{audit_refinement()}}
 }
 \author{
 Martin Haringa

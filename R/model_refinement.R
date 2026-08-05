@@ -899,6 +899,9 @@
     } else if (identical(step$type, "shrinkage") &&
                identical(step$model_variable, model_variable)) {
       model_term <- step$derived_model_variable
+    } else if (identical(step$type, "rebasing") &&
+               identical(step$model_variable, model_variable)) {
+      model_term <- step$derived_model_variable
     }
   }
 
@@ -1136,6 +1139,110 @@
     )
 }
 
+.calculate_rebasing <- function(state, step) {
+  model_variable <- step$model_variable
+  effective_model_term <- step$effective_model_term %||% model_variable
+  coefficients <- if (!identical(effective_model_term, model_variable)) {
+    .current_refinement_coefficients(state, effective_model_term)
+  } else {
+    NULL
+  }
+  coefficients <- coefficients %||%
+    .current_refinement_coefficients(state, model_variable)
+
+  if (is.null(coefficients) || nrow(coefficients) < 1L) {
+    stop(
+      "`model_variable` `", model_variable,
+      "` must identify a categorical risk factor with current relativities.",
+      call. = FALSE
+    )
+  }
+  if (anyDuplicated(coefficients$level)) {
+    stop(
+      "Risk factor `", model_variable,
+      "` contains duplicate coefficient levels in the current refinement.",
+      call. = FALSE
+    )
+  }
+  if (!is.numeric(coefficients$relativity) ||
+      anyNA(coefficients$relativity) ||
+      any(!is.finite(coefficients$relativity)) ||
+      any(coefficients$relativity <= 0)) {
+    stop(
+      "Current relativities for `", model_variable,
+      "` must be finite, non-missing and greater than zero.",
+      call. = FALSE
+    )
+  }
+
+  observed_levels <- unique(as.character(state$data[[model_variable]]))
+  observed_levels <- observed_levels[!is.na(observed_levels)]
+  missing_levels <- setdiff(observed_levels, coefficients$level)
+  if (length(missing_levels) > 0L) {
+    stop(
+      "No current relativity is available for level(s) of `", model_variable,
+      "`: ", paste(missing_levels, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  if (!is.null(step$reference_level)) {
+    reference_level <- step$reference_level
+    if (!reference_level %in% coefficients$level) {
+      suggestion <- .closest_refinement_level(
+        reference_level,
+        coefficients$level
+      )
+      message <- paste0(
+        "Reference level `", reference_level, "` does not occur in risk factor `",
+        model_variable, "`."
+      )
+      if (!is.null(suggestion)) {
+        message <- paste0(message, " Did you mean `", suggestion, "`?")
+      }
+      stop(message, call. = FALSE)
+    }
+    level_weights <- rep(NA_real_, nrow(coefficients))
+    method <- "explicit"
+  } else {
+    level_weights <- .shrinkage_level_weights(
+      state,
+      model_variable,
+      coefficients,
+      step$weight_spec
+    )
+    if (!any(level_weights > 0)) {
+      stop(
+        "The aggregated rebasing weights for `", model_variable,
+        "` must contain at least one positive level weight.",
+        call. = FALSE
+      )
+    }
+    largest <- which(level_weights == max(level_weights))
+    reference_level <- coefficients$level[largest[1L]]
+    method <- "largest_weight"
+  }
+
+  reference_relativity <- coefficients$relativity[
+    match(reference_level, coefficients$level)
+  ]
+  rebased <- coefficients$relativity / reference_relativity
+
+  data.frame(
+    level = coefficients$level,
+    original_relativity = coefficients$relativity,
+    weight = level_weights,
+    rebased_relativity = rebased,
+    stringsAsFactors = FALSE,
+    row.names = NULL
+  ) |>
+    structure(
+      reference_level = reference_level,
+      reference_relativity = reference_relativity,
+      method = method
+    )
+}
+
 .resolve_restriction_context <- function(model, variable, before_step = NULL) {
   if (is.null(before_step)) {
     before_step <- length(model$steps) + 1L
@@ -1152,6 +1259,8 @@
           variable
         )) ||
         (identical(step$type, "shrinkage") &&
+           identical(step$model_variable, variable)) ||
+        (identical(step$type, "rebasing") &&
            identical(step$model_variable, variable))
     },
     logical(1)
@@ -1370,14 +1479,15 @@ as_refinement.restricted <- function(x, ...) {
 #'
 #' @description
 #' Create an editable refinement specification from a fitted pricing GLM.
-#' Smoothing, coefficient restrictions, shrinkage and sublevel relativities can
-#' then be added in a defined order. These steps do not alter the fitted GLM
+#' Smoothing, coefficient restrictions, shrinkage, rebasing and sublevel
+#' relativities can then be added in a defined order. These steps do not alter the fitted GLM
 #' until [refit()] is called.
 #'
 #' @details
 #' `prepare_refinement()` creates a persistent refinement specification. This
 #' object contains the original GLM, the corresponding model data and the
-#' ordered smoothing, restriction, shrinkage and relativity steps. Retain this object
+#' ordered smoothing, restriction, shrinkage, rebasing and relativity steps.
+#' Retain this object
 #' during actuarial review so that assumptions can be inspected, revised and
 #' applied again in the same order.
 #'
@@ -1393,8 +1503,9 @@ as_refinement.restricted <- function(x, ...) {
 #' [refit()] applies the stored specification and returns a fitted GLM for model
 #' diagnostics, prediction and tariff reporting. The returned GLM is a result,
 #' not an editable refinement specification. Functions such as
-#' [add_smoothing()], [edit_smoothing()], [add_restriction()], [add_shrinkage()]
-#' and [add_relativities()] therefore accept a `rating_refinement` object and do not
+#' [add_smoothing()], [edit_smoothing()], [add_restriction()], [add_shrinkage()],
+#' [add_rebasing()] and [add_relativities()] therefore accept a
+#' `rating_refinement` object and do not
 #' accept an ordinary or refitted GLM directly.
 #'
 #' A practical iterative workflow therefore keeps both objects:
@@ -1431,7 +1542,7 @@ as_refinement.restricted <- function(x, ...) {
 #'
 #' @seealso [summary.rating_refinement()], [add_smoothing()],
 #'   [edit_smoothing()], [add_restriction()], [add_shrinkage()],
-#'   [add_relativities()], [refit()]
+#'   [add_rebasing()], [add_relativities()], [refit()]
 #'
 #' @examples
 #' portfolio <- data.frame(
@@ -1570,6 +1681,24 @@ print.rating_refinement <- function(x, ...) {
       "credibility = ", format(step$credibility, trim = TRUE),
       "; weights = ", source,
       "; weighted mean preserved"
+    ))
+  }
+
+  if (identical(step$type, "rebasing")) {
+    source <- if (identical(step$method, "explicit")) {
+      "explicit reference"
+    } else {
+      paste0(
+        "largest weight: ",
+        step$weight_spec$label %||% step$weights %||% "unknown"
+      )
+    }
+    return(paste0(
+      "reference = ", step$reference_level,
+      "; original relativity = ",
+      format(step$reference_relativity, trim = TRUE),
+      "; selection = ", source,
+      "; relative level ratios preserved"
     ))
   }
 
@@ -1808,7 +1937,7 @@ print.summary.rating_refinement <- function(x, ...) {
 #'   called.
 #'
 #' @seealso [prepare_refinement()], [add_smoothing()], [add_shrinkage()],
-#'   [add_relativities()], [refit()], [rating_table()]
+#'   [add_rebasing()], [add_relativities()], [refit()], [rating_table()]
 #'
 #' @examples
 #' portfolio <- data.frame(
@@ -2305,7 +2434,7 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
 #' @author Martin Haringa
 #'
 #' @seealso [prepare_refinement()], [add_smoothing()], [add_restriction()],
-#'   [add_relativities()], [refit()], [audit_refinement()]
+#'   [add_rebasing()], [add_relativities()], [refit()], [audit_refinement()]
 #'
 #' @examples
 #' portfolio <- data.frame(
@@ -2445,6 +2574,237 @@ add_shrinkage <- function(model, model_variable, credibility = 0.9,
   )
 
   .add_step(model, shrinkage_step)
+}
+
+
+#' Rebase categorical tariff relativities to a reference level
+#'
+#' @description
+#' Rescale the current relativities of one categorical risk factor so that a
+#' selected level has relativity 1. `add_rebasing()` is an ordered refinement
+#' step: it uses the relativities available at that point in the workflow and
+#' retains all ratios between levels.
+#'
+#' @details
+#' Rebasing changes the numerical reference of a tariff factor, but does not
+#' change its relative differentiation. If the current relativity of reference
+#' level \eqn{j} is \eqn{r_j}, every level is transformed as
+#'
+#' \deqn{
+#' r_i^{new} = \frac{r_i}{r_j}.
+#' }
+#'
+#' The selected reference level therefore becomes 1, while the ratio between
+#' any two levels remains unchanged. For example, relativities 0.8, 1.0 and 1.2
+#' rebased to the first level become 1.0, 1.25 and 1.5. This is different from
+#' [add_shrinkage()], which deliberately reduces the spread between levels.
+#'
+#' ## Selecting the reference level
+#'
+#' Supply `reference_level` when the tariff has an established reference class
+#' or when governance requires a particular level to remain at 1. If
+#' `reference_level = NULL`, the level with the largest aggregated weight is
+#' selected. Ties are resolved by the order of the current factor levels.
+#'
+#' With `weights = NULL`, explicit GLM weights are used when available;
+#' otherwise a single offset of the form `log(column)` is used. This commonly
+#' selects claim count for a weighted severity GLM and exposure for a frequency
+#' or risk-premium GLM. An explicit numeric column can be supplied when another
+#' portfolio basis is required. `weights` is ignored when `reference_level` is
+#' supplied because no automatic selection is then needed.
+#'
+#' ## Position in the refinement workflow
+#'
+#' Rebasing is generally applied after the step that creates the final tariff
+#' levels. For example, [add_relativities()] may replace a broad level by
+#' several sublevels; `add_rebasing()` can then select one of those resulting
+#' sublevels as the new reference. It can also follow [add_shrinkage()] when the
+#' shrunken relativities should be reported relative to an established level.
+#'
+#' `set_reference_level()` serves a different purpose. It changes the contrast
+#' reference of a factor before fitting a GLM. `add_rebasing()` rescales current
+#' tariff relativities inside an existing refinement specification. The
+#' refinement step and selected reference are retained for review by
+#' `summary()` and [audit_refinement()].
+#'
+#' @param model A `rating_refinement` object created with
+#'   [prepare_refinement()]. Rebasing uses the current relativities at this
+#'   point in the ordered workflow.
+#' @param model_variable Character string naming the categorical risk factor to
+#'   rebase. This may identify an original GLM factor or a tariff factor created
+#'   by an earlier [add_relativities()], [add_restriction()] or
+#'   [add_shrinkage()] step.
+#' @param reference_level Optional single character value naming the level that
+#'   should receive relativity 1. When `NULL`, the level with the largest
+#'   aggregated weight is selected automatically.
+#' @param weights `NULL` or a character string naming a numeric, non-negative
+#'   column in the refinement data. The weights are used only when
+#'   `reference_level = NULL`. `NULL` derives the basis from explicit model
+#'   weights or a simple exposure offset.
+#'
+#' @return A `rating_refinement` object containing an ordered rebasing step.
+#'   The step stores the original and rebased relativities, the selected
+#'   reference level, its original relativity, the selection method and, when
+#'   applicable, the aggregated level weights. The GLM is fitted only when
+#'   [refit()] is called.
+#'
+#' @author Martin Haringa
+#'
+#' @seealso [prepare_refinement()], [set_reference_level()],
+#'   [add_relativities()], [add_shrinkage()], [add_restriction()], [refit()],
+#'   [audit_refinement()]
+#'
+#' @examples
+#' portfolio <- data.frame(
+#'   claims = c(1, 2, 1, 3, 2, 4, 1, 5),
+#'   exposure = c(1, 1, 1, 1, 2, 1, 1, 1),
+#'   sector = factor(rep(c("Industry", "Office", "Retail", "Transport"), 2))
+#' )
+#'
+#' model <- glm(
+#'   claims ~ sector + offset(log(exposure)),
+#'   family = poisson(),
+#'   data = portfolio
+#' )
+#'
+#' # Keep Office as the explicit tariff reference after shrinkage.
+#' refinement <- prepare_refinement(model, data = portfolio) |>
+#'   add_shrinkage(
+#'     model_variable = "sector",
+#'     credibility = 0.9,
+#'     weights = "exposure"
+#'   ) |>
+#'   add_rebasing(
+#'     model_variable = "sector",
+#'     reference_level = "Office"
+#'   )
+#'
+#' summary(refinement)
+#' refined_model <- refit(refinement)
+#' rating_table(refined_model)
+#'
+#' # Omitting reference_level selects the level with the largest exposure.
+#' exposure_reference <- prepare_refinement(model, data = portfolio) |>
+#'   add_rebasing(
+#'     model_variable = "sector",
+#'     weights = "exposure"
+#'   )
+#'
+#' @export
+add_rebasing <- function(model, model_variable, reference_level = NULL,
+                         weights = NULL) {
+  .assert_refinement(model)
+  if (!.is_single_string(model_variable)) {
+    stop("`model_variable` must be one non-empty character string.",
+         call. = FALSE)
+  }
+  if (!is.null(reference_level) && !.is_single_string(reference_level)) {
+    stop("`reference_level` must be NULL or one non-empty character string.",
+         call. = FALSE)
+  }
+  if (!is.null(reference_level) && !is.null(weights)) {
+    warning(
+      "`weights` is ignored because `reference_level` was supplied explicitly.",
+      call. = FALSE
+    )
+  }
+  if (is.null(reference_level) && identical(weights, "equal")) {
+    stop(
+      "`weights = \"equal\"` cannot identify a largest reference level. ",
+      "Supply `reference_level` explicitly or use a portfolio weight column.",
+      call. = FALSE
+    )
+  }
+  if (any(vapply(
+    model$steps,
+    function(step) identical(step$type, "rebasing") &&
+      identical(step$model_variable, model_variable),
+    logical(1)
+  ))) {
+    stop(
+      "Risk factor `", model_variable,
+      "` already has a rebasing step. Rebuild the refinement specification ",
+      "with the revised reference selection.",
+      call. = FALSE
+    )
+  }
+
+  state <- .make_exec_state(model)
+  if (length(model$steps) > 0L) {
+    for (step in model$steps) {
+      state <- .apply_refinement_step(state, step)
+    }
+  }
+  if (!model_variable %in% names(state$data)) {
+    suggestion <- .closest_refinement_value(model_variable, names(state$data))
+    message <- paste0(
+      "Column `", model_variable,
+      "`, supplied through `model_variable`, was not found in the current refinement data."
+    )
+    if (!is.null(suggestion)) {
+      message <- paste0(message, " Did you mean `", suggestion, "`?")
+    }
+    stop(message, call. = FALSE)
+  }
+
+  weight_spec <- if (is.null(reference_level)) {
+    .resolve_shrinkage_weight_spec(model, weights)
+  } else {
+    NULL
+  }
+  effective_model_term <- .refinement_term_for_variable(
+    model$steps,
+    model_variable
+  )
+  formula_variables <- all.vars(state$formula_no_offset)
+  offset_variables <- if (is.null(state$offset)) {
+    character()
+  } else {
+    all.vars(tryCatch(parse(text = state$offset)[[1]],
+                      error = function(e) quote(NULL)))
+  }
+  replace_offset <- effective_model_term %in% offset_variables
+  if (!replace_offset && !effective_model_term %in% formula_variables) {
+    stop(
+      "Risk factor `", model_variable,
+      "` is not an active term in the current refinement specification.",
+      call. = FALSE
+    )
+  }
+
+  derived_model_variable <- paste0(model_variable, "_rebased")
+  if (derived_model_variable %in% names(state$data)) {
+    stop(
+      "Generated rebasing column `", derived_model_variable,
+      "` already exists in the refinement data.",
+      call. = FALSE
+    )
+  }
+
+  rebasing_step <- list(
+    id = .next_step_id(model),
+    type = "rebasing",
+    variable = model_variable,
+    model_variable = model_variable,
+    reference_level = reference_level,
+    weights = weights,
+    weight_spec = weight_spec,
+    effective_model_term = effective_model_term,
+    derived_model_variable = derived_model_variable,
+    replace_refinement_offset = replace_offset
+  )
+  rebasing_step$values <- .calculate_rebasing(state, rebasing_step)
+  rebasing_step$reference_level <- attr(
+    rebasing_step$values,
+    "reference_level"
+  )
+  rebasing_step$reference_relativity <- attr(
+    rebasing_step$values,
+    "reference_relativity"
+  )
+  rebasing_step$method <- attr(rebasing_step$values, "method")
+
+  .add_step(model, rebasing_step)
 }
 
 
@@ -2678,7 +3038,8 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'   [refit()] is called.
 #'
 #' @seealso [prepare_refinement()], [edit_smoothing()], [add_restriction()],
-#'   [add_shrinkage()], [add_relativities()], [refit()], [risk_factor_gam()]
+#'   [add_shrinkage()], [add_rebasing()], [add_relativities()], [refit()],
+#'   [risk_factor_gam()]
 #'
 #' @examples
 #' \dontrun{
@@ -3044,7 +3405,7 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #'   called.
 #'
 #' @seealso [prepare_refinement()], [add_smoothing()], [add_restriction()],
-#'   [add_shrinkage()], [add_relativities()], [refit()]
+#'   [add_shrinkage()], [add_rebasing()], [add_relativities()], [refit()]
 #'
 #' @examples
 #' set.seed(42)
@@ -3293,8 +3654,8 @@ edit_smoothing <- function(model,
 #'   called.
 #'
 #' @seealso [prepare_refinement()], [relativities()], [split_level()],
-#'   [add_restriction()], [add_shrinkage()], [add_smoothing()], [refit()],
-#'   [rating_table()]
+#'   [add_restriction()], [add_shrinkage()], [add_rebasing()],
+#'   [add_smoothing()], [refit()], [rating_table()]
 #'
 #' @examples
 #' portfolio <- data.frame(
@@ -3645,6 +4006,89 @@ add_relativities <- function(model,
     model_variable
   )
   state$shrinkage_df <- values
+
+  state
+}
+
+.apply_rebasing_step <- function(state, step) {
+  model_variable <- step$model_variable
+  derived_model_variable <- step$derived_model_variable
+  values <- .calculate_rebasing(state, step)
+
+  if (derived_model_variable %in% names(state$data)) {
+    stop(
+      "Generated rebasing column `", derived_model_variable,
+      "` already exists in the current refinement data.",
+      call. = FALSE
+    )
+  }
+  matched <- match(as.character(state$data[[model_variable]]), values$level)
+  if (anyNA(matched)) {
+    missing_levels <- unique(as.character(
+      state$data[[model_variable]][is.na(matched)]
+    ))
+    stop(
+      "No rebased relativity is available for level(s) of `", model_variable,
+      "`: ", paste(missing_levels, collapse = ", "),
+      call. = FALSE
+    )
+  }
+  state$data[[derived_model_variable]] <- values$rebased_relativity[matched]
+
+  if (isTRUE(step$replace_refinement_offset)) {
+    fm_replace <- .replace_refinement_offset(
+      formula_no_offset = state$formula_no_offset,
+      offset_term = state$offset,
+      old_term = step$effective_model_term,
+      new_term = derived_model_variable
+    )
+  } else {
+    fm_replace <- .replace_formula_term(
+      formula = state$formula_no_offset,
+      old_term = step$effective_model_term,
+      new_term = derived_model_variable,
+      offset_term = state$offset
+    )
+  }
+  state$formula <- fm_replace$formula
+  state$formula_no_offset <- fm_replace$formula_no_offset
+  state$offset <- fm_replace$offset
+
+  display <- data.frame(
+    level = values$level,
+    yhat = values$rebased_relativity,
+    risk_factor = rep(model_variable, nrow(values)),
+    stringsAsFactors = FALSE
+  )
+  if (!is.null(state$rf_restricted_df)) {
+    state$rf_restricted_df <- state$rf_restricted_df[
+      state$rf_restricted_df$risk_factor != model_variable,
+      ,
+      drop = FALSE
+    ]
+  }
+  state$rf_restricted_df <- unique(rbind(state$rf_restricted_df, display))
+  rownames(state$rf_restricted_df) <- NULL
+
+  restrictions <- stats::setNames(
+    data.frame(values$level, values$rebased_relativity,
+               stringsAsFactors = FALSE),
+    c(model_variable, derived_model_variable)
+  )
+  state$restrictions_lst[[derived_model_variable]] <- restrictions
+  state$mgd_rst <- append(
+    state$mgd_rst,
+    list(c(model_variable, derived_model_variable))
+  )
+  state$new_col_nm <- .safe_unique_append(
+    state$new_col_nm,
+    derived_model_variable
+  )
+  state$old_col_nm <- .safe_unique_append(
+    state$old_col_nm,
+    model_variable
+  )
+  state$rebasing_df <- values
 
   state
 }
@@ -4019,6 +4463,7 @@ add_relativities <- function(model,
     step$type,
     restriction = .apply_restriction_step(state, step),
     shrinkage = .apply_shrinkage_step(state, step),
+    rebasing = .apply_rebasing_step(state, step),
     smoothing = .apply_smoothing_step(state, step),
     relativities = .apply_relativities_step(state, step),
     stop("Unknown refinement step type: ", step$type, call. = FALSE)
@@ -4368,8 +4813,8 @@ add_relativities <- function(model,
 #' @description
 #' Apply the ordered steps stored in a `rating_refinement` object and fit the
 #' resulting pricing GLM. This evaluates the current refinement specification;
-#' it may be called repeatedly while smoothing, restrictions, shrinkage or
-#' sublevel relativities are being reviewed.
+#' it may be called repeatedly while smoothing, restrictions, shrinkage,
+#' rebasing or sublevel relativities are being reviewed.
 #'
 #' @details
 #' `refit()` applies the stored steps in their recorded order, constructs the
@@ -4428,8 +4873,9 @@ add_relativities <- function(model,
 #'   derived tariff factors.
 #'
 #' @seealso [prepare_refinement()], [add_smoothing()], [edit_smoothing()],
-#'   [add_restriction()], [add_shrinkage()], [add_relativities()], [rating_table()],
-#'   [rating_grid()], [audit_refinement()]
+#'   [add_restriction()], [add_shrinkage()], [add_rebasing()],
+#'   [add_relativities()], [rating_table()], [rating_grid()],
+#'   [audit_refinement()]
 #'
 #' @examples
 #' zip_df <- data.frame(
@@ -4538,6 +4984,23 @@ refit <- function(object, intercept_only = FALSE, ...) {
       " (credibility: ", format(step$credibility, trim = TRUE),
       ", weights: ", weight_label,
       ", weighted mean preserved)"
+    )
+  } else if (identical(step$type, "rebasing")) {
+    selection <- if (identical(step$method, "explicit")) {
+      "explicit"
+    } else {
+      paste0(
+        "largest weight using ",
+        step$weight_spec$label %||% step$weights %||% "unknown"
+      )
+    }
+    detail <- paste0(
+      "Rebasing: ", step$model_variable,
+      " (reference: ", step$reference_level,
+      ", selection: ", selection,
+      ", original reference relativity: ",
+      format(step$reference_relativity, trim = TRUE),
+      ")"
     )
   } else {
     detail <- paste0("Refinement step: ", step$type %||% "unknown")

@@ -4,6 +4,24 @@
 
 ### Changes since 0.8.1
 
+- [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+  now places the fitted reference level first within each risk factor by
+  default, including a reference selected with
+  [`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md).
+  Remaining levels can retain model order, be sorted alphabetically, or
+  be ordered by fitted effect. Risk factors can retain formula order or
+  be sorted alphabetically; comparisons with several models can select
+  the model that determines the ordering. The resulting order is
+  retained by
+  [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+  and
+  [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html).
+- [`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)
+  can rescale the current relativities of a categorical tariff factor so
+  that an explicit reference level equals 1. When no level is supplied,
+  the level with the largest portfolio weight is selected. Rebasing
+  preserves every ratio between factor levels and can be applied after
+  restrictions, shrinkage or sublevel relativities.
 - [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md)
   can reduce differences between categorical tariff relativities before
   refitting. Relativities are blended with a weighted centre on the log

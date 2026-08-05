@@ -118,6 +118,9 @@ background bars, and observed portfolio experience attached with
 One panel is produced for each selected risk factor. Model effects use the
 primary y-axis. When exposure is available, bars are rescaled to the plotting
 range and the original exposure scale is shown on the secondary y-axis.
+Panel and level order follow the input \code{\link[=rating_table]{rating_table()}} object. This keeps
+the reference level and any explicit actuarial review order consistent
+between the data frame, \code{\link[=as_gt]{as_gt()}} and the plot.
 
 Observed experience is plotted only after it has been attached with
 \code{\link[=add_portfolio_experience]{add_portfolio_experience()}}. The selected \code{metric} is converted to the

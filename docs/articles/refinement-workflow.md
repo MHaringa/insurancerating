@@ -124,21 +124,21 @@ Before refinement, inspect the unrestricted coefficient structure:
 
 
 rating_table(burn_unrestricted)
-#>          level               risk_factor est_burn_unrestricted exposure
-#> 1  (Intercept)               (Intercept)          1.228041e+04       NA
-#> 2            0                       zip          3.737317e-01      207
-#> 3            1                       zip          1.000000e+00    11081
-#> 4            2                       zip          7.574226e-01     7783
-#> 5            3                       zip          7.325129e-01     7588
-#> 6      [18,25] age_policyholder_freq_cat          1.895596e+00     1331
-#> 7      (25,32] age_policyholder_freq_cat          1.301496e+00     3649
-#> 8      (32,39] age_policyholder_freq_cat          1.053848e+00     4247
-#> 9      (39,51] age_policyholder_freq_cat          1.000000e+00     7421
-#> 10     (51,58] age_policyholder_freq_cat          8.491823e-01     3245
-#> 11     (58,65] age_policyholder_freq_cat          7.258652e-01     2791
-#> 12     (65,84] age_policyholder_freq_cat          7.584714e-01     3901
-#> 13     (84,95] age_policyholder_freq_cat          5.131699e-01       72
-#> 14          bm                        bm          9.980551e-01       NA
+#>                  risk_factor       level est_burn_unrestricted exposure
+#> 1                (Intercept) (Intercept)          1.228041e+04       NA
+#> 2                        zip           1          1.000000e+00    11081
+#> 3                        zip           0          3.737317e-01      207
+#> 4                        zip           2          7.574226e-01     7783
+#> 5                        zip           3          7.325129e-01     7588
+#> 6  age_policyholder_freq_cat     (39,51]          1.000000e+00     7421
+#> 7  age_policyholder_freq_cat     [18,25]          1.895596e+00     1331
+#> 8  age_policyholder_freq_cat     (25,32]          1.301496e+00     3649
+#> 9  age_policyholder_freq_cat     (32,39]          1.053848e+00     4247
+#> 10 age_policyholder_freq_cat     (51,58]          8.491823e-01     3245
+#> 11 age_policyholder_freq_cat     (58,65]          7.258652e-01     2791
+#> 12 age_policyholder_freq_cat     (65,84]          7.584714e-01     3901
+#> 13 age_policyholder_freq_cat     (84,95]          5.131699e-01       72
+#> 14                        bm          bm          9.980551e-01       NA
 
 rating_table(burn_unrestricted) |>
   autoplot()
@@ -372,7 +372,7 @@ summary(ref)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-05 15:22:59 CEST
+#> Created: 2026-08-05 16:38:49 CEST
 #> Observations: 30,000
 #> Family: Gamma (log link)
 #> Base formula:
@@ -383,7 +383,7 @@ summary(ref)
 #>   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)
 #>      16 intervals over 18 to 95
 #>   2. Restriction: zip -> zip_adj (4 levels)
-#>      0 = 0.8; 1 = 0.9; 2 = 1.0; 3 = 1.2
+#>      1 = 0.9; 0 = 0.8; 2 = 1.0; 3 = 1.2
 #>   3. Shrinkage: zip (credibility: 0.9, weights: exposure, weighted mean preserved)
 #>      credibility = 0.9; weights = exposure; weighted mean preserved
 autoplot(ref, step = 3)
@@ -404,6 +404,65 @@ The `credibility` value is a refinement assumption rather than a
 formally estimated Buhlmann credibility factor. Its selection should be
 assessed against exposure, stability over time and the intended degree
 of tariff differentiation.
+
+## Rebasing categorical relativities
+
+### Purpose
+
+After shrinkage, restrictions or a split into more detailed tariff
+levels, the original reference level may no longer be the most useful
+reporting basis.
+[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)
+rescales the current factor so that one resulting level equals 1. It
+does not reduce or increase the differentiation between levels: every
+ratio between two relativities remains unchanged.
+
+An explicit reference is generally preferable when the tariff has an
+established base class. If no reference is supplied, the level with the
+largest portfolio weight is selected. This gives the most prevalent
+level relativity 1 and usually provides a stable reporting basis.
+
+``` r
+
+
+ref <- ref |>
+  add_rebasing(
+    model_variable = "zip",
+    reference_level = "1"
+  )
+
+summary(ref)
+#> Refinement specification
+#> 
+#> Package: insurancerating 0.8.1.9000
+#> Created: 2026-08-05 16:38:49 CEST
+#> Observations: 30,000
+#> Family: Gamma (log link)
+#> Base formula:
+#>   premium ~ zip + bm + age_policyholder_freq_cat
+#> Offset: none
+#> 
+#> Refinement steps: 4
+#>   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)
+#>      16 intervals over 18 to 95
+#>   2. Restriction: zip -> zip_adj (4 levels)
+#>      1 = 0.9; 0 = 0.8; 2 = 1.0; 3 = 1.2
+#>   3. Shrinkage: zip (credibility: 0.9, weights: exposure, weighted mean preserved)
+#>      credibility = 0.9; weights = exposure; weighted mean preserved
+#>   4. Rebasing: zip (reference: 1, selection: explicit, original reference relativity: 0.9113921)
+#>      reference = 1; original relativity = 0.9113921; selection = explicit reference; relative level ratios preserved
+autoplot(ref, step = 4)
+```
+
+![](refinement-workflow_files/figure-html/unnamed-chunk-10-1.png)
+
+This operation differs from
+[`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md).
+That helper selects the contrast reference before a GLM is fitted.
+Rebasing is applied to the current relativities within an existing
+refinement workflow, for example after new sublevels have been
+introduced with
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).
 
 ## Expert-based relativities
 
@@ -488,20 +547,22 @@ summary(ref)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-05 15:22:59 CEST
+#> Created: 2026-08-05 16:38:49 CEST
 #> Observations: 30,000
 #> Family: Gamma (log link)
 #> Base formula:
 #>   premium ~ zip + bm + age_policyholder_freq_cat
 #> Offset: none
 #> 
-#> Refinement steps: 3
+#> Refinement steps: 4
 #>   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)
 #>      16 intervals over 18 to 95
 #>   2. Restriction: zip -> zip_adj (4 levels)
-#>      0 = 0.8; 1 = 0.9; 2 = 1.0; 3 = 1.2
+#>      1 = 0.9; 0 = 0.8; 2 = 1.0; 3 = 1.2
 #>   3. Shrinkage: zip (credibility: 0.9, weights: exposure, weighted mean preserved)
 #>      credibility = 0.9; weights = exposure; weighted mean preserved
+#>   4. Rebasing: zip (reference: 1, selection: explicit, original reference relativity: 0.9113921)
+#>      reference = 1; original relativity = 0.9113921; selection = explicit reference; relative level ratios preserved
 
 burn_refined <- refit(ref)
 ```
@@ -521,33 +582,33 @@ After refit, use
 
 
 rating_table(burn_refined)
-#>          level             risk_factor est_burn_refined exposure
-#> 1  (Intercept)             (Intercept)     1.064197e+04       NA
-#> 2            0                 zip_adj     8.000000e-01      207
-#> 3            1                 zip_adj     9.000000e-01    11081
-#> 4            2                 zip_adj     1.000000e+00     7783
-#> 5            3                 zip_adj     1.200000e+00     7588
-#> 6            0                     zip     8.197246e-01      207
-#> 7            1                     zip     9.113921e-01    11081
-#> 8            2                     zip     1.002044e+00     7783
-#> 9            3                     zip     1.180729e+00     7588
-#> 10     [18,23] age_policyholder_smooth     1.991647e+00      586
-#> 11     (23,28] age_policyholder_smooth     1.525996e+00     2204
-#> 12     (28,33] age_policyholder_smooth     1.194587e+00     2790
-#> 13     (33,38] age_policyholder_smooth     1.053848e+00     3021
-#> 14     (38,43] age_policyholder_smooth     1.017313e+00     3089
-#> 15     (43,48] age_policyholder_smooth     9.961032e-01     3041
-#> 16     (48,53] age_policyholder_smooth     9.284442e-01     2978
-#> 17     (53,58] age_policyholder_smooth     8.277635e-01     2186
-#> 18     (58,63] age_policyholder_smooth     7.364565e-01     1974
-#> 19     (63,68] age_policyholder_smooth     7.179164e-01     1973
-#> 20     (68,73] age_policyholder_smooth     7.466678e-01     1558
-#> 21     (73,78] age_policyholder_smooth     7.554871e-01      907
-#> 22     (78,83] age_policyholder_smooth     7.030268e-01      246
-#> 23     (83,88] age_policyholder_smooth     6.061124e-01       93
-#> 24     (88,93] age_policyholder_smooth     4.894076e-01       11
-#> 25     (93,95] age_policyholder_smooth     4.062390e-01        1
-#> 26          bm                      bm     9.977218e-01       NA
+#>                risk_factor       level est_burn_refined exposure
+#> 1              (Intercept) (Intercept)     9699.0109626       NA
+#> 2                  zip_adj           1        0.9000000    11081
+#> 3                  zip_adj           0        0.8000000      207
+#> 4                  zip_adj           2        1.0000000     7783
+#> 5                  zip_adj           3        1.2000000     7588
+#> 6                      zip           1        1.0000000    11081
+#> 7                      zip           0        0.8994204      207
+#> 8                      zip           2        1.0994658     7783
+#> 9                      zip           3        1.2955222     7588
+#> 10 age_policyholder_smooth     [18,23]        1.9916466      586
+#> 11 age_policyholder_smooth     (23,28]        1.5259964     2204
+#> 12 age_policyholder_smooth     (28,33]        1.1945871     2790
+#> 13 age_policyholder_smooth     (33,38]        1.0538485     3021
+#> 14 age_policyholder_smooth     (38,43]        1.0173127     3089
+#> 15 age_policyholder_smooth     (43,48]        0.9961032     3041
+#> 16 age_policyholder_smooth     (48,53]        0.9284442     2978
+#> 17 age_policyholder_smooth     (53,58]        0.8277635     2186
+#> 18 age_policyholder_smooth     (58,63]        0.7364565     1974
+#> 19 age_policyholder_smooth     (63,68]        0.7179164     1973
+#> 20 age_policyholder_smooth     (68,73]        0.7466678     1558
+#> 21 age_policyholder_smooth     (73,78]        0.7554871      907
+#> 22 age_policyholder_smooth     (78,83]        0.7030268      246
+#> 23 age_policyholder_smooth     (83,88]        0.6061124       93
+#> 24 age_policyholder_smooth     (88,93]        0.4894076       11
+#> 25 age_policyholder_smooth     (93,95]        0.4062391        1
+#> 26                      bm          bm        0.9977218       NA
 ```
 
 At this point, the output no longer represents a proposed refinement
@@ -583,29 +644,33 @@ refinement_audit <- audit_refinement(
 #> Warning: Column in `exposure` is already used in model.
 #> Warning in merge.data.frame(out, mapping, by = old_col, all.x = TRUE, sort =
 #> FALSE): column name 'exposure' is duplicated in the result
+#> Warning in merge.data.frame(out, mapping, by = old_col, all.x = TRUE, sort =
+#> FALSE): column name 'exposure' is duplicated in the result
 
 summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Prepared: 2026-08-05 15:22:59 CEST
-#> Refitted: 2026-08-05 15:23:00 CEST
-#> Audited: 2026-08-05 15:23:01 CEST
+#> Prepared: 2026-08-05 16:38:49 CEST
+#> Refitted: 2026-08-05 16:38:51 CEST
+#> Audited: 2026-08-05 16:38:52 CEST
 #> Measure: risk_premium (response)
 #> Exposure: exposure
 #> 
 #> Original formula:
 #>   premium ~ zip + bm + age_policyholder_freq_cat
 #> Refitted formula:
-#>   premium ~ bm + offset(log(zip_shrunk) + log(age_policyholder_freq_cat_smooth))
+#>   premium ~ bm + offset(log(zip_rebased) + log(age_policyholder_freq_cat_smooth))
 #> 
-#> Refinement steps: 3
+#> Refinement steps: 4
 #>   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)
 #>      16 intervals over 18 to 95
 #>   2. Restriction: zip -> zip_adj (4 levels)
-#>      0 = 0.8; 1 = 0.9; 2 = 1.0; 3 = 1.2
+#>      1 = 0.9; 0 = 0.8; 2 = 1.0; 3 = 1.2
 #>   3. Shrinkage: zip (credibility: 0.9, weights: exposure, weighted mean preserved)
 #>      credibility = 0.9; weights = exposure; weighted mean preserved
+#>   4. Rebasing: zip (reference: 1, selection: explicit, original reference relativity: 0.9113921)
+#>      reference = 1; original relativity = 0.9113921; selection = explicit reference; relative level ratios preserved
 #> 
 #> Portfolio effect
 #>   Before: 10445.1
@@ -618,8 +683,8 @@ summary(refinement_audit)
 #>          zip     0  4471.598  8387.981  3916.383    0.8758351
 #>      zip_adj     3  9001.374 12476.259  3474.885    0.3860394
 #>          zip     3  9001.374 12476.259  3474.885    0.3860394
-#>      zip_adj     1 12325.997  9650.927 -2675.069   -0.2170266
-#>          zip     1 12325.997  9650.927 -2675.069   -0.2170266
+#>      zip_adj     1 12325.997  9650.927 -2675.070   -0.2170266
+#>          zip     1 12325.997  9650.927 -2675.070   -0.2170266
 #>           bm    23 10578.429  9073.469 -1504.960   -0.1422669
 #>           bm    22  9628.570  8316.920 -1311.651   -0.1362249
 #>      zip_adj     2  9333.501 10591.602  1258.100    0.1347940
@@ -648,7 +713,7 @@ rating_table(burn_refined) |>
   autoplot()
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-14-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-15-1.png)
 
 ## Model data and rating grids
 
@@ -674,13 +739,13 @@ head(md)
 #> 4       0 0.18904110      0    33  1   2                   [18,25]
 #> 5       0 1.00000000      0    47  6   3                   [18,25]
 #> 6       1 0.06849315   6642    68  1   3                   [18,25]
-#>   pred_nclaims_freq pred_amount_sev   premium zip_adj zip_shrunk
-#> 1        0.26210773        68671.20 17999.251     1.2   1.180729
-#> 2        0.02502713        70854.51  1773.285     1.0   1.002044
-#> 3        0.04883103        70854.51  3459.898     1.0   1.002044
-#> 4        0.04975996        70854.51  3525.718     1.0   1.002044
-#> 5        0.26044368        68671.20 17884.979     1.2   1.180729
-#> 6        0.01802897        68671.20  1238.071     1.2   1.180729
+#>   pred_nclaims_freq pred_amount_sev   premium zip_adj zip_shrunk zip_rebased
+#> 1        0.26210773        68671.20 17999.251     1.2   1.180729    1.295522
+#> 2        0.02502713        70854.51  1773.285     1.0   1.002044    1.099466
+#> 3        0.04883103        70854.51  3459.898     1.0   1.002044    1.099466
+#> 4        0.04975996        70854.51  3525.718     1.0   1.002044    1.099466
+#> 5        0.26044368        68671.20 17884.979     1.2   1.180729    1.295522
+#> 6        0.01802897        68671.20  1238.071     1.2   1.180729    1.295522
 ```
 
 A model point represents a unique observed combination of the
@@ -699,13 +764,13 @@ Observed model-point combinations can be obtained with
 
 grid <- rating_grid(burn_refined)
 head(grid)
-#>   age_policyholder_smooth zip bm count  exposure zip_adj zip_shrunk
-#> 1                 (23,28]   1  1   414 342.57808     0.9  0.9113921
-#> 2                 (23,28]   2  4    12  10.63836     1.0  1.0020445
-#> 3                 (23,28]   3  1   267 235.07397     1.2  1.1807287
-#> 4                 (23,28]   1 18     1   1.00000     0.9  0.9113921
-#> 5                 (23,28]   2 18     1   1.00000     1.0  1.0020445
-#> 6                 (23,28]   3  6    44  40.35890     1.2  1.1807287
+#>   age_policyholder_smooth zip bm count  exposure zip_adj zip_shrunk zip_rebased
+#> 1                 (23,28]   1  1   414 342.57808     0.9  0.9113921    1.000000
+#> 2                 (23,28]   2  4    12  10.63836     1.0  1.0020445    1.099466
+#> 3                 (23,28]   3  1   267 235.07397     1.2  1.1807287    1.295522
+#> 4                 (23,28]   1 18     1   1.00000     0.9  0.9113921    1.000000
+#> 5                 (23,28]   2 18     1   1.00000     1.0  1.0020445    1.099466
+#> 6                 (23,28]   3  6    44  40.35890     1.2  1.1807287    1.295522
 #>   age_policyholder_freq_cat_smooth
 #> 1                         1.525996
 #> 2                         1.525996
@@ -762,35 +827,35 @@ burn_refined <- prepare_refinement(burn_unrestricted) |>
   refit()
 
 rating_table(burn_refined)
-#>          level             risk_factor est_burn_refined exposure
-#> 1  (Intercept)             (Intercept)     1.068539e+04       NA
-#> 2            0                 zip_adj     8.000000e-01      207
-#> 3            1                 zip_adj     9.000000e-01    11081
-#> 4            2                 zip_adj     1.000000e+00     7783
-#> 5            3                 zip_adj     1.200000e+00     7588
-#> 6      [18,23] age_policyholder_smooth     1.991647e+00      586
-#> 7      (23,28] age_policyholder_smooth     1.525996e+00     2204
-#> 8      (28,33] age_policyholder_smooth     1.194587e+00     2790
-#> 9      (33,38] age_policyholder_smooth     1.053848e+00     3021
-#> 10     (38,43] age_policyholder_smooth     1.017313e+00     3089
-#> 11     (43,48] age_policyholder_smooth     9.961032e-01     3041
-#> 12     (48,53] age_policyholder_smooth     9.284442e-01     2978
-#> 13     (53,58] age_policyholder_smooth     8.277635e-01     2186
-#> 14     (58,63] age_policyholder_smooth     7.364565e-01     1974
-#> 15     (63,68] age_policyholder_smooth     7.179164e-01     1973
-#> 16     (68,73] age_policyholder_smooth     7.466678e-01     1558
-#> 17     (73,78] age_policyholder_smooth     7.554871e-01      907
-#> 18     (78,83] age_policyholder_smooth     7.030268e-01      246
-#> 19     (83,88] age_policyholder_smooth     6.061124e-01       93
-#> 20     (88,93] age_policyholder_smooth     4.894076e-01       11
-#> 21     (93,95] age_policyholder_smooth     4.062390e-01        1
-#> 22          bm                      bm     9.977166e-01       NA
+#>                risk_factor       level est_burn_refined exposure
+#> 1              (Intercept) (Intercept)     1.068539e+04       NA
+#> 2                  zip_adj           1     9.000000e-01    11081
+#> 3                  zip_adj           0     8.000000e-01      207
+#> 4                  zip_adj           2     1.000000e+00     7783
+#> 5                  zip_adj           3     1.200000e+00     7588
+#> 6  age_policyholder_smooth     [18,23]     1.991647e+00      586
+#> 7  age_policyholder_smooth     (23,28]     1.525996e+00     2204
+#> 8  age_policyholder_smooth     (28,33]     1.194587e+00     2790
+#> 9  age_policyholder_smooth     (33,38]     1.053848e+00     3021
+#> 10 age_policyholder_smooth     (38,43]     1.017313e+00     3089
+#> 11 age_policyholder_smooth     (43,48]     9.961032e-01     3041
+#> 12 age_policyholder_smooth     (48,53]     9.284442e-01     2978
+#> 13 age_policyholder_smooth     (53,58]     8.277635e-01     2186
+#> 14 age_policyholder_smooth     (58,63]     7.364565e-01     1974
+#> 15 age_policyholder_smooth     (63,68]     7.179164e-01     1973
+#> 16 age_policyholder_smooth     (68,73]     7.466678e-01     1558
+#> 17 age_policyholder_smooth     (73,78]     7.554871e-01      907
+#> 18 age_policyholder_smooth     (78,83]     7.030268e-01      246
+#> 19 age_policyholder_smooth     (83,88]     6.061124e-01       93
+#> 20 age_policyholder_smooth     (88,93]     4.894076e-01       11
+#> 21 age_policyholder_smooth     (93,95]     4.062391e-01        1
+#> 22                      bm          bm     9.977166e-01       NA
 
 rating_table(burn_refined) |>
   autoplot()
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-17-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-18-1.png)
 
 ## Legacy interface
 

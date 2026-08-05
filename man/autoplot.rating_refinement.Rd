@@ -55,8 +55,8 @@ A \code{ggplot2} object.
 \description{
 Visualise one stored step of a \code{rating_refinement} specification before
 fitting the revised GLM with \code{\link[=refit]{refit()}}. The plot compares the original
-fitted tariff effect with the smoothing, restriction, shrinkage or sublevel
-relativity specification produced by the selected step.
+fitted tariff effect with the smoothing, restriction, shrinkage, rebasing or
+sublevel relativity specification produced by the selected step.
 }
 \details{
 Refinement steps are evaluated in their stored order up to and including the
@@ -106,7 +106,8 @@ autoplot(refinement)
 }
 \seealso{
 \code{\link[=prepare_refinement]{prepare_refinement()}}, \code{\link[=add_smoothing]{add_smoothing()}}, \code{\link[=edit_smoothing]{edit_smoothing()}},
-\code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_shrinkage]{add_shrinkage()}}, \code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}
+\code{\link[=add_restriction]{add_restriction()}}, \code{\link[=add_shrinkage]{add_shrinkage()}}, \code{\link[=add_rebasing]{add_rebasing()}},
+\code{\link[=add_relativities]{add_relativities()}}, \code{\link[=refit]{refit()}}
 }
 \author{
 Martin Haringa

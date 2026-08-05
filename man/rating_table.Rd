@@ -11,6 +11,10 @@ rating_table(
   exposure_output = NULL,
   exponentiate = TRUE,
   significance = FALSE,
+  reference_first = TRUE,
+  level_order = c("model", "alphabetical", "estimate_ascending", "estimate_descending"),
+  risk_factor_order = c("model", "alphabetical"),
+  order_model = NULL,
   round_exposure = 0,
   exposure_name = NULL,
   signif_stars = NULL
@@ -40,6 +44,28 @@ on the model scale.}
 \item{significance}{Logical. If \code{TRUE}, add a separate \verb{signif_*} column for
 each model containing significance indicators based on coefficient
 p-values. The corresponding \verb{est_*} columns remain numeric.}
+
+\item{reference_first}{Logical. If \code{TRUE}, place the reference level first
+within each risk factor. For an ordinary GLM, the reference is obtained
+from the fitted factor contrasts. After \code{\link[=add_rebasing]{add_rebasing()}}, the selected
+rebasing level is used.}
+
+\item{level_order}{Character string controlling the order of the remaining
+levels within each risk factor. \code{"model"} retains the fitted model order,
+\code{"alphabetical"} sorts level labels, and \code{"estimate_ascending"} or
+\code{"estimate_descending"} sorts by the fitted effect from \code{order_model}.}
+
+\item{risk_factor_order}{Character string controlling risk-factor order.
+\code{"model"} retains the order in the fitted model; \code{"alphabetical"} sorts
+risk-factor names. The intercept, when present, remains first.}
+
+\item{order_model}{Optional character string naming the supplied model whose
+level order, reference levels and estimates are used for sorting. This is
+mainly relevant when several models are compared. If \code{NULL}, the first
+supplied model is used. Both \code{"frequency"} and \code{"est_frequency"} are
+accepted for a model object named \code{frequency}. If that model does not
+contain a particular risk factor, the first supplied model containing the
+factor provides its order and reference level.}
 
 \item{round_exposure}{Non-negative number of digits used to round exposure.}
 
@@ -99,6 +125,23 @@ Comparing multiple models is useful for assessing changes between
 unrestricted and refined specifications, or between alternative model
 formulations. Comparable response definitions and coefficient scales remain
 the responsibility of the analyst.
+}
+
+\subsection{Row order and reference levels}{
+
+By default, risk factors follow the model formula and levels retain their
+model order, with the reference level placed first. This makes the tariff
+basis visible without inferring the reference from a relativity equal to
+one: several levels can legitimately have the same fitted effect. A
+reference selected with \code{\link[=add_rebasing]{add_rebasing()}} takes precedence over the original
+GLM contrast reference.
+
+Alternative level ordering is useful for specific review tasks.
+Alphabetical order supports lookup and export, while ordering by estimate
+makes the lowest or highest fitted effects easier to identify. With several
+models, \code{order_model} defines which fitted specification provides that
+ordering. \code{\link[=as_gt]{as_gt()}} and \code{\link[=autoplot.rating_table]{autoplot.rating_table()}} retain the row order
+established here.
 }
 
 \subsection{Significance indicators}{
@@ -172,6 +215,14 @@ rating_table(
   freq,
   model_data = df,
   exposure = FALSE
+)
+
+# Keep the reference first and order the other levels by fitted relativity
+rating_table(
+  freq,
+  model_data = df,
+  exposure = "exposure",
+  level_order = "estimate_descending"
 )
 
 }

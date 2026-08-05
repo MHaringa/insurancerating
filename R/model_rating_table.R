@@ -52,6 +52,179 @@
 
 
 #' @keywords internal
+.rating_table_reference_level <- function(model, risk_factor) {
+  steps <- attr(model, "refinement_steps")
+
+  if (!is.null(steps) && length(steps) > 0L) {
+    rebasing_steps <- Filter(function(step) {
+      identical(step$type, "rebasing") &&
+        identical(step$model_variable, risk_factor) &&
+        !is.null(step$reference_level)
+    }, steps)
+
+    if (length(rebasing_steps) > 0L) {
+      return(as.character(
+        rebasing_steps[[length(rebasing_steps)]]$reference_level
+      ))
+    }
+  }
+
+  model_frame <- tryCatch(
+    stats::model.frame(model),
+    error = function(e) NULL
+  )
+  if (!is.null(model_frame) && risk_factor %in% names(model_frame) &&
+      is.factor(model_frame[[risk_factor]])) {
+    contrast_matrix <- tryCatch(
+      stats::contrasts(model_frame[[risk_factor]]),
+      error = function(e) NULL
+    )
+    if (!is.null(contrast_matrix)) {
+      zero_rows <- which(rowSums(abs(contrast_matrix)) == 0)
+      if (length(zero_rows) == 1L) {
+        return(rownames(contrast_matrix)[zero_rows])
+      }
+    }
+  }
+
+  xlevels <- model$xlevels[[risk_factor]]
+  if (!is.null(xlevels) && length(xlevels) > 0L) {
+    return(as.character(xlevels[[1L]]))
+  }
+
+  NULL
+}
+
+
+#' @keywords internal
+.resolve_rating_table_order_model <- function(order_model, model_names) {
+  if (is.null(order_model)) {
+    return(1L)
+  }
+
+  if (!is.character(order_model) || length(order_model) != 1L ||
+      is.na(order_model) || !nzchar(order_model)) {
+    stop(
+      "`order_model` must be NULL or the name of one supplied model.",
+      call. = FALSE
+    )
+  }
+
+  requested <- sub("^est_", "", order_model)
+  index <- match(requested, model_names)
+  if (is.na(index)) {
+    stop(
+      "Model `", order_model, "` supplied through `order_model` was not found. ",
+      "Choose one of: ", paste(model_names, collapse = ", "), ".",
+      call. = FALSE
+    )
+  }
+
+  index
+}
+
+
+#' @keywords internal
+.order_rating_table <- function(data, model_tables, models, model_names,
+                                reference_first, level_order,
+                                risk_factor_order, order_model_index) {
+  if (nrow(data) == 0L) {
+    return(data)
+  }
+
+  data$risk_factor <- as.character(data$risk_factor)
+  data$level <- as.character(data$level)
+
+  selected_table <- model_tables[[order_model_index]]
+  selected_risk_factors <- unique(as.character(selected_table$risk_factor))
+  all_risk_factors <- unique(data$risk_factor)
+
+  if (identical(risk_factor_order, "alphabetical")) {
+    non_intercept <- sort(setdiff(all_risk_factors, "(Intercept)"))
+    ordered_risk_factors <- c(
+      intersect("(Intercept)", all_risk_factors),
+      non_intercept
+    )
+  } else {
+    ordered_risk_factors <- unique(c(selected_risk_factors, all_risk_factors))
+    if ("(Intercept)" %in% ordered_risk_factors) {
+      ordered_risk_factors <- c(
+        "(Intercept)",
+        setdiff(ordered_risk_factors, "(Intercept)")
+      )
+    }
+  }
+
+  reference_levels <- stats::setNames(
+    rep(NA_character_, length(ordered_risk_factors)),
+    ordered_risk_factors
+  )
+  ordered_rows <- integer()
+
+  for (risk_factor in ordered_risk_factors) {
+    rows <- which(data$risk_factor == risk_factor)
+    if (length(rows) == 0L) {
+      next
+    }
+
+    current_levels <- data$level[rows]
+    source_model_index <- order_model_index
+    if (!risk_factor %in% selected_table$risk_factor) {
+      containing_models <- which(vapply(model_tables, function(table) {
+        risk_factor %in% table$risk_factor
+      }, logical(1)))
+      if (length(containing_models) > 0L) {
+        source_model_index <- containing_models[[1L]]
+      }
+    }
+    source_table <- model_tables[[source_model_index]]
+    model_levels <- as.character(
+      source_table$level[source_table$risk_factor == risk_factor]
+    )
+    model_levels <- unique(c(model_levels, current_levels))
+
+    if (identical(level_order, "alphabetical")) {
+      level_sequence <- sort(unique(current_levels))
+    } else if (level_order %in%
+               c("estimate_ascending", "estimate_descending")) {
+      decreasing <- identical(level_order, "estimate_descending")
+      estimate_column <- paste0("est_", model_names[[source_model_index]])
+      estimates <- data[[estimate_column]][rows]
+      sort_values <- if (decreasing) -estimates else estimates
+      local_order <- order(sort_values, seq_along(rows), na.last = TRUE)
+      level_sequence <- current_levels[local_order]
+    } else {
+      level_sequence <- model_levels
+    }
+
+    reference_level <- .rating_table_reference_level(
+      models[[source_model_index]],
+      risk_factor
+    )
+    if (!is.null(reference_level) && reference_level %in% current_levels) {
+      reference_levels[[risk_factor]] <- reference_level
+      if (isTRUE(reference_first)) {
+        level_sequence <- c(
+          reference_level,
+          setdiff(level_sequence, reference_level)
+        )
+      }
+    }
+
+    row_order <- match(level_sequence, current_levels)
+    row_order <- row_order[!is.na(row_order)]
+    remaining <- setdiff(seq_along(rows), row_order)
+    ordered_rows <- c(ordered_rows, rows[c(row_order, remaining)])
+  }
+
+  out <- data[ordered_rows, , drop = FALSE]
+  rownames(out) <- NULL
+  attr(out, "reference_levels") <- reference_levels[!is.na(reference_levels)]
+  out
+}
+
+
+#' @keywords internal
 .get_restriction_map <- function(model) {
   out <- attr(model, "restriction_map")
   if (is.null(out)) {
@@ -679,6 +852,24 @@
 #' @param significance Logical. If `TRUE`, add a separate `signif_*` column for
 #'   each model containing significance indicators based on coefficient
 #'   p-values. The corresponding `est_*` columns remain numeric.
+#' @param reference_first Logical. If `TRUE`, place the reference level first
+#'   within each risk factor. For an ordinary GLM, the reference is obtained
+#'   from the fitted factor contrasts. After [add_rebasing()], the selected
+#'   rebasing level is used.
+#' @param level_order Character string controlling the order of the remaining
+#'   levels within each risk factor. `"model"` retains the fitted model order,
+#'   `"alphabetical"` sorts level labels, and `"estimate_ascending"` or
+#'   `"estimate_descending"` sorts by the fitted effect from `order_model`.
+#' @param risk_factor_order Character string controlling risk-factor order.
+#'   `"model"` retains the order in the fitted model; `"alphabetical"` sorts
+#'   risk-factor names. The intercept, when present, remains first.
+#' @param order_model Optional character string naming the supplied model whose
+#'   level order, reference levels and estimates are used for sorting. This is
+#'   mainly relevant when several models are compared. If `NULL`, the first
+#'   supplied model is used. Both `"frequency"` and `"est_frequency"` are
+#'   accepted for a model object named `frequency`. If that model does not
+#'   contain a particular risk factor, the first supplied model containing the
+#'   factor provides its order and reference level.
 #' @param round_exposure Non-negative number of digits used to round exposure.
 #' @param exposure_name Deprecated. Use `exposure_output` instead.
 #' @param signif_stars Deprecated. Use `significance` instead.
@@ -712,6 +903,22 @@
 #' unrestricted and refined specifications, or between alternative model
 #' formulations. Comparable response definitions and coefficient scales remain
 #' the responsibility of the analyst.
+#'
+#' ## Row order and reference levels
+#'
+#' By default, risk factors follow the model formula and levels retain their
+#' model order, with the reference level placed first. This makes the tariff
+#' basis visible without inferring the reference from a relativity equal to
+#' one: several levels can legitimately have the same fitted effect. A
+#' reference selected with [add_rebasing()] takes precedence over the original
+#' GLM contrast reference.
+#'
+#' Alternative level ordering is useful for specific review tasks.
+#' Alphabetical order supports lookup and export, while ordering by estimate
+#' makes the lowest or highest fitted effects easier to identify. With several
+#' models, `order_model` defines which fitted specification provides that
+#' ordering. [as_gt()] and [autoplot.rating_table()] retain the row order
+#' established here.
 #'
 #' ## Significance indicators
 #'
@@ -811,10 +1018,25 @@
 #'   exposure = FALSE
 #' )
 #'
+#' # Keep the reference first and order the other levels by fitted relativity
+#' rating_table(
+#'   freq,
+#'   model_data = df,
+#'   exposure = "exposure",
+#'   level_order = "estimate_descending"
+#' )
+#'
 #' @export
 rating_table <- function(..., model_data = NULL, exposure = TRUE,
                          exposure_output = NULL,
                          exponentiate = TRUE, significance = FALSE,
+                         reference_first = TRUE,
+                         level_order = c(
+                           "model", "alphabetical",
+                           "estimate_ascending", "estimate_descending"
+                         ),
+                         risk_factor_order = c("model", "alphabetical"),
+                         order_model = NULL,
                          round_exposure = 0, exposure_name = NULL,
                          signif_stars = NULL) {
 
@@ -850,6 +1072,12 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
   if (!is.logical(significance) || length(significance) != 1 || is.na(significance)) {
     stop("'significance' must be TRUE or FALSE.", call. = FALSE)
   }
+  if (!is.logical(reference_first) || length(reference_first) != 1L ||
+      is.na(reference_first)) {
+    stop("`reference_first` must be TRUE or FALSE.", call. = FALSE)
+  }
+  level_order <- match.arg(level_order)
+  risk_factor_order <- match.arg(risk_factor_order)
 
   if (length(models) == 0) {
     stop("At least one model must be supplied.", call. = FALSE)
@@ -884,6 +1112,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
   }
 
   cols <- .rating_table_model_names(models, mc)
+  order_model_index <- .resolve_rating_table_order_model(order_model, cols)
 
   rf_list <- vector("list", length(models))
   exposure_out_nm <- NULL
@@ -945,42 +1174,17 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     rf_fj <- rf_fj[, !(names(rf_fj) %in% drop_cols), drop = FALSE]
   }
 
-  model_data_use <- if (!is.null(model_data)) {
-    as.data.frame(model_data)
-  } else if (!is.null(models[[1]]$data)) {
-    as.data.frame(models[[1]]$data)
-  } else {
-    NULL
-  }
-
-  if (!is.null(model_data_use)) {
-    lst_order <- lapply(names(model_data_use), function(x) {
-      attributes(model_data_use[[x]])$xoriginal
-    })
-    names(lst_order) <- names(model_data_use)
-    lst_order <- lst_order[lengths(lst_order) != 0]
-
-    if (length(lst_order) > 0) {
-      df_order <- utils::stack(lst_order)
-      names(df_order) <- c("level", "risk_factor")
-      df_order$risk_factor <- as.character(df_order$risk_factor)
-
-      df_order <- df_order[df_order$risk_factor %in% unique(rf_fj$risk_factor), , drop = FALSE]
-      rf_fj$risk_factor <- as.character(rf_fj$risk_factor)
-
-      uit <- dplyr::full_join(df_order, rf_fj, by = c("risk_factor", "level"))
-      rf_fj <- uit[order(match(uit$risk_factor, df_order$risk_factor)), , drop = FALSE]
-      rownames(rf_fj) <- NULL
-
-      # Put intercept first
-      if ("(Intercept)" %in% rf_fj$risk_factor) {
-        intercept_ix <- which(rf_fj$risk_factor == "(Intercept)")
-        rf_fj <- rf_fj[c(intercept_ix, setdiff(seq_len(nrow(rf_fj)),
-                                               intercept_ix)), , drop = FALSE]
-        rownames(rf_fj) <- NULL
-      }
-    }
-  }
+  rf_fj <- .order_rating_table(
+    data = rf_fj,
+    model_tables = rf_list,
+    models = models,
+    model_names = cols,
+    reference_first = reference_first,
+    level_order = level_order,
+    risk_factor_order = risk_factor_order,
+    order_model_index = order_model_index
+  )
+  reference_levels <- attr(rf_fj, "reference_levels", exact = TRUE)
 
   rf_fj_stars <- NULL
   signif_levels <- NULL
@@ -1014,17 +1218,29 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     model_data = model_data_name_out,
     exponentiate = exponentiate,
     significance = significance,
-    signif_levels = signif_levels
+    signif_levels = signif_levels,
+    reference_levels = reference_levels,
+    reference_first = reference_first,
+    level_order = level_order,
+    risk_factor_order = risk_factor_order,
+    order_model = cols[[order_model_index]]
   )
 }
 
 .rating_table_metadata_names <- c(
   "df_stars", "models", "exposure", "model_data", "expon",
-  "significance", "signif_stars", "signif_levels", "observed_experience"
+  "significance", "signif_stars", "signif_levels", "observed_experience",
+  "reference_levels", "reference_first", "level_order",
+  "risk_factor_order", "order_model"
 )
 
 .new_rating_table <- function(data, df_stars, models, exposure, model_data,
-                              exponentiate, significance, signif_levels) {
+                              exponentiate, significance, signif_levels,
+                              reference_levels = NULL,
+                              reference_first = TRUE,
+                              level_order = "model",
+                              risk_factor_order = "model",
+                              order_model = NULL) {
   out <- as.data.frame(data)
   attr(out, "df_stars") <- df_stars
   attr(out, "models") <- models
@@ -1035,6 +1251,11 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
   attr(out, "signif_stars") <- significance
   attr(out, "signif_levels") <- signif_levels
   attr(out, "observed_experience") <- NULL
+  attr(out, "reference_levels") <- reference_levels
+  attr(out, "reference_first") <- reference_first
+  attr(out, "level_order") <- level_order
+  attr(out, "risk_factor_order") <- risk_factor_order
+  attr(out, "order_model") <- order_model
   class(out) <- c("rating_table", "riskfactor", "data.frame")
   out
 }

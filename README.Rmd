@@ -169,15 +169,18 @@ prepare_refinement(model) |>
   add_restriction(...) |>
   add_shrinkage(...) |>
   add_relativities(...) |>
+  add_rebasing(...) |>
   refit()
 
 ```
 
-Refinement records smoothing, restrictions, shrinkage or sublevel relativities
-explicitly before the model is refitted. Shrinkage reduces differences between
-categorical relativities while preserving their selected weighted level. These
-adjustments should be supported by the available experience, tariff
-interpretation or documented expert judgement.
+Refinement records smoothing, restrictions, shrinkage, sublevel relativities
+and rebasing explicitly before the model is refitted. Shrinkage reduces
+differences between categorical relativities while preserving their selected
+weighted level. Rebasing changes which resulting tariff level equals 1 without
+changing the ratios between levels. These adjustments should be supported by
+the available experience, tariff interpretation or documented expert
+judgement.
 
 
 ### Model structure

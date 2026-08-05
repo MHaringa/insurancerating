@@ -67,6 +67,12 @@ Kaas, Rob & Goovaerts, Marc & Dhaene, Jan & Denuit, Michel. (2008).
 Modern Actuarial Risk Theory: Using R.
 [doi:10.1007/978-3-540-70998-5](https://doi.org/10.1007/978-3-540-70998-5)
 
+## See also
+
+[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)
+for rescaling current tariff relativities within a prepared refinement
+workflow after a model has been fitted.
+
 ## Author
 
 Martin Haringa

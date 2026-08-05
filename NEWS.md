@@ -2,6 +2,18 @@
 
 ## Changes since 0.8.1
 
+- `rating_table()` now places the fitted reference level first within each risk
+  factor by default, including a reference selected with `add_rebasing()`.
+  Remaining levels can retain model order, be sorted alphabetically, or be
+  ordered by fitted effect. Risk factors can retain formula order or be sorted
+  alphabetically; comparisons with several models can select the model that
+  determines the ordering. The resulting order is retained by `as_gt()` and
+  `autoplot()`.
+- `add_rebasing()` can rescale the current relativities of a categorical tariff
+  factor so that an explicit reference level equals 1. When no level is
+  supplied, the level with the largest portfolio weight is selected. Rebasing
+  preserves every ratio between factor levels and can be applied after
+  restrictions, shrinkage or sublevel relativities.
 - `add_shrinkage()` can reduce differences between categorical tariff
   relativities before refitting. Relativities are blended with a weighted
   centre on the log scale and rescaled to preserve their weighted arithmetic
