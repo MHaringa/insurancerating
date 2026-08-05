@@ -32,7 +32,7 @@ add_restriction(
 
   Data frame with exactly two columns. The first column must have the
   same name as the risk factor to restrict and contains the levels to
-  adjust. This can also be the `split_variable` from an earlier
+  adjust. This can also be the `output_variable` from an earlier
   [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
   step. The second column contains the replacement relativities. Levels
   that are not supplied are fixed at their current effective
@@ -142,7 +142,7 @@ changed.
 
 ### Restricting a factor created by add_relativities()
 
-A `split_variable` introduced by an earlier
+An `output_variable` introduced by an earlier
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
 step is already part of the ordered refinement specification. It is
 therefore not treated as a new external risk factor and does not require
@@ -151,7 +151,7 @@ preceding relativity step from its stored metadata and replaces the
 corresponding derived tariff effect during
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
 
-When only one level of such a split variable is supplied, that level
+When only one level of such a refined variable is supplied, that level
 receives the new relativity and every other level is fixed at the
 relativity produced by
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).

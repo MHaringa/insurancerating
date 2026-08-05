@@ -77,7 +77,7 @@ as_gt(
 - x:
 
   A supported object to convert, such as a `threshold_assessment`,
-  `rating_table` or `bootstrap_coefficients` object.
+  `rating_table`, `bootstrap_coefficients` or `refinement_audit` object.
 
 - ...:
 

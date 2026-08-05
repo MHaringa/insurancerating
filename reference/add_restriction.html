@@ -77,7 +77,7 @@ refinement specification instead.</p></dd>
 <dt id="arg-restrictions">restrictions<a class="anchor" aria-label="anchor" href="#arg-restrictions"></a></dt>
 <dd><p>Data frame with exactly two columns. The first column
 must have the same name as the risk factor to restrict and contains the
-levels to adjust. This can also be the <code>split_variable</code> from an earlier
+levels to adjust. This can also be the <code>output_variable</code> from an earlier
 <code><a href="add_relativities.html">add_relativities()</a></code> step. The second column contains the replacement
 relativities. Levels that are not supplied are fixed at their current
 effective relativities.</p></dd>
@@ -177,13 +177,13 @@ changed.</p>
 <h3 id="restricting-a-factor-created-by-add-relativities-">Restricting a factor created by add_relativities()<a class="anchor" aria-label="anchor" href="#restricting-a-factor-created-by-add-relativities-"></a></h3>
 
 
-<p>A <code>split_variable</code> introduced by an earlier <code><a href="add_relativities.html">add_relativities()</a></code> step is
+<p>An <code>output_variable</code> introduced by an earlier <code><a href="add_relativities.html">add_relativities()</a></code> step is
 already part of the ordered refinement specification. It is therefore not
 treated as a new external risk factor and does not require
 <code>allow_new_risk_factors = TRUE</code>. <code>add_restriction()</code> identifies the preceding
 relativity step from its stored metadata and replaces the corresponding
 derived tariff effect during <code><a href="refit.html">refit()</a></code>.</p>
-<p>When only one level of such a split variable is supplied, that level receives
+<p>When only one level of such a refined variable is supplied, that level receives
 the new relativity and every other level is fixed at the relativity produced
 by <code><a href="add_relativities.html">add_relativities()</a></code>. Mathematically, the resulting restriction therefore
 covers all current levels. Only the explicitly supplied level changes. This

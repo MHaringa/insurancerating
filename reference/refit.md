@@ -96,7 +96,8 @@ earlier sequence of refinement steps.
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md),
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md),
-[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md),
+[`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
 
 ## Author
 

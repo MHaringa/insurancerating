@@ -80,6 +80,8 @@ relativities.
   : Define sublevel relativity specifications
 - [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
   : Fit a prepared refinement specification
+- [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
+  : Audit the effect of a fitted model refinement
 
 ## Validation
 

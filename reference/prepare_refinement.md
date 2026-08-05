@@ -85,6 +85,7 @@ restriction steps for further editing.
 
 ## See also
 
+[`summary.rating_refinement()`](https://mharinga.github.io/insurancerating/reference/summary.rating_refinement.md),
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md),
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
@@ -115,6 +116,21 @@ refinement <- prepare_refinement(model, data = portfolio) |>
     risk_class = "B",
     risk_class_restricted = 1.15
   ))
+
+summary(refinement)
+#> Refinement specification
+#> 
+#> Package: insurancerating 0.8.1.9000
+#> Created: 2026-08-05 09:51:28 UTC
+#> Observations: 6
+#> Family: poisson (log link)
+#> Base formula:
+#>   claims ~ risk_class + offset(log(exposure))
+#> Offset: log(exposure)
+#> 
+#> Refinement steps: 1
+#>   1. Restriction: risk_class -> risk_class_restricted (2 levels)
+#>      A = 1.00; B = 1.15
 
 fitted_model <- refit(refinement)
 

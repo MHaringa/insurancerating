@@ -4,6 +4,16 @@
 
 ### Changes since 0.8.1
 
+- [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
+  now provides a reproducible comparison between the unrestricted and
+  refined GLM on common observed model points. It records the package
+  version, formulas and ordered refinement steps, and reports the
+  portfolio and exposure-weighted level effects before and after
+  refinement. [`summary()`](https://rdrr.io/r/base/summary.html) on a
+  pre-refit `rating_refinement` object now gives a structured review of
+  the proposed specification, while
+  [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+  formats the fitted audit for reporting.
 - [`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md)
   now assesses GLM coefficient stability by resampling the estimation
   portfolio rows and refitting the model. Individual failed fits are
@@ -43,7 +53,10 @@
   now validates sublevels against the observed `split_variable` and
   parent categories against `model_variable` before storing a refinement
   step. Closely matching observed values are suggested for likely
-  spelling or spacing errors.
+  spelling or spacing errors. The resulting hybrid tariff factor is now
+  named with `output_variable`; its default is the model variable
+  followed by `_refined`, while application-specific names such as
+  `sbi_tariff_segment` can be supplied explicitly.
 - [`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
   and
   [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
