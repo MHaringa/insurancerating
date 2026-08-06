@@ -154,8 +154,9 @@ therefore kept together in a compact format suitable for a tariff note,
 model review or technical appendix.
 
 Risk-factor and level order are taken directly from \code{\link[=rating_table]{rating_table()}}. Use
-its \code{risk_factor_order}, \code{level_order}, \code{reference_first} and \code{order_model}
-arguments to determine the order before formatting the table.
+its \code{risk_factor_order}, \code{level_order}, \code{numeric_level_order},
+\code{reference_first} and \code{order_model} arguments to determine the order before
+formatting the table.
 
 With \code{significance = TRUE}, significance stars are appended to the fitted
 effects and the significance levels are shown below the table. This requires

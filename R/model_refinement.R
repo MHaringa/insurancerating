@@ -4841,6 +4841,19 @@ add_relativities <- function(model,
 #' effects remain unchanged while the overall expected premium level is
 #' recalibrated to the supplied model data.
 #'
+#' In practical actuarial work, `intercept_only = TRUE` is generally suitable
+#' for a controlled actuarial or commercial refinement of an accepted tariff
+#' structure. Examples include a small manual restriction, a limited curve
+#' adjustment or a final calibration in which the relativities of unaffected
+#' risk factors should remain unchanged.
+#'
+#' Use `intercept_only = FALSE` when the refinement forms part of substantive
+#' model development. The remaining free model terms are then estimated again,
+#' allowing the GLM to account for dependence between risk factors and find a
+#' new joint statistical optimum conditional on the fixed refinement steps.
+#' Coefficients of risk factors that were not directly refined may therefore
+#' also change.
+#'
 #' ## Model result and further refinement
 #'
 #' Printing the returned model first shows the original and refitted formulas,

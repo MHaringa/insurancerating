@@ -125,8 +125,61 @@
 
 
 #' @keywords internal
+.parse_rating_table_numeric_levels <- function(levels) {
+  levels <- trimws(as.character(levels))
+  number_pattern <- paste0(
+    "^[+-]?(?:",
+    "(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?",
+    "|Inf)$"
+  )
+
+  parse_number <- function(value) {
+    value <- trimws(value)
+    if (!grepl(number_pattern, value, perl = TRUE)) {
+      return(NA_real_)
+    }
+    suppressWarnings(as.numeric(value))
+  }
+
+  lower <- upper <- rep(NA_real_, length(levels))
+
+  for (i in seq_along(levels)) {
+    level <- levels[[i]]
+    first <- substr(level, 1L, 1L)
+    last <- substr(level, nchar(level), nchar(level))
+    is_interval <- first %in% c("(", "[") && last %in% c(")", "]")
+
+    if (is_interval) {
+      inside <- substr(level, 2L, nchar(level) - 1L)
+      bounds <- strsplit(inside, ",", fixed = TRUE)[[1L]]
+      if (length(bounds) != 2L) {
+        return(NULL)
+      }
+      lower[[i]] <- parse_number(bounds[[1L]])
+      upper[[i]] <- parse_number(bounds[[2L]])
+    } else {
+      value <- parse_number(level)
+      lower[[i]] <- value
+      upper[[i]] <- value
+    }
+  }
+
+  if (anyNA(lower) || anyNA(upper) || any(lower > upper)) {
+    return(NULL)
+  }
+
+  data.frame(
+    lower = lower,
+    upper = upper,
+    original_order = seq_along(levels)
+  )
+}
+
+
+#' @keywords internal
 .order_rating_table <- function(data, model_tables, models, model_names,
                                 reference_first, level_order,
+                                numeric_level_order,
                                 risk_factor_order, order_model_index) {
   if (nrow(data) == 0L) {
     return(data)
@@ -195,6 +248,17 @@
       level_sequence <- current_levels[local_order]
     } else {
       level_sequence <- model_levels
+    }
+
+    if (identical(numeric_level_order, "ascending")) {
+      numeric_levels <- .parse_rating_table_numeric_levels(current_levels)
+      if (!is.null(numeric_levels)) {
+        numeric_order <- with(
+          numeric_levels,
+          order(lower, upper, original_order)
+        )
+        level_sequence <- current_levels[numeric_order]
+      }
     }
 
     reference_level <- .rating_table_reference_level(
@@ -860,6 +924,13 @@
 #'   levels within each risk factor. `"model"` retains the fitted model order,
 #'   `"alphabetical"` sorts level labels, and `"estimate_ascending"` or
 #'   `"estimate_descending"` sorts by the fitted effect from `order_model`.
+#' @param numeric_level_order Character string controlling levels that are all
+#'   recognisable as numbers or numeric intervals. `"ascending"` orders them by
+#'   numeric value, or by the lower and then upper interval boundary, regardless
+#'   of `level_order`. This correctly orders labels such as `(100,200]` and
+#'   `(1000,2000]`. `"as_specified"` leaves these levels to `level_order`.
+#'   When `reference_first = TRUE`, the reference level remains first even when
+#'   it is not the numerically smallest level.
 #' @param risk_factor_order Character string controlling risk-factor order.
 #'   `"model"` retains the order in the fitted model; `"alphabetical"` sorts
 #'   risk-factor names. The intercept, when present, remains first.
@@ -919,6 +990,14 @@
 #' models, `order_model` defines which fitted specification provides that
 #' ordering. [as_gt()] and [autoplot.rating_table()] retain the row order
 #' established here.
+#'
+#' Numeric labels and intervals receive separate treatment because alphabetical
+#' ordering can give an incorrect tariff sequence. With the default
+#' `numeric_level_order = "ascending"`, a risk factor is sorted numerically only
+#' when every displayed level is either a complete number or a valid interval
+#' with two numeric boundaries. Mixed labels such as `"Industry 1"` remain
+#' categorical. Set `numeric_level_order = "as_specified"` when the fitted model
+#' order or another `level_order` should be retained deliberately.
 #'
 #' ## Significance indicators
 #'
@@ -1035,6 +1114,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
                            "model", "alphabetical",
                            "estimate_ascending", "estimate_descending"
                          ),
+                         numeric_level_order = c("ascending", "as_specified"),
                          risk_factor_order = c("model", "alphabetical"),
                          order_model = NULL,
                          round_exposure = 0, exposure_name = NULL,
@@ -1077,6 +1157,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     stop("`reference_first` must be TRUE or FALSE.", call. = FALSE)
   }
   level_order <- match.arg(level_order)
+  numeric_level_order <- match.arg(numeric_level_order)
   risk_factor_order <- match.arg(risk_factor_order)
 
   if (length(models) == 0) {
@@ -1181,6 +1262,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     model_names = cols,
     reference_first = reference_first,
     level_order = level_order,
+    numeric_level_order = numeric_level_order,
     risk_factor_order = risk_factor_order,
     order_model_index = order_model_index
   )
@@ -1222,6 +1304,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     reference_levels = reference_levels,
     reference_first = reference_first,
     level_order = level_order,
+    numeric_level_order = numeric_level_order,
     risk_factor_order = risk_factor_order,
     order_model = cols[[order_model_index]]
   )
@@ -1231,7 +1314,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
   "df_stars", "models", "exposure", "model_data", "expon",
   "significance", "signif_stars", "signif_levels", "observed_experience",
   "reference_levels", "reference_first", "level_order",
-  "risk_factor_order", "order_model"
+  "numeric_level_order", "risk_factor_order", "order_model"
 )
 
 .new_rating_table <- function(data, df_stars, models, exposure, model_data,
@@ -1239,6 +1322,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
                               reference_levels = NULL,
                               reference_first = TRUE,
                               level_order = "model",
+                              numeric_level_order = "ascending",
                               risk_factor_order = "model",
                               order_model = NULL) {
   out <- as.data.frame(data)
@@ -1254,6 +1338,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
   attr(out, "reference_levels") <- reference_levels
   attr(out, "reference_first") <- reference_first
   attr(out, "level_order") <- level_order
+  attr(out, "numeric_level_order") <- numeric_level_order
   attr(out, "risk_factor_order") <- risk_factor_order
   attr(out, "order_model") <- order_model
   class(out) <- c("rating_table", "riskfactor", "data.frame")

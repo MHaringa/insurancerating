@@ -372,7 +372,7 @@ summary(ref)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-05 16:38:49 CEST
+#> Created: 2026-08-06 10:37:23 CEST
 #> Observations: 30,000
 #> Family: Gamma (log link)
 #> Base formula:
@@ -435,7 +435,7 @@ summary(ref)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-05 16:38:49 CEST
+#> Created: 2026-08-06 10:37:23 CEST
 #> Observations: 30,000
 #> Family: Gamma (log link)
 #> Base formula:
@@ -547,7 +547,7 @@ summary(ref)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-05 16:38:49 CEST
+#> Created: 2026-08-06 10:37:23 CEST
 #> Observations: 30,000
 #> Family: Gamma (log link)
 #> Base formula:
@@ -584,8 +584,8 @@ After refit, use
 rating_table(burn_refined)
 #>                risk_factor       level est_burn_refined exposure
 #> 1              (Intercept) (Intercept)     9699.0109626       NA
-#> 2                  zip_adj           1        0.9000000    11081
-#> 3                  zip_adj           0        0.8000000      207
+#> 2                  zip_adj           0        0.8000000      207
+#> 3                  zip_adj           1        0.9000000    11081
 #> 4                  zip_adj           2        1.0000000     7783
 #> 5                  zip_adj           3        1.2000000     7588
 #> 6                      zip           1        1.0000000    11081
@@ -651,9 +651,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Prepared: 2026-08-05 16:38:49 CEST
-#> Refitted: 2026-08-05 16:38:51 CEST
-#> Audited: 2026-08-05 16:38:52 CEST
+#> Prepared: 2026-08-06 10:37:23 CEST
+#> Refitted: 2026-08-06 10:37:25 CEST
+#> Audited: 2026-08-06 10:37:26 CEST
 #> Measure: risk_premium (response)
 #> Exposure: exposure
 #> 
@@ -829,8 +829,8 @@ burn_refined <- prepare_refinement(burn_unrestricted) |>
 rating_table(burn_refined)
 #>                risk_factor       level est_burn_refined exposure
 #> 1              (Intercept) (Intercept)     1.068539e+04       NA
-#> 2                  zip_adj           1     9.000000e-01    11081
-#> 3                  zip_adj           0     8.000000e-01      207
+#> 2                  zip_adj           0     8.000000e-01      207
+#> 3                  zip_adj           1     9.000000e-01    11081
 #> 4                  zip_adj           2     1.000000e+00     7783
 #> 5                  zip_adj           3     1.200000e+00     7588
 #> 6  age_policyholder_smooth     [18,23]     1.991647e+00      586

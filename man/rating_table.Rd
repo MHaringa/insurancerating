@@ -13,6 +13,7 @@ rating_table(
   significance = FALSE,
   reference_first = TRUE,
   level_order = c("model", "alphabetical", "estimate_ascending", "estimate_descending"),
+  numeric_level_order = c("ascending", "as_specified"),
   risk_factor_order = c("model", "alphabetical"),
   order_model = NULL,
   round_exposure = 0,
@@ -54,6 +55,14 @@ rebasing level is used.}
 levels within each risk factor. \code{"model"} retains the fitted model order,
 \code{"alphabetical"} sorts level labels, and \code{"estimate_ascending"} or
 \code{"estimate_descending"} sorts by the fitted effect from \code{order_model}.}
+
+\item{numeric_level_order}{Character string controlling levels that are all
+recognisable as numbers or numeric intervals. \code{"ascending"} orders them by
+numeric value, or by the lower and then upper interval boundary, regardless
+of \code{level_order}. This correctly orders labels such as \verb{(100,200]} and
+\verb{(1000,2000]}. \code{"as_specified"} leaves these levels to \code{level_order}.
+When \code{reference_first = TRUE}, the reference level remains first even when
+it is not the numerically smallest level.}
 
 \item{risk_factor_order}{Character string controlling risk-factor order.
 \code{"model"} retains the order in the fitted model; \code{"alphabetical"} sorts
@@ -142,6 +151,14 @@ makes the lowest or highest fitted effects easier to identify. With several
 models, \code{order_model} defines which fitted specification provides that
 ordering. \code{\link[=as_gt]{as_gt()}} and \code{\link[=autoplot.rating_table]{autoplot.rating_table()}} retain the row order
 established here.
+
+Numeric labels and intervals receive separate treatment because alphabetical
+ordering can give an incorrect tariff sequence. With the default
+\code{numeric_level_order = "ascending"}, a risk factor is sorted numerically only
+when every displayed level is either a complete number or a valid interval
+with two numeric boundaries. Mixed labels such as \code{"Industry 1"} remain
+categorical. Set \code{numeric_level_order = "as_specified"} when the fitted model
+order or another \code{level_order} should be retained deliberately.
 }
 
 \subsection{Significance indicators}{

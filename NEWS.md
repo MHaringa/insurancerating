@@ -8,7 +8,9 @@
   ordered by fitted effect. Risk factors can retain formula order or be sorted
   alphabetically; comparisons with several models can select the model that
   determines the ordering. The resulting order is retained by `as_gt()` and
-  `autoplot()`.
+  `autoplot()`. Pure numeric levels and numeric intervals are ordered from low
+  to high by default, while `numeric_level_order = "as_specified"` retains the
+  explicitly selected level order.
 - `add_rebasing()` can rescale the current relativities of a categorical tariff
   factor so that an explicit reference level equals 1. When no level is
   supplied, the level with the largest portfolio weight is selected. Rebasing

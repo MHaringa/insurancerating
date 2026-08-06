@@ -14,8 +14,9 @@
 #' model review or technical appendix.
 #'
 #' Risk-factor and level order are taken directly from [rating_table()]. Use
-#' its `risk_factor_order`, `level_order`, `reference_first` and `order_model`
-#' arguments to determine the order before formatting the table.
+#' its `risk_factor_order`, `level_order`, `numeric_level_order`,
+#' `reference_first` and `order_model` arguments to determine the order before
+#' formatting the table.
 #'
 #' With `significance = TRUE`, significance stars are appended to the fitted
 #' effects and the significance levels are shown below the table. This requires

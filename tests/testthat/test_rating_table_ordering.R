@@ -24,6 +24,18 @@ rating_ordering_model <- function() {
 }
 
 
+numeric_level_ordering_data <- function() {
+  data.frame(
+    claims = c(1, 2, 3, 4, 2, 3, 4, 5),
+    exposure = rep(1, 8),
+    insured_amount_band = factor(
+      rep(c("[0,100]", "(100,200]", "(200,1000]", "(1000,2000]"), 2),
+      levels = c("[0,100]", "(1000,2000]", "(100,200]", "(200,1000]")
+    )
+  )
+}
+
+
 testthat::test_that("rating_table places fitted reference levels first", {
   model <- rating_ordering_model()
   table <- rating_table(model, exposure = FALSE)
@@ -82,6 +94,126 @@ testthat::test_that("rating_table supports explicit level ordering", {
     "Retail"
   )
   testthat::expect_true(all(diff(non_reference) <= 0))
+})
+
+
+testthat::test_that("numeric intervals are ordered by their boundaries", {
+  portfolio <- numeric_level_ordering_data()
+  model <- glm(
+    claims ~ insured_amount_band + offset(log(exposure)),
+    family = poisson(),
+    data = portfolio
+  )
+
+  table <- rating_table(
+    model,
+    exposure = FALSE,
+    reference_first = FALSE,
+    level_order = "alphabetical"
+  )
+
+  testthat::expect_identical(
+    table$level[table$risk_factor == "insured_amount_band"],
+    c("[0,100]", "(100,200]", "(200,1000]", "(1000,2000]")
+  )
+  testthat::expect_identical(attr(table, "numeric_level_order"), "ascending")
+})
+
+
+testthat::test_that("numeric character levels are ordered numerically", {
+  portfolio <- data.frame(
+    claims = c(1, 2, 3, 2, 3, 4),
+    exposure = rep(1, 6),
+    size_band = rep(c("1", "10", "2"), 2)
+  )
+  model <- glm(
+    claims ~ size_band + offset(log(exposure)),
+    family = poisson(),
+    data = portfolio
+  )
+
+  table <- rating_table(
+    model,
+    exposure = FALSE,
+    reference_first = FALSE,
+    level_order = "alphabetical"
+  )
+
+  testthat::expect_identical(
+    table$level[table$risk_factor == "size_band"],
+    c("1", "2", "10")
+  )
+})
+
+
+testthat::test_that("as_specified leaves numeric levels to level_order", {
+  portfolio <- numeric_level_ordering_data()
+  model <- glm(
+    claims ~ insured_amount_band + offset(log(exposure)),
+    family = poisson(),
+    data = portfolio
+  )
+
+  table <- rating_table(
+    model,
+    exposure = FALSE,
+    reference_first = FALSE,
+    level_order = "alphabetical",
+    numeric_level_order = "as_specified"
+  )
+  displayed <- table$level[table$risk_factor == "insured_amount_band"]
+
+  testthat::expect_identical(displayed, sort(displayed))
+})
+
+
+testthat::test_that("reference_first takes precedence over numeric ordering", {
+  portfolio <- numeric_level_ordering_data()
+  portfolio$insured_amount_band <- stats::relevel(
+    portfolio$insured_amount_band,
+    ref = "(1000,2000]"
+  )
+  model <- glm(
+    claims ~ insured_amount_band + offset(log(exposure)),
+    family = poisson(),
+    data = portfolio
+  )
+
+  table <- rating_table(model, exposure = FALSE)
+
+  testthat::expect_identical(
+    table$level[table$risk_factor == "insured_amount_band"],
+    c("(1000,2000]", "[0,100]", "(100,200]", "(200,1000]")
+  )
+})
+
+
+testthat::test_that("mixed categorical labels retain categorical ordering", {
+  portfolio <- data.frame(
+    claims = c(1, 2, 3, 2, 3, 4),
+    exposure = rep(1, 6),
+    industry = factor(
+      rep(c("Industry 1", "Industry 10", "Industry 2"), 2),
+      levels = c("Industry 1", "Industry 10", "Industry 2")
+    )
+  )
+  model <- glm(
+    claims ~ industry + offset(log(exposure)),
+    family = poisson(),
+    data = portfolio
+  )
+
+  table <- rating_table(
+    model,
+    exposure = FALSE,
+    reference_first = FALSE,
+    level_order = "alphabetical"
+  )
+
+  testthat::expect_identical(
+    table$level[table$risk_factor == "industry"],
+    c("Industry 1", "Industry 10", "Industry 2")
+  )
 })
 
 
