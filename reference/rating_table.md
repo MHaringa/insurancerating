@@ -17,6 +17,7 @@ rating_table(
   significance = FALSE,
   reference_first = TRUE,
   level_order = c("model", "alphabetical", "estimate_ascending", "estimate_descending"),
+  numeric_level_order = c("ascending", "as_specified"),
   risk_factor_order = c("model", "alphabetical"),
   order_model = NULL,
   round_exposure = 0,
@@ -76,6 +77,16 @@ rating_table(
   each risk factor. `"model"` retains the fitted model order,
   `"alphabetical"` sorts level labels, and `"estimate_ascending"` or
   `"estimate_descending"` sorts by the fitted effect from `order_model`.
+
+- numeric_level_order:
+
+  Character string controlling levels that are all recognisable as
+  numbers or numeric intervals. `"ascending"` orders them by numeric
+  value, or by the lower and then upper interval boundary, regardless of
+  `level_order`. This correctly orders labels such as `(100,200]` and
+  `(1000,2000]`. `"as_specified"` leaves these levels to `level_order`.
+  When `reference_first = TRUE`, the reference level remains first even
+  when it is not the numerically smallest level.
 
 - risk_factor_order:
 
@@ -186,6 +197,15 @@ provides that ordering.
 and
 [`autoplot.rating_table()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
 retain the row order established here.
+
+Numeric labels and intervals receive separate treatment because
+alphabetical ordering can give an incorrect tariff sequence. With the
+default `numeric_level_order = "ascending"`, a risk factor is sorted
+numerically only when every displayed level is either a complete number
+or a valid interval with two numeric boundaries. Mixed labels such as
+`"Industry 1"` remain categorical. Set
+`numeric_level_order = "as_specified"` when the fitted model order or
+another `level_order` should be retained deliberately.
 
 ### Significance indicators
 

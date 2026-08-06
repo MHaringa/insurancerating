@@ -16,6 +16,9 @@
   [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
   and
   [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html).
+  Pure numeric levels and numeric intervals are ordered from low to high
+  by default, while `numeric_level_order = "as_specified"` retains the
+  explicitly selected level order.
 - [`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)
   can rescale the current relativities of a categorical tariff factor so
   that an explicit reference level equals 1. When no level is supplied,
