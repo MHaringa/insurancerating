@@ -9,6 +9,11 @@
 observed rating-grid points. Exposure and other numeric measures can be
 aggregated alongside the combinations for prediction, tariff comparison and
 portfolio diagnostics.
+Together with merge_date_ranges(), this function belongs to the portfolio
+reduction workflow. Both functions reduce row-level portfolio data while
+retaining selected totals. rating_grid() reduces across identical
+risk-factor combinations; merge_date_ranges() reduces temporally connected
+records within the same policy, risk or portfolio segment.
 The function returns only combinations that are actually observed in the input
 data. It does not create the full Cartesian product of all unique values.
 This keeps the output compact and suitable for model diagnostics, portfolio
@@ -20,6 +25,11 @@ recommended to supply group_by explicitly."><meta property="og:description" cont
 observed rating-grid points. Exposure and other numeric measures can be
 aggregated alongside the combinations for prediction, tariff comparison and
 portfolio diagnostics.
+Together with merge_date_ranges(), this function belongs to the portfolio
+reduction workflow. Both functions reduce row-level portfolio data while
+retaining selected totals. rating_grid() reduces across identical
+risk-factor combinations; merge_date_ranges() reduces temporally connected
+records within the same policy, risk or portfolio segment.
 The function returns only combinations that are actually observed in the input
 data. It does not create the full Cartesian product of all unique values.
 This keeps the output compact and suitable for model diagnostics, portfolio
@@ -64,6 +74,11 @@ recommended to supply group_by explicitly."><meta property="og:image" content="h
 observed rating-grid points. Exposure and other numeric measures can be
 aggregated alongside the combinations for prediction, tariff comparison and
 portfolio diagnostics.</p>
+<p>Together with <code><a href="merge_date_ranges.html">merge_date_ranges()</a></code>, this function belongs to the portfolio
+reduction workflow. Both functions reduce row-level portfolio data while
+retaining selected totals. <code>rating_grid()</code> reduces across identical
+risk-factor combinations; <code><a href="merge_date_ranges.html">merge_date_ranges()</a></code> reduces temporally connected
+records within the same policy, risk or portfolio segment.</p>
 <p>The function returns only combinations that are actually observed in the input
 data. It does <strong>not</strong> create the full Cartesian product of all unique values.
 This keeps the output compact and suitable for model diagnostics, portfolio
@@ -122,7 +137,8 @@ columns to aggregate using <code>sum(na.rm = TRUE)</code>.</p></dd>
 
 <dt id="arg-drop-na">drop_na<a class="anchor" aria-label="anchor" href="#arg-drop-na"></a></dt>
 <dd><p>Logical; if <code>TRUE</code>, rows with missing values in <code>group_by</code>
-are removed before aggregation. Default is <code>FALSE</code>.</p></dd>
+are removed before aggregation. If <code>FALSE</code>, missing values define an
+explicit observed group and are retained. Default is <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-group-vars-agg-cols">group_vars, agg_cols<a class="anchor" aria-label="anchor" href="#arg-group-vars-agg-cols"></a></dt>
@@ -138,6 +154,16 @@ are removed before aggregation. Default is <code>FALSE</code>.</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
 
 <div class="section">
+<h3 id="portfolio-reduction">Portfolio reduction<a class="anchor" aria-label="anchor" href="#portfolio-reduction"></a></h3>
+
+
+<p><code>rating_grid()</code> performs categorical portfolio reduction. It combines rows
+with the same observed <code>group_by</code> values and retains the corresponding totals.
+Use <code><a href="merge_date_ranges.html">merge_date_ranges()</a></code> for the complementary temporal reduction of
+connected coverage periods.</p>
+</div>
+
+<div class="section">
 <h3 id="observed-combinations">Observed combinations<a class="anchor" aria-label="anchor" href="#observed-combinations"></a></h3>
 
 
@@ -146,19 +172,80 @@ model data. It deliberately does not construct combinations that were not
 observed. This avoids creating artificial model points and is particularly
 relevant when risk factors are structurally related, such as product,
 coverage and distribution channel.</p>
+<p>Each output row therefore represents one observed combination of the
+variables in <code>group_by</code>. Exposure and <code>aggregate_cols</code> are summed over the
+source records belonging to that combination. This is a categorical
+reduction of the portfolio; no date intervals are combined.</p>
+</div>
+
+<div class="section">
+<h3 id="estimating-a-glm-on-aggregated-data">Estimating a GLM on aggregated data<a class="anchor" aria-label="anchor" href="#estimating-a-glm-on-aggregated-data"></a></h3>
+
+
+<p>For a standard Poisson frequency GLM, aggregation before model fitting can
+preserve the coefficient estimates exactly. This applies when records are
+grouped by every predictor used in the model, claim counts are summed, earned
+exposure is summed, and the aggregated model uses <code>offset(log(exposure))</code>.
+Within such a group all records have the same linear predictor. Their
+contribution to the coefficient estimation therefore depends on total claims
+and total exposure, which are retained by the rating grid.</p>
+<p>This equivalence is conditional, not a general property of every GLM.
+Aggregating over a model variable changes the model, and row-level weights,
+interactions, offsets or non-additive quantities must be retained correctly.
+Binomial, severity, quasi-likelihood and dispersion analyses require their
+own sufficient totals and weights. Row-level residuals and influence
+diagnostics are also no longer available after aggregation, even when the
+fitted Poisson coefficients are unchanged.</p>
+<p>In practice, a rating grid is particularly useful before estimating a
+frequency model on a large portfolio. It can reduce repeated policy records
+to a much smaller table, lowering memory use and fitting time. Keep the
+unaggregated data when policy-level predictions, sampling, validation or
+diagnostics are required, and verify on a representative sample that the
+selected aggregation retains all inputs needed by the intended model.</p>
+</div>
+
+<div class="section">
+<h3 id="estimating-a-severity-glm-on-aggregated-data">Estimating a severity GLM on aggregated data<a class="anchor" aria-label="anchor" href="#estimating-a-severity-glm-on-aggregated-data"></a></h3>
+
+
+<p>Claim count and claim amount are additive portfolio measures and can be
+supplied through <code>aggregate_cols</code>. Frequency is then calculated as total
+claim count divided by total exposure. Average severity is total claim amount
+divided by total claim count.</p>
+<p>A Gamma severity GLM fitted to grouped average severities can produce the same
+coefficient estimates as a model fitted to the underlying individual claims.
+This requires grouping by every predictor in the severity model, calculating
+<code>average_severity = claim_amount / claim_count</code>, using <code>claim_count</code> as the
+model weight, and applying the same family and link. Within each grid row all
+underlying claims then have the same linear predictor, while the weight
+retains the number of claims represented by the average.</p>
+<p>This equivalence concerns the coefficient estimates, not the complete model
+output. Aggregation removes claim-level residuals and outlier information.
+Deviance, residual degrees of freedom, estimated dispersion, standard errors
+and significance tests can therefore differ from a claim-level fit. Claim-
+level data should remain available for severity-distribution checks,
+influential-claim analysis and model validation. The equivalence is also
+lost if a severity predictor varies within a grid row or if the totals and
+weights do not represent the underlying claims correctly.</p>
 <p>If <code>exposure_by</code> is supplied, exposure or row counts are split across levels
 of that variable and returned in wide format, for example
 <code>"exposure_2020"</code> or <code>"count_2020"</code>.</p>
 <p>For objects returned by <code><a href="extract_model_data.html">extract_model_data()</a></code>, refinement mappings are joined
 by their original factor column. They are not cross-joined onto every row.</p>
-<p>The implementation uses base R only. The output is a regular <code>data.frame</code>,
-irrespective of the class of the input data.</p>
+<p>Aggregation, reshaping and refinement joins are performed internally with
+<code><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table::data.table()</a></code> to support large pricing portfolios. A local copy
+is used, so the supplied object is not modified by reference. The output is
+a regular <code>data.frame</code>, irrespective of the class of the input data.</p>
+<p>When the row-level portfolio does not fit comfortably in R memory, use
+<code><a href="rating_grid_db.html">rating_grid_db()</a></code> to perform the grouped reduction in a database and collect
+only the resulting grid.</p>
 </div>
 
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="extract_model_data.html">extract_model_data()</a></code>, <code><a href="rating_table.html">rating_table()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="rating_grid_db.html">rating_grid_db()</a></code>, <code><a href="merge_date_ranges.html">merge_date_ranges()</a></code>,
+<code><a href="merge_date_ranges_db.html">merge_date_ranges_db()</a></code>, <code><a href="extract_model_data.html">extract_model_data()</a></code>, <code><a href="rating_table.html">rating_table()</a></code></p></div>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
@@ -167,27 +254,204 @@ irrespective of the class of the input data.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="fu">rating_grid</span><span class="op">(</span><span class="va">mtcars</span>, group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cyl"</span>, <span class="st">"vs"</span><span class="op">)</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  policy_id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span>,</span></span>
+<span class="r-in"><span>  sector <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Industry"</span>, <span class="st">"Retail"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  region <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"North"</span>, <span class="st">"South"</span><span class="op">)</span>, <span class="fl">5</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  underwriting_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2024</span>, <span class="fl">2025</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  earned_exposure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0.8</span>, <span class="fl">1</span>, <span class="fl">0.5</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">0.7</span>, <span class="fl">1</span>, <span class="fl">0.9</span>, <span class="fl">1</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  claim_count <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  claim_amount <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">2500</span>, <span class="fl">18000</span>, <span class="fl">0</span>, <span class="fl">6000</span>, <span class="fl">0</span>, <span class="fl">4500</span>, <span class="fl">0</span>, <span class="fl">22000</span>, <span class="fl">9000</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Aggregate policy records into observed combinations of sector and region.</span></span></span>
+<span class="r-in"><span><span class="co"># The resulting exposure is the total earned exposure in each combination.</span></span></span>
 <span class="r-in"><span><span class="fu">rating_grid</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">mtcars</span>,</span></span>
-<span class="r-in"><span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cyl"</span>, <span class="st">"vs"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  exposure <span class="op">=</span> <span class="st">"disp"</span>,</span></span>
-<span class="r-in"><span>  exposure_by <span class="op">=</span> <span class="st">"gear"</span>,</span></span>
-<span class="r-in"><span>  aggregate_cols <span class="op">=</span> <span class="st">"mpg"</span></span></span>
+<span class="r-in"><span>  <span class="va">portfolio</span>,</span></span>
+<span class="r-in"><span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sector"</span>, <span class="st">"region"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  exposure <span class="op">=</span> <span class="st">"earned_exposure"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     sector region earned_exposure</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Industry  North             3.0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 Industry  South             1.3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   Retail  North             1.6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   Retail  South             3.0</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Split earned exposure by underwriting year. This is useful when reviewing</span></span></span>
+<span class="r-in"><span><span class="co"># whether the portfolio mix within each rating combination changes over time.</span></span></span>
+<span class="r-in"><span><span class="fu">rating_grid</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">portfolio</span>,</span></span>
+<span class="r-in"><span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sector"</span>, <span class="st">"region"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  exposure <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span></span>
+<span class="r-in"><span>  exposure_by <span class="op">=</span> <span class="st">"underwriting_year"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     sector region earned_exposure_2024 earned_exposure_2025</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Industry  North                  3.0                   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 Industry  South                  1.3                   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   Retail  North                   NA                  1.6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   Retail  South                   NA                  3.0</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Claim count and claim amount remain additive totals in the rating grid.</span></span></span>
+<span class="r-in"><span><span class="co"># Frequency and average severity can subsequently be derived from them.</span></span></span>
+<span class="r-in"><span><span class="va">claims_grid</span> <span class="op">&lt;-</span> <span class="fu">rating_grid</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">portfolio</span>,</span></span>
+<span class="r-in"><span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sector"</span>, <span class="st">"region"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  exposure <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span></span>
+<span class="r-in"><span>  aggregate_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"claim_count"</span>, <span class="st">"claim_amount"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">pmodel</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">breaks</span> <span class="op">~</span> <span class="va">wool</span> <span class="op">+</span> <span class="va">tension</span>,</span></span>
-<span class="r-in"><span>  data <span class="op">=</span> <span class="va">warpbreaks</span>,</span></span>
-<span class="r-in"><span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">claims_grid</span><span class="op">$</span><span class="va">frequency</span> <span class="op">&lt;-</span></span></span>
+<span class="r-in"><span>  <span class="va">claims_grid</span><span class="op">$</span><span class="va">claim_count</span> <span class="op">/</span> <span class="va">claims_grid</span><span class="op">$</span><span class="va">earned_exposure</span></span></span>
+<span class="r-in"><span><span class="va">claims_grid</span><span class="op">$</span><span class="va">average_severity</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">claims_grid</span><span class="op">$</span><span class="va">claim_count</span> <span class="op">&gt;</span> <span class="fl">0</span>,</span></span>
+<span class="r-in"><span>  <span class="va">claims_grid</span><span class="op">$</span><span class="va">claim_amount</span> <span class="op">/</span> <span class="va">claims_grid</span><span class="op">$</span><span class="va">claim_count</span>,</span></span>
+<span class="r-in"><span>  <span class="cn">NA_real_</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">claims_grid</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     sector region claim_count claim_amount earned_exposure frequency</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Industry  North           3        24000             3.0 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 Industry  South           1         2500             1.3 0.7692308</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   Retail  North           3        26500             1.6 1.8750000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   Retail  South           1         9000             3.0 0.3333333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   average_severity</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1         8000.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2         2500.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3         8833.333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4         9000.000</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Fit a severity model to grouped average claim amounts. Grid rows without</span></span></span>
+<span class="r-in"><span><span class="co"># claims are excluded because average severity is undefined for those rows.</span></span></span>
+<span class="r-in"><span><span class="va">severity_model_grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">average_severity</span> <span class="op">~</span> <span class="va">sector</span> <span class="op">+</span> <span class="va">region</span>,</span></span>
+<span class="r-in"><span>  weights <span class="op">=</span> <span class="va">claim_count</span>,</span></span>
+<span class="r-in"><span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">claims_grid</span>, <span class="va">claim_count</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">severity_model_grid</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  (Intercept) sectorRetail  regionSouth </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    8.8557334    0.3819535   -0.4844045 </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># For a fitted GLM, extract_model_data() retains the model variables and</span></span></span>
+<span class="r-in"><span><span class="co"># exposure information required to construct the observed rating grid.</span></span></span>
+<span class="r-in"><span><span class="va">mtpl_portfolio</span> <span class="op">&lt;-</span> <span class="va">MTPL</span></span></span>
+<span class="r-in"><span><span class="va">mtpl_portfolio</span><span class="op">$</span><span class="va">zip</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">mtpl_portfolio</span><span class="op">$</span><span class="va">zip</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">frequency_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">bm</span> <span class="op">+</span> <span class="va">zip</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">mtpl_portfolio</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">pmodel</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span><span class="va">frequency_model</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="extract_model_data.html">extract_model_data</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">rating_grid</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    bm zip count     exposure</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1   1   0    88 7.426301e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   1   1  4760 4.208589e+03</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   1   2  3291 2.943959e+03</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   1   3  3213 2.841123e+03</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   2   0    35 3.186027e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6   2   1  2083 1.835279e+03</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7   2   2  1422 1.270674e+03</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8   2   3  1436 1.281537e+03</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9   3   0    17 1.365753e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10  3   1   695 6.139808e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11  3   2   478 4.148548e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12  3   3   541 4.764192e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13  4   0     7 6.208219e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14  4   1   320 2.809178e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 15  4   2   205 1.800904e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 16  4   3   206 1.834274e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 17  5   0    13 1.267945e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 18  5   1   615 5.496986e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 19  5   2   445 3.963425e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 20  5   3   430 3.875151e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21  6   0    26 2.312877e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 22  6   1   933 8.312466e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 23  6   2   667 5.949534e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 24  6   3   599 5.386904e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 25  7   0     2 2.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 26  7   1   407 3.587753e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 27  7   2   288 2.563014e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 28  7   3   264 2.335315e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 29  8   0     8 6.260274e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 30  8   1   424 3.791479e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 31  8   2   276 2.491890e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 32  8   3   256 2.344466e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 33  9   0     8 5.764384e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 34  9   1   345 3.112082e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 35  9   2   261 2.366575e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 36  9   3   239 2.166712e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 37 10   0     9 7.926027e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 38 10   1   508 4.514219e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 39 10   2   298 2.709918e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 40 10   3   314 2.741397e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 41 11   0     7 7.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 42 11   1   510 4.450082e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 43 11   2   386 3.522411e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 44 11   3   351 3.108137e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 45 12   0    13 1.166027e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 46 12   1   600 5.301863e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 47 12   2   462 4.113178e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 48 12   3   453 4.029890e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 49 13   0     1 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 50 13   1    86 7.600000e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 51 13   2    69 6.207397e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 52 13   3    60 5.586027e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 53 14   0     1 5.479452e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 54 14   1    54 4.708767e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 55 14   2    53 4.833973e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 56 14   3    55 4.981096e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 57 15   0     1 6.301370e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 58 15   1    95 8.560000e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 59 15   2    50 4.660822e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 60 15   3    51 4.481370e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 61 16   0     4 2.317808e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 62 16   1    36 3.359452e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 63 16   2    28 2.256986e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 64 16   3    33 2.939726e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 65 17   1    15 1.374247e+01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 66 17   2     8 5.693151e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 67 17   3     6 5.739726e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 68 18   1     8 5.865753e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 69 18   2     6 5.093151e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 70 18   3     6 5.586301e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 71 19   1     9 8.550685e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 72 19   2     7 6.843836e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 73 19   3     8 7.449315e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 74 20   1     8 6.693151e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 75 20   2     5 5.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 76 20   3     6 4.602740e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 77 21   0     1 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 78 21   1     4 3.068493e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 79 21   2     1 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 80 21   3     3 3.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 81 22   1     3 3.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 82 22   2     1 5.315068e-01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 83 23   1     2 1.964384e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 84 23   2     2 1.304110e+00</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># For this Poisson frequency model, fitting on the corresponding aggregated</span></span></span>
+<span class="r-in"><span><span class="co"># grid gives the same coefficient estimates as fitting on the policy rows.</span></span></span>
+<span class="r-in"><span><span class="va">frequency_grid</span> <span class="op">&lt;-</span> <span class="fu">rating_grid</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">mtpl_portfolio</span>,</span></span>
+<span class="r-in"><span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bm"</span>, <span class="st">"zip"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span></span>
+<span class="r-in"><span>  aggregate_cols <span class="op">=</span> <span class="st">"nclaims"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">frequency_model_grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">bm</span> <span class="op">+</span> <span class="va">zip</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">frequency_grid</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Logic.html" class="external-link">isTRUE</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">frequency_model</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">frequency_model_grid</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  tolerance <span class="op">=</span> <span class="fl">1e-8</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

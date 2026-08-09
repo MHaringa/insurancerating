@@ -52,7 +52,8 @@ construct_model_points(
 - drop_na:
 
   Logical; if `TRUE`, rows with missing values in `group_by` are removed
-  before aggregation. Default is `FALSE`.
+  before aggregation. If `FALSE`, missing values define an explicit
+  observed group and are retained. Default is `FALSE`.
 
 - group_vars, agg_cols:
 

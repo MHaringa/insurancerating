@@ -2,6 +2,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/404.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/articles/getting-started.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/articles/index.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/articles/large-portfolios.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/articles/model-validation.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/articles/refinement-workflow.html</loc></url>
@@ -54,6 +55,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/index.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/make_stars.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/merge_date_ranges.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/model_data.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/model_performance.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/outlier_histogram.html</loc></url>
@@ -63,6 +65,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/rating_factors.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/rating_factors2.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/rating_grid.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/rating_grid_db.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/rating_table.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/reduce.html</loc></url>

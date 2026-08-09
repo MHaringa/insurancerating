@@ -1,4 +1,4 @@
-# Pricing workflow building blocks
+# Pricing workflow overview
 
 `insurancerating` provides building blocks for common actuarial pricing
 tasks in GLM-based tariff analysis. The package does not prescribe a

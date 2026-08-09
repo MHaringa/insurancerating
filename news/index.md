@@ -4,6 +4,55 @@
 
 ### Changes since 0.8.1
 
+- [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md)
+  and
+  [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md)
+  add lazy database variants for portfolios that should be reduced
+  before they are imported into R.
+  [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md)
+  translates grouped counts and sums through `dbplyr`, while
+  [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md)
+  implements temporal gaps-and-islands reduction in DuckDB. A new
+  large-portfolio vignette compares local and database workflows and
+  illustrates lazy reduction of portfolios with 10 and 50 million
+  records.
+- [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+  and
+  [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
+  are now documented together as portfolio-reduction functions. Both use
+  grouped `data.table` operations internally and return ordinary
+  `data.frame` objects for downstream use.
+- [`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md)
+  and
+  [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
+  are now documented as portfolio time operations. Their calculations
+  use local `data.table` objects internally, while their public output
+  is always a regular `data.frame`.
+  [`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md)
+  now uses `data` as its first argument (`df` remains available as a
+  deprecated named argument) and expands periods without a row-wise R
+  loop.
+  [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
+  replaces the technical `nomatch` and `mult` arguments with `unmatched`
+  and `multiple_matches`; the old names remain available with
+  deprecation warnings.
+- [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
+  now uses `merge_gap_days = 1` by default, so only overlapping and
+  directly adjacent coverage periods are merged unless a wider
+  administrative gap is selected explicitly. The interval reduction is
+  now performed as a grouped `data.table` calculation, avoiding row-wise
+  R loops for large portfolios. Empty inputs, nested intervals and
+  aggregation functions without a `na.rm` argument are handled
+  explicitly. The deprecated
+  [`reduce()`](https://mharinga.github.io/insurancerating/reference/reduce.md)
+  wrapper retains its historical default for compatibility. The first
+  argument is now named `data` (`df` remains available as a deprecated
+  named argument), and the result is a regular `data.frame` subclass
+  while `data.table` remains an internal implementation detail. Together
+  with
+  [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md),
+  the function is documented as part of the portfolio reduction
+  workflow.
 - [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
   now places the fitted reference level first within each risk factor by
   default, including a reference selected with

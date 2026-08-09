@@ -12,10 +12,6 @@ reduce(df, begin, end, ..., agg_cols = NULL, agg = "sum", min.gapwidth = 5)
 
 ## Arguments
 
-- df:
-
-  A `data.frame` or `data.table`.
-
 - begin:
 
   Deprecated NSE argument. Use `period_start` instead.

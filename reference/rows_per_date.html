@@ -86,16 +86,9 @@ active_rows_by_date() instead."><meta property="og:image" content="https://mhari
 <dd><p>Deprecated NSE join columns. Use <code>by</code> instead.</p></dd>
 
 
-<dt id="arg-nomatch">nomatch<a class="anchor" aria-label="anchor" href="#arg-nomatch"></a></dt>
-<dd><p>Controls event dates for which no active portfolio row is
-found. With <code>NULL</code>, unmatched events are omitted. With <code>NA</code>, they are retained
-with missing portfolio information.</p></dd>
-
-
-<dt id="arg-mult">mult<a class="anchor" aria-label="anchor" href="#arg-mult"></a></dt>
-<dd><p>Controls the result when an event date matches multiple active
-portfolio rows. Use <code>"all"</code> to retain every match, or <code>"first"</code> or <code>"last"</code>
-to retain one matching row. The default is <code>"all"</code>.</p></dd>
+<dt id="arg-nomatch-mult">nomatch, mult<a class="anchor" aria-label="anchor" href="#arg-nomatch-mult"></a></dt>
+<dd><p>Deprecated technical argument names. Use <code>unmatched</code> and
+<code>multiple_matches</code> instead.</p></dd>
 
 </dl></div>
     <div class="section level2">

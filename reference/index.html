@@ -337,7 +337,7 @@
       </dl></div><div class="section level2">
       <h2 id="model-structure">Model structure<a class="anchor" aria-label="anchor" href="#model-structure"></a></h2>
 
-      <div class="section-desc"><p>Extract model data and analyse observed rating-grid combinations.</p></div>
+      <div class="section-desc"><p>Extract the data and metadata represented by fitted pricing models.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -350,13 +350,66 @@
 
         </dt>
         <dd>Recover the portfolio data used by a fitted model</dd>
+      </dl></div><div class="section level2">
+      <h2 id="portfolio-reduction">Portfolio reduction<a class="anchor" aria-label="anchor" href="#portfolio-reduction"></a></h2>
 
-        <dt>
+      <div class="section-desc"><p>Reduce portfolio records across observed rating-factor combinations or connected coverage periods, locally or lazily in a database.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="rating_grid.html">rating_grid()</a></code>
 
         </dt>
         <dd>Construct observed rating-grid points</dd>
+
+        <dt>
+
+          <code><a href="merge_date_ranges.html">merge_date_ranges()</a></code>
+
+        </dt>
+        <dd>Reduce portfolio periods by merging adjacent date ranges</dd>
+
+        <dt>
+
+          <code><a href="rating_grid_db.html">rating_grid_db()</a></code>
+
+        </dt>
+        <dd>Reduce a database portfolio to observed rating-grid points</dd>
+
+        <dt>
+
+          <code><a href="merge_date_ranges_db.html">merge_date_ranges_db()</a></code>
+
+        </dt>
+        <dd>Merge connected portfolio periods in DuckDB</dd>
+      </dl></div><div class="section level2">
+      <h2 id="portfolio-time-operations">Portfolio time operations<a class="anchor" aria-label="anchor" href="#portfolio-time-operations"></a></h2>
+
+      <div class="section-desc"><p>Expand policy periods to reporting months or match dated events to active portfolio records.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="split_periods_to_months.html">split_periods_to_months()</a></code>
+
+        </dt>
+        <dd>Split portfolio periods into calendar months</dd>
+
+        <dt>
+
+          <code><a href="active_rows_by_date.html">active_rows_by_date()</a></code>
+
+        </dt>
+        <dd>Match event dates to active portfolio periods</dd>
       </dl></div><div class="section level2">
       <h2 id="utilities">Utilities<a class="anchor" aria-label="anchor" href="#utilities"></a></h2>
 
@@ -394,27 +447,6 @@
 
         </dt>
         <dd>Set the reference level of a factor</dd>
-
-        <dt>
-
-          <code><a href="split_periods_to_months.html">split_periods_to_months()</a></code>
-
-        </dt>
-        <dd>Split policy periods into monthly rows</dd>
-
-        <dt>
-
-          <code><a href="active_rows_by_date.html">active_rows_by_date()</a></code>
-
-        </dt>
-        <dd>Find active portfolio rows for event dates</dd>
-
-        <dt>
-
-          <code><a href="merge_date_ranges.html">merge_date_ranges()</a></code>
-
-        </dt>
-        <dd>Reduce portfolio periods by merging adjacent date ranges</dd>
       </dl></div><div class="section level2">
       <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a></h2>
 

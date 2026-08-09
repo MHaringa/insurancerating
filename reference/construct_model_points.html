@@ -89,7 +89,8 @@ columns to aggregate using <code>sum(na.rm = TRUE)</code>.</p></dd>
 
 <dt id="arg-drop-na">drop_na<a class="anchor" aria-label="anchor" href="#arg-drop-na"></a></dt>
 <dd><p>Logical; if <code>TRUE</code>, rows with missing values in <code>group_by</code>
-are removed before aggregation. Default is <code>FALSE</code>.</p></dd>
+are removed before aggregation. If <code>FALSE</code>, missing values define an
+explicit observed group and are retained. Default is <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-group-vars-agg-cols">group_vars, agg_cols<a class="anchor" aria-label="anchor" href="#arg-group-vars-agg-cols"></a></dt>

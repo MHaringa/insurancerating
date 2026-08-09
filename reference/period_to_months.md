@@ -12,10 +12,6 @@ period_to_months(df, begin, end, ...)
 
 ## Arguments
 
-- df:
-
-  A `data.frame` or `data.table`.
-
 - begin:
 
   Deprecated NSE argument. Use `period_start` instead.

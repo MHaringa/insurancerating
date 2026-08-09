@@ -45,17 +45,10 @@ rows_per_date(
 
   Deprecated NSE join columns. Use `by` instead.
 
-- nomatch:
+- nomatch, mult:
 
-  Controls event dates for which no active portfolio row is found. With
-  `NULL`, unmatched events are omitted. With `NA`, they are retained
-  with missing portfolio information.
-
-- mult:
-
-  Controls the result when an event date matches multiple active
-  portfolio rows. Use `"all"` to retain every match, or `"first"` or
-  `"last"` to retain one matching row. The default is `"all"`.
+  Deprecated technical argument names. Use `unmatched` and
+  `multiple_matches` instead.
 
 ## Value
 
