@@ -42,6 +42,29 @@
   fun
 }
 
+#' @noRd
+.time_apply_aggregate <- function(fun, x, column) {
+  fun_args <- names(formals(args(fun)))
+  supports_na_rm <- "na.rm" %in% fun_args || "..." %in% fun_args
+  value <- if (supports_na_rm) {
+    fun(x, na.rm = TRUE)
+  } else {
+    fun(x[!is.na(x)])
+  }
+
+  if (length(value) != 1L) {
+    stop(
+      "`aggregate_fun` must return one value per merged interval; column `",
+      column,
+      "` returned ",
+      length(value),
+      " values.",
+      call. = FALSE
+    )
+  }
+  value
+}
+
 #' Reduce portfolio periods by merging adjacent date ranges
 #'
 #' @description
@@ -49,7 +72,12 @@
 #' risk or portfolio segment. The result provides a consolidated time basis for
 #' exposure calculations, active-policy counts and period-based reporting.
 #'
-#' @param df A `data.frame` or `data.table`.
+#' Together with [rating_grid()], this function belongs to the portfolio
+#' reduction workflow. Both functions reduce row-level portfolio data while
+#' retaining selected totals. `merge_date_ranges()` reduces temporally connected
+#' records; [rating_grid()] reduces records with identical risk-factor values.
+#'
+#' @param data A `data.frame` or `data.table` containing the portfolio periods.
 #' @param period_start Character string. Name of the column with period start
 #' dates.
 #' @param period_end Character string. Name of the column with period end dates.
@@ -60,10 +88,15 @@
 #' @param aggregate_fun Function or function name used to combine
 #' `aggregate_cols` within a merged interval. The default, `"sum"`, is generally
 #' appropriate for additive measures such as premium or exposure.
-#' @param merge_gap_days Non-negative whole number. Ranges with a gap smaller
-#' than this number of days are treated as continuous and merged. Defaults to 5.
-#' @param begin,end,...,agg_cols,agg,min.gapwidth Deprecated NSE argument names
-#' kept for backward compatibility.
+#' @param merge_gap_days Non-negative whole number. Ranges with fewer uncovered
+#'   days than this value are treated as continuous. The default, `1`, merges
+#'   overlapping periods and periods that start on the day after the preceding
+#'   period ends. Use `0` to merge overlapping periods only. A value above `1`
+#'   also bridges short uncovered gaps and should represent an explicit
+#'   administrative assumption.
+#' @param df,begin,end,...,agg_cols,agg,min.gapwidth Deprecated argument names
+#'   kept for backward compatibility. Use `data`, `period_start`, `period_end`,
+#'   `group_by`, `aggregate_cols`, `aggregate_fun`, and `merge_gap_days`.
 #'
 #' @importFrom data.table setDT
 #' @importFrom data.table setkeyv
@@ -72,6 +105,15 @@
 #' @author Martin Haringa
 #'
 #' @details
+#' ## Portfolio reduction
+#'
+#' `merge_date_ranges()` performs temporal portfolio reduction. It combines
+#' connected periods within the same `group_by` values and retains the selected
+#' additive amounts. Use [rating_grid()] for the complementary categorical
+#' reduction of records with identical risk-factor combinations.
+#'
+#' ## Connected periods
+#'
 #' Insurance portfolio extracts often contain multiple rows for the same policy
 #' or risk because of renewals, endorsements, product changes, or short
 #' administrative gaps. Before calculating portfolio in/outflow, active exposure
@@ -84,8 +126,33 @@
 #' the merged interval. The grouping columns should identify records for which
 #' combining coverage periods is actuarially and operationally meaningful;
 #' periods belonging to different risks or contracts should not be pooled.
+#' Missing values are not permitted in `group_by`, because such records cannot
+#' be assigned reliably to the same policy, risk or segment.
 #'
-#' @return A `data.table` of class `"reduce"`, with attributes:
+#' Start and end dates are treated as inclusive. Consequently, two periods for
+#' which the second starts one day after the first ends have zero uncovered
+#' days. They are merged with the default `merge_gap_days = 1`. A value of `5`
+#' merges periods with at most four uncovered days between them.
+#'
+#' ## Aggregation and implementation
+#'
+#' Aggregated amounts are combined over the source rows, not prorated over
+#' calendar days. Summing premium or exposure is appropriate when each source
+#' row contains a distinct additive amount. If overlapping rows already contain
+#' amounts for the same covered days, users should resolve that overlap before
+#' aggregation to avoid double counting.
+#'
+#' Each output row represents one consolidated period within a `group_by`
+#' combination. This is a temporal reduction of the portfolio; records with the
+#' same risk-factor values are not combined when their periods remain separate.
+#'
+#' Internally, interval construction and aggregation use [data.table::data.table()]
+#' on a local copy. The supplied object is not modified by reference.
+#' For a portfolio that should remain outside R memory, use
+#' [merge_date_ranges_db()] to perform the same interval reduction in DuckDB.
+#'
+#' @return A regular `data.frame` with classes `"merged_date_ranges"` and
+#' `"reduce"`, and attributes:
 #' \itemize{
 #'   \item `begin` — name of the period-start column
 #'   \item `end`   — name of the period-end column
@@ -94,50 +161,55 @@
 #'
 #' @examples
 #' portfolio <- data.frame(
-#'   policy_nr   = rep("12345", 11),
-#'   productgroup= rep("fire", 11),
-#'   product     = rep("contents", 11),
-#'   begin_dat   = as.Date(c(16709,16740,16801,17410,17440,17805,17897,
-#'                           17956,17987,18017,18262), origin="1970-01-01"),
-#'   end_dat     = as.Date(c(16739,16800,16831,17439,17531,17896,17955,
-#'                           17986,18016,18261,18292), origin="1970-01-01"),
-#'   premium     = c(89,58,83,73,69,94,91,97,57,65,55)
+#'   policy_id = rep(c("P001", "P002"), each = 3),
+#'   coverage = rep(c("Fire", "Liability"), each = 3),
+#'   period_start = as.Date(c(
+#'     "2024-01-01", "2024-02-01", "2024-04-01",
+#'     "2024-01-01", "2024-02-03", "2024-03-03"
+#'   )),
+#'   period_end = as.Date(c(
+#'     "2024-01-31", "2024-02-29", "2024-04-30",
+#'     "2024-01-31", "2024-03-02", "2024-03-31"
+#'   )),
+#'   earned_premium = c(100, 110, 120, 80, 90, 95)
 #' )
 #'
-#' # Merge periods
+#' # Reduce directly adjacent periods within each policy and coverage.
 #' pt1 <- merge_date_ranges(
 #'   portfolio,
-#'   period_start = "begin_dat",
-#'   period_end = "end_dat",
-#'   group_by = c("policy_nr", "productgroup", "product"),
-#'   merge_gap_days = 5
+#'   period_start = "period_start",
+#'   period_end = "period_end",
+#'   group_by = c("policy_id", "coverage")
 #' )
 #'
-#' # Aggregate per period
-#' summary(pt1, period = "days", policy_nr, productgroup, product)
+#' summary(pt1, period = "months", policy_id, coverage)
 #'
-#' # Merge periods and sum premium per period
+#' # Bridge a short administrative gap and retain additive premium totals.
 #' pt2 <- merge_date_ranges(
 #'   portfolio,
-#'   period_start = "begin_dat",
-#'   period_end = "end_dat",
-#'   group_by = c("policy_nr", "productgroup", "product"),
-#'   aggregate_cols = "premium",
+#'   period_start = "period_start",
+#'   period_end = "period_end",
+#'   group_by = c("policy_id", "coverage"),
+#'   aggregate_cols = "earned_premium",
+#'   # Explicitly bridge administrative gaps of up to four uncovered days.
 #'   merge_gap_days = 5
 #' )
 #'
-#' # Create summary with aggregation per week
-#' summary(pt2, period = "weeks", policy_nr, productgroup, product)
+#' summary(pt2, period = "months", policy_id, coverage)
+#'
+#' @seealso [merge_date_ranges_db()], [rating_grid()], [rating_grid_db()],
+#'   [active_rows_by_date()], [split_periods_to_months()]
 #'
 #' @export
-merge_date_ranges <- function(df,
+merge_date_ranges <- function(data = NULL,
                               ...,
                               period_start = NULL,
                               period_end = NULL,
                               group_by = NULL,
                               aggregate_cols = NULL,
                               aggregate_fun = "sum",
-                              merge_gap_days = 5,
+                              merge_gap_days = 1,
+                              df = NULL,
                               begin = NULL,
                               end = NULL,
                               agg_cols = NULL,
@@ -149,6 +221,18 @@ merge_date_ranges <- function(df,
   end_expr <- substitute(end)
   dots_expr <- as.list(substitute(list(...))[-1])
   agg_cols_expr <- substitute(agg_cols)
+
+  if (!is.null(df)) {
+    if (!is.null(data)) {
+      stop("Use only one of `data` and deprecated `df`.", call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "merge_date_ranges(df)",
+      "merge_date_ranges(data)"
+    )
+    data <- df
+  }
 
   if (!identical(begin_expr, quote(NULL))) {
     lifecycle::deprecate_warn("0.9.0", "merge_date_ranges(begin)",
@@ -181,19 +265,44 @@ merge_date_ranges <- function(df,
     merge_gap_days <- min.gapwidth
   }
 
-  .time_validate_data_frame(df)
-  .time_validate_columns(df, c(period_start, period_end),
+  .time_validate_data_frame(data, "`data`")
+  .time_validate_columns(data, c(period_start, period_end),
                          "`period_start` and `period_end`")
-  .time_validate_date_interval(df, period_start, period_end)
+  .time_validate_date_interval(data, period_start, period_end, "`data`")
   if (is.null(group_by) || length(group_by) == 0L) {
     stop("`group_by` must contain at least one column name.", call. = FALSE)
   }
-  .time_validate_columns(df, group_by, "`group_by`")
+  .time_validate_columns(data, group_by, "`group_by`")
+  missing_groups <- vapply(
+    data[group_by],
+    function(column) sum(is.na(column)),
+    integer(1)
+  )
+  missing_groups <- missing_groups[missing_groups > 0L]
+  if (length(missing_groups) > 0L) {
+    details <- paste0(names(missing_groups), " (", missing_groups, ")")
+    stop(
+      "`data` contains missing values in `group_by`: ",
+      paste(details, collapse = ", "),
+      ". Periods with a missing policy or risk identifier cannot be merged reliably.",
+      call. = FALSE
+    )
+  }
   if (is.null(aggregate_cols)) {
     aggregate_cols <- character(0)
   }
-  .time_validate_columns(df, aggregate_cols, "`aggregate_cols`")
-  non_numeric <- aggregate_cols[!vapply(df[aggregate_cols], is.numeric, logical(1))]
+  .time_validate_columns(data, aggregate_cols, "`aggregate_cols`")
+  output_id_cols <- c(group_by, period_start, period_end)
+  overlapping_cols <- intersect(aggregate_cols, output_id_cols)
+  if (length(overlapping_cols) > 0L) {
+    stop(
+      "`aggregate_cols` must not also be used as grouping or period columns: ",
+      paste(overlapping_cols, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+  non_numeric <- aggregate_cols[!vapply(data[aggregate_cols], is.numeric, logical(1))]
   if (length(non_numeric) > 0L) {
     stop(
       sprintf("`aggregate_cols` must be numeric: %s.", paste(non_numeric, collapse = ", ")),
@@ -206,69 +315,48 @@ merge_date_ranges <- function(df,
   }
   agg_fun <- .time_aggregate_function(aggregate_fun)
 
-  dt <- data.table::as.data.table(data.table::copy(df))
+  dt <- data.table::as.data.table(data.table::copy(data))
   data.table::setorderv(dt, c(group_by, period_start, period_end))
-  split_dt <- split(dt, dt[, group_by, with = FALSE], drop = TRUE)
+  period_start_name <- period_start
+  period_end_name <- period_end
 
-  reduced <- lapply(split_dt, function(part) {
-    part <- part[order(part[[period_start]], part[[period_end]])]
-    out <- vector("list", nrow(part))
-    out_n <- 0L
-    current <- part[1, ]
-    current_start <- current[[period_start]]
-    current_end <- current[[period_end]]
-    current_values <- if (length(aggregate_cols) > 0L) {
-      as.list(current[, aggregate_cols, with = FALSE])
-    } else {
-      list()
-    }
+  output_cols <- unique(c(group_by, period_start, period_end, aggregate_cols))
+  if (nrow(dt) == 0L) {
+    dt_reduce <- dt[, output_cols, with = FALSE]
+  } else {
+    previous_end_col <- ".merge_previous_end"
+    interval_col <- ".merge_interval"
+    dt[, (previous_end_col) := data.table::shift(
+      cummax(as.numeric(.SD[[1L]]))
+    ), by = group_by, .SDcols = period_end]
+    dt[, (interval_col) := cumsum(
+      is.na(.SD[[1L]]) |
+        (as.numeric(.SD[[2L]]) - .SD[[1L]] - 1) >= merge_gap_days
+    ), by = group_by, .SDcols = c(previous_end_col, period_start)]
 
-    flush_current <- function() {
-      row <- current[, c(group_by, period_start, period_end), with = FALSE]
-      row[[period_start]] <- current_start
-      row[[period_end]] <- current_end
+    interval_by <- c(group_by, interval_col)
+    value_cols <- unique(c(period_start, period_end, aggregate_cols))
+    dt_reduce <- dt[, {
+      values <- list(
+        min(.SD[[period_start_name]]),
+        max(.SD[[period_end_name]])
+      )
+      names(values) <- c(period_start_name, period_end_name)
       for (col in aggregate_cols) {
-        row[[col]] <- agg_fun(current_values[[col]], na.rm = TRUE)
+        values[[col]] <- .time_apply_aggregate(agg_fun, .SD[[col]], col)
       }
-      row
-    }
+      values
+    }, by = interval_by, .SDcols = value_cols]
+    dt_reduce[, (interval_col) := NULL]
+  }
 
-    for (i in seq_len(nrow(part))) {
-      if (i == 1L) next
-      next_start <- part[[period_start]][i]
-      next_end <- part[[period_end]][i]
-      gap_days <- as.numeric(next_start - current_end) - 1
-
-      if (gap_days < merge_gap_days) {
-        current_end <- max(current_end, next_end)
-        for (col in aggregate_cols) {
-          current_values[[col]] <- c(current_values[[col]], part[[col]][i])
-        }
-      } else {
-        out_n <- out_n + 1L
-        out[[out_n]] <- flush_current()
-        current <- part[i, ]
-        current_start <- current[[period_start]]
-        current_end <- current[[period_end]]
-        current_values <- if (length(aggregate_cols) > 0L) {
-          as.list(current[, aggregate_cols, with = FALSE])
-        } else {
-          list()
-        }
-      }
-    }
-
-    out_n <- out_n + 1L
-    out[[out_n]] <- flush_current()
-    data.table::rbindlist(out[seq_len(out_n)])
-  })
-
-  dt_reduce <- data.table::rbindlist(reduced)
   data.table::setorderv(dt_reduce, c(group_by, period_start, period_end))
+  dt_reduce <- as.data.frame(dt_reduce, stringsAsFactors = FALSE)
+  rownames(dt_reduce) <- NULL
   attr(dt_reduce, "begin") <- period_start
   attr(dt_reduce, "end") <- period_end
   attr(dt_reduce, "cols") <- group_by
-  class(dt_reduce) <- c("merged_date_ranges", "reduce", class(dt_reduce))
+  class(dt_reduce) <- c("merged_date_ranges", "reduce", "data.frame")
   dt_reduce
 }
 
@@ -303,7 +391,7 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum",
                            FUN.VALUE = character(1))
 
   merge_date_ranges(
-    df = df,
+    data = df,
     period_start = period_start,
     period_end = period_end,
     group_by = group_by,
@@ -316,17 +404,17 @@ reduce <- function(df, begin, end, ..., agg_cols = NULL, agg = "sum",
 
 #' @export
 print.reduce <- function(x, ...) {
-  class(x) <- c("data.frame", "data.table")
-  print(x)
+  print.data.frame(as.data.frame.reduce(x), ...)
+  invisible(x)
 }
 
 #' @export
 print.merged_date_ranges <- print.reduce
 
 #' @export
-as.data.frame.reduce <- function(x, ...) {
-  class(x) <- c("data.frame", "data.table")
-  return(as.data.frame(x))
+as.data.frame.reduce <- function(x, row.names = NULL, optional = FALSE, ...) {
+  class(x) <- "data.frame"
+  x
 }
 
 #' @export
@@ -340,7 +428,7 @@ as.data.frame.merged_date_ranges <- as.data.frame.reduce
 #' @export
 summary.reduce <- function(object, ..., period = "days", name = "count") {
 
-  df <- object
+  df <- data.table::as.data.table(data.table::copy(as.data.frame(object)))
   begin <- attr(object, "begin")
   end <- attr(object, "end")
 

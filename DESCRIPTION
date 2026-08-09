@@ -37,6 +37,9 @@ Imports:
 Depends: R (>= 4.1.0)
 Suggests: 
     classInt,
+    DBI,
+    dbplyr,
+    duckdb,
     ggbeeswarm,
     ggrepel,
     gt,

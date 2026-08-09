@@ -95,6 +95,114 @@ testthat::test_that(
   }
 )
 
+testthat::test_that(
+  "rating_grid retains missing group values by default", {
+    df <- data.frame(a = c("x", NA), exposure = c(1, 2))
+
+    res <- rating_grid(
+      df,
+      group_by = "a",
+      exposure = "exposure"
+    )
+
+    testthat::expect_equal(nrow(res), 2)
+    testthat::expect_true(any(is.na(res$a)))
+    testthat::expect_equal(sum(res$exposure), 3)
+  }
+)
+
+testthat::test_that(
+  "rating_grid preserves established aggregation and ordering behaviour", {
+    df <- data.frame(
+      segment = factor(
+        c("Retail", "Industry", "Retail", NA),
+        levels = c("Industry", "Retail", "Unused")
+      ),
+      year = c(2021, 2020, 2020, 2021),
+      exposure = c(2, 3, 5, 7),
+      premium = c(20, 30, NA, 70)
+    )
+
+    res <- rating_grid(
+      df,
+      group_by = "segment",
+      exposure = "exposure",
+      exposure_by = "year",
+      aggregate_cols = "premium"
+    )
+
+    testthat::expect_identical(
+      names(res),
+      c("segment", "exposure_2020", "exposure_2021", "premium")
+    )
+    testthat::expect_setequal(
+      as.character(res$segment),
+      c(NA_character_, "Industry", "Retail")
+    )
+    industry <- res$segment == "Industry" & !is.na(res$segment)
+    retail <- res$segment == "Retail" & !is.na(res$segment)
+    missing <- is.na(res$segment)
+    testthat::expect_equal(res$exposure_2020[industry], 3)
+    testthat::expect_equal(res$exposure_2020[retail], 5)
+    testthat::expect_equal(res$exposure_2021[missing], 7)
+    testthat::expect_equal(
+      sort(res$premium),
+      c(20, 30, 70)
+    )
+  }
+)
+
+testthat::test_that(
+  "rating_grid does not modify data.table input by reference", {
+    df <- data.table::data.table(
+      segment = c("Industry", "Retail", "Retail"),
+      year = c(2020, 2020, 2021),
+      exposure = c(1, 2, 3)
+    )
+    original <- data.table::copy(df)
+
+    res <- rating_grid(
+      df,
+      group_by = "segment",
+      exposure = "exposure",
+      exposure_by = "year"
+    )
+
+    testthat::expect_identical(df, original)
+    testthat::expect_s3_class(res, "data.frame")
+    testthat::expect_false(data.table::is.data.table(res))
+  }
+)
+
+testthat::test_that(
+  "rating_grid supports split aggregation without grouping columns", {
+    df <- data.frame(
+      year = c(2020, 2021, 2020),
+      exposure = c(1, 2, 3)
+    )
+
+    exposure_grid <- rating_grid(
+      df,
+      group_by = character(),
+      exposure = "exposure",
+      exposure_by = "year"
+    )
+    count_grid <- rating_grid(
+      df,
+      group_by = character(),
+      exposure_by = "year"
+    )
+
+    testthat::expect_identical(
+      names(exposure_grid),
+      c("exposure_2020", "exposure_2021")
+    )
+    testthat::expect_equal(unname(unlist(exposure_grid[1, ])), c(4, 2))
+    testthat::expect_identical(names(count_grid), c("count_2020", "count_2021"))
+    testthat::expect_equal(unname(unlist(count_grid[1, ])), c(2L, 1L))
+  }
+)
+
 mtcars5 <- mtcars
 mtcars5$am <- as.factor(mtcars5$am)
 mtcars5$gear <- as.factor(mtcars5$gear)
@@ -126,6 +234,26 @@ testthat::test_that(
     testthat::expect_true(all(c("am", "gear") %in% names(res)))
     testthat::expect_false(all(names(mtcars5) %in% names(res)))
     testthat::expect_equal(names(res), c("am", "gear", "count", "mpg"))
+  }
+)
+
+testthat::test_that(
+  "rating_grid identifies offsets included in the model formula", {
+    df <- MTPL
+    df$zip <- factor(df$zip)
+    model <- glm(
+      nclaims ~ bm + zip + offset(log(exposure)),
+      family = poisson(link = "log"),
+      data = df
+    )
+
+    model_data <- extract_model_data(model)
+    res <- rating_grid(model_data)
+
+    testthat::expect_equal(attr(model_data, "rf"), c("bm", "zip"))
+    testthat::expect_equal(attr(model_data, "offweights"), "exposure")
+    testthat::expect_identical(names(res), c("bm", "zip", "count", "exposure"))
+    testthat::expect_equal(sum(res$exposure), sum(df$exposure))
   }
 )
 

@@ -2,6 +2,35 @@
 
 ## Changes since 0.8.1
 
+- `rating_grid_db()` and `merge_date_ranges_db()` add lazy database variants
+  for portfolios that should be reduced before they are imported into R.
+  `rating_grid_db()` translates grouped counts and sums through `dbplyr`, while
+  `merge_date_ranges_db()` implements temporal gaps-and-islands reduction in
+  DuckDB. A new large-portfolio vignette compares local and database workflows
+  and illustrates lazy reduction of portfolios with 10 and 50 million records.
+- `rating_grid()` and `merge_date_ranges()` are now documented together as
+  portfolio-reduction functions. Both use grouped `data.table` operations
+  internally and return ordinary `data.frame` objects for downstream use.
+- `split_periods_to_months()` and `active_rows_by_date()` are now documented as
+  portfolio time operations. Their calculations use local `data.table` objects
+  internally, while their public output is always a regular `data.frame`.
+  `split_periods_to_months()` now uses `data` as its first argument (`df` remains
+  available as a deprecated named argument) and expands periods without a
+  row-wise R loop. `active_rows_by_date()` replaces the technical `nomatch` and
+  `mult` arguments with `unmatched` and `multiple_matches`; the old names remain
+  available with deprecation warnings.
+- `merge_date_ranges()` now uses `merge_gap_days = 1` by default, so only
+  overlapping and directly adjacent coverage periods are merged unless a wider
+  administrative gap is selected explicitly. The interval reduction is now
+  performed as a grouped `data.table` calculation, avoiding row-wise R loops
+  for large portfolios. Empty inputs, nested intervals and aggregation
+  functions without a `na.rm` argument are handled explicitly. The deprecated
+  `reduce()` wrapper retains its historical default for compatibility. The
+  first argument is now named `data` (`df` remains available as a deprecated
+  named argument), and the result is a regular `data.frame` subclass while
+  `data.table` remains an internal implementation detail. Together with
+  `rating_grid()`, the function is documented as part of the portfolio
+  reduction workflow.
 - `rating_table()` now places the fitted reference level first within each risk
   factor by default, including a reference selected with `add_rebasing()`.
   Remaining levels can retain model order, be sorted alphabetically, or be

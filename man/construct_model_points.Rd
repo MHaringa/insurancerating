@@ -35,7 +35,8 @@ exposure or counts, for example a year variable.}
 columns to aggregate using \code{sum(na.rm = TRUE)}.}
 
 \item{drop_na}{Logical; if \code{TRUE}, rows with missing values in \code{group_by}
-are removed before aggregation. Default is \code{FALSE}.}
+are removed before aggregation. If \code{FALSE}, missing values define an
+explicit observed group and are retained. Default is \code{FALSE}.}
 
 \item{group_vars, agg_cols}{Deprecated argument names. Use \code{group_by} and
 \code{aggregate_cols} instead.}

@@ -372,7 +372,7 @@ summary(ref)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-06 10:37:23 CEST
+#> Created: 2026-08-09 14:24:53 CEST
 #> Observations: 30,000
 #> Family: Gamma (log link)
 #> Base formula:
@@ -435,7 +435,7 @@ summary(ref)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-06 10:37:23 CEST
+#> Created: 2026-08-09 14:24:53 CEST
 #> Observations: 30,000
 #> Family: Gamma (log link)
 #> Base formula:
@@ -547,7 +547,7 @@ summary(ref)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-06 10:37:23 CEST
+#> Created: 2026-08-09 14:24:53 CEST
 #> Observations: 30,000
 #> Family: Gamma (log link)
 #> Base formula:
@@ -642,18 +642,14 @@ refinement_audit <- audit_refinement(
   metric = "risk_premium"
 )
 #> Warning: Column in `exposure` is already used in model.
-#> Warning in merge.data.frame(out, mapping, by = old_col, all.x = TRUE, sort =
-#> FALSE): column name 'exposure' is duplicated in the result
-#> Warning in merge.data.frame(out, mapping, by = old_col, all.x = TRUE, sort =
-#> FALSE): column name 'exposure' is duplicated in the result
 
 summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Prepared: 2026-08-06 10:37:23 CEST
-#> Refitted: 2026-08-06 10:37:25 CEST
-#> Audited: 2026-08-06 10:37:26 CEST
+#> Prepared: 2026-08-09 14:24:53 CEST
+#> Refitted: 2026-08-09 14:24:56 CEST
+#> Audited: 2026-08-09 14:24:56 CEST
 #> Measure: risk_premium (response)
 #> Exposure: exposure
 #> 
@@ -764,13 +760,13 @@ Observed model-point combinations can be obtained with
 
 grid <- rating_grid(burn_refined)
 head(grid)
-#>   age_policyholder_smooth zip bm count  exposure zip_adj zip_shrunk zip_rebased
-#> 1                 (23,28]   1  1   414 342.57808     0.9  0.9113921    1.000000
-#> 2                 (23,28]   2  4    12  10.63836     1.0  1.0020445    1.099466
-#> 3                 (23,28]   3  1   267 235.07397     1.2  1.1807287    1.295522
-#> 4                 (23,28]   1 18     1   1.00000     0.9  0.9113921    1.000000
-#> 5                 (23,28]   2 18     1   1.00000     1.0  1.0020445    1.099466
-#> 6                 (23,28]   3  6    44  40.35890     1.2  1.1807287    1.295522
+#>   zip age_policyholder_smooth bm count  exposure zip_adj zip_shrunk zip_rebased
+#> 1   1                 (23,28]  1   414 342.57808     0.9  0.9113921           1
+#> 2   1                 (23,28]  2   173 145.25753     0.9  0.9113921           1
+#> 3   1                 (23,28]  3    53  46.53699     0.9  0.9113921           1
+#> 4   1                 (23,28]  4    26  22.31507     0.9  0.9113921           1
+#> 5   1                 (23,28]  5    54  46.78630     0.9  0.9113921           1
+#> 6   1                 (23,28]  6    71  65.13699     0.9  0.9113921           1
 #>   age_policyholder_freq_cat_smooth
 #> 1                         1.525996
 #> 2                         1.525996

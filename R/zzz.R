@@ -9,5 +9,5 @@ utils::globalVariables(c(
   "nclaims", "weighted_premium", "conf_low", "conf_high", "name", "x_num",
   "x_start", "x_end", "label", ".legacy_model_data", ".legacy_exposure",
   ".legacy_exposure_name", ".legacy_exponentiate", ".legacy_signif_stars",
-  ".legacy_round_exposure"
+  ".legacy_round_exposure", "ave"
 ))

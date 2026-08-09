@@ -7,8 +7,6 @@
 period_to_months(df, begin, end, ...)
 }
 \arguments{
-\item{df}{A \code{data.frame} or \code{data.table}.}
-
 \item{begin}{Deprecated NSE argument. Use \code{period_start} instead.}
 
 \item{end}{Deprecated NSE argument. Use \code{period_end} instead.}

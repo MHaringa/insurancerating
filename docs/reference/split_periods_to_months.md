@@ -1,18 +1,19 @@
-# Split policy periods into monthly rows
+# Split portfolio periods into calendar months
 
-Split policy or exposure periods that cross calendar-month boundaries
-into monthly rows. Numeric portfolio measures, such as exposure and
-premium, can be prorated over the resulting periods while preserving
-their total per original record.
+Split policy periods that cross calendar-month boundaries into separate
+monthly records. Numeric amounts such as earned exposure and earned
+premium can be allocated over those records while preserving the amount
+of each original portfolio row.
 
 ## Usage
 
 ``` r
 split_periods_to_months(
-  df,
+  data = NULL,
   period_start = NULL,
   period_end = NULL,
   prorate_cols = NULL,
+  df = NULL,
   begin = NULL,
   end = NULL,
   cols = NULL
@@ -21,9 +22,9 @@ split_periods_to_months(
 
 ## Arguments
 
-- df:
+- data:
 
-  A `data.frame` or `data.table`.
+  A `data.frame` or `data.table` containing policy or exposure periods.
 
 - period_start:
 
@@ -38,32 +39,55 @@ split_periods_to_months(
   Character vector with names of numeric columns to prorate over the
   monthly rows, for example exposure or premium.
 
-- begin, end, cols:
+- df, begin, end, cols:
 
-  Deprecated argument names kept for backward compatibility.
+  Deprecated argument names kept for backward compatibility. Use `data`,
+  `period_start`, `period_end`, and `prorate_cols`.
 
 ## Value
 
-A `data.frame` with the same columns as in `df`, plus an `id` column.
+A regular `data.frame` with one row for each calendar month covered by
+an original portfolio record. The original columns are retained and an
+`id` column identifies the source row. Columns supplied through
+`prorate_cols` contain their allocated monthly amounts.
 
 ## Details
 
-Rating and monitoring work often needs exposure, premium, claim counts,
-or policy counts by calendar month. Source portfolios, however, usually
-contain policy periods that start and end on arbitrary dates. This
-helper expands those periods into monthly rows before modelling,
-reporting, or joining to monthly portfolio summaries.
+Pricing, reserving and monitoring analyses often require exposure and
+premium by calendar month, whereas policy administration data generally
+contains periods with arbitrary start and end dates. The function
+converts those periods into a monthly representation before aggregation,
+modelling or reporting.
+
+This is a temporal expansion rather than a portfolio reduction. See
+[`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
+for consolidating connected periods and
+[`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
+for matching dated events to active periods.
 
 Prorated columns are distributed according to the part of the policy
-period that falls in each monthly row. Full months receive weight 1;
-partial months use a 30-day month convention. The total value of each
-prorated column is preserved per original row.
+period represented by each monthly row. Full months receive weight 1 and
+partial months use a 30-day convention. The monthly weights are
+normalised within each source row. Consequently, monthly exposure and
+premium sum to their original values, including for periods that contain
+partial months.
 
 Column names are supplied as character strings, for example
 `period_start = "begin_date"`. The deprecated
 [`period_to_months()`](https://mharinga.github.io/insurancerating/reference/period_to_months.md)
 interface used unquoted column names and is retained only for backward
 compatibility.
+
+Expansion and proration are performed internally with
+[`data.table::data.table()`](https://rdrr.io/pkg/data.table/man/data.table.html)
+on a local copy. The supplied object is not modified by reference, and
+the returned object is always a regular `data.frame`.
+
+## See also
+
+[`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md),
+[`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md),
+[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
 
 ## Author
 
@@ -72,32 +96,59 @@ Martin Haringa
 ## Examples
 
 ``` r
-library(lubridate)
 portfolio <- data.frame(
-  begin_date = ymd(c("2014-01-01", "2014-01-01")),
-  end_date   = ymd(c("2014-03-14", "2014-05-10")),
-  exposure   = c(0.2025, 0.3583),
-  premium    = c(125, 150)
+  policy_id = c("P001", "P002", "P003"),
+  sector = c("Industry", "Retail", "Services"),
+  coverage_start = as.Date(c("2025-01-15", "2025-02-01", "2025-03-20")),
+  coverage_end = as.Date(c("2025-03-31", "2025-02-28", "2025-05-10")),
+  earned_exposure = c(0.21, 0.08, 0.14),
+  earned_premium = c(420, 160, 280)
 )
 
-# Split policy records and prorate premium and exposure by month
-split_periods_to_months(portfolio,
-  period_start = "begin_date",
-  period_end = "end_date",
-  prorate_cols = c("premium", "exposure")
+# Allocate each policy period and its amounts over calendar months.
+monthly_portfolio <- split_periods_to_months(
+  portfolio,
+  period_start = "coverage_start",
+  period_end = "coverage_end",
+  prorate_cols = c("earned_exposure", "earned_premium")
 )
-#>   id begin_date   end_date   exposure  premium
-#> 1  1 2014-01-01 2014-01-31 0.08437500 52.08333
-#> 2  1 2014-02-01 2014-02-28 0.07875000 48.61111
-#> 3  1 2014-03-01 2014-03-14 0.03937500 24.30556
-#> 4  2 2014-01-01 2014-01-31 0.08397656 35.15625
-#> 5  2 2014-02-01 2014-02-28 0.07837813 32.81250
-#> 6  2 2014-03-01 2014-03-31 0.08397656 35.15625
-#> 7  2 2014-04-01 2014-04-30 0.08397656 35.15625
-#> 8  2 2014-05-01 2014-05-10 0.02799219 11.71875
+monthly_portfolio
+#>   id policy_id   sector coverage_start coverage_end earned_exposure
+#> 1  1      P001 Industry     2025-01-15   2025-01-31      0.04760000
+#> 2  1      P001 Industry     2025-02-01   2025-02-28      0.07840000
+#> 3  1      P001 Industry     2025-03-01   2025-03-31      0.08400000
+#> 4  2      P002   Retail     2025-02-01   2025-02-28      0.08000000
+#> 5  3      P003 Services     2025-03-20   2025-03-31      0.03230769
+#> 6  3      P003 Services     2025-04-01   2025-04-30      0.08076923
+#> 7  3      P003 Services     2025-05-01   2025-05-10      0.02692308
+#>   earned_premium
+#> 1       95.20000
+#> 2      156.80000
+#> 3      168.00000
+#> 4      160.00000
+#> 5       64.61538
+#> 6      161.53846
+#> 7       53.84615
+
+# The allocated monthly amounts reconcile to the source portfolio.
+aggregate(
+  cbind(earned_exposure, earned_premium) ~ id,
+  data = monthly_portfolio,
+  FUN = sum
+)
+#>   id earned_exposure earned_premium
+#> 1  1            0.21            420
+#> 2  2            0.08            160
+#> 3  3            0.14            280
 
 # Deprecated interface with unquoted column names
 if (FALSE) { # \dontrun{
-period_to_months(portfolio, begin_date, end_date, premium, exposure)
+period_to_months(
+  portfolio,
+  coverage_start,
+  coverage_end,
+  earned_exposure,
+  earned_premium
+)
 } # }
 ```

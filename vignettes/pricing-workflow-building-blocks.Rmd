@@ -1,8 +1,8 @@
 ---
-title: "Pricing workflow building blocks"
+title: "Pricing workflow overview"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Pricing workflow building blocks}
+  %\VignetteIndexEntry{Pricing workflow overview}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

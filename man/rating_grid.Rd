@@ -35,7 +35,8 @@ exposure or counts, for example a year variable.}
 columns to aggregate using \code{sum(na.rm = TRUE)}.}
 
 \item{drop_na}{Logical; if \code{TRUE}, rows with missing values in \code{group_by}
-are removed before aggregation. Default is \code{FALSE}.}
+are removed before aggregation. If \code{FALSE}, missing values define an
+explicit observed group and are retained. Default is \code{FALSE}.}
 
 \item{group_vars, agg_cols}{Deprecated argument names. Use \code{group_by} and
 \code{aggregate_cols} instead.}
@@ -49,6 +50,12 @@ observed rating-grid points. Exposure and other numeric measures can be
 aggregated alongside the combinations for prediction, tariff comparison and
 portfolio diagnostics.
 
+Together with \code{\link[=merge_date_ranges]{merge_date_ranges()}}, this function belongs to the portfolio
+reduction workflow. Both functions reduce row-level portfolio data while
+retaining selected totals. \code{rating_grid()} reduces across identical
+risk-factor combinations; \code{\link[=merge_date_ranges]{merge_date_ranges()}} reduces temporally connected
+records within the same policy, risk or portfolio segment.
+
 The function returns only combinations that are actually observed in the input
 data. It does \strong{not} create the full Cartesian product of all unique values.
 This keeps the output compact and suitable for model diagnostics, portfolio
@@ -60,6 +67,14 @@ the extracted model metadata to determine the grouping variables if
 recommended to supply \code{group_by} explicitly.
 }
 \details{
+\subsection{Portfolio reduction}{
+
+\code{rating_grid()} performs categorical portfolio reduction. It combines rows
+with the same observed \code{group_by} values and retains the corresponding totals.
+Use \code{\link[=merge_date_ranges]{merge_date_ranges()}} for the complementary temporal reduction of
+connected coverage periods.
+}
+
 \subsection{Observed combinations}{
 
 The grid represents the combinations present in the supplied portfolio or
@@ -68,6 +83,62 @@ observed. This avoids creating artificial model points and is particularly
 relevant when risk factors are structurally related, such as product,
 coverage and distribution channel.
 
+Each output row therefore represents one observed combination of the
+variables in \code{group_by}. Exposure and \code{aggregate_cols} are summed over the
+source records belonging to that combination. This is a categorical
+reduction of the portfolio; no date intervals are combined.
+}
+
+\subsection{Estimating a GLM on aggregated data}{
+
+For a standard Poisson frequency GLM, aggregation before model fitting can
+preserve the coefficient estimates exactly. This applies when records are
+grouped by every predictor used in the model, claim counts are summed, earned
+exposure is summed, and the aggregated model uses \code{offset(log(exposure))}.
+Within such a group all records have the same linear predictor. Their
+contribution to the coefficient estimation therefore depends on total claims
+and total exposure, which are retained by the rating grid.
+
+This equivalence is conditional, not a general property of every GLM.
+Aggregating over a model variable changes the model, and row-level weights,
+interactions, offsets or non-additive quantities must be retained correctly.
+Binomial, severity, quasi-likelihood and dispersion analyses require their
+own sufficient totals and weights. Row-level residuals and influence
+diagnostics are also no longer available after aggregation, even when the
+fitted Poisson coefficients are unchanged.
+
+In practice, a rating grid is particularly useful before estimating a
+frequency model on a large portfolio. It can reduce repeated policy records
+to a much smaller table, lowering memory use and fitting time. Keep the
+unaggregated data when policy-level predictions, sampling, validation or
+diagnostics are required, and verify on a representative sample that the
+selected aggregation retains all inputs needed by the intended model.
+}
+
+\subsection{Estimating a severity GLM on aggregated data}{
+
+Claim count and claim amount are additive portfolio measures and can be
+supplied through \code{aggregate_cols}. Frequency is then calculated as total
+claim count divided by total exposure. Average severity is total claim amount
+divided by total claim count.
+
+A Gamma severity GLM fitted to grouped average severities can produce the same
+coefficient estimates as a model fitted to the underlying individual claims.
+This requires grouping by every predictor in the severity model, calculating
+\code{average_severity = claim_amount / claim_count}, using \code{claim_count} as the
+model weight, and applying the same family and link. Within each grid row all
+underlying claims then have the same linear predictor, while the weight
+retains the number of claims represented by the average.
+
+This equivalence concerns the coefficient estimates, not the complete model
+output. Aggregation removes claim-level residuals and outlier information.
+Deviance, residual degrees of freedom, estimated dispersion, standard errors
+and significance tests can therefore differ from a claim-level fit. Claim-
+level data should remain available for severity-distribution checks,
+influential-claim analysis and model validation. The equivalence is also
+lost if a severity predictor varies within a grid row or if the totals and
+weights do not represent the underlying claims correctly.
+
 If \code{exposure_by} is supplied, exposure or row counts are split across levels
 of that variable and returned in wide format, for example
 \code{"exposure_2020"} or \code{"count_2020"}.
@@ -75,36 +146,112 @@ of that variable and returned in wide format, for example
 For objects returned by \code{\link[=extract_model_data]{extract_model_data()}}, refinement mappings are joined
 by their original factor column. They are not cross-joined onto every row.
 
-The implementation uses base R only. The output is a regular \code{data.frame},
-irrespective of the class of the input data.
+Aggregation, reshaping and refinement joins are performed internally with
+\code{\link[data.table:data.table]{data.table::data.table()}} to support large pricing portfolios. A local copy
+is used, so the supplied object is not modified by reference. The output is
+a regular \code{data.frame}, irrespective of the class of the input data.
+
+When the row-level portfolio does not fit comfortably in R memory, use
+\code{\link[=rating_grid_db]{rating_grid_db()}} to perform the grouped reduction in a database and collect
+only the resulting grid.
 }
 }
 \examples{
-\dontrun{
-rating_grid(mtcars, group_by = c("cyl", "vs"))
+portfolio <- data.frame(
+  policy_id = 1:10,
+  sector = rep(c("Industry", "Retail"), each = 5),
+  region = rep(c("North", "South"), 5),
+  underwriting_year = rep(c(2024, 2025), each = 5),
+  earned_exposure = c(1, 0.8, 1, 0.5, 1, 1, 0.7, 1, 0.9, 1),
+  claim_count = c(0, 1, 2, 0, 1, 0, 1, 0, 2, 1),
+  claim_amount = c(0, 2500, 18000, 0, 6000, 0, 4500, 0, 22000, 9000)
+)
 
+# Aggregate policy records into observed combinations of sector and region.
+# The resulting exposure is the total earned exposure in each combination.
 rating_grid(
-  mtcars,
-  group_by = c("cyl", "vs"),
-  exposure = "disp",
-  exposure_by = "gear",
-  aggregate_cols = "mpg"
+  portfolio,
+  group_by = c("sector", "region"),
+  exposure = "earned_exposure"
 )
 
-pmodel <- glm(
-  breaks ~ wool + tension,
-  data = warpbreaks,
-  family = poisson(link = "log")
+# Split earned exposure by underwriting year. This is useful when reviewing
+# whether the portfolio mix within each rating combination changes over time.
+rating_grid(
+  portfolio,
+  group_by = c("sector", "region"),
+  exposure = "earned_exposure",
+  exposure_by = "underwriting_year"
 )
 
-pmodel |>
+# Claim count and claim amount remain additive totals in the rating grid.
+# Frequency and average severity can subsequently be derived from them.
+claims_grid <- rating_grid(
+  portfolio,
+  group_by = c("sector", "region"),
+  exposure = "earned_exposure",
+  aggregate_cols = c("claim_count", "claim_amount")
+)
+
+claims_grid$frequency <-
+  claims_grid$claim_count / claims_grid$earned_exposure
+claims_grid$average_severity <- ifelse(
+  claims_grid$claim_count > 0,
+  claims_grid$claim_amount / claims_grid$claim_count,
+  NA_real_
+)
+claims_grid
+
+# Fit a severity model to grouped average claim amounts. Grid rows without
+# claims are excluded because average severity is undefined for those rows.
+severity_model_grid <- glm(
+  average_severity ~ sector + region,
+  weights = claim_count,
+  family = Gamma(link = "log"),
+  data = subset(claims_grid, claim_count > 0)
+)
+coef(severity_model_grid)
+
+# For a fitted GLM, extract_model_data() retains the model variables and
+# exposure information required to construct the observed rating grid.
+mtpl_portfolio <- MTPL
+mtpl_portfolio$zip <- factor(mtpl_portfolio$zip)
+
+frequency_model <- glm(
+  nclaims ~ bm + zip + offset(log(exposure)),
+  family = poisson(link = "log"),
+  data = mtpl_portfolio
+)
+
+frequency_model |>
   extract_model_data() |>
   rating_grid()
-}
+
+# For this Poisson frequency model, fitting on the corresponding aggregated
+# grid gives the same coefficient estimates as fitting on the policy rows.
+frequency_grid <- rating_grid(
+  mtpl_portfolio,
+  group_by = c("bm", "zip"),
+  exposure = "exposure",
+  aggregate_cols = "nclaims"
+)
+
+frequency_model_grid <- glm(
+  nclaims ~ bm + zip + offset(log(exposure)),
+  family = poisson(link = "log"),
+  data = frequency_grid
+)
+
+isTRUE(all.equal(
+  unname(coef(frequency_model)),
+  unname(coef(frequency_model_grid)),
+  tolerance = 1e-8
+))
 
 }
 \seealso{
-\code{\link[=extract_model_data]{extract_model_data()}}, \code{\link[=rating_table]{rating_table()}}
+\code{\link[=rating_grid_db]{rating_grid_db()}}, \code{\link[=merge_date_ranges]{merge_date_ranges()}},
+\code{\link[=merge_date_ranges_db]{merge_date_ranges_db()}}, \code{\link[=extract_model_data]{extract_model_data()}}, \code{\link[=rating_table]{rating_table()}}
 }
 \author{
 Martin Haringa

@@ -109,12 +109,34 @@ behaviour.
 
 ## Model structure
 
-Extract model data and analyse observed rating-grid combinations.
+Extract the data and metadata represented by fitted pricing models.
 
 - [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
   : Recover the portfolio data used by a fitted model
+
+## Portfolio reduction
+
+Reduce portfolio records across observed rating-factor combinations or
+connected coverage periods, locally or lazily in a database.
+
 - [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
   : Construct observed rating-grid points
+- [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
+  : Reduce portfolio periods by merging adjacent date ranges
+- [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md)
+  : Reduce a database portfolio to observed rating-grid points
+- [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md)
+  : Merge connected portfolio periods in DuckDB
+
+## Portfolio time operations
+
+Expand policy periods to reporting months or match dated events to
+active portfolio records.
+
+- [`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md)
+  : Split portfolio periods into calendar months
+- [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
+  : Match event dates to active portfolio periods
 
 ## Utilities
 
@@ -128,12 +150,6 @@ Supporting functions used across pricing workflows.
   : Simulate severities from a truncated gamma distribution
 - [`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md)
   : Set the reference level of a factor
-- [`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md)
-  : Split policy periods into monthly rows
-- [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
-  : Find active portfolio rows for event dates
-- [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
-  : Reduce portfolio periods by merging adjacent date ranges
 
 ## Data
 

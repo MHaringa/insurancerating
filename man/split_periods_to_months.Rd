@@ -2,20 +2,22 @@
 % Please edit documentation in R/time_period_to_months.R
 \name{split_periods_to_months}
 \alias{split_periods_to_months}
-\title{Split policy periods into monthly rows}
+\title{Split portfolio periods into calendar months}
 \usage{
 split_periods_to_months(
-  df,
+  data = NULL,
   period_start = NULL,
   period_end = NULL,
   prorate_cols = NULL,
+  df = NULL,
   begin = NULL,
   end = NULL,
   cols = NULL
 )
 }
 \arguments{
-\item{df}{A \code{data.frame} or \code{data.table}.}
+\item{data}{A \code{data.frame} or \code{data.table} containing policy or exposure
+periods.}
 
 \item{period_start}{Character string. Name of the column with policy period
 start dates.}
@@ -26,55 +28,88 @@ dates.}
 \item{prorate_cols}{Character vector with names of numeric columns to prorate
 over the monthly rows, for example exposure or premium.}
 
-\item{begin, end, cols}{Deprecated argument names kept for backward
-compatibility.}
+\item{df, begin, end, cols}{Deprecated argument names kept for backward
+compatibility. Use \code{data}, \code{period_start}, \code{period_end}, and
+\code{prorate_cols}.}
 }
 \value{
-A \code{data.frame} with the same columns as in \code{df}, plus an \code{id} column.
+A regular \code{data.frame} with one row for each calendar month covered
+by an original portfolio record. The original columns are retained and an
+\code{id} column identifies the source row. Columns supplied through
+\code{prorate_cols} contain their allocated monthly amounts.
 }
 \description{
-Split policy or exposure periods that cross calendar-month boundaries into
-monthly rows. Numeric portfolio measures, such as exposure and premium, can
-be prorated over the resulting periods while preserving their total per
-original record.
+Split policy periods that cross calendar-month boundaries into separate
+monthly records. Numeric amounts such as earned exposure and earned premium
+can be allocated over those records while preserving the amount of each
+original portfolio row.
 }
 \details{
-Rating and monitoring work often needs exposure, premium, claim counts, or
-policy counts by calendar month. Source portfolios, however, usually contain
-policy periods that start and end on arbitrary dates. This helper expands
-those periods into monthly rows before modelling, reporting, or joining to
-monthly portfolio summaries.
+Pricing, reserving and monitoring analyses often require exposure and premium
+by calendar month, whereas policy administration data generally contains
+periods with arbitrary start and end dates. The function converts those
+periods into a monthly representation before aggregation, modelling or
+reporting.
+
+This is a temporal expansion rather than a portfolio reduction. See
+\code{\link[=merge_date_ranges]{merge_date_ranges()}} for consolidating connected periods and
+\code{\link[=active_rows_by_date]{active_rows_by_date()}} for matching dated events to active periods.
 
 Prorated columns are distributed according to the part of the policy period
-that falls in each monthly row. Full months receive weight 1; partial months
-use a 30-day month convention. The total value of each prorated column is
-preserved per original row.
+represented by each monthly row. Full months receive weight 1 and partial
+months use a 30-day convention. The monthly weights are normalised within
+each source row. Consequently, monthly exposure and premium sum to their
+original values, including for periods that contain partial months.
 
 Column names are supplied as character strings, for example
 \code{period_start = "begin_date"}. The deprecated \code{\link[=period_to_months]{period_to_months()}} interface
 used unquoted column names and is retained only for backward compatibility.
+
+Expansion and proration are performed internally with
+\code{\link[data.table:data.table]{data.table::data.table()}} on a local copy. The supplied object is not
+modified by reference, and the returned object is always a regular
+\code{data.frame}.
 }
 \examples{
-library(lubridate)
 portfolio <- data.frame(
-  begin_date = ymd(c("2014-01-01", "2014-01-01")),
-  end_date   = ymd(c("2014-03-14", "2014-05-10")),
-  exposure   = c(0.2025, 0.3583),
-  premium    = c(125, 150)
+  policy_id = c("P001", "P002", "P003"),
+  sector = c("Industry", "Retail", "Services"),
+  coverage_start = as.Date(c("2025-01-15", "2025-02-01", "2025-03-20")),
+  coverage_end = as.Date(c("2025-03-31", "2025-02-28", "2025-05-10")),
+  earned_exposure = c(0.21, 0.08, 0.14),
+  earned_premium = c(420, 160, 280)
 )
 
-# Split policy records and prorate premium and exposure by month
-split_periods_to_months(portfolio,
-  period_start = "begin_date",
-  period_end = "end_date",
-  prorate_cols = c("premium", "exposure")
+# Allocate each policy period and its amounts over calendar months.
+monthly_portfolio <- split_periods_to_months(
+  portfolio,
+  period_start = "coverage_start",
+  period_end = "coverage_end",
+  prorate_cols = c("earned_exposure", "earned_premium")
+)
+monthly_portfolio
+
+# The allocated monthly amounts reconcile to the source portfolio.
+aggregate(
+  cbind(earned_exposure, earned_premium) ~ id,
+  data = monthly_portfolio,
+  FUN = sum
 )
 
 # Deprecated interface with unquoted column names
 \dontrun{
-period_to_months(portfolio, begin_date, end_date, premium, exposure)
+period_to_months(
+  portfolio,
+  coverage_start,
+  coverage_end,
+  earned_exposure,
+  earned_premium
+)
 }
 
+}
+\seealso{
+\code{\link[=active_rows_by_date]{active_rows_by_date()}}, \code{\link[=merge_date_ranges]{merge_date_ranges()}}, \code{\link[=rating_grid]{rating_grid()}}
 }
 \author{
 Martin Haringa

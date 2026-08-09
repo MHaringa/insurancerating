@@ -2,7 +2,7 @@
 % Please edit documentation in R/time_rows_per_date.R
 \name{active_rows_by_date}
 \alias{active_rows_by_date}
-\title{Find active portfolio rows for event dates}
+\title{Match event dates to active portfolio periods}
 \usage{
 active_rows_by_date(
   portfolio,
@@ -11,8 +11,10 @@ active_rows_by_date(
   period_end,
   date,
   by = NULL,
+  unmatched = c("drop", "keep"),
+  multiple_matches = c("all", "first", "last"),
   nomatch = NULL,
-  mult = "all"
+  mult = NULL
 )
 }
 \arguments{
@@ -32,81 +34,95 @@ end dates.}
 \item{by}{Character vector with additional columns used to match \code{portfolio}
 and \code{dates}, for example policy number or claim identifier.}
 
-\item{nomatch}{Controls event dates for which no active portfolio row is
-found. With \code{NULL}, unmatched events are omitted. With \code{NA}, they are retained
-with missing portfolio information.}
+\item{unmatched}{Character string. Use \code{"drop"} to omit event dates for which
+no active portfolio row is found, or \code{"keep"} to retain them with missing
+portfolio information. The default is \code{"drop"}.}
 
-\item{mult}{Controls the result when an event date matches multiple active
-portfolio rows. Use \code{"all"} to retain every match, or \code{"first"} or \code{"last"}
-to retain one matching row. The default is \code{"all"}.}
+\item{multiple_matches}{Character string controlling events that match
+multiple active portfolio rows. Use \code{"all"} to retain every match, or
+\code{"first"} or \code{"last"} to retain one matching row. The default is \code{"all"}.}
+
+\item{nomatch, mult}{Deprecated technical argument names. Use \code{unmatched} and
+\code{multiple_matches} instead.}
 }
 \value{
-An object with the same class as \code{portfolio}.
+A regular \code{data.frame} containing the event records and the portfolio
+information active on their dates. Event order is preserved. Depending on
+\code{multiple_matches}, one event can produce more than one output row.
 }
 \description{
-Matches event dates, such as claim dates or portfolio snapshot dates, to the
-policy or risk records that were active on those dates. This allows an event
-to inherit the rating factors and coverage information that applied when it
-occurred.
+Match event dates, such as claim dates or inspection dates, to policy records
+that were active when the event occurred. The matched result contains the
+portfolio characteristics and coverage information applicable on each event
+date.
 }
 \details{
-This is useful when claim records or other dated events need the rating
-factors, premium, exposure, or policy attributes that were active at the event
-date. The function performs an interval join between event dates and
-portfolio coverage periods, optionally within matching identifiers such as a
-policy number.
+Claim and event files often contain an event date and policy identifier but
+not the rating factors used at that point in time. The function performs an
+interval match between those events and the portfolio history. Supplying a
+policy identifier through \code{by} prevents an event from matching active periods
+belonging to another policy.
 
-Multiple matches can be valid, for example when several coverages are active
-on the same date, but may also indicate overlapping portfolio periods. The
-analyst should select \code{mult} in accordance with the structure of the source
-data and the intended event-level analysis.
+This is a temporal matching operation rather than a portfolio reduction. See
+\code{\link[=merge_date_ranges]{merge_date_ranges()}} for consolidating connected coverage periods and
+\code{\link[=split_periods_to_months]{split_periods_to_months()}} for expanding periods into monthly records.
+
+Multiple matches can be valid when one event relates to several concurrently
+active coverages. They can also reveal overlapping or duplicated policy
+periods. Use \code{multiple_matches = "all"} when every active record is relevant;
+use \code{"first"} or \code{"last"} only when the source system defines which record
+should take precedence.
+
+With \code{unmatched = "drop"}, events outside every applicable coverage period
+are omitted. With \code{unmatched = "keep"}, they remain visible with missing
+portfolio fields. Retaining unmatched events is generally preferable during
+data-quality review because it makes gaps in the policy history explicit.
+
+The interval join is performed internally with \code{\link[data.table:foverlaps]{data.table::foverlaps()}} on
+local copies. Neither input is modified by reference. The output follows the
+original order of \code{dates} and is always returned as a regular \code{data.frame}.
 }
 \examples{
-library(lubridate)
 portfolio <- data.frame(
-begin1 = ymd(c("2014-01-01", "2014-01-01")),
-end = ymd(c("2014-03-14", "2014-05-10")),
-termination = ymd(c("2014-03-14", "2014-05-10")),
-exposure = c(0.2025, 0.3583),
-premium =  c(125, 150),
-car_type = c("BMW", "TESLA"))
-
-## Find active rows on different dates
-dates0 <- data.frame(active_date = seq(ymd("2014-01-01"), ymd("2014-05-01"),
-by = "months"))
-active_rows_by_date(
-  portfolio,
-  dates0,
-  period_start = "begin1",
-  period_end = "end",
-  date = "active_date"
+  policy_id = c("P001", "P001", "P002"),
+  coverage_start = as.Date(c("2024-01-01", "2025-01-01", "2025-01-01")),
+  coverage_end = as.Date(c("2024-12-31", "2025-12-31", "2025-12-31")),
+  sector = c("Retail", "Industry", "Services"),
+  insured_amount = c(500000, 750000, 300000),
+  earned_premium = c(900, 1250, 650)
 )
 
-## With extra identifiers (merge claim date with time interval in portfolio)
-claim_dates <- data.frame(claim_date = ymd("2014-01-01"),
-car_type = c("BMW", "VOLVO"))
+claims <- data.frame(
+  claim_id = c("C001", "C002", "C003"),
+  policy_id = c("P001", "P001", "P002"),
+  claim_date = as.Date(c("2024-06-15", "2025-08-10", "2026-01-10")),
+  claim_amount = c(12000, 45000, 8000)
+)
 
-### Only rows are returned that can be matched
+# Attach the policy characteristics that applied on each claim date.
 active_rows_by_date(
   portfolio,
-  claim_dates,
-  period_start = "begin1",
-  period_end = "end",
+  claims,
+  period_start = "coverage_start",
+  period_end = "coverage_end",
   date = "claim_date",
-  by = "car_type"
+  by = "policy_id"
 )
 
-### When row cannot be matched, NA is returned for that row
+# Keep claims outside the available policy history for data-quality review.
 active_rows_by_date(
   portfolio,
-  claim_dates,
-  period_start = "begin1",
-  period_end = "end",
+  claims,
+  period_start = "coverage_start",
+  period_end = "coverage_end",
   date = "claim_date",
-  by = "car_type",
-  nomatch = NA
+  by = "policy_id",
+  unmatched = "keep"
 )
 
+}
+\seealso{
+\code{\link[=split_periods_to_months]{split_periods_to_months()}}, \code{\link[=merge_date_ranges]{merge_date_ranges()}}, \code{\link[=rating_grid]{rating_grid()}}
 }
 \author{
 Martin Haringa

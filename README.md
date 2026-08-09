@@ -212,9 +212,11 @@ Full documentation and examples are available in the articles:
 
 - [Getting
   started](https://mharinga.github.io/insurancerating/articles/getting-started.html)
+- [Pricing workflow
+  overview](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html)
 - [Refinement building
   blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.html)
 - [Model
   validation](https://mharinga.github.io/insurancerating/articles/model-validation.html)
-- [Pricing workflow building
-  blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html)
+- [Working with large insurance
+  portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.html)

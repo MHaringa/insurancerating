@@ -446,7 +446,7 @@ selected weighted level of the risk factor.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-08-06 10:37:23 CEST</span></span>
+<span><span class="co">#&gt; Created: 2026-08-09 14:24:53 CEST</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: Gamma (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -505,7 +505,7 @@ level relativity 1 and usually provides a stable reporting basis.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-08-06 10:37:23 CEST</span></span>
+<span><span class="co">#&gt; Created: 2026-08-09 14:24:53 CEST</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: Gamma (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -609,7 +609,7 @@ final step is:</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-08-06 10:37:23 CEST</span></span>
+<span><span class="co">#&gt; Created: 2026-08-09 14:24:53 CEST</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: Gamma (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -694,18 +694,14 @@ portfolio combinations.</p>
 <span>  metric <span class="op">=</span> <span class="st">"risk_premium"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: Column in `exposure` is already used in model.</span></span>
-<span><span class="co">#&gt; Warning in merge.data.frame(out, mapping, by = old_col, all.x = TRUE, sort =</span></span>
-<span><span class="co">#&gt; FALSE): column name 'exposure' is duplicated in the result</span></span>
-<span><span class="co">#&gt; Warning in merge.data.frame(out, mapping, by = old_col, all.x = TRUE, sort =</span></span>
-<span><span class="co">#&gt; FALSE): column name 'exposure' is duplicated in the result</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">refinement_audit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Refinement audit</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Prepared: 2026-08-06 10:37:23 CEST</span></span>
-<span><span class="co">#&gt; Refitted: 2026-08-06 10:37:25 CEST</span></span>
-<span><span class="co">#&gt; Audited: 2026-08-06 10:37:26 CEST</span></span>
+<span><span class="co">#&gt; Prepared: 2026-08-09 14:24:53 CEST</span></span>
+<span><span class="co">#&gt; Refitted: 2026-08-09 14:24:56 CEST</span></span>
+<span><span class="co">#&gt; Audited: 2026-08-09 14:24:56 CEST</span></span>
 <span><span class="co">#&gt; Measure: risk_premium (response)</span></span>
 <span><span class="co">#&gt; Exposure: exposure</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -806,13 +802,13 @@ combination of factor levels.</p>
 <code class="sourceCode R"><span></span>
 <span><span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span><span class="va">burn_refined</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">grid</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   age_policyholder_smooth zip bm count  exposure zip_adj zip_shrunk zip_rebased</span></span>
-<span><span class="co">#&gt; 1                 (23,28]   1  1   414 342.57808     0.9  0.9113921    1.000000</span></span>
-<span><span class="co">#&gt; 2                 (23,28]   2  4    12  10.63836     1.0  1.0020445    1.099466</span></span>
-<span><span class="co">#&gt; 3                 (23,28]   3  1   267 235.07397     1.2  1.1807287    1.295522</span></span>
-<span><span class="co">#&gt; 4                 (23,28]   1 18     1   1.00000     0.9  0.9113921    1.000000</span></span>
-<span><span class="co">#&gt; 5                 (23,28]   2 18     1   1.00000     1.0  1.0020445    1.099466</span></span>
-<span><span class="co">#&gt; 6                 (23,28]   3  6    44  40.35890     1.2  1.1807287    1.295522</span></span>
+<span><span class="co">#&gt;   zip age_policyholder_smooth bm count  exposure zip_adj zip_shrunk zip_rebased</span></span>
+<span><span class="co">#&gt; 1   1                 (23,28]  1   414 342.57808     0.9  0.9113921           1</span></span>
+<span><span class="co">#&gt; 2   1                 (23,28]  2   173 145.25753     0.9  0.9113921           1</span></span>
+<span><span class="co">#&gt; 3   1                 (23,28]  3    53  46.53699     0.9  0.9113921           1</span></span>
+<span><span class="co">#&gt; 4   1                 (23,28]  4    26  22.31507     0.9  0.9113921           1</span></span>
+<span><span class="co">#&gt; 5   1                 (23,28]  5    54  46.78630     0.9  0.9113921           1</span></span>
+<span><span class="co">#&gt; 6   1                 (23,28]  6    71  65.13699     0.9  0.9113921           1</span></span>
 <span><span class="co">#&gt;   age_policyholder_freq_cat_smooth</span></span>
 <span><span class="co">#&gt; 1                         1.525996</span></span>
 <span><span class="co">#&gt; 2                         1.525996</span></span>

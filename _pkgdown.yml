@@ -14,14 +14,17 @@ navbar:
     right: [github]
 
 articles:
-  - title: "Workflow"
+  - title: "Start here"
     contents:
       - getting-started
+      - pricing-workflow-building-blocks
+  - title: "Model development"
+    contents:
       - refinement-workflow
       - model-validation
-  - title: "Overview"
+  - title: "Portfolio data"
     contents:
-      - pricing-workflow-building-blocks
+      - large-portfolios
 
 reference:
   - title: "Portfolio analysis"
@@ -92,10 +95,25 @@ reference:
 
   - title: "Model structure"
     desc: >
-      Extract model data and analyse observed rating-grid combinations.
+      Extract the data and metadata represented by fitted pricing models.
     contents:
       - extract_model_data
+
+  - title: "Portfolio reduction"
+    desc: >
+      Reduce portfolio records across observed rating-factor combinations or connected coverage periods, locally or lazily in a database.
+    contents:
       - rating_grid
+      - merge_date_ranges
+      - rating_grid_db
+      - merge_date_ranges_db
+
+  - title: "Portfolio time operations"
+    desc: >
+      Expand policy periods to reporting months or match dated events to active portfolio records.
+    contents:
+      - split_periods_to_months
+      - active_rows_by_date
 
   - title: "Utilities"
     desc: >
@@ -105,9 +123,6 @@ reference:
       - rlnormt
       - rgammat
       - set_reference_level
-      - split_periods_to_months
-      - active_rows_by_date
-      - merge_date_ranges
 
   - title: "Data"
     contents:

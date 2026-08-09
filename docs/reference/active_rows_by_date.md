@@ -1,9 +1,9 @@
-# Find active portfolio rows for event dates
+# Match event dates to active portfolio periods
 
-Matches event dates, such as claim dates or portfolio snapshot dates, to
-the policy or risk records that were active on those dates. This allows
-an event to inherit the rating factors and coverage information that
-applied when it occurred.
+Match event dates, such as claim dates or inspection dates, to policy
+records that were active when the event occurred. The matched result
+contains the portfolio characteristics and coverage information
+applicable on each event date.
 
 ## Usage
 
@@ -15,8 +15,10 @@ active_rows_by_date(
   period_end,
   date,
   by = NULL,
+  unmatched = c("drop", "keep"),
+  multiple_matches = c("all", "first", "last"),
   nomatch = NULL,
-  mult = "all"
+  mult = NULL
 )
 ```
 
@@ -49,34 +51,67 @@ active_rows_by_date(
   Character vector with additional columns used to match `portfolio` and
   `dates`, for example policy number or claim identifier.
 
-- nomatch:
+- unmatched:
 
-  Controls event dates for which no active portfolio row is found. With
-  `NULL`, unmatched events are omitted. With `NA`, they are retained
-  with missing portfolio information.
+  Character string. Use `"drop"` to omit event dates for which no active
+  portfolio row is found, or `"keep"` to retain them with missing
+  portfolio information. The default is `"drop"`.
 
-- mult:
+- multiple_matches:
 
-  Controls the result when an event date matches multiple active
+  Character string controlling events that match multiple active
   portfolio rows. Use `"all"` to retain every match, or `"first"` or
   `"last"` to retain one matching row. The default is `"all"`.
 
+- nomatch, mult:
+
+  Deprecated technical argument names. Use `unmatched` and
+  `multiple_matches` instead.
+
 ## Value
 
-An object with the same class as `portfolio`.
+A regular `data.frame` containing the event records and the portfolio
+information active on their dates. Event order is preserved. Depending
+on `multiple_matches`, one event can produce more than one output row.
 
 ## Details
 
-This is useful when claim records or other dated events need the rating
-factors, premium, exposure, or policy attributes that were active at the
-event date. The function performs an interval join between event dates
-and portfolio coverage periods, optionally within matching identifiers
-such as a policy number.
+Claim and event files often contain an event date and policy identifier
+but not the rating factors used at that point in time. The function
+performs an interval match between those events and the portfolio
+history. Supplying a policy identifier through `by` prevents an event
+from matching active periods belonging to another policy.
 
-Multiple matches can be valid, for example when several coverages are
-active on the same date, but may also indicate overlapping portfolio
-periods. The analyst should select `mult` in accordance with the
-structure of the source data and the intended event-level analysis.
+This is a temporal matching operation rather than a portfolio reduction.
+See
+[`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
+for consolidating connected coverage periods and
+[`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md)
+for expanding periods into monthly records.
+
+Multiple matches can be valid when one event relates to several
+concurrently active coverages. They can also reveal overlapping or
+duplicated policy periods. Use `multiple_matches = "all"` when every
+active record is relevant; use `"first"` or `"last"` only when the
+source system defines which record should take precedence.
+
+With `unmatched = "drop"`, events outside every applicable coverage
+period are omitted. With `unmatched = "keep"`, they remain visible with
+missing portfolio fields. Retaining unmatched events is generally
+preferable during data-quality review because it makes gaps in the
+policy history explicit.
+
+The interval join is performed internally with
+[`data.table::foverlaps()`](https://rdrr.io/pkg/data.table/man/foverlaps.html)
+on local copies. Neither input is modified by reference. The output
+follows the original order of `dates` and is always returned as a
+regular `data.frame`.
+
+## See also
+
+[`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md),
+[`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md),
+[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
 
 ## Author
 
@@ -85,67 +120,54 @@ Martin Haringa
 ## Examples
 
 ``` r
-library(lubridate)
-#> 
-#> Attaching package: ‘lubridate’
-#> The following objects are masked from ‘package:base’:
-#> 
-#>     date, intersect, setdiff, union
 portfolio <- data.frame(
-begin1 = ymd(c("2014-01-01", "2014-01-01")),
-end = ymd(c("2014-03-14", "2014-05-10")),
-termination = ymd(c("2014-03-14", "2014-05-10")),
-exposure = c(0.2025, 0.3583),
-premium =  c(125, 150),
-car_type = c("BMW", "TESLA"))
-
-## Find active rows on different dates
-dates0 <- data.frame(active_date = seq(ymd("2014-01-01"), ymd("2014-05-01"),
-by = "months"))
-active_rows_by_date(
-  portfolio,
-  dates0,
-  period_start = "begin1",
-  period_end = "end",
-  date = "active_date"
+  policy_id = c("P001", "P001", "P002"),
+  coverage_start = as.Date(c("2024-01-01", "2025-01-01", "2025-01-01")),
+  coverage_end = as.Date(c("2024-12-31", "2025-12-31", "2025-12-31")),
+  sector = c("Retail", "Industry", "Services"),
+  insured_amount = c(500000, 750000, 300000),
+  earned_premium = c(900, 1250, 650)
 )
-#>       begin1        end termination exposure premium car_type active_date
-#> 1 2014-01-01 2014-03-14  2014-03-14   0.2025     125      BMW  2014-01-01
-#> 2 2014-01-01 2014-05-10  2014-05-10   0.3583     150    TESLA  2014-01-01
-#> 3 2014-01-01 2014-03-14  2014-03-14   0.2025     125      BMW  2014-02-01
-#> 4 2014-01-01 2014-05-10  2014-05-10   0.3583     150    TESLA  2014-02-01
-#> 5 2014-01-01 2014-03-14  2014-03-14   0.2025     125      BMW  2014-03-01
-#> 6 2014-01-01 2014-05-10  2014-05-10   0.3583     150    TESLA  2014-03-01
-#> 7 2014-01-01 2014-05-10  2014-05-10   0.3583     150    TESLA  2014-04-01
-#> 8 2014-01-01 2014-05-10  2014-05-10   0.3583     150    TESLA  2014-05-01
 
-## With extra identifiers (merge claim date with time interval in portfolio)
-claim_dates <- data.frame(claim_date = ymd("2014-01-01"),
-car_type = c("BMW", "VOLVO"))
+claims <- data.frame(
+  claim_id = c("C001", "C002", "C003"),
+  policy_id = c("P001", "P001", "P002"),
+  claim_date = as.Date(c("2024-06-15", "2025-08-10", "2026-01-10")),
+  claim_amount = c(12000, 45000, 8000)
+)
 
-### Only rows are returned that can be matched
+# Attach the policy characteristics that applied on each claim date.
 active_rows_by_date(
   portfolio,
-  claim_dates,
-  period_start = "begin1",
-  period_end = "end",
+  claims,
+  period_start = "coverage_start",
+  period_end = "coverage_end",
   date = "claim_date",
-  by = "car_type"
+  by = "policy_id"
 )
-#>   car_type     begin1        end termination exposure premium claim_date
-#> 1      BMW 2014-01-01 2014-03-14  2014-03-14   0.2025     125 2014-01-01
+#>   policy_id coverage_start coverage_end   sector insured_amount earned_premium
+#> 1      P001     2024-01-01   2024-12-31   Retail         500000            900
+#> 2      P001     2025-01-01   2025-12-31 Industry         750000           1250
+#>   claim_id claim_amount claim_date
+#> 1     C001        12000 2024-06-15
+#> 2     C002        45000 2025-08-10
 
-### When row cannot be matched, NA is returned for that row
+# Keep claims outside the available policy history for data-quality review.
 active_rows_by_date(
   portfolio,
-  claim_dates,
-  period_start = "begin1",
-  period_end = "end",
+  claims,
+  period_start = "coverage_start",
+  period_end = "coverage_end",
   date = "claim_date",
-  by = "car_type",
-  nomatch = NA
+  by = "policy_id",
+  unmatched = "keep"
 )
-#>   car_type     begin1        end termination exposure premium claim_date
-#> 1      BMW 2014-01-01 2014-03-14  2014-03-14   0.2025     125 2014-01-01
-#> 2    VOLVO       <NA>       <NA>        <NA>       NA      NA 2014-01-01
+#>   policy_id coverage_start coverage_end   sector insured_amount earned_premium
+#> 1      P001     2024-01-01   2024-12-31   Retail         500000            900
+#> 2      P001     2025-01-01   2025-12-31 Industry         750000           1250
+#> 3      P002           <NA>         <NA>     <NA>             NA             NA
+#>   claim_id claim_amount claim_date
+#> 1     C001        12000 2024-06-15
+#> 2     C002        45000 2025-08-10
+#> 3     C003         8000 2026-01-10
 ```

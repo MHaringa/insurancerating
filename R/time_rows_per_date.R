@@ -1,10 +1,10 @@
-#' Find active portfolio rows for event dates
+#' Match event dates to active portfolio periods
 #'
 #' @description
-#' Matches event dates, such as claim dates or portfolio snapshot dates, to the
-#' policy or risk records that were active on those dates. This allows an event
-#' to inherit the rating factors and coverage information that applied when it
-#' occurred.
+#' Match event dates, such as claim dates or inspection dates, to policy records
+#' that were active when the event occurred. The matched result contains the
+#' portfolio characteristics and coverage information applicable on each event
+#' date.
 #'
 #' @param portfolio A `data.frame` or `data.table` with portfolio rows and
 #' active date intervals.
@@ -16,76 +16,88 @@
 #' @param date Character string. Name of the date column in `dates`.
 #' @param by Character vector with additional columns used to match `portfolio`
 #' and `dates`, for example policy number or claim identifier.
-#' @param nomatch Controls event dates for which no active portfolio row is
-#' found. With `NULL`, unmatched events are omitted. With `NA`, they are retained
-#' with missing portfolio information.
-#' @param mult Controls the result when an event date matches multiple active
-#' portfolio rows. Use `"all"` to retain every match, or `"first"` or `"last"`
-#' to retain one matching row. The default is `"all"`.
+#' @param unmatched Character string. Use `"drop"` to omit event dates for which
+#'   no active portfolio row is found, or `"keep"` to retain them with missing
+#'   portfolio information. The default is `"drop"`.
+#' @param multiple_matches Character string controlling events that match
+#'   multiple active portfolio rows. Use `"all"` to retain every match, or
+#'   `"first"` or `"last"` to retain one matching row. The default is `"all"`.
+#' @param nomatch,mult Deprecated technical argument names. Use `unmatched` and
+#'   `multiple_matches` instead.
 #'
 #' @details
-#' This is useful when claim records or other dated events need the rating
-#' factors, premium, exposure, or policy attributes that were active at the event
-#' date. The function performs an interval join between event dates and
-#' portfolio coverage periods, optionally within matching identifiers such as a
-#' policy number.
+#' Claim and event files often contain an event date and policy identifier but
+#' not the rating factors used at that point in time. The function performs an
+#' interval match between those events and the portfolio history. Supplying a
+#' policy identifier through `by` prevents an event from matching active periods
+#' belonging to another policy.
 #'
-#' Multiple matches can be valid, for example when several coverages are active
-#' on the same date, but may also indicate overlapping portfolio periods. The
-#' analyst should select `mult` in accordance with the structure of the source
-#' data and the intended event-level analysis.
+#' This is a temporal matching operation rather than a portfolio reduction. See
+#' [merge_date_ranges()] for consolidating connected coverage periods and
+#' [split_periods_to_months()] for expanding periods into monthly records.
+#'
+#' Multiple matches can be valid when one event relates to several concurrently
+#' active coverages. They can also reveal overlapping or duplicated policy
+#' periods. Use `multiple_matches = "all"` when every active record is relevant;
+#' use `"first"` or `"last"` only when the source system defines which record
+#' should take precedence.
+#'
+#' With `unmatched = "drop"`, events outside every applicable coverage period
+#' are omitted. With `unmatched = "keep"`, they remain visible with missing
+#' portfolio fields. Retaining unmatched events is generally preferable during
+#' data-quality review because it makes gaps in the policy history explicit.
+#'
+#' The interval join is performed internally with [data.table::foverlaps()] on
+#' local copies. Neither input is modified by reference. The output follows the
+#' original order of `dates` and is always returned as a regular `data.frame`.
 #'
 #' @author Martin Haringa
 #'
 #' @import data.table
 #' @importFrom lubridate is.Date
 #'
-#' @return An object with the same class as `portfolio`.
+#' @return A regular `data.frame` containing the event records and the portfolio
+#'   information active on their dates. Event order is preserved. Depending on
+#'   `multiple_matches`, one event can produce more than one output row.
 #' @examples
-#' library(lubridate)
 #' portfolio <- data.frame(
-#' begin1 = ymd(c("2014-01-01", "2014-01-01")),
-#' end = ymd(c("2014-03-14", "2014-05-10")),
-#' termination = ymd(c("2014-03-14", "2014-05-10")),
-#' exposure = c(0.2025, 0.3583),
-#' premium =  c(125, 150),
-#' car_type = c("BMW", "TESLA"))
-#'
-#' ## Find active rows on different dates
-#' dates0 <- data.frame(active_date = seq(ymd("2014-01-01"), ymd("2014-05-01"),
-#' by = "months"))
-#' active_rows_by_date(
-#'   portfolio,
-#'   dates0,
-#'   period_start = "begin1",
-#'   period_end = "end",
-#'   date = "active_date"
+#'   policy_id = c("P001", "P001", "P002"),
+#'   coverage_start = as.Date(c("2024-01-01", "2025-01-01", "2025-01-01")),
+#'   coverage_end = as.Date(c("2024-12-31", "2025-12-31", "2025-12-31")),
+#'   sector = c("Retail", "Industry", "Services"),
+#'   insured_amount = c(500000, 750000, 300000),
+#'   earned_premium = c(900, 1250, 650)
 #' )
 #'
-#' ## With extra identifiers (merge claim date with time interval in portfolio)
-#' claim_dates <- data.frame(claim_date = ymd("2014-01-01"),
-#' car_type = c("BMW", "VOLVO"))
+#' claims <- data.frame(
+#'   claim_id = c("C001", "C002", "C003"),
+#'   policy_id = c("P001", "P001", "P002"),
+#'   claim_date = as.Date(c("2024-06-15", "2025-08-10", "2026-01-10")),
+#'   claim_amount = c(12000, 45000, 8000)
+#' )
 #'
-#' ### Only rows are returned that can be matched
+#' # Attach the policy characteristics that applied on each claim date.
 #' active_rows_by_date(
 #'   portfolio,
-#'   claim_dates,
-#'   period_start = "begin1",
-#'   period_end = "end",
+#'   claims,
+#'   period_start = "coverage_start",
+#'   period_end = "coverage_end",
 #'   date = "claim_date",
-#'   by = "car_type"
+#'   by = "policy_id"
 #' )
 #'
-#' ### When row cannot be matched, NA is returned for that row
+#' # Keep claims outside the available policy history for data-quality review.
 #' active_rows_by_date(
 #'   portfolio,
-#'   claim_dates,
-#'   period_start = "begin1",
-#'   period_end = "end",
+#'   claims,
+#'   period_start = "coverage_start",
+#'   period_end = "coverage_end",
 #'   date = "claim_date",
-#'   by = "car_type",
-#'   nomatch = NA
+#'   by = "policy_id",
+#'   unmatched = "keep"
 #' )
+#'
+#' @seealso [split_periods_to_months()], [merge_date_ranges()], [rating_grid()]
 #'
 #' @export
 active_rows_by_date <- function(portfolio,
@@ -94,9 +106,45 @@ active_rows_by_date <- function(portfolio,
                                 period_end,
                                 date,
                                 by = NULL,
+                                unmatched = c("drop", "keep"),
+                                multiple_matches = c("all", "first", "last"),
                                 nomatch = NULL,
-                                mult = "all") {
+                                mult = NULL) {
   .portfolio_row_id <- .date_row_id <- .event_date <- NULL
+
+  unmatched_supplied <- !missing(unmatched)
+  if (!missing(nomatch)) {
+    if (unmatched_supplied) {
+      stop("Use only one of `unmatched` and deprecated `nomatch`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "active_rows_by_date(nomatch)",
+      "active_rows_by_date(unmatched)"
+    )
+    if (!is.null(nomatch) &&
+        !(length(nomatch) == 1L && is.na(nomatch))) {
+      stop("Deprecated `nomatch` must be NULL or NA.", call. = FALSE)
+    }
+    unmatched <- if (is.null(nomatch)) "drop" else "keep"
+  }
+  unmatched <- match.arg(unmatched)
+
+  multiple_matches_supplied <- !missing(multiple_matches)
+  if (!missing(mult)) {
+    if (multiple_matches_supplied) {
+      stop("Use only one of `multiple_matches` and deprecated `mult`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "active_rows_by_date(mult)",
+      "active_rows_by_date(multiple_matches)"
+    )
+    multiple_matches <- mult
+  }
+  multiple_matches <- match.arg(multiple_matches)
 
   .time_validate_data_frame(portfolio, "`portfolio`")
   .time_validate_data_frame(dates, "`dates`")
@@ -114,15 +162,30 @@ active_rows_by_date <- function(portfolio,
   }
   .time_validate_columns(portfolio, by, "`by`")
   .time_validate_columns(dates, by, "`by`")
-  if (!is.null(nomatch) && !identical(nomatch, NA)) {
-    stop("`nomatch` must be NULL or NA.", call. = FALSE)
+  missing_by <- c(
+    vapply(by, function(column) sum(is.na(portfolio[[column]])), integer(1)),
+    vapply(by, function(column) sum(is.na(dates[[column]])), integer(1))
+  )
+  if (any(missing_by > 0L)) {
+    stop(
+      "Columns supplied through `by` must not contain missing values in ",
+      "`portfolio` or `dates`.",
+      call. = FALSE
+    )
   }
-  if (!is.character(mult) || length(mult) != 1L ||
-      !mult %in% c("all", "first", "last")) {
-    stop("`mult` must be 'all', 'first', or 'last'.", call. = FALSE)
+  portfolio_values <- setdiff(names(portfolio), c(by, period_start, period_end))
+  date_values <- setdiff(names(dates), c(by, date))
+  conflicting_cols <- intersect(portfolio_values, date_values)
+  if (length(conflicting_cols) > 0L) {
+    stop(
+      "Non-matching columns must have distinct names in `portfolio` and ",
+      "`dates`. Conflicting columns: ",
+      paste(conflicting_cols, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
   }
 
-  input_class <- class(portfolio)
   portfolio_dt <- data.table::as.data.table(data.table::copy(portfolio))
   dates_dt <- data.table::as.data.table(data.table::copy(dates))
 
@@ -145,8 +208,8 @@ active_rows_by_date <- function(portfolio,
     by.y = key_cols,
     type = "any",
     which = FALSE,
-    nomatch = nomatch,
-    mult = mult
+    nomatch = if (identical(unmatched, "keep")) NA else NULL,
+    mult = multiple_matches
   )
 
   event_start <- paste0("i.", period_start)
@@ -157,9 +220,13 @@ active_rows_by_date <- function(portfolio,
   if (event_date %in% names(ans)) {
     data.table::setnames(ans, old = event_date, new = date)
   }
+  order_cols <- intersect(c(".date_row_id", ".portfolio_row_id"), names(ans))
+  if (length(order_cols) > 0L) {
+    data.table::setorderv(ans, order_cols, na.last = TRUE)
+  }
   ans[, intersect(c(".portfolio_row_id", ".date_row_id"), names(ans)) := NULL]
-  ans <- ans[order(get(date))]
-  class(ans) <- input_class
+  ans <- as.data.frame(ans, stringsAsFactors = FALSE)
+  rownames(ans) <- NULL
   ans
 }
 
@@ -192,7 +259,7 @@ rows_per_date <- function(df, dates, df_begin, df_end, dates_date, ...,
     period_end = deparse(substitute(df_end)),
     date = deparse(substitute(dates_date)),
     by = vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1)),
-    nomatch = nomatch,
-    mult = mult
+    unmatched = if (is.null(nomatch)) "drop" else "keep",
+    multiple_matches = mult
   )
 }

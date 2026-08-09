@@ -135,7 +135,10 @@ extract_model_data <- function(x) {
       term_vars <- attr(terms_obj, "variables")
       offset_vars <- unique(c(
         offset_vars,
-        unlist(lapply(offset_idx, function(i) all.vars(term_vars[[i]])), use.names = FALSE)
+        unlist(
+          lapply(offset_idx, function(i) all.vars(term_vars[[i + 1L]])),
+          use.names = FALSE
+        )
       ))
     }
 
@@ -176,61 +179,87 @@ model_data <- function(x) {
 
 
 .rating_grid_sum <- function(df, by_vars, sum_vars) {
+  df <- data.table::as.data.table(df)
+
   if (length(by_vars) == 0) {
-    out <- as.data.frame(as.list(vapply(
-      df[, sum_vars, drop = FALSE],
-      sum,
-      numeric(1),
-      na.rm = TRUE
-    )))
-    return(out)
+    return(df[, lapply(.SD, sum, na.rm = TRUE), .SDcols = sum_vars])
   }
 
-  out <- stats::aggregate(
-    df[, sum_vars, drop = FALSE],
-    by = df[, by_vars, drop = FALSE],
-    FUN = sum,
-    na.rm = TRUE
-  )
-  as.data.frame(out, stringsAsFactors = FALSE)
+  out <- df[, lapply(.SD, sum, na.rm = TRUE),
+            by = by_vars, .SDcols = sum_vars]
+  data.table::setorderv(out, by_vars)
+  out
 }
 
 
 .rating_grid_count <- function(df, by_vars) {
-  df$.rating_grid_count <- 1L
+  df <- data.table::as.data.table(df)
 
   if (length(by_vars) == 0) {
     return(data.frame(count = nrow(df)))
   }
 
-  out <- stats::aggregate(
-    df[".rating_grid_count"],
-    by = df[, by_vars, drop = FALSE],
-    FUN = length
-  )
-  names(out)[names(out) == ".rating_grid_count"] <- "count"
-  as.data.frame(out, stringsAsFactors = FALSE)
+  out <- df[, list(count = .N), by = by_vars]
+  data.table::setorderv(out, by_vars)
+  out
 }
 
 
 .rating_grid_merge <- function(x, y, by_vars) {
+  x <- data.table::as.data.table(x)
+  y <- data.table::as.data.table(y)
+
   if (length(by_vars) == 0) {
     return(cbind(x, y))
   }
 
-  merge(x, y, by = by_vars, all = TRUE, sort = FALSE)
+  out <- merge(x, y, by = by_vars, all = TRUE, sort = FALSE)
+  data.table::setorderv(out, by_vars)
+  out
 }
 
 
 .rating_grid_wide <- function(df, group_vars, split_var, value_var, prefix) {
-  levels_split <- unique(as.character(df[[split_var]]))
-  out <- unique(df[, group_vars, drop = FALSE])
+  df <- data.table::as.data.table(df)
+  temporary_group <- ".rating_grid_group"
 
-  for (level in levels_split) {
-    level_rows <- as.character(df[[split_var]]) == level
-    tmp <- df[level_rows, c(group_vars, value_var), drop = FALSE]
-    names(tmp)[names(tmp) == value_var] <- paste0(prefix, "_", level)
-    out <- .rating_grid_merge(out, tmp, group_vars)
+  if (length(group_vars) == 0L) {
+    while (temporary_group %in% names(df)) {
+      temporary_group <- paste0(temporary_group, "_")
+    }
+    df[, (temporary_group) := 1L]
+    cast_groups <- temporary_group
+  } else {
+    cast_groups <- group_vars
+  }
+
+  lhs <- Reduce(
+    function(left, right) call("+", left, right),
+    lapply(cast_groups, as.name)
+  )
+  wide_formula <- stats::as.formula(
+    call("~", lhs, as.name(split_var)),
+    env = parent.frame()
+  )
+
+  out <- data.table::dcast(
+    df,
+    formula = wide_formula,
+    value.var = value_var,
+    drop = TRUE
+  )
+  if (length(group_vars) == 0L) {
+    out[, (temporary_group) := NULL]
+  }
+
+  value_cols <- setdiff(names(out), cast_groups)
+  data.table::setnames(
+    out,
+    old = value_cols,
+    new = paste0(prefix, "_", value_cols)
+  )
+  if (length(group_vars) > 0L) {
+    data.table::setorderv(out, group_vars)
   }
 
   out
@@ -238,6 +267,8 @@ model_data <- function(x) {
 
 
 .rating_grid_add_refinement <- function(out, xdf, refinement_pairs) {
+  out <- data.table::as.data.table(out)
+  xdf <- data.table::as.data.table(xdf)
   refinement_pairs <- refinement_pairs[vapply(refinement_pairs, length, integer(1)) >= 2]
 
   for (pair in refinement_pairs) {
@@ -248,7 +279,7 @@ model_data <- function(x) {
       next
     }
 
-    mapping <- unique(xdf[, c(old_col, new_col), drop = FALSE])
+    mapping <- unique(xdf[, c(old_col, new_col), with = FALSE])
     if (any(duplicated(mapping[[old_col]]))) {
       warning(
         "Refinement column `", new_col, "` has multiple values per `", old_col,
@@ -258,7 +289,10 @@ model_data <- function(x) {
       next
     }
 
-    out <- merge(out, mapping, by = old_col, all.x = TRUE, sort = FALSE)
+    out[, (new_col) := mapping[[new_col]][match(
+      out[[old_col]],
+      mapping[[old_col]]
+    )]]
   }
 
   out
@@ -272,6 +306,12 @@ model_data <- function(x) {
 #' observed rating-grid points. Exposure and other numeric measures can be
 #' aggregated alongside the combinations for prediction, tariff comparison and
 #' portfolio diagnostics.
+#'
+#' Together with [merge_date_ranges()], this function belongs to the portfolio
+#' reduction workflow. Both functions reduce row-level portfolio data while
+#' retaining selected totals. `rating_grid()` reduces across identical
+#' risk-factor combinations; [merge_date_ranges()] reduces temporally connected
+#' records within the same policy, risk or portfolio segment.
 #'
 #' The function returns only combinations that are actually observed in the input
 #' data. It does **not** create the full Cartesian product of all unique values.
@@ -297,11 +337,19 @@ model_data <- function(x) {
 #' @param aggregate_cols Optional character vector with additional numeric
 #'   columns to aggregate using `sum(na.rm = TRUE)`.
 #' @param drop_na Logical; if `TRUE`, rows with missing values in `group_by`
-#'   are removed before aggregation. Default is `FALSE`.
+#'   are removed before aggregation. If `FALSE`, missing values define an
+#'   explicit observed group and are retained. Default is `FALSE`.
 #' @param group_vars,agg_cols Deprecated argument names. Use `group_by` and
 #'   `aggregate_cols` instead.
 #'
 #' @details
+#' ## Portfolio reduction
+#'
+#' `rating_grid()` performs categorical portfolio reduction. It combines rows
+#' with the same observed `group_by` values and retains the corresponding totals.
+#' Use [merge_date_ranges()] for the complementary temporal reduction of
+#' connected coverage periods.
+#'
 #' ## Observed combinations
 #'
 #' The grid represents the combinations present in the supplied portfolio or
@@ -310,6 +358,60 @@ model_data <- function(x) {
 #' relevant when risk factors are structurally related, such as product,
 #' coverage and distribution channel.
 #'
+#' Each output row therefore represents one observed combination of the
+#' variables in `group_by`. Exposure and `aggregate_cols` are summed over the
+#' source records belonging to that combination. This is a categorical
+#' reduction of the portfolio; no date intervals are combined.
+#'
+#' ## Estimating a GLM on aggregated data
+#'
+#' For a standard Poisson frequency GLM, aggregation before model fitting can
+#' preserve the coefficient estimates exactly. This applies when records are
+#' grouped by every predictor used in the model, claim counts are summed, earned
+#' exposure is summed, and the aggregated model uses `offset(log(exposure))`.
+#' Within such a group all records have the same linear predictor. Their
+#' contribution to the coefficient estimation therefore depends on total claims
+#' and total exposure, which are retained by the rating grid.
+#'
+#' This equivalence is conditional, not a general property of every GLM.
+#' Aggregating over a model variable changes the model, and row-level weights,
+#' interactions, offsets or non-additive quantities must be retained correctly.
+#' Binomial, severity, quasi-likelihood and dispersion analyses require their
+#' own sufficient totals and weights. Row-level residuals and influence
+#' diagnostics are also no longer available after aggregation, even when the
+#' fitted Poisson coefficients are unchanged.
+#'
+#' In practice, a rating grid is particularly useful before estimating a
+#' frequency model on a large portfolio. It can reduce repeated policy records
+#' to a much smaller table, lowering memory use and fitting time. Keep the
+#' unaggregated data when policy-level predictions, sampling, validation or
+#' diagnostics are required, and verify on a representative sample that the
+#' selected aggregation retains all inputs needed by the intended model.
+#'
+#' ## Estimating a severity GLM on aggregated data
+#'
+#' Claim count and claim amount are additive portfolio measures and can be
+#' supplied through `aggregate_cols`. Frequency is then calculated as total
+#' claim count divided by total exposure. Average severity is total claim amount
+#' divided by total claim count.
+#'
+#' A Gamma severity GLM fitted to grouped average severities can produce the same
+#' coefficient estimates as a model fitted to the underlying individual claims.
+#' This requires grouping by every predictor in the severity model, calculating
+#' `average_severity = claim_amount / claim_count`, using `claim_count` as the
+#' model weight, and applying the same family and link. Within each grid row all
+#' underlying claims then have the same linear predictor, while the weight
+#' retains the number of claims represented by the average.
+#'
+#' This equivalence concerns the coefficient estimates, not the complete model
+#' output. Aggregation removes claim-level residuals and outlier information.
+#' Deviance, residual degrees of freedom, estimated dispersion, standard errors
+#' and significance tests can therefore differ from a claim-level fit. Claim-
+#' level data should remain available for severity-distribution checks,
+#' influential-claim analysis and model validation. The equivalence is also
+#' lost if a severity predictor varies within a grid row or if the totals and
+#' weights do not represent the underlying claims correctly.
+#'
 #' If `exposure_by` is supplied, exposure or row counts are split across levels
 #' of that variable and returned in wide format, for example
 #' `"exposure_2020"` or `"count_2020"`.
@@ -317,8 +419,14 @@ model_data <- function(x) {
 #' For objects returned by [extract_model_data()], refinement mappings are joined
 #' by their original factor column. They are not cross-joined onto every row.
 #'
-#' The implementation uses base R only. The output is a regular `data.frame`,
-#' irrespective of the class of the input data.
+#' Aggregation, reshaping and refinement joins are performed internally with
+#' [data.table::data.table()] to support large pricing portfolios. A local copy
+#' is used, so the supplied object is not modified by reference. The output is
+#' a regular `data.frame`, irrespective of the class of the input data.
+#'
+#' When the row-level portfolio does not fit comfortably in R memory, use
+#' [rating_grid_db()] to perform the grouped reduction in a database and collect
+#' only the resulting grid.
 #'
 #' @return
 #' A `data.frame` with one row per observed rating-grid point.
@@ -326,29 +434,99 @@ model_data <- function(x) {
 #' @author Martin Haringa
 #'
 #' @examples
-#' \dontrun{
-#' rating_grid(mtcars, group_by = c("cyl", "vs"))
+#' portfolio <- data.frame(
+#'   policy_id = 1:10,
+#'   sector = rep(c("Industry", "Retail"), each = 5),
+#'   region = rep(c("North", "South"), 5),
+#'   underwriting_year = rep(c(2024, 2025), each = 5),
+#'   earned_exposure = c(1, 0.8, 1, 0.5, 1, 1, 0.7, 1, 0.9, 1),
+#'   claim_count = c(0, 1, 2, 0, 1, 0, 1, 0, 2, 1),
+#'   claim_amount = c(0, 2500, 18000, 0, 6000, 0, 4500, 0, 22000, 9000)
+#' )
 #'
+#' # Aggregate policy records into observed combinations of sector and region.
+#' # The resulting exposure is the total earned exposure in each combination.
 #' rating_grid(
-#'   mtcars,
-#'   group_by = c("cyl", "vs"),
-#'   exposure = "disp",
-#'   exposure_by = "gear",
-#'   aggregate_cols = "mpg"
+#'   portfolio,
+#'   group_by = c("sector", "region"),
+#'   exposure = "earned_exposure"
 #' )
 #'
-#' pmodel <- glm(
-#'   breaks ~ wool + tension,
-#'   data = warpbreaks,
-#'   family = poisson(link = "log")
+#' # Split earned exposure by underwriting year. This is useful when reviewing
+#' # whether the portfolio mix within each rating combination changes over time.
+#' rating_grid(
+#'   portfolio,
+#'   group_by = c("sector", "region"),
+#'   exposure = "earned_exposure",
+#'   exposure_by = "underwriting_year"
 #' )
 #'
-#' pmodel |>
+#' # Claim count and claim amount remain additive totals in the rating grid.
+#' # Frequency and average severity can subsequently be derived from them.
+#' claims_grid <- rating_grid(
+#'   portfolio,
+#'   group_by = c("sector", "region"),
+#'   exposure = "earned_exposure",
+#'   aggregate_cols = c("claim_count", "claim_amount")
+#' )
+#'
+#' claims_grid$frequency <-
+#'   claims_grid$claim_count / claims_grid$earned_exposure
+#' claims_grid$average_severity <- ifelse(
+#'   claims_grid$claim_count > 0,
+#'   claims_grid$claim_amount / claims_grid$claim_count,
+#'   NA_real_
+#' )
+#' claims_grid
+#'
+#' # Fit a severity model to grouped average claim amounts. Grid rows without
+#' # claims are excluded because average severity is undefined for those rows.
+#' severity_model_grid <- glm(
+#'   average_severity ~ sector + region,
+#'   weights = claim_count,
+#'   family = Gamma(link = "log"),
+#'   data = subset(claims_grid, claim_count > 0)
+#' )
+#' coef(severity_model_grid)
+#'
+#' # For a fitted GLM, extract_model_data() retains the model variables and
+#' # exposure information required to construct the observed rating grid.
+#' mtpl_portfolio <- MTPL
+#' mtpl_portfolio$zip <- factor(mtpl_portfolio$zip)
+#'
+#' frequency_model <- glm(
+#'   nclaims ~ bm + zip + offset(log(exposure)),
+#'   family = poisson(link = "log"),
+#'   data = mtpl_portfolio
+#' )
+#'
+#' frequency_model |>
 #'   extract_model_data() |>
 #'   rating_grid()
-#' }
 #'
-#' @seealso [extract_model_data()], [rating_table()]
+#' # For this Poisson frequency model, fitting on the corresponding aggregated
+#' # grid gives the same coefficient estimates as fitting on the policy rows.
+#' frequency_grid <- rating_grid(
+#'   mtpl_portfolio,
+#'   group_by = c("bm", "zip"),
+#'   exposure = "exposure",
+#'   aggregate_cols = "nclaims"
+#' )
+#'
+#' frequency_model_grid <- glm(
+#'   nclaims ~ bm + zip + offset(log(exposure)),
+#'   family = poisson(link = "log"),
+#'   data = frequency_grid
+#' )
+#'
+#' isTRUE(all.equal(
+#'   unname(coef(frequency_model)),
+#'   unname(coef(frequency_model_grid)),
+#'   tolerance = 1e-8
+#' ))
+#'
+#' @seealso [rating_grid_db()], [merge_date_ranges()],
+#'   [merge_date_ranges_db()], [extract_model_data()], [rating_table()]
 #'
 #' @export
 rating_grid <- function(x,
@@ -414,7 +592,9 @@ rating_grid <- function(x,
     stop("`drop_na` must be TRUE or FALSE.", call. = FALSE)
   }
 
-  xdf <- as.data.frame(x, stringsAsFactors = FALSE)
+  xdf <- data.table::as.data.table(data.table::copy(
+    as.data.frame(x, stringsAsFactors = FALSE)
+  ))
   offweights <- NULL
   agg_cols_all <- aggregate_cols
 
@@ -520,7 +700,9 @@ rating_grid <- function(x,
   }
 
   if (drop_na) {
-    xdf <- xdf[stats::complete.cases(xdf[, group_by, drop = FALSE]), , drop = FALSE]
+    if (length(group_by) > 0L) {
+      xdf <- xdf[stats::complete.cases(xdf[, group_by, with = FALSE])]
+    }
   }
 
   if (is.null(exposure)) {

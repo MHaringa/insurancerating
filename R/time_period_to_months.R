@@ -59,74 +59,119 @@
   pmin(as.numeric(end_date - start_date) + 1, 30) / 30
 }
 
-#' Split policy periods into monthly rows
+#' Split portfolio periods into calendar months
 #'
 #' @description
-#' Split policy or exposure periods that cross calendar-month boundaries into
-#' monthly rows. Numeric portfolio measures, such as exposure and premium, can
-#' be prorated over the resulting periods while preserving their total per
-#' original record.
+#' Split policy periods that cross calendar-month boundaries into separate
+#' monthly records. Numeric amounts such as earned exposure and earned premium
+#' can be allocated over those records while preserving the amount of each
+#' original portfolio row.
 #'
-#' @param df A `data.frame` or `data.table`.
+#' @param data A `data.frame` or `data.table` containing policy or exposure
+#'   periods.
 #' @param period_start Character string. Name of the column with policy period
 #' start dates.
 #' @param period_end Character string. Name of the column with policy period end
 #' dates.
 #' @param prorate_cols Character vector with names of numeric columns to prorate
 #' over the monthly rows, for example exposure or premium.
-#' @param begin,end,cols Deprecated argument names kept for backward
-#' compatibility.
+#' @param df,begin,end,cols Deprecated argument names kept for backward
+#'   compatibility. Use `data`, `period_start`, `period_end`, and
+#'   `prorate_cols`.
 #'
-#' @return A `data.frame` with the same columns as in `df`, plus an `id` column.
+#' @return A regular `data.frame` with one row for each calendar month covered
+#'   by an original portfolio record. The original columns are retained and an
+#'   `id` column identifies the source row. Columns supplied through
+#'   `prorate_cols` contain their allocated monthly amounts.
 #'
 #' @details
-#' Rating and monitoring work often needs exposure, premium, claim counts, or
-#' policy counts by calendar month. Source portfolios, however, usually contain
-#' policy periods that start and end on arbitrary dates. This helper expands
-#' those periods into monthly rows before modelling, reporting, or joining to
-#' monthly portfolio summaries.
+#' Pricing, reserving and monitoring analyses often require exposure and premium
+#' by calendar month, whereas policy administration data generally contains
+#' periods with arbitrary start and end dates. The function converts those
+#' periods into a monthly representation before aggregation, modelling or
+#' reporting.
+#'
+#' This is a temporal expansion rather than a portfolio reduction. See
+#' [merge_date_ranges()] for consolidating connected periods and
+#' [active_rows_by_date()] for matching dated events to active periods.
 #'
 #' Prorated columns are distributed according to the part of the policy period
-#' that falls in each monthly row. Full months receive weight 1; partial months
-#' use a 30-day month convention. The total value of each prorated column is
-#' preserved per original row.
+#' represented by each monthly row. Full months receive weight 1 and partial
+#' months use a 30-day convention. The monthly weights are normalised within
+#' each source row. Consequently, monthly exposure and premium sum to their
+#' original values, including for periods that contain partial months.
 #'
 #' Column names are supplied as character strings, for example
 #' `period_start = "begin_date"`. The deprecated [period_to_months()] interface
 #' used unquoted column names and is retained only for backward compatibility.
 #'
+#' Expansion and proration are performed internally with
+#' [data.table::data.table()] on a local copy. The supplied object is not
+#' modified by reference, and the returned object is always a regular
+#' `data.frame`.
+#'
 #' @examples
-#' library(lubridate)
 #' portfolio <- data.frame(
-#'   begin_date = ymd(c("2014-01-01", "2014-01-01")),
-#'   end_date   = ymd(c("2014-03-14", "2014-05-10")),
-#'   exposure   = c(0.2025, 0.3583),
-#'   premium    = c(125, 150)
+#'   policy_id = c("P001", "P002", "P003"),
+#'   sector = c("Industry", "Retail", "Services"),
+#'   coverage_start = as.Date(c("2025-01-15", "2025-02-01", "2025-03-20")),
+#'   coverage_end = as.Date(c("2025-03-31", "2025-02-28", "2025-05-10")),
+#'   earned_exposure = c(0.21, 0.08, 0.14),
+#'   earned_premium = c(420, 160, 280)
 #' )
 #'
-#' # Split policy records and prorate premium and exposure by month
-#' split_periods_to_months(portfolio,
-#'   period_start = "begin_date",
-#'   period_end = "end_date",
-#'   prorate_cols = c("premium", "exposure")
+#' # Allocate each policy period and its amounts over calendar months.
+#' monthly_portfolio <- split_periods_to_months(
+#'   portfolio,
+#'   period_start = "coverage_start",
+#'   period_end = "coverage_end",
+#'   prorate_cols = c("earned_exposure", "earned_premium")
+#' )
+#' monthly_portfolio
+#'
+#' # The allocated monthly amounts reconcile to the source portfolio.
+#' aggregate(
+#'   cbind(earned_exposure, earned_premium) ~ id,
+#'   data = monthly_portfolio,
+#'   FUN = sum
 #' )
 #'
 #' # Deprecated interface with unquoted column names
 #' \dontrun{
-#' period_to_months(portfolio, begin_date, end_date, premium, exposure)
+#' period_to_months(
+#'   portfolio,
+#'   coverage_start,
+#'   coverage_end,
+#'   earned_exposure,
+#'   earned_premium
+#' )
 #' }
 #'
 #' @author Martin Haringa
 #' @import data.table
 #' @importFrom lubridate is.Date ceiling_date floor_date
+#' @seealso [active_rows_by_date()], [merge_date_ranges()], [rating_grid()]
 #' @export
-split_periods_to_months <- function(df,
+split_periods_to_months <- function(data = NULL,
                                     period_start = NULL,
                                     period_end = NULL,
                                     prorate_cols = NULL,
+                                    df = NULL,
                                     begin = NULL,
                                     end = NULL,
                                     cols = NULL) {
+
+  if (!is.null(df)) {
+    if (!is.null(data)) {
+      stop("Use only one of `data` and deprecated `df`.", call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0",
+      "split_periods_to_months(df)",
+      "split_periods_to_months(data)"
+    )
+    data <- df
+  }
 
   if (!is.null(begin)) {
     lifecycle::deprecate_warn("0.9.0", "split_periods_to_months(begin)",
@@ -144,18 +189,22 @@ split_periods_to_months <- function(df,
     prorate_cols <- cols
   }
 
-  .time_validate_data_frame(df)
-  .time_validate_columns(df, c(period_start, period_end),
+  .time_validate_data_frame(data, "`data`")
+  .time_validate_columns(data, c(period_start, period_end),
                          "`period_start` and `period_end`")
-  .time_validate_date_interval(df, period_start, period_end)
-  if ("id" %in% names(df)) {
-    stop("`df` must not contain a column named `id`.", call. = FALSE)
+  .time_validate_date_interval(data, period_start, period_end, "`data`")
+  if ("id" %in% names(data)) {
+    stop("`data` must not contain a column named `id`.", call. = FALSE)
   }
   if (is.null(prorate_cols)) {
     prorate_cols <- character(0)
   }
-  .time_validate_columns(df, prorate_cols, "`prorate_cols`")
-  non_numeric <- prorate_cols[!vapply(df[prorate_cols], is.numeric, logical(1))]
+  .time_validate_columns(data, prorate_cols, "`prorate_cols`")
+  non_numeric <- prorate_cols[!vapply(
+    prorate_cols,
+    function(column) is.numeric(data[[column]]),
+    logical(1)
+  )]
   if (length(non_numeric) > 0L) {
     stop(
       sprintf("`prorate_cols` must be numeric: %s.", paste(non_numeric, collapse = ", ")),
@@ -163,39 +212,45 @@ split_periods_to_months <- function(df,
     )
   }
 
-  input_class <- class(df)
-  rows <- vector("list", nrow(df))
-
-  for (i in seq_len(nrow(df))) {
-    start_i <- df[[period_start]][i]
-    end_i <- df[[period_end]][i]
-    month_start <- lubridate::floor_date(start_i, unit = "months")
-    month_starts <- seq(month_start, lubridate::floor_date(end_i, unit = "months"),
-                        by = "months")
-    month_ends <- lubridate::ceiling_date(month_starts, unit = "months") - 1
-    split_start <- pmax(start_i, month_starts)
-    split_end <- pmin(end_i, month_ends)
-
-    part <- df[rep(i, length(split_start)), , drop = FALSE]
-    part[[period_start]] <- as.Date(split_start)
-    part[[period_end]] <- as.Date(split_end)
-    part$id <- i
-
-    if (length(prorate_cols) > 0L) {
-      weights <- .time_proration_weight(part[[period_start]], part[[period_end]])
-      weights <- weights / sum(weights)
-      for (col in prorate_cols) {
-        part[[col]] <- df[[col]][i] * weights
-      }
-    }
-
-    rows[[i]] <- part
+  dt <- data.table::as.data.table(data.table::copy(data))
+  if (nrow(dt) == 0L) {
+    out <- data.frame(id = integer(), as.data.frame(dt), check.names = FALSE)
+    rownames(out) <- NULL
+    return(out)
   }
 
-  out <- do.call(rbind, rows)
-  out <- out[, c("id", names(df)), drop = FALSE]
-  row.names(out) <- NULL
-  class(out) <- input_class
+  start_month <- lubridate::floor_date(dt[[period_start]], unit = "months")
+  end_month <- lubridate::floor_date(dt[[period_end]], unit = "months")
+  month_count <-
+    (lubridate::year(end_month) - lubridate::year(start_month)) * 12L +
+    lubridate::month(end_month) - lubridate::month(start_month) + 1L
+  source_row <- rep.int(seq_len(nrow(dt)), month_count)
+  month_offset <- sequence(month_count) - 1L
+  month_index <-
+    lubridate::year(start_month[source_row]) * 12L +
+    lubridate::month(start_month[source_row]) - 1L + month_offset
+  month_start <- as.Date(ISOdate(
+    month_index %/% 12L,
+    month_index %% 12L + 1L,
+    1L
+  ))
+  month_end <- lubridate::ceiling_date(month_start, unit = "months") - 1
+
+  out <- dt[source_row]
+  out[, id := source_row]
+  out[, (period_start) := pmax(dt[[period_start]][source_row], month_start)]
+  out[, (period_end) := pmin(dt[[period_end]][source_row], month_end)]
+
+  if (length(prorate_cols) > 0L) {
+    weights <- .time_proration_weight(out[[period_start]], out[[period_end]])
+    weights <- weights / ave(weights, source_row, FUN = sum)
+    out[, (prorate_cols) := lapply(.SD, function(value) value * weights),
+        .SDcols = prorate_cols]
+  }
+
+  data.table::setcolorder(out, c("id", names(data)))
+  out <- as.data.frame(out, stringsAsFactors = FALSE)
+  rownames(out) <- NULL
   out
 }
 
@@ -224,7 +279,7 @@ period_to_months <- function(df, begin, end, ...) {
   cols_chr  <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
 
   split_periods_to_months(
-    df,
+    data = df,
     period_start = begin_chr,
     period_end = end_chr,
     prorate_cols = cols_chr
