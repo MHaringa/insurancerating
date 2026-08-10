@@ -148,18 +148,20 @@ give levels with more portfolio support more influence. With a spline method,
 than a fixed number of fitted degrees of freedom.
 
 `effect_strength` controls the overall spread of the smoothed relativities on
-the logarithmic scale. The default value 1 retains the fitted smoothing, values
-between 0 and 1 flatten the complete effect, and values above 1 make the
-complete effect steeper. The value 1.1 used here strengthens the deviations
-from the common centre without changing their ordering. The adjusted curve is
-normalised so its exposure-weighted arithmetic mean remains unchanged.
+the ordinary relativity scale. The default value 1 retains the fitted
+smoothing, values between 0 and 1 flatten the complete effect, and values above
+1 make the complete effect steeper. The value 1.1 used here increases every
+vertical deviation from the exposure-weighted mean by 10%. That mean therefore
+remains unchanged.
 
 This parameter changes the strength of the complete smoothed effect; it does
 not selectively alter only older ages, high insured values or another local
 part of the curve. Use interval boundaries and control points in
-`edit_smoothing()` for a local adjustment. Monotonic ordering is retained by an
-effect-strength adjustment, but curvature on the raw relativity scale should be
-reviewed separately when convexity or concavity is an explicit assumption.
+`edit_smoothing()` for a local adjustment. Monotonic ordering and curvature are
+retained on the relativity scale. An increasing concave curve therefore remains
+increasing and concave, while the complete rise becomes steeper when
+`effect_strength` is above 1. Very large values are rejected if they would
+produce a zero or negative relativity.
 
 The default unconstrained spline is suitable when the shape should remain
 data-led. Increasing or decreasing shape constraints are available when a

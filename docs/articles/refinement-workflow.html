@@ -249,19 +249,21 @@ influence. With a spline method, <code>k</code> controls the available
 curve flexibility; it is a basis dimension rather than a fixed number of
 fitted degrees of freedom.</p>
 <p><code>effect_strength</code> controls the overall spread of the
-smoothed relativities on the logarithmic scale. The default value 1
-retains the fitted smoothing, values between 0 and 1 flatten the
+smoothed relativities on the ordinary relativity scale. The default
+value 1 retains the fitted smoothing, values between 0 and 1 flatten the
 complete effect, and values above 1 make the complete effect steeper.
-The value 1.1 used here strengthens the deviations from the common
-centre without changing their ordering. The adjusted curve is normalised
-so its exposure-weighted arithmetic mean remains unchanged.</p>
+The value 1.1 used here increases every vertical deviation from the
+exposure-weighted mean by 10%. That mean therefore remains
+unchanged.</p>
 <p>This parameter changes the strength of the complete smoothed effect;
 it does not selectively alter only older ages, high insured values or
 another local part of the curve. Use interval boundaries and control
 points in <code><a href="../reference/edit_smoothing.html">edit_smoothing()</a></code> for a local adjustment.
-Monotonic ordering is retained by an effect-strength adjustment, but
-curvature on the raw relativity scale should be reviewed separately when
-convexity or concavity is an explicit assumption.</p>
+Monotonic ordering and curvature are retained on the relativity scale.
+An increasing concave curve therefore remains increasing and concave,
+while the complete rise becomes steeper when
+<code>effect_strength</code> is above 1. Very large values are rejected
+if they would produce a zero or negative relativity.</p>
 <p>The default unconstrained spline is suitable when the shape should
 remain data-led. Increasing or decreasing shape constraints are
 available when a directional assumption has a defensible actuarial
@@ -275,7 +277,7 @@ the full set of methods and their curvature interpretation.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-08-10 14:21:28 CEST</span></span>
+<span><span class="co">#&gt; Created: 2026-08-10 15:10:05 CEST</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -454,7 +456,7 @@ levels of the derived <code>output_variable</code>.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-08-10 14:21:28 CEST</span></span>
+<span><span class="co">#&gt; Created: 2026-08-10 15:10:05 CEST</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -525,7 +527,7 @@ reviewed with the normal interpretation tools:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">refined_model</span>, exposure <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      risk_factor       level est_refined_model</span></span>
-<span><span class="co">#&gt; 1    (Intercept) (Intercept)         0.2614624</span></span>
+<span><span class="co">#&gt; 1    (Intercept) (Intercept)         0.2614623</span></span>
 <span><span class="co">#&gt; 2 zip_restricted           0         0.9500000</span></span>
 <span><span class="co">#&gt; 3 zip_restricted           1         0.9954865</span></span>
 <span><span class="co">#&gt; 4 zip_restricted           2         0.8971513</span></span>
@@ -561,9 +563,9 @@ combinations.</p>
 <span><span class="co">#&gt; Refinement audit</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Prepared: 2026-08-10 14:21:28 CEST</span></span>
-<span><span class="co">#&gt; Refitted: 2026-08-10 14:21:29 CEST</span></span>
-<span><span class="co">#&gt; Audited: 2026-08-10 14:21:30 CEST</span></span>
+<span><span class="co">#&gt; Prepared: 2026-08-10 15:10:05 CEST</span></span>
+<span><span class="co">#&gt; Refitted: 2026-08-10 15:10:07 CEST</span></span>
+<span><span class="co">#&gt; Audited: 2026-08-10 15:10:07 CEST</span></span>
 <span><span class="co">#&gt; Measure: frequency (per_exposure)</span></span>
 <span><span class="co">#&gt; Exposure: exposure</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -586,20 +588,31 @@ combinations.</p>
 <span><span class="co">#&gt; Portfolio effect</span></span>
 <span><span class="co">#&gt;   Before: 0.137596</span></span>
 <span><span class="co">#&gt;   After:  0.137596</span></span>
-<span><span class="co">#&gt;   Change: -3.60545e-14 (-2.62e-11%)</span></span>
+<span><span class="co">#&gt;   Change: 5.4956e-15 (3.994e-12%)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Largest level changes (10 of 24)</span></span>
-<span><span class="co">#&gt;              risk_factor   level     before     after       change change_ratio</span></span>
-<span><span class="co">#&gt;  age_policyholder_smooth (84,95] 0.06942859 0.1288732  0.059444654   0.85619846</span></span>
-<span><span class="co">#&gt;           zip_restricted       3 0.13680279 0.1514843  0.014681462   0.10731844</span></span>
-<span><span class="co">#&gt;           zip_restricted       0 0.14020239 0.1271431 -0.013059310  -0.09314613</span></span>
-<span><span class="co">#&gt;        bm_tariff_segment       4 0.13883017 0.1509642  0.012134021   0.08740191</span></span>
-<span><span class="co">#&gt;        bm_tariff_segment       8 0.14270460 0.1550819  0.012377286   0.08673361</span></span>
-<span><span class="co">#&gt;  age_policyholder_smooth (65,84] 0.10100599 0.0935558 -0.007450184  -0.07375983</span></span>
-<span><span class="co">#&gt;  age_policyholder_smooth (25,32] 0.17896684 0.1914842  0.012517324   0.06994214</span></span>
-<span><span class="co">#&gt;        bm_tariff_segment       7 0.14278504 0.1517406  0.008955531   0.06272038</span></span>
-<span><span class="co">#&gt;        bm_tariff_segment       3 0.13764208 0.1452538  0.007611772   0.05530120</span></span>
-<span><span class="co">#&gt;           zip_restricted       2 0.12951920 0.1241024 -0.005416832  -0.04182262</span></span></code></pre></div>
+<span><span class="co">#&gt;              risk_factor   level     before      after       change</span></span>
+<span><span class="co">#&gt;  age_policyholder_smooth (84,95] 0.06942859 0.12932481  0.059896219</span></span>
+<span><span class="co">#&gt;           zip_restricted       3 0.13680279 0.15148247  0.014679675</span></span>
+<span><span class="co">#&gt;           zip_restricted       0 0.14020239 0.12715764 -0.013044745</span></span>
+<span><span class="co">#&gt;        bm_tariff_segment       4 0.13883017 0.15097196  0.012141792</span></span>
+<span><span class="co">#&gt;        bm_tariff_segment       8 0.14270460 0.15509924  0.012394638</span></span>
+<span><span class="co">#&gt;  age_policyholder_smooth (65,84] 0.10100599 0.09317761 -0.007828374</span></span>
+<span><span class="co">#&gt;  age_policyholder_smooth (25,32] 0.17896684 0.19132120  0.012354352</span></span>
+<span><span class="co">#&gt;        bm_tariff_segment       7 0.14278504 0.15173842  0.008953378</span></span>
+<span><span class="co">#&gt;        bm_tariff_segment       3 0.13764208 0.14523090  0.007588820</span></span>
+<span><span class="co">#&gt;           zip_restricted       2 0.12951920 0.12409779 -0.005421411</span></span>
+<span><span class="co">#&gt;  change_ratio</span></span>
+<span><span class="co">#&gt;    0.86270247</span></span>
+<span><span class="co">#&gt;    0.10730537</span></span>
+<span><span class="co">#&gt;   -0.09304225</span></span>
+<span><span class="co">#&gt;    0.08745788</span></span>
+<span><span class="co">#&gt;    0.08685521</span></span>
+<span><span class="co">#&gt;   -0.07750406</span></span>
+<span><span class="co">#&gt;    0.06903151</span></span>
+<span><span class="co">#&gt;    0.06270530</span></span>
+<span><span class="co">#&gt;    0.05513445</span></span>
+<span><span class="co">#&gt;   -0.04185797</span></span></code></pre></div>
 <p>The audit reports the portfolio-level frequency before and after
 refinement and the corresponding changes by final risk-factor level.
 These are predictions from the complete model for the observed portfolio

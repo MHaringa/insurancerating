@@ -1611,9 +1611,9 @@ testthat::test_that(
     base_state <- preview_refinement(base, 1)$state
     stronger_state <- preview_refinement(stronger, 1)$state
 
-    testthat::expect_gt(
-      diff(range(log(stronger_state$new$yhat))),
-      diff(range(log(base_state$new$yhat)))
+    testthat::expect_equal(
+      diff(range(stronger_state$new$yhat)),
+      1.5 * diff(range(base_state$new$yhat))
     )
     testthat::expect_equal(
       stats::weighted.mean(
@@ -1664,6 +1664,53 @@ testthat::test_that(
         effect_strength = 1.1
       ),
       "Supply both `from` and `to`"
+    )
+  }
+)
+
+testthat::test_that(
+  "effect strength preserves direction and curvature on the relativity scale", {
+    smooth <- data.frame(
+      breaks_min = 0:3,
+      breaks_max = 1:4,
+      yhat = c(0.7, 1.0, 1.2, 1.3)
+    )
+    line <- data.frame(x = 0:3, yhat = smooth$yhat)
+    new_rf <- data.frame(yhat = smooth$yhat)
+    data <- data.frame(x = c(0.5, 1.5, 2.5, 3.5))
+
+    adjusted <- .apply_smoothing_effect_strength(
+      data = data,
+      smooth = smooth,
+      line = line,
+      new_rf = new_rf,
+      source_variable = "x",
+      weights = NULL,
+      effect_strength = 1.5
+    )
+
+    testthat::expect_true(all(diff(adjusted$smooth$yhat) > 0))
+    testthat::expect_true(all(diff(diff(adjusted$smooth$yhat)) < 0))
+    testthat::expect_equal(
+      diff(adjusted$smooth$yhat),
+      1.5 * diff(smooth$yhat)
+    )
+    testthat::expect_equal(
+      mean(adjusted$smooth$yhat),
+      mean(smooth$yhat)
+    )
+
+    testthat::expect_error(
+      .apply_smoothing_effect_strength(
+        data = data,
+        smooth = smooth,
+        line = line,
+        new_rf = new_rf,
+        source_variable = "x",
+        weights = NULL,
+        effect_strength = 5
+      ),
+      "zero or negative"
     )
   }
 )

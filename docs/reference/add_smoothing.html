@@ -143,10 +143,11 @@ exposure, used to weight the grouped GLM relativities during smoothing.</p></dd>
 
 <dt id="arg-effect-strength">effect_strength<a class="anchor" aria-label="anchor" href="#arg-effect-strength"></a></dt>
 <dd><p>Non-negative finite numeric scalar controlling the
-spread of the fitted smoothing effect on the logarithmic relativity scale.
+spread of the fitted smoothing effect around its weighted mean on the
+ordinary relativity scale.
 The default <code>1</code> leaves the smoothing unchanged. Values below 1 flatten the
-complete effect and values above 1 make it steeper. After adjustment, the
-weighted arithmetic mean is restored; see Details.</p></dd>
+complete effect and values above 1 make it steeper. The weighted arithmetic
+mean remains unchanged by construction; see Details.</p></dd>
 
 
 <dt id="arg-tariff-class-rating-variable">tariff_class, rating_variable<a class="anchor" aria-label="anchor" href="#arg-tariff-class-rating-variable"></a></dt>
@@ -188,22 +189,24 @@ variable during refitting.</p><div class="section">
 
 <p><code>effect_strength</code> adjusts the overall spread of the fitted smoothing curve
 without estimating a different curve. For a smoothed relativity <code>r(x)</code> and
-common centre <code>c</code>, the adjustment is <code>c * (r(x) / c)^a</code>, where <code>a</code> is
-<code>effect_strength</code>. It is therefore a multiplication of deviations on the
-logarithmic relativity scale, rather than a change in skewness or kurtosis.
-A value of 1 retains the fitted smooth,
+weighted arithmetic mean <code>c</code>, the adjustment is
+<code>c + a * (r(x) - c)</code>, where <code>a</code> is <code>effect_strength</code>. It multiplies the
+vertical deviations from the centre on the ordinary relativity scale; it is
+not a change in skewness or kurtosis. A value of 1 retains the fitted smooth,
 values between 0 and 1 flatten the effect, values above 1 strengthen it, and
-0 produces a constant effect. The adjusted values are subsequently
-normalised so that the weighted arithmetic mean of the smoothed tariff
-levels remains unchanged. The <code>weights</code> column is used for this
-normalisation when supplied; otherwise, tariff levels receive equal weight.</p>
+0 produces a constant effect. The weighted arithmetic mean of the smoothed
+tariff levels remains unchanged by construction. The <code>weights</code> column is
+used to determine this centre when supplied; otherwise, tariff levels
+receive equal weight.</p>
 <p>This adjustment changes the overall degree of tariff differentiation. It
 does not selectively change only the upper or lower part of the curve. Use
 <code><a href="edit_smoothing.html">edit_smoothing()</a></code> with interval boundaries and control points when a local
 part of the relationship requires a separate actuarial adjustment.
-Monotonic ordering is retained, but curvature on the raw relativity scale
-can change and should be reviewed when a convex or concave specification is
-important.</p>
+Monotonic ordering and convexity or concavity on the relativity scale are
+retained. For example, an increasing concave curve remains increasing and
+concave while its complete rise becomes steeper when <code>effect_strength</code> is
+above 1. Very large values are rejected when they would produce a zero or
+negative relativity.</p>
 </div>
 
 <div class="section">

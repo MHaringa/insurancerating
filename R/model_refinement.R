@@ -3063,23 +3063,25 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'
 #' `effect_strength` adjusts the overall spread of the fitted smoothing curve
 #' without estimating a different curve. For a smoothed relativity `r(x)` and
-#' common centre `c`, the adjustment is `c * (r(x) / c)^a`, where `a` is
-#' `effect_strength`. It is therefore a multiplication of deviations on the
-#' logarithmic relativity scale, rather than a change in skewness or kurtosis.
-#' A value of 1 retains the fitted smooth,
+#' weighted arithmetic mean `c`, the adjustment is
+#' `c + a * (r(x) - c)`, where `a` is `effect_strength`. It multiplies the
+#' vertical deviations from the centre on the ordinary relativity scale; it is
+#' not a change in skewness or kurtosis. A value of 1 retains the fitted smooth,
 #' values between 0 and 1 flatten the effect, values above 1 strengthen it, and
-#' 0 produces a constant effect. The adjusted values are subsequently
-#' normalised so that the weighted arithmetic mean of the smoothed tariff
-#' levels remains unchanged. The `weights` column is used for this
-#' normalisation when supplied; otherwise, tariff levels receive equal weight.
+#' 0 produces a constant effect. The weighted arithmetic mean of the smoothed
+#' tariff levels remains unchanged by construction. The `weights` column is
+#' used to determine this centre when supplied; otherwise, tariff levels
+#' receive equal weight.
 #'
 #' This adjustment changes the overall degree of tariff differentiation. It
 #' does not selectively change only the upper or lower part of the curve. Use
 #' [edit_smoothing()] with interval boundaries and control points when a local
 #' part of the relationship requires a separate actuarial adjustment.
-#' Monotonic ordering is retained, but curvature on the raw relativity scale
-#' can change and should be reviewed when a convex or concave specification is
-#' important.
+#' Monotonic ordering and convexity or concavity on the relativity scale are
+#' retained. For example, an increasing concave curve remains increasing and
+#' concave while its complete rise becomes steeper when `effect_strength` is
+#' above 1. Very large values are rejected when they would produce a zero or
+#' negative relativity.
 #'
 #' ## Actuarial interpretation
 #'
@@ -3218,10 +3220,11 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #' @param weights Optional character string. Numeric volume column, usually
 #'   exposure, used to weight the grouped GLM relativities during smoothing.
 #' @param effect_strength Non-negative finite numeric scalar controlling the
-#'   spread of the fitted smoothing effect on the logarithmic relativity scale.
+#'   spread of the fitted smoothing effect around its weighted mean on the
+#'   ordinary relativity scale.
 #'   The default `1` leaves the smoothing unchanged. Values below 1 flatten the
-#'   complete effect and values above 1 make it steeper. After adjustment, the
-#'   weighted arithmetic mean is restored; see Details.
+#'   complete effect and values above 1 make it steeper. The weighted arithmetic
+#'   mean remains unchanged by construction; see Details.
 #' @param tariff_class,rating_variable Deprecated. Use `model_variable` and
 #'   `source_variable` instead.
 #' @param x_cut,x_org Deprecated. Use `model_variable` and `source_variable`
@@ -4379,8 +4382,8 @@ add_relativities <- function(model,
   )
   if (anyNA(interval)) {
     stop(
-      "Cannot normalise `effect_strength` because some `", source_variable,
-      "` values are outside the smoothing breaks.",
+      "Cannot determine the weighted centre for `effect_strength` because ",
+      "some `", source_variable, "` values are outside the smoothing breaks.",
       call. = FALSE
     )
   }
@@ -4390,8 +4393,8 @@ add_relativities <- function(model,
       any(!is.finite(weight_values)) || any(weight_values < 0)) {
     stop(
       "The smoothing `weights` column `", weights,
-      "` must contain finite, non-negative values when `effect_strength` ",
-      "is used.",
+      "` must contain finite, non-negative values to determine the centre ",
+      "used by `effect_strength`.",
       call. = FALSE
     )
   }
@@ -4433,22 +4436,28 @@ add_relativities <- function(model,
     )
   }
 
-  centre <- exp(stats::weighted.mean(log(smooth$yhat), level_weights))
-  original_mean <- stats::weighted.mean(smooth$yhat, level_weights)
-  unscaled <- centre * (smooth$yhat / centre)^effect_strength
-  normalization_factor <- original_mean /
-    stats::weighted.mean(unscaled, level_weights)
+  centre <- stats::weighted.mean(smooth$yhat, level_weights)
 
   transform <- function(x) {
-    centre * (x / centre)^effect_strength * normalization_factor
+    centre + effect_strength * (x - centre)
   }
-  smooth$yhat <- transform(smooth$yhat)
-  line$yhat <- transform(line$yhat)
+  adjusted_smooth <- transform(smooth$yhat)
+  adjusted_line <- transform(line$yhat)
+  if (any(adjusted_smooth <= 0) || any(adjusted_line <= 0)) {
+    stop(
+      "The selected `effect_strength` produces zero or negative smoothed ",
+      "relativities. Choose a lower value or adjust the smoothing curve ",
+      "locally with `edit_smoothing()`.",
+      call. = FALSE
+    )
+  }
+
+  smooth$yhat <- adjusted_smooth
+  line$yhat <- adjusted_line
   new_rf$yhat <- smooth$yhat
 
   attr(smooth, "effect_strength") <- effect_strength
   attr(smooth, "effect_centre") <- centre
-  attr(smooth, "effect_normalization_factor") <- normalization_factor
 
   list(smooth = smooth, line = line, new_rf = new_rf)
 }
