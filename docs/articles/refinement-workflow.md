@@ -140,7 +140,8 @@ refinement <- refinement |>
     breaks = age_breaks,
     smoothing = "spline",
     k = 5,
-    weights = "exposure"
+    weights = "exposure",
+    effect_strength = 1.1
   )
 ```
 
@@ -155,6 +156,24 @@ The arguments distinguish two variables:
 weights give levels with more portfolio support more influence. With a
 spline method, `k` controls the available curve flexibility; it is a
 basis dimension rather than a fixed number of fitted degrees of freedom.
+
+`effect_strength` controls the overall spread of the smoothed
+relativities on the logarithmic scale. The default value 1 retains the
+fitted smoothing, values between 0 and 1 flatten the complete effect,
+and values above 1 make the complete effect steeper. The value 1.1 used
+here strengthens the deviations from the common centre without changing
+their ordering. The adjusted curve is normalised so its
+exposure-weighted arithmetic mean remains unchanged.
+
+This parameter changes the strength of the complete smoothed effect; it
+does not selectively alter only older ages, high insured values or
+another local part of the curve. Use interval boundaries and control
+points in
+[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+for a local adjustment. Monotonic ordering is retained by an
+effect-strength adjustment, but curvature on the raw relativity scale
+should be reviewed separately when convexity or concavity is an explicit
+assumption.
 
 The default unconstrained spline is suitable when the shape should
 remain data-led. Increasing or decreasing shape constraints are
@@ -171,7 +190,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-10 13:22:14 CEST
+#> Created: 2026-08-10 14:21:28 CEST
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -179,7 +198,7 @@ summary(refinement)
 #> Offset: log(exposure)
 #> 
 #> Refinement steps: 1
-#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, effect strength: 1.1)
 #>      8 intervals over 18 to 95
 
 autoplot(
@@ -381,7 +400,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-10 13:22:14 CEST
+#> Created: 2026-08-10 14:21:28 CEST
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -389,7 +408,7 @@ summary(refinement)
 #> Offset: log(exposure)
 #> 
 #> Refinement steps: 4
-#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, effect strength: 1.1)
 #>      8 intervals over 18 to 95
 #>   2. Restriction: zip -> zip_restricted (4 levels)
 #>      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000
@@ -467,7 +486,7 @@ interpretation tools:
 
 head(rating_table(refined_model, exposure = FALSE))
 #>      risk_factor       level est_refined_model
-#> 1    (Intercept) (Intercept)         0.2614588
+#> 1    (Intercept) (Intercept)         0.2614624
 #> 2 zip_restricted           0         0.9500000
 #> 3 zip_restricted           1         0.9954865
 #> 4 zip_restricted           2         0.8971513
@@ -509,9 +528,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Prepared: 2026-08-10 13:22:14 CEST
-#> Refitted: 2026-08-10 13:22:16 CEST
-#> Audited: 2026-08-10 13:22:16 CEST
+#> Prepared: 2026-08-10 14:21:28 CEST
+#> Refitted: 2026-08-10 14:21:29 CEST
+#> Audited: 2026-08-10 14:21:30 CEST
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
@@ -522,7 +541,7 @@ summary(refinement_audit)
 #>       log(age_band_smooth) + log(exposure))
 #> 
 #> Refinement steps: 4
-#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, effect strength: 1.1)
 #>      8 intervals over 18 to 95
 #>   2. Restriction: zip -> zip_restricted (4 levels)
 #>      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000
@@ -534,20 +553,20 @@ summary(refinement_audit)
 #> Portfolio effect
 #>   Before: 0.137596
 #>   After:  0.137596
-#>   Change: -1.50158e-14 (-1.091e-11%)
+#>   Change: -3.60545e-14 (-2.62e-11%)
 #> 
 #> Largest level changes (10 of 24)
 #>              risk_factor   level     before     after       change change_ratio
-#>  age_policyholder_smooth (84,95] 0.06942859 0.1301355  0.060706899   0.87437893
-#>           zip_restricted       3 0.13680279 0.1515199  0.014717130   0.10757917
-#>           zip_restricted       0 0.14020239 0.1275556 -0.012646824  -0.09020405
-#>        bm_tariff_segment       8 0.14270460 0.1552869  0.012582270   0.08817003
-#>        bm_tariff_segment       4 0.13883017 0.1507824  0.011952282   0.08609283
-#>        bm_tariff_segment       7 0.14278504 0.1518134  0.009028351   0.06323037
-#>        bm_tariff_segment       3 0.13764208 0.1452254  0.007583341   0.05509464
-#>  age_policyholder_smooth (58,65] 0.09746194 0.1021913  0.004729386   0.04852547
-#>  age_policyholder_smooth [18,25] 0.26142311 0.2487990 -0.012624116  -0.04828998
-#>           zip_restricted       2 0.12951920 0.1240765 -0.005442674  -0.04202214
+#>  age_policyholder_smooth (84,95] 0.06942859 0.1288732  0.059444654   0.85619846
+#>           zip_restricted       3 0.13680279 0.1514843  0.014681462   0.10731844
+#>           zip_restricted       0 0.14020239 0.1271431 -0.013059310  -0.09314613
+#>        bm_tariff_segment       4 0.13883017 0.1509642  0.012134021   0.08740191
+#>        bm_tariff_segment       8 0.14270460 0.1550819  0.012377286   0.08673361
+#>  age_policyholder_smooth (65,84] 0.10100599 0.0935558 -0.007450184  -0.07375983
+#>  age_policyholder_smooth (25,32] 0.17896684 0.1914842  0.012517324   0.06994214
+#>        bm_tariff_segment       7 0.14278504 0.1517406  0.008955531   0.06272038
+#>        bm_tariff_segment       3 0.13764208 0.1452538  0.007611772   0.05530120
+#>           zip_restricted       2 0.12951920 0.1241024 -0.005416832  -0.04182262
 ```
 
 The audit reports the portfolio-level frequency before and after
@@ -582,11 +601,17 @@ refined_model <- refit(refinement)
 refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
-    smoothing = "increasing"
+    effect_strength = 1.2
   )
 
 updated_model <- refit(refinement)
 ```
+
+The update replaces the stored value 1.1 with 1.2 and recalculates the
+smoothing specification from its underlying curve. It does not multiply
+both values. When a local interval is edited without supplying
+`effect_strength`, the previously stored value is retained and applied
+to the complete edited curve.
 
 Calling
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),

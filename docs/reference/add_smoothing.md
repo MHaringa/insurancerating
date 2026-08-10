@@ -18,6 +18,7 @@ add_smoothing(
   k = NULL,
   degree = NULL,
   weights = NULL,
+  effect_strength = 1,
   tariff_class = NULL,
   rating_variable = NULL,
   x_cut = NULL,
@@ -94,6 +95,14 @@ add_smoothing(
   Optional character string. Numeric volume column, usually exposure,
   used to weight the grouped GLM relativities during smoothing.
 
+- effect_strength:
+
+  Non-negative finite numeric scalar controlling the spread of the
+  fitted smoothing effect on the logarithmic relativity scale. The
+  default `1` leaves the smoothing unchanged. Values below 1 flatten the
+  complete effect and values above 1 make it steeper. After adjustment,
+  the weighted arithmetic mean is restored; see Details.
+
 - tariff_class, rating_variable:
 
   Deprecated. Use `model_variable` and `source_variable` instead.
@@ -131,6 +140,31 @@ influence on the fitted curve.
 The fitted curve is evaluated using `breaks` and converted back to a
 grouped tariff variable. The original model term is replaced by that
 smoothed tariff variable during refitting.
+
+### Effect strength
+
+`effect_strength` adjusts the overall spread of the fitted smoothing
+curve without estimating a different curve. For a smoothed relativity
+`r(x)` and common centre `c`, the adjustment is `c * (r(x) / c)^a`,
+where `a` is `effect_strength`. It is therefore a multiplication of
+deviations on the logarithmic relativity scale, rather than a change in
+skewness or kurtosis. A value of 1 retains the fitted smooth, values
+between 0 and 1 flatten the effect, values above 1 strengthen it, and 0
+produces a constant effect. The adjusted values are subsequently
+normalised so that the weighted arithmetic mean of the smoothed tariff
+levels remains unchanged. The `weights` column is used for this
+normalisation when supplied; otherwise, tariff levels receive equal
+weight.
+
+This adjustment changes the overall degree of tariff differentiation. It
+does not selectively change only the upper or lower part of the curve.
+Use
+[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+with interval boundaries and control points when a local part of the
+relationship requires a separate actuarial adjustment. Monotonic
+ordering is retained, but curvature on the raw relativity scale can
+change and should be reviewed when a convex or concave specification is
+important.
 
 ### Actuarial interpretation
 
@@ -320,7 +354,8 @@ ref <- prepare_refinement(burn_unrestricted) |>
     breaks = c(seq(18, 93, 5), 95),
     smoothing = "spline",
     k = 6,
-    weights = "exposure"
+    weights = "exposure",
+    effect_strength = 1.1
   )
 
 # When the tariff effect must not decrease, use the readable constrained

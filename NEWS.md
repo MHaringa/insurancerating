@@ -84,7 +84,11 @@
   `breaks`, smoothing method, complexity and weights. Shape-constrained methods
   now use readable values such as `"increasing"`, `"decreasing"`,
   `"increasing_convex"` and `"increasing_concave"`; the former short SCOP codes
-  remain accepted as compatibility aliases.
+  remain accepted as compatibility aliases. The new `effect_strength` argument
+  can flatten or strengthen the complete smoothed effect on the logarithmic
+  relativity scale while preserving its selected weighted level.
+  `edit_smoothing()` can replace this value on an existing smoothing step
+  without applying adjustments cumulatively.
 - `add_restriction()` recognises a split variable created by an earlier
   `add_relativities()` step without requiring
   `allow_new_risk_factors = TRUE`. A partial restriction changes the supplied

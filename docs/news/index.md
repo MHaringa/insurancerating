@@ -127,7 +127,12 @@
   and weights. Shape-constrained methods now use readable values such as
   `"increasing"`, `"decreasing"`, `"increasing_convex"` and
   `"increasing_concave"`; the former short SCOP codes remain accepted as
-  compatibility aliases.
+  compatibility aliases. The new `effect_strength` argument can flatten
+  or strengthen the complete smoothed effect on the logarithmic
+  relativity scale while preserving its selected weighted level.
+  [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+  can replace this value on an existing smoothing step without applying
+  adjustments cumulatively.
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   recognises a split variable created by an earlier
   [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)

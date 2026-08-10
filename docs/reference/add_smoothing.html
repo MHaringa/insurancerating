@@ -64,6 +64,7 @@ GLM.</p>
 <span>  k <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  degree <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  effect_strength <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  tariff_class <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rating_variable <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  x_cut <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -140,6 +141,14 @@ grouped model points.</p></dd>
 exposure, used to weight the grouped GLM relativities during smoothing.</p></dd>
 
 
+<dt id="arg-effect-strength">effect_strength<a class="anchor" aria-label="anchor" href="#arg-effect-strength"></a></dt>
+<dd><p>Non-negative finite numeric scalar controlling the
+spread of the fitted smoothing effect on the logarithmic relativity scale.
+The default <code>1</code> leaves the smoothing unchanged. Values below 1 flatten the
+complete effect and values above 1 make it steeper. After adjustment, the
+weighted arithmetic mean is restored; see Details.</p></dd>
+
+
 <dt id="arg-tariff-class-rating-variable">tariff_class, rating_variable<a class="anchor" aria-label="anchor" href="#arg-tariff-class-rating-variable"></a></dt>
 <dd><p>Deprecated. Use <code>model_variable</code> and
 <code>source_variable</code> instead.</p></dd>
@@ -174,6 +183,30 @@ with more portfolio volume have greater influence on the fitted curve.</p>
 <p>The fitted curve is evaluated using <code>breaks</code> and converted back to a grouped
 tariff variable. The original model term is replaced by that smoothed tariff
 variable during refitting.</p><div class="section">
+<h3 id="effect-strength">Effect strength<a class="anchor" aria-label="anchor" href="#effect-strength"></a></h3>
+
+
+<p><code>effect_strength</code> adjusts the overall spread of the fitted smoothing curve
+without estimating a different curve. For a smoothed relativity <code>r(x)</code> and
+common centre <code>c</code>, the adjustment is <code>c * (r(x) / c)^a</code>, where <code>a</code> is
+<code>effect_strength</code>. It is therefore a multiplication of deviations on the
+logarithmic relativity scale, rather than a change in skewness or kurtosis.
+A value of 1 retains the fitted smooth,
+values between 0 and 1 flatten the effect, values above 1 strengthen it, and
+0 produces a constant effect. The adjusted values are subsequently
+normalised so that the weighted arithmetic mean of the smoothed tariff
+levels remains unchanged. The <code>weights</code> column is used for this
+normalisation when supplied; otherwise, tariff levels receive equal weight.</p>
+<p>This adjustment changes the overall degree of tariff differentiation. It
+does not selectively change only the upper or lower part of the curve. Use
+<code><a href="edit_smoothing.html">edit_smoothing()</a></code> with interval boundaries and control points when a local
+part of the relationship requires a separate actuarial adjustment.
+Monotonic ordering is retained, but curvature on the raw relativity scale
+can change and should be reviewed when a convex or concave specification is
+important.</p>
+</div>
+
+<div class="section">
 <h3 id="actuarial-interpretation">Actuarial interpretation<a class="anchor" aria-label="anchor" href="#actuarial-interpretation"></a></h3>
 
 
@@ -350,7 +383,8 @@ compatibility.</p>
 <span class="r-in"><span>    breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">93</span>, <span class="fl">5</span><span class="op">)</span>, <span class="fl">95</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>    smoothing <span class="op">=</span> <span class="st">"spline"</span>,</span></span>
 <span class="r-in"><span>    k <span class="op">=</span> <span class="fl">6</span>,</span></span>
-<span class="r-in"><span>    weights <span class="op">=</span> <span class="st">"exposure"</span></span></span>
+<span class="r-in"><span>    weights <span class="op">=</span> <span class="st">"exposure"</span>,</span></span>
+<span class="r-in"><span>    effect_strength <span class="op">=</span> <span class="fl">1.1</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># When the tariff effect must not decrease, use the readable constrained</span></span></span>

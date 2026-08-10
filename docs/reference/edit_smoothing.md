@@ -1,10 +1,10 @@
 # Edit a smoothing curve in a refinement workflow
 
-Modify a specified interval of a smoothing curve previously added with
+Modify the overall effect strength or a specified interval of a
+smoothing curve previously added with
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md).
-The function can fix boundary values and introduce internal control
-points, for example when actuarial review supports a flatter local
-effect or a documented transition between tariff segments.
+The function can replace the stored strength, fix boundary values and
+introduce internal control points.
 
 ## Usage
 
@@ -13,14 +13,15 @@ edit_smoothing(
   model,
   model_variable = NULL,
   step = NULL,
-  from,
-  to,
+  from = NULL,
+  to = NULL,
   from_value = NULL,
   to_value = NULL,
   control_positions = NULL,
   control_values = NULL,
   allow_extrapolation = FALSE,
-  extrapolation_step = NULL
+  extrapolation_step = NULL,
+  effect_strength = NULL
 )
 ```
 
@@ -46,8 +47,9 @@ edit_smoothing(
 
 - from, to:
 
-  Numeric values giving the start and end of the source-variable
-  interval to modify.
+  Optional numeric values giving the start and end of the
+  source-variable interval to modify. Supply both for a local curve
+  edit, or omit both when only `effect_strength` is changed.
 
 - from_value, to_value:
 
@@ -69,6 +71,12 @@ edit_smoothing(
   Optional positive numeric scalar used to set the spacing of extra
   break points when extrapolation is allowed.
 
+- effect_strength:
+
+  Optional non-negative finite numeric scalar replacing the effect
+  strength stored on the smoothing step. `NULL` retains the existing
+  value. The update is non-cumulative; see Details.
+
 ## Value
 
 A `rating_refinement` object containing the edited smoothing
@@ -85,9 +93,19 @@ and applied when
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
 is called.
 
+`effect_strength` updates the overall strength stored by
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md).
+It is not multiplied by the previous value. For example, changing the
+value from 1.1 to 1.2 recalculates the current smoothing specification
+with a strength of 1.2; it does not multiply 1.1 by 1.2. If
+`effect_strength` is `NULL`, the value already stored on the smoothing
+step is retained. Local edits are calculated first and the selected
+effect strength is then applied to the resulting complete curve.
+
 Use `model_variable` or `step` to identify the smoothing step to edit.
 The interval from `from` to `to` defines the part of the source variable
-range that should be changed. `from_value` and `to_value` can be used to
+range that should be changed. Both may be omitted when only
+`effect_strength` is updated. `from_value` and `to_value` can be used to
 force the curve values at the interval boundaries. `control_positions`
 and `control_values` add additional points that the edited curve should
 follow inside the interval.
@@ -175,4 +193,12 @@ refinement <- refinement |>
   )
 
 refined_model <- refit(refinement)
+
+# Retain the smoothing shape and strengthen its complete effect. This
+# replaces the stored value; it is not multiplied by an earlier strength.
+refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    effect_strength = 1.15
+  )
 ```

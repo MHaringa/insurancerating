@@ -8,14 +8,15 @@ edit_smoothing(
   model,
   model_variable = NULL,
   step = NULL,
-  from,
-  to,
+  from = NULL,
+  to = NULL,
   from_value = NULL,
   to_value = NULL,
   control_positions = NULL,
   control_values = NULL,
   allow_extrapolation = FALSE,
-  extrapolation_step = NULL
+  extrapolation_step = NULL,
+  effect_strength = NULL
 )
 }
 \arguments{
@@ -30,8 +31,9 @@ is not supplied.}
 
 \item{step}{Optional numeric index of the smoothing step to edit.}
 
-\item{from, to}{Numeric values giving the start and end of the source-variable
-interval to modify.}
+\item{from, to}{Optional numeric values giving the start and end of the
+source-variable interval to modify. Supply both for a local curve edit, or
+omit both when only \code{effect_strength} is changed.}
 
 \item{from_value, to_value}{Optional numeric values used to override the
 smoothed curve value at \code{from} and \code{to}.}
@@ -45,6 +47,10 @@ observed source-variable range.}
 
 \item{extrapolation_step}{Optional positive numeric scalar used to set the
 spacing of extra break points when extrapolation is allowed.}
+
+\item{effect_strength}{Optional non-negative finite numeric scalar replacing
+the effect strength stored on the smoothing step. \code{NULL} retains the
+existing value. The update is non-cumulative; see Details.}
 }
 \value{
 A \code{rating_refinement} object containing the edited smoothing
@@ -52,10 +58,9 @@ specification. The pricing GLM is not fitted again until \code{\link[=refit]{ref
 called.
 }
 \description{
-Modify a specified interval of a smoothing curve previously added with
-\code{\link[=add_smoothing]{add_smoothing()}}. The function can fix boundary values and introduce
-internal control points, for example when actuarial review supports a flatter
-local effect or a documented transition between tariff segments.
+Modify the overall effect strength or a specified interval of a smoothing
+curve previously added with \code{\link[=add_smoothing]{add_smoothing()}}. The function can replace the
+stored strength, fix boundary values and introduce internal control points.
 }
 \details{
 \code{edit_smoothing()} stores an edit on the selected smoothing step of a
@@ -63,9 +68,18 @@ local effect or a documented transition between tariff segments.
 The edited curve is evaluated in the recorded step order and applied when
 \code{\link[=refit]{refit()}} is called.
 
+\code{effect_strength} updates the overall strength stored by \code{\link[=add_smoothing]{add_smoothing()}}.
+It is not multiplied by the previous value. For example, changing the value
+from 1.1 to 1.2 recalculates the current smoothing specification with a
+strength of 1.2; it does not multiply 1.1 by 1.2. If
+\code{effect_strength} is \code{NULL}, the value already stored on the smoothing step
+is retained. Local edits are calculated first and the selected effect
+strength is then applied to the resulting complete curve.
+
 Use \code{model_variable} or \code{step} to identify the smoothing step to edit. The
 interval from \code{from} to \code{to} defines the part of the source variable range
-that should be changed. \code{from_value} and \code{to_value} can be used to force the
+that should be changed. Both may be omitted when only \code{effect_strength} is
+updated. \code{from_value} and \code{to_value} can be used to force the
 curve values at the interval boundaries. \code{control_positions} and
 \code{control_values} add additional points that the edited curve should follow
 inside the interval.
@@ -133,6 +147,14 @@ refinement <- refinement |>
   )
 
 refined_model <- refit(refinement)
+
+# Retain the smoothing shape and strengthen its complete effect. This
+# replaces the stored value; it is not multiplied by an earlier strength.
+refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    effect_strength = 1.15
+  )
 
 }
 \seealso{

@@ -1576,6 +1576,99 @@ testthat::test_that(
 )
 
 testthat::test_that(
+  "smoothing effect strength is weighted, editable and non-cumulative", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = c(1, 2, 1, 3, 1, 4),
+      age = c(20, 25, 35, 40, 50, 55)
+    )
+    df$age_band <- cut(
+      df$age,
+      breaks = c(18, 30, 45, 60),
+      include.lowest = TRUE
+    )
+    model <- glm(
+      y ~ age_band + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+
+    add_strength <- function(value) {
+      prepare_refinement(model, data = df) |>
+        add_smoothing(
+          model_variable = "age_band",
+          source_variable = "age",
+          breaks = c(18, 30, 45, 60),
+          smoothing = "poly",
+          degree = 1,
+          weights = "exposure",
+          effect_strength = value
+        )
+    }
+
+    base <- add_strength(1)
+    stronger <- add_strength(1.5)
+    base_state <- preview_refinement(base, 1)$state
+    stronger_state <- preview_refinement(stronger, 1)$state
+
+    testthat::expect_gt(
+      diff(range(log(stronger_state$new$yhat))),
+      diff(range(log(base_state$new$yhat)))
+    )
+    testthat::expect_equal(
+      stats::weighted.mean(
+        stronger_state$data$age_band_smooth,
+        stronger_state$data$exposure
+      ),
+      stats::weighted.mean(
+        base_state$data$age_band_smooth,
+        base_state$data$exposure
+      )
+    )
+
+    edited <- edit_smoothing(
+      stronger,
+      model_variable = "age_band",
+      effect_strength = 0.7
+    )
+    direct <- add_strength(0.7)
+    testthat::expect_equal(edited$steps[[1]]$effect_strength, 0.7)
+    testthat::expect_equal(
+      preview_refinement(edited, 1)$state$new$yhat,
+      preview_refinement(direct, 1)$state$new$yhat
+    )
+
+    local_edit <- edit_smoothing(
+      stronger,
+      model_variable = "age_band",
+      from = 30,
+      to = 45,
+      from_value = 1,
+      to_value = 1.1
+    )
+    testthat::expect_equal(local_edit$steps[[1]]$effect_strength, 1.5)
+
+    testthat::expect_error(
+      add_strength(-0.1),
+      "finite non-negative"
+    )
+    testthat::expect_error(
+      edit_smoothing(stronger, model_variable = "age_band"),
+      "Supply `effect_strength`"
+    )
+    testthat::expect_error(
+      edit_smoothing(
+        stronger,
+        model_variable = "age_band",
+        from = 30,
+        effect_strength = 1.1
+      ),
+      "Supply both `from` and `to`"
+    )
+  }
+)
+
+testthat::test_that(
   "add_relativities validates inputs before storing a step", {
     df <- data.frame(
       y = c(1, 2, 1, 3, 2, 4),

@@ -131,7 +131,8 @@ refinement <- refinement |>
     breaks = age_breaks,
     smoothing = "spline",
     k = 5,
-    weights = "exposure"
+    weights = "exposure",
+    effect_strength = 1.1
   )
 ```
 
@@ -145,6 +146,20 @@ The arguments distinguish two variables:
 give levels with more portfolio support more influence. With a spline method,
 `k` controls the available curve flexibility; it is a basis dimension rather
 than a fixed number of fitted degrees of freedom.
+
+`effect_strength` controls the overall spread of the smoothed relativities on
+the logarithmic scale. The default value 1 retains the fitted smoothing, values
+between 0 and 1 flatten the complete effect, and values above 1 make the
+complete effect steeper. The value 1.1 used here strengthens the deviations
+from the common centre without changing their ordering. The adjusted curve is
+normalised so its exposure-weighted arithmetic mean remains unchanged.
+
+This parameter changes the strength of the complete smoothed effect; it does
+not selectively alter only older ages, high insured values or another local
+part of the curve. Use interval boundaries and control points in
+`edit_smoothing()` for a local adjustment. Monotonic ordering is retained by an
+effect-strength adjustment, but curvature on the raw relativity scale should be
+reviewed separately when convexity or concavity is an explicit assumption.
 
 The default unconstrained spline is suitable when the shape should remain
 data-led. Increasing or decreasing shape constraints are available when a
@@ -439,11 +454,17 @@ refined_model <- refit(refinement)
 refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
-    smoothing = "increasing"
+    effect_strength = 1.2
   )
 
 updated_model <- refit(refinement)
 ```
+
+The update replaces the stored value 1.1 with 1.2 and recalculates the
+smoothing specification from its underlying curve. It does not multiply both
+values. When a local interval is edited without supplying `effect_strength`,
+the previously stored value is retained and applied to the complete edited
+curve.
 
 Calling `add_smoothing()`, `add_restriction()` or another refinement function
 directly on `refined_model` is deliberately not supported. Further adjustments
