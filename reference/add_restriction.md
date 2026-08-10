@@ -13,7 +13,8 @@ add_restriction(
   model,
   restrictions,
   allow_new_levels = TRUE,
-  allow_new_risk_factors = FALSE
+  allow_new_risk_factors = FALSE,
+  replaces = NULL
 )
 ```
 
@@ -54,6 +55,17 @@ add_restriction(
   from both the model and preceding refinement steps. All observed
   levels must then have supplied relativities, which are treated as
   fixed tariff assumptions.
+
+- replaces:
+
+  `NULL` (default) or a character string naming an existing standalone
+  model term that the new fixed risk factor replaces. During
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
+  this term is removed before the restricted relativity column is added.
+  Supplying `replaces` also provides the explicit opt-in required for a
+  new risk factor; `allow_new_risk_factors = TRUE` is then unnecessary.
+  Existing terms used in transformations or interactions cannot be
+  replaced through this argument.
 
 ## Value
 
@@ -115,6 +127,35 @@ incorporated, such as a hail zone derived from geographic information.
 The refinement data must already contain a column assigning every
 observation to a level. This is required to apply the supplied
 relativities to individual records.
+
+### Replacing an existing model variable
+
+A new fixed tariff factor can either supplement the fitted GLM or
+replace an existing model variable. Supply `replaces` when the new
+factor represents an alternative tariff classification for an effect
+already present in the model. During
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
+the named existing term is removed and the supplied fixed relativities
+are inserted in its place. With `replaces = NULL`, the new factor is
+added alongside the existing model terms, which preserves the previous
+behaviour.
+
+Supplying `replaces` is itself an explicit request to add the new risk
+factor, so `allow_new_risk_factors = TRUE` does not also need to be
+supplied. The replacement relationship is retained in the ordered
+refinement metadata and is shown by
+[`print()`](https://rdrr.io/r/base/print.html),
+[`summary()`](https://rdrr.io/r/base/summary.html) and
+[`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md).
+This makes clear that the new factor substitutes for an earlier model
+effect rather than adding further multiplicative differentiation.
+
+`replaces` is intentionally limited to a standalone main-effect term in
+the current refinement formula. A variable used in an interaction or
+transformed expression cannot be removed unambiguously through this
+argument. Such model structures should be revised explicitly before the
+refinement is prepared. This argument is therefore not a general-purpose
+facility for deleting model terms.
 
 ### Updating an existing restriction
 
@@ -215,8 +256,8 @@ rating_table(refined_model, exposure = FALSE)
 #> 4  relativity           C          1.100000
 #> 5  relativity           D          1.200000
 
-# A risk factor absent from the fitted GLM can be added explicitly. The
-# portfolio must already assign every observation to a hail zone.
+# A factor absent from the fitted GLM can replace an existing model term.
+# The portfolio must already assign every observation to a hail zone.
 portfolio$hail_zone <- factor(c("low", "high", "low", "high", "low", "high"))
 hail_restrictions <- data.frame(
   hail_zone = c("low", "high"),
@@ -226,13 +267,15 @@ hail_restrictions <- data.frame(
 prepare_refinement(model, data = portfolio) |>
   add_restriction(
     hail_restrictions,
-    allow_new_risk_factors = TRUE
+    replaces = "postal_area"
   )
 #> <rating_refinement>
 #> Base model: Poisson GLM (log link)
 #> Steps: 1
-#>   1. Restriction: hail_zone -> hail_relativity (2 levels) [expert-specified new risk factor]
+#>   1. Restriction: hail_zone -> hail_relativity (2 levels) [expert-specified new risk factor] [replaces postal_area]
+# During refit(), hail_zone replaces postal_area rather than supplementing it.
 
+# Without `replaces`, a new fixed factor supplements the existing terms.
 # A later actuarial review changes only the relativity for the low hail zone.
 # The high-zone relativity remains 1.20 and the existing step is updated.
 revised_hail_restrictions <- data.frame(

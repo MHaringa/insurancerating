@@ -59,7 +59,8 @@ constraint must be applied consistently.</p>
 <span>  <span class="va">model</span>,</span>
 <span>  <span class="va">restrictions</span>,</span>
 <span>  allow_new_levels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  allow_new_risk_factors <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  allow_new_risk_factors <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  replaces <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -98,6 +99,16 @@ add an external variable that is present in the refinement data but absent
 from both the model and preceding refinement steps. All observed levels
 must then have supplied relativities, which are treated as fixed tariff
 assumptions.</p></dd>
+
+
+<dt id="arg-replaces">replaces<a class="anchor" aria-label="anchor" href="#arg-replaces"></a></dt>
+<dd><p><code>NULL</code> (default) or a character string naming an existing
+standalone model term that the new fixed risk factor replaces. During
+<code><a href="refit.html">refit()</a></code>, this term is removed before the restricted relativity column is
+added. Supplying <code>replaces</code> also provides the explicit opt-in required for
+a new risk factor; <code>allow_new_risk_factors = TRUE</code> is then unnecessary.
+Existing terms used in transformations or interactions cannot be replaced
+through this argument.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -149,6 +160,31 @@ information.</p>
 refinement data must already contain a column assigning every observation to
 a level. This is required to apply the supplied relativities to individual
 records.</p>
+</div>
+
+<div class="section">
+<h3 id="replacing-an-existing-model-variable">Replacing an existing model variable<a class="anchor" aria-label="anchor" href="#replacing-an-existing-model-variable"></a></h3>
+
+
+<p>A new fixed tariff factor can either supplement the fitted GLM or replace an
+existing model variable. Supply <code>replaces</code> when the new factor represents an
+alternative tariff classification for an effect already present in the
+model. During <code><a href="refit.html">refit()</a></code>, the named existing term is removed and the supplied
+fixed relativities are inserted in its place. With <code>replaces = NULL</code>, the new
+factor is added alongside the existing model terms, which preserves the
+previous behaviour.</p>
+<p>Supplying <code>replaces</code> is itself an explicit request to add the new risk factor,
+so <code>allow_new_risk_factors = TRUE</code> does not also need to be supplied. The
+replacement relationship is retained in the ordered refinement metadata and
+is shown by <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>, <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code><a href="audit_refinement.html">audit_refinement()</a></code>. This makes clear
+that the new factor substitutes for an earlier model effect rather than
+adding further multiplicative differentiation.</p>
+<p><code>replaces</code> is intentionally limited to a standalone main-effect term in the
+current refinement formula. A variable used in an interaction or transformed
+expression cannot be removed unambiguously through this argument. Such model
+structures should be revised explicitly before the refinement is prepared.
+This argument is therefore not a general-purpose facility for deleting model
+terms.</p>
 </div>
 
 <div class="section">
@@ -240,8 +276,8 @@ basis from which the split is derived.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4  relativity           C          1.100000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5  relativity           D          1.200000</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># A risk factor absent from the fitted GLM can be added explicitly. The</span></span></span>
-<span class="r-in"><span><span class="co"># portfolio must already assign every observation to a hail zone.</span></span></span>
+<span class="r-in"><span><span class="co"># A factor absent from the fitted GLM can replace an existing model term.</span></span></span>
+<span class="r-in"><span><span class="co"># The portfolio must already assign every observation to a hail zone.</span></span></span>
 <span class="r-in"><span><span class="va">portfolio</span><span class="op">$</span><span class="va">hail_zone</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"low"</span>, <span class="st">"high"</span>, <span class="st">"low"</span>, <span class="st">"high"</span>, <span class="st">"low"</span>, <span class="st">"high"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">hail_restrictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  hail_zone <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"low"</span>, <span class="st">"high"</span><span class="op">)</span>,</span></span>
@@ -251,13 +287,15 @@ basis from which the split is derived.</p>
 <span class="r-in"><span><span class="fu"><a href="prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">add_restriction</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    <span class="va">hail_restrictions</span>,</span></span>
-<span class="r-in"><span>    allow_new_risk_factors <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>    replaces <span class="op">=</span> <span class="st">"postal_area"</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;rating_refinement&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Base model: Poisson GLM (log link)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Steps: 1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1. Restriction: hail_zone -&gt; hail_relativity (2 levels) [expert-specified new risk factor]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1. Restriction: hail_zone -&gt; hail_relativity (2 levels) [expert-specified new risk factor] [replaces postal_area]</span>
+<span class="r-in"><span><span class="co"># During refit(), hail_zone replaces postal_area rather than supplementing it.</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Without `replaces`, a new fixed factor supplements the existing terms.</span></span></span>
 <span class="r-in"><span><span class="co"># A later actuarial review changes only the relativity for the low hail zone.</span></span></span>
 <span class="r-in"><span><span class="co"># The high-zone relativity remains 1.20 and the existing step is updated.</span></span></span>
 <span class="r-in"><span><span class="va">revised_hail_restrictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>

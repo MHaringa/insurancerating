@@ -41,6 +41,8 @@
 <div class="section level3">
 <h3 id="changes-since-0-8-1-9000">Changes since 0.8.1<a class="anchor" aria-label="anchor" href="#changes-since-0-8-1-9000"></a></h3>
 <ul><li>
+<code><a href="../reference/add_restriction.html">add_restriction()</a></code> gains <code>replaces</code>, which allows a new fixed tariff factor to explicitly replace an existing standalone model term during <code><a href="../reference/refit.html">refit()</a></code>. The replacement is retained in refinement summaries and audits. The default <code>replaces = NULL</code> preserves the existing additive behaviour for new factors.</li>
+<li>
 <code><a href="../reference/rating_grid_db.html">rating_grid_db()</a></code> and <code><a href="../reference/merge_date_ranges_db.html">merge_date_ranges_db()</a></code> add lazy database variants for portfolios that should be reduced before they are imported into R. <code><a href="../reference/rating_grid_db.html">rating_grid_db()</a></code> translates grouped counts and sums through <code>dbplyr</code>, while <code><a href="../reference/merge_date_ranges_db.html">merge_date_ranges_db()</a></code> implements temporal gaps-and-islands reduction in DuckDB. A new large-portfolio vignette compares local and database workflows and illustrates lazy reduction of portfolios with 10 and 50 million records.</li>
 <li>
 <code><a href="../reference/rating_grid.html">rating_grid()</a></code> and <code><a href="../reference/merge_date_ranges.html">merge_date_ranges()</a></code> are now documented together as portfolio-reduction functions. Both use grouped <code>data.table</code> operations internally and return ordinary <code>data.frame</code> objects for downstream use.</li>

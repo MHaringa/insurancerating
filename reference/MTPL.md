@@ -30,7 +30,7 @@ A data frame containing 30,000 rows and 7 variables:
 
 - amount:
 
-  Claim severity (in euros).
+  Total claim amount for the portfolio record (in euros).
 
 - power:
 

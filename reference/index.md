@@ -2,8 +2,8 @@
 
 ## Portfolio analysis
 
-Analyse portfolio behaviour and inspect risk factors before model
-estimation.
+Inspect observed portfolio experience, exposure distributions and
+unusual observations before or alongside modelling.
 
 - [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
   : Summarise observed portfolio experience by risk factor
@@ -12,27 +12,10 @@ estimation.
 - [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
   : Portfolio histogram with tail bins
 
-## Severity and large claims
+## Risk-factor analysis and structuring
 
-Analyse claim amounts, capped or truncated severity, and redistribute
-large losses before fitting severity models.
-
-- [`plot_severity_distribution()`](https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.md)
-  : Exploratory severity diagnostics by category
-- [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
-  : Assess possible excess-loss thresholds
-- [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
-  : Convert an object to a gt table
-- [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
-  : Redistribute large losses for severity or risk-premium modelling
-- [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
-  : Fit severity distributions to truncated claim data
-- [`autoplot(`*`<truncated_severity>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.truncated_severity.md)
-  : Plot a fitted truncated severity distribution
-
-## Tariff segments
-
-Analyse continuous risk factors and convert them to tariff segments.
+Analyse continuous risk relationships and translate them into practical
+tariff structures.
 
 - [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
   : Estimate a smooth effect for a continuous risk factor
@@ -41,13 +24,37 @@ Analyse continuous risk factors and convert them to tariff segments.
   : Inspect smooth risk-factor effects and tariff-segment boundaries
 - [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md)
   : Derive candidate tariff segments from a smooth risk-factor effect
+- [`fisher_classify()`](https://mharinga.github.io/insurancerating/reference/fisher_classify.md)
+  : Fisher's natural breaks classification
 - [`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md)
   : Add derived tariff segments to portfolio data
 
-## Modelling and interpretation
+## Severity modelling
 
-Estimate pricing models and interpret fitted coefficients in tariff
-terms.
+Explore claim amounts and fit severity distributions to truncated
+claims.
+
+- [`plot_severity_distribution()`](https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.md)
+  : Exploratory severity diagnostics by category
+- [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
+  : Fit severity distributions to truncated claim data
+- [`autoplot(`*`<truncated_severity>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.truncated_severity.md)
+  : Plot a fitted truncated severity distribution
+
+## Large-loss treatment
+
+Assess excess thresholds and redistribute large-loss experience for
+severity or risk-premium modelling.
+
+- [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
+  : Assess possible excess-loss thresholds
+- [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
+  : Redistribute large losses for severity or risk-premium modelling
+
+## Model interpretation
+
+Interpret fitted pricing models, compare estimated effects with observed
+portfolio experience, and add model predictions to portfolio data.
 
 - [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
   : Present fitted pricing-model effects as a rating table
@@ -58,15 +65,13 @@ terms.
 - [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md)
   : Add model predictions to a pricing data set
 
-## Refinement workflow
+## Tariff refinement
 
-Apply structured tariff adjustments such as smoothing, restrictions, and
+Record, inspect and refit explicit actuarial adjustments to tariff
 relativities.
 
 - [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md)
   : Prepare a model refinement workflow
-- [`autoplot(`*`<rating_refinement>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
-  : Inspect a model refinement step
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   : Smooth grouped tariff relativities in a refinement workflow
 - [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
@@ -82,20 +87,22 @@ relativities.
 - [`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
   [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
   : Define sublevel relativity specifications
+- [`autoplot(`*`<rating_refinement>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
+  : Inspect a model refinement step
 - [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
   : Fit a prepared refinement specification
 - [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
   : Audit the effect of a fitted model refinement
 
-## Validation
+## Model validation
 
-Assess model fit, predictive stability, dispersion, and residual
-behaviour.
+Assess model performance, resampling stability, distributional
+assumptions and residual behaviour.
 
 - [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md)
   : Compare fitted GLMs using common performance measures
 - [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
-  : Assess predictive stability by repeated resampling
+  : Assess performance stability under repeated resampling
 - [`autoplot(`*`<bootstrap_performance>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.md)
   : Plot the resampled performance distribution
 - [`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md)
@@ -107,49 +114,46 @@ behaviour.
 - [`autoplot(`*`<check_residuals>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.check_residuals.md)
   : Inspect simulation-based residual uniformity
 
-## Model structure
+## Portfolio preparation and reduction
 
-Extract the data and metadata represented by fitted pricing models.
+Consolidate policy periods and aggregate observed model points in memory
+or lazily in a database.
 
-- [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
-  : Recover the portfolio data used by a fitted model
-
-## Portfolio reduction
-
-Reduce portfolio records across observed rating-factor combinations or
-connected coverage periods, locally or lazily in a database.
-
-- [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-  : Construct observed rating-grid points
 - [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
   : Reduce portfolio periods by merging adjacent date ranges
-- [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md)
-  : Reduce a database portfolio to observed rating-grid points
 - [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md)
   : Merge connected portfolio periods in DuckDB
+- [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+  : Construct observed rating-grid points
+- [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md)
+  : Reduce a database portfolio to observed rating-grid points
 
-## Portfolio time operations
+## Policy period operations
 
-Expand policy periods to reporting months or match dated events to
-active portfolio records.
+Split, align and query insurance policy periods over time.
 
 - [`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md)
   : Split portfolio periods into calendar months
 - [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
   : Match event dates to active portfolio periods
 
-## Utilities
+## Model and supporting utilities
 
-Supporting functions used across pricing workflows.
+Recover model data, format package results and support common pricing
+calculations and simulations.
 
+- [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
+  : Recover the portfolio data used by a fitted model
+- [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+  : Convert an object to a gt table
+- [`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md)
+  : Set the reference level of a factor
 - [`rmse()`](https://mharinga.github.io/insurancerating/reference/rmse.md)
   : Calculate response-scale prediction error
 - [`rlnormt()`](https://mharinga.github.io/insurancerating/reference/rlnormt.md)
   : Simulate severities from a truncated lognormal distribution
 - [`rgammat()`](https://mharinga.github.io/insurancerating/reference/rgammat.md)
   : Simulate severities from a truncated gamma distribution
-- [`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md)
-  : Set the reference level of a factor
 
 ## Data
 
@@ -225,9 +229,6 @@ use the updated API.
 
   Deprecated alias for
   [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
-
-- [`fisher_classify()`](https://mharinga.github.io/insurancerating/reference/fisher_classify.md)
-  : Fisher's natural breaks classification
 
 - [`fisher()`](https://mharinga.github.io/insurancerating/reference/fisher.md)
   :

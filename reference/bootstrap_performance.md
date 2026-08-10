@@ -1,4 +1,4 @@
-# Assess predictive stability by repeated resampling
+# Assess performance stability under repeated resampling
 
 Refit a pricing model on repeated samples and record the resulting
 response-scale prediction error. The distribution of RMSE values

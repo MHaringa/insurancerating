@@ -7,18 +7,18 @@
   };
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Add model predictions to a pricing data set — add_prediction"><meta name="description" content="add_prediction() adds predictions from one or more fitted glm models to
 a data frame.
-In pricing workflows, this is often used to bring frequency and severity
-model output together on the same portfolio. For example, predicted claim
-frequency and predicted average claim amount can be multiplied to create a
-pure premium proxy before further tariff refinement.
+In pricing workflows, this is often used to bring count and severity model
+output together on the same portfolio. For example, an expected claim count
+can be normalised by exposure and multiplied by an expected average claim
+amount to calculate a risk premium per exposure unit.
 The function is deliberately small: it does not refit models or decide how
 predictions should be combined. It only adds model predictions, and
 optionally confidence intervals, using clear output column names."><meta property="og:description" content="add_prediction() adds predictions from one or more fitted glm models to
 a data frame.
-In pricing workflows, this is often used to bring frequency and severity
-model output together on the same portfolio. For example, predicted claim
-frequency and predicted average claim amount can be multiplied to create a
-pure premium proxy before further tariff refinement.
+In pricing workflows, this is often used to bring count and severity model
+output together on the same portfolio. For example, an expected claim count
+can be normalised by exposure and multiplied by an expected average claim
+amount to calculate a risk premium per exposure unit.
 The function is deliberately small: it does not refit models or decide how
 predictions should be combined. It only adds model predictions, and
 optionally confidence intervals, using clear output column names."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
@@ -56,10 +56,10 @@ optionally confidence intervals, using clear output column names."><meta propert
     <div class="ref-description section level2">
     <p><code>add_prediction()</code> adds predictions from one or more fitted <code>glm</code> models to
 a data frame.</p>
-<p>In pricing workflows, this is often used to bring frequency and severity
-model output together on the same portfolio. For example, predicted claim
-frequency and predicted average claim amount can be multiplied to create a
-pure premium proxy before further tariff refinement.</p>
+<p>In pricing workflows, this is often used to bring count and severity model
+output together on the same portfolio. For example, an expected claim count
+can be normalised by exposure and multiplied by an expected average claim
+amount to calculate a risk premium per exposure unit.</p>
 <p>The function is deliberately small: it does not refit models or decide how
 predictions should be combined. It only adds model predictions, and
 optionally confidence intervals, using clear output column names.</p>
@@ -140,8 +140,11 @@ are added as well.</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Predictions are calculated on the response scale using
 <code>stats::predict(..., type = "response")</code>. For GLMs with a log link, such as
-Poisson frequency models or Gamma severity models, the added columns are
-therefore already on the original scale.</p>
+Poisson count models or Gamma severity models, the added columns are already
+on the original response scale. For a Poisson claim-count model containing
+an exposure offset, this is the expected claim count for the supplied
+exposure, not frequency per exposure unit. Divide by exposure when a rate is
+required.</p>
 <p>If <code>confidence = TRUE</code>, lower and upper confidence interval columns are added
 next to each prediction column. The default interval suffixes are <code>"lower"</code>
 and <code>"upper"</code>.</p>
@@ -163,37 +166,49 @@ the domain supported by the fitted model.</p>
 <span class="r-in"><span>            offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>            family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Add predicted claim frequency</span></span></span>
-<span class="r-in"><span><span class="va">mtpl_pred</span> <span class="op">&lt;-</span> <span class="fu">add_prediction</span><span class="op">(</span><span class="va">MTPL</span>, <span class="va">mod1</span>, predictions <span class="op">=</span> <span class="st">"pred_frequency"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Add the expected claim count for each record's exposure</span></span></span>
+<span class="r-in"><span><span class="va">mtpl_pred</span> <span class="op">&lt;-</span> <span class="fu">add_prediction</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">MTPL</span>,</span></span>
+<span class="r-in"><span>  <span class="va">mod1</span>,</span></span>
+<span class="r-in"><span>  predictions <span class="op">=</span> <span class="st">"expected_claim_count"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Add predicted values with confidence bounds</span></span></span>
 <span class="r-in"><span><span class="va">mtpl_pred_ci</span> <span class="op">&lt;-</span> <span class="fu">add_prediction</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">MTPL</span>,</span></span>
 <span class="r-in"><span>  <span class="va">mod1</span>,</span></span>
-<span class="r-in"><span>  predictions <span class="op">=</span> <span class="st">"pred_frequency"</span>,</span></span>
+<span class="r-in"><span>  predictions <span class="op">=</span> <span class="st">"expected_claim_count"</span>,</span></span>
 <span class="r-in"><span>  confidence <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Combine frequency and severity predictions into a pure premium proxy</span></span></span>
+<span class="r-in"><span><span class="co"># Combine frequency and severity predictions into a risk premium</span></span></span>
 <span class="r-in"><span><span class="va">freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">bm</span> <span class="op">+</span> <span class="va">zip</span>,</span></span>
 <span class="r-in"><span>            data <span class="op">=</span> <span class="va">MTPL</span>,</span></span>
 <span class="r-in"><span>            offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>            family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">sev</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">amount</span> <span class="op">~</span> <span class="va">bm</span> <span class="op">+</span> <span class="va">zip</span>,</span></span>
-<span class="r-in"><span>           data <span class="op">=</span> <span class="va">MTPL</span><span class="op">[</span><span class="va">MTPL</span><span class="op">$</span><span class="va">amount</span> <span class="op">&gt;</span> <span class="fl">0</span>, <span class="op">]</span>,</span></span>
+<span class="r-in"><span><span class="va">severity_data</span> <span class="op">&lt;-</span> <span class="va">MTPL</span><span class="op">[</span><span class="va">MTPL</span><span class="op">$</span><span class="va">nclaims</span> <span class="op">&gt;</span> <span class="fl">0</span> <span class="op">&amp;</span> <span class="va">MTPL</span><span class="op">$</span><span class="va">amount</span> <span class="op">&gt;</span> <span class="fl">0</span>, <span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">severity_data</span><span class="op">$</span><span class="va">average_claim_amount</span> <span class="op">&lt;-</span></span></span>
+<span class="r-in"><span>  <span class="va">severity_data</span><span class="op">$</span><span class="va">amount</span> <span class="op">/</span> <span class="va">severity_data</span><span class="op">$</span><span class="va">nclaims</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">sev</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">average_claim_amount</span> <span class="op">~</span> <span class="va">bm</span> <span class="op">+</span> <span class="va">zip</span>,</span></span>
+<span class="r-in"><span>           data <span class="op">=</span> <span class="va">severity_data</span>,</span></span>
 <span class="r-in"><span>           weights <span class="op">=</span> <span class="va">nclaims</span>,</span></span>
 <span class="r-in"><span>           family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">premium_proxy</span> <span class="op">&lt;-</span> <span class="fu">add_prediction</span><span class="op">(</span></span></span>
+<span class="r-in"><span><span class="va">pricing</span> <span class="op">&lt;-</span> <span class="fu">add_prediction</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">MTPL</span>,</span></span>
 <span class="r-in"><span>  <span class="va">freq</span>,</span></span>
 <span class="r-in"><span>  <span class="va">sev</span>,</span></span>
-<span class="r-in"><span>  predictions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pred_frequency"</span>, <span class="st">"pred_severity"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  predictions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"expected_claim_count"</span>, <span class="st">"expected_average_severity"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">premium_proxy</span><span class="op">$</span><span class="va">pred_pure_premium</span> <span class="op">&lt;-</span></span></span>
-<span class="r-in"><span>  <span class="va">premium_proxy</span><span class="op">$</span><span class="va">pred_frequency</span> <span class="op">*</span> <span class="va">premium_proxy</span><span class="op">$</span><span class="va">pred_severity</span></span></span>
+<span class="r-in"><span><span class="va">pricing</span><span class="op">$</span><span class="va">claim_frequency</span> <span class="op">&lt;-</span></span></span>
+<span class="r-in"><span>  <span class="va">pricing</span><span class="op">$</span><span class="va">expected_claim_count</span> <span class="op">/</span> <span class="va">pricing</span><span class="op">$</span><span class="va">exposure</span></span></span>
+<span class="r-in"><span><span class="va">pricing</span><span class="op">$</span><span class="va">expected_loss</span> <span class="op">&lt;-</span></span></span>
+<span class="r-in"><span>  <span class="va">pricing</span><span class="op">$</span><span class="va">expected_claim_count</span> <span class="op">*</span> <span class="va">pricing</span><span class="op">$</span><span class="va">expected_average_severity</span></span></span>
+<span class="r-in"><span><span class="va">pricing</span><span class="op">$</span><span class="va">risk_premium</span> <span class="op">&lt;-</span></span></span>
+<span class="r-in"><span>  <span class="va">pricing</span><span class="op">$</span><span class="va">claim_frequency</span> <span class="op">*</span> <span class="va">pricing</span><span class="op">$</span><span class="va">expected_average_severity</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

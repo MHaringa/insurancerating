@@ -2,907 +2,633 @@
 
 ## Introduction
 
-In many pricing analyses, model estimation is followed by a translation
-step.
+Refinement is the explicit translation from statistically estimated
+model effects to the structure that will be reviewed, justified and
+implemented as a tariff. It can be motivated by stability, credibility,
+monotonicity, smoothness, sparse experience or an explicit
+implementation constraint.
 
-A fitted GLM may capture the structure of the portfolio well, while some
-fitted effects still need to be reviewed before they are used in a
-tariff.
+Refinement is not arbitrary editing of inconvenient coefficients. Each
+adjustment should have an actuarial or operational rationale and should
+be reviewed against exposure, claim volume, observed experience and
+model diagnostics. Recording these decisions as ordered steps makes them
+reproducible and easier to review.
 
-Common reasons include:
+This vignette starts from a fitted unrestricted GLM and focuses on what
+happens next. The construction of frequency, severity and technical
+risk-premium models is covered in [Getting
+Started](https://mharinga.github.io/insurancerating/articles/getting-started.md).
+The wider role of refinement within the package is mapped in [Pricing
+workflow and package building
+blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md).
 
-- irregular local variation
-- lack of monotonicity
-- externally imposed tariff structures
-- expert judgement not directly represented in the model
-- implementation constraints in policy administration systems
+The refinement architecture is:
 
-For this reason, actuarial pricing work often distinguishes between:
+| Stage | Meaning |
+|----|----|
+| Unrestricted GLM | Statistical starting point |
+| [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md) | Create an editable specification around that model |
+| [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md), [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md), [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md), [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md) | Record proposed actuarial adjustments |
+| [`summary()`](https://rdrr.io/r/base/summary.html) and [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) | Inspect the proposal before fitting |
+| [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md) | Reconstruct and fit the GLM under the stored specification |
+| [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md) and [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md) | Inspect the fitted tariff and its portfolio effect |
 
-1.  model estimation
-2.  tariff refinement
-3.  final refit of the pricing structure
+## A compact unrestricted model
 
-`insurancerating` provides a staged refinement interface:
-
-1.  fit an unrestricted model
-2.  initialise a refinement object with
-    [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md)
-3.  add one or more refinement steps
-4.  inspect these steps before refit
-5.  call
-    [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-    to obtain the final fitted model
-
-This separation records which adjustments are proposed before they are
-included in the fitted model. It also distinguishes estimated GLM
-effects from explicit tariff assumptions.
-
-## When refinement can help
-
-Refinement can be considered when the estimated model captures the main
-risk structure, but selected coefficient patterns require additional
-structure before tariff implementation.
-
-Typical use cases include:
-
-- smoothing a rating factor derived from a continuous variable
-- imposing monotonicity
-- restricting coefficients to a predefined relativity structure
-- introducing expert-based relativities within existing model levels
-- simplifying the final tariff for practical implementation
-
-In many workflows, refinement is applied to the model that represents
-the final pricing signal, such as a premium or risk-premium model. In
-other cases, it may also be useful for selected frequency or severity
-effects. The relevant question is whether the adjusted coefficient
-pattern is intended to support the tariff structure that will be
-reviewed or implemented.
-
-## Example setup
-
-The example below starts from one common premium modelling setup:
-
-- analyse a continuous variable with a GAM
-- convert it to tariff segments
-- fit frequency and severity models
-- combine both into a premium proxy
-- fit an unrestricted premium model
+The unrestricted model is only the starting material for this vignette.
+The following setup creates grouped age and bonus-malus factors and fits
+a Poisson frequency GLM. The response is claim count and `log(exposure)`
+is the offset.
 
 ``` r
-
 
 library(insurancerating)
-library(dplyr)
 
-age_policyholder_frequency <- risk_factor_gam(
-  data = MTPL,
-  claim_count = "nclaims",
-  risk_factor = "age_policyholder",
-  exposure = "exposure"
+portfolio <- as.data.frame(MTPL)
+
+age_breaks <- c(18, 25, 32, 39, 51, 58, 65, 84, 95)
+portfolio$age_band <- cut(
+  portfolio$age_policyholder,
+  breaks = age_breaks,
+  include.lowest = TRUE
 )
-
-age_segments_freq <- derive_tariff_segments(
-  age_policyholder_frequency,
-  seed = 1
+portfolio$bm_group <- cut(
+  portfolio$bm,
+  breaks = c(0, 4, 8, Inf),
+  labels = c("Low", "Medium", "High")
 )
+portfolio$bm_detail <- factor(as.character(portfolio$bm))
+portfolio$zip <- factor(portfolio$zip)
 
-dat <- MTPL |>
-  add_tariff_segments(age_segments_freq, name = "age_policyholder_freq_cat") |>
-  mutate(across(where(is.character), as.factor)) |>
-  mutate(across(where(is.factor), ~ set_reference_level(., exposure)))
-
-freq <- glm(
-  nclaims ~ bm + age_policyholder_freq_cat,
-  offset = log(exposure),
+unrestricted <- glm(
+  nclaims ~ age_band + zip + bm_group + offset(log(exposure)),
   family = poisson(),
-  data = dat
-)
-
-sev <- glm(
-  amount ~ zip,
-  weights = nclaims,
-  family = Gamma(link = "log"),
-  data = dat |> filter(amount > 0)
-)
-
-premium_df <- dat |>
-  add_prediction(freq, sev) |>
-  mutate(premium = pred_nclaims_freq * pred_amount_sev)
-
-burn_unrestricted <- glm(
-  premium ~ zip + bm + age_policyholder_freq_cat,
-  weights = exposure,
-  family = Gamma(link = "log"),
-  data = premium_df
+  data = portfolio
 )
 ```
 
-Before refinement, inspect the unrestricted coefficient structure:
+The initial tariff effects can be inspected before any actuarial
+adjustment:
 
 ``` r
 
-
-rating_table(burn_unrestricted)
-#>                  risk_factor       level est_burn_unrestricted exposure
-#> 1                (Intercept) (Intercept)          1.228041e+04       NA
-#> 2                        zip           1          1.000000e+00    11081
-#> 3                        zip           0          3.737317e-01      207
-#> 4                        zip           2          7.574226e-01     7783
-#> 5                        zip           3          7.325129e-01     7588
-#> 6  age_policyholder_freq_cat     (39,51]          1.000000e+00     7421
-#> 7  age_policyholder_freq_cat     [18,25]          1.895596e+00     1331
-#> 8  age_policyholder_freq_cat     (25,32]          1.301496e+00     3649
-#> 9  age_policyholder_freq_cat     (32,39]          1.053848e+00     4247
-#> 10 age_policyholder_freq_cat     (51,58]          8.491823e-01     3245
-#> 11 age_policyholder_freq_cat     (58,65]          7.258652e-01     2791
-#> 12 age_policyholder_freq_cat     (65,84]          7.584714e-01     3901
-#> 13 age_policyholder_freq_cat     (84,95]          5.131699e-01       72
-#> 14                        bm          bm          9.980551e-01       NA
-
-rating_table(burn_unrestricted) |>
-  autoplot()
+head(rating_table(unrestricted, exposure = FALSE))
+#>   risk_factor       level est_unrestricted
+#> 1 (Intercept) (Intercept)        0.2735430
+#> 2    age_band     [18,25]        1.0000000
+#> 3    age_band     (25,32]        0.6853582
+#> 4    age_band     (32,39]        0.5540633
+#> 5    age_band     (39,51]        0.5197098
+#> 6    age_band     (51,58]        0.4381469
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-3-1.png)
+These are the conditional effects estimated by the unrestricted GLM. An
+irregular effect is not by itself a reason to refine it: the analyst
+should first consider data quality, exposure definition, model
+specification, interactions and factor construction.
 
-At this stage, the coefficients reflect the unrestricted model fit. This
-output is often informative by itself. If the pattern is too irregular,
-too granular or difficult to explain, a refinement step can be added
-explicitly.
-
-## The refinement object
-
-Refinement begins with:
+## Preparing the refinement
 
 ``` r
 
+refinement <- prepare_refinement(
+  unrestricted,
+  data = portfolio
+)
 
-ref <- prepare_refinement(burn_unrestricted)
-ref
+refinement
 #> <rating_refinement>
-#> Base model: Gamma GLM (log link)
+#> Base model: Poisson GLM (log link)
 #> Steps: 0
 ```
 
-A `rating_refinement` object stores:
+[`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md)
+creates a `rating_refinement` object containing the unrestricted model,
+the corresponding retained model data and an initially empty ordered
+step specification. It does not refit the GLM and does not change its
+coefficients or fitted values.
 
-- the fitted base model
-- the underlying model data
-- the refinement steps added through the refinement interface
+This distinction is central to the API:
 
-At this point, the model itself has not been refitted. The refinement
-object represents a proposed tariff adjustment structure, not yet the
-final fitted result.
+- `unrestricted` is a fitted statistical model;
+- `refinement` is an editable proposal for the tariff structure;
+- the model returned later by
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+  is the fitted outcome under that proposal.
 
-This distinction is useful because refinement steps can be inspected
-before they are incorporated into the final model.
+Keep the refinement object when iterating. A model returned by
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+is a fitted result, not an editable specification. Calling
+[`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md)
+on that fitted result deliberately starts a new workflow and does not
+reconstruct the earlier steps.
 
-## Smoothing
+## Smoothing an ordered effect
 
-### Purpose
-
-Smoothing can be used when a rating factor derived from a continuous
-variable contains local variation that is hard to justify in a tariff.
-
-For example, a coefficient pattern such as:
-
-- age 30–34 lower
-- age 34–38 higher
-- age 38–42 lower again
-
-may be compatible with the observed sample, but unstable across periods
-or difficult to support actuarially. Smoothing replaces local variation
-with an explicitly regularised coefficient pattern.
-
-### Adding smoothing
+Raw level effects for a grouped continuous variable may contain local
+movement that is weakly supported or unstable over time. Smoothing
+replaces that local pattern with an explicitly structured curve. It is
+most relevant when a gradual underlying relationship is plausible and
+neighbouring tariff levels should be interpreted coherently.
 
 ``` r
 
-
-ref <- ref |>
+refinement <- refinement |>
   add_smoothing(
-    model_variable = "age_policyholder_freq_cat",
+    model_variable = "age_band",
     source_variable = "age_policyholder",
-    breaks = c(seq(18, 93, 5), 95),
+    breaks = age_breaks,
+    smoothing = "spline",
+    k = 5,
     weights = "exposure"
   )
 ```
 
-The key arguments are:
+The arguments distinguish two variables:
 
-- `model_variable`: the grouped variable present in the GLM
-- `source_variable`: the original continuous portfolio variable
-- `breaks`: the preferred commercial cut points
-- `smoothing`: the smoothing specification; `"spline"` is the
-  general-purpose default
-- `weights`: optional weighting, typically exposure
+- `model_variable` is the grouped factor included in the unrestricted
+  GLM;
+- `source_variable` is the underlying numeric portfolio variable used to
+  estimate the smooth relationship.
 
-Use `"increasing"` or `"decreasing"` when the tariff effect is required
-to move monotonically. Convex, concave and combined shape constraints
-are available for cases where that additional assumption can be
-supported actuarially. `"poly"` fits a global polynomial and uses
-`degree`; `"gam"` fits a thin-plate smooth that can be used as an
-unconstrained comparison. For spline methods, `k` limits the available
-curve flexibility but is not the fitted effective number of degrees of
-freedom.
+`breaks` define the intervals in the resulting tariff factor. Exposure
+weights give levels with more portfolio support more influence. With a
+spline method, `k` controls the available curve flexibility; it is a
+basis dimension rather than a fixed number of fitted degrees of freedom.
 
-### Inspecting smoothing before refit
+The default unconstrained spline is suitable when the shape should
+remain data-led. Increasing or decreasing shape constraints are
+available when a directional assumption has a defensible actuarial
+basis. The function reference for
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+describes the full set of methods and their curvature interpretation.
+
+### Inspecting the proposal
 
 ``` r
 
+summary(refinement)
+#> Refinement specification
+#> 
+#> Package: insurancerating 0.8.1.9000
+#> Created: 2026-08-10 11:29:02 UTC
+#> Observations: 30,000
+#> Family: poisson (log link)
+#> Base formula:
+#>   nclaims ~ age_band + zip + bm_group + offset(log(exposure))
+#> Offset: log(exposure)
+#> 
+#> Refinement steps: 1
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)
+#>      8 intervals over 18 to 95
 
-print(ref)
-#> <rating_refinement>
-#> Base model: Gamma GLM (log link)
-#> Steps: 1
-#>   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)
 autoplot(
-  ref,
-  variable = "age_policyholder_freq_cat",
-  x_max = 90,
-  y_max = 1.5
+  refinement,
+  variable = "age_band",
+  x_max = 90
 )
 ```
 
 ![](refinement-workflow_files/figure-html/unnamed-chunk-6-1.png)
 
-This plot belongs to the **pre-refit stage**. It shows:
+This is a **pre-refit** plot. It compares the original fitted effect
+with the proposed smooth structure. The GLM has not yet been estimated
+under that structure.
 
-- the original fitted coefficients
-- the proposed smoothed structure
+If the curve needs adjustment, retain the specification and use
+[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+before refitting. This preserves the rest of the ordered workflow rather
+than starting again from the fitted result.
 
-The purpose is to inspect the refinement step itself, before it is
-incorporated into the final fitted model.
+## Restricting selected levels
 
-### Choosing a smoothing method
-
-Typical smoothing choices are:
-
-- `"spline"`: unconstrained penalised cubic regression spline; the
-  general-purpose default
-- `"poly"`: global polynomial controlled by `degree`
-- `"gam"`: thin-plate regression spline fitted with `mgcv`, mainly
-  useful as an unconstrained comparison
-- `"increasing"`: monotone increasing
-- `"decreasing"`: monotone decreasing
-
-Monotonicity concerns the direction of the tariff effect. Convexity and
-concavity concern how its slope changes. A convex effect has an
-increasing slope and may be U-shaped when its direction is not
-constrained; a concave effect has a decreasing slope and may be inverted
-U-shaped. For an increasing effect, convexity implies acceleration and
-concavity implies flattening. For a decreasing effect, convexity implies
-flattening and concavity implies a steeper decline.
-
-The readable advanced options are `"convex"`, `"concave"`,
-`"increasing_convex"`, `"increasing_concave"`, `"decreasing_convex"` and
-`"decreasing_concave"`. They should be used only when the assumed
-curvature has an actuarial or economic basis in addition to any
-directional assumption. The former short codes `"mpi"`, `"mpd"`, `"cx"`,
-`"cv"`, `"micx"`, `"micv"`, `"mdcx"` and `"mdcv"` remain accepted for
-compatibility.
-
-For example:
-
-- age may justify a flexible smooth
-- insured value or power may require a monotonic relationship
-- low-exposure tails may benefit from exposure weighting
-
-## Restrictions
-
-### Purpose
-
-Restrictions can be used when coefficients need to follow a predefined
-structure.
-
-Typical examples include:
-
-- bonus-malus systems
-- governance-approved relativities
-- externally mandated tariff structures
-- implementation constraints in policy systems
-
-Restrictions differ from smoothing:
-
-- smoothing reshapes the fitted pattern
-- restriction imposes user-defined coefficients
-
-### Adding restrictions
+[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+fixes tariff levels at supplied relativities. A restriction may
+represent an implementation rule, a supported external assumption or a
+deliberate response to an unstable local estimate. It differs from
+smoothing: smoothing estimates a structured pattern, whereas a
+restriction explicitly prescribes selected values.
 
 ``` r
 
-
-zip_df <- data.frame(
-  zip = c(0, 1, 2, 3),
-  zip_adj = c(0.8, 0.9, 1.0, 1.2)
+zip_restrictions <- data.frame(
+  zip = c("0", "3"),
+  zip_restricted = c(0.95, 1.10)
 )
 
-ref <- ref |>
-  add_restriction(restrictions = zip_df)
+refinement <- refinement |>
+  add_restriction(zip_restrictions)
 ```
 
-The restriction table must contain exactly two columns:
+Only ZIP levels 0 and 3 are supplied here. The other observed ZIP levels
+are fixed at their current effective relativities. Consequently, a
+partial restriction changes the selected values but still produces a
+complete fixed structure for that risk factor.
 
-- the original factor levels
-- the adjusted coefficients
+Repeated calls for the same restricted variable update matching levels
+and retain earlier restrictions for levels not supplied again. New
+levels may be added when they represent explicit tariff assumptions; new
+risk factors require the corresponding portfolio column and an explicit
+opt-in. These behaviours are documented in the
+[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+reference.
 
-### Inspecting restrictions before refit
+A new fixed tariff factor can also replace an existing standalone model
+term. For example, `add_restriction(..., replaces = "postal_area")`
+records that the new classification substitutes for `postal_area` during
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
+rather than adding a second multiplicative effect. The replacement is
+shown in the refinement summary and audit. Interactions and transformed
+terms must be revised explicitly in the model specification because
+removing them is not an unambiguous level restriction.
 
 ``` r
 
-
-autoplot(ref, variable = "zip")
+autoplot(refinement, variable = "zip")
 ```
 
 ![](refinement-workflow_files/figure-html/unnamed-chunk-8-1.png)
 
-This shows the proposed restricted structure relative to the original
-fitted model.
+Again, the plot shows the proposed restriction before
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
 
-## Shrinkage of categorical relativities
+## Shrinking a categorical effect
 
-### Purpose
-
-Shrinkage can be used when the ordering of a categorical risk-factor
-pattern is considered credible, but the distance between its highest and
-lowest relativities is too large for the available experience or the
-intended tariff. It differs from a restriction: a restriction supplies
-selected relativities directly, whereas shrinkage systematically moves
-all current relativities towards a common level.
-
-The adjustment is made on the logarithmic scale. With
-`credibility = 0.9`, each level retains 90 percent of its current
-logarithmic effect and receives 10 percent of the common effect. The
-resulting relativities are rescaled to retain their weighted arithmetic
-mean. This reduces differentiation without changing the selected
-weighted level of the risk factor.
+[`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md)
+reduces the differences between the current relativities of one
+categorical risk factor. It is useful when the direction and ordering of
+an estimated effect are considered informative, but the spread between
+levels is larger than is supported by the available experience or the
+intended tariff. Unlike a restriction, shrinkage does not prescribe
+individual level values.
 
 ``` r
 
-
-ref <- ref |>
+refinement <- refinement |>
   add_shrinkage(
-    model_variable = "zip",
+    model_variable = "bm_group",
     credibility = 0.9,
     weights = "exposure"
   )
-
-summary(ref)
-#> Refinement specification
-#> 
-#> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-09 12:32:31 UTC
-#> Observations: 30,000
-#> Family: Gamma (log link)
-#> Base formula:
-#>   premium ~ zip + bm + age_policyholder_freq_cat
-#> Offset: none
-#> 
-#> Refinement steps: 3
-#>   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)
-#>      16 intervals over 18 to 95
-#>   2. Restriction: zip -> zip_adj (4 levels)
-#>      1 = 0.9; 0 = 0.8; 2 = 1.0; 3 = 1.2
-#>   3. Shrinkage: zip (credibility: 0.9, weights: exposure, weighted mean preserved)
-#>      credibility = 0.9; weights = exposure; weighted mean preserved
-autoplot(ref, step = 3)
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-9-1.png)
+`credibility` is the weight assigned to the current logarithmic effect.
+A value of 0.9 retains 90 percent of each level’s deviation from the
+common centre; a value of 1 leaves the effect unchanged, while a value
+of 0 removes differences between levels. This is a user-selected
+refinement parameter, not an automatically estimated Buhlmann or
+Buhlmann-Straub credibility factor.
 
-Exposure is generally an appropriate basis for frequency or risk-premium
-relativities. Claim count is generally more appropriate for severity
-relativities. With `weights = NULL`, explicit GLM weights are used
-first; otherwise a simple exposure offset is used when it can be
-identified without ambiguity. Use `weights = "equal"` when every tariff
-level should receive the same weight. Equal weighting is an explicit
-unweighted level comparison and does not necessarily preserve the
-observed portfolio level.
+The common centre is determined using the selected weighting basis.
+Exposure weights are appropriate here because `bm_group` is part of a
+frequency model. For a severity model, claim count may be a more
+relevant basis. Use `weights = "equal"` when every factor level should
+receive equal weight rather than representing the observed portfolio
+mix.
 
-The `credibility` value is a refinement assumption rather than a
-formally estimated Buhlmann credibility factor. Its selection should be
-assessed against exposure, stability over time and the intended degree
-of tariff differentiation.
-
-## Rebasing categorical relativities
-
-### Purpose
-
-After shrinkage, restrictions or a split into more detailed tariff
-levels, the original reference level may no longer be the most useful
-reporting basis.
-[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)
-rescales the current factor so that one resulting level equals 1. It
-does not reduce or increase the differentiation between levels: every
-ratio between two relativities remains unchanged.
-
-An explicit reference is generally preferable when the tariff has an
-established base class. If no reference is supplied, the level with the
-largest portfolio weight is selected. This gives the most prevalent
-level relativity 1 and usually provides a stable reporting basis.
+After shrinkage, the relativities are normalised so their
+exposure-weighted arithmetic mean remains equal to its value before
+shrinkage. The operation therefore reduces tariff differentiation
+without intentionally changing the weighted level of this risk factor.
+The later refit can still recalibrate the intercept or other free model
+effects.
 
 ``` r
 
-
-ref <- ref |>
-  add_rebasing(
-    model_variable = "zip",
-    reference_level = "1"
-  )
-
-summary(ref)
-#> Refinement specification
-#> 
-#> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-09 12:32:31 UTC
-#> Observations: 30,000
-#> Family: Gamma (log link)
-#> Base formula:
-#>   premium ~ zip + bm + age_policyholder_freq_cat
-#> Offset: none
-#> 
-#> Refinement steps: 4
-#>   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)
-#>      16 intervals over 18 to 95
-#>   2. Restriction: zip -> zip_adj (4 levels)
-#>      1 = 0.9; 0 = 0.8; 2 = 1.0; 3 = 1.2
-#>   3. Shrinkage: zip (credibility: 0.9, weights: exposure, weighted mean preserved)
-#>      credibility = 0.9; weights = exposure; weighted mean preserved
-#>   4. Rebasing: zip (reference: 1, selection: explicit, original reference relativity: 0.9113921)
-#>      reference = 1; original relativity = 0.9113921; selection = explicit reference; relative level ratios preserved
-autoplot(ref, step = 4)
+autoplot(refinement, variable = "bm_group")
 ```
 
 ![](refinement-workflow_files/figure-html/unnamed-chunk-10-1.png)
 
-This operation differs from
-[`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md).
-That helper selects the contrast reference before a GLM is fitted.
-Rebasing is applied to the current relativities within an existing
-refinement workflow, for example after new sublevels have been
-introduced with
-[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).
+This remains a pre-refit comparison: it shows the current estimated
+effect and the proposed shrunken structure stored in the refinement
+specification.
 
-## Expert-based relativities
+## Adding differentiation within model levels
 
-### Purpose
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+addresses a different problem. An unrestricted GLM may use a broad
+factor because its detailed levels are individually too sparse for
+stable direct estimation. The refinement can retain the broad parent
+effect while introducing documented differentiation between selected
+sublevels.
 
-In some cases, the fitted model uses a broad factor level, while
-portfolio or business knowledge suggests that more granular
-differentiation may be useful.
-
-For example, a model may estimate one coefficient for “construction”,
-while pricing practice distinguishes between:
-
-- residential construction
-- commercial construction
-- civil engineering
-
-This can be relevant when subgroup exposure is too limited to estimate
-stable coefficients directly.
-
-### Adding relativities
+The example splits the broad bonus-malus groups `Low` and `Medium` into
+their observed detailed values:
 
 ``` r
 
-
-relativities_activity <- relativities(
+bm_relativities <- relativities(
   split_level(
-    "construction",
-    c("residential_construction", "commercial_construction"),
-    c(1.00, 1.15)
+    "Low",
+    new_levels = c("1", "2", "3", "4"),
+    relativities = c(0.95, 0.98, 1.02, 1.05)
   ),
   split_level(
-    "services",
-    c("professional_services", "personal_services"),
-    c(0.95, 1.05)
+    "Medium",
+    new_levels = c("5", "6", "7", "8"),
+    relativities = c(0.96, 0.99, 1.02, 1.05)
   )
 )
 
-ref <- ref |>
+refinement <- refinement |>
   add_relativities(
-    model_variable = "business_activity",
-    split_variable = "business_activity_split",
-    output_variable = "business_activity_tariff_segment",
-    relativities = relativities_activity,
+    model_variable = "bm_group",
+    split_variable = "bm_detail",
+    relativities = bm_relativities,
     exposure = "exposure",
-    normalize = TRUE
+    normalize = TRUE,
+    output_variable = "bm_tariff_segment"
   )
 ```
 
-If `normalize = TRUE`, the relativities are scaled so that their
-exposure-weighted average remains equal to 1 within the original level.
+`model_variable` supplies the parent GLM effect. `split_variable`
+identifies the detailed portfolio levels within each parent.
+`output_variable` names the resulting hybrid tariff factor; unsplit
+parent levels retain their existing model effect.
 
-`output_variable` names the resulting hybrid tariff factor. In this
-example, the explicitly split construction and services levels are
-represented by their detailed levels, while unsplit levels retain their
-original `business_activity` value. A name ending in `_tariff_segment`
-can make this role explicit in later model and reporting steps.
+With `normalize = TRUE`, the sublevel relativities are normalised within
+each parent so their exposure-weighted average equals one. The split
+therefore redistributes the parent effect without changing its
+exposure-weighted level. Because shrinkage was added first, these
+sublevel effects use the shrunken `bm_group` relativities as their
+parent values. With `normalize = FALSE`, the supplied relativities are
+applied directly.
 
-This preserves the original model signal while introducing finer
-structure. When `model_variable` has already been restricted with
-[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
-the restricted coefficients are used automatically as the basis for
-these relativities. Refinement order is therefore part of the
-specification.
+This operation is not equivalent to restriction or smoothing:
 
-## Refit
+- smoothing regularises an ordered effect already represented by the
+  model;
+- restriction fixes selected tariff values;
+- shrinkage reduces differences between categorical levels while
+  retaining their ordering;
+- additional relativities introduce finer differentiation inside a
+  broader model level.
 
-### Why refit is required
+Step order matters. A restriction or shrinkage step added before
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+changes the parent coefficient used as the basis for the split. A later
+restriction can instead adjust selected levels of the derived
+`output_variable`.
 
-Refinement steps alter part of the model structure. Once these changes
-are applied, the remaining coefficients may also adjust.
+## Combining and reviewing refinements
 
-For that reason, the sequence does not end with
-[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
-or
-[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md).
-The final step is:
+The four operations now form one ordered specification:
 
 ``` r
 
-
-summary(ref)
+summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-09 12:32:31 UTC
+#> Created: 2026-08-10 11:29:02 UTC
 #> Observations: 30,000
-#> Family: Gamma (log link)
+#> Family: poisson (log link)
 #> Base formula:
-#>   premium ~ zip + bm + age_policyholder_freq_cat
-#> Offset: none
+#>   nclaims ~ age_band + zip + bm_group + offset(log(exposure))
+#> Offset: log(exposure)
 #> 
 #> Refinement steps: 4
-#>   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)
-#>      16 intervals over 18 to 95
-#>   2. Restriction: zip -> zip_adj (4 levels)
-#>      1 = 0.9; 0 = 0.8; 2 = 1.0; 3 = 1.2
-#>   3. Shrinkage: zip (credibility: 0.9, weights: exposure, weighted mean preserved)
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)
+#>      8 intervals over 18 to 95
+#>   2. Restriction: zip -> zip_restricted (4 levels)
+#>      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000
+#>   3. Shrinkage: bm_group (credibility: 0.9, weights: exposure, weighted mean preserved)
 #>      credibility = 0.9; weights = exposure; weighted mean preserved
-#>   4. Rebasing: zip (reference: 1, selection: explicit, original reference relativity: 0.9113921)
-#>      reference = 1; original relativity = 0.9113921; selection = explicit reference; relative level ratios preserved
-
-burn_refined <- refit(ref)
+#>   4. Relativities: bm_group split by bm_detail -> bm_tariff_segment (normalised: yes)
+#>      2 parent levels split: Low, Medium
 ```
 
-`summary(ref)` describes the base model and the ordered refinement
-specification before a new GLM is fitted. This provides a direct review
-of the assumptions that will be applied.
+The summary records the base formula, package version, data size and
+each refinement in evaluation order. It describes what will be applied;
+it does not report a fitted refined model because
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-then fits the model while incorporating those documented steps.
+has not yet been called.
 
-### Inspecting the final fitted result
+The variable-specific
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+calls above evaluate the stored steps in their recorded order. They
+therefore inspect the intended tariff after any preceding adjustments
+without silently changing the GLM. The `step` argument can be used when
+an earlier stage of a longer specification needs to be reviewed
+separately.
 
-After refit, use
-[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md):
+[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)
+can be inserted when required to change which resulting level is
+displayed as one without changing ratios between levels. Rebasing
+changes the representation of an effect, whereas shrinkage changes its
+degree of differentiation.
+
+## Refitting the model
 
 ``` r
 
-
-rating_table(burn_refined)
-#>                risk_factor       level est_burn_refined exposure
-#> 1              (Intercept) (Intercept)     9699.0109722       NA
-#> 2                  zip_adj           0        0.8000000      207
-#> 3                  zip_adj           1        0.9000000    11081
-#> 4                  zip_adj           2        1.0000000     7783
-#> 5                  zip_adj           3        1.2000000     7588
-#> 6                      zip           1        1.0000000    11081
-#> 7                      zip           0        0.8994204      207
-#> 8                      zip           2        1.0994658     7783
-#> 9                      zip           3        1.2955222     7588
-#> 10 age_policyholder_smooth     [18,23]        1.9916467      586
-#> 11 age_policyholder_smooth     (23,28]        1.5259964     2204
-#> 12 age_policyholder_smooth     (28,33]        1.1945870     2790
-#> 13 age_policyholder_smooth     (33,38]        1.0538485     3021
-#> 14 age_policyholder_smooth     (38,43]        1.0173127     3089
-#> 15 age_policyholder_smooth     (43,48]        0.9961032     3041
-#> 16 age_policyholder_smooth     (48,53]        0.9284442     2978
-#> 17 age_policyholder_smooth     (53,58]        0.8277635     2186
-#> 18 age_policyholder_smooth     (58,63]        0.7364565     1974
-#> 19 age_policyholder_smooth     (63,68]        0.7179164     1973
-#> 20 age_policyholder_smooth     (68,73]        0.7466678     1558
-#> 21 age_policyholder_smooth     (73,78]        0.7554871      907
-#> 22 age_policyholder_smooth     (78,83]        0.7030268      246
-#> 23 age_policyholder_smooth     (83,88]        0.6061124       93
-#> 24 age_policyholder_smooth     (88,93]        0.4894076       11
-#> 25 age_policyholder_smooth     (93,95]        0.4062390        1
-#> 26                      bm          bm        0.9977218       NA
+refined_model <- refit(
+  refinement,
+  intercept_only = TRUE
+)
+#> Warning in update_formula_remove(formula, old_term): Column 'bm_group' must be in model call.
 ```
 
-At this point, the output no longer represents a proposed refinement
-plan. It represents the fitted coefficient structure after refinement.
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+applies the stored steps in order, constructs the required tariff
+variables and offsets, updates the formula and calls
+[`glm()`](https://rdrr.io/r/stats/glm.html) with the original model
+family. It does more than copy proposed relativities into an existing
+coefficient vector.
 
-The distinction is:
+The treatment of the remaining model effects depends on
+`intercept_only`:
+
+- with `intercept_only = TRUE`, unaffected existing effects are fixed as
+  offsets and only the intercept is estimated. Their relative
+  differences are preserved while the overall level is recalibrated;
+- with `intercept_only = FALSE`, remaining free terms are estimated
+  again. Their coefficients may change as the GLM finds a new joint
+  optimum conditional on the fixed refinement steps.
+
+An intercept-only refit is often appropriate for a controlled adjustment
+to an accepted tariff structure. Re-estimating the remaining free
+effects is more appropriate when the refinement is part of substantive
+model development and dependence between factors should be reconsidered.
+
+The prescribed smoothing, restrictions and sublevel relativities remain
+explicit assumptions. Refitting does not turn them into unrestricted
+statistical estimates.
+
+## Inspecting the fitted result
+
+After
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
+the result is a fitted GLM and can be reviewed with the normal
+interpretation tools:
+
+``` r
+
+head(rating_table(refined_model, exposure = FALSE))
+#>      risk_factor       level est_refined_model
+#> 1    (Intercept) (Intercept)         0.2614588
+#> 2 zip_restricted           0         0.9500000
+#> 3 zip_restricted           1         0.9954865
+#> 4 zip_restricted           2         0.8971513
+#> 5 zip_restricted           3         1.1000000
+#> 6       bm_group         Low         1.0001880
+```
+
+This is the **post-refit** result. It is distinct from the preview shown
+by `autoplot(refinement)`:
 
 - before
-  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-  –\> inspect the refinement plan
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md):
+  proposed tariff adjustments;
 - after
-  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-  –\> inspect the fitted tariff structure
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md):
+  fitted model under those adjustments.
 
-If smoothing, restrictions, and relativities have been applied, they are
-now embedded in the fitted model output.
+Printing `refined_model` also reports the original and refitted
+formulas, the model family, refit mode and stored refinement steps
+before showing the regular GLM output.
 
-### Auditing the portfolio effect
+## Auditing the portfolio effect
 
-Coefficient changes cannot be interpreted independently of the intercept
-and the other model terms. A more direct audit compares fitted values
-from the unrestricted and refined models on the same observed portfolio
-combinations.
+Individual coefficient changes are difficult to interpret independently
+of the intercept, other model terms and portfolio mix.
+[`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
+therefore compares predictions from the unrestricted and refined models
+on the same observed portfolio combinations.
 
 ``` r
 
-
 refinement_audit <- audit_refinement(
-  burn_refined,
+  refined_model,
   exposure = "exposure",
-  metric = "risk_premium"
+  metric = "frequency"
 )
-#> Warning: Column in `exposure` is already used in model.
 
 summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Prepared: 2026-08-09 12:32:31 UTC
-#> Refitted: 2026-08-09 12:32:34 UTC
-#> Audited: 2026-08-09 12:32:34 UTC
-#> Measure: risk_premium (response)
+#> Prepared: 2026-08-10 11:29:02 UTC
+#> Refitted: 2026-08-10 11:29:04 UTC
+#> Audited: 2026-08-10 11:29:05 UTC
+#> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
 #> Original formula:
-#>   premium ~ zip + bm + age_policyholder_freq_cat
+#>   nclaims ~ age_band + zip + bm_group + offset(log(exposure))
 #> Refitted formula:
-#>   premium ~ bm + offset(log(zip_rebased) + log(age_policyholder_freq_cat_smooth))
+#>   nclaims ~ offset(log(bm_group_rel) + log(bm_group_shrunk) + log(zip_restricted) + 
+#>       log(age_band_smooth) + log(exposure))
 #> 
 #> Refinement steps: 4
-#>   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)
-#>      16 intervals over 18 to 95
-#>   2. Restriction: zip -> zip_adj (4 levels)
-#>      1 = 0.9; 0 = 0.8; 2 = 1.0; 3 = 1.2
-#>   3. Shrinkage: zip (credibility: 0.9, weights: exposure, weighted mean preserved)
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)
+#>      8 intervals over 18 to 95
+#>   2. Restriction: zip -> zip_restricted (4 levels)
+#>      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000
+#>   3. Shrinkage: bm_group (credibility: 0.9, weights: exposure, weighted mean preserved)
 #>      credibility = 0.9; weights = exposure; weighted mean preserved
-#>   4. Rebasing: zip (reference: 1, selection: explicit, original reference relativity: 0.9113921)
-#>      reference = 1; original relativity = 0.9113921; selection = explicit reference; relative level ratios preserved
+#>   4. Relativities: bm_group split by bm_detail -> bm_tariff_segment (normalised: yes)
+#>      2 parent levels split: Low, Medium
 #> 
 #> Portfolio effect
-#>   Before: 10445.1
-#>   After:  10719.9
-#>   Change: 274.813 (2.631%)
+#>   Before: 0.137596
+#>   After:  0.137596
+#>   Change: -1.93734e-14 (-1.408e-11%)
 #> 
-#> Largest level changes (10 of 47)
-#>  risk_factor level    before     after    change change_ratio
-#>      zip_adj     0  4471.598  8387.981  3916.383    0.8758351
-#>          zip     0  4471.598  8387.981  3916.383    0.8758351
-#>      zip_adj     3  9001.374 12476.259  3474.885    0.3860394
-#>          zip     3  9001.374 12476.259  3474.885    0.3860394
-#>      zip_adj     1 12325.997  9650.927 -2675.070   -0.2170266
-#>          zip     1 12325.997  9650.927 -2675.070   -0.2170266
-#>           bm    23 10578.429  9073.469 -1504.960   -0.1422669
-#>           bm    22  9628.570  8316.920 -1311.651   -0.1362249
-#>      zip_adj     2  9333.501 10591.602  1258.100    0.1347940
-#>          zip     2  9333.501 10591.602  1258.100    0.1347940
+#> Largest level changes (10 of 24)
+#>              risk_factor   level     before     after       change change_ratio
+#>  age_policyholder_smooth (84,95] 0.06942859 0.1301355  0.060706899   0.87437893
+#>           zip_restricted       3 0.13680279 0.1515199  0.014717130   0.10757917
+#>           zip_restricted       0 0.14020239 0.1275556 -0.012646824  -0.09020405
+#>        bm_tariff_segment       8 0.14270460 0.1552869  0.012582270   0.08817003
+#>        bm_tariff_segment       4 0.13883017 0.1507824  0.011952282   0.08609283
+#>        bm_tariff_segment       7 0.14278504 0.1518134  0.009028351   0.06323037
+#>        bm_tariff_segment       3 0.13764208 0.1452254  0.007583341   0.05509464
+#>  age_policyholder_smooth (58,65] 0.09746194 0.1021913  0.004729386   0.04852547
+#>  age_policyholder_smooth [18,25] 0.26142311 0.2487990 -0.012624116  -0.04828998
+#>           zip_restricted       2 0.12951920 0.1240765 -0.005442674  -0.04202214
 ```
 
-The portfolio result shows the exposure-weighted risk premium before and
-after refinement. `as.data.frame(refinement_audit)` gives the
-corresponding comparison for every final risk factor and level. These
-level results reflect the combined prediction of the full model for the
-observed portfolio mix; they are not isolated coefficient differences.
+The audit reports the portfolio-level frequency before and after
+refinement and the corresponding changes by final risk-factor level.
+These are predictions from the complete model for the observed portfolio
+mix, not isolated coefficient differences.
 
-The audit also records the package version, preparation time, refit
-time, formulas and ordered refinement steps. For a frequency or severity
-model, use a matching metric name such as `"frequency"` or
-`"average_severity"`; a complete risk-premium interpretation requires a
-direct risk-premium model or a combined frequency and severity
-calculation.
+The refinement and audit objects record package version, timestamps,
+formulas and ordered steps. This supports reproducibility, peer review
+and documentation of actuarial judgement. Organisational approval,
+source-data versioning and formal governance remain outside the package
+and should be handled by the user’s normal processes.
 
-### Visualising the final structure
+## When to revisit the model
+
+Refinement is not a substitute for correcting a poor model. If an
+implausible effect is caused by incorrect data, exposure errors, missing
+interactions, an inappropriate response definition or poor factor
+construction, the model or data preparation should be revisited first.
+Refinement is most defensible when the statistical model captures the
+main risk structure and the remaining adjustment has a clear tariff
+rationale.
+
+## Iterating without losing the specification
+
+Retain both the editable specification and the fitted result:
 
 ``` r
 
+refined_model <- refit(refinement)
 
-rating_table(burn_refined) |>
-  autoplot()
+refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    smoothing = "increasing"
+  )
+
+updated_model <- refit(refinement)
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-15-1.png)
-
-## Model data and rating grids
-
-After refit, model structure can be extracted with
-[`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md):
-
-``` r
-
-
-md <- extract_model_data(burn_refined)
-head(md)
-#>   age_policyholder age_policyholder_freq_cat_smooth age_policyholder_smooth
-#> 1               18                         1.991647                 [18,23]
-#> 2               18                         1.991647                 [18,23]
-#> 3               18                         1.991647                 [18,23]
-#> 4               18                         1.991647                 [18,23]
-#> 5               19                         1.991647                 [18,23]
-#> 6               19                         1.991647                 [18,23]
-#>   nclaims   exposure amount power bm zip age_policyholder_freq_cat
-#> 1       1 1.00000000 261777    40  3   3                   [18,25]
-#> 2       0 0.09589041      0    68  5   2                   [18,25]
-#> 3       0 0.18630137      0    37  3   2                   [18,25]
-#> 4       0 0.18904110      0    33  1   2                   [18,25]
-#> 5       0 1.00000000      0    47  6   3                   [18,25]
-#> 6       1 0.06849315   6642    68  1   3                   [18,25]
-#>   pred_nclaims_freq pred_amount_sev   premium zip_adj zip_shrunk zip_rebased
-#> 1        0.26210773        68671.20 17999.251     1.2   1.180729    1.295522
-#> 2        0.02502713        70854.51  1773.285     1.0   1.002044    1.099466
-#> 3        0.04883103        70854.51  3459.898     1.0   1.002044    1.099466
-#> 4        0.04975996        70854.51  3525.718     1.0   1.002044    1.099466
-#> 5        0.26044368        68671.20 17884.979     1.2   1.180729    1.295522
-#> 6        0.01802897        68671.20  1238.071     1.2   1.180729    1.295522
-```
-
-A model point represents a unique observed combination of the
-risk-factor levels used by the fitted model.
-[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-groups portfolio records with the same combination and attaches the
-corresponding refined model effects. It returns combinations observed in
-the portfolio; it does not construct every theoretically possible
-combination of factor levels.
-
-Observed model-point combinations can be obtained with
-[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md):
-
-``` r
-
-
-grid <- rating_grid(burn_refined)
-head(grid)
-#>   zip age_policyholder_smooth bm count  exposure zip_adj zip_shrunk zip_rebased
-#> 1   1                 (23,28]  1   414 342.57808     0.9  0.9113921           1
-#> 2   1                 (23,28]  2   173 145.25753     0.9  0.9113921           1
-#> 3   1                 (23,28]  3    53  46.53699     0.9  0.9113921           1
-#> 4   1                 (23,28]  4    26  22.31507     0.9  0.9113921           1
-#> 5   1                 (23,28]  5    54  46.78630     0.9  0.9113921           1
-#> 6   1                 (23,28]  6    71  65.13699     0.9  0.9113921           1
-#>   age_policyholder_freq_cat_smooth
-#> 1                         1.525996
-#> 2                         1.525996
-#> 3                         1.525996
-#> 4                         1.525996
-#> 5                         1.525996
-#> 6                         1.525996
-```
-
-Each row can represent several portfolio records. `count` gives the
-number of records with that combination and `exposure` gives their
-aggregated exposure. The remaining refinement columns contain the
-restrictions, smoothed effects or derived relativities that apply to the
-model point.
-
-When a fitted GLM is supplied,
-[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-retrieves the exposure column used as a model weight or offset from the
-model metadata and aggregates it automatically. Supply `exposure`
-explicitly only when that column is not used by the model or when a
-plain data frame is supplied.
-
-This is typically used for:
-
-- tariff review
-- portfolio summaries
-- compact input for tariff calculations or predictions
-- implementation support
-
-Before the grid is used for prediction, the analyst should verify that
-all required model variables are present and decide how combinations not
-observed in the estimation portfolio will be handled.
-
-## Complete example
-
-One possible refinement sequence is:
-
-``` r
-
-
-zip_df <- data.frame(
-  zip = c(0, 1, 2, 3),
-  zip_adj = c(0.8, 0.9, 1.0, 1.2)
-)
-
-burn_refined <- prepare_refinement(burn_unrestricted) |>
-  add_smoothing(
-    model_variable = "age_policyholder_freq_cat",
-    source_variable = "age_policyholder",
-    breaks = c(seq(18, 93, 5), 95),
-    weights = "exposure"
-  ) |>
-  add_restriction(zip_df) |>
-  refit()
-
-rating_table(burn_refined)
-#>                risk_factor       level est_burn_refined exposure
-#> 1              (Intercept) (Intercept)     1.068539e+04       NA
-#> 2                  zip_adj           0     8.000000e-01      207
-#> 3                  zip_adj           1     9.000000e-01    11081
-#> 4                  zip_adj           2     1.000000e+00     7783
-#> 5                  zip_adj           3     1.200000e+00     7588
-#> 6  age_policyholder_smooth     [18,23]     1.991647e+00      586
-#> 7  age_policyholder_smooth     (23,28]     1.525996e+00     2204
-#> 8  age_policyholder_smooth     (28,33]     1.194587e+00     2790
-#> 9  age_policyholder_smooth     (33,38]     1.053848e+00     3021
-#> 10 age_policyholder_smooth     (38,43]     1.017313e+00     3089
-#> 11 age_policyholder_smooth     (43,48]     9.961032e-01     3041
-#> 12 age_policyholder_smooth     (48,53]     9.284442e-01     2978
-#> 13 age_policyholder_smooth     (53,58]     8.277635e-01     2186
-#> 14 age_policyholder_smooth     (58,63]     7.364565e-01     1974
-#> 15 age_policyholder_smooth     (63,68]     7.179164e-01     1973
-#> 16 age_policyholder_smooth     (68,73]     7.466678e-01     1558
-#> 17 age_policyholder_smooth     (73,78]     7.554871e-01      907
-#> 18 age_policyholder_smooth     (78,83]     7.030268e-01      246
-#> 19 age_policyholder_smooth     (83,88]     6.061124e-01       93
-#> 20 age_policyholder_smooth     (88,93]     4.894076e-01       11
-#> 21 age_policyholder_smooth     (93,95]     4.062390e-01        1
-#> 22                      bm          bm     9.977166e-01       NA
-
-rating_table(burn_refined) |>
-  autoplot()
-```
-
-![](refinement-workflow_files/figure-html/unnamed-chunk-18-1.png)
-
-## Legacy interface
-
-Legacy entry points remain available:
-
-``` r
-
-
-burn_refined_old <- burn_unrestricted |>
-  smooth_coef(
-    x_cut = "age_policyholder_freq_man",
-    x_org = "age_policyholder",
-    breaks = c(seq(18, 93, 5), 95)
-  ) |>
-  restrict_coef(zip_df) |>
-  refit_glm()
-```
-
-These are primarily maintained for backward compatibility.
-
-For new code, the recommended interface is:
-
-``` r
-
-prepare_refinement() |> add_*() |> refit()
-```
-
-This keeps the sequence of tariff adjustments explicit.
+Calling
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
+[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+or another refinement function directly on `refined_model` is
+deliberately not supported. Further adjustments belong on the retained
+`rating_refinement` object so their ordering and origin remain visible.
 
 ## Summary
 
-The refinement interface helps separate:
+The specialist workflow is:
 
-- model estimation
-- tariff adjustments
-- final fitted output
+1.  start from an unrestricted fitted model;
+2.  create one persistent specification with
+    [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md);
+3.  add smoothing, restrictions, shrinkage or sublevel relativities with
+    an explicit rationale;
+4.  inspect the proposal with
+    [`summary()`](https://rdrr.io/r/base/summary.html) and
+    [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html);
+5.  use
+    [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+    to fit the model under that specification;
+6.  inspect the final tariff with
+    [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+    and its portfolio effect with
+    [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md).
 
-The refinement specification records which parts of the final
-coefficient structure originate from the fitted model and which parts
-result from smoothing, restrictions or expert-based sublevel
-relativities. These choices should be assessed using exposure, claim
-volume, stability and the intended tariff application.
+This separates estimated effects, proposed actuarial adjustments and
+final fitted output without treating refinement as an automatic approval
+of the result.
 
-## Next steps
-
-For the underlying pricing concepts, see:
-
-- [Pricing workflow building
-  blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md)
-
-For an example sequence from portfolio analysis to fitted tariff, see:
+## Where to go next
 
 - [Getting
-  started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
+  Started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
+  constructs the initial pricing model used as the starting point for
+  refinement.
+- [Pricing workflow and package building
+  blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md)
+  places refinement within the wider package architecture.
+- [Model
+  validation](https://mharinga.github.io/insurancerating/articles/model-validation.md)
+  develops the diagnostics used to assess unrestricted and refined
+  models.

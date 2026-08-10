@@ -1,290 +1,376 @@
 # Model validation
 
-## Introduction
+## What does model validation mean?
 
-Model validation is a common part of actuarial pricing work.
+Validation of an insurance pricing model is broader than comparing fit
+statistics. A model may describe the estimation data well while
+producing unstable, weakly supported or actuarially implausible tariff
+relativities. Conversely, a statistically detectable imperfection may
+have little practical pricing effect in the insured portfolio.
 
-After model estimation and coefficient interpretation, validation
-assesses whether the fitted model behaves consistently with its
-statistical assumptions and intended pricing use.
+No single metric determines whether a model is adequate. A validation
+review normally combines several dimensions:
 
-In practice, model validation typically considers several dimensions:
+| Dimension | Practical question |
+|----|----|
+| Statistical adequacy | Are the model structure and distribution broadly consistent with the data? |
+| Predictive performance | How well does the model predict the relevant outcome, preferably outside the estimation sample where appropriate? |
+| Stability | How sensitive are estimates or performance to variation in the observed sample? |
+| Tariff plausibility | Are the effects interpretable, credible and suitable for the intended tariff? |
+| Portfolio behaviour | Where does expected experience differ systematically from observed experience? |
 
-- comparative model performance
-- coefficient structure
-- predictive stability
-- distributional diagnostics
-- portfolio-level behaviour
+These dimensions are complementary rather than a mandatory sequence.
+Their relative importance depends on the response, portfolio, modelling
+objective and intended use of the tariff.
 
-`insurancerating` provides tools for several of these validation tasks.
+This vignette starts from fitted models. [Getting
+Started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
+provides the worked modelling example, while [Pricing workflow and
+package building
+blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md)
+maps validation within the wider package.
 
-No single diagnostic establishes that a model is suitable for pricing.
-The results need to be interpreted together with data quality, portfolio
-structure, coefficient stability and the intended tariff application.
+## Validation map
 
-## Example setup
+The following functions support different validation questions. Not
+every model requires every diagnostic.
 
-The examples below use a simple frequency modelling setup based on
-`MTPL2`.
+| Validation question | Typical tool |
+|----|----|
+| How do alternative fitted models compare? | [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md) |
+| Are tariff relativities plausible and sufficiently supported? | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md) |
+| Does observed portfolio experience support the fitted pattern? | [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md) |
+| How sensitive is measured performance to portfolio resampling? | [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md) |
+| Is a Poisson frequency model materially overdispersed? | [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md) |
+| Do simulation-based residuals show remaining structure? | [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md) |
+| Where does the model over- or under-predict? | exposure-aware observed-versus-expected review |
+
+## Compact example setup
+
+The examples use two Poisson frequency models fitted to the same
+records, response and exposure definition. `expected_claims` from these
+models is the expected claim count for each observed policy period,
+because the prediction includes its earned-exposure offset.
 
 ``` r
-
 
 library(insurancerating)
-library(dplyr)
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
 
-df <- MTPL2 |>
-  mutate(across(c(area), as.factor)) |>
-  mutate(across(c(area), ~ set_reference_level(., exposure)))
+portfolio <- as.data.frame(MTPL2)
+portfolio$area <- factor(portfolio$area)
+portfolio$area <- set_reference_level(portfolio$area, portfolio$exposure)
 
-mod1 <- glm(
-  nclaims ~ area,
-  offset = log(exposure),
+intercept_model <- glm(
+  nclaims ~ 1 + offset(log(exposure)),
   family = poisson(),
-  data = df
+  data = portfolio
 )
 
-mod2 <- glm(
-  nclaims ~ area + premium,
-  offset = log(exposure),
+area_model <- glm(
+  nclaims ~ area + offset(log(exposure)),
   family = poisson(),
-  data = df
+  data = portfolio
 )
 ```
 
-## Step 1 — Comparative model performance
+The fitted model is starting material here; construction of frequency,
+severity and technical risk-premium models is covered elsewhere.
 
-A first validation step is to compare alternative model specifications.
+## Comparing model performance
 
 ``` r
 
-
-model_performance(mod1, mod2)
+model_performance(intercept_model, area_model)
 #> # Comparison of Model Performance Indices
 #> 
-#> Model |   AIC    |   BIC    | RMSE  
-#> ------+----------+----------+------ 
-#>  mod1 |  2287.25 | 2311.275 | 0.356 
-#>  mod2 | 2289.054 | 2319.086 | 0.356
+#>      Model      |   AIC    |   BIC    | RMSE  
+#> ----------------+----------+----------+------ 
+#> intercept_model | 2284.056 | 2290.063 | 0.356 
+#>      area_model |  2287.25 | 2311.275 | 0.356
 ```
 
-This reports AIC, BIC and response-scale RMSE. AIC and BIC compare
-likelihood fit with model complexity, while RMSE measures prediction
-error in the response unit.
+[`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md)
+reports AIC, BIC and response-scale RMSE:
 
-The purpose of this step is to assess whether the addition or removal of
-model terms leads to a materially different fit.
+- AIC and BIC compare likelihood fit while penalising model complexity;
+- RMSE summarises prediction error in the response unit and gives
+  relatively high weight to large errors.
 
-The measures are comparable only when the models use the same response,
-estimation records, weights and offsets. They support model comparison
-but do not select a specification automatically.
+These values are most directly comparable when models use the same
+response, estimation records, weights and offsets, as they do here. The
+RMSE shown is calculated on the estimation data. It is therefore an
+in-sample description, not an estimate of performance on a future
+portfolio.
 
-## Step 2 — Coefficient inspection
+Lower values can support a model comparison, but a small improvement
+does not automatically imply a better tariff. Exposure by level,
+coefficient stability, residual behaviour, observed experience and
+practical interpretability remain part of the assessment.
 
-Model validation is not limited to summary fit statistics. The
-coefficient structure also needs to be reviewed.
+## Inspecting tariff structure and observed experience
+
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+expresses fitted GLM effects as tariff relativities and shows the
+exposure supporting each level. This makes the statistical output easier
+to review in actuarial terms. Observed experience can be attached to the
+same table for a direct graphical comparison.
 
 ``` r
 
+area_table <- rating_table(
+  area_model,
+  model_data = portfolio,
+  exposure = "exposure"
+)
 
-rating_table(mod1, mod2, model_data = df, exposure = "exposure") |>
-  autoplot()
+area_table
+#>   risk_factor       level est_area_model exposure
+#> 1 (Intercept) (Intercept)      0.1369930       NA
+#> 2        area           1      1.0000000     1066
+#> 3        area           0      0.5485629       13
+#> 4        area           2      0.8739528      819
+#> 5        area           3      1.0782596      765
+
+area_review <- area_table |>
+  add_portfolio_experience(
+    data = portfolio,
+    claim_count = "nclaims",
+    exposure = "exposure",
+    metric = "frequency"
+  )
+
+autoplot(
+  area_review,
+  risk_factors = "area",
+  metric = "frequency"
+)
 ```
 
 ![](model-validation_files/figure-html/unnamed-chunk-4-1.png)
 
-This is used to assess:
+A model with slightly better aggregate fit can still be unattractive
+when it creates volatile neighbouring relativities, extreme effects
+supported by little exposure or shapes without a plausible risk
+interpretation. An extreme coefficient in a small segment should
+therefore not be interpreted in the same way as the same coefficient
+supported by a substantial share of the portfolio.
 
-- the relative size of fitted effects
-- the ordering of factor levels
-- the exposure behind each level
-- whether differences are plausible and stable
+The model line shows conditional tariff relativities. The observed line
+shows unadjusted portfolio experience by area. They answer different
+questions and need not coincide exactly: observed experience also
+reflects differences in the mix of other risk characteristics. The
+comparison is useful for identifying levels that require further
+investigation, especially when interpreted with their exposure.
 
-In pricing practice, this is often part of validation, because a model
-with slightly better fit may still be less suitable if its coefficient
-structure is difficult to interpret or unstable in low-exposure
-segments.
-
-## Step 3 — Predictive stability
-
-Single performance measures provide only a point estimate. In many
-pricing contexts, it is also relevant to assess how stable that
-performance is under small variations in the data.
+## Assessing resampling stability
 
 ``` r
 
+set.seed(123)
 
-bootstrap_performance(
-  mod1,
-  df,
-  n_resamples = 100,
+bootstrap_result <- bootstrap_performance(
+  area_model,
+  portfolio,
+  n_resamples = 50,
   sample_fraction = 0.8,
   sampling = "bootstrap",
   show_progress = FALSE
-) |>
-  autoplot()
+)
+
+autoplot(bootstrap_result)
 ```
 
 ![](model-validation_files/figure-html/unnamed-chunk-5-1.png)
 
-This repeatedly refits the model on bootstrap samples and evaluates RMSE
-on out-of-bag records. The resulting distribution measures sensitivity
-to portfolio sampling rather than the full uncertainty in future claims.
+With this specification,
+[`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
+samples portfolio rows with replacement, refits the model and evaluates
+response-scale RMSE on rows that were not selected for that replicate.
+Its RMSE distribution describes how sensitive measured performance is to
+repeated sampling from the observed portfolio.
 
-The output is used to assess:
+This is a resampling-stability diagnostic. It is not independent
+validation on a genuinely later or external portfolio, and it does not
+capture all future claim, trend, mix or specification uncertainty. A
+narrow distribution indicates less sensitivity to the sampled records; a
+wide distribution may point to sparse segments or an unstable
+specification.
 
-- the variability of model performance
-- whether the fitted model behaves consistently
-- whether the model is highly sensitive to changes in the underlying
-  sample
+When prediction on unseen data is central to the objective, this
+evidence should be complemented by a suitable holdout, cross-validation
+or temporal validation design. With `sample_fraction = 1`, the function
+instead evaluates on sampled training rows and should be interpreted as
+in-sample stability.
 
-This is particularly relevant when portfolios contain sparse segments or
-large claim volatility.
+## Checking distributional assumptions
 
-## Step 4 — Dispersion checks
-
-For Poisson models, it is common practice to check whether the variance
-assumption is broadly appropriate.
+### Overdispersion
 
 ``` r
 
-
-check_overdispersion(mod1)
+dispersion_check <- check_overdispersion(area_model)
+dispersion_check
 #> Dispersion ratio =    1.220
 #> Pearson's Chi-squared = 3655.711
 #> p-value =  < 0.001
 #> Overdispersion detected.
 ```
 
-A dispersion ratio above 1 indicates that the observed variance exceeds
-the variance implied by the Poisson model.
+For a Poisson frequency GLM, the dispersion ratio is Pearson’s
+chi-squared statistic divided by the residual degrees of freedom. A
+value above one means that observed variation exceeds the variance
+implied by the Poisson model.
 
-This does not automatically invalidate the model, but it does provide an
-important diagnostic signal. In pricing practice, overdispersion may
-indicate:
+Both statistical evidence and practical magnitude matter. In a large
+insurance portfolio, a small departure can produce a very small p-value
+simply because many observations are available. The size of the
+dispersion ratio and its effect on uncertainty and tariff decisions are
+generally more informative than the p-value alone. Overdispersion can
+indicate omitted heterogeneity, clustering, unusual observations or
+model misspecification, but does not by itself identify the cause.
 
-- omitted heterogeneity
-- model misspecification
-- clustering in the data
-- or unmodelled portfolio structure
-
-## Step 5 — Residual diagnostics
-
-Residual diagnostics provide an additional view of model adequacy.
+### Simulation-based residuals
 
 ``` r
 
+set.seed(123)
 
-check_residuals(mod1, n_simulations = 600) |>
-  autoplot()
-#> Residuals consistent with expected distribution (p = 0.934)
+residual_check <- check_residuals(
+  area_model,
+  n_simulations = 250
+)
+
+autoplot(residual_check)
 ```
 
 ![](model-validation_files/figure-html/unnamed-chunk-7-1.png)
 
-This step is used to assess whether the residual behaviour is broadly
-consistent with the fitted model assumptions.
-
-In GLM settings, simulation-based residual diagnostics are often more
-useful than classical residual plots, because they allow the fitted
-model to be evaluated relative to its own implied distribution.
-
-The uniformity-test p-value is a diagnostic signal, not a stand-alone
-acceptance rule. Its interpretation should be combined with the shape of
-the QQ plot, exposure and relevant risk-factor levels.
-
-## Step 6 — Portfolio-level structure
-
-Validation is also performed at portfolio or model-point level.
-
-``` r
-
-
-grid <- rating_grid(mod1)
-head(grid)
-#>   area count   exposure
-#> 1    1  1194 1065.74795
-#> 2    0    15   13.30685
-#> 3    2   921  818.53973
-#> 4    3   870  764.99178
-```
-
-[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-aggregates the fitted model to observed model-point combinations. This
-is useful when validation requires a more structured view of:
-
-- observed portfolio composition
-- combinations of rating factors
-- model-point level summaries
-- compact portfolio input for further review
-
-This step is particularly relevant when moving from model validation to
-tariff review or implementation support.
-
-## Validation in context
-
-In practice, model validation is rarely based on a single statistic.
-
-A validation exercise often combines:
-
-- comparative performance measures
-- coefficient inspection
-- predictive stability
-- residual and dispersion diagnostics
-- portfolio-level review
-
-These steps serve different purposes:
-
-- performance measures assess fit
-- coefficient inspection assesses interpretability
-- bootstrap analysis assesses stability
-- diagnostics assess model adequacy
-- portfolio review assesses practical usability
-
-Taken together, they provide evidence for actuarial review of the fitted
+[`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
+uses DHARMa simulations from the fitted model to construct scaled
+residuals. The QQ plot and uniformity test assess whether the observed
+response behaves consistently with the distribution implied by that
 model.
 
-## Summary
+Systematic departures can indicate remaining structure, distributional
+mismatch or unusual observations. The uniformity p-value is a diagnostic
+signal, not a stand-alone acceptance rule. Its interpretation should be
+combined with the location and shape of departures, fitted values,
+exposure and relevant risk-factor levels.
 
-One possible validation sequence in `insurancerating` is:
+## Reviewing observed versus expected experience
+
+An observed-versus-expected review asks where the fitted model
+systematically over- or under-predicts the portfolio. The following
+example aggregates actual and expected claim counts by area.
 
 ``` r
 
+validation_data <- portfolio
+validation_data$expected_claims <- predict(
+  area_model,
+  newdata = validation_data,
+  type = "response"
+)
 
-model_performance(...)        # compare fitted models
-rating_table(...) |> autoplot()   # inspect coefficient structure
-bootstrap_performance(...)    # assess predictive stability
-check_overdispersion(...)     # assess dispersion
-check_residuals(...)          # inspect residual behaviour
-rating_grid(...)              # review model-point structure
+area_oe <- rating_grid(
+  validation_data,
+  group_by = "area",
+  exposure = "exposure",
+  aggregate_cols = c("nclaims", "expected_claims")
+)
+
+area_oe$observed_frequency <-
+  area_oe$nclaims / area_oe$exposure
+area_oe$expected_frequency <-
+  area_oe$expected_claims / area_oe$exposure
+area_oe$observed_expected_ratio <- ifelse(
+  area_oe$expected_claims > 0,
+  area_oe$nclaims / area_oe$expected_claims,
+  NA_real_
+)
+
+area_oe
+#>   area nclaims expected_claims   exposure observed_frequency expected_frequency
+#> 1    1     146             146 1065.74795         0.13699299         0.13699299
+#> 2    0       1               1   13.30685         0.07514927         0.07514927
+#> 3    2      98              98  818.53973         0.11972540         0.11972540
+#> 4    3     113             113  764.99178         0.14771401         0.14771401
+#>   observed_expected_ratio
+#> 1                       1
+#> 2                       1
+#> 3                       1
+#> 4                       1
 ```
 
-The diagnostics address different aspects of model behaviour. Their
-relevance and materiality depend on the portfolio, model purpose and
-validation criteria.
+Because the model prediction includes earned exposure, summing
+`expected_claims` gives the expected number of claims for each area.
+Dividing observed and expected counts by aggregated exposure gives the
+corresponding frequencies. A ratio above one indicates more observed
+claims than expected; a ratio below one indicates fewer.
 
-## Next steps
+[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+does not validate the model by itself. It prepares a compact model-point
+or segment-level view by aggregating additive portfolio quantities. Here
+it supports an O:E review; elsewhere it is primarily used to reduce
+portfolios before modelling or implementation. See [Large
+Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.md)
+for that role.
 
-For a modelling example, see:
+O:E differences should always be read with exposure and claim volume. A
+large ratio in a small segment may reflect limited experience, while a
+persistent deviation in a well-exposed segment can indicate missing
+structure or miscalibration. Similar reviews can be made by rating
+level, predicted-risk band, underwriting period or another segment
+relevant to the portfolio.
+
+## Validation, investigation and refinement
+
+Validation identifies evidence; it should not silently alter the model.
+A useful response to an issue is:
+
+1.  identify the affected observations or tariff levels;
+2.  investigate the likely cause;
+3.  revise the data or model when the statistical specification is
+    responsible;
+4.  apply an explicit actuarial refinement only when it has a defensible
+    tariff rationale;
+5.  validate the resulting model again.
+
+Incorrect exposure, data-quality problems, missing interactions, poor
+segmentation, inappropriate distributions and large-loss treatment can
+all produce unattractive diagnostics. These issues may require
+revisiting the model rather than smoothing or restricting its
+coefficients. The [Refinement building
+blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md)
+vignette explains how justified tariff adjustments can be recorded and
+refitted explicitly.
+
+## Putting the evidence together
+
+Validation should combine evidence rather than rank models on one
+metric. A model may have a slightly lower AIC but unstable coefficients,
+weak observed support and material residual structure. Such a model may
+be less suitable for tariff implementation than a more stable
+alternative.
+
+Conversely, a statistically significant diagnostic result may have
+little practical effect when its magnitude is small and portfolio
+behaviour remains stable. The conclusion should reflect statistical
+adequacy, predictive evidence, sampling stability, exposure and
+credibility, actuarial plausibility and the intended pricing use.
+
+## Where to go next
 
 - [Getting
-  started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
-
-For the refinement step after validation, see:
-
-- [Refinement building
-  blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md).
-
-For the conceptual background to exposure, risk premium, and tariff
-structure, see:
-
-- [Pricing workflow building
+  Started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
+  constructs and interprets a pricing model in one worked example.
+- [Pricing workflow and package building
   blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md)
+  maps the complete package architecture.
+- [Refinement building
+  blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md)
+  translates identified tariff issues into explicit, reviewable
+  adjustments.
+- [Large
+  Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.md)
+  covers model-point aggregation and database-backed reduction.

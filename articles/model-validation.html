@@ -71,269 +71,410 @@
     
     
 <div class="section level2">
-<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
+<h2 id="what-does-model-validation-mean">What does model validation mean?<a class="anchor" aria-label="anchor" href="#what-does-model-validation-mean"></a>
 </h2>
-<p>Model validation is a common part of actuarial pricing work.</p>
-<p>After model estimation and coefficient interpretation, validation
-assesses whether the fitted model behaves consistently with its
-statistical assumptions and intended pricing use.</p>
-<p>In practice, model validation typically considers several
-dimensions:</p>
-<ul>
-<li>comparative model performance</li>
-<li>coefficient structure</li>
-<li>predictive stability</li>
-<li>distributional diagnostics</li>
-<li>portfolio-level behaviour</li>
-</ul>
-<p><code>insurancerating</code> provides tools for several of these
-validation tasks.</p>
-<p>No single diagnostic establishes that a model is suitable for
-pricing. The results need to be interpreted together with data quality,
-portfolio structure, coefficient stability and the intended tariff
-application.</p>
+<p>Validation of an insurance pricing model is broader than comparing
+fit statistics. A model may describe the estimation data well while
+producing unstable, weakly supported or actuarially implausible tariff
+relativities. Conversely, a statistically detectable imperfection may
+have little practical pricing effect in the insured portfolio.</p>
+<p>No single metric determines whether a model is adequate. A validation
+review normally combines several dimensions:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Dimension</th>
+<th>Practical question</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Statistical adequacy</td>
+<td>Are the model structure and distribution broadly consistent with the
+data?</td>
+</tr>
+<tr class="even">
+<td>Predictive performance</td>
+<td>How well does the model predict the relevant outcome, preferably
+outside the estimation sample where appropriate?</td>
+</tr>
+<tr class="odd">
+<td>Stability</td>
+<td>How sensitive are estimates or performance to variation in the
+observed sample?</td>
+</tr>
+<tr class="even">
+<td>Tariff plausibility</td>
+<td>Are the effects interpretable, credible and suitable for the
+intended tariff?</td>
+</tr>
+<tr class="odd">
+<td>Portfolio behaviour</td>
+<td>Where does expected experience differ systematically from observed
+experience?</td>
+</tr>
+</tbody>
+</table>
+<p>These dimensions are complementary rather than a mandatory sequence.
+Their relative importance depends on the response, portfolio, modelling
+objective and intended use of the tariff.</p>
+<p>This vignette starts from fitted models. <a href="getting-started.html">Getting Started</a> provides the worked
+modelling example, while <a href="pricing-workflow-building-blocks.html">Pricing workflow and
+package building blocks</a> maps validation within the wider
+package.</p>
 </div>
 <div class="section level2">
-<h2 id="example-setup">Example setup<a class="anchor" aria-label="anchor" href="#example-setup"></a>
+<h2 id="validation-map">Validation map<a class="anchor" aria-label="anchor" href="#validation-map"></a>
 </h2>
-<p>The examples below use a simple frequency modelling setup based on
-<code>MTPL2</code>.</p>
+<p>The following functions support different validation questions. Not
+every model requires every diagnostic.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Validation question</th>
+<th>Typical tool</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>How do alternative fitted models compare?</td>
+<td><code><a href="../reference/model_performance.html">model_performance()</a></code></td>
+</tr>
+<tr class="even">
+<td>Are tariff relativities plausible and sufficiently supported?</td>
+<td><code><a href="../reference/rating_table.html">rating_table()</a></code></td>
+</tr>
+<tr class="odd">
+<td>Does observed portfolio experience support the fitted pattern?</td>
+<td><code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code></td>
+</tr>
+<tr class="even">
+<td>How sensitive is measured performance to portfolio resampling?</td>
+<td><code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code></td>
+</tr>
+<tr class="odd">
+<td>Is a Poisson frequency model materially overdispersed?</td>
+<td><code><a href="../reference/check_overdispersion.html">check_overdispersion()</a></code></td>
+</tr>
+<tr class="even">
+<td>Do simulation-based residuals show remaining structure?</td>
+<td><code><a href="../reference/check_residuals.html">check_residuals()</a></code></td>
+</tr>
+<tr class="odd">
+<td>Where does the model over- or under-predict?</td>
+<td>exposure-aware observed-versus-expected review</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="compact-example-setup">Compact example setup<a class="anchor" aria-label="anchor" href="#compact-example-setup"></a>
+</h2>
+<p>The examples use two Poisson frequency models fitted to the same
+records, response and exposure definition. <code>expected_claims</code>
+from these models is the expected claim count for each observed policy
+period, because the prediction includes its earned-exposure offset.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mharinga.github.io/insurancerating/">insurancerating</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     filter, lag</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mharinga.github.io/insurancerating/">insurancerating</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">df</span> <span class="op">&lt;-</span> <span class="va">MTPL2</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">area</span><span class="op">)</span>, <span class="va">as.factor</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">area</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="../reference/set_reference_level.html">set_reference_level</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">exposure</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">MTPL2</span><span class="op">)</span></span>
+<span><span class="va">portfolio</span><span class="op">$</span><span class="va">area</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">portfolio</span><span class="op">$</span><span class="va">area</span><span class="op">)</span></span>
+<span><span class="va">portfolio</span><span class="op">$</span><span class="va">area</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/set_reference_level.html">set_reference_level</a></span><span class="op">(</span><span class="va">portfolio</span><span class="op">$</span><span class="va">area</span>, <span class="va">portfolio</span><span class="op">$</span><span class="va">exposure</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">mod1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
-<span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">area</span>,</span>
-<span>  offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>,</span>
+<span><span class="va">intercept_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
+<span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  data <span class="op">=</span> <span class="va">df</span></span>
+<span>  data <span class="op">=</span> <span class="va">portfolio</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">mod2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
-<span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">area</span> <span class="op">+</span> <span class="va">premium</span>,</span>
-<span>  offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>,</span>
+<span><span class="va">area_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
+<span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">area</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  data <span class="op">=</span> <span class="va">df</span></span>
+<span>  data <span class="op">=</span> <span class="va">portfolio</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>The fitted model is starting material here; construction of
+frequency, severity and technical risk-premium models is covered
+elsewhere.</p>
 </div>
 <div class="section level2">
-<h2 id="step-1-comparative-model-performance">Step 1 — Comparative model performance<a class="anchor" aria-label="anchor" href="#step-1-comparative-model-performance"></a>
+<h2 id="comparing-model-performance">Comparing model performance<a class="anchor" aria-label="anchor" href="#comparing-model-performance"></a>
 </h2>
-<p>A first validation step is to compare alternative model
-specifications.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/model_performance.html">model_performance</a></span><span class="op">(</span><span class="va">mod1</span>, <span class="va">mod2</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/model_performance.html">model_performance</a></span><span class="op">(</span><span class="va">intercept_model</span>, <span class="va">area_model</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Comparison of Model Performance Indices</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Model |   AIC    |   BIC    | RMSE  </span></span>
-<span><span class="co">#&gt; ------+----------+----------+------ </span></span>
-<span><span class="co">#&gt;  mod1 |  2287.25 | 2311.275 | 0.356 </span></span>
-<span><span class="co">#&gt;  mod2 | 2289.054 | 2319.086 | 0.356</span></span></code></pre></div>
-<p>This reports AIC, BIC and response-scale RMSE. AIC and BIC compare
-likelihood fit with model complexity, while RMSE measures prediction
-error in the response unit.</p>
-<p>The purpose of this step is to assess whether the addition or removal
-of model terms leads to a materially different fit.</p>
-<p>The measures are comparable only when the models use the same
-response, estimation records, weights and offsets. They support model
-comparison but do not select a specification automatically.</p>
-</div>
-<div class="section level2">
-<h2 id="step-2-coefficient-inspection">Step 2 — Coefficient inspection<a class="anchor" aria-label="anchor" href="#step-2-coefficient-inspection"></a>
-</h2>
-<p>Model validation is not limited to summary fit statistics. The
-coefficient structure also needs to be reviewed.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">mod1</span>, <span class="va">mod2</span>, model_data <span class="op">=</span> <span class="va">df</span>, exposure <span class="op">=</span> <span class="st">"exposure"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="model-validation_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="700"></p>
-<p>This is used to assess:</p>
+<span><span class="co">#&gt;      Model      |   AIC    |   BIC    | RMSE  </span></span>
+<span><span class="co">#&gt; ----------------+----------+----------+------ </span></span>
+<span><span class="co">#&gt; intercept_model | 2284.056 | 2290.063 | 0.356 </span></span>
+<span><span class="co">#&gt;      area_model |  2287.25 | 2311.275 | 0.356</span></span></code></pre></div>
+<p><code><a href="../reference/model_performance.html">model_performance()</a></code> reports AIC, BIC and response-scale
+RMSE:</p>
 <ul>
-<li>the relative size of fitted effects</li>
-<li>the ordering of factor levels</li>
-<li>the exposure behind each level</li>
-<li>whether differences are plausible and stable</li>
+<li>AIC and BIC compare likelihood fit while penalising model
+complexity;</li>
+<li>RMSE summarises prediction error in the response unit and gives
+relatively high weight to large errors.</li>
 </ul>
-<p>In pricing practice, this is often part of validation, because a
-model with slightly better fit may still be less suitable if its
-coefficient structure is difficult to interpret or unstable in
-low-exposure segments.</p>
+<p>These values are most directly comparable when models use the same
+response, estimation records, weights and offsets, as they do here. The
+RMSE shown is calculated on the estimation data. It is therefore an
+in-sample description, not an estimate of performance on a future
+portfolio.</p>
+<p>Lower values can support a model comparison, but a small improvement
+does not automatically imply a better tariff. Exposure by level,
+coefficient stability, residual behaviour, observed experience and
+practical interpretability remain part of the assessment.</p>
 </div>
 <div class="section level2">
-<h2 id="step-3-predictive-stability">Step 3 — Predictive stability<a class="anchor" aria-label="anchor" href="#step-3-predictive-stability"></a>
+<h2 id="inspecting-tariff-structure-and-observed-experience">Inspecting tariff structure and observed experience<a class="anchor" aria-label="anchor" href="#inspecting-tariff-structure-and-observed-experience"></a>
 </h2>
-<p>Single performance measures provide only a point estimate. In many
-pricing contexts, it is also relevant to assess how stable that
-performance is under small variations in the data.</p>
+<p><code><a href="../reference/rating_table.html">rating_table()</a></code> expresses fitted GLM effects as tariff
+relativities and shows the exposure supporting each level. This makes
+the statistical output easier to review in actuarial terms. Observed
+experience can be attached to the same table for a direct graphical
+comparison.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">area_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span></span>
+<span>  <span class="va">area_model</span>,</span>
+<span>  model_data <span class="op">=</span> <span class="va">portfolio</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">area_table</span></span>
+<span><span class="co">#&gt;   risk_factor       level est_area_model exposure</span></span>
+<span><span class="co">#&gt; 1 (Intercept) (Intercept)      0.1369930       NA</span></span>
+<span><span class="co">#&gt; 2        area           1      1.0000000     1066</span></span>
+<span><span class="co">#&gt; 3        area           0      0.5485629       13</span></span>
+<span><span class="co">#&gt; 4        area           2      0.8739528      819</span></span>
+<span><span class="co">#&gt; 5        area           3      1.0782596      765</span></span>
+<span></span>
+<span><span class="va">area_review</span> <span class="op">&lt;-</span> <span class="va">area_table</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_portfolio_experience.html">add_portfolio_experience</a></span><span class="op">(</span></span>
+<span>    data <span class="op">=</span> <span class="va">portfolio</span>,</span>
+<span>    claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
+<span>    exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
+<span>    metric <span class="op">=</span> <span class="st">"frequency"</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span></span>
+<span>  <span class="va">area_review</span>,</span>
+<span>  risk_factors <span class="op">=</span> <span class="st">"area"</span>,</span>
+<span>  metric <span class="op">=</span> <span class="st">"frequency"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="model-validation_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="700"></p>
+<p>A model with slightly better aggregate fit can still be unattractive
+when it creates volatile neighbouring relativities, extreme effects
+supported by little exposure or shapes without a plausible risk
+interpretation. An extreme coefficient in a small segment should
+therefore not be interpreted in the same way as the same coefficient
+supported by a substantial share of the portfolio.</p>
+<p>The model line shows conditional tariff relativities. The observed
+line shows unadjusted portfolio experience by area. They answer
+different questions and need not coincide exactly: observed experience
+also reflects differences in the mix of other risk characteristics. The
+comparison is useful for identifying levels that require further
+investigation, especially when interpreted with their exposure.</p>
+</div>
+<div class="section level2">
+<h2 id="assessing-resampling-stability">Assessing resampling stability<a class="anchor" aria-label="anchor" href="#assessing-resampling-stability"></a>
+</h2>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span></span>
-<span>  <span class="va">mod1</span>,</span>
-<span>  <span class="va">df</span>,</span>
-<span>  n_resamples <span class="op">=</span> <span class="fl">100</span>,</span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">bootstrap_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span></span>
+<span>  <span class="va">area_model</span>,</span>
+<span>  <span class="va">portfolio</span>,</span>
+<span>  n_resamples <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  sample_fraction <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>  sampling <span class="op">=</span> <span class="st">"bootstrap"</span>,</span>
 <span>  show_progress <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">bootstrap_result</span><span class="op">)</span></span></code></pre></div>
 <p><img src="model-validation_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="700"></p>
-<p>This repeatedly refits the model on bootstrap samples and evaluates
-RMSE on out-of-bag records. The resulting distribution measures
-sensitivity to portfolio sampling rather than the full uncertainty in
-future claims.</p>
-<p>The output is used to assess:</p>
-<ul>
-<li>the variability of model performance</li>
-<li>whether the fitted model behaves consistently</li>
-<li>whether the model is highly sensitive to changes in the underlying
-sample</li>
-</ul>
-<p>This is particularly relevant when portfolios contain sparse segments
-or large claim volatility.</p>
+<p>With this specification, <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code> samples
+portfolio rows with replacement, refits the model and evaluates
+response-scale RMSE on rows that were not selected for that replicate.
+Its RMSE distribution describes how sensitive measured performance is to
+repeated sampling from the observed portfolio.</p>
+<p>This is a resampling-stability diagnostic. It is not independent
+validation on a genuinely later or external portfolio, and it does not
+capture all future claim, trend, mix or specification uncertainty. A
+narrow distribution indicates less sensitivity to the sampled records; a
+wide distribution may point to sparse segments or an unstable
+specification.</p>
+<p>When prediction on unseen data is central to the objective, this
+evidence should be complemented by a suitable holdout, cross-validation
+or temporal validation design. With <code>sample_fraction = 1</code>,
+the function instead evaluates on sampled training rows and should be
+interpreted as in-sample stability.</p>
 </div>
 <div class="section level2">
-<h2 id="step-4-dispersion-checks">Step 4 — Dispersion checks<a class="anchor" aria-label="anchor" href="#step-4-dispersion-checks"></a>
+<h2 id="checking-distributional-assumptions">Checking distributional assumptions<a class="anchor" aria-label="anchor" href="#checking-distributional-assumptions"></a>
 </h2>
-<p>For Poisson models, it is common practice to check whether the
-variance assumption is broadly appropriate.</p>
+<div class="section level3">
+<h3 id="overdispersion">Overdispersion<a class="anchor" aria-label="anchor" href="#overdispersion"></a>
+</h3>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/check_overdispersion.html">check_overdispersion</a></span><span class="op">(</span><span class="va">mod1</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">dispersion_check</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_overdispersion.html">check_overdispersion</a></span><span class="op">(</span><span class="va">area_model</span><span class="op">)</span></span>
+<span><span class="va">dispersion_check</span></span>
 <span><span class="co">#&gt; Dispersion ratio =    1.220</span></span>
 <span><span class="co">#&gt; Pearson's Chi-squared = 3655.711</span></span>
 <span><span class="co">#&gt; p-value =  &lt; 0.001</span></span>
 <span><span class="co">#&gt; Overdispersion detected.</span></span></code></pre></div>
-<p>A dispersion ratio above 1 indicates that the observed variance
-exceeds the variance implied by the Poisson model.</p>
-<p>This does not automatically invalidate the model, but it does provide
-an important diagnostic signal. In pricing practice, overdispersion may
-indicate:</p>
-<ul>
-<li>omitted heterogeneity</li>
-<li>model misspecification</li>
-<li>clustering in the data</li>
-<li>or unmodelled portfolio structure</li>
-</ul>
+<p>For a Poisson frequency GLM, the dispersion ratio is Pearson’s
+chi-squared statistic divided by the residual degrees of freedom. A
+value above one means that observed variation exceeds the variance
+implied by the Poisson model.</p>
+<p>Both statistical evidence and practical magnitude matter. In a large
+insurance portfolio, a small departure can produce a very small p-value
+simply because many observations are available. The size of the
+dispersion ratio and its effect on uncertainty and tariff decisions are
+generally more informative than the p-value alone. Overdispersion can
+indicate omitted heterogeneity, clustering, unusual observations or
+model misspecification, but does not by itself identify the cause.</p>
 </div>
-<div class="section level2">
-<h2 id="step-5-residual-diagnostics">Step 5 — Residual diagnostics<a class="anchor" aria-label="anchor" href="#step-5-residual-diagnostics"></a>
-</h2>
-<p>Residual diagnostics provide an additional view of model
-adequacy.</p>
+<div class="section level3">
+<h3 id="simulation-based-residuals">Simulation-based residuals<a class="anchor" aria-label="anchor" href="#simulation-based-residuals"></a>
+</h3>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/check_residuals.html">check_residuals</a></span><span class="op">(</span><span class="va">mod1</span>, n_simulations <span class="op">=</span> <span class="fl">600</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Residuals consistent with expected distribution (p = 0.934)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">residual_check</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_residuals.html">check_residuals</a></span><span class="op">(</span></span>
+<span>  <span class="va">area_model</span>,</span>
+<span>  n_simulations <span class="op">=</span> <span class="fl">250</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">residual_check</span><span class="op">)</span></span></code></pre></div>
 <p><img src="model-validation_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="700"></p>
-<p>This step is used to assess whether the residual behaviour is broadly
-consistent with the fitted model assumptions.</p>
-<p>In GLM settings, simulation-based residual diagnostics are often more
-useful than classical residual plots, because they allow the fitted
-model to be evaluated relative to its own implied distribution.</p>
-<p>The uniformity-test p-value is a diagnostic signal, not a stand-alone
-acceptance rule. Its interpretation should be combined with the shape of
-the QQ plot, exposure and relevant risk-factor levels.</p>
+<p><code><a href="../reference/check_residuals.html">check_residuals()</a></code> uses DHARMa simulations from the
+fitted model to construct scaled residuals. The QQ plot and uniformity
+test assess whether the observed response behaves consistently with the
+distribution implied by that model.</p>
+<p>Systematic departures can indicate remaining structure,
+distributional mismatch or unusual observations. The uniformity p-value
+is a diagnostic signal, not a stand-alone acceptance rule. Its
+interpretation should be combined with the location and shape of
+departures, fitted values, exposure and relevant risk-factor levels.</p>
+</div>
 </div>
 <div class="section level2">
-<h2 id="step-6-portfolio-level-structure">Step 6 — Portfolio-level structure<a class="anchor" aria-label="anchor" href="#step-6-portfolio-level-structure"></a>
+<h2 id="reviewing-observed-versus-expected-experience">Reviewing observed versus expected experience<a class="anchor" aria-label="anchor" href="#reviewing-observed-versus-expected-experience"></a>
 </h2>
-<p>Validation is also performed at portfolio or model-point level.</p>
+<p>An observed-versus-expected review asks where the fitted model
+systematically over- or under-predicts the portfolio. The following
+example aggregates actual and expected claim counts by area.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span><span class="va">mod1</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">grid</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   area count   exposure</span></span>
-<span><span class="co">#&gt; 1    1  1194 1065.74795</span></span>
-<span><span class="co">#&gt; 2    0    15   13.30685</span></span>
-<span><span class="co">#&gt; 3    2   921  818.53973</span></span>
-<span><span class="co">#&gt; 4    3   870  764.99178</span></span></code></pre></div>
-<p><code><a href="../reference/rating_grid.html">rating_grid()</a></code> aggregates the fitted model to observed
-model-point combinations. This is useful when validation requires a more
-structured view of:</p>
-<ul>
-<li>observed portfolio composition</li>
-<li>combinations of rating factors</li>
-<li>model-point level summaries</li>
-<li>compact portfolio input for further review</li>
-</ul>
-<p>This step is particularly relevant when moving from model validation
-to tariff review or implementation support.</p>
+<code class="sourceCode R"><span><span class="va">validation_data</span> <span class="op">&lt;-</span> <span class="va">portfolio</span></span>
+<span><span class="va">validation_data</span><span class="op">$</span><span class="va">expected_claims</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span></span>
+<span>  <span class="va">area_model</span>,</span>
+<span>  newdata <span class="op">=</span> <span class="va">validation_data</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"response"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">area_oe</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span></span>
+<span>  <span class="va">validation_data</span>,</span>
+<span>  group_by <span class="op">=</span> <span class="st">"area"</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
+<span>  aggregate_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nclaims"</span>, <span class="st">"expected_claims"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">area_oe</span><span class="op">$</span><span class="va">observed_frequency</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">area_oe</span><span class="op">$</span><span class="va">nclaims</span> <span class="op">/</span> <span class="va">area_oe</span><span class="op">$</span><span class="va">exposure</span></span>
+<span><span class="va">area_oe</span><span class="op">$</span><span class="va">expected_frequency</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">area_oe</span><span class="op">$</span><span class="va">expected_claims</span> <span class="op">/</span> <span class="va">area_oe</span><span class="op">$</span><span class="va">exposure</span></span>
+<span><span class="va">area_oe</span><span class="op">$</span><span class="va">observed_expected_ratio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span></span>
+<span>  <span class="va">area_oe</span><span class="op">$</span><span class="va">expected_claims</span> <span class="op">&gt;</span> <span class="fl">0</span>,</span>
+<span>  <span class="va">area_oe</span><span class="op">$</span><span class="va">nclaims</span> <span class="op">/</span> <span class="va">area_oe</span><span class="op">$</span><span class="va">expected_claims</span>,</span>
+<span>  <span class="cn">NA_real_</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">area_oe</span></span>
+<span><span class="co">#&gt;   area nclaims expected_claims   exposure observed_frequency expected_frequency</span></span>
+<span><span class="co">#&gt; 1    1     146             146 1065.74795         0.13699299         0.13699299</span></span>
+<span><span class="co">#&gt; 2    0       1               1   13.30685         0.07514927         0.07514927</span></span>
+<span><span class="co">#&gt; 3    2      98              98  818.53973         0.11972540         0.11972540</span></span>
+<span><span class="co">#&gt; 4    3     113             113  764.99178         0.14771401         0.14771401</span></span>
+<span><span class="co">#&gt;   observed_expected_ratio</span></span>
+<span><span class="co">#&gt; 1                       1</span></span>
+<span><span class="co">#&gt; 2                       1</span></span>
+<span><span class="co">#&gt; 3                       1</span></span>
+<span><span class="co">#&gt; 4                       1</span></span></code></pre></div>
+<p>Because the model prediction includes earned exposure, summing
+<code>expected_claims</code> gives the expected number of claims for
+each area. Dividing observed and expected counts by aggregated exposure
+gives the corresponding frequencies. A ratio above one indicates more
+observed claims than expected; a ratio below one indicates fewer.</p>
+<p><code><a href="../reference/rating_grid.html">rating_grid()</a></code> does not validate the model by itself. It
+prepares a compact model-point or segment-level view by aggregating
+additive portfolio quantities. Here it supports an O:E review; elsewhere
+it is primarily used to reduce portfolios before modelling or
+implementation. See <a href="large-portfolios.html">Large Portfolios</a>
+for that role.</p>
+<p>O:E differences should always be read with exposure and claim volume.
+A large ratio in a small segment may reflect limited experience, while a
+persistent deviation in a well-exposed segment can indicate missing
+structure or miscalibration. Similar reviews can be made by rating
+level, predicted-risk band, underwriting period or another segment
+relevant to the portfolio.</p>
 </div>
 <div class="section level2">
-<h2 id="validation-in-context">Validation in context<a class="anchor" aria-label="anchor" href="#validation-in-context"></a>
+<h2 id="validation-investigation-and-refinement">Validation, investigation and refinement<a class="anchor" aria-label="anchor" href="#validation-investigation-and-refinement"></a>
 </h2>
-<p>In practice, model validation is rarely based on a single
-statistic.</p>
-<p>A validation exercise often combines:</p>
-<ul>
-<li>comparative performance measures</li>
-<li>coefficient inspection</li>
-<li>predictive stability</li>
-<li>residual and dispersion diagnostics</li>
-<li>portfolio-level review</li>
-</ul>
-<p>These steps serve different purposes:</p>
-<ul>
-<li>performance measures assess fit</li>
-<li>coefficient inspection assesses interpretability</li>
-<li>bootstrap analysis assesses stability</li>
-<li>diagnostics assess model adequacy</li>
-<li>portfolio review assesses practical usability</li>
-</ul>
-<p>Taken together, they provide evidence for actuarial review of the
-fitted model.</p>
+<p>Validation identifies evidence; it should not silently alter the
+model. A useful response to an issue is:</p>
+<ol style="list-style-type: decimal">
+<li>identify the affected observations or tariff levels;</li>
+<li>investigate the likely cause;</li>
+<li>revise the data or model when the statistical specification is
+responsible;</li>
+<li>apply an explicit actuarial refinement only when it has a defensible
+tariff rationale;</li>
+<li>validate the resulting model again.</li>
+</ol>
+<p>Incorrect exposure, data-quality problems, missing interactions, poor
+segmentation, inappropriate distributions and large-loss treatment can
+all produce unattractive diagnostics. These issues may require
+revisiting the model rather than smoothing or restricting its
+coefficients. The <a href="refinement-workflow.html">Refinement building
+blocks</a> vignette explains how justified tariff adjustments can be
+recorded and refitted explicitly.</p>
 </div>
 <div class="section level2">
-<h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
+<h2 id="putting-the-evidence-together">Putting the evidence together<a class="anchor" aria-label="anchor" href="#putting-the-evidence-together"></a>
 </h2>
-<p>One possible validation sequence in <code>insurancerating</code>
-is:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/model_performance.html">model_performance</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span>        <span class="co"># compare fitted models</span></span>
-<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span>   <span class="co"># inspect coefficient structure</span></span>
-<span><span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span>    <span class="co"># assess predictive stability</span></span>
-<span><span class="fu"><a href="../reference/check_overdispersion.html">check_overdispersion</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span>     <span class="co"># assess dispersion</span></span>
-<span><span class="fu"><a href="../reference/check_residuals.html">check_residuals</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span>          <span class="co"># inspect residual behaviour</span></span>
-<span><span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span>              <span class="co"># review model-point structure</span></span></code></pre></div>
-<p>The diagnostics address different aspects of model behaviour. Their
-relevance and materiality depend on the portfolio, model purpose and
-validation criteria.</p>
+<p>Validation should combine evidence rather than rank models on one
+metric. A model may have a slightly lower AIC but unstable coefficients,
+weak observed support and material residual structure. Such a model may
+be less suitable for tariff implementation than a more stable
+alternative.</p>
+<p>Conversely, a statistically significant diagnostic result may have
+little practical effect when its magnitude is small and portfolio
+behaviour remains stable. The conclusion should reflect statistical
+adequacy, predictive evidence, sampling stability, exposure and
+credibility, actuarial plausibility and the intended pricing use.</p>
 </div>
 <div class="section level2">
-<h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+<h2 id="where-to-go-next">Where to go next<a class="anchor" aria-label="anchor" href="#where-to-go-next"></a>
 </h2>
-<p>For a modelling example, see:</p>
-<ul>
-<li><a href="getting-started.html">Getting started</a></li>
-</ul>
-<p>For the refinement step after validation, see:</p>
 <ul>
 <li>
-<a href="refinement-workflow.html">Refinement building
-blocks</a>.</li>
-</ul>
-<p>For the conceptual background to exposure, risk premium, and tariff
-structure, see:</p>
-<ul>
-<li><a href="pricing-workflow-building-blocks.html">Pricing workflow
-building blocks</a></li>
+<a href="getting-started.html">Getting Started</a> constructs and
+interprets a pricing model in one worked example.</li>
+<li>
+<a href="pricing-workflow-building-blocks.html">Pricing workflow and
+package building blocks</a> maps the complete package architecture.</li>
+<li>
+<a href="refinement-workflow.html">Refinement building blocks</a>
+translates identified tariff issues into explicit, reviewable
+adjustments.</li>
+<li>
+<a href="large-portfolios.html">Large Portfolios</a> covers
+model-point aggregation and database-backed reduction.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -174,8 +174,10 @@ relevant when risk factors are structurally related, such as product,
 coverage and distribution channel.</p>
 <p>Each output row therefore represents one observed combination of the
 variables in <code>group_by</code>. Exposure and <code>aggregate_cols</code> are summed over the
-source records belonging to that combination. This is a categorical
-reduction of the portfolio; no date intervals are combined.</p>
+source records belonging to that combination. Such a row is a model point:
+one observed covariate combination together with its aggregated additive
+portfolio quantities. This is a categorical reduction of the portfolio; no
+date intervals are combined.</p>
 </div>
 
 <div class="section">

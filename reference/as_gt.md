@@ -94,7 +94,7 @@ as_gt(
 
 - premium:
 
-  Logical. If `TRUE`, include pure-premium and premium-reduction
+  Logical. If `TRUE`, include risk-premium and premium-reduction
   columns.
 
 - locale:

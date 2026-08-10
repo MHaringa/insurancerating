@@ -4,6 +4,13 @@
 
 ### Changes since 0.8.1
 
+- [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+  gains `replaces`, which allows a new fixed tariff factor to explicitly
+  replace an existing standalone model term during
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
+  The replacement is retained in refinement summaries and audits. The
+  default `replaces = NULL` preserves the existing additive behaviour
+  for new factors.
 - [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md)
   and
   [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md)
