@@ -231,7 +231,8 @@ neighbouring tariff levels should be interpreted coherently.</p>
 <span>    breaks <span class="op">=</span> <span class="va">age_breaks</span>,</span>
 <span>    smoothing <span class="op">=</span> <span class="st">"spline"</span>,</span>
 <span>    k <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>    weights <span class="op">=</span> <span class="st">"exposure"</span></span>
+<span>    weights <span class="op">=</span> <span class="st">"exposure"</span>,</span>
+<span>    effect_strength <span class="op">=</span> <span class="fl">1.1</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <p>The arguments distinguish two variables:</p>
 <ul>
@@ -247,6 +248,20 @@ factor. Exposure weights give levels with more portfolio support more
 influence. With a spline method, <code>k</code> controls the available
 curve flexibility; it is a basis dimension rather than a fixed number of
 fitted degrees of freedom.</p>
+<p><code>effect_strength</code> controls the overall spread of the
+smoothed relativities on the logarithmic scale. The default value 1
+retains the fitted smoothing, values between 0 and 1 flatten the
+complete effect, and values above 1 make the complete effect steeper.
+The value 1.1 used here strengthens the deviations from the common
+centre without changing their ordering. The adjusted curve is normalised
+so its exposure-weighted arithmetic mean remains unchanged.</p>
+<p>This parameter changes the strength of the complete smoothed effect;
+it does not selectively alter only older ages, high insured values or
+another local part of the curve. Use interval boundaries and control
+points in <code><a href="../reference/edit_smoothing.html">edit_smoothing()</a></code> for a local adjustment.
+Monotonic ordering is retained by an effect-strength adjustment, but
+curvature on the raw relativity scale should be reviewed separately when
+convexity or concavity is an explicit assumption.</p>
 <p>The default unconstrained spline is suitable when the shape should
 remain data-led. Increasing or decreasing shape constraints are
 available when a directional assumption has a defensible actuarial
@@ -260,7 +275,7 @@ the full set of methods and their curvature interpretation.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-08-10 11:29:02 UTC</span></span>
+<span><span class="co">#&gt; Created: 2026-08-10 12:30:45 UTC</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -268,7 +283,7 @@ the full set of methods and their curvature interpretation.</p>
 <span><span class="co">#&gt; Offset: log(exposure)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Refinement steps: 1</span></span>
-<span><span class="co">#&gt;   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)</span></span>
+<span><span class="co">#&gt;   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, effect strength: 1.1)</span></span>
 <span><span class="co">#&gt;      8 intervals over 18 to 95</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span></span>
@@ -439,7 +454,7 @@ levels of the derived <code>output_variable</code>.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-08-10 11:29:02 UTC</span></span>
+<span><span class="co">#&gt; Created: 2026-08-10 12:30:45 UTC</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -447,7 +462,7 @@ levels of the derived <code>output_variable</code>.</p>
 <span><span class="co">#&gt; Offset: log(exposure)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Refinement steps: 4</span></span>
-<span><span class="co">#&gt;   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)</span></span>
+<span><span class="co">#&gt;   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, effect strength: 1.1)</span></span>
 <span><span class="co">#&gt;      8 intervals over 18 to 95</span></span>
 <span><span class="co">#&gt;   2. Restriction: zip -&gt; zip_restricted (4 levels)</span></span>
 <span><span class="co">#&gt;      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000</span></span>
@@ -510,7 +525,7 @@ reviewed with the normal interpretation tools:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">refined_model</span>, exposure <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      risk_factor       level est_refined_model</span></span>
-<span><span class="co">#&gt; 1    (Intercept) (Intercept)         0.2614588</span></span>
+<span><span class="co">#&gt; 1    (Intercept) (Intercept)         0.2614624</span></span>
 <span><span class="co">#&gt; 2 zip_restricted           0         0.9500000</span></span>
 <span><span class="co">#&gt; 3 zip_restricted           1         0.9954865</span></span>
 <span><span class="co">#&gt; 4 zip_restricted           2         0.8971513</span></span>
@@ -546,9 +561,9 @@ combinations.</p>
 <span><span class="co">#&gt; Refinement audit</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Prepared: 2026-08-10 11:29:02 UTC</span></span>
-<span><span class="co">#&gt; Refitted: 2026-08-10 11:29:04 UTC</span></span>
-<span><span class="co">#&gt; Audited: 2026-08-10 11:29:05 UTC</span></span>
+<span><span class="co">#&gt; Prepared: 2026-08-10 12:30:45 UTC</span></span>
+<span><span class="co">#&gt; Refitted: 2026-08-10 12:30:48 UTC</span></span>
+<span><span class="co">#&gt; Audited: 2026-08-10 12:30:48 UTC</span></span>
 <span><span class="co">#&gt; Measure: frequency (per_exposure)</span></span>
 <span><span class="co">#&gt; Exposure: exposure</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -559,7 +574,7 @@ combinations.</p>
 <span><span class="co">#&gt;       log(age_band_smooth) + log(exposure))</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Refinement steps: 4</span></span>
-<span><span class="co">#&gt;   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)</span></span>
+<span><span class="co">#&gt;   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, effect strength: 1.1)</span></span>
 <span><span class="co">#&gt;      8 intervals over 18 to 95</span></span>
 <span><span class="co">#&gt;   2. Restriction: zip -&gt; zip_restricted (4 levels)</span></span>
 <span><span class="co">#&gt;      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000</span></span>
@@ -571,20 +586,20 @@ combinations.</p>
 <span><span class="co">#&gt; Portfolio effect</span></span>
 <span><span class="co">#&gt;   Before: 0.137596</span></span>
 <span><span class="co">#&gt;   After:  0.137596</span></span>
-<span><span class="co">#&gt;   Change: -1.93734e-14 (-1.408e-11%)</span></span>
+<span><span class="co">#&gt;   Change: -1.84852e-14 (-1.343e-11%)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Largest level changes (10 of 24)</span></span>
 <span><span class="co">#&gt;              risk_factor   level     before     after       change change_ratio</span></span>
-<span><span class="co">#&gt;  age_policyholder_smooth (84,95] 0.06942859 0.1301355  0.060706899   0.87437893</span></span>
-<span><span class="co">#&gt;           zip_restricted       3 0.13680279 0.1515199  0.014717130   0.10757917</span></span>
-<span><span class="co">#&gt;           zip_restricted       0 0.14020239 0.1275556 -0.012646824  -0.09020405</span></span>
-<span><span class="co">#&gt;        bm_tariff_segment       8 0.14270460 0.1552869  0.012582270   0.08817003</span></span>
-<span><span class="co">#&gt;        bm_tariff_segment       4 0.13883017 0.1507824  0.011952282   0.08609283</span></span>
-<span><span class="co">#&gt;        bm_tariff_segment       7 0.14278504 0.1518134  0.009028351   0.06323037</span></span>
-<span><span class="co">#&gt;        bm_tariff_segment       3 0.13764208 0.1452254  0.007583341   0.05509464</span></span>
-<span><span class="co">#&gt;  age_policyholder_smooth (58,65] 0.09746194 0.1021913  0.004729386   0.04852547</span></span>
-<span><span class="co">#&gt;  age_policyholder_smooth [18,25] 0.26142311 0.2487990 -0.012624116  -0.04828998</span></span>
-<span><span class="co">#&gt;           zip_restricted       2 0.12951920 0.1240765 -0.005442674  -0.04202214</span></span></code></pre></div>
+<span><span class="co">#&gt;  age_policyholder_smooth (84,95] 0.06942859 0.1288732  0.059444654   0.85619846</span></span>
+<span><span class="co">#&gt;           zip_restricted       3 0.13680279 0.1514843  0.014681462   0.10731844</span></span>
+<span><span class="co">#&gt;           zip_restricted       0 0.14020239 0.1271431 -0.013059310  -0.09314613</span></span>
+<span><span class="co">#&gt;        bm_tariff_segment       4 0.13883017 0.1509642  0.012134021   0.08740191</span></span>
+<span><span class="co">#&gt;        bm_tariff_segment       8 0.14270460 0.1550819  0.012377286   0.08673361</span></span>
+<span><span class="co">#&gt;  age_policyholder_smooth (65,84] 0.10100599 0.0935558 -0.007450184  -0.07375983</span></span>
+<span><span class="co">#&gt;  age_policyholder_smooth (25,32] 0.17896684 0.1914842  0.012517324   0.06994214</span></span>
+<span><span class="co">#&gt;        bm_tariff_segment       7 0.14278504 0.1517406  0.008955531   0.06272038</span></span>
+<span><span class="co">#&gt;        bm_tariff_segment       3 0.13764208 0.1452538  0.007611772   0.05530120</span></span>
+<span><span class="co">#&gt;           zip_restricted       2 0.12951920 0.1241024 -0.005416832  -0.04182262</span></span></code></pre></div>
 <p>The audit reports the portfolio-level frequency before and after
 refinement and the corresponding changes by final risk-factor level.
 These are predictions from the complete model for the observed portfolio
@@ -616,10 +631,15 @@ rationale.</p>
 <span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/edit_smoothing.html">edit_smoothing</a></span><span class="op">(</span></span>
 <span>    model_variable <span class="op">=</span> <span class="st">"age_band"</span>,</span>
-<span>    smoothing <span class="op">=</span> <span class="st">"increasing"</span></span>
+<span>    effect_strength <span class="op">=</span> <span class="fl">1.2</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="va">updated_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span></code></pre></div>
+<p>The update replaces the stored value 1.1 with 1.2 and recalculates
+the smoothing specification from its underlying curve. It does not
+multiply both values. When a local interval is edited without supplying
+<code>effect_strength</code>, the previously stored value is retained
+and applied to the complete edited curve.</p>
 <p>Calling <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code>, <code><a href="../reference/add_restriction.html">add_restriction()</a></code>
 or another refinement function directly on <code>refined_model</code> is
 deliberately not supported. Further adjustments belong on the retained

@@ -125,7 +125,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-10 11:28:08 UTC
+#> Created: 2026-08-10 12:29:51 UTC
 #> Observations: 6
 #> Family: poisson (log link)
 #> Base formula:
