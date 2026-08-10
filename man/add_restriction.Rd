@@ -8,7 +8,8 @@ add_restriction(
   model,
   restrictions,
   allow_new_levels = TRUE,
-  allow_new_risk_factors = FALSE
+  allow_new_risk_factors = FALSE,
+  replaces = NULL
 )
 }
 \arguments{
@@ -36,6 +37,14 @@ add an external variable that is present in the refinement data but absent
 from both the model and preceding refinement steps. All observed levels
 must then have supplied relativities, which are treated as fixed tariff
 assumptions.}
+
+\item{replaces}{\code{NULL} (default) or a character string naming an existing
+standalone model term that the new fixed risk factor replaces. During
+\code{\link[=refit]{refit()}}, this term is removed before the restricted relativity column is
+added. Supplying \code{replaces} also provides the explicit opt-in required for
+a new risk factor; \code{allow_new_risk_factors = TRUE} is then unnecessary.
+Existing terms used in transformations or interactions cannot be replaced
+through this argument.}
 }
 \value{
 A \code{rating_refinement} object containing the stored restriction
@@ -95,6 +104,31 @@ information.
 refinement data must already contain a column assigning every observation to
 a level. This is required to apply the supplied relativities to individual
 records.
+}
+
+\subsection{Replacing an existing model variable}{
+
+A new fixed tariff factor can either supplement the fitted GLM or replace an
+existing model variable. Supply \code{replaces} when the new factor represents an
+alternative tariff classification for an effect already present in the
+model. During \code{\link[=refit]{refit()}}, the named existing term is removed and the supplied
+fixed relativities are inserted in its place. With \code{replaces = NULL}, the new
+factor is added alongside the existing model terms, which preserves the
+previous behaviour.
+
+Supplying \code{replaces} is itself an explicit request to add the new risk factor,
+so \code{allow_new_risk_factors = TRUE} does not also need to be supplied. The
+replacement relationship is retained in the ordered refinement metadata and
+is shown by \code{print()}, \code{summary()} and \code{\link[=audit_refinement]{audit_refinement()}}. This makes clear
+that the new factor substitutes for an earlier model effect rather than
+adding further multiplicative differentiation.
+
+\code{replaces} is intentionally limited to a standalone main-effect term in the
+current refinement formula. A variable used in an interaction or transformed
+expression cannot be removed unambiguously through this argument. Such model
+structures should be revised explicitly before the refinement is prepared.
+This argument is therefore not a general-purpose facility for deleting model
+terms.
 }
 
 \subsection{Updating an existing restriction}{
@@ -167,8 +201,8 @@ refined <- prepare_refinement(model, data = portfolio) |>
 refined_model <- refit(refined)
 rating_table(refined_model, exposure = FALSE)
 
-# A risk factor absent from the fitted GLM can be added explicitly. The
-# portfolio must already assign every observation to a hail zone.
+# A factor absent from the fitted GLM can replace an existing model term.
+# The portfolio must already assign every observation to a hail zone.
 portfolio$hail_zone <- factor(c("low", "high", "low", "high", "low", "high"))
 hail_restrictions <- data.frame(
   hail_zone = c("low", "high"),
@@ -178,9 +212,11 @@ hail_restrictions <- data.frame(
 prepare_refinement(model, data = portfolio) |>
   add_restriction(
     hail_restrictions,
-    allow_new_risk_factors = TRUE
+    replaces = "postal_area"
   )
+# During refit(), hail_zone replaces postal_area rather than supplementing it.
 
+# Without `replaces`, a new fixed factor supplements the existing terms.
 # A later actuarial review changes only the relativity for the low hail zone.
 # The high-zone relativity remains 1.20 and the existing step is updated.
 revised_hail_restrictions <- data.frame(

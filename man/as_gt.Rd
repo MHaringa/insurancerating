@@ -63,7 +63,7 @@ as_gt(x, ...)
 \item{loss}{Logical. If \code{TRUE}, include loss amount columns. The default is
 \code{FALSE} to keep the threshold comparison compact.}
 
-\item{premium}{Logical. If \code{TRUE}, include pure-premium and premium-reduction
+\item{premium}{Logical. If \code{TRUE}, include risk-premium and premium-reduction
 columns.}
 
 \item{locale}{Character. Locale used to format model effects and exposure,

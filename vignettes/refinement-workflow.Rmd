@@ -14,679 +14,464 @@ knitr::opts_chunk$set(
 )
 ```
 
-
 ## Introduction
 
-In many pricing analyses, model estimation is followed by a translation step.
+Refinement is the explicit translation from statistically estimated model
+effects to the structure that will be reviewed, justified and implemented as a
+tariff. It can be motivated by stability, credibility, monotonicity,
+smoothness, sparse experience or an explicit implementation constraint.
 
-A fitted GLM may capture the structure of the portfolio well, while some fitted
-effects still need to be reviewed before they are used in a tariff.
+Refinement is not arbitrary editing of inconvenient coefficients. Each
+adjustment should have an actuarial or operational rationale and should be
+reviewed against exposure, claim volume, observed experience and model
+diagnostics. Recording these decisions as ordered steps makes them
+reproducible and easier to review.
 
-Common reasons include:
+This vignette starts from a fitted unrestricted GLM and focuses on what happens
+next. The construction of frequency, severity and technical risk-premium
+models is covered in [Getting Started](getting-started.html). The wider role of
+refinement within the package is mapped in
+[Pricing workflow and package building blocks](pricing-workflow-building-blocks.html).
 
--	irregular local variation
--	lack of monotonicity
--	externally imposed tariff structures
--	expert judgement not directly represented in the model
--	implementation constraints in policy administration systems
+The refinement architecture is:
 
-For this reason, actuarial pricing work often distinguishes between:
+| Stage | Meaning |
+|---|---|
+| Unrestricted GLM | Statistical starting point |
+| `prepare_refinement()` | Create an editable specification around that model |
+| `add_smoothing()`, `add_restriction()`, `add_shrinkage()`, `add_relativities()` | Record proposed actuarial adjustments |
+| `summary()` and `autoplot()` | Inspect the proposal before fitting |
+| `refit()` | Reconstruct and fit the GLM under the stored specification |
+| `rating_table()` and `audit_refinement()` | Inspect the fitted tariff and its portfolio effect |
 
-1.	model estimation
-2.	tariff refinement
-3.	final refit of the pricing structure
+## A compact unrestricted model
 
-`insurancerating` provides a staged refinement interface:
-
-1.	fit an unrestricted model
-2.	initialise a refinement object with `prepare_refinement()`
-3.	add one or more refinement steps
-4.	inspect these steps before refit
-5.	call `refit()` to obtain the final fitted model
-
-This separation records which adjustments are proposed before they are included
-in the fitted model. It also distinguishes estimated GLM effects from explicit
-tariff assumptions.
-
-
-## When refinement can help
-
-Refinement can be considered when the estimated model captures the main risk
-structure, but selected coefficient patterns require additional structure
-before tariff implementation.
-
-Typical use cases include:
-
--	smoothing a rating factor derived from a continuous variable
--	imposing monotonicity
--	restricting coefficients to a predefined relativity structure
--	introducing expert-based relativities within existing model levels
--	simplifying the final tariff for practical implementation
-
-In many workflows, refinement is applied to the model that represents the final
-pricing signal, such as a premium or risk-premium model. In other cases, it may
-also be useful for selected frequency or severity effects. The relevant question
-is whether the adjusted coefficient pattern is intended to support the tariff
-structure that will be reviewed or implemented.
-
-
-## Example setup
-
-The example below starts from one common premium modelling setup:
-
--	analyse a continuous variable with a GAM
--	convert it to tariff segments
--	fit frequency and severity models
--	combine both into a premium proxy
--	fit an unrestricted premium model
-	
+The unrestricted model is only the starting material for this vignette. The
+following setup creates grouped age and bonus-malus factors and fits a Poisson
+frequency GLM. The response is claim count and `log(exposure)` is the offset.
 
 ```{r, message = FALSE, warning = FALSE}
-
 library(insurancerating)
-library(dplyr)
 
-age_policyholder_frequency <- risk_factor_gam(
-  data = MTPL,
-  claim_count = "nclaims",
-  risk_factor = "age_policyholder",
-  exposure = "exposure"
+portfolio <- as.data.frame(MTPL)
+
+age_breaks <- c(18, 25, 32, 39, 51, 58, 65, 84, 95)
+portfolio$age_band <- cut(
+  portfolio$age_policyholder,
+  breaks = age_breaks,
+  include.lowest = TRUE
 )
-
-age_segments_freq <- derive_tariff_segments(
-  age_policyholder_frequency,
-  seed = 1
+portfolio$bm_group <- cut(
+  portfolio$bm,
+  breaks = c(0, 4, 8, Inf),
+  labels = c("Low", "Medium", "High")
 )
+portfolio$bm_detail <- factor(as.character(portfolio$bm))
+portfolio$zip <- factor(portfolio$zip)
 
-dat <- MTPL |>
-  add_tariff_segments(age_segments_freq, name = "age_policyholder_freq_cat") |>
-  mutate(across(where(is.character), as.factor)) |>
-  mutate(across(where(is.factor), ~ set_reference_level(., exposure)))
-
-freq <- glm(
-  nclaims ~ bm + age_policyholder_freq_cat,
-  offset = log(exposure),
+unrestricted <- glm(
+  nclaims ~ age_band + zip + bm_group + offset(log(exposure)),
   family = poisson(),
-  data = dat
+  data = portfolio
 )
-
-sev <- glm(
-  amount ~ zip,
-  weights = nclaims,
-  family = Gamma(link = "log"),
-  data = dat |> filter(amount > 0)
-)
-
-premium_df <- dat |>
-  add_prediction(freq, sev) |>
-  mutate(premium = pred_nclaims_freq * pred_amount_sev)
-
-burn_unrestricted <- glm(
-  premium ~ zip + bm + age_policyholder_freq_cat,
-  weights = exposure,
-  family = Gamma(link = "log"),
-  data = premium_df
-)
-
 ```
 
-Before refinement, inspect the unrestricted coefficient structure:
+The initial tariff effects can be inspected before any actuarial adjustment:
 
 ```{r}
-
-rating_table(burn_unrestricted)
-
-rating_table(burn_unrestricted) |>
-  autoplot()
-
+head(rating_table(unrestricted, exposure = FALSE))
 ```
 
-At this stage, the coefficients reflect the unrestricted model fit. This output
-is often informative by itself. If the pattern is too irregular, too granular or
-difficult to explain, a refinement step can be added explicitly.
+These are the conditional effects estimated by the unrestricted GLM. An
+irregular effect is not by itself a reason to refine it: the analyst should
+first consider data quality, exposure definition, model specification,
+interactions and factor construction.
 
-
-## The refinement object
-
-Refinement begins with:
+## Preparing the refinement
 
 ```{r}
+refinement <- prepare_refinement(
+  unrestricted,
+  data = portfolio
+)
 
-ref <- prepare_refinement(burn_unrestricted)
-ref
-
+refinement
 ```
 
-A `rating_refinement` object stores:
+`prepare_refinement()` creates a `rating_refinement` object containing the
+unrestricted model, the corresponding retained model data and an initially
+empty ordered step specification. It does not refit the GLM and does not change
+its coefficients or fitted values.
 
--	the fitted base model
--	the underlying model data
--	the refinement steps added through the refinement interface
+This distinction is central to the API:
 
-At this point, the model itself has not been refitted. The refinement object
-represents a proposed tariff adjustment structure, not yet the final fitted
-result.
+- `unrestricted` is a fitted statistical model;
+- `refinement` is an editable proposal for the tariff structure;
+- the model returned later by `refit()` is the fitted outcome under that
+  proposal.
 
-This distinction is useful because refinement steps can be inspected before they
-are incorporated into the final model.
+Keep the refinement object when iterating. A model returned by `refit()` is a
+fitted result, not an editable specification. Calling `prepare_refinement()` on
+that fitted result deliberately starts a new workflow and does not reconstruct
+the earlier steps.
 
+## Smoothing an ordered effect
 
-## Smoothing 
-
-### Purpose
-
-Smoothing can be used when a rating factor derived from a continuous variable
-contains local variation that is hard to justify in a tariff.
-
-For example, a coefficient pattern such as:
-
--	age 30–34 lower
--	age 34–38 higher
--	age 38–42 lower again
-
-may be compatible with the observed sample, but unstable across periods or
-difficult to support actuarially. Smoothing replaces local variation with an
-explicitly regularised coefficient pattern.
-
-
-### Adding smoothing
+Raw level effects for a grouped continuous variable may contain local movement
+that is weakly supported or unstable over time. Smoothing replaces that local
+pattern with an explicitly structured curve. It is most relevant when a gradual
+underlying relationship is plausible and neighbouring tariff levels should be
+interpreted coherently.
 
 ```{r}
-
-ref <- ref |>
+refinement <- refinement |>
   add_smoothing(
-    model_variable = "age_policyholder_freq_cat",
+    model_variable = "age_band",
     source_variable = "age_policyholder",
-    breaks = c(seq(18, 93, 5), 95),
+    breaks = age_breaks,
+    smoothing = "spline",
+    k = 5,
     weights = "exposure"
   )
-
 ```
 
-The key arguments are:
+The arguments distinguish two variables:
 
--	`model_variable`: the grouped variable present in the GLM
--	`source_variable`: the original continuous portfolio variable
--	`breaks`: the preferred commercial cut points
--	`smoothing`: the smoothing specification; `"spline"` is the general-purpose
-  default
--	`weights`: optional weighting, typically exposure
+- `model_variable` is the grouped factor included in the unrestricted GLM;
+- `source_variable` is the underlying numeric portfolio variable used to
+  estimate the smooth relationship.
 
-Use `"increasing"` or `"decreasing"` when the tariff effect is required to
-move monotonically. Convex, concave and combined shape constraints are
-available for cases where that additional assumption can be supported
-actuarially. `"poly"` fits a global polynomial and uses `degree`; `"gam"` fits
-a thin-plate smooth that can be used as an unconstrained comparison. For spline
-methods, `k` limits the available curve flexibility but is not the fitted
-effective number of degrees of freedom.
+`breaks` define the intervals in the resulting tariff factor. Exposure weights
+give levels with more portfolio support more influence. With a spline method,
+`k` controls the available curve flexibility; it is a basis dimension rather
+than a fixed number of fitted degrees of freedom.
 
-### Inspecting smoothing before refit
+The default unconstrained spline is suitable when the shape should remain
+data-led. Increasing or decreasing shape constraints are available when a
+directional assumption has a defensible actuarial basis. The function reference
+for `add_smoothing()` describes the full set of methods and their curvature
+interpretation.
+
+### Inspecting the proposal
 
 ```{r}
+summary(refinement)
 
-print(ref)
 autoplot(
-  ref,
-  variable = "age_policyholder_freq_cat",
-  x_max = 90,
-  y_max = 1.5
+  refinement,
+  variable = "age_band",
+  x_max = 90
 )
-
 ```
 
-This plot belongs to the **pre-refit stage**. It shows:
-
--	the original fitted coefficients
--	the proposed smoothed structure
-
-The purpose is to inspect the refinement step itself, before it is incorporated
-into the final fitted model.
-
-### Choosing a smoothing method
-
-Typical smoothing choices are:
-
--	`"spline"`: unconstrained penalised cubic regression spline; the
-  general-purpose default
--	`"poly"`: global polynomial controlled by `degree`
--	`"gam"`: thin-plate regression spline fitted with `mgcv`, mainly useful as
-  an unconstrained comparison
--	`"increasing"`: monotone increasing
--	`"decreasing"`: monotone decreasing
-
-Monotonicity concerns the direction of the tariff effect. Convexity and
-concavity concern how its slope changes. A convex effect has an increasing
-slope and may be U-shaped when its direction is not constrained; a concave
-effect has a decreasing slope and may be inverted U-shaped. For an increasing
-effect, convexity implies acceleration and concavity implies flattening. For a
-decreasing effect, convexity implies flattening and concavity implies a steeper
-decline.
-
-The readable advanced options are `"convex"`, `"concave"`,
-`"increasing_convex"`, `"increasing_concave"`, `"decreasing_convex"` and
-`"decreasing_concave"`. They should be used only when the assumed curvature
-has an actuarial or economic basis in addition to any directional assumption.
-The former short codes `"mpi"`, `"mpd"`, `"cx"`, `"cv"`, `"micx"`, `"micv"`,
-`"mdcx"` and `"mdcv"` remain accepted for compatibility.
-
-For example:
-
--	age may justify a flexible smooth
--	insured value or power may require a monotonic relationship
--	low-exposure tails may benefit from exposure weighting
-
-
-## Restrictions
-
-### Purpose
-
-Restrictions can be used when coefficients need to follow a predefined
+This is a **pre-refit** plot. It compares the original fitted effect with the
+proposed smooth structure. The GLM has not yet been estimated under that
 structure.
 
-Typical examples include:
+If the curve needs adjustment, retain the specification and use
+`edit_smoothing()` before refitting. This preserves the rest of the ordered
+workflow rather than starting again from the fitted result.
 
--	bonus-malus systems
--	governance-approved relativities
--	externally mandated tariff structures
--	implementation constraints in policy systems
+## Restricting selected levels
 
-Restrictions differ from smoothing:
-
--	smoothing reshapes the fitted pattern
--	restriction imposes user-defined coefficients
-
-
-### Adding restrictions
-
-
+`add_restriction()` fixes tariff levels at supplied relativities. A restriction
+may represent an implementation rule, a supported external assumption or a
+deliberate response to an unstable local estimate. It differs from smoothing:
+smoothing estimates a structured pattern, whereas a restriction explicitly
+prescribes selected values.
 
 ```{r}
-
-zip_df <- data.frame(
-  zip = c(0, 1, 2, 3),
-  zip_adj = c(0.8, 0.9, 1.0, 1.2)
+zip_restrictions <- data.frame(
+  zip = c("0", "3"),
+  zip_restricted = c(0.95, 1.10)
 )
 
-ref <- ref |>
-  add_restriction(restrictions = zip_df)
-
+refinement <- refinement |>
+  add_restriction(zip_restrictions)
 ```
 
-The restriction table must contain exactly two columns:
+Only ZIP levels 0 and 3 are supplied here. The other observed ZIP levels are
+fixed at their current effective relativities. Consequently, a partial
+restriction changes the selected values but still produces a complete fixed
+structure for that risk factor.
 
--	the original factor levels
--	the adjusted coefficients
+Repeated calls for the same restricted variable update matching levels and
+retain earlier restrictions for levels not supplied again. New levels may be
+added when they represent explicit tariff assumptions; new risk factors require
+the corresponding portfolio column and an explicit opt-in. These behaviours
+are documented in the `add_restriction()` reference.
 
-
-### Inspecting restrictions before refit
+A new fixed tariff factor can also replace an existing standalone model term.
+For example, `add_restriction(..., replaces = "postal_area")` records that the
+new classification substitutes for `postal_area` during `refit()`, rather than
+adding a second multiplicative effect. The replacement is shown in the
+refinement summary and audit. Interactions and transformed terms must be revised
+explicitly in the model specification because removing them is not an
+unambiguous level restriction.
 
 ```{r}
-
-autoplot(ref, variable = "zip")
-
+autoplot(refinement, variable = "zip")
 ```
 
-This shows the proposed restricted structure relative to the original fitted
-model.
+Again, the plot shows the proposed restriction before `refit()`.
 
+## Shrinking a categorical effect
 
-## Shrinkage of categorical relativities
-
-### Purpose
-
-Shrinkage can be used when the ordering of a categorical risk-factor pattern is
-considered credible, but the distance between its highest and lowest
-relativities is too large for the available experience or the intended tariff.
-It differs from a restriction: a restriction supplies selected relativities
-directly, whereas shrinkage systematically moves all current relativities
-towards a common level.
-
-The adjustment is made on the logarithmic scale. With `credibility = 0.9`, each
-level retains 90 percent of its current logarithmic effect and receives 10
-percent of the common effect. The resulting relativities are rescaled to retain
-their weighted arithmetic mean. This reduces differentiation without changing
-the selected weighted level of the risk factor.
+`add_shrinkage()` reduces the differences between the current relativities of
+one categorical risk factor. It is useful when the direction and ordering of an
+estimated effect are considered informative, but the spread between levels is
+larger than is supported by the available experience or the intended tariff.
+Unlike a restriction, shrinkage does not prescribe individual level values.
 
 ```{r}
-
-ref <- ref |>
+refinement <- refinement |>
   add_shrinkage(
-    model_variable = "zip",
+    model_variable = "bm_group",
     credibility = 0.9,
     weights = "exposure"
   )
-
-summary(ref)
-autoplot(ref, step = 3)
-
 ```
 
-Exposure is generally an appropriate basis for frequency or risk-premium
-relativities. Claim count is generally more appropriate for severity
-relativities. With `weights = NULL`, explicit GLM weights are used first;
-otherwise a simple exposure offset is used when it can be identified without
-ambiguity. Use `weights = "equal"` when every tariff level should receive the
-same weight. Equal weighting is an explicit unweighted level comparison and
-does not necessarily preserve the observed portfolio level.
+`credibility` is the weight assigned to the current logarithmic effect. A value
+of 0.9 retains 90 percent of each level's deviation from the common centre; a
+value of 1 leaves the effect unchanged, while a value of 0 removes differences
+between levels. This is a user-selected refinement parameter, not an
+automatically estimated Buhlmann or Buhlmann-Straub credibility factor.
 
-The `credibility` value is a refinement assumption rather than a formally
-estimated Buhlmann credibility factor. Its selection should be assessed against
-exposure, stability over time and the intended degree of tariff
-differentiation.
+The common centre is determined using the selected weighting basis. Exposure
+weights are appropriate here because `bm_group` is part of a frequency model.
+For a severity model, claim count may be a more relevant basis. Use
+`weights = "equal"` when every factor level should receive equal weight rather
+than representing the observed portfolio mix.
 
-
-## Rebasing categorical relativities
-
-### Purpose
-
-After shrinkage, restrictions or a split into more detailed tariff levels, the
-original reference level may no longer be the most useful reporting basis.
-`add_rebasing()` rescales the current factor so that one resulting level equals
-1. It does not reduce or increase the differentiation between levels: every
-ratio between two relativities remains unchanged.
-
-An explicit reference is generally preferable when the tariff has an
-established base class. If no reference is supplied, the level with the largest
-portfolio weight is selected. This gives the most prevalent level relativity 1
-and usually provides a stable reporting basis.
+After shrinkage, the relativities are normalised so their exposure-weighted
+arithmetic mean remains equal to its value before shrinkage. The operation
+therefore reduces tariff differentiation without intentionally changing the
+weighted level of this risk factor. The later refit can still recalibrate the
+intercept or other free model effects.
 
 ```{r}
-
-ref <- ref |>
-  add_rebasing(
-    model_variable = "zip",
-    reference_level = "1"
-  )
-
-summary(ref)
-autoplot(ref, step = 4)
-
+autoplot(refinement, variable = "bm_group")
 ```
 
-This operation differs from `set_reference_level()`. That helper selects the
-contrast reference before a GLM is fitted. Rebasing is applied to the current
-relativities within an existing refinement workflow, for example after new
-sublevels have been introduced with `add_relativities()`.
+This remains a pre-refit comparison: it shows the current estimated effect and
+the proposed shrunken structure stored in the refinement specification.
 
+## Adding differentiation within model levels
 
-## Expert-based relativities
+`add_relativities()` addresses a different problem. An unrestricted GLM may use
+a broad factor because its detailed levels are individually too sparse for
+stable direct estimation. The refinement can retain the broad parent effect
+while introducing documented differentiation between selected sublevels.
 
-### Purpose
+The example splits the broad bonus-malus groups `Low` and `Medium` into their
+observed detailed values:
 
-In some cases, the fitted model uses a broad factor level, while portfolio or
-business knowledge suggests that more granular differentiation may be useful.
-
-For example, a model may estimate one coefficient for "construction", while
-pricing practice distinguishes between:
-
--	residential construction
--	commercial construction
--	civil engineering
-
-This can be relevant when subgroup exposure is too limited to estimate stable
-coefficients directly.
-
-### Adding relativities
-
-```{r, eval = FALSE}
-
-relativities_activity <- relativities(
+```{r}
+bm_relativities <- relativities(
   split_level(
-    "construction",
-    c("residential_construction", "commercial_construction"),
-    c(1.00, 1.15)
+    "Low",
+    new_levels = c("1", "2", "3", "4"),
+    relativities = c(0.95, 0.98, 1.02, 1.05)
   ),
   split_level(
-    "services",
-    c("professional_services", "personal_services"),
-    c(0.95, 1.05)
+    "Medium",
+    new_levels = c("5", "6", "7", "8"),
+    relativities = c(0.96, 0.99, 1.02, 1.05)
   )
 )
 
-ref <- ref |>
+refinement <- refinement |>
   add_relativities(
-    model_variable = "business_activity",
-    split_variable = "business_activity_split",
-    output_variable = "business_activity_tariff_segment",
-    relativities = relativities_activity,
+    model_variable = "bm_group",
+    split_variable = "bm_detail",
+    relativities = bm_relativities,
     exposure = "exposure",
-    normalize = TRUE
+    normalize = TRUE,
+    output_variable = "bm_tariff_segment"
   )
-
 ```
 
-If `normalize = TRUE`, the relativities are scaled so that their
-exposure-weighted average remains equal to 1 within the original level.
+`model_variable` supplies the parent GLM effect. `split_variable` identifies the
+detailed portfolio levels within each parent. `output_variable` names the
+resulting hybrid tariff factor; unsplit parent levels retain their existing
+model effect.
 
-`output_variable` names the resulting hybrid tariff factor. In this example,
-the explicitly split construction and services levels are represented by their
-detailed levels, while unsplit levels retain their original
-`business_activity` value. A name ending in `_tariff_segment` can make this
-role explicit in later model and reporting steps.
+With `normalize = TRUE`, the sublevel relativities are normalised within each
+parent so their exposure-weighted average equals one. The split therefore
+redistributes the parent effect without changing its exposure-weighted level.
+Because shrinkage was added first, these sublevel effects use the shrunken
+`bm_group` relativities as their parent values. With `normalize = FALSE`, the
+supplied relativities are applied directly.
 
-This preserves the original model signal while introducing finer structure.
-When `model_variable` has already been restricted with `add_restriction()`, the
-restricted coefficients are used automatically as the basis for these
-relativities. Refinement order is therefore part of the specification.
+This operation is not equivalent to restriction or smoothing:
 
+- smoothing regularises an ordered effect already represented by the model;
+- restriction fixes selected tariff values;
+- shrinkage reduces differences between categorical levels while retaining
+  their ordering;
+- additional relativities introduce finer differentiation inside a broader
+  model level.
 
-## Refit
+Step order matters. A restriction or shrinkage step added before
+`add_relativities()` changes the parent coefficient used as the basis for the
+split. A later restriction can instead adjust selected levels of the derived
+`output_variable`.
 
-### Why refit is required
+## Combining and reviewing refinements
 
-Refinement steps alter part of the model structure. Once these changes are
-applied, the remaining coefficients may also adjust.
-
-For that reason, the sequence does not end with `add_smoothing()` or
-`add_restriction()`. The final step is:
+The four operations now form one ordered specification:
 
 ```{r}
-
-summary(ref)
-
-burn_refined <- refit(ref)
-
+summary(refinement)
 ```
 
-`summary(ref)` describes the base model and the ordered refinement specification
-before a new GLM is fitted. This provides a direct review of the assumptions
-that will be applied. `refit()` then fits the model while incorporating those
-documented steps.
+The summary records the base formula, package version, data size and each
+refinement in evaluation order. It describes what will be applied; it does not
+report a fitted refined model because `refit()` has not yet been called.
 
+The variable-specific `autoplot()` calls above evaluate the stored steps in
+their recorded order. They therefore inspect the intended tariff after any
+preceding adjustments without silently changing the GLM. The `step` argument
+can be used when an earlier stage of a longer specification needs to be
+reviewed separately.
 
-### Inspecting the final fitted result
+`add_rebasing()` can be inserted when required to change which resulting level
+is displayed as one without changing ratios between levels. Rebasing changes
+the representation of an effect, whereas shrinkage changes its degree of
+differentiation.
 
-After refit, use `rating_table()`:
+## Refitting the model
 
 ```{r}
-
-rating_table(burn_refined)
-
+refined_model <- refit(
+  refinement,
+  intercept_only = TRUE
+)
 ```
 
-At this point, the output no longer represents a proposed refinement plan. It
-represents the fitted coefficient structure after refinement.
+`refit()` applies the stored steps in order, constructs the required tariff
+variables and offsets, updates the formula and calls `glm()` with the original
+model family. It does more than copy proposed relativities into an existing
+coefficient vector.
 
-The distinction is:
+The treatment of the remaining model effects depends on `intercept_only`:
 
--	before `refit()` --> inspect the refinement plan
--	after `refit()` --> inspect the fitted tariff structure
+- with `intercept_only = TRUE`, unaffected existing effects are fixed as
+  offsets and only the intercept is estimated. Their relative differences are
+  preserved while the overall level is recalibrated;
+- with `intercept_only = FALSE`, remaining free terms are estimated again.
+  Their coefficients may change as the GLM finds a new joint optimum conditional
+  on the fixed refinement steps.
 
-If smoothing, restrictions, and relativities have been applied, they are now
-embedded in the fitted model output.
+An intercept-only refit is often appropriate for a controlled adjustment to an
+accepted tariff structure. Re-estimating the remaining free effects is more
+appropriate when the refinement is part of substantive model development and
+dependence between factors should be reconsidered.
 
+The prescribed smoothing, restrictions and sublevel relativities remain
+explicit assumptions. Refitting does not turn them into unrestricted statistical
+estimates.
 
-### Auditing the portfolio effect
+## Inspecting the fitted result
 
-Coefficient changes cannot be interpreted independently of the intercept and
-the other model terms. A more direct audit compares fitted values from the
-unrestricted and refined models on the same observed portfolio combinations.
+After `refit()`, the result is a fitted GLM and can be reviewed with the normal
+interpretation tools:
 
 ```{r}
+head(rating_table(refined_model, exposure = FALSE))
+```
 
+This is the **post-refit** result. It is distinct from the preview shown by
+`autoplot(refinement)`:
+
+- before `refit()`: proposed tariff adjustments;
+- after `refit()`: fitted model under those adjustments.
+
+Printing `refined_model` also reports the original and refitted formulas, the
+model family, refit mode and stored refinement steps before showing the regular
+GLM output.
+
+## Auditing the portfolio effect
+
+Individual coefficient changes are difficult to interpret independently of
+the intercept, other model terms and portfolio mix. `audit_refinement()`
+therefore compares predictions from the unrestricted and refined models on the
+same observed portfolio combinations.
+
+```{r}
 refinement_audit <- audit_refinement(
-  burn_refined,
+  refined_model,
   exposure = "exposure",
-  metric = "risk_premium"
+  metric = "frequency"
 )
 
 summary(refinement_audit)
-
 ```
 
-The portfolio result shows the exposure-weighted risk premium before and after
-refinement. `as.data.frame(refinement_audit)` gives the corresponding comparison
-for every final risk factor and level. These level results reflect the combined
-prediction of the full model for the observed portfolio mix; they are not
-isolated coefficient differences.
+The audit reports the portfolio-level frequency before and after refinement
+and the corresponding changes by final risk-factor level. These are predictions
+from the complete model for the observed portfolio mix, not isolated
+coefficient differences.
 
-The audit also records the package version, preparation time, refit time,
-formulas and ordered refinement steps. For a frequency or severity model, use a
-matching metric name such as `"frequency"` or `"average_severity"`; a complete
-risk-premium interpretation requires a direct risk-premium model or a combined
-frequency and severity calculation.
+The refinement and audit objects record package version, timestamps, formulas
+and ordered steps. This supports reproducibility, peer review and documentation
+of actuarial judgement. Organisational approval, source-data versioning and
+formal governance remain outside the package and should be handled by the
+user's normal processes.
 
+## When to revisit the model
 
-### Visualising the final structure
+Refinement is not a substitute for correcting a poor model. If an implausible
+effect is caused by incorrect data, exposure errors, missing interactions, an
+inappropriate response definition or poor factor construction, the model or
+data preparation should be revisited first. Refinement is most defensible when
+the statistical model captures the main risk structure and the remaining
+adjustment has a clear tariff rationale.
 
-```{r}
+## Iterating without losing the specification
 
-rating_table(burn_refined) |>
-  autoplot()
-
-```
-
-
-
-## Model data and rating grids 
-
-After refit, model structure can be extracted with `extract_model_data()`:
-
-```{r}
-
-md <- extract_model_data(burn_refined)
-head(md)
-
-```
-
-A model point represents a unique observed combination of the risk-factor
-levels used by the fitted model. `rating_grid()` groups portfolio records with
-the same combination and attaches the corresponding refined model effects. It
-returns combinations observed in the portfolio; it does not construct every
-theoretically possible combination of factor levels.
-
-Observed model-point combinations can be obtained with `rating_grid()`:
-
-```{r}
-
-grid <- rating_grid(burn_refined)
-head(grid)
-
-```
-
-Each row can represent several portfolio records. `count` gives the number of
-records with that combination and `exposure` gives their aggregated exposure.
-The remaining refinement columns contain the restrictions, smoothed effects or
-derived relativities that apply to the model point.
-
-When a fitted GLM is supplied, `rating_grid()` retrieves the exposure column
-used as a model weight or offset from the model metadata and aggregates it
-automatically. Supply `exposure` explicitly only when that column is not used by
-the model or when a plain data frame is supplied.
-
-This is typically used for:
-
--	tariff review
--	portfolio summaries
--	compact input for tariff calculations or predictions
--	implementation support
-
-Before the grid is used for prediction, the analyst should verify that all
-required model variables are present and decide how combinations not observed
-in the estimation portfolio will be handled.
-	
-	
-## Complete example
-
-One possible refinement sequence is:
-
-```{r}
-
-zip_df <- data.frame(
-  zip = c(0, 1, 2, 3),
-  zip_adj = c(0.8, 0.9, 1.0, 1.2)
-)
-
-burn_refined <- prepare_refinement(burn_unrestricted) |>
-  add_smoothing(
-    model_variable = "age_policyholder_freq_cat",
-    source_variable = "age_policyholder",
-    breaks = c(seq(18, 93, 5), 95),
-    weights = "exposure"
-  ) |>
-  add_restriction(zip_df) |>
-  refit()
-
-rating_table(burn_refined)
-
-rating_table(burn_refined) |>
-  autoplot()
-
-```
-
-
-## Legacy interface
-
-Legacy entry points remain available:
+Retain both the editable specification and the fitted result:
 
 ```{r, eval = FALSE}
+refined_model <- refit(refinement)
 
-burn_refined_old <- burn_unrestricted |>
-  smooth_coef(
-    x_cut = "age_policyholder_freq_man",
-    x_org = "age_policyholder",
-    breaks = c(seq(18, 93, 5), 95)
-  ) |>
-  restrict_coef(zip_df) |>
-  refit_glm()
+refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    smoothing = "increasing"
+  )
 
+updated_model <- refit(refinement)
 ```
 
-These are primarily maintained for backward compatibility.
-
-For new code, the recommended interface is:
-
-```{r, eval = FALSE}
-
-prepare_refinement() |> add_*() |> refit()
-
-```
-
-This keeps the sequence of tariff adjustments explicit.
-
-
+Calling `add_smoothing()`, `add_restriction()` or another refinement function
+directly on `refined_model` is deliberately not supported. Further adjustments
+belong on the retained `rating_refinement` object so their ordering and origin
+remain visible.
 
 ## Summary
 
-The refinement interface helps separate:
+The specialist workflow is:
 
--	model estimation
--	tariff adjustments
--	final fitted output
+1. start from an unrestricted fitted model;
+2. create one persistent specification with `prepare_refinement()`;
+3. add smoothing, restrictions, shrinkage or sublevel relativities with an
+   explicit rationale;
+4. inspect the proposal with `summary()` and `autoplot()`;
+5. use `refit()` to fit the model under that specification;
+6. inspect the final tariff with `rating_table()` and its portfolio effect with
+   `audit_refinement()`.
 
-The refinement specification records which parts of the final coefficient
-structure originate from the fitted model and which parts result from
-smoothing, restrictions or expert-based sublevel relativities. These choices
-should be assessed using exposure, claim volume, stability and the intended
-tariff application.
+This separates estimated effects, proposed actuarial adjustments and final
+fitted output without treating refinement as an automatic approval of the
+result.
 
+## Where to go next
 
-## Next steps
-
-For the underlying pricing concepts, see:
-
-- [Pricing workflow building blocks](pricing-workflow-building-blocks.html)
-
-For an example sequence from portfolio analysis to fitted tariff, see:
-
-- [Getting started](getting-started.html)
+- [Getting Started](getting-started.html) constructs the initial pricing model
+  used as the starting point for refinement.
+- [Pricing workflow and package building blocks](pricing-workflow-building-blocks.html)
+  places refinement within the wider package architecture.
+- [Model validation](model-validation.html) develops the diagnostics used to
+  assess unrestricted and refined models.

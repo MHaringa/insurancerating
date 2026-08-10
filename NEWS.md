@@ -2,6 +2,10 @@
 
 ## Changes since 0.8.1
 
+- `add_restriction()` gains `replaces`, which allows a new fixed tariff factor
+  to explicitly replace an existing standalone model term during `refit()`.
+  The replacement is retained in refinement summaries and audits. The default
+  `replaces = NULL` preserves the existing additive behaviour for new factors.
 - `rating_grid_db()` and `merge_date_ranges_db()` add lazy database variants
   for portfolios that should be reduced before they are imported into R.
   `rating_grid_db()` translates grouped counts and sums through `dbplyr`, while

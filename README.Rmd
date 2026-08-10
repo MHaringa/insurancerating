@@ -16,61 +16,50 @@ knitr::opts_chunk$set(
 
 [![CRAN Status](https://www.r-pkg.org/badges/version/insurancerating)](https://cran.r-project.org/package=insurancerating) [![Downloads](https://cranlogs.r-pkg.org/badges/insurancerating?color=blue)](https://cran.r-project.org/package=insurancerating)
 
-
 <!-- badges: end -->
 
-`insurancerating` provides functions for common actuarial pricing tasks in R,
-including portfolio analysis, GLM estimation, coefficient refinement and model
-diagnostics.
+`insurancerating` provides actuarial tools and building blocks for traditional
+insurance pricing workflows. GLMs remain at the core, with supporting functions
+for portfolio analysis, risk-factor structuring, model interpretation, tariff
+refinement, validation, large-loss treatment and scalable data preparation.
 
-The package is organised around GLM-based pricing work and the translation of
-statistical model output into tariff structures that can be reviewed,
-documented and implemented. The functions can be used independently or combined
-into a workflow appropriate for the portfolio and pricing question.
+The package works alongside standard R modelling tools such as `glm()`. Models
+are fitted with familiar R functions and can subsequently be analysed,
+interpreted, refined and validated in actuarial terms with `insurancerating`.
+The building blocks can be used independently or combined according to the
+portfolio and pricing question.
 
-
-## Scope
-
-The package supports common tasks that often occur in actuarial pricing work:
-
-- exploratory analysis of risk factors
-- estimation of GLM-based pricing models
-- controlled refinement of model coefficients
-- construction and interpretation of tariff structures
-- evaluation of model performance and stability
-
-The appropriate combination of model choice, segmentation, refinement and
-validation depends on the product, data, portfolio composition and intended use
-of the tariff.
-
-
+The package is developed independently as a generally applicable actuarial R
+package. Its examples illustrate possible combinations of the building blocks;
+they are not a universal industry workflow or a description of the pricing
+methodology or governance process of any particular organisation.
 
 ## Installation
 
-Install the CRAN version:
+Install the CRAN version, or install the development version from GitHub:
 
 ```{r, eval = FALSE}
 install.packages("insurancerating")
-```
 
-Or development version:
-
-```{r gh-installation, eval = FALSE}
 # install.packages("remotes")
 remotes::install_github("MHaringa/insurancerating")
-
 ```
 
+## Explore portfolio experience
 
-## Quick example
+`factor_analysis()` summarises observed experience and the exposure supporting
+each level of a rating factor. These unadjusted portfolio patterns are useful
+before modelling, but should not be interpreted as conditional tariff
+relativities.
 
-```{r message = FALSE, warning = FALSE, fig.alt = "Factor analysis plot showing frequency, average severity and risk premium by ZIP code."}
-
+```{r, message = FALSE, warning = FALSE, fig.alt = "Factor analysis plot showing claim frequency, average severity and risk premium by ZIP code."}
 library(insurancerating)
 
-# Factor analysis
-fa <- factor_analysis(
-  MTPL,
+portfolio <- as.data.frame(MTPL)
+portfolio$zip <- factor(portfolio$zip)
+
+zip_analysis <- factor_analysis(
+  portfolio,
   risk_factors = "zip",
   claim_count = "nclaims",
   exposure = "exposure",
@@ -78,153 +67,78 @@ fa <- factor_analysis(
 )
 
 autoplot(
-  fa,
+  zip_analysis,
   metrics = c("frequency", "average_severity", "risk_premium")
 )
-
 ```
 
-```{r}
+## From model to refined tariff
 
-# Fit model
-mod <- glm(
-  nclaims ~ zip,
-  offset = log(exposure),
+A standard Poisson GLM can be translated into an explicit tariff adjustment
+before it is refitted. The restriction below is deliberately small: it shows
+the refinement architecture without replacing the specialist documentation.
+
+```{r, message = FALSE, warning = FALSE}
+frequency_model <- glm(
+  nclaims ~ zip + offset(log(exposure)),
   family = poisson(),
-  data = MTPL
+  data = portfolio
 )
 
-rating_table(mod)
-
-```
-
-```{r message = FALSE, warning = FALSE}
-
-# Refine coefficients
-zip_df <- data.frame(
+zip_restrictions <- data.frame(
   zip = c("0", "1", "2", "3"),
-  zip_adj = c(0.90, 0.95, 1.00, 1.10)
+  zip_restricted = c(0.90, 0.95, 1.00, 1.10)
 )
 
-mod_refined <- prepare_refinement(mod) |>
-  add_restriction(zip_df) |>
+refined_model <- frequency_model |>
+  prepare_refinement(data = portfolio) |>
+  add_restriction(zip_restrictions) |>
   refit()
 
-rating_table(mod_refined)
-
+rating_table(refined_model, exposure = FALSE)
 ```
 
+The refinement steps remain explicit and reviewable. Their actuarial rationale
+and effect on the portfolio should still be assessed before implementation.
 
-## Combining building blocks
+## What does insurancerating help with?
 
-A possible sequence of steps is:
+| Pricing task | Main tools |
+|---|---|
+| Explore portfolio experience | `factor_analysis()`, `outlier_histogram()` |
+| Structure continuous risk factors | `risk_factor_gam()`, `derive_tariff_segments()` |
+| Interpret fitted model effects | `rating_table()`, `add_portfolio_experience()` |
+| Refine tariff structures | `prepare_refinement()`, `add_smoothing()`, `add_restriction()`, `refit()` |
+| Validate fitted models | `model_performance()`, `check_overdispersion()`, `check_residuals()`, `bootstrap_performance()` |
+| Treat large losses | `assess_excess_threshold()`, `redistribute_excess_loss()` |
+| Reduce portfolio data locally | `rating_grid()`, `merge_date_ranges()` |
+| Reduce portfolios in a database | `rating_grid_db()`, `merge_date_ranges_db()` |
 
-```{r, eval = FALSE}
+## Where should I start?
 
-factor_analysis()      # analyse portfolio
-glm()                  # estimate model
-prepare_refinement()   # apply adjustments
-rating_table()         # interpret coefficients
+- [Getting Started](https://mharinga.github.io/insurancerating/articles/getting-started.html)
+  Follow one portfolio through risk-factor analysis, modelling, technical risk
+  premium, interpretation, validation and refinement.
 
-```
+- [Pricing workflow and package building blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html)
+  See how the main actuarial pricing tasks and package components fit together.
 
-
-## Core components
-
-### Factor analysis
-
-`factor_analysis()` provides aggregated portfolio metrics such as:
-
--	frequency
--	average severity
--	risk premium
--	loss ratio
-
-These summaries describe observed portfolio experience. They help identify
-volume, heterogeneity and potentially unstable levels, but they do not adjust
-for correlations with other risk factors and are not fitted tariff
-relativities.
-
-
-### Rating models
-
-Models are estimated using widely used GLM specifications:
-
--	Poisson for frequency
--	Gamma for severity
--	Gamma with a log link for severity or risk premium
-
-`rating_table()` expresses fitted coefficients in terms of the original factor
-levels. When coefficients are exponentiated, they are shown as relativities.
-
-
-### Refinement
-
-Model output can be adjusted using:
-
-```{r, eval = FALSE}
-
-prepare_refinement(model) |>
-  add_smoothing(...) |>
-  add_restriction(...) |>
-  add_shrinkage(...) |>
-  add_relativities(...) |>
-  add_rebasing(...) |>
-  refit()
-
-```
-
-Refinement records smoothing, restrictions, shrinkage, sublevel relativities
-and rebasing explicitly before the model is refitted. Shrinkage reduces
-differences between categorical relativities while preserving their selected
-weighted level. Rebasing changes which resulting tariff level equals 1 without
-changing the ratios between levels. These adjustments should be supported by
-the available experience, tariff interpretation or documented expert
-judgement.
-
-
-### Model structure
-
-```{r, eval = FALSE}
-
-extract_model_data(model)
-rating_grid(model)
-
-```
-
-These functions recover the data represented by a fitted model and construct
-observed model-point combinations. They are useful when predictions and tariff
-reviews must remain aligned with the estimation portfolio.
-
-
-## Validation
-
-```{r, eval = FALSE}
-
-model_performance(model)
-bootstrap_performance(model, data)
-
-```
-
-These functions compare response-scale error and information criteria and
-assess sensitivity under repeated sampling. They provide complementary
-diagnostics rather than an automatic model-selection rule.
-
----
-
-## Notes
-
-The examples represent general actuarial pricing applications. Their modelling
-choices and thresholds are illustrative and should be assessed against the
-portfolio, data quality and governance requirements of the intended use.
-
-
-## Learn more
-
-Full documentation and examples are available in the articles:
-
-- [Getting started](https://mharinga.github.io/insurancerating/articles/getting-started.html)
-- [Pricing workflow overview](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html)
 - [Refinement building blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.html)
+  Translate estimated model effects into an explicit, reviewable and
+  implementable tariff structure.
+
 - [Model validation](https://mharinga.github.io/insurancerating/articles/model-validation.html)
-- [Working with large insurance portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.html)
+  Assess statistical adequacy, resampling stability, tariff plausibility and
+  observed portfolio behaviour.
+
+- [Large Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.html)
+  Reduce production-sized portfolios with model-point aggregation and
+  database-backed workflows.
+
+## Project information
+
+- [Package website](https://mharinga.github.io/insurancerating/)
+- [CRAN package](https://cran.r-project.org/package=insurancerating)
+- [Issue tracker](https://github.com/MHaringa/insurancerating/issues)
+- Citation information is available with `citation("insurancerating")`.
+- The package is distributed under the GPL (>= 2) licence.

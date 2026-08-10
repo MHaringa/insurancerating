@@ -402,6 +402,30 @@ testthat::test_that(
 )
 
 testthat::test_that(
+  "intercept-only refit ignores exposure metadata on remaining factors", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4, 2, 3),
+      exposure = rep(1, 8),
+      group = factor(rep(c("low", "high"), each = 4)),
+      zip = factor(rep(c("a", "b"), 4))
+    )
+    model <- glm(
+      y ~ group + zip + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+
+    refinement <- prepare_refinement(model, data = df) |>
+      add_restriction(data.frame(zip = "b", zip_rst = 1.1))
+
+    refined <- refit(refinement, intercept_only = TRUE)
+
+    testthat::expect_s3_class(refined, "glm")
+    testthat::expect_true(isTRUE(attr(refined, "intercept_only")))
+  }
+)
+
+testthat::test_that(
   "add_restriction completes partial restrictions with fitted relativities", {
     df <- data.frame(
       y = c(1, 2, 1, 3, 2, 4),
@@ -722,6 +746,117 @@ testthat::test_that(
     )
     testthat::expect_true(legacy$steps[[1]]$new_risk_factor)
     testthat::expect_s3_class(refit(legacy), "refitrestricted")
+  }
+)
+
+testthat::test_that(
+  "a new restricted risk factor can replace an existing model term", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4, 2, 3),
+      exposure = rep(1, 8),
+      postal_area = factor(rep(c("A", "B"), 4)),
+      vehicle_group = factor(rep(c("small", "large"), each = 4)),
+      hail_zone = factor(rep(c("low", "high"), each = 2, times = 2))
+    )
+    model <- glm(
+      y ~ postal_area + vehicle_group + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+    restrictions <- data.frame(
+      hail_zone = c("low", "high"),
+      hail_relativity = c(0.9, 1.2)
+    )
+
+    refinement <- prepare_refinement(model, data = df) |>
+      add_restriction(restrictions, replaces = "postal_area")
+
+    testthat::expect_identical(refinement$steps[[1]]$replaces, "postal_area")
+    testthat::expect_true(refinement$steps[[1]]$new_risk_factor)
+    testthat::expect_true(refinement$steps[[1]]$allow_new_risk_factors)
+    testthat::expect_match(
+      refinement |> summary() |> capture.output() |> paste(collapse = "\n"),
+      "replaces postal_area"
+    )
+
+    fitted <- refit(refinement)
+    fitted_terms <- attr(stats::terms(fitted), "term.labels")
+    testthat::expect_false("postal_area" %in% fitted_terms)
+    testthat::expect_true("vehicle_group" %in% fitted_terms)
+    testthat::expect_match(
+      paste(deparse(stats::formula(fitted)), collapse = ""),
+      "offset\\(log\\(hail_relativity\\) \\+ log\\(exposure\\)\\)"
+    )
+    testthat::expect_false(any(grepl("postal_area", names(stats::coef(fitted)))))
+
+    tariff <- as.data.frame(rating_table(fitted, exposure = FALSE))
+    testthat::expect_true("hail_relativity" %in% tariff$risk_factor)
+    testthat::expect_false("postal_area" %in% tariff$risk_factor)
+
+    refinement <- add_restriction(
+      refinement,
+      data.frame(hail_zone = "low", hail_relativity = 1)
+    )
+    testthat::expect_identical(refinement$steps[[1]]$replaces, "postal_area")
+    testthat::expect_s3_class(refit(refinement), "refitrestricted")
+  }
+)
+
+testthat::test_that(
+  "replacement restrictions validate the model term explicitly", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4, 2, 3),
+      exposure = rep(1, 8),
+      postal_area = factor(rep(c("A", "B"), 4)),
+      vehicle_group = factor(rep(c("small", "large"), each = 4)),
+      hail_zone = factor(rep(c("low", "high"), each = 2, times = 2))
+    )
+    restrictions <- data.frame(
+      hail_zone = c("low", "high"),
+      hail_relativity = c(0.9, 1.2)
+    )
+    model <- glm(
+      y ~ postal_area + vehicle_group + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+    refinement <- prepare_refinement(model, data = df)
+
+    testthat::expect_error(
+      add_restriction(refinement, restrictions, replaces = "postal_are"),
+      "Did you mean `postal_area`?",
+      fixed = TRUE
+    )
+    testthat::expect_error(
+      add_restriction(
+        refinement,
+        restrictions,
+        allow_new_risk_factors = FALSE,
+        replaces = "postal_area"
+      ),
+      "conflicts with `allow_new_risk_factors = FALSE`",
+      fixed = TRUE
+    )
+    testthat::expect_error(
+      add_restriction(
+        refinement,
+        data.frame(postal_area = c("A", "B"), postal_fixed = c(1, 1.1)),
+        replaces = "vehicle_group"
+      ),
+      "can only be used when `postal_area` is a new fixed risk factor",
+      fixed = TRUE
+    )
+
+    interaction_model <- glm(
+      y ~ postal_area * vehicle_group + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+    testthat::expect_error(
+      prepare_refinement(interaction_model, data = df) |>
+        add_restriction(restrictions, replaces = "postal_area"),
+      "also occurs in interaction term"
+    )
   }
 )
 

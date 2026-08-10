@@ -1,32 +1,73 @@
-# Pricing workflow overview
+# Pricing workflow and package building blocks
 
-`insurancerating` provides building blocks for common actuarial pricing
-tasks in GLM-based tariff analysis. The package does not prescribe a
-single pricing method. Instead, it supports practical steps that often
-appear in insurance pricing work: portfolio analysis, model
-interpretation, tariff refinement and model validation.
+Insurance pricing is rarely one linear modelling exercise. Different
+portfolios require different combinations of data preparation,
+exploratory analysis, large-loss treatment, statistical modelling,
+tariff refinement and validation. `insurancerating` provides building
+blocks for these tasks; it does not prescribe one universal pricing
+methodology.
 
-This vignette gives a compact overview of those building blocks and how
-they can be combined.
+This vignette is a map of those building blocks. It explains which
+actuarial question each family of functions addresses and how the
+families relate. For a linear tutorial in which one portfolio is
+followed from exploratory analysis to a refined tariff model, see
+[Getting
+Started](https://mharinga.github.io/insurancerating/articles/getting-started.md).
+
+> **A note on workflow**
+>
+> Insurance pricing workflows vary across organisations because
+> portfolios, available data, regulatory requirements, commercial
+> objectives and operational constraints differ. There is no single
+> universally accepted sequence of analytical activities. The examples
+> in this documentation show possible combinations of modular building
+> blocks; individual components can be used independently, omitted,
+> supplemented or reordered for the problem at hand. They do not
+> describe the pricing methodology or governance process of any
+> particular organisation.
 
 ``` r
 
 library(insurancerating)
 ```
 
-## 1. Start with portfolio experience
+## Package map
 
-A pricing analysis often starts by checking how the observed portfolio
-behaves by risk factor. This is useful before modelling, but also later
-when reviewing whether fitted relativities are plausible.
+The main building blocks can be placed in the following broad
+architecture:
+
+| Actuarial task | Purpose | Main building blocks |
+|----|----|----|
+| Portfolio analysis | Review exposure, claims and observed experience | [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md), [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md) |
+| Risk-factor analysis and structuring | Study continuous effects and derive candidate tariff segments | [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md), [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md), [`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md) |
+| Severity modelling | Inspect claim amounts and truncated severity distributions | [`plot_severity_distribution()`](https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.md), [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md) |
+| Large-loss treatment | Assess a threshold and decide how excess loss enters the model | [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md), [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md) |
+| Estimate technical risk | Estimate frequency, severity and expected loss | standard R modelling functions such as [`glm()`](https://rdrr.io/r/stats/glm.html), supported by [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md) |
+| Model interpretation | Express fitted effects as tariff relativities and compare them with experience | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md), [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md) |
+| Tariff refinement | Apply explicit actuarial adjustments and refit the tariff model | [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md), [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md), [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md), [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md), [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md) |
+| Model validation | Examine assumptions, residuals, performance and stability | [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md), [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md), [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md), [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md) |
+| Portfolio preparation and reduction | Consolidate periods and construct observed model points locally or in a database | [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md), [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md), [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md), [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md) |
+| Policy period operations | Split periods or match dated events to active policies | [`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md), [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md) |
+
+These tasks are related, but their order is not fixed. Large-loss
+analysis may change a severity specification, a continuous-factor
+analysis may lead to new model variables, and validation may send the
+analyst back to model development or tariff refinement.
+
+## Understanding the portfolio
+
+Before model estimation, an actuary commonly asks where the exposure and
+claims are concentrated, whether observed differences are supported by
+enough experience, and whether sparse levels or extreme observations
+require closer attention.
 
 [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-summarises exposure, claim frequency, average severity, risk premium and
-related metrics by one or more risk factors.
+summarises observed exposure, claim frequency, average severity and risk
+premium by rating-factor level:
 
 ``` r
 
-fa <- factor_analysis(
+zip_experience <- factor_analysis(
   MTPL,
   risk_factors = "zip",
   claim_count = "nclaims",
@@ -34,7 +75,7 @@ fa <- factor_analysis(
   exposure = "exposure"
 )
 
-head(fa)
+head(zip_experience)
 #>   zip    amount nclaims   exposure frequency average_severity risk_premium
 #> 1   1 116178669    1593 11080.6274 0.1437644         72930.74    10484.846
 #> 2   2  59751985    1008  7782.6301 0.1295192         59277.76     7677.608
@@ -42,199 +83,169 @@ head(fa)
 #> 4   0    821510      29   206.8438 0.1402024         28327.93     3971.644
 ```
 
-The output supports questions such as:
+The results are descriptive. They show unadjusted portfolio experience
+and do not control for correlations with other rating factors. Their
+main purpose is to identify patterns that warrant further analysis and
+to show how much experience supports each pattern.
 
-- where exposure is concentrated
-- whether observed differences are supported by sufficient volume or are
-  likely to be volatile
-- whether a segment is driven by a small number of claims
-- which risk factors may need closer modelling or refinement
-
-For numeric variables with long or skewed tails,
 [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
-can help inspect extreme observations before fitting severity models or
-constructing tariff segments.
+inspects the central range and tail of a numeric variable.
+[`plot_severity_distribution()`](https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.md)
+provides a more detailed comparison of claim distributions across
+categories. These tools help determine whether an apparent severity
+pattern is broad-based or dominated by a small number of large
+observations.
+
+## Preparing modelling data
+
+Portfolio reduction can serve two different purposes:
+
+- [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
+  performs **temporal consolidation** by combining compatible adjacent
+  or overlapping coverage periods;
+- [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+  performs **model-point aggregation** by combining records with
+  identical observed rating-factor values.
+
+A model point represents one observed combination of model covariates
+together with additive quantities such as exposure, claim count and
+claim amount.
 
 ``` r
 
-outlier_histogram(
-  MTPL2,
-  x = "premium",
-  upper = 100,
-  density = FALSE
+claims_grid <- rating_grid(
+  MTPL,
+  group_by = c("zip", "bm"),
+  exposure = "exposure",
+  aggregate_cols = c("nclaims", "amount")
+)
+
+head(claims_grid)
+#>   zip bm nclaims amount  exposure
+#> 1   0  1      11 154173 74.263014
+#> 2   0  2       2   7777 31.860274
+#> 3   0  3       2 222411 13.657534
+#> 4   0  4       1  27081  6.208219
+#> 5   0  5       1   5178 12.679452
+#> 6   0  6       4  87395 23.128767
+```
+
+For a Poisson frequency GLM, model-point aggregation can preserve
+coefficient estimates exactly when every predictor is retained, claim
+counts and exposure are summed, and the grouped model uses the same
+`offset(log(exposure))`. Equivalent results are not automatic for every
+model family or diagnostic. Severity aggregation, for example, requires
+average claim amount as the response and claim count as the weight,
+while record-level residual and influence information is no longer
+available after aggregation.
+
+Temporal consolidation normally precedes model-point aggregation when
+the original interval structure is needed:
+
+``` r
+
+periods_reduced <- merge_date_ranges(
+  policy_periods,
+  period_start = "period_start",
+  period_end = "period_end",
+  group_by = c("policy_id", "coverage"),
+  aggregate_cols = "earned_exposure"
+)
+
+grid <- rating_grid(
+  periods_reduced,
+  group_by = c("coverage", "region"),
+  exposure = "earned_exposure",
+  aggregate_cols = c("claim_count", "claim_amount")
 )
 ```
 
-![](pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-4-1.png)
+The detailed in-memory and database-backed workflows are described in
+[Large
+Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.md).
 
-## 2. Assess large losses
+## Treating large losses
 
-Large claims can dominate severity and risk premium analysis. In capped
-severity workflows, it is often useful to assess a cap first, decompose
-the historical claim amounts, and then decide how the excess burden
-should be allocated. A low threshold increases pricing responsiveness
-but introduces volatility. A high threshold improves stability but may
-understate structural differences between segments.
+Large claims can materially affect observed severity, fitted
+relativities and the technical risk premium. Threshold selection and
+excess-loss treatment are therefore modelling choices rather than purely
+mechanical data operations.
+
+[`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
+compares how much loss and risk premium remain below alternative
+thresholds. It supports judgement about the balance between retaining
+risk differentiation and limiting volatility; it does not select a
+threshold automatically.
 
 ``` r
-
-portfolio <- data.frame(
-  policy_id = 1:10,
-  sector = rep(c("Industry", "Retail"), each = 5),
-  claim_count = c(0, 1, 1, 1, 1, 0, 1, 1, 1, 1),
-  claim_amount = c(
-    0, 25000, 120000, 50000, 175000,
-    0, 40000, 90000, 150000, 300000
-  ),
-  policy_years = rep(1, 10)
-)
 
 thresholds <- assess_excess_threshold(
   portfolio,
   claim_amount = "claim_amount",
-  thresholds = c(25000, 50000, 100000, 150000),
-  exposure = "policy_years",
+  thresholds = c(50000, 100000, 150000),
+  exposure = "earned_exposure",
   group = "sector",
   claim_count = "claim_count"
 )
-
-if (requireNamespace("gt", quietly = TRUE)) {
-  as_gt(thresholds)
-} else {
-  thresholds
-}
 ```
 
-After choosing a threshold,
+After a threshold has been selected,
 [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
-caps the large losses and allocates the excess burden. The same
-calculation supports two modelling workflows:
+supports two distinct uses of the same excess-loss allocation:
 
-| Output | Typical redistribution weight | Interpretation | Typical use |
-|----|----|----|----|
-| `"redistributed_claim"` | Claim count or expected claim count | Excess loss redistributed across claims | One severity model |
-| `"excess_loading"` | Earned exposure | Excess risk premium per exposure unit | Separate component of total risk premium |
-
-The total excess loss is preserved in both workflows.
+| Output | Interpretation | Typical model use |
+|----|----|----|
+| `"redistributed_claim"` | Add allocated excess loss to retained claim amounts | One severity response containing the complete allocated loss burden |
+| `"excess_loading"` | Keep the allocation as an amount per unit of redistribution weight | Retained severity plus a separate excess component in the technical risk premium |
 
 ``` r
 
-adjusted <- redistribute_excess_loss(
+large_loss_result <- redistribute_excess_loss(
   portfolio,
   claim_amount = "claim_amount",
   threshold = 100000,
   claim_count = "claim_count",
-  risk_factor = "sector",
-  redistribution_method = "partial",
-  output = "redistributed_claim"
-)
-```
-
-Portfolio redistribution gives every claim the same excess amount per
-claim. Risk-factor redistribution uses only the experience of each
-group. Partial redistribution balances portfolio stability, group
-responsiveness and the credibility of observed excess experience.
-
-``` r
-
-severity_data <- adjusted[adjusted$claim_count > 0, ]
-severity_model <- glm(
-  claim_amount_adjusted_average ~ sector,
-  weights = claim_count,
-  family = Gamma(link = "log"),
-  data = severity_data
-)
-```
-
-The adjusted average claim amount already contains the redistributed
-cost of large losses. A separate excess-premium component should
-therefore not be added again. This workflow uses one severity response
-and can be appropriate when modelled groups contain sufficient claims
-and sparse factor levels have been combined.
-
-The amount allocated to an individual row is not an observed claim
-amount for that row. In a sparse sector, a severity model can therefore
-interpret allocated portfolio excess as evidence about that sector.
-Inspect claim volume, combine sparse levels using an actuarially
-meaningful hierarchy and validate coefficient stability over time. A
-minimum such as 20 claims can be a useful starting point, but is
-illustrative and must be selected for the portfolio at hand.
-
-When retained severity and allocated excess should remain conceptually
-separate, use earned exposure as the redistribution weight:
-
-``` r
-
-loading_result <- redistribute_excess_loss(
-  portfolio,
-  claim_amount = "claim_amount",
-  threshold = 100000,
-  claim_count = "claim_count",
-  redistribution_weight = "policy_years",
+  redistribution_weight = "earned_exposure",
   risk_factor = "sector",
   redistribution_method = "partial",
   output = "excess_loading"
 )
-
-frequency_model <- glm(
-  claim_count ~ sector + offset(log(policy_years)),
-  family = poisson(link = "log"),
-  data = loading_result
-)
-retained_severity_model <- glm(
-  claim_amount_capped ~ sector,
-  weights = claim_count,
-  family = Gamma(link = "log"),
-  data = loading_result[loading_result$claim_count > 0, ]
-)
-
-loading_result$predicted_frequency <-
-  predict(frequency_model, type = "response") / loading_result$policy_years
-loading_result$predicted_retained_severity <- predict(
-  retained_severity_model,
-  newdata = loading_result,
-  type = "response"
-)
-loading_result$predicted_retained_risk_premium <-
-  loading_result$predicted_frequency *
-  loading_result$predicted_retained_severity
-loading_result$predicted_total_risk_premium <-
-  loading_result$predicted_retained_risk_premium +
-  loading_result$excess_loading
 ```
 
-Here `excess_loading` is an amount per policy year. Claim volume can
-still determine partial credibility while policy years determine both
-the allocation shares and the unit of the loading. This approach avoids
-treating allocated portfolio excess as an observed individual claim
-severity.
+Neither representation is universally preferable. A redistributed
+response is simple to use in one severity model, but allocated excess is
+then treated as part of a row’s model response. A separate loading keeps
+observed retained severity and allocated excess conceptually distinct.
+The decision should take account of claim volume, sparse levels, the
+intended severity model and how the technical premium will be
+implemented. The function reference pages provide the full allocation
+and credibility details.
 
-## 3. Translate continuous factors into tariff segments
+## Understanding and structuring risk factors
 
-Many tariffs use grouped versions of continuous variables such as age,
-vehicle age or insured value.
+Continuous variables can be included directly in a model. In traditional
+tariff structures, continuous relationships are also often translated
+into a limited number of segments for stability, interpretation or
+implementation.
+
 [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
-can be used to inspect the fitted shape of a continuous risk factor.
+estimates a smooth univariate relationship. It helps the actuary inspect
+shape, local volatility and areas with limited exposure.
 [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md)
-can then derive candidate segment boundaries from that pattern.
+then approximates that fitted relationship with candidate intervals;
+[`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md)
+adds those intervals to the portfolio.
 
 ``` r
 
-age_gam <- risk_factor_gam(
-  data = MTPL,
-  claim_count = "nclaims",
+age_effect <- risk_factor_gam(
+  MTPL,
   risk_factor = "age_policyholder",
+  claim_count = "nclaims",
   exposure = "exposure"
 )
 
-age_segments <- derive_tariff_segments(age_gam)
-age_segments
-#> Tariff segmentation
-#> Risk factor: age_policyholder 
-#> Candidate segments: 8 
-#> Segmentation penalty: 0 
-#> Boundaries:
-#> [1] 18 25 32 39 51 58 65 84 95
+age_segments <- derive_tariff_segments(age_effect)
 summary(age_segments)
 #>   segment portfolio_records risk_factor_values   exposure claim_count
 #> 1 [18,25]              1543                  8 1331.17534         348
@@ -256,203 +267,222 @@ summary(age_segments)
 #> 8 0.06942859
 ```
 
-The segment boundaries approximate the fitted GAM curve. Exposure and
-claim volume have already influenced that curve through the GAM
-specification and are not applied as a second weight during
-segmentation. The segment summary retains these portfolio measures for
-assessing the support of each candidate segment.
+The smooth relationship and its segmented representation answer
+different questions. The first estimates how observed risk changes
+continuously; the second proposes an implementable tariff structure.
+Candidate boundaries still require review against exposure, claim
+volume, stability and operational constraints. A complete worked example
+is available in [Getting
+Started](https://mharinga.github.io/insurancerating/articles/getting-started.md).
 
-The derived segments can be added back to the portfolio with
-[`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md).
+## Estimating technical risk
 
-``` r
+`insurancerating` complements standard R modelling functions rather than
+replacing them. A common actuarial decomposition is:
 
-portfolio <- MTPL |>
-  add_tariff_segments(age_segments, name = "age_policyholder_segment")
+`claim frequency per exposure unit x expected severity = risk premium per exposure unit`.
 
-head(portfolio[, c("age_policyholder", "age_policyholder_segment")])
-#> # A tibble: 6 × 2
-#>   age_policyholder age_policyholder_segment
-#>              <int> <fct>                   
-#> 1               70 (65,84]                 
-#> 2               40 (39,51]                 
-#> 3               78 (65,84]                 
-#> 4               49 (39,51]                 
-#> 5               59 (58,65]                 
-#> 6               71 (65,84]
-```
-
-These functions are intended to support actuarial judgement, not replace
-it. The tree approximates the fitted GAM effect and does not directly
-optimise observed claims or portfolio loss. Candidate segment boundaries
-should still be reviewed against exposure, claim volume, stability and
-practical usability.
-
-## 4. Fit and interpret a GLM
-
-GLMs are widely used in insurance pricing because they provide an
-interpretable multiplicative structure. After fitting a model,
-[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-expresses the coefficients in tariff-table form.
+For a Poisson model with claim count as response and `log(exposure)` as
+offset, `predict(type = "response")` returns the expected claim count
+for the record’s exposure. Dividing by exposure gives frequency per
+exposure unit.
 
 ``` r
 
-portfolio$zip <- as.factor(portfolio$zip)
+portfolio <- MTPL
+portfolio$zip <- factor(portfolio$zip)
 
-freq_model <- glm(
-  nclaims ~ zip + age_policyholder_segment + offset(log(exposure)),
+frequency_model <- glm(
+  nclaims ~ zip + offset(log(exposure)),
   family = poisson(),
   data = portfolio
 )
 
-rt <- rating_table(
-  freq_model,
-  model_data = portfolio,
-  exposure = "exposure"
+portfolio$expected_claim_count <- predict(
+  frequency_model,
+  type = "response"
 )
-
-head(rt)
-#>                risk_factor       level est_freq_model exposure
-#> 1              (Intercept) (Intercept)      0.2743790       NA
-#> 2                      zip           0      1.0000000      207
-#> 3                      zip           1      0.9944341    11081
-#> 4                      zip           2      0.8960053     7783
-#> 5                      zip           3      0.9493475     7588
-#> 6 age_policyholder_segment     [18,25]      1.0000000     1331
+portfolio$claim_frequency <-
+  portfolio$expected_claim_count / portfolio$exposure
 ```
 
-Observed portfolio experience can be attached to the rating table with
-[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md).
-When `data` is supplied, the function calculates the observed experience
-for the rating-table risk factors automatically. This makes the
-comparison between model relativities and observed experience explicit.
+When `amount` is total loss for a row containing several claims,
+severity is modelled on `amount / nclaims`, with `nclaims` as the
+weight. Multiplying the resulting expected severity by claim frequency
+gives technical risk premium per exposure unit. Multiplying expected
+severity by expected claim count instead gives expected loss for the
+record’s actual exposure. These technical amounts do not yet include
+commercial margins, expenses or other premium adjustments.
+
+The full frequency-severity calculation is kept in [Getting
+Started](https://mharinga.github.io/insurancerating/articles/getting-started.md),
+where the units are followed through to a tariff representation.
+
+## Interpreting model effects
+
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+expresses fitted coefficients as tariff relativities and makes reference
+levels explicit.
+[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+adds the unadjusted experience observed for those same risk-factor
+levels.
 
 ``` r
 
-rt |>
+rating_table(frequency_model, exposure = "exposure") |>
   add_portfolio_experience(
     data = portfolio,
     claim_count = "nclaims",
-    exposure = "exposure"
+    exposure = "exposure",
+    metric = "frequency"
   ) |>
-  autoplot(risk_factors = "zip", metric = "frequency")
+  head()
+#>   risk_factor       level est_frequency_model exposure
+#> 1 (Intercept) (Intercept)           0.1402024       NA
+#> 2         zip           0           1.0000000      207
+#> 3         zip           1           1.0254064    11081
+#> 4         zip           2           0.9238016     7783
+#> 5         zip           3           0.9757522     7588
 ```
 
-![](pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-12-1.png)
+This comparison answers two related questions: what conditional effect
+did the model estimate, and what pattern is visible directly in the
+portfolio? The two need not coincide because the model adjusts for its
+other terms. Exposure and claim volume remain important when deciding
+whether either pattern is stable enough for tariff use.
 
-## 5. Refine tariff effects when needed
+## Refining the tariff
 
-Estimated coefficients may require further actuarial review before
-direct tariff use. Sparse levels, sampling variation or non-monotonic
-adjacent effects can produce a structure that is unstable or difficult
-to support.
+Refinement separates statistical estimation from explicit actuarial
+tariff decisions. The architecture is:
 
-The refinement workflow makes these adjustments explicit:
+`estimated model -> prepare refinement -> apply adjustments -> refit -> tariff model`.
 
 ``` r
 
-refined_model <- prepare_refinement(freq_model) |>
-  add_smoothing(
-    model_variable = "age_policyholder_segment",
-    source_variable = "age_policyholder",
-    weights = "exposure"
-  ) |>
-  add_restriction(restrictions) |>
+zip_restrictions <- data.frame(
+  zip = c("0", "3"),
+  relativity = c(0.95, 1.05)
+)
+
+refined_model <- frequency_model |>
+  prepare_refinement(data = portfolio) |>
+  add_restriction(zip_restrictions) |>
   refit()
 ```
 
-Common refinement tasks include:
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+addresses unstable or implausibly irregular adjacent effects.
+[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+records explicit coefficient choices.
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+introduces a finer tariff structure within broader model levels. Other
+steps, such as shrinkage and rebasing, address related implementation
+questions.
 
-- smoothing adjacent tariff levels
-- fixing selected coefficients to actuarial or commercial assumptions
-- applying sublevel relativities within a broader GLM factor level
-- refitting the model while preserving the intended tariff structure
+Refinement should have an actuarial rationale, such as stability,
+credibility, monotonicity or an explicit implementation constraint. It
+is not a substitute for correcting a misspecified statistical model. The
+complete object workflow, including audit output, is described in
+[Refinement building
+blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md).
 
-These tools are most useful when the statistical model already captures
-the main risk structure and the remaining work is tariff refinement.
+## Validating the model
 
-## 6. Validate model behaviour
+Validation consists of several questions rather than one performance
+measure:
 
-Pricing models should be checked before their output is used in a
-tariff. `insurancerating` contains helpers for several common checks:
-
-- [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md)
-  for Poisson frequency models
-- [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
-  for simulation-based residual diagnostics using DHARMa
-- [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
-  for sensitivity of performance under repeated sampling
-- [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-  to inspect observed rating-grid combinations
-
-For example:
+| Question | Building block |
+|----|----|
+| Does a Poisson model show material overdispersion? | [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md) |
+| Do simulated residuals show systematic structure? | [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md) |
+| How do comparable fitted models differ in likelihood and response-scale error? | [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md) |
+| How sensitive is measured performance to portfolio resampling? | [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md) |
 
 ``` r
 
-check_overdispersion(freq_model)
-#> Dispersion ratio =     1.185
-#> Pearson's Chi-squared = 35522.367
+check_overdispersion(frequency_model)
+#> Dispersion ratio =     1.197
+#> Pearson's Chi-squared = 35907.391
 #> p-value =   < 0.001
 #> Overdispersion detected.
 ```
 
+These diagnostics provide evidence about assumptions, unexplained
+structure and stability. They do not replace review of exposure by
+level, coefficient plausibility, observed versus fitted experience,
+out-of-sample behaviour or changes in portfolio mix. See [Model
+validation](https://mharinga.github.io/insurancerating/articles/model-validation.md)
+for a more complete diagnostic workflow.
+
+## Scaling to large portfolios
+
+Scale changes where a building block is executed, but not necessarily
+its actuarial purpose.
+[`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md)
+performs model-point aggregation lazily in a database.
+[`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md)
+performs temporal consolidation in DuckDB. The main principle is to
+perform the expensive reduction close to the data and collect only the
+compact modelling table into R.
+
 ``` r
 
-check_residuals(freq_model) |>
-  autoplot()
+grid_query <- rating_grid_db(
+  portfolio_db,
+  group_by = c("sector", "region"),
+  exposure = "earned_exposure",
+  aggregate_cols = c("claim_count", "claim_amount")
+)
+
+grid <- dplyr::collect(grid_query)
 ```
 
-Validation does not make a tariff decision by itself. It gives evidence
-about model fit, stability and areas that may need further review.
+The database-backed functions preserve the same conceptual distinction
+as the local functions: period consolidation is temporal, while
+rating-grid reduction constructs model points. Memory planning, DuckDB
+examples and the preferred order of operations are covered in [Large
+Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.md).
 
-## Typical workflow
+## Choosing the building blocks
 
-One possible workflow is:
+Not every pricing exercise needs every component:
 
-1.  Inspect the portfolio with
-    [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-    and
-    [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md).
-2.  Assess large-loss thresholds with
-    [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
-    where capped severity or excess-loss loadings are relevant.
-3.  Use
-    [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
-    either to create one redistributed severity response or to calculate
-    a separate excess loading per exposure unit.
-4.  Analyse continuous risk factors with
-    [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md).
-5.  Create candidate tariff segments with
-    [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md).
-6.  Fit GLMs for frequency, severity or risk premium.
-7.  Interpret coefficients with
-    [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
-8.  Compare fitted relativities with observed experience using
-    [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md).
-9.  Apply refinement where needed with
-    [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
-    [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
-    [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
-    or
-    [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md).
-10. Validate the resulting model with the model-performance helpers.
+- A compact, stable portfolio may require only exploratory analysis, a
+  GLM,
+  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+  and targeted diagnostics.
+- A portfolio with material continuous effects may add
+  [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
+  and tariff segmentation.
+- A portfolio exposed to volatile large losses may add threshold
+  assessment and an explicit excess-loss treatment.
+- A large policy-period table may first require temporal consolidation
+  and database-backed model-point aggregation.
+- A mature tariff may require explicit refinement, audit and comparison
+  with observed experience.
 
-The exact order and choice of functions depends on the portfolio,
-product, data quality and pricing objective.
+These are possible combinations, not mandatory recipes. The appropriate
+set depends on the response definition, available experience, portfolio
+scale, modelling objective and intended tariff implementation.
 
-## Next steps
-
-For a worked example, see:
+## Where to go next
 
 - [Getting
-  started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
-
-For coefficient refinement:
-
+  Started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
+  is the primary worked tutorial and follows one portfolio through
+  modelling, interpretation, validation and a small refinement.
 - [Refinement building
   blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md)
-
-For validation:
-
+  develops smoothing, restrictions, relativities, refitting and audit in
+  detail.
 - [Model
   validation](https://mharinga.github.io/insurancerating/articles/model-validation.md)
+  covers residual, dispersion and resampling diagnostics.
+- [Large
+  Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.md)
+  covers local and database-backed portfolio reduction.
+- The [reference
+  index](https://mharinga.github.io/insurancerating/reference/index.html)
+  maps these actuarial tasks to the exact public functions and
+  arguments.

@@ -1,8 +1,8 @@
 ---
-title: "Getting started"
+title: "Getting Started"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting started}
+  %\VignetteIndexEntry{Getting Started}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -17,35 +17,49 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-`insurancerating` provides functions for common actuarial pricing tasks in R.
+`insurancerating` provides building blocks for common actuarial pricing tasks in
+R. This vignette presents one possible workflow. It is an illustration rather
+than a prescribed end-to-end pricing methodology.
 
-A common GLM-based pricing exercise often combines several tasks:
+The sequence is chosen to show how several package components can be combined.
+Depending on the portfolio, available data, modelling objective and applicable
+requirements, activities may be omitted, added, repeated or performed in a
+different order. The example is not intended to represent a canonical industry
+workflow or the internal process of a particular organisation.
 
-1.	portfolio analysis
-2.	model estimation
-3.	interpretation of fitted coefficients
-4.	refinement of tariff structure
+A GLM-based pricing exercise commonly combines several tasks:
 
-This vignette presents one possible GLM-based analysis and illustrates how the
-functions can be combined:
+1.	understand observed portfolio experience and rating factors
+2.	construct modelling variables
+3.	estimate frequency, severity and technical risk
+4.	translate technical risk into a reviewable tariff structure
+5.	interpret, validate and refine the resulting model
+
+The work is often iterative. Exploratory results may lead to different variable
+definitions, large-loss treatment may affect the severity model, and tariff or
+implementation constraints may require the statistical models to be revisited.
+The package functions can be combined in different orders depending on the
+portfolio and modelling objective.
+
+The example illustrates how to:
 
 -	analyse risk factors with `factor_analysis()`
 -	estimate pricing models with `glm()`
 -	interpret coefficients with `rating_table()`
--	assess model stability with `model_performance()` and `bootstrap_performance()`
+-	assess model behaviour and stability
+-	apply a small actuarial refinement
 
 The focus is on the transition from observed portfolio experience to fitted
-effects and a tariff structure that can be reviewed actuarially.
+technical risk and a tariff structure that can be reviewed actuarially.
 
 
-## Data
+## Portfolio and data
 
-We use the example dataset `MTPL2`, which contains a motor portfolio with:
+The examples consistently use `MTPL`, a motor portfolio with:
 
 -	number of claims (`nclaims`),
 -	exposure (`exposure`),
--	premium (`premium`),
--	claim amounts (`amount`),
+-	total claim cost per portfolio record (`amount`),
 -	several rating factors
 	
 ```{r, warning = FALSE, message = FALSE}
@@ -53,12 +67,12 @@ We use the example dataset `MTPL2`, which contains a motor portfolio with:
 library(insurancerating)
 library(dplyr)
 
-head(MTPL2)
+head(MTPL)
 
 ```
 
 
-## Step 1 — Portfolio analysis
+## Understanding rating factors
 
 ### Factor analysis
 
@@ -96,8 +110,10 @@ The output provides commonly used portfolio metrics such as:
 -	frequency = claims / exposure
 -	average severity = loss / claims
 -	risk premium = loss / exposure
--	loss ratio = loss / premium
--	average premium = premium / exposure
+
+Loss ratio and average premium can also be calculated when an earned-premium
+column is supplied. `MTPL` does not contain that quantity, so they are not used
+in this example.
 
 
 ### Visualising factor behaviour
@@ -119,13 +135,14 @@ and volume by level, but do not control for correlations with other risk
 factors.
 	
 
-## Step 2 — Continuous variables
+## Handling continuous variables
 
 ### Why continuous variables are treated separately
 
-Continuous variables can be modelled directly or translated into grouped tariff
-variables, depending on the model and implementation environment. This example
-uses the following sequence:
+Continuous variables can be modelled directly. In many traditional insurance
+tariffs, they are instead translated into a limited number of segments to
+improve stability, interpretation and implementation. This example uses the
+following sequence:
 
 1.	analysed as continuous variables
 2.	translated into tariff segments
@@ -195,7 +212,7 @@ A high-exposure level is often a useful baseline because its relativity is
 supported by a substantial part of the portfolio.
 
 
-## Step 3 — Model estimation
+## Estimating frequency and severity
 
 ### Why GLMs are used
 
@@ -203,7 +220,7 @@ Generalized linear models are widely used in insurance pricing. They can:
 
 -	accommodate non-normal response distributions
 -	produce interpretable multiplicative effects
--	can be translated into tariff relativities
+-	be translated into tariff relativities
 
 A common decomposition is:
 
@@ -223,47 +240,84 @@ mod_freq <- glm(
 
 ```
 
+The response is the observed claim count for each policy-period. Because
+`log(exposure)` is included as an offset, `predict(mod_freq, type = "response")`
+returns the expected number of claims for that record's exposure. Dividing that
+prediction by exposure gives claim frequency per exposure-year.
+
 ### Severity model
 
 ```{r}
 
+severity_data <- dat |>
+  filter(nclaims > 0, amount > 0) |>
+  mutate(average_claim_amount = amount / nclaims)
+
 mod_sev <- glm(
-  amount ~ age_cat,
+  average_claim_amount ~ age_cat,
   weights = nclaims,
   family = Gamma(link = "log"),
-  data = dat |> filter(amount > 0)
+  data = severity_data
 )
 
 ```
 
-Frequency and severity are modelled separately because they capture different
-aspects of the loss process.
+`amount` is the total claim cost recorded for a portfolio row. Dividing by
+`nclaims` gives average claim severity. Claim count is then used as the model
+weight because a row containing several claims represents more severity
+observations than a row containing one claim. Frequency and severity are
+modelled separately because they describe different parts of the loss process.
 
-### Constructing a premium proxy
+## Constructing technical risk premium
 
 ```{r}
 
 premium_df <- dat |>
-  add_prediction(mod_freq, mod_sev) |>
-  mutate(premium = pred_nclaims_mod_freq * pred_amount_mod_sev)
+  add_prediction(
+    mod_freq,
+    mod_sev,
+    predictions = c("expected_claim_count", "expected_average_severity")
+  ) |>
+  mutate(
+    claim_frequency = expected_claim_count / exposure,
+    expected_loss = expected_claim_count * expected_average_severity,
+    risk_premium = claim_frequency * expected_average_severity
+  )
 
-head(premium_df)
+premium_df |>
+  select(
+    exposure,
+    expected_claim_count,
+    claim_frequency,
+    expected_average_severity,
+    expected_loss,
+    risk_premium
+  ) |>
+  head()
 
 ```
 
-This produces an expected-loss proxy from the fitted frequency and severity
-components. Its precise unit depends on the exposure treatment in the frequency
-prediction and should be checked before it is used as a model response.
+The units are now explicit:
+
+- `expected_claim_count` is the expected number of claims for the observed
+  policy exposure;
+- `claim_frequency` is the expected number of claims per exposure-year;
+- `expected_average_severity` is the expected amount per claim;
+- `expected_loss` is the expected loss for the policy-period;
+- `risk_premium` is expected loss per exposure-year.
+
+The risk premium is a technical expected loss cost. It does not include expense
+loadings, profit margins, taxes or other components of a commercial premium.
 
 
-## Step 4 — Premium model
+## From technical risk to tariff
 
-### Fitting a premium model
+### Fitting a tariff representation
 
 ```{r}
 
 burn_unrestricted <- glm(
-  premium ~ age_cat + zip,
+  risk_premium ~ age_cat + zip,
   weights = exposure,
   family = Gamma(link = "log"),
   data = premium_df
@@ -271,36 +325,48 @@ burn_unrestricted <- glm(
 
 ```
 
-This model combines the rating factors into one fitted risk-premium structure.
+This second GLM is not statistically required after fitting frequency and
+severity. Here it is used as a tariff-construction step: it approximates the
+combined technical risk with a compact multiplicative structure based on
+`age_cat` and `zip`. Exposure weights give more influence to tariff cells that
+represent a larger part of the portfolio.
 
-It can be used to inspect the combined effect of the frequency and severity
-components. Commercial loadings and other premium components are outside this
-technical risk-premium model.
+The response is a fitted technical target rather than an observed claim
+outcome. The model is therefore used to obtain an interpretable and
+implementable tariff representation, not as a replacement for the underlying
+frequency and severity analyses.
 
 
-## Step 5 — Interpreting coefficients
+## Interpreting model effects and observed experience
 
 ### Rating table
 
 ```{r}
 
-rt <- rating_table(burn_unrestricted)
+rt <- rating_table(burn_unrestricted) |>
+  add_portfolio_experience(
+    data = premium_df,
+    claim_count = "nclaims",
+    exposure = "exposure",
+    claim_amount = "amount",
+    metric = "risk_premium"
+  )
 rt
 
 ```
 
-`rating_table()` expresses fitted coefficients in terms of the original factor
-levels, including the reference level.
-
-This output is commonly used to inspect tariff relativities.
+`rating_table()` expresses fitted model effects as tariff relativities for the
+original factor levels, including the reference level. The attached portfolio
+experience makes it possible to compare those modelled relativities with the
+observed risk-premium pattern. Exposure remains important when judging whether
+an apparent difference is sufficiently credible.
 	
 
 ### Visualising coefficients
 
 ```{r}
 
-rating_table(burn_unrestricted) |>
-  autoplot()
+autoplot(rt, metric = "risk_premium")
 
 ```
 
@@ -319,7 +385,24 @@ At this stage, the relevant questions are:
 	
 	
 
-## Step 6 — Model evaluation
+## Validating the model
+
+Validation combines statistical diagnostics with actuarial review. No single
+measure determines whether a tariff model is suitable. Relevant questions
+include dispersion, residual structure, out-of-sample stability, exposure by
+level, plausible factor shapes and agreement with observed experience.
+
+### Overdispersion
+
+```{r}
+
+check_overdispersion(mod_freq)
+
+```
+
+For a Poisson frequency model, a dispersion ratio materially above one can
+indicate remaining heterogeneity or an unsuitable variance assumption. The
+result should be considered together with residual and factor-level checks.
 
 ### Model performance
 
@@ -329,8 +412,9 @@ model_performance(mod_freq)
 
 ```
 
-This reports AIC, BIC and response-scale RMSE. These measures are most
-meaningful when models use the same response, records, weights and offsets.
+This reports AIC, BIC and response-scale RMSE for the expected claim-count
+model. These measures are most meaningful when models use the same response,
+records, weights and offsets.
 
 
 ### Bootstrap performance
@@ -353,12 +437,13 @@ This refits the model on repeated bootstrap samples and evaluates RMSE on
 out-of-bag records. The resulting distribution describes sensitivity to the
 sampled portfolio records; it is not a prediction interval for future claims.
 
-A single fit statistic is usually not sufficient. In pricing practice, it is
-also relevant to assess whether the model behaves consistently under small data
-perturbations.
+A single fit statistic is not sufficient. In pricing practice, the numerical
+results should be reviewed together with exposure, observed experience,
+residual diagnostics and stability of effects over time. The dedicated model
+validation vignette covers these checks in more detail.
 
 
-## Step 7 — From model to tariff
+## Refining the tariff
 
 At this point, the example has produced:
 
@@ -367,8 +452,8 @@ At this point, the example has produced:
 -	interpretable factor relativities
 -	basic performance diagnostics
 
-In many cases, a further step is required before the model output can be used as
-a tariff.
+Depending on the intended tariff, a further refinement step may be useful
+before implementation.
 
 Typical reasons include:
 
@@ -377,7 +462,32 @@ Typical reasons include:
 -	externally imposed restrictions
 -	expert-driven adjustments
 
-This can be handled with the refinement tools described in [Refinement building blocks](refinement-workflow.html).
+The following small example fixes one ZIP relativity as an explicit actuarial
+assumption. Other ZIP levels retain their current relativities, and the
+intercept-only refit recalibrates the overall level without re-estimating the
+prescribed tariff effects.
+
+```{r}
+
+zip_restriction <- data.frame(
+  zip = "3",
+  relativity = 1.05
+)
+
+tariff_refinement <- prepare_refinement(
+  burn_unrestricted,
+  data = premium_df
+) |>
+  add_restriction(zip_restriction)
+
+burn_refined <- refit(tariff_refinement, intercept_only = TRUE)
+rating_table(burn_refined)
+
+```
+
+The value `1.05` is illustrative; a production restriction requires actuarial
+support and governance. Smoothing, shrinkage, rebasing and more extensive
+restrictions are described in [Refinement building blocks](refinement-workflow.html).
 
 ## Summary
 
@@ -388,10 +498,13 @@ A possible sequence in `insurancerating` is:
 factor_analysis()             # analyse portfolio behaviour
 risk_factor_gam()             # analyse continuous variables
 derive_tariff_segments()      # derive tariff segments
-glm()                         # estimate pricing models
-rating_table()                # interpret fitted coefficients
+glm()                         # estimate frequency and severity
+add_prediction()              # construct technical risk premium
+glm()                         # represent risk in a tariff structure
+rating_table()                # interpret tariff relativities
 bootstrap_performance()       # assess stability
-prepare_refinement()          # refine tariff structure if needed
+prepare_refinement()          # prepare an actuarial refinement
+refit()                       # fit the refined tariff model
 
 ```
 
@@ -400,12 +513,14 @@ tariff segmentation and model diagnostics. The final modelling choices remain
 dependent on the portfolio and pricing objective.
 
 
-## Next steps
+## Where to go next
 
-The following vignette covers the refinement step in more detail:
-
-- [Refinement building blocks](refinement-workflow.html)
-
-For the conceptual background to exposure, risk premium, and tariff design, see:
-
-- [Pricing workflow building blocks](pricing-workflow-building-blocks.html)
+- [Pricing workflow and package building blocks](pricing-workflow-building-blocks.html)
+  maps the wider package to the actuarial tasks it supports, including data
+  preparation, large-loss treatment, modelling and tariff construction.
+- [Refinement building blocks](refinement-workflow.html) covers smoothing,
+  restrictions, shrinkage, rebasing and audit of tariff changes.
+- [Model validation](model-validation.html) develops the diagnostic and
+  out-of-sample checks used only briefly here.
+- [Large Portfolios](large-portfolios.html) shows how to
+  reduce policy-period data to model points before fitting a pricing GLM.

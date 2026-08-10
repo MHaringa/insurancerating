@@ -55,6 +55,8 @@
 #' Construct the same type of observed rating-factor combinations as
 #' [rating_grid()], while leaving the calculation in the database. The function
 #' returns a lazy query and does not copy the source portfolio into R.
+#' Each output row is a model point: one observed covariate combination together
+#' with aggregated exposure and other additive quantities requested by the user.
 #'
 #' This is useful when the row-level portfolio is too large for available R
 #' memory. The database performs the grouping and aggregation; the reduced

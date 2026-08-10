@@ -4,10 +4,10 @@
 #' `add_prediction()` adds predictions from one or more fitted `glm` models to
 #' a data frame.
 #'
-#' In pricing workflows, this is often used to bring frequency and severity
-#' model output together on the same portfolio. For example, predicted claim
-#' frequency and predicted average claim amount can be multiplied to create a
-#' pure premium proxy before further tariff refinement.
+#' In pricing workflows, this is often used to bring count and severity model
+#' output together on the same portfolio. For example, an expected claim count
+#' can be normalised by exposure and multiplied by an expected average claim
+#' amount to calculate a risk premium per exposure unit.
 #'
 #' The function is deliberately small: it does not refit models or decide how
 #' predictions should be combined. It only adds model predictions, and
@@ -36,8 +36,11 @@
 #' @details
 #' Predictions are calculated on the response scale using
 #' `stats::predict(..., type = "response")`. For GLMs with a log link, such as
-#' Poisson frequency models or Gamma severity models, the added columns are
-#' therefore already on the original scale.
+#' Poisson count models or Gamma severity models, the added columns are already
+#' on the original response scale. For a Poisson claim-count model containing
+#' an exposure offset, this is the expected claim count for the supplied
+#' exposure, not frequency per exposure unit. Divide by exposure when a rate is
+#' required.
 #'
 #' If `confidence = TRUE`, lower and upper confidence interval columns are added
 #' next to each prediction column. The default interval suffixes are `"lower"`
@@ -63,37 +66,49 @@
 #'             offset = log(exposure),
 #'             family = poisson())
 #'
-#' # Add predicted claim frequency
-#' mtpl_pred <- add_prediction(MTPL, mod1, predictions = "pred_frequency")
+#' # Add the expected claim count for each record's exposure
+#' mtpl_pred <- add_prediction(
+#'   MTPL,
+#'   mod1,
+#'   predictions = "expected_claim_count"
+#' )
 #'
 #' # Add predicted values with confidence bounds
 #' mtpl_pred_ci <- add_prediction(
 #'   MTPL,
 #'   mod1,
-#'   predictions = "pred_frequency",
+#'   predictions = "expected_claim_count",
 #'   confidence = TRUE
 #' )
 #'
-#' # Combine frequency and severity predictions into a pure premium proxy
+#' # Combine frequency and severity predictions into a risk premium
 #' freq <- glm(nclaims ~ bm + zip,
 #'             data = MTPL,
 #'             offset = log(exposure),
 #'             family = poisson())
 #'
-#' sev <- glm(amount ~ bm + zip,
-#'            data = MTPL[MTPL$amount > 0, ],
+#' severity_data <- MTPL[MTPL$nclaims > 0 & MTPL$amount > 0, ]
+#' severity_data$average_claim_amount <-
+#'   severity_data$amount / severity_data$nclaims
+#'
+#' sev <- glm(average_claim_amount ~ bm + zip,
+#'            data = severity_data,
 #'            weights = nclaims,
 #'            family = Gamma(link = "log"))
 #'
-#' premium_proxy <- add_prediction(
+#' pricing <- add_prediction(
 #'   MTPL,
 #'   freq,
 #'   sev,
-#'   predictions = c("pred_frequency", "pred_severity")
+#'   predictions = c("expected_claim_count", "expected_average_severity")
 #' )
 #'
-#' premium_proxy$pred_pure_premium <-
-#'   premium_proxy$pred_frequency * premium_proxy$pred_severity
+#' pricing$claim_frequency <-
+#'   pricing$expected_claim_count / pricing$exposure
+#' pricing$expected_loss <-
+#'   pricing$expected_claim_count * pricing$expected_average_severity
+#' pricing$risk_premium <-
+#'   pricing$claim_frequency * pricing$expected_average_severity
 #'
 #' @export
 add_prediction <- function(data, ..., predictions = NULL, prefix = "pred",

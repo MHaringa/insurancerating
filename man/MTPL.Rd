@@ -11,7 +11,7 @@ A data frame containing 30,000 rows and 7 variables:
 \item{nclaims}{Number of claims.}
 \item{exposure}{Exposure, expressed in years. For example, if a vehicle is
 insured from July 1, the exposure equals 0.5 for that year.}
-\item{amount}{Claim severity (in euros).}
+\item{amount}{Total claim amount for the portfolio record (in euros).}
 \item{power}{Engine power of the vehicle (in kilowatts).}
 \item{bm}{Bonus-malus level (0–22). Higher levels indicate worse claim history.}
 \item{zip}{Region indicator (0–3).}

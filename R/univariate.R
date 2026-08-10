@@ -359,9 +359,9 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #'   (default is all available metrics). The numeric positions are:
 #' \itemize{
 #'   \item 1. Frequency (`nclaims / exposure`)
-#'   \item 2. Average severity (`severity / nclaims`)
-#'   \item 3. Risk premium (`severity / exposure`)
-#'   \item 4. Loss ratio (`severity / premium`)
+#'   \item 2. Average severity (`claim_amount / claim_count`)
+#'   \item 3. Risk premium (`claim_amount / exposure`)
+#'   \item 4. Loss ratio (`claim_amount / premium`)
 #'   \item 5. Average premium (`premium / exposure`)
 #'   \item 6. Exposure
 #'   \item 7. Severity

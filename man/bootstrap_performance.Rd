@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_performance_bootstrap_rmse.R
 \name{bootstrap_performance}
 \alias{bootstrap_performance}
-\title{Assess predictive stability by repeated resampling}
+\title{Assess performance stability under repeated resampling}
 \usage{
 bootstrap_performance(
   model,

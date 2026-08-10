@@ -28,7 +28,7 @@ A data frame containing 3,000 rows and 6 variables:
 
 - amount:
 
-  Claim severity (in euros).
+  Total claim amount for the portfolio record (in euros).
 
 - exposure:
 

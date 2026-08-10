@@ -1,56 +1,54 @@
 # insurancerating
 
-`insurancerating` provides functions for common actuarial pricing tasks
-in R, including portfolio analysis, GLM estimation, coefficient
-refinement and model diagnostics.
+`insurancerating` provides actuarial tools and building blocks for
+traditional insurance pricing workflows. GLMs remain at the core, with
+supporting functions for portfolio analysis, risk-factor structuring,
+model interpretation, tariff refinement, validation, large-loss
+treatment and scalable data preparation.
 
-The package is organised around GLM-based pricing work and the
-translation of statistical model output into tariff structures that can
-be reviewed, documented and implemented. The functions can be used
-independently or combined into a workflow appropriate for the portfolio
-and pricing question.
+The package works alongside standard R modelling tools such as
+[`glm()`](https://rdrr.io/r/stats/glm.html). Models are fitted with
+familiar R functions and can subsequently be analysed, interpreted,
+refined and validated in actuarial terms with `insurancerating`. The
+building blocks can be used independently or combined according to the
+portfolio and pricing question.
 
-## Scope
-
-The package supports common tasks that often occur in actuarial pricing
-work:
-
-- exploratory analysis of risk factors
-- estimation of GLM-based pricing models
-- controlled refinement of model coefficients
-- construction and interpretation of tariff structures
-- evaluation of model performance and stability
-
-The appropriate combination of model choice, segmentation, refinement
-and validation depends on the product, data, portfolio composition and
-intended use of the tariff.
+The package is developed independently as a generally applicable
+actuarial R package. Its examples illustrate possible combinations of
+the building blocks; they are not a universal industry workflow or a
+description of the pricing methodology or governance process of any
+particular organisation.
 
 ## Installation
 
-Install the CRAN version:
+Install the CRAN version, or install the development version from
+GitHub:
 
 ``` r
 
 install.packages("insurancerating")
-```
-
-Or development version:
-
-``` r
 
 # install.packages("remotes")
 remotes::install_github("MHaringa/insurancerating")
 ```
 
-## Quick example
+## Explore portfolio experience
+
+[`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
+summarises observed experience and the exposure supporting each level of
+a rating factor. These unadjusted portfolio patterns are useful before
+modelling, but should not be interpreted as conditional tariff
+relativities.
 
 ``` r
 
 library(insurancerating)
 
-# Factor analysis
-fa <- factor_analysis(
-  MTPL,
+portfolio <- as.data.frame(MTPL)
+portfolio$zip <- factor(portfolio$zip)
+
+zip_analysis <- factor_analysis(
+  portfolio,
   risk_factors = "zip",
   claim_count = "nclaims",
   exposure = "exposure",
@@ -58,179 +56,109 @@ fa <- factor_analysis(
 )
 
 autoplot(
-  fa,
+  zip_analysis,
   metrics = c("frequency", "average_severity", "risk_premium")
 )
 ```
 
-![Factor analysis plot showing frequency, average severity and risk
-premium by ZIP code.](reference/figures/unnamed-chunk-3-1.png)
+![Factor analysis plot showing claim frequency, average severity and
+risk premium by ZIP code.](reference/figures/unnamed-chunk-3-1.png)
+
+## From model to refined tariff
+
+A standard Poisson GLM can be translated into an explicit tariff
+adjustment before it is refitted. The restriction below is deliberately
+small: it shows the refinement architecture without replacing the
+specialist documentation.
 
 ``` r
 
-# Fit model
-mod <- glm(
-  nclaims ~ zip,
-  offset = log(exposure),
+frequency_model <- glm(
+  nclaims ~ zip + offset(log(exposure)),
   family = poisson(),
-  data = MTPL
+  data = portfolio
 )
 
-rating_table(mod)
-```
-
-``` R
-##   risk_factor       level   est_mod
-## 1 (Intercept) (Intercept) 0.1402024
-## 2         zip           0 1.0000000
-## 3         zip           1 1.0254064
-## 4         zip           2 0.9238016
-## 5         zip           3 0.9757522
-```
-
-``` r
-
-# Refine coefficients
-zip_df <- data.frame(
+zip_restrictions <- data.frame(
   zip = c("0", "1", "2", "3"),
-  zip_adj = c(0.90, 0.95, 1.00, 1.10)
+  zip_restricted = c(0.90, 0.95, 1.00, 1.10)
 )
 
-mod_refined <- prepare_refinement(mod) |>
-  add_restriction(zip_df) |>
+refined_model <- frequency_model |>
+  prepare_refinement(data = portfolio) |>
+  add_restriction(zip_restrictions) |>
   refit()
 
-rating_table(mod_refined)
+rating_table(refined_model, exposure = FALSE)
 ```
 
 ``` R
-##   risk_factor       level est_mod_refined exposure
-## 1 (Intercept) (Intercept)        0.136653       NA
-## 2     zip_adj           0        0.900000      207
-## 3     zip_adj           1        0.950000    11081
-## 4     zip_adj           2        1.000000     7783
-## 5     zip_adj           3        1.100000     7588
+##      risk_factor       level est_refined_model
+## 1    (Intercept) (Intercept)          0.136653
+## 2 zip_restricted           0          0.900000
+## 3 zip_restricted           1          0.950000
+## 4 zip_restricted           2          1.000000
+## 5 zip_restricted           3          1.100000
 ```
 
-## Combining building blocks
+The refinement steps remain explicit and reviewable. Their actuarial
+rationale and effect on the portfolio should still be assessed before
+implementation.
 
-A possible sequence of steps is:
+## What does insurancerating help with?
 
-``` r
+| Pricing task | Main tools |
+|----|----|
+| Explore portfolio experience | [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md), [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md) |
+| Structure continuous risk factors | [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md), [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md) |
+| Interpret fitted model effects | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md), [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md) |
+| Refine tariff structures | [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md), [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md), [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md), [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md) |
+| Validate fitted models | [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md), [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md), [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md), [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md) |
+| Treat large losses | [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md), [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md) |
+| Reduce portfolio data locally | [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md), [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md) |
+| Reduce portfolios in a database | [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md), [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md) |
 
-factor_analysis()      # analyse portfolio
-glm()                  # estimate model
-prepare_refinement()   # apply adjustments
-rating_table()         # interpret coefficients
-```
-
-## Core components
-
-### Factor analysis
-
-[`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-provides aggregated portfolio metrics such as:
-
-- frequency
-- average severity
-- risk premium
-- loss ratio
-
-These summaries describe observed portfolio experience. They help
-identify volume, heterogeneity and potentially unstable levels, but they
-do not adjust for correlations with other risk factors and are not
-fitted tariff relativities.
-
-### Rating models
-
-Models are estimated using widely used GLM specifications:
-
-- Poisson for frequency
-- Gamma for severity
-- Gamma with a log link for severity or risk premium
-
-[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-expresses fitted coefficients in terms of the original factor levels.
-When coefficients are exponentiated, they are shown as relativities.
-
-### Refinement
-
-Model output can be adjusted using:
-
-``` r
-
-prepare_refinement(model) |>
-  add_smoothing(...) |>
-  add_restriction(...) |>
-  add_shrinkage(...) |>
-  add_relativities(...) |>
-  add_rebasing(...) |>
-  refit()
-```
-
-Refinement records smoothing, restrictions, shrinkage, sublevel
-relativities and rebasing explicitly before the model is refitted.
-Shrinkage reduces differences between categorical relativities while
-preserving their selected weighted level. Rebasing changes which
-resulting tariff level equals 1 without changing the ratios between
-levels. These adjustments should be supported by the available
-experience, tariff interpretation or documented expert judgement.
-
-### Model structure
-
-``` r
-
-extract_model_data(model)
-rating_grid(model)
-```
-
-These functions recover the data represented by a fitted model and
-construct observed model-point combinations. They are useful when
-predictions and tariff reviews must remain aligned with the estimation
-portfolio.
-
-## Validation
-
-``` r
-
-model_performance(model)
-bootstrap_performance(model, data)
-```
-
-These functions compare response-scale error and information criteria
-and assess sensitivity under repeated sampling. They provide
-complementary diagnostics rather than an automatic model-selection rule.
-
-------------------------------------------------------------------------
-
-## Notes
-
-The examples represent general actuarial pricing applications. Their
-modelling choices and thresholds are illustrative and should be assessed
-against the portfolio, data quality and governance requirements of the
-intended use.
-
-## Learn more
-
-Full documentation and examples are available in the articles:
+## Where should I start?
 
 - [Getting
-  started](https://mharinga.github.io/insurancerating/articles/getting-started.html)
-- [Pricing workflow
-  overview](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html)
+  Started](https://mharinga.github.io/insurancerating/articles/getting-started.html)
+  Follow one portfolio through risk-factor analysis, modelling,
+  technical risk premium, interpretation, validation and refinement.
+
+- [Pricing workflow and package building
+  blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html)
+  See how the main actuarial pricing tasks and package components fit
+  together.
+
 - [Refinement building
   blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.html)
+  Translate estimated model effects into an explicit, reviewable and
+  implementable tariff structure.
+
 - [Model
   validation](https://mharinga.github.io/insurancerating/articles/model-validation.html)
-- [Working with large insurance
-  portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.html)
+  Assess statistical adequacy, resampling stability, tariff plausibility
+  and observed portfolio behaviour.
+
+- [Large
+  Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.html)
+  Reduce production-sized portfolios with model-point aggregation and
+  database-backed workflows.
+
+## Project information
+
+- [Package website](https://mharinga.github.io/insurancerating/)
+- [CRAN package](https://cran.r-project.org/package=insurancerating)
+- [Issue tracker](https://github.com/MHaringa/insurancerating/issues)
+- Citation information is available with `citation("insurancerating")`.
+- The package is distributed under the GPL (\>= 2) licence.
 
 # Package index
 
 ## Portfolio analysis
 
-Analyse portfolio behaviour and inspect risk factors before model
-estimation.
+Inspect observed portfolio experience, exposure distributions and
+unusual observations before or alongside modelling.
 
 - [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
   : Summarise observed portfolio experience by risk factor
@@ -239,27 +167,10 @@ estimation.
 - [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md)
   : Portfolio histogram with tail bins
 
-## Severity and large claims
+## Risk-factor analysis and structuring
 
-Analyse claim amounts, capped or truncated severity, and redistribute
-large losses before fitting severity models.
-
-- [`plot_severity_distribution()`](https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.md)
-  : Exploratory severity diagnostics by category
-- [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
-  : Assess possible excess-loss thresholds
-- [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
-  : Convert an object to a gt table
-- [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
-  : Redistribute large losses for severity or risk-premium modelling
-- [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
-  : Fit severity distributions to truncated claim data
-- [`autoplot(`*`<truncated_severity>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.truncated_severity.md)
-  : Plot a fitted truncated severity distribution
-
-## Tariff segments
-
-Analyse continuous risk factors and convert them to tariff segments.
+Analyse continuous risk relationships and translate them into practical
+tariff structures.
 
 - [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md)
   : Estimate a smooth effect for a continuous risk factor
@@ -268,13 +179,37 @@ Analyse continuous risk factors and convert them to tariff segments.
   : Inspect smooth risk-factor effects and tariff-segment boundaries
 - [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md)
   : Derive candidate tariff segments from a smooth risk-factor effect
+- [`fisher_classify()`](https://mharinga.github.io/insurancerating/reference/fisher_classify.md)
+  : Fisher's natural breaks classification
 - [`add_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/add_tariff_segments.md)
   : Add derived tariff segments to portfolio data
 
-## Modelling and interpretation
+## Severity modelling
 
-Estimate pricing models and interpret fitted coefficients in tariff
-terms.
+Explore claim amounts and fit severity distributions to truncated
+claims.
+
+- [`plot_severity_distribution()`](https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.md)
+  : Exploratory severity diagnostics by category
+- [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
+  : Fit severity distributions to truncated claim data
+- [`autoplot(`*`<truncated_severity>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.truncated_severity.md)
+  : Plot a fitted truncated severity distribution
+
+## Large-loss treatment
+
+Assess excess thresholds and redistribute large-loss experience for
+severity or risk-premium modelling.
+
+- [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md)
+  : Assess possible excess-loss thresholds
+- [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md)
+  : Redistribute large losses for severity or risk-premium modelling
+
+## Model interpretation
+
+Interpret fitted pricing models, compare estimated effects with observed
+portfolio experience, and add model predictions to portfolio data.
 
 - [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
   : Present fitted pricing-model effects as a rating table
@@ -285,15 +220,13 @@ terms.
 - [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md)
   : Add model predictions to a pricing data set
 
-## Refinement workflow
+## Tariff refinement
 
-Apply structured tariff adjustments such as smoothing, restrictions, and
+Record, inspect and refit explicit actuarial adjustments to tariff
 relativities.
 
 - [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md)
   : Prepare a model refinement workflow
-- [`autoplot(`*`<rating_refinement>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
-  : Inspect a model refinement step
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   : Smooth grouped tariff relativities in a refinement workflow
 - [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
@@ -309,20 +242,22 @@ relativities.
 - [`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
   [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
   : Define sublevel relativity specifications
+- [`autoplot(`*`<rating_refinement>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
+  : Inspect a model refinement step
 - [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
   : Fit a prepared refinement specification
 - [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
   : Audit the effect of a fitted model refinement
 
-## Validation
+## Model validation
 
-Assess model fit, predictive stability, dispersion, and residual
-behaviour.
+Assess model performance, resampling stability, distributional
+assumptions and residual behaviour.
 
 - [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md)
   : Compare fitted GLMs using common performance measures
 - [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
-  : Assess predictive stability by repeated resampling
+  : Assess performance stability under repeated resampling
 - [`autoplot(`*`<bootstrap_performance>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.md)
   : Plot the resampled performance distribution
 - [`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md)
@@ -334,49 +269,46 @@ behaviour.
 - [`autoplot(`*`<check_residuals>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.check_residuals.md)
   : Inspect simulation-based residual uniformity
 
-## Model structure
+## Portfolio preparation and reduction
 
-Extract the data and metadata represented by fitted pricing models.
+Consolidate policy periods and aggregate observed model points in memory
+or lazily in a database.
 
-- [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
-  : Recover the portfolio data used by a fitted model
-
-## Portfolio reduction
-
-Reduce portfolio records across observed rating-factor combinations or
-connected coverage periods, locally or lazily in a database.
-
-- [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-  : Construct observed rating-grid points
 - [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
   : Reduce portfolio periods by merging adjacent date ranges
-- [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md)
-  : Reduce a database portfolio to observed rating-grid points
 - [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md)
   : Merge connected portfolio periods in DuckDB
+- [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+  : Construct observed rating-grid points
+- [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md)
+  : Reduce a database portfolio to observed rating-grid points
 
-## Portfolio time operations
+## Policy period operations
 
-Expand policy periods to reporting months or match dated events to
-active portfolio records.
+Split, align and query insurance policy periods over time.
 
 - [`split_periods_to_months()`](https://mharinga.github.io/insurancerating/reference/split_periods_to_months.md)
   : Split portfolio periods into calendar months
 - [`active_rows_by_date()`](https://mharinga.github.io/insurancerating/reference/active_rows_by_date.md)
   : Match event dates to active portfolio periods
 
-## Utilities
+## Model and supporting utilities
 
-Supporting functions used across pricing workflows.
+Recover model data, format package results and support common pricing
+calculations and simulations.
 
+- [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
+  : Recover the portfolio data used by a fitted model
+- [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+  : Convert an object to a gt table
+- [`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md)
+  : Set the reference level of a factor
 - [`rmse()`](https://mharinga.github.io/insurancerating/reference/rmse.md)
   : Calculate response-scale prediction error
 - [`rlnormt()`](https://mharinga.github.io/insurancerating/reference/rlnormt.md)
   : Simulate severities from a truncated lognormal distribution
 - [`rgammat()`](https://mharinga.github.io/insurancerating/reference/rgammat.md)
   : Simulate severities from a truncated gamma distribution
-- [`set_reference_level()`](https://mharinga.github.io/insurancerating/reference/set_reference_level.md)
-  : Set the reference level of a factor
 
 ## Data
 
@@ -453,9 +385,6 @@ use the updated API.
   Deprecated alias for
   [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md)
 
-- [`fisher_classify()`](https://mharinga.github.io/insurancerating/reference/fisher_classify.md)
-  : Fisher's natural breaks classification
-
 - [`fisher()`](https://mharinga.github.io/insurancerating/reference/fisher.md)
   :
 
@@ -515,18 +444,15 @@ use the updated API.
 ### Start here
 
 - [Getting
-  started](https://mharinga.github.io/insurancerating/articles/getting-started.md):
-- [Pricing workflow
-  overview](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md):
+  Started](https://mharinga.github.io/insurancerating/articles/getting-started.md):
+- [Pricing workflow and package building
+  blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md):
 
-### Model development
+### Specialist guides
 
 - [Refinement building
   blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md):
 - [Model
   validation](https://mharinga.github.io/insurancerating/articles/model-validation.md):
-
-### Portfolio data
-
-- [Working with large insurance
-  portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.md):
+- [Large
+  Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.md):

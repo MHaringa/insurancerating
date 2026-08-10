@@ -64,7 +64,7 @@ unique model points.
 
 The resulting measure should be named according to the model being audited.
 For a frequency model it is normally a fitted frequency; for a severity
-model it is a fitted average severity; and for a direct pure-premium model it
+model it is a fitted average severity; and for a direct risk-premium model it
 can be labelled \code{"risk_premium"}. A complete risk-premium comparison requires
 either a direct risk-premium model or an explicit combination of frequency
 and severity predictions.

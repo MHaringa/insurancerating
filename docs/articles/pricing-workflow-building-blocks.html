@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Pricing workflow overview • insurancerating</title>
+<title>Pricing workflow and package building blocks • insurancerating</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
@@ -24,7 +24,7 @@
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="Pricing workflow overview">
+<meta property="og:title" content="Pricing workflow and package building blocks">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -61,7 +61,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>Pricing workflow overview</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Pricing workflow and package building blocks</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/MHaringa/insurancerating/blob/HEAD/vignettes/pricing-workflow-building-blocks.Rmd" class="external-link"><code>vignettes/pricing-workflow-building-blocks.Rmd</code></a></small>
@@ -70,26 +70,149 @@
 
     
     
-<p><code>insurancerating</code> provides building blocks for common
-actuarial pricing tasks in GLM-based tariff analysis. The package does
-not prescribe a single pricing method. Instead, it supports practical
-steps that often appear in insurance pricing work: portfolio analysis,
-model interpretation, tariff refinement and model validation.</p>
-<p>This vignette gives a compact overview of those building blocks and
-how they can be combined.</p>
+<p>Insurance pricing is rarely one linear modelling exercise. Different
+portfolios require different combinations of data preparation,
+exploratory analysis, large-loss treatment, statistical modelling,
+tariff refinement and validation. <code>insurancerating</code> provides
+building blocks for these tasks; it does not prescribe one universal
+pricing methodology.</p>
+<p>This vignette is a map of those building blocks. It explains which
+actuarial question each family of functions addresses and how the
+families relate. For a linear tutorial in which one portfolio is
+followed from exploratory analysis to a refined tariff model, see <a href="getting-started.html">Getting Started</a>.</p>
+<blockquote>
+<p><strong>A note on workflow</strong></p>
+<p>Insurance pricing workflows vary across organisations because
+portfolios, available data, regulatory requirements, commercial
+objectives and operational constraints differ. There is no single
+universally accepted sequence of analytical activities. The examples in
+this documentation show possible combinations of modular building
+blocks; individual components can be used independently, omitted,
+supplemented or reordered for the problem at hand. They do not describe
+the pricing methodology or governance process of any particular
+organisation.</p>
+</blockquote>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mharinga.github.io/insurancerating/">insurancerating</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
-<h2 id="start-with-portfolio-experience">1. Start with portfolio experience<a class="anchor" aria-label="anchor" href="#start-with-portfolio-experience"></a>
+<h2 id="package-map">Package map<a class="anchor" aria-label="anchor" href="#package-map"></a>
 </h2>
-<p>A pricing analysis often starts by checking how the observed
-portfolio behaves by risk factor. This is useful before modelling, but
-also later when reviewing whether fitted relativities are plausible.</p>
-<p><code><a href="../reference/factor_analysis.html">factor_analysis()</a></code> summarises exposure, claim frequency,
-average severity, risk premium and related metrics by one or more risk
-factors.</p>
+<p>The main building blocks can be placed in the following broad
+architecture:</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Actuarial task</th>
+<th>Purpose</th>
+<th>Main building blocks</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Portfolio analysis</td>
+<td>Review exposure, claims and observed experience</td>
+<td>
+<code><a href="../reference/factor_analysis.html">factor_analysis()</a></code>,
+<code><a href="../reference/outlier_histogram.html">outlier_histogram()</a></code>
+</td>
+</tr>
+<tr class="even">
+<td>Risk-factor analysis and structuring</td>
+<td>Study continuous effects and derive candidate tariff segments</td>
+<td>
+<code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code>,
+<code><a href="../reference/derive_tariff_segments.html">derive_tariff_segments()</a></code>,
+<code><a href="../reference/add_tariff_segments.html">add_tariff_segments()</a></code>
+</td>
+</tr>
+<tr class="odd">
+<td>Severity modelling</td>
+<td>Inspect claim amounts and truncated severity distributions</td>
+<td>
+<code><a href="../reference/plot_severity_distribution.html">plot_severity_distribution()</a></code>,
+<code><a href="../reference/fit_truncated_severity.html">fit_truncated_severity()</a></code>
+</td>
+</tr>
+<tr class="even">
+<td>Large-loss treatment</td>
+<td>Assess a threshold and decide how excess loss enters the model</td>
+<td>
+<code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code>,
+<code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code>
+</td>
+</tr>
+<tr class="odd">
+<td>Estimate technical risk</td>
+<td>Estimate frequency, severity and expected loss</td>
+<td>standard R modelling functions such as <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, supported
+by <code><a href="../reference/add_prediction.html">add_prediction()</a></code>
+</td>
+</tr>
+<tr class="even">
+<td>Model interpretation</td>
+<td>Express fitted effects as tariff relativities and compare them with
+experience</td>
+<td>
+<code><a href="../reference/rating_table.html">rating_table()</a></code>,
+<code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code>
+</td>
+</tr>
+<tr class="odd">
+<td>Tariff refinement</td>
+<td>Apply explicit actuarial adjustments and refit the tariff model</td>
+<td>
+<code><a href="../reference/prepare_refinement.html">prepare_refinement()</a></code>, <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code>,
+<code><a href="../reference/add_restriction.html">add_restriction()</a></code>, <code><a href="../reference/add_relativities.html">add_relativities()</a></code>,
+<code><a href="../reference/refit.html">refit()</a></code>
+</td>
+</tr>
+<tr class="even">
+<td>Model validation</td>
+<td>Examine assumptions, residuals, performance and stability</td>
+<td>
+<code><a href="../reference/check_overdispersion.html">check_overdispersion()</a></code>, <code><a href="../reference/check_residuals.html">check_residuals()</a></code>,
+<code><a href="../reference/model_performance.html">model_performance()</a></code>,
+<code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code>
+</td>
+</tr>
+<tr class="odd">
+<td>Portfolio preparation and reduction</td>
+<td>Consolidate periods and construct observed model points locally or
+in a database</td>
+<td>
+<code><a href="../reference/merge_date_ranges.html">merge_date_ranges()</a></code>, <code><a href="../reference/rating_grid.html">rating_grid()</a></code>,
+<code><a href="../reference/merge_date_ranges_db.html">merge_date_ranges_db()</a></code>, <code><a href="../reference/rating_grid_db.html">rating_grid_db()</a></code>
+</td>
+</tr>
+<tr class="even">
+<td>Policy period operations</td>
+<td>Split periods or match dated events to active policies</td>
+<td>
+<code><a href="../reference/split_periods_to_months.html">split_periods_to_months()</a></code>,
+<code><a href="../reference/active_rows_by_date.html">active_rows_by_date()</a></code>
+</td>
+</tr>
+</tbody>
+</table>
+<p>These tasks are related, but their order is not fixed. Large-loss
+analysis may change a severity specification, a continuous-factor
+analysis may lead to new model variables, and validation may send the
+analyst back to model development or tariff refinement.</p>
+</div>
+<div class="section level2">
+<h2 id="understanding-the-portfolio">Understanding the portfolio<a class="anchor" aria-label="anchor" href="#understanding-the-portfolio"></a>
+</h2>
+<p>Before model estimation, an actuary commonly asks where the exposure
+and claims are concentrated, whether observed differences are supported
+by enough experience, and whether sparse levels or extreme observations
+require closer attention.</p>
+<p><code><a href="../reference/factor_analysis.html">factor_analysis()</a></code> summarises observed exposure, claim
+frequency, average severity and risk premium by rating-factor level:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/factor_analysis.html">factor_analysis</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">zip_experience</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/factor_analysis.html">factor_analysis</a></span><span class="op">(</span></span>
 <span>  <span class="va">MTPL</span>,</span>
 <span>  risk_factors <span class="op">=</span> <span class="st">"zip"</span>,</span>
 <span>  claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
@@ -97,204 +220,176 @@ factors.</p>
 <span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">fa</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">zip_experience</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   zip    amount nclaims   exposure frequency average_severity risk_premium</span></span>
 <span><span class="co">#&gt; 1   1 116178669    1593 11080.6274 0.1437644         72930.74    10484.846</span></span>
 <span><span class="co">#&gt; 2   2  59751985    1008  7782.6301 0.1295192         59277.76     7677.608</span></span>
 <span><span class="co">#&gt; 3   3  58988962    1038  7587.5644 0.1368028         56829.44     7774.427</span></span>
 <span><span class="co">#&gt; 4   0    821510      29   206.8438 0.1402024         28327.93     3971.644</span></span></code></pre></div>
-<p>The output supports questions such as:</p>
-<ul>
-<li>where exposure is concentrated</li>
-<li>whether observed differences are supported by sufficient volume or
-are likely to be volatile</li>
-<li>whether a segment is driven by a small number of claims</li>
-<li>which risk factors may need closer modelling or refinement</li>
-</ul>
-<p>For numeric variables with long or skewed tails,
-<code><a href="../reference/outlier_histogram.html">outlier_histogram()</a></code> can help inspect extreme observations
-before fitting severity models or constructing tariff segments.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/outlier_histogram.html">outlier_histogram</a></span><span class="op">(</span></span>
-<span>  <span class="va">MTPL2</span>,</span>
-<span>  x <span class="op">=</span> <span class="st">"premium"</span>,</span>
-<span>  upper <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>  density <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p><img src="pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="700"></p>
+<p>The results are descriptive. They show unadjusted portfolio
+experience and do not control for correlations with other rating
+factors. Their main purpose is to identify patterns that warrant further
+analysis and to show how much experience supports each pattern.</p>
+<p><code><a href="../reference/outlier_histogram.html">outlier_histogram()</a></code> inspects the central range and tail
+of a numeric variable. <code><a href="../reference/plot_severity_distribution.html">plot_severity_distribution()</a></code>
+provides a more detailed comparison of claim distributions across
+categories. These tools help determine whether an apparent severity
+pattern is broad-based or dominated by a small number of large
+observations.</p>
 </div>
 <div class="section level2">
-<h2 id="assess-large-losses">2. Assess large losses<a class="anchor" aria-label="anchor" href="#assess-large-losses"></a>
+<h2 id="preparing-modelling-data">Preparing modelling data<a class="anchor" aria-label="anchor" href="#preparing-modelling-data"></a>
 </h2>
-<p>Large claims can dominate severity and risk premium analysis. In
-capped severity workflows, it is often useful to assess a cap first,
-decompose the historical claim amounts, and then decide how the excess
-burden should be allocated. A low threshold increases pricing
-responsiveness but introduces volatility. A high threshold improves
-stability but may understate structural differences between
-segments.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  policy_id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span>,</span>
-<span>  sector <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Industry"</span>, <span class="st">"Retail"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,</span>
-<span>  claim_count <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>  claim_amount <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="fl">0</span>, <span class="fl">25000</span>, <span class="fl">120000</span>, <span class="fl">50000</span>, <span class="fl">175000</span>,</span>
-<span>    <span class="fl">0</span>, <span class="fl">40000</span>, <span class="fl">90000</span>, <span class="fl">150000</span>, <span class="fl">300000</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  policy_years <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">10</span><span class="op">)</span></span>
+<p>Portfolio reduction can serve two different purposes:</p>
+<ul>
+<li>
+<code><a href="../reference/merge_date_ranges.html">merge_date_ranges()</a></code> performs <strong>temporal
+consolidation</strong> by combining compatible adjacent or overlapping
+coverage periods;</li>
+<li>
+<code><a href="../reference/rating_grid.html">rating_grid()</a></code> performs <strong>model-point
+aggregation</strong> by combining records with identical observed
+rating-factor values.</li>
+</ul>
+<p>A model point represents one observed combination of model covariates
+together with additive quantities such as exposure, claim count and
+claim amount.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">claims_grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span></span>
+<span>  <span class="va">MTPL</span>,</span>
+<span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"zip"</span>, <span class="st">"bm"</span><span class="op">)</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
+<span>  aggregate_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nclaims"</span>, <span class="st">"amount"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">thresholds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assess_excess_threshold.html">assess_excess_threshold</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">claims_grid</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   zip bm nclaims amount  exposure</span></span>
+<span><span class="co">#&gt; 1   0  1      11 154173 74.263014</span></span>
+<span><span class="co">#&gt; 2   0  2       2   7777 31.860274</span></span>
+<span><span class="co">#&gt; 3   0  3       2 222411 13.657534</span></span>
+<span><span class="co">#&gt; 4   0  4       1  27081  6.208219</span></span>
+<span><span class="co">#&gt; 5   0  5       1   5178 12.679452</span></span>
+<span><span class="co">#&gt; 6   0  6       4  87395 23.128767</span></span></code></pre></div>
+<p>For a Poisson frequency GLM, model-point aggregation can preserve
+coefficient estimates exactly when every predictor is retained, claim
+counts and exposure are summed, and the grouped model uses the same
+<code>offset(log(exposure))</code>. Equivalent results are not automatic
+for every model family or diagnostic. Severity aggregation, for example,
+requires average claim amount as the response and claim count as the
+weight, while record-level residual and influence information is no
+longer available after aggregation.</p>
+<p>Temporal consolidation normally precedes model-point aggregation when
+the original interval structure is needed:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">periods_reduced</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_date_ranges.html">merge_date_ranges</a></span><span class="op">(</span></span>
+<span>  <span class="va">policy_periods</span>,</span>
+<span>  period_start <span class="op">=</span> <span class="st">"period_start"</span>,</span>
+<span>  period_end <span class="op">=</span> <span class="st">"period_end"</span>,</span>
+<span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"policy_id"</span>, <span class="st">"coverage"</span><span class="op">)</span>,</span>
+<span>  aggregate_cols <span class="op">=</span> <span class="st">"earned_exposure"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span></span>
+<span>  <span class="va">periods_reduced</span>,</span>
+<span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"coverage"</span>, <span class="st">"region"</span><span class="op">)</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
+<span>  aggregate_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"claim_count"</span>, <span class="st">"claim_amount"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The detailed in-memory and database-backed workflows are described in
+<a href="large-portfolios.html">Large Portfolios</a>.</p>
+</div>
+<div class="section level2">
+<h2 id="treating-large-losses">Treating large losses<a class="anchor" aria-label="anchor" href="#treating-large-losses"></a>
+</h2>
+<p>Large claims can materially affect observed severity, fitted
+relativities and the technical risk premium. Threshold selection and
+excess-loss treatment are therefore modelling choices rather than purely
+mechanical data operations.</p>
+<p><code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code> compares how much loss and
+risk premium remain below alternative thresholds. It supports judgement
+about the balance between retaining risk differentiation and limiting
+volatility; it does not select a threshold automatically.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">thresholds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assess_excess_threshold.html">assess_excess_threshold</a></span><span class="op">(</span></span>
 <span>  <span class="va">portfolio</span>,</span>
 <span>  claim_amount <span class="op">=</span> <span class="st">"claim_amount"</span>,</span>
-<span>  thresholds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">25000</span>, <span class="fl">50000</span>, <span class="fl">100000</span>, <span class="fl">150000</span><span class="op">)</span>,</span>
-<span>  exposure <span class="op">=</span> <span class="st">"policy_years"</span>,</span>
+<span>  thresholds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50000</span>, <span class="fl">100000</span>, <span class="fl">150000</span><span class="op">)</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
 <span>  group <span class="op">=</span> <span class="st">"sector"</span>,</span>
 <span>  claim_count <span class="op">=</span> <span class="st">"claim_count"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"gt"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="../reference/as_gt.html">as_gt</a></span><span class="op">(</span><span class="va">thresholds</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="va">thresholds</span></span>
-<span><span class="op">}</span></span></code></pre></div>
-<p>After choosing a threshold, <code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code>
-caps the large losses and allocates the excess burden. The same
-calculation supports two modelling workflows:</p>
+<span><span class="op">)</span></span></code></pre></div>
+<p>After a threshold has been selected,
+<code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code> supports two distinct uses of
+the same excess-loss allocation:</p>
 <table class="table">
 <colgroup>
-<col width="25%">
-<col width="25%">
-<col width="25%">
-<col width="25%">
+<col width="33%">
+<col width="33%">
+<col width="33%">
 </colgroup>
 <thead><tr class="header">
 <th>Output</th>
-<th>Typical redistribution weight</th>
 <th>Interpretation</th>
-<th>Typical use</th>
+<th>Typical model use</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td><code>"redistributed_claim"</code></td>
-<td>Claim count or expected claim count</td>
-<td>Excess loss redistributed across claims</td>
-<td>One severity model</td>
+<td>Add allocated excess loss to retained claim amounts</td>
+<td>One severity response containing the complete allocated loss
+burden</td>
 </tr>
 <tr class="even">
 <td><code>"excess_loading"</code></td>
-<td>Earned exposure</td>
-<td>Excess risk premium per exposure unit</td>
-<td>Separate component of total risk premium</td>
+<td>Keep the allocation as an amount per unit of redistribution
+weight</td>
+<td>Retained severity plus a separate excess component in the technical
+risk premium</td>
 </tr>
 </tbody>
 </table>
-<p>The total excess loss is preserved in both workflows.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">adjusted</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss</a></span><span class="op">(</span></span>
-<span>  <span class="va">portfolio</span>,</span>
-<span>  claim_amount <span class="op">=</span> <span class="st">"claim_amount"</span>,</span>
-<span>  threshold <span class="op">=</span> <span class="fl">100000</span>,</span>
-<span>  claim_count <span class="op">=</span> <span class="st">"claim_count"</span>,</span>
-<span>  risk_factor <span class="op">=</span> <span class="st">"sector"</span>,</span>
-<span>  redistribution_method <span class="op">=</span> <span class="st">"partial"</span>,</span>
-<span>  output <span class="op">=</span> <span class="st">"redistributed_claim"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>Portfolio redistribution gives every claim the same excess amount per
-claim. Risk-factor redistribution uses only the experience of each
-group. Partial redistribution balances portfolio stability, group
-responsiveness and the credibility of observed excess experience.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">severity_data</span> <span class="op">&lt;-</span> <span class="va">adjusted</span><span class="op">[</span><span class="va">adjusted</span><span class="op">$</span><span class="va">claim_count</span> <span class="op">&gt;</span> <span class="fl">0</span>, <span class="op">]</span></span>
-<span><span class="va">severity_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
-<span>  <span class="va">claim_amount_adjusted_average</span> <span class="op">~</span> <span class="va">sector</span>,</span>
-<span>  weights <span class="op">=</span> <span class="va">claim_count</span>,</span>
-<span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>,</span>
-<span>  data <span class="op">=</span> <span class="va">severity_data</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>The adjusted average claim amount already contains the redistributed
-cost of large losses. A separate excess-premium component should
-therefore not be added again. This workflow uses one severity response
-and can be appropriate when modelled groups contain sufficient claims
-and sparse factor levels have been combined.</p>
-<p>The amount allocated to an individual row is not an observed claim
-amount for that row. In a sparse sector, a severity model can therefore
-interpret allocated portfolio excess as evidence about that sector.
-Inspect claim volume, combine sparse levels using an actuarially
-meaningful hierarchy and validate coefficient stability over time. A
-minimum such as 20 claims can be a useful starting point, but is
-illustrative and must be selected for the portfolio at hand.</p>
-<p>When retained severity and allocated excess should remain
-conceptually separate, use earned exposure as the redistribution
-weight:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">loading_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">large_loss_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss</a></span><span class="op">(</span></span>
 <span>  <span class="va">portfolio</span>,</span>
 <span>  claim_amount <span class="op">=</span> <span class="st">"claim_amount"</span>,</span>
 <span>  threshold <span class="op">=</span> <span class="fl">100000</span>,</span>
 <span>  claim_count <span class="op">=</span> <span class="st">"claim_count"</span>,</span>
-<span>  redistribution_weight <span class="op">=</span> <span class="st">"policy_years"</span>,</span>
+<span>  redistribution_weight <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
 <span>  risk_factor <span class="op">=</span> <span class="st">"sector"</span>,</span>
 <span>  redistribution_method <span class="op">=</span> <span class="st">"partial"</span>,</span>
 <span>  output <span class="op">=</span> <span class="st">"excess_loading"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">frequency_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
-<span>  <span class="va">claim_count</span> <span class="op">~</span> <span class="va">sector</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">policy_years</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>,</span>
-<span>  data <span class="op">=</span> <span class="va">loading_result</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">retained_severity_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
-<span>  <span class="va">claim_amount_capped</span> <span class="op">~</span> <span class="va">sector</span>,</span>
-<span>  weights <span class="op">=</span> <span class="va">claim_count</span>,</span>
-<span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>,</span>
-<span>  data <span class="op">=</span> <span class="va">loading_result</span><span class="op">[</span><span class="va">loading_result</span><span class="op">$</span><span class="va">claim_count</span> <span class="op">&gt;</span> <span class="fl">0</span>, <span class="op">]</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">loading_result</span><span class="op">$</span><span class="va">predicted_frequency</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">frequency_model</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span> <span class="op">/</span> <span class="va">loading_result</span><span class="op">$</span><span class="va">policy_years</span></span>
-<span><span class="va">loading_result</span><span class="op">$</span><span class="va">predicted_retained_severity</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span></span>
-<span>  <span class="va">retained_severity_model</span>,</span>
-<span>  newdata <span class="op">=</span> <span class="va">loading_result</span>,</span>
-<span>  type <span class="op">=</span> <span class="st">"response"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">loading_result</span><span class="op">$</span><span class="va">predicted_retained_risk_premium</span> <span class="op">&lt;-</span></span>
-<span>  <span class="va">loading_result</span><span class="op">$</span><span class="va">predicted_frequency</span> <span class="op">*</span></span>
-<span>  <span class="va">loading_result</span><span class="op">$</span><span class="va">predicted_retained_severity</span></span>
-<span><span class="va">loading_result</span><span class="op">$</span><span class="va">predicted_total_risk_premium</span> <span class="op">&lt;-</span></span>
-<span>  <span class="va">loading_result</span><span class="op">$</span><span class="va">predicted_retained_risk_premium</span> <span class="op">+</span></span>
-<span>  <span class="va">loading_result</span><span class="op">$</span><span class="va">excess_loading</span></span></code></pre></div>
-<p>Here <code>excess_loading</code> is an amount per policy year. Claim
-volume can still determine partial credibility while policy years
-determine both the allocation shares and the unit of the loading. This
-approach avoids treating allocated portfolio excess as an observed
-individual claim severity.</p>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Neither representation is universally preferable. A redistributed
+response is simple to use in one severity model, but allocated excess is
+then treated as part of a row’s model response. A separate loading keeps
+observed retained severity and allocated excess conceptually distinct.
+The decision should take account of claim volume, sparse levels, the
+intended severity model and how the technical premium will be
+implemented. The function reference pages provide the full allocation
+and credibility details.</p>
 </div>
 <div class="section level2">
-<h2 id="translate-continuous-factors-into-tariff-segments">3. Translate continuous factors into tariff segments<a class="anchor" aria-label="anchor" href="#translate-continuous-factors-into-tariff-segments"></a>
+<h2 id="understanding-and-structuring-risk-factors">Understanding and structuring risk factors<a class="anchor" aria-label="anchor" href="#understanding-and-structuring-risk-factors"></a>
 </h2>
-<p>Many tariffs use grouped versions of continuous variables such as
-age, vehicle age or insured value. <code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code> can be
-used to inspect the fitted shape of a continuous risk factor.
-<code><a href="../reference/derive_tariff_segments.html">derive_tariff_segments()</a></code> can then derive candidate segment
-boundaries from that pattern.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">age_gam</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/risk_factor_gam.html">risk_factor_gam</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="va">MTPL</span>,</span>
-<span>  claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
+<p>Continuous variables can be included directly in a model. In
+traditional tariff structures, continuous relationships are also often
+translated into a limited number of segments for stability,
+interpretation or implementation.</p>
+<p><code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code> estimates a smooth univariate
+relationship. It helps the actuary inspect shape, local volatility and
+areas with limited exposure. <code><a href="../reference/derive_tariff_segments.html">derive_tariff_segments()</a></code> then
+approximates that fitted relationship with candidate intervals;
+<code><a href="../reference/add_tariff_segments.html">add_tariff_segments()</a></code> adds those intervals to the
+portfolio.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">age_effect</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/risk_factor_gam.html">risk_factor_gam</a></span><span class="op">(</span></span>
+<span>  <span class="va">MTPL</span>,</span>
 <span>  risk_factor <span class="op">=</span> <span class="st">"age_policyholder"</span>,</span>
+<span>  claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
 <span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">age_segments</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_tariff_segments.html">derive_tariff_segments</a></span><span class="op">(</span><span class="va">age_gam</span><span class="op">)</span></span>
-<span><span class="va">age_segments</span></span>
-<span><span class="co">#&gt; Tariff segmentation</span></span>
-<span><span class="co">#&gt; Risk factor: age_policyholder </span></span>
-<span><span class="co">#&gt; Candidate segments: 8 </span></span>
-<span><span class="co">#&gt; Segmentation penalty: 0 </span></span>
-<span><span class="co">#&gt; Boundaries:</span></span>
-<span><span class="co">#&gt; [1] 18 25 32 39 51 58 65 84 95</span></span>
+<span><span class="va">age_segments</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_tariff_segments.html">derive_tariff_segments</a></span><span class="op">(</span><span class="va">age_effect</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">age_segments</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   segment portfolio_records risk_factor_values   exposure claim_count</span></span>
 <span><span class="co">#&gt; 1 [18,25]              1543                  8 1331.17534         348</span></span>
@@ -314,188 +409,217 @@ boundaries from that pattern.</p>
 <span><span class="co">#&gt; 6 0.09746194</span></span>
 <span><span class="co">#&gt; 7 0.10100599</span></span>
 <span><span class="co">#&gt; 8 0.06942859</span></span></code></pre></div>
-<p>The segment boundaries approximate the fitted GAM curve. Exposure and
-claim volume have already influenced that curve through the GAM
-specification and are not applied as a second weight during
-segmentation. The segment summary retains these portfolio measures for
-assessing the support of each candidate segment.</p>
-<p>The derived segments can be added back to the portfolio with
-<code><a href="../reference/add_tariff_segments.html">add_tariff_segments()</a></code>.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="va">MTPL</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_tariff_segments.html">add_tariff_segments</a></span><span class="op">(</span><span class="va">age_segments</span>, name <span class="op">=</span> <span class="st">"age_policyholder_segment"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">portfolio</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age_policyholder"</span>, <span class="st">"age_policyholder_segment"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 2</span></span></span>
-<span><span class="co">#&gt;   age_policyholder age_policyholder_segment</span></span>
-<span><span class="co">#&gt;              <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>               70 (65,84]                 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>               40 (39,51]                 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>               78 (65,84]                 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>               49 (39,51]                 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>               59 (58,65]                 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>               71 (65,84]</span></span></code></pre></div>
-<p>These functions are intended to support actuarial judgement, not
-replace it. The tree approximates the fitted GAM effect and does not
-directly optimise observed claims or portfolio loss. Candidate segment
-boundaries should still be reviewed against exposure, claim volume,
-stability and practical usability.</p>
+<p>The smooth relationship and its segmented representation answer
+different questions. The first estimates how observed risk changes
+continuously; the second proposes an implementable tariff structure.
+Candidate boundaries still require review against exposure, claim
+volume, stability and operational constraints. A complete worked example
+is available in <a href="getting-started.html">Getting Started</a>.</p>
 </div>
 <div class="section level2">
-<h2 id="fit-and-interpret-a-glm">4. Fit and interpret a GLM<a class="anchor" aria-label="anchor" href="#fit-and-interpret-a-glm"></a>
+<h2 id="estimating-technical-risk">Estimating technical risk<a class="anchor" aria-label="anchor" href="#estimating-technical-risk"></a>
 </h2>
-<p>GLMs are widely used in insurance pricing because they provide an
-interpretable multiplicative structure. After fitting a model,
-<code><a href="../reference/rating_table.html">rating_table()</a></code> expresses the coefficients in tariff-table
-form.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">portfolio</span><span class="op">$</span><span class="va">zip</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">portfolio</span><span class="op">$</span><span class="va">zip</span><span class="op">)</span></span>
+<p><code>insurancerating</code> complements standard R modelling
+functions rather than replacing them. A common actuarial decomposition
+is:</p>
+<p><code>claim frequency per exposure unit x expected severity = risk premium per exposure unit</code>.</p>
+<p>For a Poisson model with claim count as response and
+<code>log(exposure)</code> as offset,
+<code>predict(type = "response")</code> returns the expected claim count
+for the record’s exposure. Dividing by exposure gives frequency per
+exposure unit.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="va">MTPL</span></span>
+<span><span class="va">portfolio</span><span class="op">$</span><span class="va">zip</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">portfolio</span><span class="op">$</span><span class="va">zip</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">freq_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
-<span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">zip</span> <span class="op">+</span> <span class="va">age_policyholder_segment</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span>
+<span><span class="va">frequency_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
+<span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">zip</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  data <span class="op">=</span> <span class="va">portfolio</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">rt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span></span>
-<span>  <span class="va">freq_model</span>,</span>
-<span>  model_data <span class="op">=</span> <span class="va">portfolio</span>,</span>
-<span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
+<span><span class="va">portfolio</span><span class="op">$</span><span class="va">expected_claim_count</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span></span>
+<span>  <span class="va">frequency_model</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"response"</span></span>
 <span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">rt</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                risk_factor       level est_freq_model exposure</span></span>
-<span><span class="co">#&gt; 1              (Intercept) (Intercept)      0.2743790       NA</span></span>
-<span><span class="co">#&gt; 2                      zip           0      1.0000000      207</span></span>
-<span><span class="co">#&gt; 3                      zip           1      0.9944341    11081</span></span>
-<span><span class="co">#&gt; 4                      zip           2      0.8960053     7783</span></span>
-<span><span class="co">#&gt; 5                      zip           3      0.9493475     7588</span></span>
-<span><span class="co">#&gt; 6 age_policyholder_segment     [18,25]      1.0000000     1331</span></span></code></pre></div>
-<p>Observed portfolio experience can be attached to the rating table
-with <code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code>. When <code>data</code> is
-supplied, the function calculates the observed experience for the
-rating-table risk factors automatically. This makes the comparison
-between model relativities and observed experience explicit.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">rt</span> <span class="op">|&gt;</span></span>
+<span><span class="va">portfolio</span><span class="op">$</span><span class="va">claim_frequency</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">portfolio</span><span class="op">$</span><span class="va">expected_claim_count</span> <span class="op">/</span> <span class="va">portfolio</span><span class="op">$</span><span class="va">exposure</span></span></code></pre></div>
+<p>When <code>amount</code> is total loss for a row containing several
+claims, severity is modelled on <code>amount / nclaims</code>, with
+<code>nclaims</code> as the weight. Multiplying the resulting expected
+severity by claim frequency gives technical risk premium per exposure
+unit. Multiplying expected severity by expected claim count instead
+gives expected loss for the record’s actual exposure. These technical
+amounts do not yet include commercial margins, expenses or other premium
+adjustments.</p>
+<p>The full frequency-severity calculation is kept in <a href="getting-started.html">Getting Started</a>, where the units are
+followed through to a tariff representation.</p>
+</div>
+<div class="section level2">
+<h2 id="interpreting-model-effects">Interpreting model effects<a class="anchor" aria-label="anchor" href="#interpreting-model-effects"></a>
+</h2>
+<p><code><a href="../reference/rating_table.html">rating_table()</a></code> expresses fitted coefficients as tariff
+relativities and makes reference levels explicit.
+<code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code> adds the unadjusted experience
+observed for those same risk-factor levels.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">frequency_model</span>, exposure <span class="op">=</span> <span class="st">"exposure"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_portfolio_experience.html">add_portfolio_experience</a></span><span class="op">(</span></span>
 <span>    data <span class="op">=</span> <span class="va">portfolio</span>,</span>
 <span>    claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
-<span>    exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
+<span>    exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
+<span>    metric <span class="op">=</span> <span class="st">"frequency"</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span>risk_factors <span class="op">=</span> <span class="st">"zip"</span>, metric <span class="op">=</span> <span class="st">"frequency"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pricing-workflow-building-blocks_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="700"></p>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   risk_factor       level est_frequency_model exposure</span></span>
+<span><span class="co">#&gt; 1 (Intercept) (Intercept)           0.1402024       NA</span></span>
+<span><span class="co">#&gt; 2         zip           0           1.0000000      207</span></span>
+<span><span class="co">#&gt; 3         zip           1           1.0254064    11081</span></span>
+<span><span class="co">#&gt; 4         zip           2           0.9238016     7783</span></span>
+<span><span class="co">#&gt; 5         zip           3           0.9757522     7588</span></span></code></pre></div>
+<p>This comparison answers two related questions: what conditional
+effect did the model estimate, and what pattern is visible directly in
+the portfolio? The two need not coincide because the model adjusts for
+its other terms. Exposure and claim volume remain important when
+deciding whether either pattern is stable enough for tariff use.</p>
 </div>
 <div class="section level2">
-<h2 id="refine-tariff-effects-when-needed">5. Refine tariff effects when needed<a class="anchor" aria-label="anchor" href="#refine-tariff-effects-when-needed"></a>
+<h2 id="refining-the-tariff">Refining the tariff<a class="anchor" aria-label="anchor" href="#refining-the-tariff"></a>
 </h2>
-<p>Estimated coefficients may require further actuarial review before
-direct tariff use. Sparse levels, sampling variation or non-monotonic
-adjacent effects can produce a structure that is unstable or difficult
-to support.</p>
-<p>The refinement workflow makes these adjustments explicit:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">freq_model</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_smoothing.html">add_smoothing</a></span><span class="op">(</span></span>
-<span>    model_variable <span class="op">=</span> <span class="st">"age_policyholder_segment"</span>,</span>
-<span>    source_variable <span class="op">=</span> <span class="st">"age_policyholder"</span>,</span>
-<span>    weights <span class="op">=</span> <span class="st">"exposure"</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="va">restrictions</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<p>Refinement separates statistical estimation from explicit actuarial
+tariff decisions. The architecture is:</p>
+<p><code>estimated model -&gt; prepare refinement -&gt; apply adjustments -&gt; refit -&gt; tariff model</code>.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">zip_restrictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  zip <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0"</span>, <span class="st">"3"</span><span class="op">)</span>,</span>
+<span>  relativity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.95</span>, <span class="fl">1.05</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="va">frequency_model</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="va">zip_restrictions</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>Common refinement tasks include:</p>
-<ul>
-<li>smoothing adjacent tariff levels</li>
-<li>fixing selected coefficients to actuarial or commercial
-assumptions</li>
-<li>applying sublevel relativities within a broader GLM factor
-level</li>
-<li>refitting the model while preserving the intended tariff
-structure</li>
-</ul>
-<p>These tools are most useful when the statistical model already
-captures the main risk structure and the remaining work is tariff
-refinement.</p>
+<p><code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> addresses unstable or implausibly
+irregular adjacent effects. <code><a href="../reference/add_restriction.html">add_restriction()</a></code> records
+explicit coefficient choices. <code><a href="../reference/add_relativities.html">add_relativities()</a></code> introduces
+a finer tariff structure within broader model levels. Other steps, such
+as shrinkage and rebasing, address related implementation questions.</p>
+<p>Refinement should have an actuarial rationale, such as stability,
+credibility, monotonicity or an explicit implementation constraint. It
+is not a substitute for correcting a misspecified statistical model. The
+complete object workflow, including audit output, is described in <a href="refinement-workflow.html">Refinement building blocks</a>.</p>
 </div>
 <div class="section level2">
-<h2 id="validate-model-behaviour">6. Validate model behaviour<a class="anchor" aria-label="anchor" href="#validate-model-behaviour"></a>
+<h2 id="validating-the-model">Validating the model<a class="anchor" aria-label="anchor" href="#validating-the-model"></a>
 </h2>
-<p>Pricing models should be checked before their output is used in a
-tariff. <code>insurancerating</code> contains helpers for several common
-checks:</p>
-<ul>
-<li>
-<code><a href="../reference/check_overdispersion.html">check_overdispersion()</a></code> for Poisson frequency
-models</li>
-<li>
-<code><a href="../reference/check_residuals.html">check_residuals()</a></code> for simulation-based residual
-diagnostics using DHARMa</li>
-<li>
-<code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code> for sensitivity of performance
-under repeated sampling</li>
-<li>
-<code><a href="../reference/rating_grid.html">rating_grid()</a></code> to inspect observed rating-grid
-combinations</li>
-</ul>
-<p>For example:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_overdispersion.html">check_overdispersion</a></span><span class="op">(</span><span class="va">freq_model</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Dispersion ratio =     1.185</span></span>
-<span><span class="co">#&gt; Pearson's Chi-squared = 35522.367</span></span>
+<p>Validation consists of several questions rather than one performance
+measure:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Question</th>
+<th>Building block</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Does a Poisson model show material overdispersion?</td>
+<td><code><a href="../reference/check_overdispersion.html">check_overdispersion()</a></code></td>
+</tr>
+<tr class="even">
+<td>Do simulated residuals show systematic structure?</td>
+<td><code><a href="../reference/check_residuals.html">check_residuals()</a></code></td>
+</tr>
+<tr class="odd">
+<td>How do comparable fitted models differ in likelihood and
+response-scale error?</td>
+<td><code><a href="../reference/model_performance.html">model_performance()</a></code></td>
+</tr>
+<tr class="even">
+<td>How sensitive is measured performance to portfolio resampling?</td>
+<td><code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code></td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_overdispersion.html">check_overdispersion</a></span><span class="op">(</span><span class="va">frequency_model</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Dispersion ratio =     1.197</span></span>
+<span><span class="co">#&gt; Pearson's Chi-squared = 35907.391</span></span>
 <span><span class="co">#&gt; p-value =   &lt; 0.001</span></span>
 <span><span class="co">#&gt; Overdispersion detected.</span></span></code></pre></div>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_residuals.html">check_residuals</a></span><span class="op">(</span><span class="va">freq_model</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>Validation does not make a tariff decision by itself. It gives
-evidence about model fit, stability and areas that may need further
-review.</p>
+<p>These diagnostics provide evidence about assumptions, unexplained
+structure and stability. They do not replace review of exposure by
+level, coefficient plausibility, observed versus fitted experience,
+out-of-sample behaviour or changes in portfolio mix. See <a href="model-validation.html">Model validation</a> for a more complete
+diagnostic workflow.</p>
 </div>
 <div class="section level2">
-<h2 id="typical-workflow">Typical workflow<a class="anchor" aria-label="anchor" href="#typical-workflow"></a>
+<h2 id="scaling-to-large-portfolios">Scaling to large portfolios<a class="anchor" aria-label="anchor" href="#scaling-to-large-portfolios"></a>
 </h2>
-<p>One possible workflow is:</p>
-<ol style="list-style-type: decimal">
-<li>Inspect the portfolio with <code><a href="../reference/factor_analysis.html">factor_analysis()</a></code> and
-<code><a href="../reference/outlier_histogram.html">outlier_histogram()</a></code>.</li>
-<li>Assess large-loss thresholds with
-<code><a href="../reference/assess_excess_threshold.html">assess_excess_threshold()</a></code> where capped severity or
-excess-loss loadings are relevant.</li>
-<li>Use <code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code> either to create one
-redistributed severity response or to calculate a separate excess
-loading per exposure unit.</li>
-<li>Analyse continuous risk factors with
-<code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code>.</li>
-<li>Create candidate tariff segments with
-<code><a href="../reference/derive_tariff_segments.html">derive_tariff_segments()</a></code>.</li>
-<li>Fit GLMs for frequency, severity or risk premium.</li>
-<li>Interpret coefficients with <code><a href="../reference/rating_table.html">rating_table()</a></code>.</li>
-<li>Compare fitted relativities with observed experience using
-<code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code>.</li>
-<li>Apply refinement where needed with
-<code><a href="../reference/prepare_refinement.html">prepare_refinement()</a></code>, <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code>,
-<code><a href="../reference/add_restriction.html">add_restriction()</a></code> or <code><a href="../reference/add_relativities.html">add_relativities()</a></code>.</li>
-<li>Validate the resulting model with the model-performance
-helpers.</li>
-</ol>
-<p>The exact order and choice of functions depends on the portfolio,
-product, data quality and pricing objective.</p>
+<p>Scale changes where a building block is executed, but not necessarily
+its actuarial purpose. <code><a href="../reference/rating_grid_db.html">rating_grid_db()</a></code> performs
+model-point aggregation lazily in a database.
+<code><a href="../reference/merge_date_ranges_db.html">merge_date_ranges_db()</a></code> performs temporal consolidation in
+DuckDB. The main principle is to perform the expensive reduction close
+to the data and collect only the compact modelling table into R.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">grid_query</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_grid_db.html">rating_grid_db</a></span><span class="op">(</span></span>
+<span>  <span class="va">portfolio_db</span>,</span>
+<span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sector"</span>, <span class="st">"region"</span><span class="op">)</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
+<span>  aggregate_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"claim_count"</span>, <span class="st">"claim_amount"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="va">grid_query</span><span class="op">)</span></span></code></pre></div>
+<p>The database-backed functions preserve the same conceptual
+distinction as the local functions: period consolidation is temporal,
+while rating-grid reduction constructs model points. Memory planning,
+DuckDB examples and the preferred order of operations are covered in <a href="large-portfolios.html">Large Portfolios</a>.</p>
 </div>
 <div class="section level2">
-<h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+<h2 id="choosing-the-building-blocks">Choosing the building blocks<a class="anchor" aria-label="anchor" href="#choosing-the-building-blocks"></a>
 </h2>
-<p>For a worked example, see:</p>
+<p>Not every pricing exercise needs every component:</p>
 <ul>
-<li><a href="getting-started.html">Getting started</a></li>
+<li>A compact, stable portfolio may require only exploratory analysis, a
+GLM, <code><a href="../reference/rating_table.html">rating_table()</a></code> and targeted diagnostics.</li>
+<li>A portfolio with material continuous effects may add
+<code><a href="../reference/risk_factor_gam.html">risk_factor_gam()</a></code> and tariff segmentation.</li>
+<li>A portfolio exposed to volatile large losses may add threshold
+assessment and an explicit excess-loss treatment.</li>
+<li>A large policy-period table may first require temporal consolidation
+and database-backed model-point aggregation.</li>
+<li>A mature tariff may require explicit refinement, audit and
+comparison with observed experience.</li>
 </ul>
-<p>For coefficient refinement:</p>
+<p>These are possible combinations, not mandatory recipes. The
+appropriate set depends on the response definition, available
+experience, portfolio scale, modelling objective and intended tariff
+implementation.</p>
+</div>
+<div class="section level2">
+<h2 id="where-to-go-next">Where to go next<a class="anchor" aria-label="anchor" href="#where-to-go-next"></a>
+</h2>
 <ul>
-<li><a href="refinement-workflow.html">Refinement building
-blocks</a></li>
-</ul>
-<p>For validation:</p>
-<ul>
-<li><a href="model-validation.html">Model validation</a></li>
+<li>
+<a href="getting-started.html">Getting Started</a> is the primary
+worked tutorial and follows one portfolio through modelling,
+interpretation, validation and a small refinement.</li>
+<li>
+<a href="refinement-workflow.html">Refinement building blocks</a>
+develops smoothing, restrictions, relativities, refitting and audit in
+detail.</li>
+<li>
+<a href="model-validation.html">Model validation</a> covers
+residual, dispersion and resampling diagnostics.</li>
+<li>
+<a href="large-portfolios.html">Large Portfolios</a> covers local
+and database-backed portfolio reduction.</li>
+<li>The <a href="https://mharinga.github.io/insurancerating/reference/index.html">reference
+index</a> maps these actuarial tasks to the exact public functions and
+arguments.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

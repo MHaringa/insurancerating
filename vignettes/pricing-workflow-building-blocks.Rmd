@@ -1,8 +1,8 @@
 ---
-title: "Pricing workflow overview"
+title: "Pricing workflow and package building blocks"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Pricing workflow overview}
+  %\VignetteIndexEntry{Pricing workflow and package building blocks}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,30 +14,66 @@ knitr::opts_chunk$set(
 )
 ```
 
-`insurancerating` provides building blocks for common actuarial pricing tasks in
-GLM-based tariff analysis. The package does not prescribe a single pricing
-method. Instead, it supports practical steps that often appear in insurance
-pricing work: portfolio analysis, model interpretation, tariff refinement and
-model validation.
+Insurance pricing is rarely one linear modelling exercise. Different
+portfolios require different combinations of data preparation, exploratory
+analysis, large-loss treatment, statistical modelling, tariff refinement and
+validation. `insurancerating` provides building blocks for these tasks; it does
+not prescribe one universal pricing methodology.
 
-This vignette gives a compact overview of those building blocks and how they
-can be combined.
+This vignette is a map of those building blocks. It explains which actuarial
+question each family of functions addresses and how the families relate. For a
+linear tutorial in which one portfolio is followed from exploratory analysis
+to a refined tariff model, see [Getting Started](getting-started.html).
+
+> **A note on workflow**
+>
+> Insurance pricing workflows vary across organisations because portfolios,
+> available data, regulatory requirements, commercial objectives and
+> operational constraints differ. There is no single universally accepted
+> sequence of analytical activities. The examples in this documentation show
+> possible combinations of modular building blocks; individual components can
+> be used independently, omitted, supplemented or reordered for the problem at
+> hand. They do not describe the pricing methodology or governance process of
+> any particular organisation.
 
 ```{r}
 library(insurancerating)
 ```
 
-## 1. Start with portfolio experience
+## Package map
 
-A pricing analysis often starts by checking how the observed portfolio behaves
-by risk factor. This is useful before modelling, but also later when reviewing
-whether fitted relativities are plausible.
+The main building blocks can be placed in the following broad architecture:
 
-`factor_analysis()` summarises exposure, claim frequency, average severity,
-risk premium and related metrics by one or more risk factors.
+| Actuarial task | Purpose | Main building blocks |
+|---|---|---|
+| Portfolio analysis | Review exposure, claims and observed experience | `factor_analysis()`, `outlier_histogram()` |
+| Risk-factor analysis and structuring | Study continuous effects and derive candidate tariff segments | `risk_factor_gam()`, `derive_tariff_segments()`, `add_tariff_segments()` |
+| Severity modelling | Inspect claim amounts and truncated severity distributions | `plot_severity_distribution()`, `fit_truncated_severity()` |
+| Large-loss treatment | Assess a threshold and decide how excess loss enters the model | `assess_excess_threshold()`, `redistribute_excess_loss()` |
+| Estimate technical risk | Estimate frequency, severity and expected loss | standard R modelling functions such as `glm()`, supported by `add_prediction()` |
+| Model interpretation | Express fitted effects as tariff relativities and compare them with experience | `rating_table()`, `add_portfolio_experience()` |
+| Tariff refinement | Apply explicit actuarial adjustments and refit the tariff model | `prepare_refinement()`, `add_smoothing()`, `add_restriction()`, `add_relativities()`, `refit()` |
+| Model validation | Examine assumptions, residuals, performance and stability | `check_overdispersion()`, `check_residuals()`, `model_performance()`, `bootstrap_performance()` |
+| Portfolio preparation and reduction | Consolidate periods and construct observed model points locally or in a database | `merge_date_ranges()`, `rating_grid()`, `merge_date_ranges_db()`, `rating_grid_db()` |
+| Policy period operations | Split periods or match dated events to active policies | `split_periods_to_months()`, `active_rows_by_date()` |
+
+These tasks are related, but their order is not fixed. Large-loss analysis may
+change a severity specification, a continuous-factor analysis may lead to new
+model variables, and validation may send the analyst back to model development
+or tariff refinement.
+
+## Understanding the portfolio
+
+Before model estimation, an actuary commonly asks where the exposure and
+claims are concentrated, whether observed differences are supported by enough
+experience, and whether sparse levels or extreme observations require closer
+attention.
+
+`factor_analysis()` summarises observed exposure, claim frequency, average
+severity and risk premium by rating-factor level:
 
 ```{r}
-fa <- factor_analysis(
+zip_experience <- factor_analysis(
   MTPL,
   risk_factors = "zip",
   claim_count = "nclaims",
@@ -45,332 +81,324 @@ fa <- factor_analysis(
   exposure = "exposure"
 )
 
-head(fa)
+head(zip_experience)
 ```
 
-The output supports questions such as:
+The results are descriptive. They show unadjusted portfolio experience and do
+not control for correlations with other rating factors. Their main purpose is
+to identify patterns that warrant further analysis and to show how much
+experience supports each pattern.
 
-- where exposure is concentrated
-- whether observed differences are supported by sufficient volume or are likely
-  to be volatile
-- whether a segment is driven by a small number of claims
-- which risk factors may need closer modelling or refinement
+`outlier_histogram()` inspects the central range and tail of a numeric
+variable. `plot_severity_distribution()` provides a more detailed comparison
+of claim distributions across categories. These tools help determine whether
+an apparent severity pattern is broad-based or dominated by a small number of
+large observations.
 
-For numeric variables with long or skewed tails, `outlier_histogram()` can help
-inspect extreme observations before fitting severity models or constructing
-tariff segments.
+## Preparing modelling data
+
+Portfolio reduction can serve two different purposes:
+
+- `merge_date_ranges()` performs **temporal consolidation** by combining
+  compatible adjacent or overlapping coverage periods;
+- `rating_grid()` performs **model-point aggregation** by combining records
+  with identical observed rating-factor values.
+
+A model point represents one observed combination of model covariates together
+with additive quantities such as exposure, claim count and claim amount.
 
 ```{r}
-outlier_histogram(
-  MTPL2,
-  x = "premium",
-  upper = 100,
-  density = FALSE
+claims_grid <- rating_grid(
+  MTPL,
+  group_by = c("zip", "bm"),
+  exposure = "exposure",
+  aggregate_cols = c("nclaims", "amount")
+)
+
+head(claims_grid)
+```
+
+For a Poisson frequency GLM, model-point aggregation can preserve coefficient
+estimates exactly when every predictor is retained, claim counts and exposure
+are summed, and the grouped model uses the same `offset(log(exposure))`.
+Equivalent results are not automatic for every model family or diagnostic.
+Severity aggregation, for example, requires average claim amount as the
+response and claim count as the weight, while record-level residual and
+influence information is no longer available after aggregation.
+
+Temporal consolidation normally precedes model-point aggregation when the
+original interval structure is needed:
+
+```{r, eval = FALSE}
+periods_reduced <- merge_date_ranges(
+  policy_periods,
+  period_start = "period_start",
+  period_end = "period_end",
+  group_by = c("policy_id", "coverage"),
+  aggregate_cols = "earned_exposure"
+)
+
+grid <- rating_grid(
+  periods_reduced,
+  group_by = c("coverage", "region"),
+  exposure = "earned_exposure",
+  aggregate_cols = c("claim_count", "claim_amount")
 )
 ```
 
-## 2. Assess large losses
+The detailed in-memory and database-backed workflows are described in
+[Large Portfolios](large-portfolios.html).
 
-Large claims can dominate severity and risk premium analysis. In capped
-severity workflows, it is often useful to assess a cap first, decompose the
-historical claim amounts, and then decide how the excess burden should be
-allocated. A low threshold increases pricing responsiveness but introduces
-volatility. A high threshold improves stability but may understate structural
-differences between segments.
+## Treating large losses
+
+Large claims can materially affect observed severity, fitted relativities and
+the technical risk premium. Threshold selection and excess-loss treatment are
+therefore modelling choices rather than purely mechanical data operations.
+
+`assess_excess_threshold()` compares how much loss and risk premium remain
+below alternative thresholds. It supports judgement about the balance between
+retaining risk differentiation and limiting volatility; it does not select a
+threshold automatically.
 
 ```{r, eval = FALSE}
-portfolio <- data.frame(
-  policy_id = 1:10,
-  sector = rep(c("Industry", "Retail"), each = 5),
-  claim_count = c(0, 1, 1, 1, 1, 0, 1, 1, 1, 1),
-  claim_amount = c(
-    0, 25000, 120000, 50000, 175000,
-    0, 40000, 90000, 150000, 300000
-  ),
-  policy_years = rep(1, 10)
-)
-
 thresholds <- assess_excess_threshold(
   portfolio,
   claim_amount = "claim_amount",
-  thresholds = c(25000, 50000, 100000, 150000),
-  exposure = "policy_years",
+  thresholds = c(50000, 100000, 150000),
+  exposure = "earned_exposure",
   group = "sector",
   claim_count = "claim_count"
 )
-
-if (requireNamespace("gt", quietly = TRUE)) {
-  as_gt(thresholds)
-} else {
-  thresholds
-}
 ```
 
-After choosing a threshold, `redistribute_excess_loss()` caps the large losses
-and allocates the excess burden. The same calculation supports two modelling
-workflows:
+After a threshold has been selected, `redistribute_excess_loss()` supports two
+distinct uses of the same excess-loss allocation:
 
-| Output | Typical redistribution weight | Interpretation | Typical use |
-|---|---|---|---|
-| `"redistributed_claim"` | Claim count or expected claim count | Excess loss redistributed across claims | One severity model |
-| `"excess_loading"` | Earned exposure | Excess risk premium per exposure unit | Separate component of total risk premium |
-
-The total excess loss is preserved in both workflows.
+| Output | Interpretation | Typical model use |
+|---|---|---|
+| `"redistributed_claim"` | Add allocated excess loss to retained claim amounts | One severity response containing the complete allocated loss burden |
+| `"excess_loading"` | Keep the allocation as an amount per unit of redistribution weight | Retained severity plus a separate excess component in the technical risk premium |
 
 ```{r, eval = FALSE}
-adjusted <- redistribute_excess_loss(
+large_loss_result <- redistribute_excess_loss(
   portfolio,
   claim_amount = "claim_amount",
   threshold = 100000,
   claim_count = "claim_count",
-  risk_factor = "sector",
-  redistribution_method = "partial",
-  output = "redistributed_claim"
-)
-```
-
-Portfolio redistribution gives every claim the same excess amount per claim.
-Risk-factor redistribution uses only the experience of each group. Partial
-redistribution balances portfolio stability, group responsiveness and the
-credibility of observed excess experience.
-
-```{r, eval = FALSE}
-severity_data <- adjusted[adjusted$claim_count > 0, ]
-severity_model <- glm(
-  claim_amount_adjusted_average ~ sector,
-  weights = claim_count,
-  family = Gamma(link = "log"),
-  data = severity_data
-)
-```
-
-The adjusted average claim amount already contains the redistributed cost of
-large losses. A separate excess-premium component should therefore not be added
-again. This workflow uses one severity response and can be appropriate when
-modelled groups contain sufficient claims and sparse factor levels have been
-combined.
-
-The amount allocated to an individual row is not an observed claim amount for
-that row. In a sparse sector, a severity model can therefore interpret allocated
-portfolio excess as evidence about that sector. Inspect claim volume, combine
-sparse levels using an actuarially meaningful hierarchy and validate coefficient
-stability over time. A minimum such as 20 claims can be a useful starting point,
-but is illustrative and must be selected for the portfolio at hand.
-
-When retained severity and allocated excess should remain conceptually
-separate, use earned exposure as the redistribution weight:
-
-```{r, eval = FALSE}
-loading_result <- redistribute_excess_loss(
-  portfolio,
-  claim_amount = "claim_amount",
-  threshold = 100000,
-  claim_count = "claim_count",
-  redistribution_weight = "policy_years",
+  redistribution_weight = "earned_exposure",
   risk_factor = "sector",
   redistribution_method = "partial",
   output = "excess_loading"
 )
-
-frequency_model <- glm(
-  claim_count ~ sector + offset(log(policy_years)),
-  family = poisson(link = "log"),
-  data = loading_result
-)
-retained_severity_model <- glm(
-  claim_amount_capped ~ sector,
-  weights = claim_count,
-  family = Gamma(link = "log"),
-  data = loading_result[loading_result$claim_count > 0, ]
-)
-
-loading_result$predicted_frequency <-
-  predict(frequency_model, type = "response") / loading_result$policy_years
-loading_result$predicted_retained_severity <- predict(
-  retained_severity_model,
-  newdata = loading_result,
-  type = "response"
-)
-loading_result$predicted_retained_risk_premium <-
-  loading_result$predicted_frequency *
-  loading_result$predicted_retained_severity
-loading_result$predicted_total_risk_premium <-
-  loading_result$predicted_retained_risk_premium +
-  loading_result$excess_loading
 ```
 
-Here `excess_loading` is an amount per policy year. Claim volume can still
-determine partial credibility while policy years determine both the allocation
-shares and the unit of the loading. This approach avoids treating allocated
-portfolio excess as an observed individual claim severity.
+Neither representation is universally preferable. A redistributed response is
+simple to use in one severity model, but allocated excess is then treated as
+part of a row's model response. A separate loading keeps observed retained
+severity and allocated excess conceptually distinct. The decision should take
+account of claim volume, sparse levels, the intended severity model and how the
+technical premium will be implemented. The function reference pages provide
+the full allocation and credibility details.
 
-## 3. Translate continuous factors into tariff segments
+## Understanding and structuring risk factors
 
-Many tariffs use grouped versions of continuous variables such as age, vehicle
-age or insured value. `risk_factor_gam()` can be used to inspect the fitted
-shape of a continuous risk factor. `derive_tariff_segments()` can then derive
-candidate segment boundaries from that pattern.
+Continuous variables can be included directly in a model. In traditional
+tariff structures, continuous relationships are also often translated into a
+limited number of segments for stability, interpretation or implementation.
+
+`risk_factor_gam()` estimates a smooth univariate relationship. It helps the
+actuary inspect shape, local volatility and areas with limited exposure.
+`derive_tariff_segments()` then approximates that fitted relationship with
+candidate intervals; `add_tariff_segments()` adds those intervals to the
+portfolio.
 
 ```{r}
-age_gam <- risk_factor_gam(
-  data = MTPL,
-  claim_count = "nclaims",
+age_effect <- risk_factor_gam(
+  MTPL,
   risk_factor = "age_policyholder",
+  claim_count = "nclaims",
   exposure = "exposure"
 )
 
-age_segments <- derive_tariff_segments(age_gam)
-age_segments
+age_segments <- derive_tariff_segments(age_effect)
 summary(age_segments)
 ```
 
-The segment boundaries approximate the fitted GAM curve. Exposure and claim
-volume have already influenced that curve through the GAM specification and
-are not applied as a second weight during segmentation. The segment summary
-retains these portfolio measures for assessing the support of each candidate
-segment.
+The smooth relationship and its segmented representation answer different
+questions. The first estimates how observed risk changes continuously; the
+second proposes an implementable tariff structure. Candidate boundaries still
+require review against exposure, claim volume, stability and operational
+constraints. A complete worked example is available in
+[Getting Started](getting-started.html).
 
-The derived segments can be added back to the portfolio with
-`add_tariff_segments()`.
+## Estimating technical risk
 
-```{r}
-portfolio <- MTPL |>
-  add_tariff_segments(age_segments, name = "age_policyholder_segment")
+`insurancerating` complements standard R modelling functions rather than
+replacing them. A common actuarial decomposition is:
 
-head(portfolio[, c("age_policyholder", "age_policyholder_segment")])
-```
+`claim frequency per exposure unit x expected severity = risk premium per exposure unit`.
 
-These functions are intended to support actuarial judgement, not replace it.
-The tree approximates the fitted GAM effect and does not directly optimise
-observed claims or portfolio loss. Candidate segment boundaries should still be
-reviewed against exposure, claim volume, stability and practical usability.
-
-## 4. Fit and interpret a GLM
-
-GLMs are widely used in insurance pricing because they provide an interpretable
-multiplicative structure. After fitting a model, `rating_table()` expresses the
-coefficients in tariff-table form.
+For a Poisson model with claim count as response and `log(exposure)` as offset,
+`predict(type = "response")` returns the expected claim count for the record's
+exposure. Dividing by exposure gives frequency per exposure unit.
 
 ```{r}
-portfolio$zip <- as.factor(portfolio$zip)
+portfolio <- MTPL
+portfolio$zip <- factor(portfolio$zip)
 
-freq_model <- glm(
-  nclaims ~ zip + age_policyholder_segment + offset(log(exposure)),
+frequency_model <- glm(
+  nclaims ~ zip + offset(log(exposure)),
   family = poisson(),
   data = portfolio
 )
 
-rt <- rating_table(
-  freq_model,
-  model_data = portfolio,
-  exposure = "exposure"
+portfolio$expected_claim_count <- predict(
+  frequency_model,
+  type = "response"
 )
-
-head(rt)
+portfolio$claim_frequency <-
+  portfolio$expected_claim_count / portfolio$exposure
 ```
 
-Observed portfolio experience can be attached to the rating table with
-`add_portfolio_experience()`. When `data` is supplied, the function calculates
-the observed experience for the rating-table risk factors automatically. This
-makes the comparison between model relativities and observed experience
-explicit.
+When `amount` is total loss for a row containing several claims, severity is
+modelled on `amount / nclaims`, with `nclaims` as the weight. Multiplying the
+resulting expected severity by claim frequency gives technical risk premium per
+exposure unit. Multiplying expected severity by expected claim count instead
+gives expected loss for the record's actual exposure. These technical amounts
+do not yet include commercial margins, expenses or other premium adjustments.
+
+The full frequency-severity calculation is kept in
+[Getting Started](getting-started.html), where the units are followed through
+to a tariff representation.
+
+## Interpreting model effects
+
+`rating_table()` expresses fitted coefficients as tariff relativities and makes
+reference levels explicit. `add_portfolio_experience()` adds the unadjusted
+experience observed for those same risk-factor levels.
 
 ```{r}
-rt |>
+rating_table(frequency_model, exposure = "exposure") |>
   add_portfolio_experience(
     data = portfolio,
     claim_count = "nclaims",
-    exposure = "exposure"
+    exposure = "exposure",
+    metric = "frequency"
   ) |>
-  autoplot(risk_factors = "zip", metric = "frequency")
+  head()
 ```
 
-## 5. Refine tariff effects when needed
+This comparison answers two related questions: what conditional effect did the
+model estimate, and what pattern is visible directly in the portfolio? The two
+need not coincide because the model adjusts for its other terms. Exposure and
+claim volume remain important when deciding whether either pattern is stable
+enough for tariff use.
 
-Estimated coefficients may require further actuarial review before direct
-tariff use. Sparse levels, sampling variation or non-monotonic adjacent effects
-can produce a structure that is unstable or difficult to support.
+## Refining the tariff
 
-The refinement workflow makes these adjustments explicit:
+Refinement separates statistical estimation from explicit actuarial tariff
+decisions. The architecture is:
+
+`estimated model -> prepare refinement -> apply adjustments -> refit -> tariff model`.
 
 ```{r, eval = FALSE}
-refined_model <- prepare_refinement(freq_model) |>
-  add_smoothing(
-    model_variable = "age_policyholder_segment",
-    source_variable = "age_policyholder",
-    weights = "exposure"
-  ) |>
-  add_restriction(restrictions) |>
+zip_restrictions <- data.frame(
+  zip = c("0", "3"),
+  relativity = c(0.95, 1.05)
+)
+
+refined_model <- frequency_model |>
+  prepare_refinement(data = portfolio) |>
+  add_restriction(zip_restrictions) |>
   refit()
 ```
 
-Common refinement tasks include:
+`add_smoothing()` addresses unstable or implausibly irregular adjacent effects.
+`add_restriction()` records explicit coefficient choices. `add_relativities()`
+introduces a finer tariff structure within broader model levels. Other steps,
+such as shrinkage and rebasing, address related implementation questions.
 
-- smoothing adjacent tariff levels
-- fixing selected coefficients to actuarial or commercial assumptions
-- applying sublevel relativities within a broader GLM factor level
-- refitting the model while preserving the intended tariff structure
+Refinement should have an actuarial rationale, such as stability, credibility,
+monotonicity or an explicit implementation constraint. It is not a substitute
+for correcting a misspecified statistical model. The complete object workflow,
+including audit output, is described in
+[Refinement building blocks](refinement-workflow.html).
 
-These tools are most useful when the statistical model already captures the main
-risk structure and the remaining work is tariff refinement.
+## Validating the model
 
-## 6. Validate model behaviour
+Validation consists of several questions rather than one performance measure:
 
-Pricing models should be checked before their output is used in a tariff.
-`insurancerating` contains helpers for several common checks:
-
-- `check_overdispersion()` for Poisson frequency models
-- `check_residuals()` for simulation-based residual diagnostics using DHARMa
-- `bootstrap_performance()` for sensitivity of performance under repeated
-  sampling
-- `rating_grid()` to inspect observed rating-grid combinations
-
-For example:
+| Question | Building block |
+|---|---|
+| Does a Poisson model show material overdispersion? | `check_overdispersion()` |
+| Do simulated residuals show systematic structure? | `check_residuals()` |
+| How do comparable fitted models differ in likelihood and response-scale error? | `model_performance()` |
+| How sensitive is measured performance to portfolio resampling? | `bootstrap_performance()` |
 
 ```{r}
-check_overdispersion(freq_model)
+check_overdispersion(frequency_model)
 ```
+
+These diagnostics provide evidence about assumptions, unexplained structure
+and stability. They do not replace review of exposure by level, coefficient
+plausibility, observed versus fitted experience, out-of-sample behaviour or
+changes in portfolio mix. See [Model validation](model-validation.html) for a
+more complete diagnostic workflow.
+
+## Scaling to large portfolios
+
+Scale changes where a building block is executed, but not necessarily its
+actuarial purpose. `rating_grid_db()` performs model-point aggregation lazily in
+a database. `merge_date_ranges_db()` performs temporal consolidation in
+DuckDB. The main principle is to perform the expensive reduction close to the
+data and collect only the compact modelling table into R.
 
 ```{r, eval = FALSE}
-check_residuals(freq_model) |>
-  autoplot()
+grid_query <- rating_grid_db(
+  portfolio_db,
+  group_by = c("sector", "region"),
+  exposure = "earned_exposure",
+  aggregate_cols = c("claim_count", "claim_amount")
+)
+
+grid <- dplyr::collect(grid_query)
 ```
 
-Validation does not make a tariff decision by itself. It gives evidence about
-model fit, stability and areas that may need further review.
+The database-backed functions preserve the same conceptual distinction as the
+local functions: period consolidation is temporal, while rating-grid reduction
+constructs model points. Memory planning, DuckDB examples and the preferred
+order of operations are covered in
+[Large Portfolios](large-portfolios.html).
 
-## Typical workflow
+## Choosing the building blocks
 
-One possible workflow is:
+Not every pricing exercise needs every component:
 
-1. Inspect the portfolio with `factor_analysis()` and `outlier_histogram()`.
-2. Assess large-loss thresholds with `assess_excess_threshold()` where capped
-   severity or excess-loss loadings are relevant.
-3. Use `redistribute_excess_loss()` either to create one redistributed severity
-   response or to calculate a separate excess loading per exposure unit.
-4. Analyse continuous risk factors with `risk_factor_gam()`.
-5. Create candidate tariff segments with `derive_tariff_segments()`.
-6. Fit GLMs for frequency, severity or risk premium.
-7. Interpret coefficients with `rating_table()`.
-8. Compare fitted relativities with observed experience using
-   `add_portfolio_experience()`.
-9. Apply refinement where needed with `prepare_refinement()`, `add_smoothing()`,
-   `add_restriction()` or `add_relativities()`.
-10. Validate the resulting model with the model-performance helpers.
+- A compact, stable portfolio may require only exploratory analysis, a GLM,
+  `rating_table()` and targeted diagnostics.
+- A portfolio with material continuous effects may add `risk_factor_gam()` and
+  tariff segmentation.
+- A portfolio exposed to volatile large losses may add threshold assessment
+  and an explicit excess-loss treatment.
+- A large policy-period table may first require temporal consolidation and
+  database-backed model-point aggregation.
+- A mature tariff may require explicit refinement, audit and comparison with
+  observed experience.
 
-The exact order and choice of functions depends on the portfolio, product,
-data quality and pricing objective.
+These are possible combinations, not mandatory recipes. The appropriate set
+depends on the response definition, available experience, portfolio scale,
+modelling objective and intended tariff implementation.
 
-## Next steps
+## Where to go next
 
-For a worked example, see:
-
-- [Getting started](getting-started.html)
-
-For coefficient refinement:
-
-- [Refinement building blocks](refinement-workflow.html)
-
-For validation:
-
-- [Model validation](model-validation.html)
+- [Getting Started](getting-started.html) is the primary worked tutorial and
+  follows one portfolio through modelling, interpretation, validation and a
+  small refinement.
+- [Refinement building blocks](refinement-workflow.html) develops smoothing,
+  restrictions, relativities, refitting and audit in detail.
+- [Model validation](model-validation.html) covers residual, dispersion and
+  resampling diagnostics.
+- [Large Portfolios](large-portfolios.html) covers local
+  and database-backed portfolio reduction.
+- The [reference index](https://mharinga.github.io/insurancerating/reference/index.html) maps these actuarial tasks to
+  the exact public functions and arguments.

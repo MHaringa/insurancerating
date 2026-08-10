@@ -38,7 +38,7 @@
     <div class="section level2">
       <h2 id="portfolio-analysis">Portfolio analysis<a class="anchor" aria-label="anchor" href="#portfolio-analysis"></a></h2>
 
-      <div class="section-desc"><p>Analyse portfolio behaviour and inspect risk factors before model estimation.</p></div>
+      <div class="section-desc"><p>Inspect observed portfolio experience, exposure distributions and unusual observations before or alongside modelling.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -66,60 +66,9 @@
         </dt>
         <dd>Portfolio histogram with tail bins</dd>
       </dl></div><div class="section level2">
-      <h2 id="severity-and-large-claims">Severity and large claims<a class="anchor" aria-label="anchor" href="#severity-and-large-claims"></a></h2>
+      <h2 id="risk-factor-analysis-and-structuring">Risk-factor analysis and structuring<a class="anchor" aria-label="anchor" href="#risk-factor-analysis-and-structuring"></a></h2>
 
-      <div class="section-desc"><p>Analyse claim amounts, capped or truncated severity, and redistribute large losses before fitting severity models.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="plot_severity_distribution.html">plot_severity_distribution()</a></code>
-
-        </dt>
-        <dd>Exploratory severity diagnostics by category</dd>
-
-        <dt>
-
-          <code><a href="assess_excess_threshold.html">assess_excess_threshold()</a></code>
-
-        </dt>
-        <dd>Assess possible excess-loss thresholds</dd>
-
-        <dt>
-
-          <code><a href="as_gt.html">as_gt()</a></code>
-
-        </dt>
-        <dd>Convert an object to a gt table</dd>
-
-        <dt>
-
-          <code><a href="redistribute_excess_loss.html">redistribute_excess_loss()</a></code>
-
-        </dt>
-        <dd>Redistribute large losses for severity or risk-premium modelling</dd>
-
-        <dt>
-
-          <code><a href="fit_truncated_severity.html">fit_truncated_severity()</a></code>
-
-        </dt>
-        <dd>Fit severity distributions to truncated claim data</dd>
-
-        <dt>
-
-          <code><a href="autoplot.truncated_severity.html">autoplot(<i>&lt;truncated_severity&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Plot a fitted truncated severity distribution</dd>
-      </dl></div><div class="section level2">
-      <h2 id="tariff-segments">Tariff segments<a class="anchor" aria-label="anchor" href="#tariff-segments"></a></h2>
-
-      <div class="section-desc"><p>Analyse continuous risk factors and convert them to tariff segments.</p></div>
+      <div class="section-desc"><p>Analyse continuous risk relationships and translate them into practical tariff structures.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -149,14 +98,74 @@
 
         <dt>
 
+          <code><a href="fisher_classify.html">fisher_classify()</a></code>
+
+        </dt>
+        <dd>Fisher's natural breaks classification</dd>
+
+        <dt>
+
           <code><a href="add_tariff_segments.html">add_tariff_segments()</a></code>
 
         </dt>
         <dd>Add derived tariff segments to portfolio data</dd>
       </dl></div><div class="section level2">
-      <h2 id="modelling-and-interpretation">Modelling and interpretation<a class="anchor" aria-label="anchor" href="#modelling-and-interpretation"></a></h2>
+      <h2 id="severity-modelling">Severity modelling<a class="anchor" aria-label="anchor" href="#severity-modelling"></a></h2>
 
-      <div class="section-desc"><p>Estimate pricing models and interpret fitted coefficients in tariff terms.</p></div>
+      <div class="section-desc"><p>Explore claim amounts and fit severity distributions to truncated claims.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="plot_severity_distribution.html">plot_severity_distribution()</a></code>
+
+        </dt>
+        <dd>Exploratory severity diagnostics by category</dd>
+
+        <dt>
+
+          <code><a href="fit_truncated_severity.html">fit_truncated_severity()</a></code>
+
+        </dt>
+        <dd>Fit severity distributions to truncated claim data</dd>
+
+        <dt>
+
+          <code><a href="autoplot.truncated_severity.html">autoplot(<i>&lt;truncated_severity&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot a fitted truncated severity distribution</dd>
+      </dl></div><div class="section level2">
+      <h2 id="large-loss-treatment">Large-loss treatment<a class="anchor" aria-label="anchor" href="#large-loss-treatment"></a></h2>
+
+      <div class="section-desc"><p>Assess excess thresholds and redistribute large-loss experience for severity or risk-premium modelling.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="assess_excess_threshold.html">assess_excess_threshold()</a></code>
+
+        </dt>
+        <dd>Assess possible excess-loss thresholds</dd>
+
+        <dt>
+
+          <code><a href="redistribute_excess_loss.html">redistribute_excess_loss()</a></code>
+
+        </dt>
+        <dd>Redistribute large losses for severity or risk-premium modelling</dd>
+      </dl></div><div class="section level2">
+      <h2 id="model-interpretation">Model interpretation<a class="anchor" aria-label="anchor" href="#model-interpretation"></a></h2>
+
+      <div class="section-desc"><p>Interpret fitted pricing models, compare estimated effects with observed portfolio experience, and add model predictions to portfolio data.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -191,9 +200,9 @@
         </dt>
         <dd>Add model predictions to a pricing data set</dd>
       </dl></div><div class="section level2">
-      <h2 id="refinement-workflow">Refinement workflow<a class="anchor" aria-label="anchor" href="#refinement-workflow"></a></h2>
+      <h2 id="tariff-refinement">Tariff refinement<a class="anchor" aria-label="anchor" href="#tariff-refinement"></a></h2>
 
-      <div class="section-desc"><p>Apply structured tariff adjustments such as smoothing, restrictions, and relativities.</p></div>
+      <div class="section-desc"><p>Record, inspect and refit explicit actuarial adjustments to tariff relativities.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -206,13 +215,6 @@
 
         </dt>
         <dd>Prepare a model refinement workflow</dd>
-
-        <dt>
-
-          <code><a href="autoplot.rating_refinement.html">autoplot(<i>&lt;rating_refinement&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Inspect a model refinement step</dd>
 
         <dt>
 
@@ -265,6 +267,13 @@
 
         <dt>
 
+          <code><a href="autoplot.rating_refinement.html">autoplot(<i>&lt;rating_refinement&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Inspect a model refinement step</dd>
+
+        <dt>
+
           <code><a href="refit.html">refit()</a></code>
 
         </dt>
@@ -277,9 +286,9 @@
         </dt>
         <dd>Audit the effect of a fitted model refinement</dd>
       </dl></div><div class="section level2">
-      <h2 id="validation">Validation<a class="anchor" aria-label="anchor" href="#validation"></a></h2>
+      <h2 id="model-validation">Model validation<a class="anchor" aria-label="anchor" href="#model-validation"></a></h2>
 
-      <div class="section-desc"><p>Assess model fit, predictive stability, dispersion, and residual behaviour.</p></div>
+      <div class="section-desc"><p>Assess model performance, resampling stability, distributional assumptions and residual behaviour.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -298,7 +307,7 @@
           <code><a href="bootstrap_performance.html">bootstrap_performance()</a></code>
 
         </dt>
-        <dd>Assess predictive stability by repeated resampling</dd>
+        <dd>Assess performance stability under repeated resampling</dd>
 
         <dt>
 
@@ -335,25 +344,9 @@
         </dt>
         <dd>Inspect simulation-based residual uniformity</dd>
       </dl></div><div class="section level2">
-      <h2 id="model-structure">Model structure<a class="anchor" aria-label="anchor" href="#model-structure"></a></h2>
+      <h2 id="portfolio-preparation-and-reduction">Portfolio preparation and reduction<a class="anchor" aria-label="anchor" href="#portfolio-preparation-and-reduction"></a></h2>
 
-      <div class="section-desc"><p>Extract the data and metadata represented by fitted pricing models.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="extract_model_data.html">extract_model_data()</a></code>
-
-        </dt>
-        <dd>Recover the portfolio data used by a fitted model</dd>
-      </dl></div><div class="section level2">
-      <h2 id="portfolio-reduction">Portfolio reduction<a class="anchor" aria-label="anchor" href="#portfolio-reduction"></a></h2>
-
-      <div class="section-desc"><p>Reduce portfolio records across observed rating-factor combinations or connected coverage periods, locally or lazily in a database.</p></div>
+      <div class="section-desc"><p>Consolidate policy periods and aggregate observed model points in memory or lazily in a database.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -361,13 +354,6 @@
 
 
       <dl><dt>
-
-          <code><a href="rating_grid.html">rating_grid()</a></code>
-
-        </dt>
-        <dd>Construct observed rating-grid points</dd>
-
-        <dt>
 
           <code><a href="merge_date_ranges.html">merge_date_ranges()</a></code>
 
@@ -376,21 +362,28 @@
 
         <dt>
 
-          <code><a href="rating_grid_db.html">rating_grid_db()</a></code>
-
-        </dt>
-        <dd>Reduce a database portfolio to observed rating-grid points</dd>
-
-        <dt>
-
           <code><a href="merge_date_ranges_db.html">merge_date_ranges_db()</a></code>
 
         </dt>
         <dd>Merge connected portfolio periods in DuckDB</dd>
-      </dl></div><div class="section level2">
-      <h2 id="portfolio-time-operations">Portfolio time operations<a class="anchor" aria-label="anchor" href="#portfolio-time-operations"></a></h2>
 
-      <div class="section-desc"><p>Expand policy periods to reporting months or match dated events to active portfolio records.</p></div>
+        <dt>
+
+          <code><a href="rating_grid.html">rating_grid()</a></code>
+
+        </dt>
+        <dd>Construct observed rating-grid points</dd>
+
+        <dt>
+
+          <code><a href="rating_grid_db.html">rating_grid_db()</a></code>
+
+        </dt>
+        <dd>Reduce a database portfolio to observed rating-grid points</dd>
+      </dl></div><div class="section level2">
+      <h2 id="policy-period-operations">Policy period operations<a class="anchor" aria-label="anchor" href="#policy-period-operations"></a></h2>
+
+      <div class="section-desc"><p>Split, align and query insurance policy periods over time.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -411,9 +404,9 @@
         </dt>
         <dd>Match event dates to active portfolio periods</dd>
       </dl></div><div class="section level2">
-      <h2 id="utilities">Utilities<a class="anchor" aria-label="anchor" href="#utilities"></a></h2>
+      <h2 id="model-and-supporting-utilities">Model and supporting utilities<a class="anchor" aria-label="anchor" href="#model-and-supporting-utilities"></a></h2>
 
-      <div class="section-desc"><p>Supporting functions used across pricing workflows.</p></div>
+      <div class="section-desc"><p>Recover model data, format package results and support common pricing calculations and simulations.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -421,6 +414,27 @@
 
 
       <dl><dt>
+
+          <code><a href="extract_model_data.html">extract_model_data()</a></code>
+
+        </dt>
+        <dd>Recover the portfolio data used by a fitted model</dd>
+
+        <dt>
+
+          <code><a href="as_gt.html">as_gt()</a></code>
+
+        </dt>
+        <dd>Convert an object to a gt table</dd>
+
+        <dt>
+
+          <code><a href="set_reference_level.html">set_reference_level()</a></code>
+
+        </dt>
+        <dd>Set the reference level of a factor</dd>
+
+        <dt>
 
           <code><a href="rmse.html">rmse()</a></code>
 
@@ -440,13 +454,6 @@
 
         </dt>
         <dd>Simulate severities from a truncated gamma distribution</dd>
-
-        <dt>
-
-          <code><a href="set_reference_level.html">set_reference_level()</a></code>
-
-        </dt>
-        <dd>Set the reference level of a factor</dd>
       </dl></div><div class="section level2">
       <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a></h2>
 
@@ -556,13 +563,6 @@
 
         </dt>
         <dd>Deprecated alias for <code><a href="../reference/fit_truncated_severity.html">fit_truncated_severity()</a></code></dd>
-
-        <dt>
-
-          <code><a href="fisher_classify.html">fisher_classify()</a></code>
-
-        </dt>
-        <dd>Fisher's natural breaks classification</dd>
 
         <dt>
 

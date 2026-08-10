@@ -48,9 +48,9 @@
 (default is all available metrics). The numeric positions are:
 \itemize{
 \item 1. Frequency (\code{nclaims / exposure})
-\item 2. Average severity (\code{severity / nclaims})
-\item 3. Risk premium (\code{severity / exposure})
-\item 4. Loss ratio (\code{severity / premium})
+\item 2. Average severity (\code{claim_amount / claim_count})
+\item 3. Risk premium (\code{claim_amount / exposure})
+\item 4. Loss ratio (\code{claim_amount / premium})
 \item 5. Average premium (\code{premium / exposure})
 \item 6. Exposure
 \item 7. Severity

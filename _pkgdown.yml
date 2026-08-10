@@ -18,59 +18,65 @@ articles:
     contents:
       - getting-started
       - pricing-workflow-building-blocks
-  - title: "Model development"
+  - title: "Specialist guides"
     contents:
       - refinement-workflow
       - model-validation
-  - title: "Portfolio data"
-    contents:
       - large-portfolios
 
 reference:
   - title: "Portfolio analysis"
     desc: >
-      Analyse portfolio behaviour and inspect risk factors before model estimation.
+      Inspect observed portfolio experience, exposure distributions and unusual
+      observations before or alongside modelling.
     contents:
       - factor_analysis
       - autoplot.factor_analysis
       - outlier_histogram
 
-  - title: "Severity and large claims"
+  - title: "Risk-factor analysis and structuring"
     desc: >
-      Analyse claim amounts, capped or truncated severity, and redistribute
-      large losses before fitting severity models.
-    contents:
-      - plot_severity_distribution
-      - assess_excess_threshold
-      - as_gt
-      - redistribute_excess_loss
-      - fit_truncated_severity
-      - autoplot.truncated_severity
-
-  - title: "Tariff segments"
-    desc: >
-      Analyse continuous risk factors and convert them to tariff segments.
+      Analyse continuous risk relationships and translate them into practical
+      tariff structures.
     contents:
       - risk_factor_gam
       - autoplot.tariff_effect
       - derive_tariff_segments
+      - fisher_classify
       - add_tariff_segments
 
-  - title: "Modelling and interpretation"
+  - title: "Severity modelling"
     desc: >
-      Estimate pricing models and interpret fitted coefficients in tariff terms.
+      Explore claim amounts and fit severity distributions to truncated claims.
+    contents:
+      - plot_severity_distribution
+      - fit_truncated_severity
+      - autoplot.truncated_severity
+
+  - title: "Large-loss treatment"
+    desc: >
+      Assess excess thresholds and redistribute large-loss experience for
+      severity or risk-premium modelling.
+    contents:
+      - assess_excess_threshold
+      - redistribute_excess_loss
+
+  - title: "Model interpretation"
+    desc: >
+      Interpret fitted pricing models, compare estimated effects with observed
+      portfolio experience, and add model predictions to portfolio data.
     contents:
       - rating_table
       - add_portfolio_experience
       - autoplot.rating_table
       - add_prediction
 
-  - title: "Refinement workflow"
+  - title: "Tariff refinement"
     desc: >
-      Apply structured tariff adjustments such as smoothing, restrictions, and relativities.
+      Record, inspect and refit explicit actuarial adjustments to tariff
+      relativities.
     contents:
       - prepare_refinement
-      - autoplot.rating_refinement
       - add_smoothing
       - edit_smoothing
       - add_restriction
@@ -78,12 +84,14 @@ reference:
       - add_rebasing
       - add_relativities
       - relativity_specification
+      - autoplot.rating_refinement
       - refit
       - audit_refinement
 
-  - title: "Validation"
+  - title: "Model validation"
     desc: >
-      Assess model fit, predictive stability, dispersion, and residual behaviour.
+      Assess model performance, resampling stability, distributional assumptions
+      and residual behaviour.
     contents:
       - model_performance
       - bootstrap_performance
@@ -93,36 +101,34 @@ reference:
       - check_residuals
       - autoplot.check_residuals
 
-  - title: "Model structure"
+  - title: "Portfolio preparation and reduction"
     desc: >
-      Extract the data and metadata represented by fitted pricing models.
+      Consolidate policy periods and aggregate observed model points in memory
+      or lazily in a database.
     contents:
-      - extract_model_data
-
-  - title: "Portfolio reduction"
-    desc: >
-      Reduce portfolio records across observed rating-factor combinations or connected coverage periods, locally or lazily in a database.
-    contents:
-      - rating_grid
       - merge_date_ranges
-      - rating_grid_db
       - merge_date_ranges_db
+      - rating_grid
+      - rating_grid_db
 
-  - title: "Portfolio time operations"
+  - title: "Policy period operations"
     desc: >
-      Expand policy periods to reporting months or match dated events to active portfolio records.
+      Split, align and query insurance policy periods over time.
     contents:
       - split_periods_to_months
       - active_rows_by_date
 
-  - title: "Utilities"
+  - title: "Model and supporting utilities"
     desc: >
-      Supporting functions used across pricing workflows.
+      Recover model data, format package results and support common pricing
+      calculations and simulations.
     contents:
+      - extract_model_data
+      - as_gt
+      - set_reference_level
       - rmse
       - rlnormt
       - rgammat
-      - set_reference_level
 
   - title: "Data"
     contents:
@@ -144,7 +150,6 @@ reference:
       - construct_tariff_classes
       - bootstrap_rmse
       - fit_truncated_dist
-      - fisher_classify
       - fisher
       - histbin
       - biggest_reference

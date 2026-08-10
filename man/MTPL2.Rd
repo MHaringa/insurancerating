@@ -10,7 +10,7 @@ A data frame containing 3,000 rows and 6 variables:
 \item{customer_id}{Unique customer identifier.}
 \item{area}{Region where the customer lives (0–3).}
 \item{nclaims}{Number of claims.}
-\item{amount}{Claim severity (in euros).}
+\item{amount}{Total claim amount for the portfolio record (in euros).}
 \item{exposure}{Exposure, expressed in years.}
 \item{premium}{Earned premium.}
 }

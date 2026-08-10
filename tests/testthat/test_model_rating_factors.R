@@ -593,6 +593,47 @@ testthat::test_that(
 )
 
 testthat::test_that(
+  "observed experience plots when several levels have unit relativity", {
+    portfolio <- expand.grid(
+      age_band = factor(c("young", "old")),
+      region = factor(c("A", "B", "C")),
+      replicate = seq_len(4)
+    )
+    portfolio$exposure <- 1
+    portfolio$nclaims <- ifelse(portfolio$age_band == "young", 1, 2)
+    portfolio$amount <- portfolio$nclaims * 1000
+    portfolio$risk_premium <-
+      ifelse(portfolio$age_band == "young", 100, 200) *
+      c(0.95, 1.05, 1.02, 0.98)[portfolio$replicate]
+
+    tariff <- stats::glm(
+      risk_premium ~ age_band + region,
+      weights = exposure,
+      family = stats::Gamma(link = "log"),
+      data = portfolio
+    )
+
+    rt_observed <- rating_table(
+      tariff,
+      model_data = portfolio,
+      exposure = "exposure"
+    ) |>
+      add_portfolio_experience(
+        data = portfolio,
+        claim_count = "nclaims",
+        exposure = "exposure",
+        claim_amount = "amount",
+        metric = "risk_premium"
+      )
+
+    testthat::expect_s3_class(
+      ggplot2::autoplot(rt_observed, metric = "risk_premium"),
+      "ggplot"
+    )
+  }
+)
+
+testthat::test_that(
   "multiple factor_analysis objects can be attached to a rating table", {
     rt <- rating_table(mod1, model_data = df, exposure = "exposure")
     observed_area <- factor_analysis(

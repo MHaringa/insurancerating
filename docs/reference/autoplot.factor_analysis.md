@@ -67,11 +67,11 @@ autoplot(
 
   - 1\. Frequency (`nclaims / exposure`)
 
-  - 2\. Average severity (`severity / nclaims`)
+  - 2\. Average severity (`claim_amount / claim_count`)
 
-  - 3\. Risk premium (`severity / exposure`)
+  - 3\. Risk premium (`claim_amount / exposure`)
 
-  - 4\. Loss ratio (`severity / premium`)
+  - 4\. Loss ratio (`claim_amount / premium`)
 
   - 5\. Average premium (`premium / exposure`)
 

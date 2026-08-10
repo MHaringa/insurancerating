@@ -1,4 +1,4 @@
-#' Assess predictive stability by repeated resampling
+#' Assess performance stability under repeated resampling
 #'
 #' @description
 #' Refit a pricing model on repeated samples and record the resulting

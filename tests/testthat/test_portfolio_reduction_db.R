@@ -103,9 +103,13 @@ test_that("database reductions agree with local reductions in DuckDB", {
     exposure = "exposure",
     aggregate_cols = "premium"
   )
+  grid_result <- as.data.frame(grid_result)[order(grid_result$sector), , drop = FALSE]
+  grid_local <- grid_local[order(grid_local$sector), , drop = FALSE]
+  row.names(grid_result) <- NULL
+  row.names(grid_local) <- NULL
 
   expect_s3_class(grid_db, "tbl_lazy")
-  expect_equal(as.data.frame(grid_result), grid_local)
+  expect_equal(grid_result, grid_local)
 
   periods_db <- merge_date_ranges_db(
     portfolio_db,
@@ -122,6 +126,22 @@ test_that("database reductions agree with local reductions in DuckDB", {
     group_by = c("policy_id", "sector"),
     aggregate_cols = c("exposure", "premium")
   )
+  period_order_db <- order(
+    periods_result$policy_id,
+    periods_result$sector,
+    periods_result$period_start,
+    periods_result$period_end
+  )
+  period_order_local <- order(
+    periods_local$policy_id,
+    periods_local$sector,
+    periods_local$period_start,
+    periods_local$period_end
+  )
+  periods_result <- periods_result[period_order_db, , drop = FALSE]
+  periods_local <- periods_local[period_order_local, , drop = FALSE]
+  row.names(periods_result) <- NULL
+  row.names(periods_local) <- NULL
 
   expect_s3_class(periods_db, "tbl_lazy")
   expect_identical(names(periods_result), names(periods_local))

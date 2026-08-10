@@ -73,868 +73,594 @@
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>In many pricing analyses, model estimation is followed by a
-translation step.</p>
-<p>A fitted GLM may capture the structure of the portfolio well, while
-some fitted effects still need to be reviewed before they are used in a
-tariff.</p>
-<p>Common reasons include:</p>
-<ul>
-<li>irregular local variation</li>
-<li>lack of monotonicity</li>
-<li>externally imposed tariff structures</li>
-<li>expert judgement not directly represented in the model</li>
-<li>implementation constraints in policy administration systems</li>
-</ul>
-<p>For this reason, actuarial pricing work often distinguishes
-between:</p>
-<ol style="list-style-type: decimal">
-<li>model estimation</li>
-<li>tariff refinement</li>
-<li>final refit of the pricing structure</li>
-</ol>
-<p><code>insurancerating</code> provides a staged refinement
-interface:</p>
-<ol style="list-style-type: decimal">
-<li>fit an unrestricted model</li>
-<li>initialise a refinement object with
-<code><a href="../reference/prepare_refinement.html">prepare_refinement()</a></code>
-</li>
-<li>add one or more refinement steps</li>
-<li>inspect these steps before refit</li>
-<li>call <code><a href="../reference/refit.html">refit()</a></code> to obtain the final fitted model</li>
-</ol>
-<p>This separation records which adjustments are proposed before they
-are included in the fitted model. It also distinguishes estimated GLM
-effects from explicit tariff assumptions.</p>
+<p>Refinement is the explicit translation from statistically estimated
+model effects to the structure that will be reviewed, justified and
+implemented as a tariff. It can be motivated by stability, credibility,
+monotonicity, smoothness, sparse experience or an explicit
+implementation constraint.</p>
+<p>Refinement is not arbitrary editing of inconvenient coefficients.
+Each adjustment should have an actuarial or operational rationale and
+should be reviewed against exposure, claim volume, observed experience
+and model diagnostics. Recording these decisions as ordered steps makes
+them reproducible and easier to review.</p>
+<p>This vignette starts from a fitted unrestricted GLM and focuses on
+what happens next. The construction of frequency, severity and technical
+risk-premium models is covered in <a href="getting-started.html">Getting
+Started</a>. The wider role of refinement within the package is mapped
+in <a href="pricing-workflow-building-blocks.html">Pricing workflow and
+package building blocks</a>.</p>
+<p>The refinement architecture is:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Stage</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Unrestricted GLM</td>
+<td>Statistical starting point</td>
+</tr>
+<tr class="even">
+<td><code><a href="../reference/prepare_refinement.html">prepare_refinement()</a></code></td>
+<td>Create an editable specification around that model</td>
+</tr>
+<tr class="odd">
+<td>
+<code><a href="../reference/add_smoothing.html">add_smoothing()</a></code>, <code><a href="../reference/add_restriction.html">add_restriction()</a></code>,
+<code><a href="../reference/add_shrinkage.html">add_shrinkage()</a></code>, <code><a href="../reference/add_relativities.html">add_relativities()</a></code>
+</td>
+<td>Record proposed actuarial adjustments</td>
+</tr>
+<tr class="even">
+<td>
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>
+</td>
+<td>Inspect the proposal before fitting</td>
+</tr>
+<tr class="odd">
+<td><code><a href="../reference/refit.html">refit()</a></code></td>
+<td>Reconstruct and fit the GLM under the stored specification</td>
+</tr>
+<tr class="even">
+<td>
+<code><a href="../reference/rating_table.html">rating_table()</a></code> and <code><a href="../reference/audit_refinement.html">audit_refinement()</a></code>
+</td>
+<td>Inspect the fitted tariff and its portfolio effect</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level2">
-<h2 id="when-refinement-can-help">When refinement can help<a class="anchor" aria-label="anchor" href="#when-refinement-can-help"></a>
+<h2 id="a-compact-unrestricted-model">A compact unrestricted model<a class="anchor" aria-label="anchor" href="#a-compact-unrestricted-model"></a>
 </h2>
-<p>Refinement can be considered when the estimated model captures the
-main risk structure, but selected coefficient patterns require
-additional structure before tariff implementation.</p>
-<p>Typical use cases include:</p>
-<ul>
-<li>smoothing a rating factor derived from a continuous variable</li>
-<li>imposing monotonicity</li>
-<li>restricting coefficients to a predefined relativity structure</li>
-<li>introducing expert-based relativities within existing model
-levels</li>
-<li>simplifying the final tariff for practical implementation</li>
-</ul>
-<p>In many workflows, refinement is applied to the model that represents
-the final pricing signal, such as a premium or risk-premium model. In
-other cases, it may also be useful for selected frequency or severity
-effects. The relevant question is whether the adjusted coefficient
-pattern is intended to support the tariff structure that will be
-reviewed or implemented.</p>
-</div>
-<div class="section level2">
-<h2 id="example-setup">Example setup<a class="anchor" aria-label="anchor" href="#example-setup"></a>
-</h2>
-<p>The example below starts from one common premium modelling setup:</p>
-<ul>
-<li>analyse a continuous variable with a GAM</li>
-<li>convert it to tariff segments</li>
-<li>fit frequency and severity models</li>
-<li>combine both into a premium proxy</li>
-<li>fit an unrestricted premium model</li>
-</ul>
+<p>The unrestricted model is only the starting material for this
+vignette. The following setup creates grouped age and bonus-malus
+factors and fits a Poisson frequency GLM. The response is claim count
+and <code>log(exposure)</code> is the offset.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mharinga.github.io/insurancerating/">insurancerating</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mharinga.github.io/insurancerating/">insurancerating</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">age_policyholder_frequency</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/risk_factor_gam.html">risk_factor_gam</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="va">MTPL</span>,</span>
-<span>  claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
-<span>  risk_factor <span class="op">=</span> <span class="st">"age_policyholder"</span>,</span>
-<span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
+<span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">MTPL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">age_breaks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">25</span>, <span class="fl">32</span>, <span class="fl">39</span>, <span class="fl">51</span>, <span class="fl">58</span>, <span class="fl">65</span>, <span class="fl">84</span>, <span class="fl">95</span><span class="op">)</span></span>
+<span><span class="va">portfolio</span><span class="op">$</span><span class="va">age_band</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span></span>
+<span>  <span class="va">portfolio</span><span class="op">$</span><span class="va">age_policyholder</span>,</span>
+<span>  breaks <span class="op">=</span> <span class="va">age_breaks</span>,</span>
+<span>  include.lowest <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">age_segments_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/derive_tariff_segments.html">derive_tariff_segments</a></span><span class="op">(</span></span>
-<span>  <span class="va">age_policyholder_frequency</span>,</span>
-<span>  seed <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="va">portfolio</span><span class="op">$</span><span class="va">bm_group</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span></span>
+<span>  <span class="va">portfolio</span><span class="op">$</span><span class="va">bm</span>,</span>
+<span>  breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">4</span>, <span class="fl">8</span>, <span class="cn">Inf</span><span class="op">)</span>,</span>
+<span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Low"</span>, <span class="st">"Medium"</span>, <span class="st">"High"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
+<span><span class="va">portfolio</span><span class="op">$</span><span class="va">bm_detail</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">portfolio</span><span class="op">$</span><span class="va">bm</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">portfolio</span><span class="op">$</span><span class="va">zip</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">portfolio</span><span class="op">$</span><span class="va">zip</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="va">MTPL</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_tariff_segments.html">add_tariff_segments</a></span><span class="op">(</span><span class="va">age_segments_freq</span>, name <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">as.factor</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.factor</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="../reference/set_reference_level.html">set_reference_level</a></span><span class="op">(</span><span class="va">.</span>, <span class="va">exposure</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
-<span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">bm</span> <span class="op">+</span> <span class="va">age_policyholder_freq_cat</span>,</span>
-<span>  offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>,</span>
+<span><span class="va">unrestricted</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
+<span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">age_band</span> <span class="op">+</span> <span class="va">zip</span> <span class="op">+</span> <span class="va">bm_group</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  data <span class="op">=</span> <span class="va">dat</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">sev</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
-<span>  <span class="va">amount</span> <span class="op">~</span> <span class="va">zip</span>,</span>
-<span>  weights <span class="op">=</span> <span class="va">nclaims</span>,</span>
-<span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>,</span>
-<span>  data <span class="op">=</span> <span class="va">dat</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">amount</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">premium_df</span> <span class="op">&lt;-</span> <span class="va">dat</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_prediction.html">add_prediction</a></span><span class="op">(</span><span class="va">freq</span>, <span class="va">sev</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>premium <span class="op">=</span> <span class="va">pred_nclaims_freq</span> <span class="op">*</span> <span class="va">pred_amount_sev</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">burn_unrestricted</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
-<span>  <span class="va">premium</span> <span class="op">~</span> <span class="va">zip</span> <span class="op">+</span> <span class="va">bm</span> <span class="op">+</span> <span class="va">age_policyholder_freq_cat</span>,</span>
-<span>  weights <span class="op">=</span> <span class="va">exposure</span>,</span>
-<span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>,</span>
-<span>  data <span class="op">=</span> <span class="va">premium_df</span></span>
+<span>  data <span class="op">=</span> <span class="va">portfolio</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>Before refinement, inspect the unrestricted coefficient
-structure:</p>
+<p>The initial tariff effects can be inspected before any actuarial
+adjustment:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                  risk_factor       level est_burn_unrestricted exposure</span></span>
-<span><span class="co">#&gt; 1                (Intercept) (Intercept)          1.228041e+04       NA</span></span>
-<span><span class="co">#&gt; 2                        zip           1          1.000000e+00    11081</span></span>
-<span><span class="co">#&gt; 3                        zip           0          3.737317e-01      207</span></span>
-<span><span class="co">#&gt; 4                        zip           2          7.574226e-01     7783</span></span>
-<span><span class="co">#&gt; 5                        zip           3          7.325129e-01     7588</span></span>
-<span><span class="co">#&gt; 6  age_policyholder_freq_cat     (39,51]          1.000000e+00     7421</span></span>
-<span><span class="co">#&gt; 7  age_policyholder_freq_cat     [18,25]          1.895596e+00     1331</span></span>
-<span><span class="co">#&gt; 8  age_policyholder_freq_cat     (25,32]          1.301496e+00     3649</span></span>
-<span><span class="co">#&gt; 9  age_policyholder_freq_cat     (32,39]          1.053848e+00     4247</span></span>
-<span><span class="co">#&gt; 10 age_policyholder_freq_cat     (51,58]          8.491823e-01     3245</span></span>
-<span><span class="co">#&gt; 11 age_policyholder_freq_cat     (58,65]          7.258652e-01     2791</span></span>
-<span><span class="co">#&gt; 12 age_policyholder_freq_cat     (65,84]          7.584714e-01     3901</span></span>
-<span><span class="co">#&gt; 13 age_policyholder_freq_cat     (84,95]          5.131699e-01       72</span></span>
-<span><span class="co">#&gt; 14                        bm          bm          9.980551e-01       NA</span></span>
-<span></span>
-<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="refinement-workflow_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="700"></p>
-<p>At this stage, the coefficients reflect the unrestricted model fit.
-This output is often informative by itself. If the pattern is too
-irregular, too granular or difficult to explain, a refinement step can
-be added explicitly.</p>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">unrestricted</span>, exposure <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   risk_factor       level est_unrestricted</span></span>
+<span><span class="co">#&gt; 1 (Intercept) (Intercept)        0.2735430</span></span>
+<span><span class="co">#&gt; 2    age_band     [18,25]        1.0000000</span></span>
+<span><span class="co">#&gt; 3    age_band     (25,32]        0.6853582</span></span>
+<span><span class="co">#&gt; 4    age_band     (32,39]        0.5540633</span></span>
+<span><span class="co">#&gt; 5    age_band     (39,51]        0.5197098</span></span>
+<span><span class="co">#&gt; 6    age_band     (51,58]        0.4381469</span></span></code></pre></div>
+<p>These are the conditional effects estimated by the unrestricted GLM.
+An irregular effect is not by itself a reason to refine it: the analyst
+should first consider data quality, exposure definition, model
+specification, interactions and factor construction.</p>
 </div>
 <div class="section level2">
-<h2 id="the-refinement-object">The refinement object<a class="anchor" aria-label="anchor" href="#the-refinement-object"></a>
+<h2 id="preparing-the-refinement">Preparing the refinement<a class="anchor" aria-label="anchor" href="#preparing-the-refinement"></a>
 </h2>
-<p>Refinement begins with:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">ref</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span></span>
-<span><span class="va">ref</span></span>
+<code class="sourceCode R"><span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span></span>
+<span>  <span class="va">unrestricted</span>,</span>
+<span>  data <span class="op">=</span> <span class="va">portfolio</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">refinement</span></span>
 <span><span class="co">#&gt; &lt;rating_refinement&gt;</span></span>
-<span><span class="co">#&gt; Base model: Gamma GLM (log link)</span></span>
+<span><span class="co">#&gt; Base model: Poisson GLM (log link)</span></span>
 <span><span class="co">#&gt; Steps: 0</span></span></code></pre></div>
-<p>A <code>rating_refinement</code> object stores:</p>
+<p><code><a href="../reference/prepare_refinement.html">prepare_refinement()</a></code> creates a
+<code>rating_refinement</code> object containing the unrestricted model,
+the corresponding retained model data and an initially empty ordered
+step specification. It does not refit the GLM and does not change its
+coefficients or fitted values.</p>
+<p>This distinction is central to the API:</p>
 <ul>
-<li>the fitted base model</li>
-<li>the underlying model data</li>
-<li>the refinement steps added through the refinement interface</li>
+<li>
+<code>unrestricted</code> is a fitted statistical model;</li>
+<li>
+<code>refinement</code> is an editable proposal for the tariff
+structure;</li>
+<li>the model returned later by <code><a href="../reference/refit.html">refit()</a></code> is the fitted
+outcome under that proposal.</li>
 </ul>
-<p>At this point, the model itself has not been refitted. The refinement
-object represents a proposed tariff adjustment structure, not yet the
-final fitted result.</p>
-<p>This distinction is useful because refinement steps can be inspected
-before they are incorporated into the final model.</p>
+<p>Keep the refinement object when iterating. A model returned by
+<code><a href="../reference/refit.html">refit()</a></code> is a fitted result, not an editable specification.
+Calling <code><a href="../reference/prepare_refinement.html">prepare_refinement()</a></code> on that fitted result
+deliberately starts a new workflow and does not reconstruct the earlier
+steps.</p>
 </div>
 <div class="section level2">
-<h2 id="smoothing">Smoothing<a class="anchor" aria-label="anchor" href="#smoothing"></a>
+<h2 id="smoothing-an-ordered-effect">Smoothing an ordered effect<a class="anchor" aria-label="anchor" href="#smoothing-an-ordered-effect"></a>
 </h2>
-<div class="section level3">
-<h3 id="purpose">Purpose<a class="anchor" aria-label="anchor" href="#purpose"></a>
-</h3>
-<p>Smoothing can be used when a rating factor derived from a continuous
-variable contains local variation that is hard to justify in a
-tariff.</p>
-<p>For example, a coefficient pattern such as:</p>
-<ul>
-<li>age 30–34 lower</li>
-<li>age 34–38 higher</li>
-<li>age 38–42 lower again</li>
-</ul>
-<p>may be compatible with the observed sample, but unstable across
-periods or difficult to support actuarially. Smoothing replaces local
-variation with an explicitly regularised coefficient pattern.</p>
-</div>
-<div class="section level3">
-<h3 id="adding-smoothing">Adding smoothing<a class="anchor" aria-label="anchor" href="#adding-smoothing"></a>
-</h3>
+<p>Raw level effects for a grouped continuous variable may contain local
+movement that is weakly supported or unstable over time. Smoothing
+replaces that local pattern with an explicitly structured curve. It is
+most relevant when a gradual underlying relationship is plausible and
+neighbouring tariff levels should be interpreted coherently.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">ref</span> <span class="op">&lt;-</span> <span class="va">ref</span> <span class="op">|&gt;</span></span>
+<code class="sourceCode R"><span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_smoothing.html">add_smoothing</a></span><span class="op">(</span></span>
-<span>    model_variable <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span>,</span>
+<span>    model_variable <span class="op">=</span> <span class="st">"age_band"</span>,</span>
 <span>    source_variable <span class="op">=</span> <span class="st">"age_policyholder"</span>,</span>
-<span>    breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">93</span>, <span class="fl">5</span><span class="op">)</span>, <span class="fl">95</span><span class="op">)</span>,</span>
+<span>    breaks <span class="op">=</span> <span class="va">age_breaks</span>,</span>
+<span>    smoothing <span class="op">=</span> <span class="st">"spline"</span>,</span>
+<span>    k <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>    weights <span class="op">=</span> <span class="st">"exposure"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<p>The key arguments are:</p>
+<p>The arguments distinguish two variables:</p>
 <ul>
 <li>
-<code>model_variable</code>: the grouped variable present in the
-GLM</li>
+<code>model_variable</code> is the grouped factor included in the
+unrestricted GLM;</li>
 <li>
-<code>source_variable</code>: the original continuous portfolio
-variable</li>
-<li>
-<code>breaks</code>: the preferred commercial cut points</li>
-<li>
-<code>smoothing</code>: the smoothing specification;
-<code>"spline"</code> is the general-purpose default</li>
-<li>
-<code>weights</code>: optional weighting, typically exposure</li>
+<code>source_variable</code> is the underlying numeric portfolio
+variable used to estimate the smooth relationship.</li>
 </ul>
-<p>Use <code>"increasing"</code> or <code>"decreasing"</code> when the
-tariff effect is required to move monotonically. Convex, concave and
-combined shape constraints are available for cases where that additional
-assumption can be supported actuarially. <code>"poly"</code> fits a
-global polynomial and uses <code>degree</code>; <code>"gam"</code> fits
-a thin-plate smooth that can be used as an unconstrained comparison. For
-spline methods, <code>k</code> limits the available curve flexibility
-but is not the fitted effective number of degrees of freedom.</p>
-</div>
+<p><code>breaks</code> define the intervals in the resulting tariff
+factor. Exposure weights give levels with more portfolio support more
+influence. With a spline method, <code>k</code> controls the available
+curve flexibility; it is a basis dimension rather than a fixed number of
+fitted degrees of freedom.</p>
+<p>The default unconstrained spline is suitable when the shape should
+remain data-led. Increasing or decreasing shape constraints are
+available when a directional assumption has a defensible actuarial
+basis. The function reference for <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> describes
+the full set of methods and their curvature interpretation.</p>
 <div class="section level3">
-<h3 id="inspecting-smoothing-before-refit">Inspecting smoothing before refit<a class="anchor" aria-label="anchor" href="#inspecting-smoothing-before-refit"></a>
+<h3 id="inspecting-the-proposal">Inspecting the proposal<a class="anchor" aria-label="anchor" href="#inspecting-the-proposal"></a>
 </h3>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">ref</span><span class="op">)</span></span>
-<span><span class="co">#&gt; &lt;rating_refinement&gt;</span></span>
-<span><span class="co">#&gt; Base model: Gamma GLM (log link)</span></span>
-<span><span class="co">#&gt; Steps: 1</span></span>
-<span><span class="co">#&gt;   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Refinement specification</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
+<span><span class="co">#&gt; Created: 2026-08-10 13:22:14 CEST</span></span>
+<span><span class="co">#&gt; Observations: 30,000</span></span>
+<span><span class="co">#&gt; Family: poisson (log link)</span></span>
+<span><span class="co">#&gt; Base formula:</span></span>
+<span><span class="co">#&gt;   nclaims ~ age_band + zip + bm_group + offset(log(exposure))</span></span>
+<span><span class="co">#&gt; Offset: log(exposure)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Refinement steps: 1</span></span>
+<span><span class="co">#&gt;   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)</span></span>
+<span><span class="co">#&gt;      8 intervals over 18 to 95</span></span>
+<span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span></span>
-<span>  <span class="va">ref</span>,</span>
-<span>  variable <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span>,</span>
-<span>  x_max <span class="op">=</span> <span class="fl">90</span>,</span>
-<span>  y_max <span class="op">=</span> <span class="fl">1.5</span></span>
+<span>  <span class="va">refinement</span>,</span>
+<span>  variable <span class="op">=</span> <span class="st">"age_band"</span>,</span>
+<span>  x_max <span class="op">=</span> <span class="fl">90</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><img src="refinement-workflow_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="700"></p>
-<p>This plot belongs to the <strong>pre-refit stage</strong>. It
-shows:</p>
-<ul>
-<li>the original fitted coefficients</li>
-<li>the proposed smoothed structure</li>
-</ul>
-<p>The purpose is to inspect the refinement step itself, before it is
-incorporated into the final fitted model.</p>
-</div>
-<div class="section level3">
-<h3 id="choosing-a-smoothing-method">Choosing a smoothing method<a class="anchor" aria-label="anchor" href="#choosing-a-smoothing-method"></a>
-</h3>
-<p>Typical smoothing choices are:</p>
-<ul>
-<li>
-<code>"spline"</code>: unconstrained penalised cubic regression
-spline; the general-purpose default</li>
-<li>
-<code>"poly"</code>: global polynomial controlled by
-<code>degree</code>
-</li>
-<li>
-<code>"gam"</code>: thin-plate regression spline fitted with
-<code>mgcv</code>, mainly useful as an unconstrained comparison</li>
-<li>
-<code>"increasing"</code>: monotone increasing</li>
-<li>
-<code>"decreasing"</code>: monotone decreasing</li>
-</ul>
-<p>Monotonicity concerns the direction of the tariff effect. Convexity
-and concavity concern how its slope changes. A convex effect has an
-increasing slope and may be U-shaped when its direction is not
-constrained; a concave effect has a decreasing slope and may be inverted
-U-shaped. For an increasing effect, convexity implies acceleration and
-concavity implies flattening. For a decreasing effect, convexity implies
-flattening and concavity implies a steeper decline.</p>
-<p>The readable advanced options are <code>"convex"</code>,
-<code>"concave"</code>, <code>"increasing_convex"</code>,
-<code>"increasing_concave"</code>, <code>"decreasing_convex"</code> and
-<code>"decreasing_concave"</code>. They should be used only when the
-assumed curvature has an actuarial or economic basis in addition to any
-directional assumption. The former short codes <code>"mpi"</code>,
-<code>"mpd"</code>, <code>"cx"</code>, <code>"cv"</code>,
-<code>"micx"</code>, <code>"micv"</code>, <code>"mdcx"</code> and
-<code>"mdcv"</code> remain accepted for compatibility.</p>
-<p>For example:</p>
-<ul>
-<li>age may justify a flexible smooth</li>
-<li>insured value or power may require a monotonic relationship</li>
-<li>low-exposure tails may benefit from exposure weighting</li>
-</ul>
+<p>This is a <strong>pre-refit</strong> plot. It compares the original
+fitted effect with the proposed smooth structure. The GLM has not yet
+been estimated under that structure.</p>
+<p>If the curve needs adjustment, retain the specification and use
+<code><a href="../reference/edit_smoothing.html">edit_smoothing()</a></code> before refitting. This preserves the rest
+of the ordered workflow rather than starting again from the fitted
+result.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="restrictions">Restrictions<a class="anchor" aria-label="anchor" href="#restrictions"></a>
+<h2 id="restricting-selected-levels">Restricting selected levels<a class="anchor" aria-label="anchor" href="#restricting-selected-levels"></a>
 </h2>
-<div class="section level3">
-<h3 id="purpose-1">Purpose<a class="anchor" aria-label="anchor" href="#purpose-1"></a>
-</h3>
-<p>Restrictions can be used when coefficients need to follow a
-predefined structure.</p>
-<p>Typical examples include:</p>
-<ul>
-<li>bonus-malus systems</li>
-<li>governance-approved relativities</li>
-<li>externally mandated tariff structures</li>
-<li>implementation constraints in policy systems</li>
-</ul>
-<p>Restrictions differ from smoothing:</p>
-<ul>
-<li>smoothing reshapes the fitted pattern</li>
-<li>restriction imposes user-defined coefficients</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="adding-restrictions">Adding restrictions<a class="anchor" aria-label="anchor" href="#adding-restrictions"></a>
-</h3>
+<p><code><a href="../reference/add_restriction.html">add_restriction()</a></code> fixes tariff levels at supplied
+relativities. A restriction may represent an implementation rule, a
+supported external assumption or a deliberate response to an unstable
+local estimate. It differs from smoothing: smoothing estimates a
+structured pattern, whereas a restriction explicitly prescribes selected
+values.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">zip_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  zip <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>,</span>
-<span>  zip_adj <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="fl">0.9</span>, <span class="fl">1.0</span>, <span class="fl">1.2</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">zip_restrictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  zip <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0"</span>, <span class="st">"3"</span><span class="op">)</span>,</span>
+<span>  zip_restricted <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.95</span>, <span class="fl">1.10</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">ref</span> <span class="op">&lt;-</span> <span class="va">ref</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_restriction.html">add_restriction</a></span><span class="op">(</span>restrictions <span class="op">=</span> <span class="va">zip_df</span><span class="op">)</span></span></code></pre></div>
-<p>The restriction table must contain exactly two columns:</p>
-<ul>
-<li>the original factor levels</li>
-<li>the adjusted coefficients</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="inspecting-restrictions-before-refit">Inspecting restrictions before refit<a class="anchor" aria-label="anchor" href="#inspecting-restrictions-before-refit"></a>
-</h3>
+<span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="va">zip_restrictions</span><span class="op">)</span></span></code></pre></div>
+<p>Only ZIP levels 0 and 3 are supplied here. The other observed ZIP
+levels are fixed at their current effective relativities. Consequently,
+a partial restriction changes the selected values but still produces a
+complete fixed structure for that risk factor.</p>
+<p>Repeated calls for the same restricted variable update matching
+levels and retain earlier restrictions for levels not supplied again.
+New levels may be added when they represent explicit tariff assumptions;
+new risk factors require the corresponding portfolio column and an
+explicit opt-in. These behaviours are documented in the
+<code><a href="../reference/add_restriction.html">add_restriction()</a></code> reference.</p>
+<p>A new fixed tariff factor can also replace an existing standalone
+model term. For example,
+<code>add_restriction(..., replaces = "postal_area")</code> records that
+the new classification substitutes for <code>postal_area</code> during
+<code><a href="../reference/refit.html">refit()</a></code>, rather than adding a second multiplicative effect.
+The replacement is shown in the refinement summary and audit.
+Interactions and transformed terms must be revised explicitly in the
+model specification because removing them is not an unambiguous level
+restriction.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">ref</span>, variable <span class="op">=</span> <span class="st">"zip"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">refinement</span>, variable <span class="op">=</span> <span class="st">"zip"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="refinement-workflow_files/figure-html/unnamed-chunk-8-1.png" class="r-plt" alt="" width="700"></p>
-<p>This shows the proposed restricted structure relative to the original
-fitted model.</p>
-</div>
+<p>Again, the plot shows the proposed restriction before
+<code><a href="../reference/refit.html">refit()</a></code>.</p>
 </div>
 <div class="section level2">
-<h2 id="shrinkage-of-categorical-relativities">Shrinkage of categorical relativities<a class="anchor" aria-label="anchor" href="#shrinkage-of-categorical-relativities"></a>
+<h2 id="shrinking-a-categorical-effect">Shrinking a categorical effect<a class="anchor" aria-label="anchor" href="#shrinking-a-categorical-effect"></a>
 </h2>
-<div class="section level3">
-<h3 id="purpose-2">Purpose<a class="anchor" aria-label="anchor" href="#purpose-2"></a>
-</h3>
-<p>Shrinkage can be used when the ordering of a categorical risk-factor
-pattern is considered credible, but the distance between its highest and
-lowest relativities is too large for the available experience or the
-intended tariff. It differs from a restriction: a restriction supplies
-selected relativities directly, whereas shrinkage systematically moves
-all current relativities towards a common level.</p>
-<p>The adjustment is made on the logarithmic scale. With
-<code>credibility = 0.9</code>, each level retains 90 percent of its
-current logarithmic effect and receives 10 percent of the common effect.
-The resulting relativities are rescaled to retain their weighted
-arithmetic mean. This reduces differentiation without changing the
-selected weighted level of the risk factor.</p>
+<p><code><a href="../reference/add_shrinkage.html">add_shrinkage()</a></code> reduces the differences between the
+current relativities of one categorical risk factor. It is useful when
+the direction and ordering of an estimated effect are considered
+informative, but the spread between levels is larger than is supported
+by the available experience or the intended tariff. Unlike a
+restriction, shrinkage does not prescribe individual level values.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">ref</span> <span class="op">&lt;-</span> <span class="va">ref</span> <span class="op">|&gt;</span></span>
+<code class="sourceCode R"><span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_shrinkage.html">add_shrinkage</a></span><span class="op">(</span></span>
-<span>    model_variable <span class="op">=</span> <span class="st">"zip"</span>,</span>
+<span>    model_variable <span class="op">=</span> <span class="st">"bm_group"</span>,</span>
 <span>    credibility <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>    weights <span class="op">=</span> <span class="st">"exposure"</span></span>
-<span>  <span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ref</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Refinement specification</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-08-09 14:24:53 CEST</span></span>
-<span><span class="co">#&gt; Observations: 30,000</span></span>
-<span><span class="co">#&gt; Family: Gamma (log link)</span></span>
-<span><span class="co">#&gt; Base formula:</span></span>
-<span><span class="co">#&gt;   premium ~ zip + bm + age_policyholder_freq_cat</span></span>
-<span><span class="co">#&gt; Offset: none</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Refinement steps: 3</span></span>
-<span><span class="co">#&gt;   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)</span></span>
-<span><span class="co">#&gt;      16 intervals over 18 to 95</span></span>
-<span><span class="co">#&gt;   2. Restriction: zip -&gt; zip_adj (4 levels)</span></span>
-<span><span class="co">#&gt;      1 = 0.9; 0 = 0.8; 2 = 1.0; 3 = 1.2</span></span>
-<span><span class="co">#&gt;   3. Shrinkage: zip (credibility: 0.9, weights: exposure, weighted mean preserved)</span></span>
-<span><span class="co">#&gt;      credibility = 0.9; weights = exposure; weighted mean preserved</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">ref</span>, step <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
-<p><img src="refinement-workflow_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="700"></p>
-<p>Exposure is generally an appropriate basis for frequency or
-risk-premium relativities. Claim count is generally more appropriate for
-severity relativities. With <code>weights = NULL</code>, explicit GLM
-weights are used first; otherwise a simple exposure offset is used when
-it can be identified without ambiguity. Use
-<code>weights = "equal"</code> when every tariff level should receive
-the same weight. Equal weighting is an explicit unweighted level
-comparison and does not necessarily preserve the observed portfolio
-level.</p>
-<p>The <code>credibility</code> value is a refinement assumption rather
-than a formally estimated Buhlmann credibility factor. Its selection
-should be assessed against exposure, stability over time and the
-intended degree of tariff differentiation.</p>
-</div>
-</div>
-<div class="section level2">
-<h2 id="rebasing-categorical-relativities">Rebasing categorical relativities<a class="anchor" aria-label="anchor" href="#rebasing-categorical-relativities"></a>
-</h2>
-<div class="section level3">
-<h3 id="purpose-3">Purpose<a class="anchor" aria-label="anchor" href="#purpose-3"></a>
-</h3>
-<p>After shrinkage, restrictions or a split into more detailed tariff
-levels, the original reference level may no longer be the most useful
-reporting basis. <code><a href="../reference/add_rebasing.html">add_rebasing()</a></code> rescales the current factor
-so that one resulting level equals 1. It does not reduce or increase the
-differentiation between levels: every ratio between two relativities
-remains unchanged.</p>
-<p>An explicit reference is generally preferable when the tariff has an
-established base class. If no reference is supplied, the level with the
-largest portfolio weight is selected. This gives the most prevalent
-level relativity 1 and usually provides a stable reporting basis.</p>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p><code>credibility</code> is the weight assigned to the current
+logarithmic effect. A value of 0.9 retains 90 percent of each level’s
+deviation from the common centre; a value of 1 leaves the effect
+unchanged, while a value of 0 removes differences between levels. This
+is a user-selected refinement parameter, not an automatically estimated
+Buhlmann or Buhlmann-Straub credibility factor.</p>
+<p>The common centre is determined using the selected weighting basis.
+Exposure weights are appropriate here because <code>bm_group</code> is
+part of a frequency model. For a severity model, claim count may be a
+more relevant basis. Use <code>weights = "equal"</code> when every
+factor level should receive equal weight rather than representing the
+observed portfolio mix.</p>
+<p>After shrinkage, the relativities are normalised so their
+exposure-weighted arithmetic mean remains equal to its value before
+shrinkage. The operation therefore reduces tariff differentiation
+without intentionally changing the weighted level of this risk factor.
+The later refit can still recalibrate the intercept or other free model
+effects.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">ref</span> <span class="op">&lt;-</span> <span class="va">ref</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_rebasing.html">add_rebasing</a></span><span class="op">(</span></span>
-<span>    model_variable <span class="op">=</span> <span class="st">"zip"</span>,</span>
-<span>    reference_level <span class="op">=</span> <span class="st">"1"</span></span>
-<span>  <span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ref</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Refinement specification</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-08-09 14:24:53 CEST</span></span>
-<span><span class="co">#&gt; Observations: 30,000</span></span>
-<span><span class="co">#&gt; Family: Gamma (log link)</span></span>
-<span><span class="co">#&gt; Base formula:</span></span>
-<span><span class="co">#&gt;   premium ~ zip + bm + age_policyholder_freq_cat</span></span>
-<span><span class="co">#&gt; Offset: none</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Refinement steps: 4</span></span>
-<span><span class="co">#&gt;   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)</span></span>
-<span><span class="co">#&gt;      16 intervals over 18 to 95</span></span>
-<span><span class="co">#&gt;   2. Restriction: zip -&gt; zip_adj (4 levels)</span></span>
-<span><span class="co">#&gt;      1 = 0.9; 0 = 0.8; 2 = 1.0; 3 = 1.2</span></span>
-<span><span class="co">#&gt;   3. Shrinkage: zip (credibility: 0.9, weights: exposure, weighted mean preserved)</span></span>
-<span><span class="co">#&gt;      credibility = 0.9; weights = exposure; weighted mean preserved</span></span>
-<span><span class="co">#&gt;   4. Rebasing: zip (reference: 1, selection: explicit, original reference relativity: 0.9113921)</span></span>
-<span><span class="co">#&gt;      reference = 1; original relativity = 0.9113921; selection = explicit reference; relative level ratios preserved</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">ref</span>, step <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">refinement</span>, variable <span class="op">=</span> <span class="st">"bm_group"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="refinement-workflow_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="" width="700"></p>
-<p>This operation differs from <code><a href="../reference/set_reference_level.html">set_reference_level()</a></code>. That
-helper selects the contrast reference before a GLM is fitted. Rebasing
-is applied to the current relativities within an existing refinement
-workflow, for example after new sublevels have been introduced with
-<code><a href="../reference/add_relativities.html">add_relativities()</a></code>.</p>
-</div>
+<p>This remains a pre-refit comparison: it shows the current estimated
+effect and the proposed shrunken structure stored in the refinement
+specification.</p>
 </div>
 <div class="section level2">
-<h2 id="expert-based-relativities">Expert-based relativities<a class="anchor" aria-label="anchor" href="#expert-based-relativities"></a>
+<h2 id="adding-differentiation-within-model-levels">Adding differentiation within model levels<a class="anchor" aria-label="anchor" href="#adding-differentiation-within-model-levels"></a>
 </h2>
-<div class="section level3">
-<h3 id="purpose-4">Purpose<a class="anchor" aria-label="anchor" href="#purpose-4"></a>
-</h3>
-<p>In some cases, the fitted model uses a broad factor level, while
-portfolio or business knowledge suggests that more granular
-differentiation may be useful.</p>
-<p>For example, a model may estimate one coefficient for “construction”,
-while pricing practice distinguishes between:</p>
-<ul>
-<li>residential construction</li>
-<li>commercial construction</li>
-<li>civil engineering</li>
-</ul>
-<p>This can be relevant when subgroup exposure is too limited to
-estimate stable coefficients directly.</p>
-</div>
-<div class="section level3">
-<h3 id="adding-relativities">Adding relativities<a class="anchor" aria-label="anchor" href="#adding-relativities"></a>
-</h3>
+<p><code><a href="../reference/add_relativities.html">add_relativities()</a></code> addresses a different problem. An
+unrestricted GLM may use a broad factor because its detailed levels are
+individually too sparse for stable direct estimation. The refinement can
+retain the broad parent effect while introducing documented
+differentiation between selected sublevels.</p>
+<p>The example splits the broad bonus-malus groups <code>Low</code> and
+<code>Medium</code> into their observed detailed values:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">relativities_activity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/relativity_specification.html">relativities</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">bm_relativities</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/relativity_specification.html">relativities</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/relativity_specification.html">split_level</a></span><span class="op">(</span></span>
-<span>    <span class="st">"construction"</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"residential_construction"</span>, <span class="st">"commercial_construction"</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.00</span>, <span class="fl">1.15</span><span class="op">)</span></span>
+<span>    <span class="st">"Low"</span>,</span>
+<span>    new_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span><span class="op">)</span>,</span>
+<span>    relativities <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.95</span>, <span class="fl">0.98</span>, <span class="fl">1.02</span>, <span class="fl">1.05</span><span class="op">)</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="../reference/relativity_specification.html">split_level</a></span><span class="op">(</span></span>
-<span>    <span class="st">"services"</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"professional_services"</span>, <span class="st">"personal_services"</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.95</span>, <span class="fl">1.05</span><span class="op">)</span></span>
+<span>    <span class="st">"Medium"</span>,</span>
+<span>    new_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"5"</span>, <span class="st">"6"</span>, <span class="st">"7"</span>, <span class="st">"8"</span><span class="op">)</span>,</span>
+<span>    relativities <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.96</span>, <span class="fl">0.99</span>, <span class="fl">1.02</span>, <span class="fl">1.05</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">ref</span> <span class="op">&lt;-</span> <span class="va">ref</span> <span class="op">|&gt;</span></span>
+<span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_relativities.html">add_relativities</a></span><span class="op">(</span></span>
-<span>    model_variable <span class="op">=</span> <span class="st">"business_activity"</span>,</span>
-<span>    split_variable <span class="op">=</span> <span class="st">"business_activity_split"</span>,</span>
-<span>    output_variable <span class="op">=</span> <span class="st">"business_activity_tariff_segment"</span>,</span>
-<span>    relativities <span class="op">=</span> <span class="va">relativities_activity</span>,</span>
+<span>    model_variable <span class="op">=</span> <span class="st">"bm_group"</span>,</span>
+<span>    split_variable <span class="op">=</span> <span class="st">"bm_detail"</span>,</span>
+<span>    relativities <span class="op">=</span> <span class="va">bm_relativities</span>,</span>
 <span>    exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
-<span>    normalize <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>    normalize <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>    output_variable <span class="op">=</span> <span class="st">"bm_tariff_segment"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<p>If <code>normalize = TRUE</code>, the relativities are scaled so that
-their exposure-weighted average remains equal to 1 within the original
-level.</p>
-<p><code>output_variable</code> names the resulting hybrid tariff
-factor. In this example, the explicitly split construction and services
-levels are represented by their detailed levels, while unsplit levels
-retain their original <code>business_activity</code> value. A name
-ending in <code>_tariff_segment</code> can make this role explicit in
-later model and reporting steps.</p>
-<p>This preserves the original model signal while introducing finer
-structure. When <code>model_variable</code> has already been restricted
-with <code><a href="../reference/add_restriction.html">add_restriction()</a></code>, the restricted coefficients are
-used automatically as the basis for these relativities. Refinement order
-is therefore part of the specification.</p>
-</div>
+<p><code>model_variable</code> supplies the parent GLM effect.
+<code>split_variable</code> identifies the detailed portfolio levels
+within each parent. <code>output_variable</code> names the resulting
+hybrid tariff factor; unsplit parent levels retain their existing model
+effect.</p>
+<p>With <code>normalize = TRUE</code>, the sublevel relativities are
+normalised within each parent so their exposure-weighted average equals
+one. The split therefore redistributes the parent effect without
+changing its exposure-weighted level. Because shrinkage was added first,
+these sublevel effects use the shrunken <code>bm_group</code>
+relativities as their parent values. With
+<code>normalize = FALSE</code>, the supplied relativities are applied
+directly.</p>
+<p>This operation is not equivalent to restriction or smoothing:</p>
+<ul>
+<li>smoothing regularises an ordered effect already represented by the
+model;</li>
+<li>restriction fixes selected tariff values;</li>
+<li>shrinkage reduces differences between categorical levels while
+retaining their ordering;</li>
+<li>additional relativities introduce finer differentiation inside a
+broader model level.</li>
+</ul>
+<p>Step order matters. A restriction or shrinkage step added before
+<code><a href="../reference/add_relativities.html">add_relativities()</a></code> changes the parent coefficient used as
+the basis for the split. A later restriction can instead adjust selected
+levels of the derived <code>output_variable</code>.</p>
 </div>
 <div class="section level2">
-<h2 id="refit">Refit<a class="anchor" aria-label="anchor" href="#refit"></a>
+<h2 id="combining-and-reviewing-refinements">Combining and reviewing refinements<a class="anchor" aria-label="anchor" href="#combining-and-reviewing-refinements"></a>
 </h2>
-<div class="section level3">
-<h3 id="why-refit-is-required">Why refit is required<a class="anchor" aria-label="anchor" href="#why-refit-is-required"></a>
-</h3>
-<p>Refinement steps alter part of the model structure. Once these
-changes are applied, the remaining coefficients may also adjust.</p>
-<p>For that reason, the sequence does not end with
-<code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> or <code><a href="../reference/add_restriction.html">add_restriction()</a></code>. The
-final step is:</p>
+<p>The four operations now form one ordered specification:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ref</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-08-09 14:24:53 CEST</span></span>
+<span><span class="co">#&gt; Created: 2026-08-10 13:22:14 CEST</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
-<span><span class="co">#&gt; Family: Gamma (log link)</span></span>
+<span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
-<span><span class="co">#&gt;   premium ~ zip + bm + age_policyholder_freq_cat</span></span>
-<span><span class="co">#&gt; Offset: none</span></span>
+<span><span class="co">#&gt;   nclaims ~ age_band + zip + bm_group + offset(log(exposure))</span></span>
+<span><span class="co">#&gt; Offset: log(exposure)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Refinement steps: 4</span></span>
-<span><span class="co">#&gt;   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)</span></span>
-<span><span class="co">#&gt;      16 intervals over 18 to 95</span></span>
-<span><span class="co">#&gt;   2. Restriction: zip -&gt; zip_adj (4 levels)</span></span>
-<span><span class="co">#&gt;      1 = 0.9; 0 = 0.8; 2 = 1.0; 3 = 1.2</span></span>
-<span><span class="co">#&gt;   3. Shrinkage: zip (credibility: 0.9, weights: exposure, weighted mean preserved)</span></span>
+<span><span class="co">#&gt;   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)</span></span>
+<span><span class="co">#&gt;      8 intervals over 18 to 95</span></span>
+<span><span class="co">#&gt;   2. Restriction: zip -&gt; zip_restricted (4 levels)</span></span>
+<span><span class="co">#&gt;      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000</span></span>
+<span><span class="co">#&gt;   3. Shrinkage: bm_group (credibility: 0.9, weights: exposure, weighted mean preserved)</span></span>
 <span><span class="co">#&gt;      credibility = 0.9; weights = exposure; weighted mean preserved</span></span>
-<span><span class="co">#&gt;   4. Rebasing: zip (reference: 1, selection: explicit, original reference relativity: 0.9113921)</span></span>
-<span><span class="co">#&gt;      reference = 1; original relativity = 0.9113921; selection = explicit reference; relative level ratios preserved</span></span>
-<span></span>
-<span><span class="va">burn_refined</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="va">ref</span><span class="op">)</span></span></code></pre></div>
-<p><code>summary(ref)</code> describes the base model and the ordered
-refinement specification before a new GLM is fitted. This provides a
-direct review of the assumptions that will be applied.
-<code><a href="../reference/refit.html">refit()</a></code> then fits the model while incorporating those
-documented steps.</p>
+<span><span class="co">#&gt;   4. Relativities: bm_group split by bm_detail -&gt; bm_tariff_segment (normalised: yes)</span></span>
+<span><span class="co">#&gt;      2 parent levels split: Low, Medium</span></span></code></pre></div>
+<p>The summary records the base formula, package version, data size and
+each refinement in evaluation order. It describes what will be applied;
+it does not report a fitted refined model because <code><a href="../reference/refit.html">refit()</a></code>
+has not yet been called.</p>
+<p>The variable-specific <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> calls above evaluate
+the stored steps in their recorded order. They therefore inspect the
+intended tariff after any preceding adjustments without silently
+changing the GLM. The <code>step</code> argument can be used when an
+earlier stage of a longer specification needs to be reviewed
+separately.</p>
+<p><code><a href="../reference/add_rebasing.html">add_rebasing()</a></code> can be inserted when required to change
+which resulting level is displayed as one without changing ratios
+between levels. Rebasing changes the representation of an effect,
+whereas shrinkage changes its degree of differentiation.</p>
 </div>
-<div class="section level3">
-<h3 id="inspecting-the-final-fitted-result">Inspecting the final fitted result<a class="anchor" aria-label="anchor" href="#inspecting-the-final-fitted-result"></a>
-</h3>
-<p>After refit, use <code><a href="../reference/rating_table.html">rating_table()</a></code>:</p>
+<div class="section level2">
+<h2 id="refitting-the-model">Refitting the model<a class="anchor" aria-label="anchor" href="#refitting-the-model"></a>
+</h2>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_refined</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                risk_factor       level est_burn_refined exposure</span></span>
-<span><span class="co">#&gt; 1              (Intercept) (Intercept)     9699.0109626       NA</span></span>
-<span><span class="co">#&gt; 2                  zip_adj           0        0.8000000      207</span></span>
-<span><span class="co">#&gt; 3                  zip_adj           1        0.9000000    11081</span></span>
-<span><span class="co">#&gt; 4                  zip_adj           2        1.0000000     7783</span></span>
-<span><span class="co">#&gt; 5                  zip_adj           3        1.2000000     7588</span></span>
-<span><span class="co">#&gt; 6                      zip           1        1.0000000    11081</span></span>
-<span><span class="co">#&gt; 7                      zip           0        0.8994204      207</span></span>
-<span><span class="co">#&gt; 8                      zip           2        1.0994658     7783</span></span>
-<span><span class="co">#&gt; 9                      zip           3        1.2955222     7588</span></span>
-<span><span class="co">#&gt; 10 age_policyholder_smooth     [18,23]        1.9916466      586</span></span>
-<span><span class="co">#&gt; 11 age_policyholder_smooth     (23,28]        1.5259964     2204</span></span>
-<span><span class="co">#&gt; 12 age_policyholder_smooth     (28,33]        1.1945871     2790</span></span>
-<span><span class="co">#&gt; 13 age_policyholder_smooth     (33,38]        1.0538485     3021</span></span>
-<span><span class="co">#&gt; 14 age_policyholder_smooth     (38,43]        1.0173127     3089</span></span>
-<span><span class="co">#&gt; 15 age_policyholder_smooth     (43,48]        0.9961032     3041</span></span>
-<span><span class="co">#&gt; 16 age_policyholder_smooth     (48,53]        0.9284442     2978</span></span>
-<span><span class="co">#&gt; 17 age_policyholder_smooth     (53,58]        0.8277635     2186</span></span>
-<span><span class="co">#&gt; 18 age_policyholder_smooth     (58,63]        0.7364565     1974</span></span>
-<span><span class="co">#&gt; 19 age_policyholder_smooth     (63,68]        0.7179164     1973</span></span>
-<span><span class="co">#&gt; 20 age_policyholder_smooth     (68,73]        0.7466678     1558</span></span>
-<span><span class="co">#&gt; 21 age_policyholder_smooth     (73,78]        0.7554871      907</span></span>
-<span><span class="co">#&gt; 22 age_policyholder_smooth     (78,83]        0.7030268      246</span></span>
-<span><span class="co">#&gt; 23 age_policyholder_smooth     (83,88]        0.6061124       93</span></span>
-<span><span class="co">#&gt; 24 age_policyholder_smooth     (88,93]        0.4894076       11</span></span>
-<span><span class="co">#&gt; 25 age_policyholder_smooth     (93,95]        0.4062391        1</span></span>
-<span><span class="co">#&gt; 26                      bm          bm        0.9977218       NA</span></span></code></pre></div>
-<p>At this point, the output no longer represents a proposed refinement
-plan. It represents the fitted coefficient structure after
-refinement.</p>
-<p>The distinction is:</p>
-<ul>
-<li>before <code><a href="../reference/refit.html">refit()</a></code> –&gt; inspect the refinement plan</li>
-<li>after <code><a href="../reference/refit.html">refit()</a></code> –&gt; inspect the fitted tariff
-structure</li>
-</ul>
-<p>If smoothing, restrictions, and relativities have been applied, they
-are now embedded in the fitted model output.</p>
-</div>
-<div class="section level3">
-<h3 id="auditing-the-portfolio-effect">Auditing the portfolio effect<a class="anchor" aria-label="anchor" href="#auditing-the-portfolio-effect"></a>
-</h3>
-<p>Coefficient changes cannot be interpreted independently of the
-intercept and the other model terms. A more direct audit compares fitted
-values from the unrestricted and refined models on the same observed
-portfolio combinations.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">refinement_audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_refinement.html">audit_refinement</a></span><span class="op">(</span></span>
-<span>  <span class="va">burn_refined</span>,</span>
-<span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
-<span>  metric <span class="op">=</span> <span class="st">"risk_premium"</span></span>
+<code class="sourceCode R"><span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span></span>
+<span>  <span class="va">refinement</span>,</span>
+<span>  intercept_only <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Column in `exposure` is already used in model.</span></span>
+<span><span class="co">#&gt; Warning in update_formula_remove(formula, old_term): Column 'bm_group' must be in model call.</span></span></code></pre></div>
+<p><code><a href="../reference/refit.html">refit()</a></code> applies the stored steps in order, constructs
+the required tariff variables and offsets, updates the formula and calls
+<code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code> with the original model family. It does more than
+copy proposed relativities into an existing coefficient vector.</p>
+<p>The treatment of the remaining model effects depends on
+<code>intercept_only</code>:</p>
+<ul>
+<li>with <code>intercept_only = TRUE</code>, unaffected existing effects
+are fixed as offsets and only the intercept is estimated. Their relative
+differences are preserved while the overall level is recalibrated;</li>
+<li>with <code>intercept_only = FALSE</code>, remaining free terms are
+estimated again. Their coefficients may change as the GLM finds a new
+joint optimum conditional on the fixed refinement steps.</li>
+</ul>
+<p>An intercept-only refit is often appropriate for a controlled
+adjustment to an accepted tariff structure. Re-estimating the remaining
+free effects is more appropriate when the refinement is part of
+substantive model development and dependence between factors should be
+reconsidered.</p>
+<p>The prescribed smoothing, restrictions and sublevel relativities
+remain explicit assumptions. Refitting does not turn them into
+unrestricted statistical estimates.</p>
+</div>
+<div class="section level2">
+<h2 id="inspecting-the-fitted-result">Inspecting the fitted result<a class="anchor" aria-label="anchor" href="#inspecting-the-fitted-result"></a>
+</h2>
+<p>After <code><a href="../reference/refit.html">refit()</a></code>, the result is a fitted GLM and can be
+reviewed with the normal interpretation tools:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">refined_model</span>, exposure <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;      risk_factor       level est_refined_model</span></span>
+<span><span class="co">#&gt; 1    (Intercept) (Intercept)         0.2614588</span></span>
+<span><span class="co">#&gt; 2 zip_restricted           0         0.9500000</span></span>
+<span><span class="co">#&gt; 3 zip_restricted           1         0.9954865</span></span>
+<span><span class="co">#&gt; 4 zip_restricted           2         0.8971513</span></span>
+<span><span class="co">#&gt; 5 zip_restricted           3         1.1000000</span></span>
+<span><span class="co">#&gt; 6       bm_group         Low         1.0001880</span></span></code></pre></div>
+<p>This is the <strong>post-refit</strong> result. It is distinct from
+the preview shown by <code>autoplot(refinement)</code>:</p>
+<ul>
+<li>before <code><a href="../reference/refit.html">refit()</a></code>: proposed tariff adjustments;</li>
+<li>after <code><a href="../reference/refit.html">refit()</a></code>: fitted model under those
+adjustments.</li>
+</ul>
+<p>Printing <code>refined_model</code> also reports the original and
+refitted formulas, the model family, refit mode and stored refinement
+steps before showing the regular GLM output.</p>
+</div>
+<div class="section level2">
+<h2 id="auditing-the-portfolio-effect">Auditing the portfolio effect<a class="anchor" aria-label="anchor" href="#auditing-the-portfolio-effect"></a>
+</h2>
+<p>Individual coefficient changes are difficult to interpret
+independently of the intercept, other model terms and portfolio mix.
+<code><a href="../reference/audit_refinement.html">audit_refinement()</a></code> therefore compares predictions from the
+unrestricted and refined models on the same observed portfolio
+combinations.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">refinement_audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_refinement.html">audit_refinement</a></span><span class="op">(</span></span>
+<span>  <span class="va">refined_model</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
+<span>  metric <span class="op">=</span> <span class="st">"frequency"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">refinement_audit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Refinement audit</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Prepared: 2026-08-09 14:24:53 CEST</span></span>
-<span><span class="co">#&gt; Refitted: 2026-08-09 14:24:56 CEST</span></span>
-<span><span class="co">#&gt; Audited: 2026-08-09 14:24:56 CEST</span></span>
-<span><span class="co">#&gt; Measure: risk_premium (response)</span></span>
+<span><span class="co">#&gt; Prepared: 2026-08-10 13:22:14 CEST</span></span>
+<span><span class="co">#&gt; Refitted: 2026-08-10 13:22:16 CEST</span></span>
+<span><span class="co">#&gt; Audited: 2026-08-10 13:22:16 CEST</span></span>
+<span><span class="co">#&gt; Measure: frequency (per_exposure)</span></span>
 <span><span class="co">#&gt; Exposure: exposure</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Original formula:</span></span>
-<span><span class="co">#&gt;   premium ~ zip + bm + age_policyholder_freq_cat</span></span>
+<span><span class="co">#&gt;   nclaims ~ age_band + zip + bm_group + offset(log(exposure))</span></span>
 <span><span class="co">#&gt; Refitted formula:</span></span>
-<span><span class="co">#&gt;   premium ~ bm + offset(log(zip_rebased) + log(age_policyholder_freq_cat_smooth))</span></span>
+<span><span class="co">#&gt;   nclaims ~ offset(log(bm_group_rel) + log(bm_group_shrunk) + log(zip_restricted) + </span></span>
+<span><span class="co">#&gt;       log(age_band_smooth) + log(exposure))</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Refinement steps: 4</span></span>
-<span><span class="co">#&gt;   1. Smoothing: age_policyholder_freq_cat from age_policyholder (method: spline, k: 8)</span></span>
-<span><span class="co">#&gt;      16 intervals over 18 to 95</span></span>
-<span><span class="co">#&gt;   2. Restriction: zip -&gt; zip_adj (4 levels)</span></span>
-<span><span class="co">#&gt;      1 = 0.9; 0 = 0.8; 2 = 1.0; 3 = 1.2</span></span>
-<span><span class="co">#&gt;   3. Shrinkage: zip (credibility: 0.9, weights: exposure, weighted mean preserved)</span></span>
+<span><span class="co">#&gt;   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)</span></span>
+<span><span class="co">#&gt;      8 intervals over 18 to 95</span></span>
+<span><span class="co">#&gt;   2. Restriction: zip -&gt; zip_restricted (4 levels)</span></span>
+<span><span class="co">#&gt;      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000</span></span>
+<span><span class="co">#&gt;   3. Shrinkage: bm_group (credibility: 0.9, weights: exposure, weighted mean preserved)</span></span>
 <span><span class="co">#&gt;      credibility = 0.9; weights = exposure; weighted mean preserved</span></span>
-<span><span class="co">#&gt;   4. Rebasing: zip (reference: 1, selection: explicit, original reference relativity: 0.9113921)</span></span>
-<span><span class="co">#&gt;      reference = 1; original relativity = 0.9113921; selection = explicit reference; relative level ratios preserved</span></span>
+<span><span class="co">#&gt;   4. Relativities: bm_group split by bm_detail -&gt; bm_tariff_segment (normalised: yes)</span></span>
+<span><span class="co">#&gt;      2 parent levels split: Low, Medium</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Portfolio effect</span></span>
-<span><span class="co">#&gt;   Before: 10445.1</span></span>
-<span><span class="co">#&gt;   After:  10719.9</span></span>
-<span><span class="co">#&gt;   Change: 274.813 (2.631%)</span></span>
+<span><span class="co">#&gt;   Before: 0.137596</span></span>
+<span><span class="co">#&gt;   After:  0.137596</span></span>
+<span><span class="co">#&gt;   Change: -1.50158e-14 (-1.091e-11%)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Largest level changes (10 of 47)</span></span>
-<span><span class="co">#&gt;  risk_factor level    before     after    change change_ratio</span></span>
-<span><span class="co">#&gt;      zip_adj     0  4471.598  8387.981  3916.383    0.8758351</span></span>
-<span><span class="co">#&gt;          zip     0  4471.598  8387.981  3916.383    0.8758351</span></span>
-<span><span class="co">#&gt;      zip_adj     3  9001.374 12476.259  3474.885    0.3860394</span></span>
-<span><span class="co">#&gt;          zip     3  9001.374 12476.259  3474.885    0.3860394</span></span>
-<span><span class="co">#&gt;      zip_adj     1 12325.997  9650.927 -2675.070   -0.2170266</span></span>
-<span><span class="co">#&gt;          zip     1 12325.997  9650.927 -2675.070   -0.2170266</span></span>
-<span><span class="co">#&gt;           bm    23 10578.429  9073.469 -1504.960   -0.1422669</span></span>
-<span><span class="co">#&gt;           bm    22  9628.570  8316.920 -1311.651   -0.1362249</span></span>
-<span><span class="co">#&gt;      zip_adj     2  9333.501 10591.602  1258.100    0.1347940</span></span>
-<span><span class="co">#&gt;          zip     2  9333.501 10591.602  1258.100    0.1347940</span></span></code></pre></div>
-<p>The portfolio result shows the exposure-weighted risk premium before
-and after refinement. <code>as.data.frame(refinement_audit)</code> gives
-the corresponding comparison for every final risk factor and level.
-These level results reflect the combined prediction of the full model
-for the observed portfolio mix; they are not isolated coefficient
-differences.</p>
-<p>The audit also records the package version, preparation time, refit
-time, formulas and ordered refinement steps. For a frequency or severity
-model, use a matching metric name such as <code>"frequency"</code> or
-<code>"average_severity"</code>; a complete risk-premium interpretation
-requires a direct risk-premium model or a combined frequency and
-severity calculation.</p>
-</div>
-<div class="section level3">
-<h3 id="visualising-the-final-structure">Visualising the final structure<a class="anchor" aria-label="anchor" href="#visualising-the-final-structure"></a>
-</h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_refined</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="refinement-workflow_files/figure-html/unnamed-chunk-15-1.png" class="r-plt" alt="" width="700"></p>
-</div>
+<span><span class="co">#&gt; Largest level changes (10 of 24)</span></span>
+<span><span class="co">#&gt;              risk_factor   level     before     after       change change_ratio</span></span>
+<span><span class="co">#&gt;  age_policyholder_smooth (84,95] 0.06942859 0.1301355  0.060706899   0.87437893</span></span>
+<span><span class="co">#&gt;           zip_restricted       3 0.13680279 0.1515199  0.014717130   0.10757917</span></span>
+<span><span class="co">#&gt;           zip_restricted       0 0.14020239 0.1275556 -0.012646824  -0.09020405</span></span>
+<span><span class="co">#&gt;        bm_tariff_segment       8 0.14270460 0.1552869  0.012582270   0.08817003</span></span>
+<span><span class="co">#&gt;        bm_tariff_segment       4 0.13883017 0.1507824  0.011952282   0.08609283</span></span>
+<span><span class="co">#&gt;        bm_tariff_segment       7 0.14278504 0.1518134  0.009028351   0.06323037</span></span>
+<span><span class="co">#&gt;        bm_tariff_segment       3 0.13764208 0.1452254  0.007583341   0.05509464</span></span>
+<span><span class="co">#&gt;  age_policyholder_smooth (58,65] 0.09746194 0.1021913  0.004729386   0.04852547</span></span>
+<span><span class="co">#&gt;  age_policyholder_smooth [18,25] 0.26142311 0.2487990 -0.012624116  -0.04828998</span></span>
+<span><span class="co">#&gt;           zip_restricted       2 0.12951920 0.1240765 -0.005442674  -0.04202214</span></span></code></pre></div>
+<p>The audit reports the portfolio-level frequency before and after
+refinement and the corresponding changes by final risk-factor level.
+These are predictions from the complete model for the observed portfolio
+mix, not isolated coefficient differences.</p>
+<p>The refinement and audit objects record package version, timestamps,
+formulas and ordered steps. This supports reproducibility, peer review
+and documentation of actuarial judgement. Organisational approval,
+source-data versioning and formal governance remain outside the package
+and should be handled by the user’s normal processes.</p>
 </div>
 <div class="section level2">
-<h2 id="model-data-and-rating-grids">Model data and rating grids<a class="anchor" aria-label="anchor" href="#model-data-and-rating-grids"></a>
+<h2 id="when-to-revisit-the-model">When to revisit the model<a class="anchor" aria-label="anchor" href="#when-to-revisit-the-model"></a>
 </h2>
-<p>After refit, model structure can be extracted with
-<code><a href="../reference/extract_model_data.html">extract_model_data()</a></code>:</p>
+<p>Refinement is not a substitute for correcting a poor model. If an
+implausible effect is caused by incorrect data, exposure errors, missing
+interactions, an inappropriate response definition or poor factor
+construction, the model or data preparation should be revisited first.
+Refinement is most defensible when the statistical model captures the
+main risk structure and the remaining adjustment has a clear tariff
+rationale.</p>
+</div>
+<div class="section level2">
+<h2 id="iterating-without-losing-the-specification">Iterating without losing the specification<a class="anchor" aria-label="anchor" href="#iterating-without-losing-the-specification"></a>
+</h2>
+<p>Retain both the editable specification and the fitted result:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">md</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extract_model_data.html">extract_model_data</a></span><span class="op">(</span><span class="va">burn_refined</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">md</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   age_policyholder age_policyholder_freq_cat_smooth age_policyholder_smooth</span></span>
-<span><span class="co">#&gt; 1               18                         1.991647                 [18,23]</span></span>
-<span><span class="co">#&gt; 2               18                         1.991647                 [18,23]</span></span>
-<span><span class="co">#&gt; 3               18                         1.991647                 [18,23]</span></span>
-<span><span class="co">#&gt; 4               18                         1.991647                 [18,23]</span></span>
-<span><span class="co">#&gt; 5               19                         1.991647                 [18,23]</span></span>
-<span><span class="co">#&gt; 6               19                         1.991647                 [18,23]</span></span>
-<span><span class="co">#&gt;   nclaims   exposure amount power bm zip age_policyholder_freq_cat</span></span>
-<span><span class="co">#&gt; 1       1 1.00000000 261777    40  3   3                   [18,25]</span></span>
-<span><span class="co">#&gt; 2       0 0.09589041      0    68  5   2                   [18,25]</span></span>
-<span><span class="co">#&gt; 3       0 0.18630137      0    37  3   2                   [18,25]</span></span>
-<span><span class="co">#&gt; 4       0 0.18904110      0    33  1   2                   [18,25]</span></span>
-<span><span class="co">#&gt; 5       0 1.00000000      0    47  6   3                   [18,25]</span></span>
-<span><span class="co">#&gt; 6       1 0.06849315   6642    68  1   3                   [18,25]</span></span>
-<span><span class="co">#&gt;   pred_nclaims_freq pred_amount_sev   premium zip_adj zip_shrunk zip_rebased</span></span>
-<span><span class="co">#&gt; 1        0.26210773        68671.20 17999.251     1.2   1.180729    1.295522</span></span>
-<span><span class="co">#&gt; 2        0.02502713        70854.51  1773.285     1.0   1.002044    1.099466</span></span>
-<span><span class="co">#&gt; 3        0.04883103        70854.51  3459.898     1.0   1.002044    1.099466</span></span>
-<span><span class="co">#&gt; 4        0.04975996        70854.51  3525.718     1.0   1.002044    1.099466</span></span>
-<span><span class="co">#&gt; 5        0.26044368        68671.20 17884.979     1.2   1.180729    1.295522</span></span>
-<span><span class="co">#&gt; 6        0.01802897        68671.20  1238.071     1.2   1.180729    1.295522</span></span></code></pre></div>
-<p>A model point represents a unique observed combination of the
-risk-factor levels used by the fitted model. <code><a href="../reference/rating_grid.html">rating_grid()</a></code>
-groups portfolio records with the same combination and attaches the
-corresponding refined model effects. It returns combinations observed in
-the portfolio; it does not construct every theoretically possible
-combination of factor levels.</p>
-<p>Observed model-point combinations can be obtained with
-<code><a href="../reference/rating_grid.html">rating_grid()</a></code>:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span><span class="va">burn_refined</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">grid</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   zip age_policyholder_smooth bm count  exposure zip_adj zip_shrunk zip_rebased</span></span>
-<span><span class="co">#&gt; 1   1                 (23,28]  1   414 342.57808     0.9  0.9113921           1</span></span>
-<span><span class="co">#&gt; 2   1                 (23,28]  2   173 145.25753     0.9  0.9113921           1</span></span>
-<span><span class="co">#&gt; 3   1                 (23,28]  3    53  46.53699     0.9  0.9113921           1</span></span>
-<span><span class="co">#&gt; 4   1                 (23,28]  4    26  22.31507     0.9  0.9113921           1</span></span>
-<span><span class="co">#&gt; 5   1                 (23,28]  5    54  46.78630     0.9  0.9113921           1</span></span>
-<span><span class="co">#&gt; 6   1                 (23,28]  6    71  65.13699     0.9  0.9113921           1</span></span>
-<span><span class="co">#&gt;   age_policyholder_freq_cat_smooth</span></span>
-<span><span class="co">#&gt; 1                         1.525996</span></span>
-<span><span class="co">#&gt; 2                         1.525996</span></span>
-<span><span class="co">#&gt; 3                         1.525996</span></span>
-<span><span class="co">#&gt; 4                         1.525996</span></span>
-<span><span class="co">#&gt; 5                         1.525996</span></span>
-<span><span class="co">#&gt; 6                         1.525996</span></span></code></pre></div>
-<p>Each row can represent several portfolio records. <code>count</code>
-gives the number of records with that combination and
-<code>exposure</code> gives their aggregated exposure. The remaining
-refinement columns contain the restrictions, smoothed effects or derived
-relativities that apply to the model point.</p>
-<p>When a fitted GLM is supplied, <code><a href="../reference/rating_grid.html">rating_grid()</a></code> retrieves
-the exposure column used as a model weight or offset from the model
-metadata and aggregates it automatically. Supply <code>exposure</code>
-explicitly only when that column is not used by the model or when a
-plain data frame is supplied.</p>
-<p>This is typically used for:</p>
-<ul>
-<li>tariff review</li>
-<li>portfolio summaries</li>
-<li>compact input for tariff calculations or predictions</li>
-<li>implementation support</li>
-</ul>
-<p>Before the grid is used for prediction, the analyst should verify
-that all required model variables are present and decide how
-combinations not observed in the estimation portfolio will be
-handled.</p>
-</div>
-<div class="section level2">
-<h2 id="complete-example">Complete example<a class="anchor" aria-label="anchor" href="#complete-example"></a>
-</h2>
-<p>One possible refinement sequence is:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">zip_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  zip <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>,</span>
-<span>  zip_adj <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.8</span>, <span class="fl">0.9</span>, <span class="fl">1.0</span>, <span class="fl">1.2</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">burn_refined</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_smoothing.html">add_smoothing</a></span><span class="op">(</span></span>
-<span>    model_variable <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span>,</span>
-<span>    source_variable <span class="op">=</span> <span class="st">"age_policyholder"</span>,</span>
-<span>    breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">93</span>, <span class="fl">5</span><span class="op">)</span>, <span class="fl">95</span><span class="op">)</span>,</span>
-<span>    weights <span class="op">=</span> <span class="st">"exposure"</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="va">zip_df</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/edit_smoothing.html">edit_smoothing</a></span><span class="op">(</span></span>
+<span>    model_variable <span class="op">=</span> <span class="st">"age_band"</span>,</span>
+<span>    smoothing <span class="op">=</span> <span class="st">"increasing"</span></span>
+<span>  <span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_refined</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                risk_factor       level est_burn_refined exposure</span></span>
-<span><span class="co">#&gt; 1              (Intercept) (Intercept)     1.068539e+04       NA</span></span>
-<span><span class="co">#&gt; 2                  zip_adj           0     8.000000e-01      207</span></span>
-<span><span class="co">#&gt; 3                  zip_adj           1     9.000000e-01    11081</span></span>
-<span><span class="co">#&gt; 4                  zip_adj           2     1.000000e+00     7783</span></span>
-<span><span class="co">#&gt; 5                  zip_adj           3     1.200000e+00     7588</span></span>
-<span><span class="co">#&gt; 6  age_policyholder_smooth     [18,23]     1.991647e+00      586</span></span>
-<span><span class="co">#&gt; 7  age_policyholder_smooth     (23,28]     1.525996e+00     2204</span></span>
-<span><span class="co">#&gt; 8  age_policyholder_smooth     (28,33]     1.194587e+00     2790</span></span>
-<span><span class="co">#&gt; 9  age_policyholder_smooth     (33,38]     1.053848e+00     3021</span></span>
-<span><span class="co">#&gt; 10 age_policyholder_smooth     (38,43]     1.017313e+00     3089</span></span>
-<span><span class="co">#&gt; 11 age_policyholder_smooth     (43,48]     9.961032e-01     3041</span></span>
-<span><span class="co">#&gt; 12 age_policyholder_smooth     (48,53]     9.284442e-01     2978</span></span>
-<span><span class="co">#&gt; 13 age_policyholder_smooth     (53,58]     8.277635e-01     2186</span></span>
-<span><span class="co">#&gt; 14 age_policyholder_smooth     (58,63]     7.364565e-01     1974</span></span>
-<span><span class="co">#&gt; 15 age_policyholder_smooth     (63,68]     7.179164e-01     1973</span></span>
-<span><span class="co">#&gt; 16 age_policyholder_smooth     (68,73]     7.466678e-01     1558</span></span>
-<span><span class="co">#&gt; 17 age_policyholder_smooth     (73,78]     7.554871e-01      907</span></span>
-<span><span class="co">#&gt; 18 age_policyholder_smooth     (78,83]     7.030268e-01      246</span></span>
-<span><span class="co">#&gt; 19 age_policyholder_smooth     (83,88]     6.061124e-01       93</span></span>
-<span><span class="co">#&gt; 20 age_policyholder_smooth     (88,93]     4.894076e-01       11</span></span>
-<span><span class="co">#&gt; 21 age_policyholder_smooth     (93,95]     4.062391e-01        1</span></span>
-<span><span class="co">#&gt; 22                      bm          bm     9.977166e-01       NA</span></span>
-<span></span>
-<span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">burn_refined</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="refinement-workflow_files/figure-html/unnamed-chunk-18-1.png" class="r-plt" alt="" width="700"></p>
-</div>
-<div class="section level2">
-<h2 id="legacy-interface">Legacy interface<a class="anchor" aria-label="anchor" href="#legacy-interface"></a>
-</h2>
-<p>Legacy entry points remain available:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">burn_refined_old</span> <span class="op">&lt;-</span> <span class="va">burn_unrestricted</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/smooth_coef.html">smooth_coef</a></span><span class="op">(</span></span>
-<span>    x_cut <span class="op">=</span> <span class="st">"age_policyholder_freq_man"</span>,</span>
-<span>    x_org <span class="op">=</span> <span class="st">"age_policyholder"</span>,</span>
-<span>    breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">93</span>, <span class="fl">5</span><span class="op">)</span>, <span class="fl">95</span><span class="op">)</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/restrict_coef.html">restrict_coef</a></span><span class="op">(</span><span class="va">zip_df</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/refit_glm.html">refit_glm</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>These are primarily maintained for backward compatibility.</p>
-<p>For new code, the recommended interface is:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a></span>
-<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="fu">prepare_refinement</span>() <span class="sc">|&gt;</span> add_<span class="sc">*</span>() <span class="sc">|&gt;</span> <span class="fu">refit</span>()</span></code></pre></div>
-<p>This keeps the sequence of tariff adjustments explicit.</p>
+<span><span class="va">updated_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span></code></pre></div>
+<p>Calling <code><a href="../reference/add_smoothing.html">add_smoothing()</a></code>, <code><a href="../reference/add_restriction.html">add_restriction()</a></code>
+or another refinement function directly on <code>refined_model</code> is
+deliberately not supported. Further adjustments belong on the retained
+<code>rating_refinement</code> object so their ordering and origin
+remain visible.</p>
 </div>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
-<p>The refinement interface helps separate:</p>
-<ul>
-<li>model estimation</li>
-<li>tariff adjustments</li>
-<li>final fitted output</li>
-</ul>
-<p>The refinement specification records which parts of the final
-coefficient structure originate from the fitted model and which parts
-result from smoothing, restrictions or expert-based sublevel
-relativities. These choices should be assessed using exposure, claim
-volume, stability and the intended tariff application.</p>
+<p>The specialist workflow is:</p>
+<ol style="list-style-type: decimal">
+<li>start from an unrestricted fitted model;</li>
+<li>create one persistent specification with
+<code><a href="../reference/prepare_refinement.html">prepare_refinement()</a></code>;</li>
+<li>add smoothing, restrictions, shrinkage or sublevel relativities with
+an explicit rationale;</li>
+<li>inspect the proposal with <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and
+<code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>;</li>
+<li>use <code><a href="../reference/refit.html">refit()</a></code> to fit the model under that
+specification;</li>
+<li>inspect the final tariff with <code><a href="../reference/rating_table.html">rating_table()</a></code> and its
+portfolio effect with <code><a href="../reference/audit_refinement.html">audit_refinement()</a></code>.</li>
+</ol>
+<p>This separates estimated effects, proposed actuarial adjustments and
+final fitted output without treating refinement as an automatic approval
+of the result.</p>
 </div>
 <div class="section level2">
-<h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+<h2 id="where-to-go-next">Where to go next<a class="anchor" aria-label="anchor" href="#where-to-go-next"></a>
 </h2>
-<p>For the underlying pricing concepts, see:</p>
 <ul>
-<li><a href="pricing-workflow-building-blocks.html">Pricing workflow
-building blocks</a></li>
-</ul>
-<p>For an example sequence from portfolio analysis to fitted tariff,
-see:</p>
-<ul>
-<li><a href="getting-started.html">Getting started</a></li>
+<li>
+<a href="getting-started.html">Getting Started</a> constructs the
+initial pricing model used as the starting point for refinement.</li>
+<li>
+<a href="pricing-workflow-building-blocks.html">Pricing workflow and
+package building blocks</a> places refinement within the wider package
+architecture.</li>
+<li>
+<a href="model-validation.html">Model validation</a> develops the
+diagnostics used to assess unrestricted and refined models.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

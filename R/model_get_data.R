@@ -360,8 +360,10 @@ model_data <- function(x) {
 #'
 #' Each output row therefore represents one observed combination of the
 #' variables in `group_by`. Exposure and `aggregate_cols` are summed over the
-#' source records belonging to that combination. This is a categorical
-#' reduction of the portfolio; no date intervals are combined.
+#' source records belonging to that combination. Such a row is a model point:
+#' one observed covariate combination together with its aggregated additive
+#' portfolio quantities. This is a categorical reduction of the portfolio; no
+#' date intervals are combined.
 #'
 #' ## Estimating a GLM on aggregated data
 #'

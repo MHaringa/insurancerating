@@ -251,11 +251,15 @@ autoplot.rating_table <- function(object,
       idx <- which.min(abs(est_vals - 1))
     }
 
+    if (length(idx) > 0) {
+      idx <- idx[1L]
+    }
+
     if (length(idx) == 0 || is.infinite(idx) || is.na(idx)) {
       return(NULL)
     }
 
-    as.character(df_ref$level[idx[1]])
+    as.character(df_ref$level[idx])
   }
 
   pal <- plot_palette()

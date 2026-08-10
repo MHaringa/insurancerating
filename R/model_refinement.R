@@ -1320,6 +1320,86 @@
   context
 }
 
+.validate_restriction_replacement <- function(model, replaces, variable,
+                                                before_step = NULL) {
+  if (is.null(replaces)) {
+    return(invisible(TRUE))
+  }
+  if (!.is_single_string(replaces)) {
+    stop("`replaces` must be NULL or one non-empty character string.",
+         call. = FALSE)
+  }
+  if (identical(replaces, variable)) {
+    stop(
+      "`replaces` must identify the existing model variable that the new ",
+      "risk factor replaces; it cannot equal the new risk factor `", variable,
+      "`.",
+      call. = FALSE
+    )
+  }
+
+  if (is.null(before_step)) {
+    before_step <- length(model$steps) + 1L
+  }
+  state <- .make_exec_state(model)
+  prior_indices <- seq_along(model$steps)
+  prior_indices <- prior_indices[prior_indices < before_step]
+  if (length(prior_indices) > 0L) {
+    for (i in prior_indices) {
+      state <- .apply_refinement_step(state, model$steps[[i]])
+    }
+  }
+
+  term_labels <- attr(stats::terms(state$formula_no_offset), "term.labels")
+  related_terms <- term_labels[vapply(
+    term_labels,
+    function(term) {
+      expression <- tryCatch(
+        stats::as.formula(paste("~", term)),
+        error = function(e) NULL
+      )
+      !is.null(expression) && replaces %in% all.vars(expression)
+    },
+    logical(1)
+  )]
+
+  if (!replaces %in% term_labels) {
+    if (length(related_terms) > 0L) {
+      stop(
+        "Model variable `", replaces, "` is not a standalone main-effect term ",
+        "in the current refinement formula. It occurs within: ",
+        paste0("`", related_terms, "`", collapse = ", "), ". ",
+        "Replace transformed terms or interactions by revising the model ",
+        "specification explicitly.",
+        call. = FALSE
+      )
+    }
+    suggestion <- .closest_refinement_value(replaces, term_labels)
+    message <- paste0(
+      "Model variable `", replaces,
+      "`, supplied through `replaces`, is not an active standalone term in ",
+      "the current refinement formula."
+    )
+    if (!is.null(suggestion)) {
+      message <- paste0(message, " Did you mean `", suggestion, "`?")
+    }
+    stop(message, call. = FALSE)
+  }
+
+  interaction_terms <- setdiff(related_terms, replaces)
+  if (length(interaction_terms) > 0L) {
+    stop(
+      "Model variable `", replaces, "` also occurs in interaction term(s): ",
+      paste0("`", interaction_terms, "`", collapse = ", "), ". ",
+      "`add_restriction(replaces = ...)` only replaces a standalone main ",
+      "effect. Revise the interaction structure explicitly before refitting.",
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
 .refinement_base_from_glm <- function(model, data = NULL) {
   if (!inherits(model, "glm")) {
     stop("'model' must be of class glm.", call. = FALSE)
@@ -1633,11 +1713,15 @@ print.rating_refinement <- function(x, ...) {
     if (is.null(restrictions) || ncol(restrictions) < 2L) {
       return(NA_character_)
     }
-    return(paste0(
+    values <- paste0(
       as.character(restrictions[[1]]), " = ",
       format(as.numeric(restrictions[[2]]), trim = TRUE),
       collapse = "; "
-    ))
+    )
+    if (!is.null(step$replaces)) {
+      values <- paste0("replaces ", step$replaces, "; ", values)
+    }
+    return(values)
   }
 
   if (identical(step$type, "smoothing")) {
@@ -1866,6 +1950,30 @@ print.summary.rating_refinement <- function(x, ...) {
 #' a level. This is required to apply the supplied relativities to individual
 #' records.
 #'
+#' ## Replacing an existing model variable
+#'
+#' A new fixed tariff factor can either supplement the fitted GLM or replace an
+#' existing model variable. Supply `replaces` when the new factor represents an
+#' alternative tariff classification for an effect already present in the
+#' model. During [refit()], the named existing term is removed and the supplied
+#' fixed relativities are inserted in its place. With `replaces = NULL`, the new
+#' factor is added alongside the existing model terms, which preserves the
+#' previous behaviour.
+#'
+#' Supplying `replaces` is itself an explicit request to add the new risk factor,
+#' so `allow_new_risk_factors = TRUE` does not also need to be supplied. The
+#' replacement relationship is retained in the ordered refinement metadata and
+#' is shown by `print()`, `summary()` and [audit_refinement()]. This makes clear
+#' that the new factor substitutes for an earlier model effect rather than
+#' adding further multiplicative differentiation.
+#'
+#' `replaces` is intentionally limited to a standalone main-effect term in the
+#' current refinement formula. A variable used in an interaction or transformed
+#' expression cannot be removed unambiguously through this argument. Such model
+#' structures should be revised explicitly before the refinement is prepared.
+#' This argument is therefore not a general-purpose facility for deleting model
+#' terms.
+#'
 #' ## Updating an existing restriction
 #'
 #' A later call to `add_restriction()` for the same risk factor and the same
@@ -1929,6 +2037,13 @@ print.summary.rating_refinement <- function(x, ...) {
 #'   from both the model and preceding refinement steps. All observed levels
 #'   must then have supplied relativities, which are treated as fixed tariff
 #'   assumptions.
+#' @param replaces `NULL` (default) or a character string naming an existing
+#'   standalone model term that the new fixed risk factor replaces. During
+#'   [refit()], this term is removed before the restricted relativity column is
+#'   added. Supplying `replaces` also provides the explicit opt-in required for
+#'   a new risk factor; `allow_new_risk_factors = TRUE` is then unnecessary.
+#'   Existing terms used in transformations or interactions cannot be replaced
+#'   through this argument.
 #'
 #' @author Martin Haringa
 #'
@@ -1965,8 +2080,8 @@ print.summary.rating_refinement <- function(x, ...) {
 #' refined_model <- refit(refined)
 #' rating_table(refined_model, exposure = FALSE)
 #'
-#' # A risk factor absent from the fitted GLM can be added explicitly. The
-#' # portfolio must already assign every observation to a hail zone.
+#' # A factor absent from the fitted GLM can replace an existing model term.
+#' # The portfolio must already assign every observation to a hail zone.
 #' portfolio$hail_zone <- factor(c("low", "high", "low", "high", "low", "high"))
 #' hail_restrictions <- data.frame(
 #'   hail_zone = c("low", "high"),
@@ -1976,9 +2091,11 @@ print.summary.rating_refinement <- function(x, ...) {
 #' prepare_refinement(model, data = portfolio) |>
 #'   add_restriction(
 #'     hail_restrictions,
-#'     allow_new_risk_factors = TRUE
+#'     replaces = "postal_area"
 #'   )
+#' # During refit(), hail_zone replaces postal_area rather than supplementing it.
 #'
+#' # Without `replaces`, a new fixed factor supplements the existing terms.
 #' # A later actuarial review changes only the relativity for the low hail zone.
 #' # The high-zone relativity remains 1.20 and the existing step is updated.
 #' revised_hail_restrictions <- data.frame(
@@ -1997,9 +2114,10 @@ print.summary.rating_refinement <- function(x, ...) {
 #'
 #' @export
 add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
-                            allow_new_risk_factors = FALSE) {
+                            allow_new_risk_factors = FALSE, replaces = NULL) {
   allow_new_levels_missing <- missing(allow_new_levels)
   allow_new_risk_factors_missing <- missing(allow_new_risk_factors)
+  replaces_missing <- missing(replaces)
 
   .assert_refinement(model)
 
@@ -2042,6 +2160,35 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
     model$steps[[restriction_steps]]
   } else {
     NULL
+  }
+  if (!is.null(existing_step)) {
+    existing_replaces <- existing_step$replaces %||% NULL
+    if (replaces_missing || is.null(replaces)) {
+      replaces <- existing_replaces
+    } else if (!is.null(existing_replaces) &&
+               !identical(replaces, existing_replaces)) {
+      stop(
+        "Risk factor `", variable, "` already replaces `", existing_replaces,
+        "`. Rebuild the refinement specification to replace a different model ",
+        "variable.",
+        call. = FALSE
+      )
+    }
+  }
+  if (!is.null(replaces) && !.is_single_string(replaces)) {
+    stop("`replaces` must be NULL or one non-empty character string.",
+         call. = FALSE)
+  }
+  if (!is.null(replaces)) {
+    if (!allow_new_risk_factors_missing && !isTRUE(allow_new_risk_factors)) {
+      stop(
+        "Supplying `replaces` adds a new fixed risk factor and therefore ",
+        "conflicts with `allow_new_risk_factors = FALSE`. Omit ",
+        "`allow_new_risk_factors` or set it to `TRUE`.",
+        call. = FALSE
+      )
+    }
+    allow_new_risk_factors <- TRUE
   }
   restriction_context <- .resolve_restriction_context(
     model,
@@ -2135,6 +2282,27 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
     current_coefficients = restriction_context$coefficients %||% NULL
   )
 
+  if (!is.null(replaces)) {
+    if (!isTRUE(completed$new_risk_factor)) {
+      stop(
+        "`replaces` can only be used when `", variable,
+        "` is a new fixed risk factor. Existing model or refinement variables ",
+        "already replace their own active term when restricted.",
+        call. = FALSE
+      )
+    }
+    .validate_restriction_replacement(
+      model,
+      replaces = replaces,
+      variable = variable,
+      before_step = if (length(restriction_steps) == 1L) {
+        restriction_steps
+      } else {
+        NULL
+      }
+    )
+  }
+
   if (length(updated_restrictions) > 0) {
     for (update in updated_restrictions) {
       message(
@@ -2189,6 +2357,7 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
     allow_new_levels = allow_new_levels,
     new_risk_factor = completed$new_risk_factor,
     allow_new_risk_factors = allow_new_risk_factors,
+    replaces = replaces,
     model_term = existing_step$model_term %||%
       restriction_context$model_term %||%
       variable,
@@ -3833,14 +4002,21 @@ add_relativities <- function(model,
   restricted_df <- restrict_df(restrictions)
 
   if (isTRUE(step$new_risk_factor)) {
+    formula_no_offset <- state$formula_no_offset
+    if (!is.null(step$replaces)) {
+      formula_no_offset <- update_formula_remove(
+        formula_no_offset,
+        step$replaces
+      )
+    }
     fm_add <- update_formula_add(
       offset_term = state$offset,
-      fm_no_offset = state$formula_no_offset,
+      fm_no_offset = formula_no_offset,
       add_term = names(restrictions)[2]
     )
     fm_replace <- list(
       formula = fm_add[[1]],
-      formula_no_offset = state$formula_no_offset,
+      formula_no_offset = formula_no_offset,
       offset = fm_add[[2]]
     )
   } else if (isTRUE(step$replace_refinement_offset)) {
@@ -4661,6 +4837,10 @@ add_relativities <- function(model,
             risk_factor_name, "_rst99"
           )
           mult_lst[[i]]$risk_factor <- NULL
+          mult_lst[[i]] <- mult_lst[[i]][c(
+            risk_factor_name,
+            paste0(risk_factor_name, "_rst99")
+          )]
           x <- .legacy_add_restriction_on_legacy_object(x, mult_lst[[i]])
         }
       }
@@ -4940,6 +5120,9 @@ refit <- function(object, intercept_only = FALSE, ...) {
     )
     if (isTRUE(step$new_risk_factor)) {
       detail <- paste0(detail, " [expert-specified new risk factor]")
+      if (!is.null(step$replaces)) {
+        detail <- paste0(detail, " [replaces ", step$replaces, "]")
+      }
     } else if (length(step$new_levels %||% character()) > 0) {
       detail <- paste0(
         detail,

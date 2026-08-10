@@ -1111,7 +1111,7 @@ as_gt <- function(x, ...) {
 #' @param claims Logical. If `TRUE`, include claim-count columns.
 #' @param loss Logical. If `TRUE`, include loss amount columns. The default is
 #'   `FALSE` to keep the threshold comparison compact.
-#' @param premium Logical. If `TRUE`, include pure-premium and premium-reduction
+#' @param premium Logical. If `TRUE`, include risk-premium and premium-reduction
 #'   columns.
 #' @param locale Character. Locale used for number formatting, for example
 #'   `"nl-NL"` or `"en-US"`.
