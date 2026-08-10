@@ -128,8 +128,9 @@
   `"increasing"`, `"decreasing"`, `"increasing_convex"` and
   `"increasing_concave"`; the former short SCOP codes remain accepted as
   compatibility aliases. The new `effect_strength` argument can flatten
-  or strengthen the complete smoothed effect on the logarithmic
-  relativity scale while preserving its selected weighted level.
+  or strengthen the complete smoothed effect around its weighted mean on
+  the ordinary relativity scale while preserving direction and convexity
+  or concavity.
   [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
   can replace this value on an existing smoothing step without applying
   adjustments cumulatively.

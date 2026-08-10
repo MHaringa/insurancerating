@@ -158,22 +158,22 @@ spline method, `k` controls the available curve flexibility; it is a
 basis dimension rather than a fixed number of fitted degrees of freedom.
 
 `effect_strength` controls the overall spread of the smoothed
-relativities on the logarithmic scale. The default value 1 retains the
-fitted smoothing, values between 0 and 1 flatten the complete effect,
-and values above 1 make the complete effect steeper. The value 1.1 used
-here strengthens the deviations from the common centre without changing
-their ordering. The adjusted curve is normalised so its
-exposure-weighted arithmetic mean remains unchanged.
+relativities on the ordinary relativity scale. The default value 1
+retains the fitted smoothing, values between 0 and 1 flatten the
+complete effect, and values above 1 make the complete effect steeper.
+The value 1.1 used here increases every vertical deviation from the
+exposure-weighted mean by 10%. That mean therefore remains unchanged.
 
 This parameter changes the strength of the complete smoothed effect; it
 does not selectively alter only older ages, high insured values or
 another local part of the curve. Use interval boundaries and control
 points in
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
-for a local adjustment. Monotonic ordering is retained by an
-effect-strength adjustment, but curvature on the raw relativity scale
-should be reviewed separately when convexity or concavity is an explicit
-assumption.
+for a local adjustment. Monotonic ordering and curvature are retained on
+the relativity scale. An increasing concave curve therefore remains
+increasing and concave, while the complete rise becomes steeper when
+`effect_strength` is above 1. Very large values are rejected if they
+would produce a zero or negative relativity.
 
 The default unconstrained spline is suitable when the shape should
 remain data-led. Increasing or decreasing shape constraints are
@@ -190,7 +190,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-10 12:30:45 UTC
+#> Created: 2026-08-10 13:17:12 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -400,7 +400,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-10 12:30:45 UTC
+#> Created: 2026-08-10 13:17:12 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -486,7 +486,7 @@ interpretation tools:
 
 head(rating_table(refined_model, exposure = FALSE))
 #>      risk_factor       level est_refined_model
-#> 1    (Intercept) (Intercept)         0.2614624
+#> 1    (Intercept) (Intercept)         0.2614623
 #> 2 zip_restricted           0         0.9500000
 #> 3 zip_restricted           1         0.9954865
 #> 4 zip_restricted           2         0.8971513
@@ -528,9 +528,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Prepared: 2026-08-10 12:30:45 UTC
-#> Refitted: 2026-08-10 12:30:48 UTC
-#> Audited: 2026-08-10 12:30:48 UTC
+#> Prepared: 2026-08-10 13:17:12 UTC
+#> Refitted: 2026-08-10 13:17:14 UTC
+#> Audited: 2026-08-10 13:17:15 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
@@ -553,20 +553,31 @@ summary(refinement_audit)
 #> Portfolio effect
 #>   Before: 0.137596
 #>   After:  0.137596
-#>   Change: -1.84852e-14 (-1.343e-11%)
+#>   Change: -1.85685e-14 (-1.349e-11%)
 #> 
 #> Largest level changes (10 of 24)
-#>              risk_factor   level     before     after       change change_ratio
-#>  age_policyholder_smooth (84,95] 0.06942859 0.1288732  0.059444654   0.85619846
-#>           zip_restricted       3 0.13680279 0.1514843  0.014681462   0.10731844
-#>           zip_restricted       0 0.14020239 0.1271431 -0.013059310  -0.09314613
-#>        bm_tariff_segment       4 0.13883017 0.1509642  0.012134021   0.08740191
-#>        bm_tariff_segment       8 0.14270460 0.1550819  0.012377286   0.08673361
-#>  age_policyholder_smooth (65,84] 0.10100599 0.0935558 -0.007450184  -0.07375983
-#>  age_policyholder_smooth (25,32] 0.17896684 0.1914842  0.012517324   0.06994214
-#>        bm_tariff_segment       7 0.14278504 0.1517406  0.008955531   0.06272038
-#>        bm_tariff_segment       3 0.13764208 0.1452538  0.007611772   0.05530120
-#>           zip_restricted       2 0.12951920 0.1241024 -0.005416832  -0.04182262
+#>              risk_factor   level     before      after       change
+#>  age_policyholder_smooth (84,95] 0.06942859 0.12932481  0.059896219
+#>           zip_restricted       3 0.13680279 0.15148247  0.014679675
+#>           zip_restricted       0 0.14020239 0.12715764 -0.013044745
+#>        bm_tariff_segment       4 0.13883017 0.15097196  0.012141792
+#>        bm_tariff_segment       8 0.14270460 0.15509924  0.012394638
+#>  age_policyholder_smooth (65,84] 0.10100599 0.09317761 -0.007828374
+#>  age_policyholder_smooth (25,32] 0.17896684 0.19132120  0.012354352
+#>        bm_tariff_segment       7 0.14278504 0.15173842  0.008953378
+#>        bm_tariff_segment       3 0.13764208 0.14523090  0.007588820
+#>           zip_restricted       2 0.12951920 0.12409779 -0.005421411
+#>  change_ratio
+#>    0.86270247
+#>    0.10730537
+#>   -0.09304225
+#>    0.08745788
+#>    0.08685521
+#>   -0.07750406
+#>    0.06903151
+#>    0.06270530
+#>    0.05513445
+#>   -0.04185797
 ```
 
 The audit reports the portfolio-level frequency before and after
