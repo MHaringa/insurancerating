@@ -1,10 +1,10 @@
 # Edit a smoothing curve in a refinement workflow
 
-Modify the overall effect strength or a specified interval of a
-smoothing curve previously added with
+Modify a specified interval of a smoothing curve previously added with
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md).
-The function can replace the stored strength, fix boundary values and
-introduce internal control points.
+Use a relative adjustment when the existing shape is broadly
+appropriate, or explicit values and control points when the curve should
+follow known targets.
 
 ## Usage
 
@@ -19,9 +19,10 @@ edit_smoothing(
   to_value = NULL,
   control_positions = NULL,
   control_values = NULL,
+  adjustment = NULL,
+  transition = NULL,
   allow_extrapolation = FALSE,
-  extrapolation_step = NULL,
-  effect_strength = NULL
+  extrapolation_step = NULL
 )
 ```
 
@@ -43,13 +44,17 @@ edit_smoothing(
 
 - step:
 
-  Optional numeric index of the smoothing step to edit.
+  Optional numeric index of the original smoothing step or one of its
+  later edit steps. In both cases, the new edit is linked to the same
+  original smoothing and appended after the existing workflow steps.
 
 - from, to:
 
   Optional numeric values giving the start and end of the
-  source-variable interval to modify. Supply both for a local curve
-  edit, or omit both when only `effect_strength` is changed.
+  source-variable interval to modify. For `adjustment`, either value may
+  be omitted to use the beginning or end of the available smoothing
+  range. Explicit target-value and control-point edits require both
+  values.
 
 - from_value, to_value:
 
@@ -61,6 +66,24 @@ edit_smoothing(
   Optional numeric vectors of equal length. These define additional
   points that the edited smoothing curve should pass through.
 
+- adjustment:
+
+  Optional positive numeric scalar applied multiplicatively to the
+  current smoothing within the selected interval. `1.05` requests an
+  increase of up to 5 percent and `0.95` a decrease of up to 5 percent.
+  With two boundaries, the default transition anchors the multiplier at
+  1 at `from` and `to`; a one-sided edit is anchored only at the
+  supplied boundary.
+
+- transition:
+
+  Optional character string controlling how `adjustment` connects to the
+  unchanged smoothing. `NULL` inherits the original smoothing
+  specification. `"linear"` gives continuous linear transitions and
+  `"step"` permits immediate jumps. Smoothing methods accepted by
+  [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+  can be supplied as explicit structural overrides.
+
 - allow_extrapolation:
 
   Logical. Whether edits may extend beyond the observed source-variable
@@ -71,44 +94,65 @@ edit_smoothing(
   Optional positive numeric scalar used to set the spacing of extra
   break points when extrapolation is allowed.
 
-- effect_strength:
-
-  Optional non-negative finite numeric scalar replacing the effect
-  strength stored on the smoothing step. `NULL` retains the existing
-  value. The update is non-cumulative; see Details.
-
 ## Value
 
-A `rating_refinement` object containing the edited smoothing
-specification. The pricing GLM is not fitted again until
+A `rating_refinement` object with a separate smoothing-edit step
+appended to the ordered specification. The pricing GLM is not fitted
+again until
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
 is called.
 
 ## Details
 
-`edit_smoothing()` stores an edit on the selected smoothing step of a
+`edit_smoothing()` appends a separate, ordered edit step to a
 `rating_refinement` object. It does not alter the fitted GLM
-immediately. The edited curve is evaluated in the recorded step order
-and applied when
+immediately. Repeated calls are cumulative: every new edit starts from
+the smoothing produced by preceding edits to the same
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+step. The selected cumulative curve is applied when
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
 is called.
 
-`effect_strength` updates the overall strength stored by
-[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md).
-It is not multiplied by the previous value. For example, changing the
-value from 1.1 to 1.2 recalculates the current smoothing specification
-with a strength of 1.2; it does not multiply 1.1 by 1.2. If
-`effect_strength` is `NULL`, the value already stored on the smoothing
-step is retained. Local edits are calculated first and the selected
-effect strength is then applied to the resulting complete curve.
+Use `model_variable` or `step` to identify the smoothing to edit. `step`
+may identify either its original
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+step or a later edit belonging to that smoothing. The interval from
+`from` to `to` defines the part of the source-variable range that should
+be changed. With `adjustment`, either boundary may be omitted. Supplying
+only `from` edits the curve from that value to the end of the smoothing
+range; supplying only `to` edits it from the beginning of the range to
+that value. `adjustment` multiplies the current smoothing within the
+selected range. For example, `adjustment = 1.05` requests an increase of
+up to 5 percent relative to the existing smoothing.
 
-Use `model_variable` or `step` to identify the smoothing step to edit.
-The interval from `from` to `to` defines the part of the source variable
-range that should be changed. Both may be omitted when only
-`effect_strength` is updated. `from_value` and `to_value` can be used to
-force the curve values at the interval boundaries. `control_positions`
-and `control_values` add additional points that the edited curve should
-follow inside the interval.
+With two boundaries, the multiplier is anchored at 1 at `from` and `to`
+and reaches the requested adjustment near the middle. With only `from`,
+it is anchored at 1 at `from` and moves towards the requested adjustment
+at the end of the range. With only `to`, it starts at the requested
+adjustment and reconnects to 1 at `to`. These one-sided forms are useful
+for refining a lower or upper tail without introducing a jump at the
+supplied boundary.
+
+By default, `transition = NULL` inherits the smoothing specification
+from the
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+step. The entry and exit are adapted to their opposite directions and
+join the unchanged curve continuously. `"linear"` uses continuous
+straight transitions. `"step"` applies the multiplier immediately at
+both boundaries and therefore permits deliberate jumps. Explicit
+shape-constrained transition names accepted by
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+can also be supplied. When a constrained transition is inherited or
+selected, the edited curve is checked for the corresponding monotonicity
+and curvature.
+
+`from_value` and `to_value` instead prescribe curve values at the
+interval boundaries. `control_positions` and `control_values` add points
+that the edited curve should follow inside the interval. Relative
+adjustments and explicit target values cannot be combined in one
+`edit_smoothing()` call because they represent different actuarial
+instructions. They may be used in separate consecutive edits, which are
+then evaluated in their stored order.
 
 ### Actuarial interpretation
 
@@ -181,7 +225,7 @@ refinement <- prepare_refinement(model, data = portfolio) |>
 initial_model <- refit(refinement)
 
 # Edit the retained specification and fit it again.
-refinement <- refinement |>
+explicit_refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
     from = 30,
@@ -192,13 +236,26 @@ refinement <- refinement |>
     control_values = c(1.05)
   )
 
-refined_model <- refit(refinement)
+explicit_model <- refit(explicit_refinement)
 
-# Retain the smoothing shape and strengthen its complete effect. This
-# replaces the stored value; it is not multiplied by an earlier strength.
-refinement <- refinement |>
+# Keep the current shape as the basis and raise the middle of this interval
+# by up to 5 percent. The inherited transition remains continuous.
+adjusted_refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
-    effect_strength = 1.15
+    from = 30,
+    to = 50,
+    adjustment = 1.05
+  )
+
+adjusted_model <- refit(adjusted_refinement)
+
+# A one-sided adjustment applies from age 40 to the end of the range.
+upper_tail_refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 40,
+    adjustment = 1.05,
+    transition = "linear"
   )
 ```

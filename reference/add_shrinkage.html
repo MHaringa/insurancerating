@@ -71,7 +71,8 @@ this point in the ordered refinement workflow.</p></dd>
 <dt id="arg-model-variable">model_variable<a class="anchor" aria-label="anchor" href="#arg-model-variable"></a></dt>
 <dd><p>Character string naming the categorical risk factor to
 shrink. This may also identify a tariff factor created by an earlier
-<code><a href="add_relativities.html">add_relativities()</a></code> or <code><a href="add_restriction.html">add_restriction()</a></code> step.</p></dd>
+<code><a href="add_relativities.html">add_relativities()</a></code> step. After <code><a href="add_restriction.html">add_restriction()</a></code>, use the first column
+of its restriction table; the second column is resolved internally.</p></dd>
 
 
 <dt id="arg-credibility">credibility<a class="anchor" aria-label="anchor" href="#arg-credibility"></a></dt>
@@ -143,6 +144,18 @@ The selected value and weighting basis are retained in the refinement
 specification and shown by <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>.</p>
 </div>
 
+<div class="section">
+<h3 id="following-a-restriction">Following a restriction<a class="anchor" aria-label="anchor" href="#following-a-restriction"></a></h3>
+
+
+<p>When shrinkage follows <code><a href="add_restriction.html">add_restriction()</a></code>, <code>model_variable</code> remains the
+first column of the restriction table: the categorical risk factor whose
+levels are being adjusted. The second column is a numeric implementation
+column containing the fixed relativities used during <code><a href="refit.html">refit()</a></code>; it is not a
+separate categorical risk factor. <code>add_shrinkage()</code> resolves that internal
+column automatically from the stored restriction metadata.</p>
+</div>
+
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -179,7 +192,7 @@ specification and shown by <code><a href="https://rdrr.io/r/base/summary.html" c
 <span class="r-out co"><span class="r-pr">#&gt;</span> Refinement specification</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Package: insurancerating 0.8.1.9000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Created: 2026-08-10 13:15:59 UTC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Created: 2026-08-11 11:48:41 UTC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Observations: 8</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Family: poisson (log link)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Base formula:</span>
@@ -193,10 +206,10 @@ specification and shown by <code><a href="https://rdrr.io/r/base/summary.html" c
 <span class="r-in"><span><span class="fu"><a href="rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">refined_model</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   risk_factor       level est_refined_model</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 (Intercept) (Intercept)          1.000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2      sector    Industry          1.095723</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2      sector   Transport          3.815528</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3      sector      Office          2.945166</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4      sector      Retail          1.095723</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5      sector   Transport          3.815528</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4      sector    Industry          1.095723</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5      sector      Retail          1.095723</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Use equal level weights explicitly when portfolio weighting is not wanted.</span></span></span>
 <span class="r-in"><span><span class="va">equal_level_refinement</span> <span class="op">&lt;-</span> <span class="fu"><a href="prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>

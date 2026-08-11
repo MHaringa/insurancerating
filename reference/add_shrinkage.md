@@ -26,9 +26,10 @@ add_shrinkage(model, model_variable, credibility = 0.9, weights = NULL)
   Character string naming the categorical risk factor to shrink. This
   may also identify a tariff factor created by an earlier
   [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
-  or
-  [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
-  step.
+  step. After
+  [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
+  use the first column of its restriction table; the second column is
+  resolved internally.
 
 - credibility:
 
@@ -105,6 +106,18 @@ differentiation. The selected value and weighting basis are retained in
 the refinement specification and shown by
 [`summary()`](https://rdrr.io/r/base/summary.html).
 
+### Following a restriction
+
+When shrinkage follows
+[`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md),
+`model_variable` remains the first column of the restriction table: the
+categorical risk factor whose levels are being adjusted. The second
+column is a numeric implementation column containing the fixed
+relativities used during
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md);
+it is not a separate categorical risk factor. `add_shrinkage()` resolves
+that internal column automatically from the stored restriction metadata.
+
 ## See also
 
 [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
@@ -145,7 +158,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-10 13:15:59 UTC
+#> Created: 2026-08-11 11:48:41 UTC
 #> Observations: 8
 #> Family: poisson (log link)
 #> Base formula:
@@ -159,10 +172,10 @@ refined_model <- refit(refinement)
 rating_table(refined_model)
 #>   risk_factor       level est_refined_model
 #> 1 (Intercept) (Intercept)          1.000000
-#> 2      sector    Industry          1.095723
+#> 2      sector   Transport          3.815528
 #> 3      sector      Office          2.945166
-#> 4      sector      Retail          1.095723
-#> 5      sector   Transport          3.815528
+#> 4      sector    Industry          1.095723
+#> 5      sector      Retail          1.095723
 
 # Use equal level weights explicitly when portfolio weighting is not wanted.
 equal_level_refinement <- prepare_refinement(model, data = portfolio) |>

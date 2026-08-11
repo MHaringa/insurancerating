@@ -17,6 +17,7 @@ autoplot(
   step = NULL,
   x_max = NULL,
   y_max = NULL,
+  show_initial_smoothing = FALSE,
   remove_underscores = FALSE,
   rotate_angle = NULL,
   custom_theme = NULL,
@@ -33,8 +34,9 @@ autoplot(
 - variable:
 
   Optional character string identifying the model or derived variable
-  whose refinement step should be shown. An error is returned when no
-  step or more than one step matches.
+  whose refinement step should be shown. For one smoothing lineage, the
+  most recent smoothing or edit step is selected. An error is returned
+  when no step matches or when matches belong to different refinements.
 
 - step:
 
@@ -61,6 +63,16 @@ autoplot(
   refinement data or
   [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
   This argument is only available for smoothing steps.
+
+- show_initial_smoothing:
+
+  Logical. For a smoothing or smoothing-edit plot, whether to overlay
+  the initial curve produced by the corresponding
+  [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+  step. The other smoothing line shows the cumulative curve at the
+  selected `step`. Default is `FALSE`. This argument does not alter the
+  refinement specification or
+  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
 
 - remove_underscores:
 
@@ -91,10 +103,20 @@ the selected step. The plot is a diagnostic preview: it does not refit
 the GLM and does not modify the refinement specification.
 
 If `step` is supplied, that position in the refinement sequence is
-shown. If only `variable` is supplied, exactly one stored step must
-match that variable. When neither is supplied, the object must contain
-exactly one refinement step. Otherwise the function asks the user to
-select a step explicitly.
+shown. If only `variable` is supplied, the most recent step in one
+smoothing lineage is used. For other refinement types, exactly one
+stored step must match that variable. When neither is supplied, the
+object must contain exactly one refinement step. Otherwise the function
+asks the user to select a step explicitly.
+
+Each
+[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+call is stored as a separate workflow step. Selecting such a step shows
+the cumulative smoothing after all preceding edits up to that point. Set
+`show_initial_smoothing = TRUE` to add the curve produced by the
+corresponding
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+step before any edits were applied.
 
 ### Actuarial interpretation
 

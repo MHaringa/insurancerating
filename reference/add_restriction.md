@@ -251,10 +251,10 @@ refined_model <- refit(refined)
 rating_table(refined_model, exposure = FALSE)
 #>   risk_factor       level est_refined_model
 #> 1 (Intercept) (Intercept)          2.096774
-#> 2  relativity           A          1.000000
-#> 3  relativity           B          1.000000
-#> 4  relativity           C          1.100000
-#> 5  relativity           D          1.200000
+#> 2  relativity           D          1.200000
+#> 3  relativity           C          1.100000
+#> 4  relativity           A          1.000000
+#> 5  relativity           B          1.000000
 
 # A factor absent from the fitted GLM can replace an existing model term.
 # The portfolio must already assign every observation to a hail zone.

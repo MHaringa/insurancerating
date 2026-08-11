@@ -59,6 +59,7 @@ sublevel relativity specification produced by the selected step.</p>
 <span>  step <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  x_max <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  y_max <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  show_initial_smoothing <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  remove_underscores <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  rotate_angle <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  custom_theme <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -76,8 +77,9 @@ sublevel relativity specification produced by the selected step.</p>
 
 <dt id="arg-variable">variable<a class="anchor" aria-label="anchor" href="#arg-variable"></a></dt>
 <dd><p>Optional character string identifying the model or derived
-variable whose refinement step should be shown. An error is returned when
-no step or more than one step matches.</p></dd>
+variable whose refinement step should be shown. For one smoothing lineage,
+the most recent smoothing or edit step is selected. An error is returned
+when no step matches or when matches belong to different refinements.</p></dd>
 
 
 <dt id="arg-step">step<a class="anchor" aria-label="anchor" href="#arg-step"></a></dt>
@@ -101,6 +103,14 @@ displayed on the y-axis of a smoothing plot. Like <code>x_max</code>, this chang
 only the visible plotting range and does not alter the smoothing fit,
 refinement data or <code><a href="refit.html">refit()</a></code>. This argument is only available for
 smoothing steps.</p></dd>
+
+
+<dt id="arg-show-initial-smoothing">show_initial_smoothing<a class="anchor" aria-label="anchor" href="#arg-show-initial-smoothing"></a></dt>
+<dd><p>Logical. For a smoothing or smoothing-edit
+plot, whether to overlay the initial curve produced by the corresponding
+<code><a href="add_smoothing.html">add_smoothing()</a></code> step. The other smoothing line shows the cumulative curve
+at the selected <code>step</code>. Default is <code>FALSE</code>. This argument does not alter
+the refinement specification or <code><a href="refit.html">refit()</a></code>.</p></dd>
 
 
 <dt id="arg-remove-underscores">remove_underscores<a class="anchor" aria-label="anchor" href="#arg-remove-underscores"></a></dt>
@@ -130,9 +140,15 @@ spaces in the x-axis label. Default is <code>FALSE</code>.</p></dd>
 selected step. The plot is a diagnostic preview: it does not refit the GLM
 and does not modify the refinement specification.</p>
 <p>If <code>step</code> is supplied, that position in the refinement sequence is shown. If
-only <code>variable</code> is supplied, exactly one stored step must match that variable.
-When neither is supplied, the object must contain exactly one refinement
-step. Otherwise the function asks the user to select a step explicitly.</p><div class="section">
+only <code>variable</code> is supplied, the most recent step in one smoothing lineage
+is used. For other refinement types, exactly one stored step must match that
+variable. When neither is supplied, the object must contain exactly one
+refinement step. Otherwise the function asks the user to select a step
+explicitly.</p>
+<p>Each <code><a href="edit_smoothing.html">edit_smoothing()</a></code> call is stored as a separate workflow step. Selecting
+such a step shows the cumulative smoothing after all preceding edits up to
+that point. Set <code>show_initial_smoothing = TRUE</code> to add the curve produced by
+the corresponding <code><a href="add_smoothing.html">add_smoothing()</a></code> step before any edits were applied.</p><div class="section">
 <h3 id="actuarial-interpretation">Actuarial interpretation<a class="anchor" aria-label="anchor" href="#actuarial-interpretation"></a></h3>
 
 

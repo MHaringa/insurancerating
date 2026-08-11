@@ -61,20 +61,20 @@
   the function is documented as part of the portfolio reduction
   workflow.
 - [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-  now places the fitted reference level first within each risk factor by
-  default, including a reference selected with
-  [`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md).
-  Remaining levels can retain model order, be sorted alphabetically, or
-  be ordered by fitted effect. Risk factors can retain formula order or
-  be sorted alphabetically; comparisons with several models can select
-  the model that determines the ordering. The resulting order is
-  retained by
+  now distinguishes structural and comparative level order. Pure numeric
+  levels and numeric intervals are ordered from low to high, explicitly
+  ordered factors retain their declared level sequence, and nominal
+  factors are ordered from the highest to the lowest fitted effect by
+  default. Numeric and ordinal order are not displaced by the fitted
+  reference level. The new `level_order_by_risk_factor` argument can
+  preserve model order or select alphabetical or estimate-based ordering
+  for individual factors. Risk factors can retain formula order or be
+  sorted alphabetically, and comparisons with several models can select
+  the model that determines the estimate ordering. The resulting order
+  is retained by
   [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
   and
   [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html).
-  Pure numeric levels and numeric intervals are ordered from low to high
-  by default, while `numeric_level_order = "as_specified"` retains the
-  explicitly selected level order.
 - [`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)
   can rescale the current relativities of a categorical tariff factor so
   that an explicit reference level equals 1. When no level is supplied,
@@ -127,13 +127,24 @@
   and weights. Shape-constrained methods now use readable values such as
   `"increasing"`, `"decreasing"`, `"increasing_convex"` and
   `"increasing_concave"`; the former short SCOP codes remain accepted as
-  compatibility aliases. The new `effect_strength` argument can flatten
-  or strengthen the complete smoothed effect around its weighted mean on
-  the ordinary relativity scale while preserving direction and convexity
-  or concavity.
+  compatibility aliases.
+  [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+  now focuses only on the initial smoothing and its structural shape.
+  The former global strength adjustment has been removed.
   [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
-  can replace this value on an existing smoothing step without applying
-  adjustments cumulatively.
+  now supports a multiplicative local `adjustment`, such as `1.05` for
+  an increase of up to 5 percent, together with continuous inherited or
+  linear transitions and an explicit discontinuous `"step"` transition.
+  Relative adjustments are anchored to the unchanged smoothing at both
+  interval boundaries and remain separate from explicit target-value
+  edits. Each
+  [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+  call is stored as a separate cumulative refinement step. In
+  [`autoplot.rating_refinement()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md),
+  `step` selects the cumulative smoothing state and
+  `show_initial_smoothing = TRUE` overlays the original
+  [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+  curve for comparison.
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   recognises a split variable created by an earlier
   [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)

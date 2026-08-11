@@ -140,8 +140,7 @@ refinement <- refinement |>
     breaks = age_breaks,
     smoothing = "spline",
     k = 5,
-    weights = "exposure",
-    effect_strength = 1.1
+    weights = "exposure"
   )
 ```
 
@@ -156,24 +155,6 @@ The arguments distinguish two variables:
 weights give levels with more portfolio support more influence. With a
 spline method, `k` controls the available curve flexibility; it is a
 basis dimension rather than a fixed number of fitted degrees of freedom.
-
-`effect_strength` controls the overall spread of the smoothed
-relativities on the ordinary relativity scale. The default value 1
-retains the fitted smoothing, values between 0 and 1 flatten the
-complete effect, and values above 1 make the complete effect steeper.
-The value 1.1 used here increases every vertical deviation from the
-exposure-weighted mean by 10%. That mean therefore remains unchanged.
-
-This parameter changes the strength of the complete smoothed effect; it
-does not selectively alter only older ages, high insured values or
-another local part of the curve. Use interval boundaries and control
-points in
-[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
-for a local adjustment. Monotonic ordering and curvature are retained on
-the relativity scale. An increasing concave curve therefore remains
-increasing and concave, while the complete rise becomes steeper when
-`effect_strength` is above 1. Very large values are rejected if they
-would produce a zero or negative relativity.
 
 The default unconstrained spline is suitable when the shape should
 remain data-led. Increasing or decreasing shape constraints are
@@ -190,7 +171,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-10 13:17:12 UTC
+#> Created: 2026-08-11 11:49:56 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -198,7 +179,7 @@ summary(refinement)
 #> Offset: log(exposure)
 #> 
 #> Refinement steps: 1
-#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, effect strength: 1.1)
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)
 #>      8 intervals over 18 to 95
 
 autoplot(
@@ -218,6 +199,190 @@ If the curve needs adjustment, retain the specification and use
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
 before refitting. This preserves the rest of the ordered workflow rather
 than starting again from the fitted result.
+
+### Refining a selected part of the smoothing
+
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+defines the initial curve and its structural assumptions.
+[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+can subsequently refine a selected interval in two distinct ways. These
+edits are explicit tariff assumptions layered on the initial smoothing;
+they are not additional statistical observations.
+
+Each call to
+[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+is stored as a separate refinement step. If the same smoothing is edited
+more than once, the edits are applied cumulatively in their recorded
+order. The `step` argument in
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+can therefore be used to inspect the curve after a particular edit
+without introducing a separate revision argument.
+
+#### Explicitly redirecting the curve
+
+Use explicit values when the intended targets are known:
+
+``` r
+
+explicit_age_refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 32,
+    to = 65,
+    from_value = 0.95,
+    to_value = 1.10,
+    control_positions = 51,
+    control_values = 1.02
+  )
+
+autoplot(explicit_age_refinement, variable = "age_band", x_max = 90)
+```
+
+![](refinement-workflow_files/figure-html/unnamed-chunk-7-1.png)
+
+The stored edit redirects the selected interval through the supplied
+target values. This is appropriate when those values have a documented
+actuarial or implementation basis.
+
+#### Applying a relative local adjustment
+
+Use `adjustment` when the current shape is broadly appropriate but one
+region should be somewhat higher or lower:
+
+``` r
+
+relative_age_refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 32,
+    to = 65,
+    adjustment = 1.05
+  )
+
+autoplot(
+  relative_age_refinement,
+  variable = "age_band",
+  x_max = 90,
+  show_initial_smoothing = TRUE
+)
+```
+
+![](refinement-workflow_files/figure-html/unnamed-chunk-8-1.png)
+
+Here, `adjustment = 1.05` raises the middle of the selected region by up
+to 5% relative to the existing smoothing. The multiplier starts at 1 at
+`from`, moves towards 1.05 over the available smoothing points, and
+returns to 1 at `to`. The unchanged curve is therefore retained outside
+the interval and no jump is introduced at either boundary.
+
+With `show_initial_smoothing = TRUE`, the plot includes both the curve
+directly after
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+and the cumulative curve at the selected step. This comparison changes
+only the plot; it does not alter the stored refinement or the subsequent
+refit.
+
+For example, two local adjustments create two successive edit steps:
+
+``` r
+
+cumulative_age_refinement <- relative_age_refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 50,
+    adjustment = 1.02,
+    transition = "linear"
+  )
+
+# Step 3 is the cumulative result of the initial smoothing and both edits.
+autoplot(
+  cumulative_age_refinement,
+  step = 3,
+  x_max = 90,
+  show_initial_smoothing = TRUE
+)
+```
+
+![](refinement-workflow_files/figure-html/unnamed-chunk-9-1.png)
+
+Selecting `step = 2` would show the curve after the first edit only. The
+initial comparison line remains the result of the original
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+step in both plots.
+
+For a tail adjustment, only one boundary is needed. With only `from`,
+the adjustment runs from that value to the end of the available
+smoothing range. With only `to`, it runs from the beginning of the range
+to that value. The transition remains attached to the original curve at
+the supplied boundary:
+
+``` r
+
+# Refine the upper tail
+edit_smoothing(
+  refinement,
+  model_variable = "age_band",
+  from = 50,
+  adjustment = 1.05
+)
+
+# Refine the lower tail
+edit_smoothing(
+  refinement,
+  model_variable = "age_band",
+  to = 35,
+  adjustment = 0.95
+)
+```
+
+With `transition = NULL`, the default, the transition inherits the
+smoothing specification of the step being edited. For example, an
+original `smoothing = "increasing_concave"` uses the same structural
+shape logic while adapting the entry and exit to their opposite
+directions. The resulting curve is checked against the inherited
+monotonicity and curvature where applicable.
+
+Two explicit alternatives are available:
+
+``` r
+
+# Continuous straight transitions
+edit_smoothing(
+  refinement,
+  model_variable = "age_band",
+  from = 32,
+  to = 65,
+  adjustment = 1.05,
+  transition = "linear"
+)
+
+# Immediate changes at both boundaries
+edit_smoothing(
+  refinement,
+  model_variable = "age_band",
+  from = 32,
+  to = 65,
+  adjustment = 1.05,
+  transition = "step"
+)
+```
+
+`"linear"` remains continuous. `"step"` deliberately permits
+discontinuities and should therefore be selected only when an immediate
+tariff change is intended. Relative adjustments and explicit target
+values cannot be combined in one
+[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+call because they express different instructions. They can be recorded
+in separate consecutive edit steps when that sequence has a clear
+actuarial interpretation.
+
+The remainder of this vignette uses `relative_age_refinement` as the
+current proposal:
+
+``` r
+
+refinement <- relative_age_refinement
+```
 
 ## Restricting selected levels
 
@@ -266,7 +431,7 @@ removing them is not an unambiguous level restriction.
 autoplot(refinement, variable = "zip")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-8-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-14-1.png)
 
 Again, the plot shows the proposed restriction before
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
@@ -317,7 +482,7 @@ effects.
 autoplot(refinement, variable = "bm_group")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-10-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-16-1.png)
 
 This remains a pre-refit comparison: it shows the current estimated
 effect and the proposed shrunken structure stored in the refinement
@@ -400,21 +565,23 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-10 13:17:12 UTC
+#> Created: 2026-08-11 11:49:56 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
 #>   nclaims ~ age_band + zip + bm_group + offset(log(exposure))
 #> Offset: log(exposure)
 #> 
-#> Refinement steps: 4
-#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, effect strength: 1.1)
+#> Refinement steps: 5
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)
 #>      8 intervals over 18 to 95
-#>   2. Restriction: zip -> zip_restricted (4 levels)
+#>   2. Smoothing edit: age_band (relative adjustment: 1.05 from 32 to 65, transition: inherited)
+#>      relative adjustment = 1.05; transition = inherited; cumulative from smoothing step 1
+#>   3. Restriction: zip -> zip_restricted (4 levels)
 #>      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000
-#>   3. Shrinkage: bm_group (credibility: 0.9, weights: exposure, weighted mean preserved)
+#>   4. Shrinkage: bm_group (credibility: 0.9, weights: exposure, weighted mean preserved)
 #>      credibility = 0.9; weights = exposure; weighted mean preserved
-#>   4. Relativities: bm_group split by bm_detail -> bm_tariff_segment (normalised: yes)
+#>   5. Relativities: bm_group split by bm_detail -> bm_tariff_segment (normalised: yes)
 #>      2 parent levels split: Low, Medium
 ```
 
@@ -486,12 +653,12 @@ interpretation tools:
 
 head(rating_table(refined_model, exposure = FALSE))
 #>      risk_factor       level est_refined_model
-#> 1    (Intercept) (Intercept)         0.2614623
+#> 1    (Intercept) (Intercept)         0.2568384
 #> 2 zip_restricted           0         0.9500000
 #> 3 zip_restricted           1         0.9954865
 #> 4 zip_restricted           2         0.8971513
 #> 5 zip_restricted           3         1.1000000
-#> 6       bm_group         Low         1.0001880
+#> 6       bm_group      Medium         1.0440707
 ```
 
 This is the **post-refit** result. It is distinct from the preview shown
@@ -528,9 +695,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Prepared: 2026-08-10 13:17:12 UTC
-#> Refitted: 2026-08-10 13:17:14 UTC
-#> Audited: 2026-08-10 13:17:15 UTC
+#> Prepared: 2026-08-11 11:49:56 UTC
+#> Refitted: 2026-08-11 11:50:00 UTC
+#> Audited: 2026-08-11 11:50:01 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
@@ -540,44 +707,46 @@ summary(refinement_audit)
 #>   nclaims ~ offset(log(bm_group_rel) + log(bm_group_shrunk) + log(zip_restricted) + 
 #>       log(age_band_smooth) + log(exposure))
 #> 
-#> Refinement steps: 4
-#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, effect strength: 1.1)
+#> Refinement steps: 5
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)
 #>      8 intervals over 18 to 95
-#>   2. Restriction: zip -> zip_restricted (4 levels)
+#>   2. Smoothing edit: age_band (relative adjustment: 1.05 from 32 to 65, transition: inherited)
+#>      relative adjustment = 1.05; transition = inherited; cumulative from smoothing step 1
+#>   3. Restriction: zip -> zip_restricted (4 levels)
 #>      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000
-#>   3. Shrinkage: bm_group (credibility: 0.9, weights: exposure, weighted mean preserved)
+#>   4. Shrinkage: bm_group (credibility: 0.9, weights: exposure, weighted mean preserved)
 #>      credibility = 0.9; weights = exposure; weighted mean preserved
-#>   4. Relativities: bm_group split by bm_detail -> bm_tariff_segment (normalised: yes)
+#>   5. Relativities: bm_group split by bm_detail -> bm_tariff_segment (normalised: yes)
 #>      2 parent levels split: Low, Medium
 #> 
 #> Portfolio effect
 #>   Before: 0.137596
 #>   After:  0.137596
-#>   Change: -1.85685e-14 (-1.349e-11%)
+#>   Change: -1.95122e-14 (-1.418e-11%)
 #> 
 #> Largest level changes (10 of 24)
 #>              risk_factor   level     before      after       change
-#>  age_policyholder_smooth (84,95] 0.06942859 0.12932481  0.059896219
-#>           zip_restricted       3 0.13680279 0.15148247  0.014679675
-#>           zip_restricted       0 0.14020239 0.12715764 -0.013044745
-#>        bm_tariff_segment       4 0.13883017 0.15097196  0.012141792
-#>        bm_tariff_segment       8 0.14270460 0.15509924  0.012394638
-#>  age_policyholder_smooth (65,84] 0.10100599 0.09317761 -0.007828374
-#>  age_policyholder_smooth (25,32] 0.17896684 0.19132120  0.012354352
-#>        bm_tariff_segment       7 0.14278504 0.15173842  0.008953378
-#>        bm_tariff_segment       3 0.13764208 0.14523090  0.007588820
-#>           zip_restricted       2 0.12951920 0.12409779 -0.005421411
+#>  age_policyholder_smooth (84,95] 0.06942859 0.12783575  0.058407152
+#>           zip_restricted       3 0.13680279 0.15155033  0.014747533
+#>           zip_restricted       0 0.14020239 0.12759132 -0.012611074
+#>        bm_tariff_segment       8 0.14270460 0.15538814  0.012683531
+#>        bm_tariff_segment       4 0.13883017 0.15067141  0.011841241
+#>  age_policyholder_smooth [18,25] 0.26142311 0.24440223 -0.017020877
+#>        bm_tariff_segment       7 0.14278504 0.15180712  0.009022077
+#>        bm_tariff_segment       3 0.13764208 0.14514697  0.007504895
+#>  age_policyholder_smooth (65,84] 0.10100599 0.09551705 -0.005488934
+#>  age_policyholder_smooth (51,58] 0.11462184 0.11999825  0.005376415
 #>  change_ratio
-#>    0.86270247
-#>    0.10730537
-#>   -0.09304225
-#>    0.08745788
-#>    0.08685521
-#>   -0.07750406
-#>    0.06903151
-#>    0.06270530
-#>    0.05513445
-#>   -0.04185797
+#>    0.84125502
+#>    0.10780140
+#>   -0.08994907
+#>    0.08887962
+#>    0.08529300
+#>   -0.06510854
+#>    0.06318643
+#>    0.05452471
+#>   -0.05434266
+#>    0.04690568
 ```
 
 The audit reports the portfolio-level frequency before and after
@@ -612,17 +781,18 @@ refined_model <- refit(refinement)
 refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
-    effect_strength = 1.2
+    from = 32,
+    to = 65,
+    adjustment = 1.03,
+    transition = "linear"
   )
 
 updated_model <- refit(refinement)
 ```
 
-The update replaces the stored value 1.1 with 1.2 and recalculates the
-smoothing specification from its underlying curve. It does not multiply
-both values. When a local interval is edited without supplying
-`effect_strength`, the previously stored value is retained and applied
-to the complete edited curve.
+The update replaces the earlier local adjustment on this smoothing step.
+It is always calculated relative to the initial smoothing and is
+therefore not multiplied cumulatively by the previous value.
 
 Calling
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),

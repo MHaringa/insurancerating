@@ -60,7 +60,8 @@ attached to support actuarial review.</p>
 <span>  exponentiate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  significance <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  reference_first <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  level_order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"model"</span>, <span class="st">"alphabetical"</span>, <span class="st">"estimate_ascending"</span>, <span class="st">"estimate_descending"</span><span class="op">)</span>,</span>
+<span>  level_order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"estimate_descending"</span>, <span class="st">"estimate_ascending"</span>, <span class="st">"model"</span>, <span class="st">"alphabetical"</span><span class="op">)</span>,</span>
+<span>  level_order_by_risk_factor <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  numeric_level_order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ascending"</span>, <span class="st">"as_specified"</span><span class="op">)</span>,</span>
 <span>  risk_factor_order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"model"</span>, <span class="st">"alphabetical"</span><span class="op">)</span>,</span>
 <span>  order_model <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -112,16 +113,30 @@ p-values. The corresponding <code>est_*</code> columns remain numeric.</p></dd>
 
 <dt id="arg-reference-first">reference_first<a class="anchor" aria-label="anchor" href="#arg-reference-first"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, place the reference level first
-within each risk factor. For an ordinary GLM, the reference is obtained
-from the fitted factor contrasts. After <code><a href="add_rebasing.html">add_rebasing()</a></code>, the selected
-rebasing level is used.</p></dd>
+when the global ordering of a nominal risk factor is <code>"model"</code> or
+<code>"alphabetical"</code>. Numeric levels, ordered factors, estimate-based ordering
+and explicit per-factor overrides retain their selected order. For an
+ordinary GLM, the reference is obtained from the fitted factor contrasts.
+After <code><a href="add_rebasing.html">add_rebasing()</a></code>, the selected rebasing level is used.</p></dd>
 
 
 <dt id="arg-level-order">level_order<a class="anchor" aria-label="anchor" href="#arg-level-order"></a></dt>
-<dd><p>Character string controlling the order of the remaining
-levels within each risk factor. <code>"model"</code> retains the fitted model order,
-<code>"alphabetical"</code> sorts level labels, and <code>"estimate_ascending"</code> or
-<code>"estimate_descending"</code> sorts by the fitted effect from <code>order_model</code>.</p></dd>
+<dd><p>Character string controlling the default order of nominal
+factor levels. <code>"estimate_descending"</code> (default) places the highest fitted
+effect first, <code>"estimate_ascending"</code> places the lowest first,
+<code>"model"</code> retains the fitted model order and <code>"alphabetical"</code> sorts labels.
+Numeric levels and explicitly ordered factors use their substantive order
+instead.</p></dd>
+
+
+<dt id="arg-level-order-by-risk-factor">level_order_by_risk_factor<a class="anchor" aria-label="anchor" href="#arg-level-order-by-risk-factor"></a></dt>
+<dd><p>Optional named character vector providing
+an ordering override for individual risk factors. Names identify risk
+factors and values must be <code>"model"</code>, <code>"alphabetical"</code>,
+<code>"estimate_ascending"</code> or <code>"estimate_descending"</code>. For example,
+<code>c(urbanisation = "model", sector = "estimate_descending")</code> preserves an
+ordinal urbanisation scale while ordering sector relativities from high to
+low. Numeric ordering still takes precedence.</p></dd>
 
 
 <dt id="arg-numeric-level-order">numeric_level_order<a class="anchor" aria-label="anchor" href="#arg-numeric-level-order"></a></dt>
@@ -130,8 +145,8 @@ recognisable as numbers or numeric intervals. <code>"ascending"</code> orders th
 numeric value, or by the lower and then upper interval boundary, regardless
 of <code>level_order</code>. This correctly orders labels such as <code>(100,200]</code> and
 <code>(1000,2000]</code>. <code>"as_specified"</code> leaves these levels to <code>level_order</code>.
-When <code>reference_first = TRUE</code>, the reference level remains first even when
-it is not the numerically smallest level.</p></dd>
+Numeric ordering takes precedence over <code>reference_first</code>, so the reference
+level is not moved away from its numerical position.</p></dd>
 
 
 <dt id="arg-risk-factor-order">risk_factor_order<a class="anchor" aria-label="anchor" href="#arg-risk-factor-order"></a></dt>
@@ -226,18 +241,27 @@ the responsibility of the analyst.</p>
 <h3 id="row-order-and-reference-levels">Row order and reference levels<a class="anchor" aria-label="anchor" href="#row-order-and-reference-levels"></a></h3>
 
 
-<p>By default, risk factors follow the model formula and levels retain their
-model order, with the reference level placed first. This makes the tariff
-basis visible without inferring the reference from a relativity equal to
-one: several levels can legitimately have the same fitted effect. A
-reference selected with <code><a href="add_rebasing.html">add_rebasing()</a></code> takes precedence over the original
-GLM contrast reference.</p>
-<p>Alternative level ordering is useful for specific review tasks.
-Alphabetical order supports lookup and export, while ordering by estimate
-makes the lowest or highest fitted effects easier to identify. With several
-models, <code>order_model</code> defines which fitted specification provides that
-ordering. <code><a href="as_gt.html">as_gt()</a></code> and <code><a href="autoplot.rating_table.html">autoplot.rating_table()</a></code> retain the row order
-established here.</p>
+<p>By default, risk factors follow the model formula. Numeric levels and
+intervals are shown from low to high, explicitly ordered factors retain their
+factor-level sequence, and remaining nominal factors are shown from highest
+to lowest fitted effect. This separates structural order from an ordering
+used to compare tariff differentiation.</p>
+<p><code>reference_first</code> applies only when a nominal factor uses model or
+alphabetical order. It does not move the reference level ahead of a numeric,
+ordinal or estimate-based sequence. The reference remains recorded in the
+rating-table metadata, including a reference selected with <code><a href="add_rebasing.html">add_rebasing()</a></code>.</p>
+<p>Alternative level ordering is useful for specific review tasks. Alphabetical
+order supports lookup and export, while model order can retain a deliberately
+specified factor sequence. Use <code>level_order_by_risk_factor</code> when nominal and
+ordinal factors require different treatment in the same table. With several
+models, <code>order_model</code> defines which fitted specification provides
+estimate-based ordering. <code><a href="as_gt.html">as_gt()</a></code> and <code><a href="autoplot.rating_table.html">autoplot.rating_table()</a></code> retain the
+row order established here.</p>
+<p>Only a factor stored with <code>ordered = TRUE</code> is identified automatically as an
+ordinal scale. A regular factor may also have deliberately arranged levels,
+but that intention cannot be distinguished reliably from an arbitrary model
+order. Use <code>level_order_by_risk_factor = c(variable = "model")</code> to preserve
+that sequence explicitly.</p>
 <p>Numeric labels and intervals receive separate treatment because alphabetical
 ordering can give an incorrect tariff sequence. With the default
 <code>numeric_level_order = "ascending"</code>, a risk factor is sorted numerically only
@@ -391,7 +415,7 @@ fitting a refinement specification.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5         zip           2              NA 0.9237868</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6         zip           3              NA 0.9756337</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Keep the reference first and order the other levels by fitted relativity</span></span></span>
+<span class="r-in"><span><span class="co"># Order all levels by fitted relativity</span></span></span>
 <span class="r-in"><span><span class="fu">rating_table</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">freq</span>,</span></span>
 <span class="r-in"><span>  model_data <span class="op">=</span> <span class="va">df</span>,</span></span>
