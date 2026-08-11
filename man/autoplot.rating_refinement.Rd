@@ -10,6 +10,7 @@
   step = NULL,
   x_max = NULL,
   y_max = NULL,
+  show_initial_smoothing = FALSE,
   remove_underscores = FALSE,
   rotate_angle = NULL,
   custom_theme = NULL,
@@ -20,8 +21,9 @@
 \item{object}{Object of class \code{rating_refinement}.}
 
 \item{variable}{Optional character string identifying the model or derived
-variable whose refinement step should be shown. An error is returned when
-no step or more than one step matches.}
+variable whose refinement step should be shown. For one smoothing lineage,
+the most recent smoothing or edit step is selected. An error is returned
+when no step matches or when matches belong to different refinements.}
 
 \item{step}{Optional positive integer identifying a step in the stored
 refinement sequence. This takes precedence over \code{variable}.}
@@ -39,6 +41,12 @@ displayed on the y-axis of a smoothing plot. Like \code{x_max}, this changes
 only the visible plotting range and does not alter the smoothing fit,
 refinement data or \code{\link[=refit]{refit()}}. This argument is only available for
 smoothing steps.}
+
+\item{show_initial_smoothing}{Logical. For a smoothing or smoothing-edit
+plot, whether to overlay the initial curve produced by the corresponding
+\code{\link[=add_smoothing]{add_smoothing()}} step. The other smoothing line shows the cumulative curve
+at the selected \code{step}. Default is \code{FALSE}. This argument does not alter
+the refinement specification or \code{\link[=refit]{refit()}}.}
 
 \item{remove_underscores}{Logical; if \code{TRUE}, underscores are replaced by
 spaces in the x-axis label. Default is \code{FALSE}.}
@@ -64,9 +72,16 @@ selected step. The plot is a diagnostic preview: it does not refit the GLM
 and does not modify the refinement specification.
 
 If \code{step} is supplied, that position in the refinement sequence is shown. If
-only \code{variable} is supplied, exactly one stored step must match that variable.
-When neither is supplied, the object must contain exactly one refinement
-step. Otherwise the function asks the user to select a step explicitly.
+only \code{variable} is supplied, the most recent step in one smoothing lineage
+is used. For other refinement types, exactly one stored step must match that
+variable. When neither is supplied, the object must contain exactly one
+refinement step. Otherwise the function asks the user to select a step
+explicitly.
+
+Each \code{\link[=edit_smoothing]{edit_smoothing()}} call is stored as a separate workflow step. Selecting
+such a step shows the cumulative smoothing after all preceding edits up to
+that point. Set \code{show_initial_smoothing = TRUE} to add the curve produced by
+the corresponding \code{\link[=add_smoothing]{add_smoothing()}} step before any edits were applied.
 \subsection{Actuarial interpretation}{
 
 The plot supports review of the proposed tariff structure before estimation.

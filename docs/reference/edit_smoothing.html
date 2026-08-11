@@ -5,11 +5,13 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Edit a smoothing curve in a refinement workflow — edit_smoothing"><meta name="description" content="Modify the overall effect strength or a specified interval of a smoothing
-curve previously added with add_smoothing(). The function can replace the
-stored strength, fix boundary values and introduce internal control points."><meta property="og:description" content="Modify the overall effect strength or a specified interval of a smoothing
-curve previously added with add_smoothing(). The function can replace the
-stored strength, fix boundary values and introduce internal control points."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Edit a smoothing curve in a refinement workflow — edit_smoothing"><meta name="description" content="Modify a specified interval of a smoothing curve previously added with
+add_smoothing(). Use a relative adjustment when the existing shape is
+broadly appropriate, or explicit values and control points when the curve
+should follow known targets."><meta property="og:description" content="Modify a specified interval of a smoothing curve previously added with
+add_smoothing(). Use a relative adjustment when the existing shape is
+broadly appropriate, or explicit values and control points when the curve
+should follow known targets."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -42,9 +44,10 @@ stored strength, fix boundary values and introduce internal control points."><me
     </div>
 
     <div class="ref-description section level2">
-    <p>Modify the overall effect strength or a specified interval of a smoothing
-curve previously added with <code><a href="add_smoothing.html">add_smoothing()</a></code>. The function can replace the
-stored strength, fix boundary values and introduce internal control points.</p>
+    <p>Modify a specified interval of a smoothing curve previously added with
+<code><a href="add_smoothing.html">add_smoothing()</a></code>. Use a relative adjustment when the existing shape is
+broadly appropriate, or explicit values and control points when the curve
+should follow known targets.</p>
     </div>
 
     <div class="section level2">
@@ -59,9 +62,10 @@ stored strength, fix boundary values and introduce internal control points.</p>
 <span>  to_value <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  control_positions <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  control_values <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  adjustment <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  transition <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  allow_extrapolation <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  extrapolation_step <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  effect_strength <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  extrapolation_step <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -83,13 +87,16 @@ is not supplied.</p></dd>
 
 
 <dt id="arg-step">step<a class="anchor" aria-label="anchor" href="#arg-step"></a></dt>
-<dd><p>Optional numeric index of the smoothing step to edit.</p></dd>
+<dd><p>Optional numeric index of the original smoothing step or one of
+its later edit steps. In both cases, the new edit is linked to the same
+original smoothing and appended after the existing workflow steps.</p></dd>
 
 
 <dt id="arg-from-to">from, to<a class="anchor" aria-label="anchor" href="#arg-from-to"></a></dt>
 <dd><p>Optional numeric values giving the start and end of the
-source-variable interval to modify. Supply both for a local curve edit, or
-omit both when only <code>effect_strength</code> is changed.</p></dd>
+source-variable interval to modify. For <code>adjustment</code>, either value may be
+omitted to use the beginning or end of the available smoothing range.
+Explicit target-value and control-point edits require both values.</p></dd>
 
 
 <dt id="arg-from-value-to-value">from_value, to_value<a class="anchor" aria-label="anchor" href="#arg-from-value-to-value"></a></dt>
@@ -103,6 +110,23 @@ length. These define additional points that the edited smoothing curve
 should pass through.</p></dd>
 
 
+<dt id="arg-adjustment">adjustment<a class="anchor" aria-label="anchor" href="#arg-adjustment"></a></dt>
+<dd><p>Optional positive numeric scalar applied multiplicatively
+to the current smoothing within the selected interval. <code>1.05</code> requests an
+increase of up to 5 percent and <code>0.95</code> a decrease of up to 5 percent. With
+two boundaries, the default transition anchors the multiplier at 1 at
+<code>from</code> and <code>to</code>; a one-sided edit is anchored only at the supplied
+boundary.</p></dd>
+
+
+<dt id="arg-transition">transition<a class="anchor" aria-label="anchor" href="#arg-transition"></a></dt>
+<dd><p>Optional character string controlling how <code>adjustment</code>
+connects to the unchanged smoothing. <code>NULL</code> inherits the original
+smoothing specification. <code>"linear"</code> gives continuous linear transitions
+and <code>"step"</code> permits immediate jumps. Smoothing methods accepted by
+<code><a href="add_smoothing.html">add_smoothing()</a></code> can be supplied as explicit structural overrides.</p></dd>
+
+
 <dt id="arg-allow-extrapolation">allow_extrapolation<a class="anchor" aria-label="anchor" href="#arg-allow-extrapolation"></a></dt>
 <dd><p>Logical. Whether edits may extend beyond the
 observed source-variable range.</p></dd>
@@ -112,39 +136,49 @@ observed source-variable range.</p></dd>
 <dd><p>Optional positive numeric scalar used to set the
 spacing of extra break points when extrapolation is allowed.</p></dd>
 
-
-<dt id="arg-effect-strength">effect_strength<a class="anchor" aria-label="anchor" href="#arg-effect-strength"></a></dt>
-<dd><p>Optional non-negative finite numeric scalar replacing
-the effect strength stored on the smoothing step. <code>NULL</code> retains the
-existing value. The update is non-cumulative; see Details.</p></dd>
-
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>rating_refinement</code> object containing the edited smoothing
-specification. The pricing GLM is not fitted again until <code><a href="refit.html">refit()</a></code> is
-called.</p>
+    <p>A <code>rating_refinement</code> object with a separate smoothing-edit step
+appended to the ordered specification. The pricing GLM is not fitted again
+until <code><a href="refit.html">refit()</a></code> is called.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><code>edit_smoothing()</code> stores an edit on the selected smoothing step of a
+    <p><code>edit_smoothing()</code> appends a separate, ordered edit step to a
 <code>rating_refinement</code> object. It does not alter the fitted GLM immediately.
-The edited curve is evaluated in the recorded step order and applied when
-<code><a href="refit.html">refit()</a></code> is called.</p>
-<p><code>effect_strength</code> updates the overall strength stored by <code><a href="add_smoothing.html">add_smoothing()</a></code>.
-It is not multiplied by the previous value. For example, changing the value
-from 1.1 to 1.2 recalculates the current smoothing specification with a
-strength of 1.2; it does not multiply 1.1 by 1.2. If
-<code>effect_strength</code> is <code>NULL</code>, the value already stored on the smoothing step
-is retained. Local edits are calculated first and the selected effect
-strength is then applied to the resulting complete curve.</p>
-<p>Use <code>model_variable</code> or <code>step</code> to identify the smoothing step to edit. The
-interval from <code>from</code> to <code>to</code> defines the part of the source variable range
-that should be changed. Both may be omitted when only <code>effect_strength</code> is
-updated. <code>from_value</code> and <code>to_value</code> can be used to force the
-curve values at the interval boundaries. <code>control_positions</code> and
-<code>control_values</code> add additional points that the edited curve should follow
-inside the interval.</p><div class="section">
+Repeated calls are cumulative: every new edit starts from the smoothing
+produced by preceding edits to the same <code><a href="add_smoothing.html">add_smoothing()</a></code> step. The selected
+cumulative curve is applied when <code><a href="refit.html">refit()</a></code> is called.</p>
+<p>Use <code>model_variable</code> or <code>step</code> to identify the smoothing to edit. <code>step</code> may
+identify either its original <code><a href="add_smoothing.html">add_smoothing()</a></code> step or a later edit belonging
+to that smoothing. The interval from <code>from</code> to <code>to</code> defines the part of the source-variable
+range that should be changed. With <code>adjustment</code>, either boundary may be
+omitted. Supplying only <code>from</code> edits the curve from that value to the end of
+the smoothing range; supplying only <code>to</code> edits it from the beginning of the
+range to that value. <code>adjustment</code> multiplies the current smoothing within
+the selected range. For example, <code>adjustment = 1.05</code> requests an increase
+of up to 5 percent relative to the existing smoothing.</p>
+<p>With two boundaries, the multiplier is anchored at 1 at <code>from</code> and <code>to</code> and
+reaches the requested adjustment near the middle. With only <code>from</code>, it is
+anchored at 1 at <code>from</code> and moves towards the requested adjustment at the
+end of the range. With only <code>to</code>, it starts at the requested adjustment and
+reconnects to 1 at <code>to</code>. These one-sided forms are useful for refining a
+lower or upper tail without introducing a jump at the supplied boundary.</p>
+<p>By default, <code>transition = NULL</code> inherits the smoothing specification from
+the <code><a href="add_smoothing.html">add_smoothing()</a></code> step. The entry and exit are adapted to their opposite
+directions and join the unchanged curve continuously. <code>"linear"</code> uses
+continuous straight transitions. <code>"step"</code> applies the multiplier
+immediately at both boundaries and therefore permits deliberate jumps.
+Explicit shape-constrained transition names accepted by <code><a href="add_smoothing.html">add_smoothing()</a></code>
+can also be supplied. When a constrained transition is inherited or selected,
+the edited curve is checked for the corresponding monotonicity and curvature.</p>
+<p><code>from_value</code> and <code>to_value</code> instead prescribe curve values at the interval
+boundaries. <code>control_positions</code> and <code>control_values</code> add points that the
+edited curve should follow inside the interval. Relative adjustments and
+explicit target values cannot be combined in one <code>edit_smoothing()</code> call
+because they represent different actuarial instructions. They may be used in
+separate consecutive edits, which are then evaluated in their stored order.</p><div class="section">
 <h3 id="actuarial-interpretation">Actuarial interpretation<a class="anchor" aria-label="anchor" href="#actuarial-interpretation"></a></h3>
 
 
@@ -209,7 +243,7 @@ specification.</p>
 <span class="r-in"><span><span class="va">initial_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Edit the retained specification and fit it again.</span></span></span>
-<span class="r-in"><span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span><span class="va">explicit_refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">edit_smoothing</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    model_variable <span class="op">=</span> <span class="st">"age_band"</span>,</span></span>
 <span class="r-in"><span>    from <span class="op">=</span> <span class="fl">30</span>,</span></span>
@@ -220,14 +254,27 @@ specification.</p>
 <span class="r-in"><span>    control_values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.05</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">explicit_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="va">explicit_refinement</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Retain the smoothing shape and strengthen its complete effect. This</span></span></span>
-<span class="r-in"><span><span class="co"># replaces the stored value; it is not multiplied by an earlier strength.</span></span></span>
-<span class="r-in"><span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span><span class="co"># Keep the current shape as the basis and raise the middle of this interval</span></span></span>
+<span class="r-in"><span><span class="co"># by up to 5 percent. The inherited transition remains continuous.</span></span></span>
+<span class="r-in"><span><span class="va">adjusted_refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">edit_smoothing</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    model_variable <span class="op">=</span> <span class="st">"age_band"</span>,</span></span>
-<span class="r-in"><span>    effect_strength <span class="op">=</span> <span class="fl">1.15</span></span></span>
+<span class="r-in"><span>    from <span class="op">=</span> <span class="fl">30</span>,</span></span>
+<span class="r-in"><span>    to <span class="op">=</span> <span class="fl">50</span>,</span></span>
+<span class="r-in"><span>    adjustment <span class="op">=</span> <span class="fl">1.05</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">adjusted_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="va">adjusted_refinement</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A one-sided adjustment applies from age 40 to the end of the range.</span></span></span>
+<span class="r-in"><span><span class="va">upper_tail_refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">edit_smoothing</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    model_variable <span class="op">=</span> <span class="st">"age_band"</span>,</span></span>
+<span class="r-in"><span>    from <span class="op">=</span> <span class="fl">40</span>,</span></span>
+<span class="r-in"><span>    adjustment <span class="op">=</span> <span class="fl">1.05</span>,</span></span>
+<span class="r-in"><span>    transition <span class="op">=</span> <span class="st">"linear"</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

@@ -131,8 +131,7 @@ refinement <- refinement |>
     breaks = age_breaks,
     smoothing = "spline",
     k = 5,
-    weights = "exposure",
-    effect_strength = 1.1
+    weights = "exposure"
   )
 ```
 
@@ -146,22 +145,6 @@ The arguments distinguish two variables:
 give levels with more portfolio support more influence. With a spline method,
 `k` controls the available curve flexibility; it is a basis dimension rather
 than a fixed number of fitted degrees of freedom.
-
-`effect_strength` controls the overall spread of the smoothed relativities on
-the ordinary relativity scale. The default value 1 retains the fitted
-smoothing, values between 0 and 1 flatten the complete effect, and values above
-1 make the complete effect steeper. The value 1.1 used here increases every
-vertical deviation from the exposure-weighted mean by 10%. That mean therefore
-remains unchanged.
-
-This parameter changes the strength of the complete smoothed effect; it does
-not selectively alter only older ages, high insured values or another local
-part of the curve. Use interval boundaries and control points in
-`edit_smoothing()` for a local adjustment. Monotonic ordering and curvature are
-retained on the relativity scale. An increasing concave curve therefore remains
-increasing and concave, while the complete rise becomes steeper when
-`effect_strength` is above 1. Very large values are rejected if they would
-produce a zero or negative relativity.
 
 The default unconstrained spline is suitable when the shape should remain
 data-led. Increasing or decreasing shape constraints are available when a
@@ -188,6 +171,166 @@ structure.
 If the curve needs adjustment, retain the specification and use
 `edit_smoothing()` before refitting. This preserves the rest of the ordered
 workflow rather than starting again from the fitted result.
+
+### Refining a selected part of the smoothing
+
+`add_smoothing()` defines the initial curve and its structural assumptions.
+`edit_smoothing()` can subsequently refine a selected interval in two distinct
+ways. These edits are explicit tariff assumptions layered on the initial
+smoothing; they are not additional statistical observations.
+
+Each call to `edit_smoothing()` is stored as a separate refinement step. If the
+same smoothing is edited more than once, the edits are applied cumulatively in
+their recorded order. The `step` argument in `autoplot()` can therefore be used
+to inspect the curve after a particular edit without introducing a separate
+revision argument.
+
+#### Explicitly redirecting the curve
+
+Use explicit values when the intended targets are known:
+
+```{r}
+explicit_age_refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 32,
+    to = 65,
+    from_value = 0.95,
+    to_value = 1.10,
+    control_positions = 51,
+    control_values = 1.02
+  )
+
+autoplot(explicit_age_refinement, variable = "age_band", x_max = 90)
+```
+
+The stored edit redirects the selected interval through the supplied target
+values. This is appropriate when those values have a documented actuarial or
+implementation basis.
+
+#### Applying a relative local adjustment
+
+Use `adjustment` when the current shape is broadly appropriate but one region
+should be somewhat higher or lower:
+
+```{r}
+relative_age_refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 32,
+    to = 65,
+    adjustment = 1.05
+  )
+
+autoplot(
+  relative_age_refinement,
+  variable = "age_band",
+  x_max = 90,
+  show_initial_smoothing = TRUE
+)
+```
+
+Here, `adjustment = 1.05` raises the middle of the selected region by up to 5%
+relative to the existing smoothing. The multiplier starts at 1 at `from`, moves
+towards 1.05 over the available smoothing points, and returns to 1 at `to`.
+The unchanged curve is therefore retained outside the interval and no jump is
+introduced at either boundary.
+
+With `show_initial_smoothing = TRUE`, the plot includes both the curve directly
+after `add_smoothing()` and the cumulative curve at the selected step. This
+comparison changes only the plot; it does not alter the stored refinement or
+the subsequent refit.
+
+For example, two local adjustments create two successive edit steps:
+
+```{r}
+cumulative_age_refinement <- relative_age_refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 50,
+    adjustment = 1.02,
+    transition = "linear"
+  )
+
+# Step 3 is the cumulative result of the initial smoothing and both edits.
+autoplot(
+  cumulative_age_refinement,
+  step = 3,
+  x_max = 90,
+  show_initial_smoothing = TRUE
+)
+```
+
+Selecting `step = 2` would show the curve after the first edit only. The
+initial comparison line remains the result of the original `add_smoothing()`
+step in both plots.
+
+For a tail adjustment, only one boundary is needed. With only `from`, the
+adjustment runs from that value to the end of the available smoothing range.
+With only `to`, it runs from the beginning of the range to that value. The
+transition remains attached to the original curve at the supplied boundary:
+
+```{r, eval = FALSE}
+# Refine the upper tail
+edit_smoothing(
+  refinement,
+  model_variable = "age_band",
+  from = 50,
+  adjustment = 1.05
+)
+
+# Refine the lower tail
+edit_smoothing(
+  refinement,
+  model_variable = "age_band",
+  to = 35,
+  adjustment = 0.95
+)
+```
+
+With `transition = NULL`, the default, the transition inherits the smoothing
+specification of the step being edited. For example, an original
+`smoothing = "increasing_concave"` uses the same structural shape logic while
+adapting the entry and exit to their opposite directions. The resulting curve
+is checked against the inherited monotonicity and curvature where applicable.
+
+Two explicit alternatives are available:
+
+```{r, eval = FALSE}
+# Continuous straight transitions
+edit_smoothing(
+  refinement,
+  model_variable = "age_band",
+  from = 32,
+  to = 65,
+  adjustment = 1.05,
+  transition = "linear"
+)
+
+# Immediate changes at both boundaries
+edit_smoothing(
+  refinement,
+  model_variable = "age_band",
+  from = 32,
+  to = 65,
+  adjustment = 1.05,
+  transition = "step"
+)
+```
+
+`"linear"` remains continuous. `"step"` deliberately permits discontinuities
+and should therefore be selected only when an immediate tariff change is
+intended. Relative adjustments and explicit target values cannot be combined
+in one `edit_smoothing()` call because they express different instructions.
+They can be recorded in separate consecutive edit steps when that sequence has
+a clear actuarial interpretation.
+
+The remainder of this vignette uses `relative_age_refinement` as the current
+proposal:
+
+```{r}
+refinement <- relative_age_refinement
+```
 
 ## Restricting selected levels
 
@@ -456,17 +599,18 @@ refined_model <- refit(refinement)
 refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
-    effect_strength = 1.2
+    from = 32,
+    to = 65,
+    adjustment = 1.03,
+    transition = "linear"
   )
 
 updated_model <- refit(refinement)
 ```
 
-The update replaces the stored value 1.1 with 1.2 and recalculates the
-smoothing specification from its underlying curve. It does not multiply both
-values. When a local interval is edited without supplying `effect_strength`,
-the previously stored value is retained and applied to the complete edited
-curve.
+The update replaces the earlier local adjustment on this smoothing step. It is
+always calculated relative to the initial smoothing and is therefore not
+multiplied cumulatively by the previous value.
 
 Calling `add_smoothing()`, `add_restriction()` or another refinement function
 directly on `refined_model` is deliberately not supported. Further adjustments

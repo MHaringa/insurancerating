@@ -53,7 +53,13 @@
 }
 
 .get_rating_factors_df <- function(model) {
-  rfdf <- rating_table(model, significance = FALSE)$df
+  rfdf <- rating_table(
+    model,
+    significance = FALSE,
+    level_order = "model",
+    numeric_level_order = "as_specified",
+    reference_first = FALSE
+  )$df
   colnames(rfdf)[3] <- "estimate"
   as.data.frame(rfdf)
 }
@@ -598,6 +604,35 @@
   }
 
   idx[1]
+}
+
+.resolve_smoothing_step <- function(ref, variable = NULL, step = NULL) {
+  if (is.null(step)) {
+    return(.find_step(ref, type = "smoothing", variable = variable))
+  }
+
+  idx <- .find_step(ref, step = step)
+  selected <- ref$steps[[idx]]
+  if (identical(selected$type, "smoothing")) {
+    return(idx)
+  }
+  if (identical(selected$type, "smoothing_edit")) {
+    base_id <- selected$smoothing_step_id
+    base_idx <- which(vapply(
+      ref$steps,
+      function(candidate) identical(candidate$id, base_id),
+      logical(1)
+    ))
+    if (length(base_idx) == 1L &&
+        identical(ref$steps[[base_idx]]$type, "smoothing")) {
+      return(base_idx)
+    }
+  }
+
+  stop(
+    "`step` must identify an `add_smoothing()` or `edit_smoothing()` step.",
+    call. = FALSE
+  )
 }
 
 .safe_unique_append <- function(x, values) {
@@ -1741,6 +1776,22 @@ print.rating_refinement <- function(x, ...) {
     })
   }
 
+  if (identical(step$type, "smoothing_edit")) {
+    edit <- step$edit
+    if (identical(edit$mode %||% "explicit", "adjustment")) {
+      return(paste0(
+        "relative adjustment = ", format(edit$adjustment, trim = TRUE),
+        "; transition = ", edit$transition %||% "inherited",
+        "; cumulative from smoothing step ", step$smoothing_step_index
+      ))
+    }
+    return(paste0(
+      "explicit targets from ", format(edit$from, trim = TRUE),
+      " to ", format(edit$to, trim = TRUE),
+      "; cumulative from smoothing step ", step$smoothing_step_index
+    ))
+  }
+
   if (identical(step$type, "relativities")) {
     specification <- .build_relativities_df(step$relativities)
     parents <- unique(as.character(specification$level))
@@ -1800,7 +1851,7 @@ print.rating_refinement <- function(x, ...) {
 
   rows <- lapply(seq_along(steps), function(i) {
     step <- steps[[i]]
-    variable <- if (identical(step$type, "smoothing")) {
+    variable <- if (step$type %in% c("smoothing", "smoothing_edit")) {
       step$model_variable %||% step$x_cut %||% step$variable
     } else if (identical(step$type, "relativities")) {
       step$output_variable %||% step$display_risk_factor %||%
@@ -2580,12 +2631,22 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
 #' The selected value and weighting basis are retained in the refinement
 #' specification and shown by `summary()`.
 #'
+#' ## Following a restriction
+#'
+#' When shrinkage follows [add_restriction()], `model_variable` remains the
+#' first column of the restriction table: the categorical risk factor whose
+#' levels are being adjusted. The second column is a numeric implementation
+#' column containing the fixed relativities used during [refit()]; it is not a
+#' separate categorical risk factor. `add_shrinkage()` resolves that internal
+#' column automatically from the stored restriction metadata.
+#'
 #' @param model A `rating_refinement` object created with
 #'   [prepare_refinement()]. Shrinkage is applied to the current relativities at
 #'   this point in the ordered refinement workflow.
 #' @param model_variable Character string naming the categorical risk factor to
 #'   shrink. This may also identify a tariff factor created by an earlier
-#'   [add_relativities()] or [add_restriction()] step.
+#'   [add_relativities()] step. After [add_restriction()], use the first column
+#'   of its restriction table; the second column is resolved internally.
 #' @param credibility Numeric scalar between 0 and 1. This is the weight given
 #'   to the current risk-factor relativity. The remaining weight is assigned to
 #'   the common centre. The default `0.9` retains 90 percent of the current
@@ -2645,6 +2706,30 @@ add_shrinkage <- function(model, model_variable, credibility = 0.9,
       is.na(model_variable) || !nzchar(model_variable)) {
     stop("`model_variable` must be one non-empty character string.",
          call. = FALSE)
+  }
+  restriction_source <- vapply(
+    model$steps,
+    function(step) {
+      if (!identical(step$type, "restriction") ||
+          is.null(step$restrictions) ||
+          ncol(step$restrictions) != 2L ||
+          !identical(names(step$restrictions)[2], model_variable)) {
+        return(NA_character_)
+      }
+      step$variable %||% names(step$restrictions)[1]
+    },
+    character(1)
+  )
+  restriction_source <- unique(stats::na.omit(restriction_source))
+  if (length(restriction_source) > 0L) {
+    stop(
+      "`model_variable` `", model_variable,
+      "` is the numeric restriction column created for risk factor `",
+      restriction_source[1], "`. Supply `model_variable = \"",
+      restriction_source[1],
+      "\"`; `add_shrinkage()` resolves the restriction column automatically.",
+      call. = FALSE
+    )
   }
   if (!is.numeric(credibility) || length(credibility) != 1L ||
       is.na(credibility) || !is.finite(credibility) || credibility < 0 ||
@@ -3059,30 +3144,6 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #' tariff variable. The original model term is replaced by that smoothed tariff
 #' variable during refitting.
 #'
-#' ## Effect strength
-#'
-#' `effect_strength` adjusts the overall spread of the fitted smoothing curve
-#' without estimating a different curve. For a smoothed relativity `r(x)` and
-#' weighted arithmetic mean `c`, the adjustment is
-#' `c + a * (r(x) - c)`, where `a` is `effect_strength`. It multiplies the
-#' vertical deviations from the centre on the ordinary relativity scale; it is
-#' not a change in skewness or kurtosis. A value of 1 retains the fitted smooth,
-#' values between 0 and 1 flatten the effect, values above 1 strengthen it, and
-#' 0 produces a constant effect. The weighted arithmetic mean of the smoothed
-#' tariff levels remains unchanged by construction. The `weights` column is
-#' used to determine this centre when supplied; otherwise, tariff levels
-#' receive equal weight.
-#'
-#' This adjustment changes the overall degree of tariff differentiation. It
-#' does not selectively change only the upper or lower part of the curve. Use
-#' [edit_smoothing()] with interval boundaries and control points when a local
-#' part of the relationship requires a separate actuarial adjustment.
-#' Monotonic ordering and convexity or concavity on the relativity scale are
-#' retained. For example, an increasing concave curve remains increasing and
-#' concave while its complete rise becomes steeper when `effect_strength` is
-#' above 1. Very large values are rejected when they would produce a zero or
-#' negative relativity.
-#'
 #' ## Actuarial interpretation
 #'
 #' Smoothing introduces a structural assumption: adjacent values of the source
@@ -3219,12 +3280,6 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'   grouped model points.
 #' @param weights Optional character string. Numeric volume column, usually
 #'   exposure, used to weight the grouped GLM relativities during smoothing.
-#' @param effect_strength Non-negative finite numeric scalar controlling the
-#'   spread of the fitted smoothing effect around its weighted mean on the
-#'   ordinary relativity scale.
-#'   The default `1` leaves the smoothing unchanged. Values below 1 flatten the
-#'   complete effect and values above 1 make it steeper. The weighted arithmetic
-#'   mean remains unchanged by construction; see Details.
 #' @param tariff_class,rating_variable Deprecated. Use `model_variable` and
 #'   `source_variable` instead.
 #' @param x_cut,x_org Deprecated. Use `model_variable` and `source_variable`
@@ -3294,8 +3349,7 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'     breaks = c(seq(18, 93, 5), 95),
 #'     smoothing = "spline",
 #'     k = 6,
-#'     weights = "exposure",
-#'     effect_strength = 1.1
+#'     weights = "exposure"
 #'   )
 #'
 #' # When the tariff effect must not decrease, use the readable constrained
@@ -3317,7 +3371,7 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #' @export
 add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
                           breaks, smoothing = "spline", k = NULL,
-                          degree = NULL, weights = NULL, effect_strength = 1,
+                          degree = NULL, weights = NULL,
                           tariff_class = NULL, rating_variable = NULL,
                           x_cut = NULL, x_org = NULL) {
   .assert_refinement(model)
@@ -3429,15 +3483,6 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
   )
   .assert_single_numeric(degree, "degree", allow_null = TRUE, positive = TRUE, whole = TRUE)
   .assert_single_numeric(k, "k", allow_null = TRUE, positive = TRUE, whole = TRUE)
-  if (!is.numeric(effect_strength) || length(effect_strength) != 1L ||
-      is.na(effect_strength) || !is.finite(effect_strength) ||
-      effect_strength < 0) {
-    stop(
-      "`effect_strength` must be one finite non-negative numeric value.",
-      call. = FALSE
-    )
-  }
-
   basis_methods <- c(
     "spline", "gam", "mpi", "mpd", "cx", "cv", "micx", "micv", "mdcx",
     "mdcv"
@@ -3493,7 +3538,6 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
     smoothing_code = smoothing_code,
     k = k,
     weights = weights,
-    effect_strength = as.numeric(effect_strength),
     edit = NULL
   ))
 }
@@ -3556,31 +3600,50 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #' Edit a smoothing curve in a refinement workflow
 #'
 #' @description
-#' Modify the overall effect strength or a specified interval of a smoothing
-#' curve previously added with [add_smoothing()]. The function can replace the
-#' stored strength, fix boundary values and introduce internal control points.
+#' Modify a specified interval of a smoothing curve previously added with
+#' [add_smoothing()]. Use a relative adjustment when the existing shape is
+#' broadly appropriate, or explicit values and control points when the curve
+#' should follow known targets.
 #'
 #' @details
-#' `edit_smoothing()` stores an edit on the selected smoothing step of a
+#' `edit_smoothing()` appends a separate, ordered edit step to a
 #' `rating_refinement` object. It does not alter the fitted GLM immediately.
-#' The edited curve is evaluated in the recorded step order and applied when
-#' [refit()] is called.
+#' Repeated calls are cumulative: every new edit starts from the smoothing
+#' produced by preceding edits to the same [add_smoothing()] step. The selected
+#' cumulative curve is applied when [refit()] is called.
 #'
-#' `effect_strength` updates the overall strength stored by [add_smoothing()].
-#' It is not multiplied by the previous value. For example, changing the value
-#' from 1.1 to 1.2 recalculates the current smoothing specification with a
-#' strength of 1.2; it does not multiply 1.1 by 1.2. If
-#' `effect_strength` is `NULL`, the value already stored on the smoothing step
-#' is retained. Local edits are calculated first and the selected effect
-#' strength is then applied to the resulting complete curve.
+#' Use `model_variable` or `step` to identify the smoothing to edit. `step` may
+#' identify either its original [add_smoothing()] step or a later edit belonging
+#' to that smoothing. The interval from `from` to `to` defines the part of the source-variable
+#' range that should be changed. With `adjustment`, either boundary may be
+#' omitted. Supplying only `from` edits the curve from that value to the end of
+#' the smoothing range; supplying only `to` edits it from the beginning of the
+#' range to that value. `adjustment` multiplies the current smoothing within
+#' the selected range. For example, `adjustment = 1.05` requests an increase
+#' of up to 5 percent relative to the existing smoothing.
 #'
-#' Use `model_variable` or `step` to identify the smoothing step to edit. The
-#' interval from `from` to `to` defines the part of the source variable range
-#' that should be changed. Both may be omitted when only `effect_strength` is
-#' updated. `from_value` and `to_value` can be used to force the
-#' curve values at the interval boundaries. `control_positions` and
-#' `control_values` add additional points that the edited curve should follow
-#' inside the interval.
+#' With two boundaries, the multiplier is anchored at 1 at `from` and `to` and
+#' reaches the requested adjustment near the middle. With only `from`, it is
+#' anchored at 1 at `from` and moves towards the requested adjustment at the
+#' end of the range. With only `to`, it starts at the requested adjustment and
+#' reconnects to 1 at `to`. These one-sided forms are useful for refining a
+#' lower or upper tail without introducing a jump at the supplied boundary.
+#'
+#' By default, `transition = NULL` inherits the smoothing specification from
+#' the [add_smoothing()] step. The entry and exit are adapted to their opposite
+#' directions and join the unchanged curve continuously. `"linear"` uses
+#' continuous straight transitions. `"step"` applies the multiplier
+#' immediately at both boundaries and therefore permits deliberate jumps.
+#' Explicit shape-constrained transition names accepted by [add_smoothing()]
+#' can also be supplied. When a constrained transition is inherited or selected,
+#' the edited curve is checked for the corresponding monotonicity and curvature.
+#'
+#' `from_value` and `to_value` instead prescribe curve values at the interval
+#' boundaries. `control_positions` and `control_values` add points that the
+#' edited curve should follow inside the interval. Relative adjustments and
+#' explicit target values cannot be combined in one `edit_smoothing()` call
+#' because they represent different actuarial instructions. They may be used in
+#' separate consecutive edits, which are then evaluated in their stored order.
 #'
 #' ## Actuarial interpretation
 #'
@@ -3603,28 +3666,39 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #' @param model_variable Character string. The `model_variable` of the smoothing
 #'   step to edit. Required when more than one smoothing step exists and `step`
 #'   is not supplied.
-#' @param step Optional numeric index of the smoothing step to edit.
+#' @param step Optional numeric index of the original smoothing step or one of
+#'   its later edit steps. In both cases, the new edit is linked to the same
+#'   original smoothing and appended after the existing workflow steps.
 #' @param from,to Optional numeric values giving the start and end of the
-#'   source-variable interval to modify. Supply both for a local curve edit, or
-#'   omit both when only `effect_strength` is changed.
+#'   source-variable interval to modify. For `adjustment`, either value may be
+#'   omitted to use the beginning or end of the available smoothing range.
+#'   Explicit target-value and control-point edits require both values.
 #' @param from_value,to_value Optional numeric values used to override the
 #'   smoothed curve value at `from` and `to`.
 #' @param control_positions,control_values Optional numeric vectors of equal
 #'   length. These define additional points that the edited smoothing curve
 #'   should pass through.
+#' @param adjustment Optional positive numeric scalar applied multiplicatively
+#'   to the current smoothing within the selected interval. `1.05` requests an
+#'   increase of up to 5 percent and `0.95` a decrease of up to 5 percent. With
+#'   two boundaries, the default transition anchors the multiplier at 1 at
+#'   `from` and `to`; a one-sided edit is anchored only at the supplied
+#'   boundary.
+#' @param transition Optional character string controlling how `adjustment`
+#'   connects to the unchanged smoothing. `NULL` inherits the original
+#'   smoothing specification. `"linear"` gives continuous linear transitions
+#'   and `"step"` permits immediate jumps. Smoothing methods accepted by
+#'   [add_smoothing()] can be supplied as explicit structural overrides.
 #' @param allow_extrapolation Logical. Whether edits may extend beyond the
 #'   observed source-variable range.
 #' @param extrapolation_step Optional positive numeric scalar used to set the
 #'   spacing of extra break points when extrapolation is allowed.
-#' @param effect_strength Optional non-negative finite numeric scalar replacing
-#'   the effect strength stored on the smoothing step. `NULL` retains the
-#'   existing value. The update is non-cumulative; see Details.
 #'
 #' @author Martin Haringa
 #'
-#' @return A `rating_refinement` object containing the edited smoothing
-#'   specification. The pricing GLM is not fitted again until [refit()] is
-#'   called.
+#' @return A `rating_refinement` object with a separate smoothing-edit step
+#'   appended to the ordered specification. The pricing GLM is not fitted again
+#'   until [refit()] is called.
 #'
 #' @seealso [prepare_refinement()], [add_smoothing()], [add_restriction()],
 #'   [add_shrinkage()], [add_rebasing()], [add_relativities()], [refit()]
@@ -3666,7 +3740,7 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #' initial_model <- refit(refinement)
 #'
 #' # Edit the retained specification and fit it again.
-#' refinement <- refinement |>
+#' explicit_refinement <- refinement |>
 #'   edit_smoothing(
 #'     model_variable = "age_band",
 #'     from = 30,
@@ -3677,14 +3751,27 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #'     control_values = c(1.05)
 #'   )
 #'
-#' refined_model <- refit(refinement)
+#' explicit_model <- refit(explicit_refinement)
 #'
-#' # Retain the smoothing shape and strengthen its complete effect. This
-#' # replaces the stored value; it is not multiplied by an earlier strength.
-#' refinement <- refinement |>
+#' # Keep the current shape as the basis and raise the middle of this interval
+#' # by up to 5 percent. The inherited transition remains continuous.
+#' adjusted_refinement <- refinement |>
 #'   edit_smoothing(
 #'     model_variable = "age_band",
-#'     effect_strength = 1.15
+#'     from = 30,
+#'     to = 50,
+#'     adjustment = 1.05
+#'   )
+#'
+#' adjusted_model <- refit(adjusted_refinement)
+#'
+#' # A one-sided adjustment applies from age 40 to the end of the range.
+#' upper_tail_refinement <- refinement |>
+#'   edit_smoothing(
+#'     model_variable = "age_band",
+#'     from = 40,
+#'     adjustment = 1.05,
+#'     transition = "linear"
 #'   )
 #'
 #' @export
@@ -3695,9 +3782,10 @@ edit_smoothing <- function(model,
                            from_value = NULL, to_value = NULL,
                            control_positions = NULL,
                            control_values = NULL,
+                           adjustment = NULL,
+                           transition = NULL,
                            allow_extrapolation = FALSE,
-                           extrapolation_step = NULL,
-                           effect_strength = NULL) {
+                           extrapolation_step = NULL) {
   if (inherits(model, c("smooth", "restricted"))) {
     lifecycle::deprecate_warn(
       when = "0.9.0",
@@ -3711,26 +3799,31 @@ edit_smoothing <- function(model,
 
   .assert_single_numeric(from, "from", allow_null = TRUE)
   .assert_single_numeric(to, "to", allow_null = TRUE)
-  if (xor(is.null(from), is.null(to))) {
-    stop("Supply both `from` and `to`, or omit both.", call. = FALSE)
-  }
-  if (!is.null(from) && from >= to) {
+  if (!is.null(from) && !is.null(to) && from >= to) {
     stop("'from' must be smaller than 'to'.", call. = FALSE)
   }
   .assert_single_numeric(from_value, "from_value", allow_null = TRUE)
   .assert_single_numeric(to_value, "to_value", allow_null = TRUE)
-  .assert_single_logical(allow_extrapolation, "allow_extrapolation")
-  .assert_single_numeric(extrapolation_step, "extrapolation_step",
-                         allow_null = TRUE, positive = TRUE)
-  if (!is.null(effect_strength) &&
-      (!is.numeric(effect_strength) || length(effect_strength) != 1L ||
-       is.na(effect_strength) || !is.finite(effect_strength) ||
-       effect_strength < 0)) {
+  if (!is.null(adjustment) &&
+      (!is.numeric(adjustment) || length(adjustment) != 1L ||
+       is.na(adjustment) || !is.finite(adjustment) || adjustment <= 0)) {
     stop(
-      "`effect_strength` must be NULL or one finite non-negative numeric value.",
+      "`adjustment` must be NULL or one finite numeric value greater than 0.",
       call. = FALSE
     )
   }
+  if (!is.null(transition) &&
+      (!.is_single_string(transition) ||
+       !transition %in% c("linear", "step", .allowed_smoothing_methods))) {
+    stop(
+      "`transition` must be NULL, \"linear\", \"step\" or one of the ",
+      "smoothing methods accepted by `add_smoothing()`.",
+      call. = FALSE
+    )
+  }
+  .assert_single_logical(allow_extrapolation, "allow_extrapolation")
+  .assert_single_numeric(extrapolation_step, "extrapolation_step",
+                         allow_null = TRUE, positive = TRUE)
 
   if (is.null(control_positions)) control_positions <- numeric()
   if (is.null(control_values)) control_values <- numeric()
@@ -3750,24 +3843,68 @@ edit_smoothing <- function(model,
          call. = FALSE)
   }
 
-  idx <- .find_step(model, type = "smoothing",
-                    variable = model_variable,
-                    step = step)
+  idx <- .resolve_smoothing_step(
+    model,
+    variable = model_variable,
+    step = step
+  )
+  smoothing_step <- model$steps[[idx]]
 
-  has_interval_edit <- !is.null(from)
+  has_interval_edit <- !is.null(from) || !is.null(to)
   has_interval_values <- !is.null(from_value) || !is.null(to_value) ||
     length(control_positions) > 0L || length(control_values) > 0L ||
+    !is.null(adjustment) || !is.null(transition) ||
     isTRUE(allow_extrapolation) || !is.null(extrapolation_step)
   if (!has_interval_edit && has_interval_values) {
     stop(
-      "Supply `from` and `to` when specifying local smoothing edits or ",
+      "Supply `from`, `to`, or both when specifying a local smoothing edit or ",
       "extrapolation settings.",
       call. = FALSE
     )
   }
-  if (!has_interval_edit && is.null(effect_strength)) {
+  if (!has_interval_edit) {
     stop(
-      "Supply `effect_strength` or define a local interval with `from` and `to`.",
+      "Define the local interval to edit with `from`, `to`, or both.",
+      call. = FALSE
+    )
+  }
+
+  explicit_values <- !is.null(from_value) || !is.null(to_value) ||
+    length(control_positions) > 0L || length(control_values) > 0L
+  if (is.null(adjustment) && xor(is.null(from), is.null(to))) {
+    stop(
+      "Explicit target-value edits require both `from` and `to`. A single ",
+      "boundary is available only with `adjustment`.",
+      call. = FALSE
+    )
+  }
+  if (!is.null(adjustment) && explicit_values) {
+    stop(
+      "`adjustment` cannot be combined with `from_value`, `to_value`, ",
+      "`control_positions` or `control_values`. Use a relative adjustment or ",
+      "explicit target values, not both.",
+      call. = FALSE
+    )
+  }
+  if (is.null(adjustment) && !is.null(transition)) {
+    stop(
+      "`transition` is only used with `adjustment`.",
+      call. = FALSE
+    )
+  }
+  if (!is.null(adjustment) &&
+      (isTRUE(allow_extrapolation) || !is.null(extrapolation_step))) {
+    stop(
+      "`allow_extrapolation` and `extrapolation_step` are only available for ",
+      "explicit target-value edits, not for `adjustment`.",
+      call. = FALSE
+    )
+  }
+  if (is.null(adjustment) && !explicit_values &&
+      !isTRUE(allow_extrapolation) && is.null(extrapolation_step)) {
+    stop(
+      "Supply `adjustment` or at least one explicit target value or control ",
+      "point for the selected interval.",
       call. = FALSE
     )
   }
@@ -3778,26 +3915,32 @@ edit_smoothing <- function(model,
          call. = FALSE)
   }
 
-  if (has_interval_edit) {
-    model$steps[[idx]]$edit <- utils::modifyList(
-      model$steps[[idx]]$edit %||% list(),
-      list(
-        from = from,
-        to = to,
-        from_value = from_value,
-        to_value = to_value,
-        control_positions = control_positions,
-        control_values = control_values,
-        allow_extrapolation = allow_extrapolation,
-        extrapolation_step = extrapolation_step
-      )
-    )
-  }
-  if (!is.null(effect_strength)) {
-    model$steps[[idx]]$effect_strength <- as.numeric(effect_strength)
-  }
+  requested_mode <- if (!is.null(adjustment)) "adjustment" else "explicit"
 
-  model
+  .add_step(model, list(
+    id = .next_step_id(model),
+    type = "smoothing_edit",
+    variable = smoothing_step$variable,
+    model_variable = smoothing_step$model_variable %||%
+      smoothing_step$x_cut %||% smoothing_step$variable,
+    source_variable = smoothing_step$source_variable %||%
+      smoothing_step$x_org,
+    smoothing_step_id = smoothing_step$id,
+    smoothing_step_index = idx,
+    edit = list(
+      mode = requested_mode,
+      from = from,
+      to = to,
+      from_value = from_value,
+      to_value = to_value,
+      control_positions = control_positions,
+      control_values = control_values,
+      adjustment = if (is.null(adjustment)) NULL else as.numeric(adjustment),
+      transition = transition,
+      allow_extrapolation = allow_extrapolation,
+      extrapolation_step = extrapolation_step
+    )
+  ))
 }
 
 
@@ -4073,9 +4216,12 @@ add_relativities <- function(model,
     borders = NULL,
     new = NULL,
     new_line = NULL,
+    initial_smoothing_line = NULL,
+    smoothing_states = list(),
     degree = NULL,
     smoothing = NULL,
-    effect_strength = NULL,
+    adjustment = NULL,
+    transition = NULL,
     relativities_df = NULL,
     relativities_base_df = NULL,
     normalize = NULL,
@@ -4367,101 +4513,6 @@ add_relativities <- function(model,
   state
 }
 
-.smoothing_effect_weights <- function(data, smooth, source_variable,
-                                      weights = NULL) {
-  if (is.null(weights)) {
-    return(rep(1, nrow(smooth)))
-  }
-
-  boundaries <- c(smooth$breaks_min[1], smooth$breaks_max)
-  interval <- cut(
-    data[[source_variable]],
-    breaks = boundaries,
-    include.lowest = TRUE,
-    labels = FALSE
-  )
-  if (anyNA(interval)) {
-    stop(
-      "Cannot determine the weighted centre for `effect_strength` because ",
-      "some `", source_variable, "` values are outside the smoothing breaks.",
-      call. = FALSE
-    )
-  }
-
-  weight_values <- data[[weights]]
-  if (!is.numeric(weight_values) || anyNA(weight_values) ||
-      any(!is.finite(weight_values)) || any(weight_values < 0)) {
-    stop(
-      "The smoothing `weights` column `", weights,
-      "` must contain finite, non-negative values to determine the centre ",
-      "used by `effect_strength`.",
-      call. = FALSE
-    )
-  }
-
-  interval_weights <- numeric(nrow(smooth))
-  totals <- rowsum(weight_values, interval, reorder = FALSE)
-  interval_weights[as.integer(rownames(totals))] <- totals[, 1]
-  interval_weights
-}
-
-.apply_smoothing_effect_strength <- function(data, smooth, line, new_rf,
-                                             source_variable, weights,
-                                             effect_strength) {
-  if (isTRUE(all.equal(effect_strength, 1))) {
-    return(list(smooth = smooth, line = line, new_rf = new_rf))
-  }
-
-  all_values <- c(smooth$yhat, line$yhat)
-  if (anyNA(all_values) || any(!is.finite(all_values)) ||
-      any(all_values <= 0)) {
-    stop(
-      "`effect_strength` can only be applied when all smoothed relativities ",
-      "are finite and greater than zero.",
-      call. = FALSE
-    )
-  }
-
-  level_weights <- .smoothing_effect_weights(
-    data = data,
-    smooth = smooth,
-    source_variable = source_variable,
-    weights = weights
-  )
-  if (sum(level_weights) <= 0) {
-    stop(
-      "`effect_strength` requires at least one smoothing level with positive ",
-      "weight.",
-      call. = FALSE
-    )
-  }
-
-  centre <- stats::weighted.mean(smooth$yhat, level_weights)
-
-  transform <- function(x) {
-    centre + effect_strength * (x - centre)
-  }
-  adjusted_smooth <- transform(smooth$yhat)
-  adjusted_line <- transform(line$yhat)
-  if (any(adjusted_smooth <= 0) || any(adjusted_line <= 0)) {
-    stop(
-      "The selected `effect_strength` produces zero or negative smoothed ",
-      "relativities. Choose a lower value or adjust the smoothing curve ",
-      "locally with `edit_smoothing()`.",
-      call. = FALSE
-    )
-  }
-
-  smooth$yhat <- adjusted_smooth
-  line$yhat <- adjusted_line
-  new_rf$yhat <- smooth$yhat
-
-  attr(smooth, "effect_strength") <- effect_strength
-  attr(smooth, "effect_centre") <- centre
-
-  list(smooth = smooth, line = line, new_rf = new_rf)
-}
-
 .apply_smoothing_step <- function(state, step) {
   x_cut <- step$x_cut
   x_org <- step$x_org
@@ -4471,7 +4522,6 @@ add_relativities <- function(model,
   smoothing <- step$smoothing_code %||% smoothing_spec$code
   k <- step$k
   weights <- step$weights
-  effect_strength <- step$effect_strength %||% 1
 
   borders_x_cut <- cut_borders_model(state$model_out, x_cut)
 
@@ -4509,45 +4559,52 @@ add_relativities <- function(model,
   df_poly <- fit_poly[["new_poly_df"]]
   df_poly_line <- fit_poly[["poly_line"]]
   df_new_rf <- fit_poly[["new_rf"]]
+  initial_df_poly <- df_poly
+  initial_df_poly_line <- df_poly_line
+  initial_df_new_rf <- df_new_rf
 
+  effective_transition <- NULL
   if (!is.null(step$edit)) {
     edit <- step$edit
+    edit_mode <- edit$mode %||% "explicit"
 
-    ebreak <- edit$extrapolation_step
-    if (is.null(ebreak)) {
-      ebreak <- default_extrapolation_break_size(df_poly, factor = 1)
+    if (identical(edit_mode, "adjustment")) {
+      changed <- .apply_smoothing_adjustment(
+        smooth = df_poly,
+        line = df_poly_line,
+        new_rf = df_new_rf,
+        source_variable = x_org,
+        from = edit$from,
+        to = edit$to,
+        adjustment = edit$adjustment,
+        transition = edit$transition,
+        original_smoothing = smoothing_spec$method
+      )
+      effective_transition <- changed$transition
+    } else {
+      ebreak <- edit$extrapolation_step
+      if (is.null(ebreak)) {
+        ebreak <- default_extrapolation_break_size(df_poly, factor = 1)
+      }
+
+      changed <- change_xy(
+        borders_model = df_poly,
+        x_org = x_org,
+        x1 = edit$from,
+        x2 = edit$to,
+        overwrite_y1 = edit$from_value,
+        overwrite_y2 = edit$to_value,
+        middle_x = edit$control_positions %||% numeric(),
+        middle_y = edit$control_values %||% numeric(),
+        allow_extrapolation = isTRUE(edit$allow_extrapolation),
+        extrapolation_break_size = ebreak
+      )
     }
 
-    changed <- change_xy(
-      borders_model = df_poly,
-      x_org = x_org,
-      x1 = edit$from,
-      x2 = edit$to,
-      overwrite_y1 = edit$from_value,
-      overwrite_y2 = edit$to_value,
-      middle_x = edit$control_positions %||% numeric(),
-      middle_y = edit$control_values %||% numeric(),
-      allow_extrapolation = isTRUE(edit$allow_extrapolation),
-      extrapolation_break_size = ebreak
-    )
-
-    df_poly <- changed[["new_poly_df"]]
-    df_poly_line <- changed[["poly_line"]]
+    df_poly <- changed[["smooth"]] %||% changed[["new_poly_df"]]
+    df_poly_line <- changed[["line"]] %||% changed[["poly_line"]]
     df_new_rf <- changed[["new_rf"]]
   }
-
-  strengthened <- .apply_smoothing_effect_strength(
-    data = state$data,
-    smooth = df_poly,
-    line = df_poly_line,
-    new_rf = df_new_rf,
-    source_variable = x_org,
-    weights = weights,
-    effect_strength = effect_strength
-  )
-  df_poly <- strengthened$smooth
-  df_poly_line <- strengthened$line
-  df_new_rf <- strengthened$new_rf
 
   state$mgd_smt <- append(
     state$mgd_smt,
@@ -4581,9 +4638,118 @@ add_relativities <- function(model,
   state$borders <- borders_x_cut
   state$new <- df_poly
   state$new_line <- df_poly_line
+  state$initial_smoothing_line <- initial_df_poly_line
   state$degree <- degree
   state$smoothing <- smoothing
-  state$effect_strength <- effect_strength
+  state$adjustment <- step$edit$adjustment %||% NULL
+  state$transition <- effective_transition
+  state$smoothing_states[[step$id]] <- list(
+    smoothing_step_id = step$id,
+    model_variable = x_cut,
+    source_variable = x_org,
+    original_smoothing = smoothing_spec$method,
+    borders = borders_x_cut,
+    initial_new = initial_df_poly,
+    initial_line = initial_df_poly_line,
+    initial_new_rf = initial_df_new_rf,
+    current_new = df_poly,
+    current_line = df_poly_line,
+    current_new_rf = df_new_rf
+  )
+
+  state
+}
+
+.apply_smoothing_edit_step <- function(state, step) {
+  smoothing_step_id <- step$smoothing_step_id
+  smoothing_state <- state$smoothing_states[[smoothing_step_id]]
+  if (is.null(smoothing_state)) {
+    stop(
+      "The smoothing edited by step `", step$id,
+      "` has not been evaluated. Ensure `edit_smoothing()` follows its ",
+      "corresponding `add_smoothing()` step.",
+      call. = FALSE
+    )
+  }
+
+  edit <- step$edit
+  edit_mode <- edit$mode %||% "explicit"
+  df_poly <- smoothing_state$current_new
+  df_poly_line <- smoothing_state$current_line
+  df_new_rf <- smoothing_state$current_new_rf
+  x_org <- smoothing_state$source_variable
+  x_cut <- smoothing_state$model_variable
+  effective_transition <- NULL
+
+  if (identical(edit_mode, "adjustment")) {
+    changed <- .apply_smoothing_adjustment(
+      smooth = df_poly,
+      line = df_poly_line,
+      new_rf = df_new_rf,
+      source_variable = x_org,
+      from = edit$from,
+      to = edit$to,
+      adjustment = edit$adjustment,
+      transition = edit$transition,
+      original_smoothing = smoothing_state$original_smoothing
+    )
+    effective_transition <- changed$transition
+  } else {
+    ebreak <- edit$extrapolation_step
+    if (is.null(ebreak)) {
+      ebreak <- default_extrapolation_break_size(df_poly, factor = 1)
+    }
+    changed <- change_xy(
+      borders_model = df_poly,
+      x_org = x_org,
+      x1 = edit$from,
+      x2 = edit$to,
+      overwrite_y1 = edit$from_value,
+      overwrite_y2 = edit$to_value,
+      middle_x = edit$control_positions %||% numeric(),
+      middle_y = edit$control_values %||% numeric(),
+      allow_extrapolation = isTRUE(edit$allow_extrapolation),
+      extrapolation_break_size = ebreak
+    )
+  }
+
+  df_poly <- changed[["smooth"]] %||% changed[["new_poly_df"]]
+  df_poly_line <- changed[["line"]] %||% changed[["poly_line"]]
+  df_new_rf <- changed[["new_rf"]]
+
+  level_column <- paste0(x_org, "_smooth")
+  smooth_column <- paste0(x_cut, "_smooth")
+  matched <- match(
+    as.character(state$data[[level_column]]),
+    as.character(df_poly[[level_column]])
+  )
+  if (anyNA(matched)) {
+    stop(
+      "The edited smoothing intervals could not be matched to the current ",
+      "refinement data for `", x_cut, "`.",
+      call. = FALSE
+    )
+  }
+  state$data[[smooth_column]] <- df_poly$yhat[matched]
+
+  if (is.null(state$new_rf)) {
+    state$new_rf <- df_new_rf
+  } else {
+    keep <- state$new_rf$risk_factor != paste0(x_org, "_smooth")
+    state$new_rf <- rbind(state$new_rf[keep, , drop = FALSE], df_new_rf)
+  }
+
+  smoothing_state$current_new <- df_poly
+  smoothing_state$current_line <- df_poly_line
+  smoothing_state$current_new_rf <- df_new_rf
+  state$smoothing_states[[smoothing_step_id]] <- smoothing_state
+  state$borders <- smoothing_state$borders
+  state$new <- df_poly
+  state$new_line <- df_poly_line
+  state$initial_smoothing_line <- smoothing_state$initial_line
+  state$smoothing <- smoothing_state$original_smoothing
+  state$adjustment <- edit$adjustment %||% NULL
+  state$transition <- effective_transition
 
   state
 }
@@ -4849,6 +5015,7 @@ add_relativities <- function(model,
     shrinkage = .apply_shrinkage_step(state, step),
     rebasing = .apply_rebasing_step(state, step),
     smoothing = .apply_smoothing_step(state, step),
+    smoothing_edit = .apply_smoothing_edit_step(state, step),
     relativities = .apply_relativities_step(state, step),
     stop("Unknown refinement step type: ", step$type, call. = FALSE)
   )
@@ -4894,7 +5061,8 @@ add_relativities <- function(model,
       mgd_rst = state$mgd_rst,
       mgd_smt = state$mgd_smt,
       smoothing = state$smoothing,
-      effect_strength = state$effect_strength
+      adjustment = state$adjustment,
+      transition = state$transition
     )
     attr(st, "class") <- "smooth"
     attr(st, "has_smoothing") <- TRUE
@@ -5356,12 +5524,60 @@ refit <- function(object, intercept_only = FALSE, ...) {
     } else if (!is.null(step$degree)) {
       detail <- paste0(detail, ", degree: ", step$degree)
     }
-    detail <- paste0(
-      detail,
-      ", effect strength: ",
-      format(step$effect_strength %||% 1, trim = TRUE)
-    )
+    if (identical(step$edit$mode %||% NULL, "adjustment")) {
+      transition <- step$edit$transition %||% "inherited"
+      edit_range <- if (is.null(step$edit$from)) {
+        paste0("from the start of the smoothing range to ",
+               format(step$edit$to, trim = TRUE))
+      } else if (is.null(step$edit$to)) {
+        paste0("from ", format(step$edit$from, trim = TRUE),
+               " to the end of the smoothing range")
+      } else {
+        paste0("from ", format(step$edit$from, trim = TRUE),
+               " to ", format(step$edit$to, trim = TRUE))
+      }
+      detail <- paste0(
+        detail,
+        ", local adjustment: ",
+        format(step$edit$adjustment, trim = TRUE),
+        " ", edit_range,
+        ", transition: ", transition
+      )
+    } else if (!is.null(step$edit)) {
+      detail <- paste0(
+        detail,
+        ", explicit edit from ", format(step$edit$from, trim = TRUE),
+        " to ", format(step$edit$to, trim = TRUE)
+      )
+    }
     detail <- paste0(detail, ")")
+  } else if (identical(step$type, "smoothing_edit")) {
+    edit <- step$edit
+    model_variable <- step$model_variable %||% step$variable
+    if (identical(edit$mode %||% "explicit", "adjustment")) {
+      edit_range <- if (is.null(edit$from)) {
+        paste0("from the start of the smoothing range to ",
+               format(edit$to, trim = TRUE))
+      } else if (is.null(edit$to)) {
+        paste0("from ", format(edit$from, trim = TRUE),
+               " to the end of the smoothing range")
+      } else {
+        paste0("from ", format(edit$from, trim = TRUE),
+               " to ", format(edit$to, trim = TRUE))
+      }
+      detail <- paste0(
+        "Smoothing edit: ", model_variable,
+        " (relative adjustment: ", format(edit$adjustment, trim = TRUE),
+        " ", edit_range,
+        ", transition: ", edit$transition %||% "inherited", ")"
+      )
+    } else {
+      detail <- paste0(
+        "Smoothing edit: ", model_variable,
+        " (explicit targets from ", format(edit$from, trim = TRUE),
+        " to ", format(edit$to, trim = TRUE), ")"
+      )
+    }
   } else if (identical(step$type, "relativities")) {
     model_variable <- step$model_variable %||% step$risk_factor %||% step$variable
     effective_model_variable <- step$effective_model_variable %||%

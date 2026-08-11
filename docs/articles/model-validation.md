@@ -126,8 +126,8 @@ area_table <- rating_table(
 area_table
 #>   risk_factor       level est_area_model exposure
 #> 1 (Intercept) (Intercept)      0.1369930       NA
-#> 2        area           1      1.0000000     1066
-#> 3        area           0      0.5485629       13
+#> 2        area           0      0.5485629       13
+#> 3        area           1      1.0000000     1066
 #> 4        area           2      0.8739528      819
 #> 5        area           3      1.0782596      765
 

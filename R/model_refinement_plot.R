@@ -22,7 +22,10 @@
   if (!is.null(variable)) {
     matches <- which(vapply(
       ref$steps,
-      function(s) identical(s$variable, variable),
+      function(s) {
+        identical(s$variable, variable) ||
+          identical(s$model_variable, variable)
+      },
       logical(1)
     ))
 
@@ -31,6 +34,22 @@
     }
 
     if (length(matches) > 1) {
+      smoothing_ids <- vapply(
+        ref$steps[matches],
+        function(candidate) {
+          if (identical(candidate$type, "smoothing")) {
+            candidate$id
+          } else if (identical(candidate$type, "smoothing_edit")) {
+            candidate$smoothing_step_id
+          } else {
+            NA_character_
+          }
+        },
+        character(1)
+      )
+      if (all(!is.na(smoothing_ids)) && length(unique(smoothing_ids)) == 1L) {
+        return(matches[length(matches)])
+      }
       stop(
         "Multiple refinement steps found for variable: ",
         variable,
@@ -105,9 +124,16 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #' and does not modify the refinement specification.
 #'
 #' If `step` is supplied, that position in the refinement sequence is shown. If
-#' only `variable` is supplied, exactly one stored step must match that variable.
-#' When neither is supplied, the object must contain exactly one refinement
-#' step. Otherwise the function asks the user to select a step explicitly.
+#' only `variable` is supplied, the most recent step in one smoothing lineage
+#' is used. For other refinement types, exactly one stored step must match that
+#' variable. When neither is supplied, the object must contain exactly one
+#' refinement step. Otherwise the function asks the user to select a step
+#' explicitly.
+#'
+#' Each [edit_smoothing()] call is stored as a separate workflow step. Selecting
+#' such a step shows the cumulative smoothing after all preceding edits up to
+#' that point. Set `show_initial_smoothing = TRUE` to add the curve produced by
+#' the corresponding [add_smoothing()] step before any edits were applied.
 #'
 #' ## Actuarial interpretation
 #'
@@ -125,8 +151,9 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #'
 #' @param object Object of class `rating_refinement`.
 #' @param variable Optional character string identifying the model or derived
-#'   variable whose refinement step should be shown. An error is returned when
-#'   no step or more than one step matches.
+#'   variable whose refinement step should be shown. For one smoothing lineage,
+#'   the most recent smoothing or edit step is selected. An error is returned
+#'   when no step matches or when matches belong to different refinements.
 #' @param step Optional positive integer identifying a step in the stored
 #'   refinement sequence. This takes precedence over `variable`.
 #' @param x_max Optional single finite numeric value. Maximum value displayed on
@@ -141,6 +168,11 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #'   only the visible plotting range and does not alter the smoothing fit,
 #'   refinement data or [refit()]. This argument is only available for
 #'   smoothing steps.
+#' @param show_initial_smoothing Logical. For a smoothing or smoothing-edit
+#'   plot, whether to overlay the initial curve produced by the corresponding
+#'   [add_smoothing()] step. The other smoothing line shows the cumulative curve
+#'   at the selected `step`. Default is `FALSE`. This argument does not alter
+#'   the refinement specification or [refit()].
 #' @param remove_underscores Logical; if `TRUE`, underscores are replaced by
 #'   spaces in the x-axis label. Default is `FALSE`.
 #' @param rotate_angle Optional numeric value for the angle of x-axis labels.
@@ -185,6 +217,7 @@ autoplot.rating_refinement <- function(object,
                                        step = NULL,
                                        x_max = NULL,
                                        y_max = NULL,
+                                       show_initial_smoothing = FALSE,
                                        remove_underscores = FALSE,
                                        rotate_angle = NULL,
                                        custom_theme = NULL,
@@ -192,6 +225,7 @@ autoplot.rating_refinement <- function(object,
   .assert_refinement(object)
   .assert_single_numeric(x_max, "x_max", allow_null = TRUE)
   .assert_single_numeric(y_max, "y_max", allow_null = TRUE)
+  .assert_single_logical(show_initial_smoothing, "show_initial_smoothing")
 
   if (length(object$steps) == 0) {
     stop("No refinement steps available to plot.", call. = FALSE)
@@ -203,13 +237,14 @@ autoplot.rating_refinement <- function(object,
   selected_step <- preview$step
   state <- preview$state
 
-  if (identical(selected_step$type, "smoothing")) {
+  if (selected_step$type %in% c("smoothing", "smoothing_edit")) {
     return(
       .plot_smoothing_step(
         state = state,
         step = selected_step,
         x_max = x_max,
         y_max = y_max,
+        show_initial_smoothing = show_initial_smoothing,
         ...
       )
     )
@@ -217,6 +252,13 @@ autoplot.rating_refinement <- function(object,
 
   if (selected_step$type %in%
       c("restriction", "shrinkage", "rebasing", "relativities")) {
+    if (isTRUE(show_initial_smoothing)) {
+      stop(
+        "`show_initial_smoothing` is only available when plotting a ",
+        "smoothing step.",
+        call. = FALSE
+      )
+    }
     if (!is.null(x_max) || !is.null(y_max)) {
       supplied_limits <- c(
         if (!is.null(x_max)) "`x_max`",
@@ -282,7 +324,12 @@ autoplot.rating_refinement <- function(object,
 # Plot smoothing step
 # -----------------------------------------------------------------------------
 
-.plot_smoothing_step <- function(state, step, x_max = NULL, y_max = NULL, ...) {
+.plot_smoothing_step <- function(state,
+                                 step,
+                                 x_max = NULL,
+                                 y_max = NULL,
+                                 show_initial_smoothing = FALSE,
+                                 ...) {
   rf2 <- state$borders
   new <- state$new
   new_line <- state$new_line
@@ -307,6 +354,39 @@ autoplot.rating_refinement <- function(object,
   x_name <- names(new_line)[1]
   names(new_line)[names(new_line) == x_name] <- "col1"
 
+  initial_line <- state$initial_smoothing_line
+  if (isTRUE(show_initial_smoothing)) {
+    if (is.null(initial_line)) {
+      stop(
+        "No initial smoothing curve is available for the selected step.",
+        call. = FALSE
+      )
+    }
+    initial_x_name <- names(initial_line)[1]
+    names(initial_line)[names(initial_line) == initial_x_name] <- "col1"
+  }
+
+  colour_values <- c(
+    "Model fit" = pal$frequency,
+    "New cluster" = pal$risk_premium
+  )
+  colour_labels <- c(
+    "Model fit" = "Original fit",
+    "New cluster" = "Clustered fit"
+  )
+  if (isTRUE(show_initial_smoothing)) {
+    colour_values <- c(
+      colour_values,
+      "Initial smoothing" = "#9E9E9E",
+      "Current smoothing" = "#333333"
+    )
+    colour_labels <- c(
+      colour_labels,
+      "Initial smoothing" = "Initial smoothing",
+      "Current smoothing" = "Current smoothing"
+    )
+  }
+
   p <- ggplot2::ggplot(data = rf2) +
     ggplot2::geom_segment(
       ggplot2::aes(
@@ -329,17 +409,6 @@ autoplot.rating_refinement <- function(object,
         color = "New cluster"
       ),
       linewidth = 0.8,
-      ...
-    ) +
-    ggplot2::geom_line(
-      data = new_line,
-      ggplot2::aes(
-        x = col1,
-        y = yhat
-      ),
-      linewidth = 0.5,
-      linetype = "dashed",
-      color = "#4D4D4D",
       ...
     ) +
     ggplot2::geom_point(
@@ -412,17 +481,66 @@ autoplot.rating_refinement <- function(object,
     ) +
     ggplot2::scale_colour_manual(
       name = NULL,
-      values = c(
-        "Model fit" = pal$frequency,
-        "New cluster" = pal$risk_premium
-      ),
-      labels = c(
-        "Model fit" = "Original fit",
-        "New cluster" = "Clustered fit"
+      values = colour_values,
+      labels = colour_labels,
+      breaks = names(colour_values),
+      guide = ggplot2::guide_legend(
+        override.aes = list(
+          shape = NA,
+          linetype = if (isTRUE(show_initial_smoothing)) {
+            c("solid", "solid", "solid", "dashed")
+          } else {
+            c("solid", "solid")
+          }
+        )
       )
     ) +
     ggplot2::theme_minimal() +
     grid_theme
+
+  if (isTRUE(show_initial_smoothing)) {
+    initial_line$curve <- factor(
+      "Initial smoothing",
+      levels = c("Initial smoothing", "Current smoothing")
+    )
+    new_line$curve <- factor(
+      "Current smoothing",
+      levels = c("Initial smoothing", "Current smoothing")
+    )
+    smoothing_lines <- rbind(initial_line, new_line)
+    p <- p +
+      ggplot2::geom_line(
+        data = smoothing_lines,
+        ggplot2::aes(
+          x = col1,
+          y = yhat,
+          color = .data$curve,
+          linetype = .data$curve
+        ),
+        linewidth = 0.65,
+        ...
+      ) +
+      ggplot2::scale_linetype_manual(
+        name = NULL,
+        values = c(
+          "Initial smoothing" = "solid",
+          "Current smoothing" = "dashed"
+        ),
+        guide = "none"
+      )
+  } else {
+    p <- p + ggplot2::geom_line(
+      data = new_line,
+      ggplot2::aes(
+        x = col1,
+        y = yhat
+      ),
+      linewidth = 0.5,
+      linetype = "dashed",
+      color = "#4D4D4D",
+      ...
+    )
+  }
 
   if (!is.null(x_max) || !is.null(y_max)) {
     x_limits <- if (is.null(x_max)) NULL else c(NA_real_, x_max)

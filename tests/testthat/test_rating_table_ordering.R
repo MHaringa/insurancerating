@@ -36,18 +36,15 @@ numeric_level_ordering_data <- function() {
 }
 
 
-testthat::test_that("rating_table places fitted reference levels first", {
+testthat::test_that("rating_table orders nominal factors by descending estimate", {
   model <- rating_ordering_model()
   table <- rating_table(model, exposure = FALSE)
 
-  testthat::expect_identical(
-    table$level[table$risk_factor == "sector"],
-    c("Retail", "Industry", "Office")
-  )
-  testthat::expect_identical(
-    table$level[table$risk_factor == "region"],
-    c("West", "East")
-  )
+  estimate <- grep("^est_", names(table), value = TRUE)
+  for (risk_factor in c("sector", "region")) {
+    values <- table[[estimate]][table$risk_factor == risk_factor]
+    testthat::expect_true(all(diff(values) <= 0))
+  }
   testthat::expect_identical(
     attr(table, "reference_levels"),
     c(sector = "Retail", region = "West")
@@ -88,12 +85,7 @@ testthat::test_that("rating_table supports explicit level ordering", {
 
   sector_rows <- descending$risk_factor == "sector"
   estimate <- grep("^est_", names(descending), value = TRUE)
-  non_reference <- descending[[estimate]][sector_rows][-1L]
-  testthat::expect_identical(
-    descending$level[sector_rows][1L],
-    "Retail"
-  )
-  testthat::expect_true(all(diff(non_reference) <= 0))
+  testthat::expect_true(all(diff(descending[[estimate]][sector_rows]) <= 0))
 })
 
 
@@ -167,7 +159,7 @@ testthat::test_that("as_specified leaves numeric levels to level_order", {
 })
 
 
-testthat::test_that("reference_first takes precedence over numeric ordering", {
+testthat::test_that("numeric ordering takes precedence over reference_first", {
   portfolio <- numeric_level_ordering_data()
   portfolio$insured_amount_band <- stats::relevel(
     portfolio$insured_amount_band,
@@ -183,7 +175,74 @@ testthat::test_that("reference_first takes precedence over numeric ordering", {
 
   testthat::expect_identical(
     table$level[table$risk_factor == "insured_amount_band"],
-    c("(1000,2000]", "[0,100]", "(100,200]", "(200,1000]")
+    c("[0,100]", "(100,200]", "(200,1000]", "(1000,2000]")
+  )
+})
+
+
+testthat::test_that("ordered factors retain their declared level sequence", {
+  portfolio <- data.frame(
+    claims = c(1, 2, 3, 4, 5, 2, 3, 4, 5, 6),
+    exposure = rep(1, 10),
+    urbanisation = ordered(
+      rep(c("Low", "Moderate", "Average", "Strong", "Very strong"), 2),
+      levels = c("Low", "Moderate", "Average", "Strong", "Very strong")
+    )
+  )
+  model <- glm(
+    claims ~ urbanisation + offset(log(exposure)),
+    family = poisson(),
+    data = portfolio
+  )
+
+  table <- rating_table(model, exposure = FALSE)
+
+  testthat::expect_identical(
+    table$level[table$risk_factor == "urbanisation"],
+    c("Low", "Moderate", "Average", "Strong", "Very strong")
+  )
+})
+
+
+testthat::test_that("level order can be overridden by risk factor", {
+  model <- rating_ordering_model()
+  table <- rating_table(
+    model,
+    exposure = FALSE,
+    level_order_by_risk_factor = c(
+      sector = "alphabetical",
+      region = "model"
+    )
+  )
+
+  testthat::expect_identical(
+    table$level[table$risk_factor == "sector"],
+    c("Industry", "Office", "Retail")
+  )
+  testthat::expect_identical(
+    table$level[table$risk_factor == "region"],
+    c("West", "East")
+  )
+  testthat::expect_identical(
+    attr(table, "level_order_by_risk_factor"),
+    c(sector = "alphabetical", region = "model")
+  )
+
+  testthat::expect_error(
+    rating_table(
+      model,
+      exposure = FALSE,
+      level_order_by_risk_factor = c(unknown = "model")
+    ),
+    "were not found"
+  )
+  testthat::expect_error(
+    rating_table(
+      model,
+      exposure = FALSE,
+      level_order_by_risk_factor = c(sector = "descending")
+    ),
+    "Unknown ordering"
   )
 })
 

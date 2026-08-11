@@ -241,7 +241,7 @@ rating_table(refined_model, exposure = FALSE)
 #>                              risk_factor       level est_refined_model
 #> 1                            (Intercept) (Intercept)         2.3746130
 #> 2 construction_tariff_segment_restricted        shop         1.0645161
-#> 3 construction_tariff_segment_restricted      office         0.8709677
-#> 4 construction_tariff_segment_restricted        flat         1.0000000
+#> 3 construction_tariff_segment_restricted        flat         1.0000000
+#> 4 construction_tariff_segment_restricted      office         0.8709677
 #> 5 construction_tariff_segment_restricted       house         0.4745763
 ```

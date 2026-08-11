@@ -802,6 +802,216 @@ change_xy <- function(borders_model, x_org,
 }
 
 
+#' Create a bounded local multiplier for a smoothing edit
+#'
+#' @noRd
+.smoothing_adjustment_profile <- function(x, from, to, peak, transition,
+                                          anchor_from = TRUE,
+                                          anchor_to = TRUE) {
+  profile <- numeric(length(x))
+  inside <- is.finite(x) & x >= from & x <= to
+  if (!any(inside)) {
+    return(profile)
+  }
+
+  if (identical(transition, "step")) {
+    profile[inside] <- 1
+    return(profile)
+  }
+
+  ease <- function(u) {
+    u <- pmin(1, pmax(0, u))
+    if (identical(transition, "linear")) {
+      return(u)
+    }
+
+    canonical <- .resolve_smoothing_method(transition)$method
+    if (canonical %in%
+        c("convex", "increasing_convex", "decreasing_convex")) {
+      return(u^2)
+    }
+    if (canonical %in%
+        c("concave", "increasing_concave", "decreasing_concave")) {
+      return(1 - (1 - u)^2)
+    }
+
+    # Cubic smoothstep gives one gradual transition without extra oscillation.
+    u^2 * (3 - 2 * u)
+  }
+
+  if (!anchor_from && anchor_to) {
+    profile[inside] <- ease((to - x[inside]) / (to - from))
+  } else if (anchor_from && !anchor_to) {
+    profile[inside] <- ease((x[inside] - from) / (to - from))
+  } else {
+    left <- inside & x <= peak
+    right <- inside & x > peak
+    if (any(left)) {
+      profile[left] <- ease((x[left] - from) / (peak - from))
+    }
+    if (any(right)) {
+      profile[right] <- ease((to - x[right]) / (to - peak))
+    }
+  }
+  if (anchor_from) profile[x == from] <- 0
+  if (anchor_to) profile[x == to] <- 0
+  profile
+}
+
+
+#' Check structural constraints after a local smoothing adjustment
+#'
+#' @noRd
+.validate_adjusted_smoothing_shape <- function(x, y, smoothing) {
+  canonical <- .resolve_smoothing_method(smoothing)$method
+  constrained <- c(
+    "increasing", "decreasing", "convex", "concave",
+    "increasing_convex", "increasing_concave",
+    "decreasing_convex", "decreasing_concave"
+  )
+  if (!canonical %in% constrained || length(y) < 2L) {
+    return(invisible(TRUE))
+  }
+
+  ord <- order(x)
+  x <- x[ord]
+  y <- y[ord]
+  tolerance <- sqrt(.Machine$double.eps) * max(1, max(abs(y)))
+  slopes <- diff(y) / diff(x)
+
+  invalid_direction <-
+    (canonical %in% c("increasing", "increasing_convex",
+                      "increasing_concave") && any(slopes < -tolerance)) ||
+    (canonical %in% c("decreasing", "decreasing_convex",
+                      "decreasing_concave") && any(slopes > tolerance))
+
+  slope_changes <- diff(slopes)
+  invalid_curvature <-
+    (canonical %in% c("convex", "increasing_convex",
+                      "decreasing_convex") &&
+       any(slope_changes < -tolerance)) ||
+    (canonical %in% c("concave", "increasing_concave",
+                      "decreasing_concave") &&
+       any(slope_changes > tolerance))
+
+  if (invalid_direction || invalid_curvature) {
+    stop(
+      "The requested local `adjustment` would violate the inherited `",
+      canonical, "` smoothing structure. Choose an adjustment closer to 1, ",
+      "use a wider interval, or select an explicit `transition` if departing ",
+      "from the original shape is intentional.",
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
+
+#' Apply a relative local adjustment to an existing smoothing curve
+#'
+#' @noRd
+.apply_smoothing_adjustment <- function(smooth, line, new_rf,
+                                        source_variable, from, to,
+                                        adjustment, transition,
+                                        original_smoothing) {
+  smooth_x <- smooth[[source_variable]]
+  line_x <- line[[source_variable]]
+  smoothing_range <- range(c(smooth_x, line_x), na.rm = TRUE)
+  anchor_from <- !is.null(from)
+  anchor_to <- !is.null(to)
+  from <- from %||% smoothing_range[1]
+  to <- to %||% smoothing_range[2]
+
+  candidates <- smooth_x[smooth_x > from & smooth_x < to]
+  if (anchor_from && anchor_to && length(candidates) == 0L) {
+    stop(
+      "The interval selected by `from` and `to` contains no internal ",
+      "smoothing point. Choose a wider interval aligned with the smoothing ",
+      "breaks.",
+      call. = FALSE
+    )
+  }
+  affected <- smooth_x >= from & smooth_x <= to
+  if (sum(affected) < 2L) {
+    stop(
+      "The selected adjustment range contains fewer than two smoothing ",
+      "points. Choose a boundary further inside the smoothing range.",
+      call. = FALSE
+    )
+  }
+
+  peak <- if (anchor_from && anchor_to) {
+    candidates[which.min(abs(candidates - (from + to) / 2))]
+  } else if (!anchor_from) {
+    from
+  } else {
+    to
+  }
+  effective_transition <- if (is.null(transition)) {
+    .resolve_smoothing_method(original_smoothing)$method
+  } else if (transition %in% c("linear", "step")) {
+    transition
+  } else {
+    .resolve_smoothing_method(transition)$method
+  }
+
+  smooth_profile <- .smoothing_adjustment_profile(
+    smooth_x, from, to, peak, effective_transition,
+    anchor_from = anchor_from, anchor_to = anchor_to
+  )
+  line_profile <- .smoothing_adjustment_profile(
+    line_x, from, to, peak, effective_transition,
+    anchor_from = anchor_from, anchor_to = anchor_to
+  )
+  smooth_multiplier <- 1 + (adjustment - 1) * smooth_profile
+  line_multiplier <- 1 + (adjustment - 1) * line_profile
+
+  adjusted_smooth <- smooth$yhat * smooth_multiplier
+  adjusted_line <- line$yhat * line_multiplier
+  if (any(!is.finite(adjusted_smooth)) || any(adjusted_smooth <= 0) ||
+      any(!is.finite(adjusted_line)) || any(adjusted_line <= 0)) {
+    stop(
+      "The requested `adjustment` produces a non-finite or non-positive ",
+      "smoothed relativity.",
+      call. = FALSE
+    )
+  }
+
+  structural_method <- if (is.null(transition)) {
+    original_smoothing
+  } else if (!transition %in% c("linear", "step")) {
+    transition
+  } else {
+    NULL
+  }
+  if (!is.null(structural_method)) {
+    .validate_adjusted_smoothing_shape(
+      line_x,
+      adjusted_line,
+      structural_method
+    )
+  }
+
+  smooth$yhat <- adjusted_smooth
+  line$yhat <- adjusted_line
+  new_rf$yhat <- adjusted_smooth
+  attr(smooth, "adjustment") <- adjustment
+  attr(smooth, "transition") <- effective_transition
+  attr(smooth, "adjustment_peak") <- peak
+  attr(smooth, "adjustment_from") <- if (anchor_from) from else NULL
+  attr(smooth, "adjustment_to") <- if (anchor_to) to else NULL
+
+  list(
+    smooth = smooth,
+    line = line,
+    new_rf = new_rf,
+    transition = effective_transition,
+    peak = peak
+  )
+}
+
+
 #' @noRd
 .check_relativities <- function(relativities) {
   ok <- vapply(relativities, is.data.frame, logical(1))

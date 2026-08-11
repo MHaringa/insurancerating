@@ -1528,7 +1528,14 @@ testthat::test_that(
       extrapolation_step = 5
     )
 
-    edit <- edited$steps[[1]]$edit
+    testthat::expect_length(edited$steps, 2L)
+    testthat::expect_identical(edited$steps[[1]]$type, "smoothing")
+    testthat::expect_identical(edited$steps[[2]]$type, "smoothing_edit")
+    testthat::expect_identical(
+      edited$steps[[2]]$smoothing_step_id,
+      edited$steps[[1]]$id
+    )
+    edit <- edited$steps[[2]]$edit
     testthat::expect_equal(edit$from, 30)
     testthat::expect_equal(edit$to, 45)
     testthat::expect_equal(edit$from_value, 1)
@@ -1575,8 +1582,14 @@ testthat::test_that(
   }
 )
 
+testthat::test_that("the former global strength argument is absent", {
+  old_argument <- paste0("effect", "_strength")
+  testthat::expect_false(old_argument %in% names(formals(add_smoothing)))
+  testthat::expect_false(old_argument %in% names(formals(edit_smoothing)))
+})
+
 testthat::test_that(
-  "smoothing effect strength is weighted, editable and non-cumulative", {
+  "relative smoothing adjustments are stored and inherit the method", {
     df <- data.frame(
       y = c(1, 2, 1, 3, 2, 4),
       exposure = c(1, 2, 1, 3, 1, 4),
@@ -1592,125 +1605,372 @@ testthat::test_that(
       family = poisson(),
       data = df
     )
-
-    add_strength <- function(value) {
-      prepare_refinement(model, data = df) |>
-        add_smoothing(
-          model_variable = "age_band",
-          source_variable = "age",
-          breaks = c(18, 30, 45, 60),
-          smoothing = "poly",
-          degree = 1,
-          weights = "exposure",
-          effect_strength = value
-        )
-    }
-
-    base <- add_strength(1)
-    stronger <- add_strength(1.5)
-    base_state <- preview_refinement(base, 1)$state
-    stronger_state <- preview_refinement(stronger, 1)$state
-
-    testthat::expect_equal(
-      diff(range(stronger_state$new$yhat)),
-      1.5 * diff(range(base_state$new$yhat))
-    )
-    testthat::expect_equal(
-      stats::weighted.mean(
-        stronger_state$data$age_band_smooth,
-        stronger_state$data$exposure
-      ),
-      stats::weighted.mean(
-        base_state$data$age_band_smooth,
-        base_state$data$exposure
+    base <- prepare_refinement(model, data = df) |>
+      add_smoothing(
+        model_variable = "age_band",
+        source_variable = "age",
+        breaks = c(18, 30, 45, 60),
+        smoothing = "poly",
+        degree = 1,
+        weights = "exposure"
       )
-    )
 
     edited <- edit_smoothing(
-      stronger,
+      base,
       model_variable = "age_band",
-      effect_strength = 0.7
+      from = 18,
+      to = 60,
+      adjustment = 1.05
     )
-    direct <- add_strength(0.7)
-    testthat::expect_equal(edited$steps[[1]]$effect_strength, 0.7)
+    base_state <- preview_refinement(base, 1)$state
+    state <- preview_refinement(edited, 2)$state
+
+    testthat::expect_equal(edited$steps[[2]]$edit$adjustment, 1.05)
+    testthat::expect_null(edited$steps[[2]]$edit$transition)
+    testthat::expect_identical(state$transition, "poly")
+    testthat::expect_true(any(state$new$yhat > base_state$new$yhat))
+    boundary_rows <- c(1L, nrow(state$new_line))
     testthat::expect_equal(
-      preview_refinement(edited, 1)$state$new$yhat,
-      preview_refinement(direct, 1)$state$new$yhat
+      state$new_line$yhat[boundary_rows],
+      base_state$new_line$yhat[boundary_rows]
     )
 
-    local_edit <- edit_smoothing(
-      stronger,
+    upper_tail <- edit_smoothing(
+      base,
       model_variable = "age_band",
       from = 30,
-      to = 45,
-      from_value = 1,
-      to_value = 1.1
+      adjustment = 1.05,
+      transition = "linear"
     )
-    testthat::expect_equal(local_edit$steps[[1]]$effect_strength, 1.5)
-
-    testthat::expect_error(
-      add_strength(-0.1),
-      "finite non-negative"
+    upper_state <- preview_refinement(upper_tail, 2)$state
+    testthat::expect_null(upper_tail$steps[[2]]$edit$to)
+    testthat::expect_equal(
+      upper_state$new_line$yhat[upper_state$new_line$age == 30],
+      base_state$new_line$yhat[base_state$new_line$age == 30]
     )
-    testthat::expect_error(
-      edit_smoothing(stronger, model_variable = "age_band"),
-      "Supply `effect_strength`"
-    )
-    testthat::expect_error(
-      edit_smoothing(
-        stronger,
-        model_variable = "age_band",
-        from = 30,
-        effect_strength = 1.1
-      ),
-      "Supply both `from` and `to`"
+    testthat::expect_true(
+      tail(upper_state$new_line$yhat, 1) > tail(base_state$new_line$yhat, 1)
     )
   }
 )
 
 testthat::test_that(
-  "effect strength preserves direction and curvature on the relativity scale", {
-    smooth <- data.frame(
-      breaks_min = 0:3,
-      breaks_max = 1:4,
-      yhat = c(0.7, 1.0, 1.2, 1.3)
+  "smoothing edits are separate cumulative steps with an initial overlay", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = c(1, 2, 1, 3, 1, 4),
+      age = c(20, 25, 35, 40, 50, 55)
     )
-    line <- data.frame(x = 0:3, yhat = smooth$yhat)
-    new_rf <- data.frame(yhat = smooth$yhat)
-    data <- data.frame(x = c(0.5, 1.5, 2.5, 3.5))
+    df$age_band <- cut(
+      df$age,
+      breaks = c(18, 30, 45, 60),
+      include.lowest = TRUE
+    )
+    model <- glm(
+      y ~ age_band + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+    refinement <- prepare_refinement(model, data = df) |>
+      add_smoothing(
+        model_variable = "age_band",
+        source_variable = "age",
+        breaks = c(18, 30, 45, 60),
+        smoothing = "poly",
+        degree = 1,
+        weights = "exposure"
+      ) |>
+      edit_smoothing(
+        model_variable = "age_band",
+        from = 18,
+        to = 60,
+        adjustment = 1.05,
+        transition = "linear"
+      ) |>
+      edit_smoothing(
+        model_variable = "age_band",
+        from = 18,
+        to = 60,
+        adjustment = 1.03,
+        transition = "linear"
+      )
 
-    adjusted <- .apply_smoothing_effect_strength(
-      data = data,
+    testthat::expect_identical(
+      vapply(refinement$steps, `[[`, character(1), "type"),
+      c("smoothing", "smoothing_edit", "smoothing_edit")
+    )
+
+    initial <- preview_refinement(refinement, 1)$state$new_line$yhat
+    first_edit <- preview_refinement(refinement, 2)$state$new_line$yhat
+    second_edit <- preview_refinement(refinement, 3)$state$new_line$yhat
+    testthat::expect_true(any(first_edit > initial))
+    testthat::expect_true(any(second_edit > first_edit))
+    testthat::expect_equal(second_edit[c(1L, length(second_edit))],
+                           initial[c(1L, length(initial))])
+
+    plot <- ggplot2::autoplot(
+      refinement,
+      step = 3,
+      show_initial_smoothing = TRUE
+    )
+    overlay_layers <- which(vapply(
+      plot$layers,
+      function(layer) "curve" %in% names(layer$data),
+      logical(1)
+    ))
+    testthat::expect_length(overlay_layers, 1L)
+    testthat::expect_setequal(
+      unique(plot$layers[[overlay_layers]]$data$curve),
+      c("Initial smoothing", "Current smoothing")
+    )
+    testthat::expect_equal(
+      plot$layers[[overlay_layers]]$data$yhat[
+        plot$layers[[overlay_layers]]$data$curve == "Current smoothing"
+      ],
+      second_edit
+    )
+
+    first_plot <- ggplot2::autoplot(
+      refinement,
+      step = 2,
+      show_initial_smoothing = TRUE
+    )
+    first_overlay <- which(vapply(
+      first_plot$layers,
+      function(layer) "curve" %in% names(layer$data),
+      logical(1)
+    ))
+    testthat::expect_equal(
+      first_plot$layers[[first_overlay]]$data$yhat[
+        first_plot$layers[[first_overlay]]$data$curve == "Current smoothing"
+      ],
+      first_edit
+    )
+
+    plain_plot <- ggplot2::autoplot(refinement, step = 3)
+    testthat::expect_false(any(vapply(
+      plain_plot$layers,
+      function(layer) "curve" %in% names(layer$data),
+      logical(1)
+    )))
+
+    latest_plot <- ggplot2::autoplot(
+      refinement,
+      variable = "age_band",
+      show_initial_smoothing = TRUE
+    )
+    testthat::expect_s3_class(latest_plot, "ggplot")
+    testthat::expect_s3_class(refit(refinement), "glm")
+  }
+)
+
+testthat::test_that(
+  "linear relative adjustments are continuous and local", {
+    smooth <- data.frame(
+      age = c(25, 30, 35, 40, 45, 50, 55),
+      yhat = rep(1, 7)
+    )
+    line <- smooth
+    new_rf <- data.frame(yhat = smooth$yhat)
+
+    increased <- .apply_smoothing_adjustment(
       smooth = smooth,
       line = line,
       new_rf = new_rf,
-      source_variable = "x",
-      weights = NULL,
-      effect_strength = 1.5
+      source_variable = "age",
+      from = 30,
+      to = 50,
+      adjustment = 1.05,
+      transition = "linear",
+      original_smoothing = "spline"
+    )
+    testthat::expect_equal(
+      increased$smooth$yhat,
+      c(1, 1, 1.025, 1.05, 1.025, 1, 1)
+    )
+    testthat::expect_equal(increased$line$yhat[c(2, 6)], c(1, 1))
+
+    decreased <- .apply_smoothing_adjustment(
+      smooth = smooth,
+      line = line,
+      new_rf = new_rf,
+      source_variable = "age",
+      from = 30,
+      to = 50,
+      adjustment = 0.95,
+      transition = "linear",
+      original_smoothing = "spline"
+    )
+    testthat::expect_equal(
+      decreased$smooth$yhat,
+      c(1, 1, 0.975, 0.95, 0.975, 1, 1)
+    )
+  }
+)
+
+testthat::test_that(
+  "one-sided relative adjustments use the available smoothing range", {
+    smooth <- data.frame(
+      age = c(20, 30, 40, 50, 60),
+      yhat = rep(1, 5)
+    )
+    new_rf <- data.frame(yhat = smooth$yhat)
+
+    upper_tail <- .apply_smoothing_adjustment(
+      smooth = smooth,
+      line = smooth,
+      new_rf = new_rf,
+      source_variable = "age",
+      from = 30,
+      to = NULL,
+      adjustment = 1.05,
+      transition = "linear",
+      original_smoothing = "spline"
+    )
+    testthat::expect_equal(
+      upper_tail$smooth$yhat,
+      c(1, 1, 1 + 0.05 / 3, 1 + 0.10 / 3, 1.05)
+    )
+    testthat::expect_equal(upper_tail$smooth$yhat[2], smooth$yhat[2])
+
+    lower_tail <- .apply_smoothing_adjustment(
+      smooth = smooth,
+      line = smooth,
+      new_rf = new_rf,
+      source_variable = "age",
+      from = NULL,
+      to = 50,
+      adjustment = 0.95,
+      transition = "linear",
+      original_smoothing = "spline"
+    )
+    testthat::expect_equal(
+      lower_tail$smooth$yhat,
+      c(0.95, 1 - 0.10 / 3, 1 - 0.05 / 3, 1, 1)
+    )
+    testthat::expect_equal(lower_tail$smooth$yhat[4], smooth$yhat[4])
+  }
+)
+
+testthat::test_that("step adjustments explicitly allow boundary jumps", {
+  smooth <- data.frame(age = c(25, 30, 35, 40, 45, 50, 55), yhat = 1)
+  changed <- .apply_smoothing_adjustment(
+    smooth = smooth,
+    line = smooth,
+    new_rf = data.frame(yhat = smooth$yhat),
+    source_variable = "age",
+    from = 30,
+    to = 50,
+    adjustment = 1.05,
+    transition = "step",
+    original_smoothing = "spline"
+  )
+
+  testthat::expect_equal(
+    changed$smooth$yhat,
+    c(1, 1.05, 1.05, 1.05, 1.05, 1.05, 1)
+  )
+})
+
+testthat::test_that(
+  "inherited constrained transitions preserve feasible structure", {
+    smooth <- data.frame(
+      age = c(30, 35, 40, 45, 50),
+      yhat = c(0.8, 1.0, 1.15, 1.25, 1.3)
+    )
+    changed <- .apply_smoothing_adjustment(
+      smooth = smooth,
+      line = smooth,
+      new_rf = data.frame(yhat = smooth$yhat),
+      source_variable = "age",
+      from = 30,
+      to = 50,
+      adjustment = 1.05,
+      transition = NULL,
+      original_smoothing = "increasing_concave"
     )
 
-    testthat::expect_true(all(diff(adjusted$smooth$yhat) > 0))
-    testthat::expect_true(all(diff(diff(adjusted$smooth$yhat)) < 0))
-    testthat::expect_equal(
-      diff(adjusted$smooth$yhat),
-      1.5 * diff(smooth$yhat)
+    slopes <- diff(changed$line$yhat) / diff(changed$line$age)
+    testthat::expect_true(all(slopes >= 0))
+    testthat::expect_true(all(diff(slopes) <= 0))
+    testthat::expect_identical(changed$transition, "increasing_concave")
+    profile <- changed$smooth$yhat / smooth$yhat
+    testthat::expect_true(all(diff(profile[1:3]) >= 0))
+    testthat::expect_true(all(diff(profile[3:5]) <= 0))
+  }
+)
+
+testthat::test_that(
+  "infeasible inherited shape adjustments return an actionable error", {
+    smooth <- data.frame(
+      age = c(30, 35, 40, 45, 50),
+      yhat = c(1, 1.01, 1.02, 1.03, 1.04)
     )
-    testthat::expect_equal(
-      mean(adjusted$smooth$yhat),
-      mean(smooth$yhat)
+    testthat::expect_error(
+      .apply_smoothing_adjustment(
+        smooth = smooth,
+        line = smooth,
+        new_rf = data.frame(yhat = smooth$yhat),
+        source_variable = "age",
+        from = 30,
+        to = 50,
+        adjustment = 1.20,
+        transition = NULL,
+        original_smoothing = "increasing"
+      ),
+      "violate the inherited `increasing` smoothing structure"
     )
+  }
+)
+
+testthat::test_that(
+  "relative adjustments reject ambiguous edit combinations", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      age = c(20, 25, 35, 40, 50, 55)
+    )
+    df$age_band <- cut(df$age, c(18, 30, 45, 60), include.lowest = TRUE)
+    model <- glm(
+      y ~ age_band + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+    ref <- prepare_refinement(model, data = df) |>
+      add_smoothing(
+        model_variable = "age_band",
+        source_variable = "age",
+        breaks = c(18, 30, 45, 60),
+        smoothing = "poly",
+        degree = 1
+      )
 
     testthat::expect_error(
-      .apply_smoothing_effect_strength(
-        data = data,
-        smooth = smooth,
-        line = line,
-        new_rf = new_rf,
-        source_variable = "x",
-        weights = NULL,
-        effect_strength = 5
+      edit_smoothing(
+        ref, model_variable = "age_band", from = 18, to = 60,
+        adjustment = 1.05, from_value = 1
       ),
-      "zero or negative"
+      "cannot be combined"
+    )
+    testthat::expect_error(
+      edit_smoothing(
+        ref, model_variable = "age_band", from = 30, from_value = 1.05
+      ),
+      "Explicit target-value edits require both `from` and `to`"
+    )
+    testthat::expect_error(
+      edit_smoothing(
+        ref, model_variable = "age_band", from = 18, to = 60,
+        transition = "linear", from_value = 1
+      ),
+      "only used with `adjustment`"
+    )
+    testthat::expect_error(
+      edit_smoothing(
+        ref, model_variable = "age_band", from = 18, to = 60,
+        adjustment = 1.05, allow_extrapolation = TRUE
+      ),
+      "only available for explicit"
     )
   }
 )

@@ -13,7 +13,8 @@ this point in the ordered refinement workflow.}
 
 \item{model_variable}{Character string naming the categorical risk factor to
 shrink. This may also identify a tariff factor created by an earlier
-\code{\link[=add_relativities]{add_relativities()}} or \code{\link[=add_restriction]{add_restriction()}} step.}
+\code{\link[=add_relativities]{add_relativities()}} step. After \code{\link[=add_restriction]{add_restriction()}}, use the first column
+of its restriction table; the second column is resolved internally.}
 
 \item{credibility}{Numeric scalar between 0 and 1. This is the weight given
 to the current risk-factor relativity. The remaining weight is assigned to
@@ -85,6 +86,16 @@ credibility factor. Its value should be supported by portfolio stability,
 validation over time and the intended degree of tariff differentiation.
 The selected value and weighting basis are retained in the refinement
 specification and shown by \code{summary()}.
+}
+
+\subsection{Following a restriction}{
+
+When shrinkage follows \code{\link[=add_restriction]{add_restriction()}}, \code{model_variable} remains the
+first column of the restriction table: the categorical risk factor whose
+levels are being adjusted. The second column is a numeric implementation
+column containing the fixed relativities used during \code{\link[=refit]{refit()}}; it is not a
+separate categorical risk factor. \code{add_shrinkage()} resolves that internal
+column automatically from the stored restriction metadata.
 }
 }
 \examples{

@@ -159,6 +159,20 @@ testthat::test_that("shrinkage follows and precedes other refinement steps", {
     2.5
   )
 
+  restricted_specification <- prepare_refinement(model, portfolio) |>
+    add_restriction(restrictions)
+  testthat::expect_error(
+    add_shrinkage(
+      restricted_specification,
+      model_variable = "sector_restricted",
+      credibility = 0.8
+    ),
+    paste0(
+      "numeric restriction column created for risk factor `sector`.*",
+      "model_variable = \\\"sector\\\""
+    )
+  )
+
   after_shrinkage <- prepare_refinement(model, portfolio) |>
     add_shrinkage("sector", credibility = 0.8) |>
     add_restriction(restrictions)

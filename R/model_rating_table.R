@@ -125,6 +125,59 @@
 
 
 #' @keywords internal
+.rating_table_ordered_levels <- function(model, risk_factor) {
+  model_frame <- tryCatch(
+    stats::model.frame(model),
+    error = function(e) NULL
+  )
+  if (is.null(model_frame) || !risk_factor %in% names(model_frame) ||
+      !is.ordered(model_frame[[risk_factor]])) {
+    return(NULL)
+  }
+  as.character(levels(model_frame[[risk_factor]]))
+}
+
+
+#' @keywords internal
+.validate_level_order_by_risk_factor <- function(x, risk_factors) {
+  if (is.null(x)) {
+    return(character())
+  }
+
+  allowed <- c(
+    "model", "alphabetical", "estimate_ascending", "estimate_descending"
+  )
+  if (!is.character(x) || length(x) == 0L || is.null(names(x)) ||
+      anyNA(x) || anyNA(names(x)) || any(!nzchar(names(x))) ||
+      anyDuplicated(names(x))) {
+    stop(
+      "`level_order_by_risk_factor` must be a named character vector with ",
+      "one unique risk-factor name for every ordering override.",
+      call. = FALSE
+    )
+  }
+  invalid_values <- setdiff(unique(x), allowed)
+  if (length(invalid_values) > 0L) {
+    stop(
+      "Unknown ordering in `level_order_by_risk_factor`: ",
+      paste(invalid_values, collapse = ", "), ". Choose from: ",
+      paste(allowed, collapse = ", "), ".",
+      call. = FALSE
+    )
+  }
+  unknown_factors <- setdiff(names(x), risk_factors)
+  if (length(unknown_factors) > 0L) {
+    stop(
+      "Risk factor(s) in `level_order_by_risk_factor` were not found in the ",
+      "rating table: ", paste(unknown_factors, collapse = ", "), ".",
+      call. = FALSE
+    )
+  }
+  x
+}
+
+
+#' @keywords internal
 .parse_rating_table_numeric_levels <- function(levels) {
   levels <- trimws(as.character(levels))
   number_pattern <- paste0(
@@ -179,6 +232,7 @@
 #' @keywords internal
 .order_rating_table <- function(data, model_tables, models, model_names,
                                 reference_first, level_order,
+                                level_order_by_risk_factor,
                                 numeric_level_order,
                                 risk_factor_order, order_model_index) {
   if (nrow(data) == 0L) {
@@ -212,6 +266,10 @@
     rep(NA_character_, length(ordered_risk_factors)),
     ordered_risk_factors
   )
+  level_order_by_risk_factor <- .validate_level_order_by_risk_factor(
+    level_order_by_risk_factor,
+    setdiff(ordered_risk_factors, "(Intercept)")
+  )
   ordered_rows <- integer()
 
   for (risk_factor in ordered_risk_factors) {
@@ -236,29 +294,64 @@
     )
     model_levels <- unique(c(model_levels, current_levels))
 
-    if (identical(level_order, "alphabetical")) {
+    numeric_levels <- if (identical(numeric_level_order, "ascending")) {
+      .parse_rating_table_numeric_levels(current_levels)
+    } else {
+      NULL
+    }
+    ordered_factor_levels <- .rating_table_ordered_levels(
+      models[[source_model_index]],
+      risk_factor
+    )
+    has_override <- risk_factor %in% names(level_order_by_risk_factor)
+    selected_level_order <- if (has_override) {
+      unname(level_order_by_risk_factor[[risk_factor]])
+    } else {
+      level_order
+    }
+    preserve_reference_position <- FALSE
+
+    if (!is.null(numeric_levels)) {
+      numeric_order <- with(
+        numeric_levels,
+        order(lower, upper, original_order)
+      )
+      level_sequence <- current_levels[numeric_order]
+      preserve_reference_position <- TRUE
+    } else if (has_override) {
+      if (identical(selected_level_order, "alphabetical")) {
+        level_sequence <- sort(unique(current_levels))
+      } else if (selected_level_order %in%
+                 c("estimate_ascending", "estimate_descending")) {
+        decreasing <- identical(selected_level_order, "estimate_descending")
+        estimate_column <- paste0("est_", model_names[[source_model_index]])
+        estimates <- data[[estimate_column]][rows]
+        sort_values <- if (decreasing) -estimates else estimates
+        local_order <- order(sort_values, seq_along(rows), na.last = TRUE)
+        level_sequence <- current_levels[local_order]
+      } else {
+        level_sequence <- model_levels
+      }
+      preserve_reference_position <- TRUE
+    } else if (!is.null(ordered_factor_levels)) {
+      level_sequence <- c(
+        intersect(ordered_factor_levels, current_levels),
+        setdiff(current_levels, ordered_factor_levels)
+      )
+      preserve_reference_position <- TRUE
+    } else if (identical(selected_level_order, "alphabetical")) {
       level_sequence <- sort(unique(current_levels))
-    } else if (level_order %in%
+    } else if (selected_level_order %in%
                c("estimate_ascending", "estimate_descending")) {
-      decreasing <- identical(level_order, "estimate_descending")
+      decreasing <- identical(selected_level_order, "estimate_descending")
       estimate_column <- paste0("est_", model_names[[source_model_index]])
       estimates <- data[[estimate_column]][rows]
       sort_values <- if (decreasing) -estimates else estimates
       local_order <- order(sort_values, seq_along(rows), na.last = TRUE)
       level_sequence <- current_levels[local_order]
+      preserve_reference_position <- TRUE
     } else {
       level_sequence <- model_levels
-    }
-
-    if (identical(numeric_level_order, "ascending")) {
-      numeric_levels <- .parse_rating_table_numeric_levels(current_levels)
-      if (!is.null(numeric_levels)) {
-        numeric_order <- with(
-          numeric_levels,
-          order(lower, upper, original_order)
-        )
-        level_sequence <- current_levels[numeric_order]
-      }
     }
 
     reference_level <- .rating_table_reference_level(
@@ -267,7 +360,7 @@
     )
     if (!is.null(reference_level) && reference_level %in% current_levels) {
       reference_levels[[risk_factor]] <- reference_level
-      if (isTRUE(reference_first)) {
+      if (isTRUE(reference_first) && !preserve_reference_position) {
         level_sequence <- c(
           reference_level,
           setdiff(level_sequence, reference_level)
@@ -917,20 +1010,31 @@
 #'   each model containing significance indicators based on coefficient
 #'   p-values. The corresponding `est_*` columns remain numeric.
 #' @param reference_first Logical. If `TRUE`, place the reference level first
-#'   within each risk factor. For an ordinary GLM, the reference is obtained
-#'   from the fitted factor contrasts. After [add_rebasing()], the selected
-#'   rebasing level is used.
-#' @param level_order Character string controlling the order of the remaining
-#'   levels within each risk factor. `"model"` retains the fitted model order,
-#'   `"alphabetical"` sorts level labels, and `"estimate_ascending"` or
-#'   `"estimate_descending"` sorts by the fitted effect from `order_model`.
+#'   when the global ordering of a nominal risk factor is `"model"` or
+#'   `"alphabetical"`. Numeric levels, ordered factors, estimate-based ordering
+#'   and explicit per-factor overrides retain their selected order. For an
+#'   ordinary GLM, the reference is obtained from the fitted factor contrasts.
+#'   After [add_rebasing()], the selected rebasing level is used.
+#' @param level_order Character string controlling the default order of nominal
+#'   factor levels. `"estimate_descending"` (default) places the highest fitted
+#'   effect first, `"estimate_ascending"` places the lowest first,
+#'   `"model"` retains the fitted model order and `"alphabetical"` sorts labels.
+#'   Numeric levels and explicitly ordered factors use their substantive order
+#'   instead.
+#' @param level_order_by_risk_factor Optional named character vector providing
+#'   an ordering override for individual risk factors. Names identify risk
+#'   factors and values must be `"model"`, `"alphabetical"`,
+#'   `"estimate_ascending"` or `"estimate_descending"`. For example,
+#'   `c(urbanisation = "model", sector = "estimate_descending")` preserves an
+#'   ordinal urbanisation scale while ordering sector relativities from high to
+#'   low. Numeric ordering still takes precedence.
 #' @param numeric_level_order Character string controlling levels that are all
 #'   recognisable as numbers or numeric intervals. `"ascending"` orders them by
 #'   numeric value, or by the lower and then upper interval boundary, regardless
 #'   of `level_order`. This correctly orders labels such as `(100,200]` and
 #'   `(1000,2000]`. `"as_specified"` leaves these levels to `level_order`.
-#'   When `reference_first = TRUE`, the reference level remains first even when
-#'   it is not the numerically smallest level.
+#'   Numeric ordering takes precedence over `reference_first`, so the reference
+#'   level is not moved away from its numerical position.
 #' @param risk_factor_order Character string controlling risk-factor order.
 #'   `"model"` retains the order in the fitted model; `"alphabetical"` sorts
 #'   risk-factor names. The intercept, when present, remains first.
@@ -977,19 +1081,30 @@
 #'
 #' ## Row order and reference levels
 #'
-#' By default, risk factors follow the model formula and levels retain their
-#' model order, with the reference level placed first. This makes the tariff
-#' basis visible without inferring the reference from a relativity equal to
-#' one: several levels can legitimately have the same fitted effect. A
-#' reference selected with [add_rebasing()] takes precedence over the original
-#' GLM contrast reference.
+#' By default, risk factors follow the model formula. Numeric levels and
+#' intervals are shown from low to high, explicitly ordered factors retain their
+#' factor-level sequence, and remaining nominal factors are shown from highest
+#' to lowest fitted effect. This separates structural order from an ordering
+#' used to compare tariff differentiation.
 #'
-#' Alternative level ordering is useful for specific review tasks.
-#' Alphabetical order supports lookup and export, while ordering by estimate
-#' makes the lowest or highest fitted effects easier to identify. With several
-#' models, `order_model` defines which fitted specification provides that
-#' ordering. [as_gt()] and [autoplot.rating_table()] retain the row order
-#' established here.
+#' `reference_first` applies only when a nominal factor uses model or
+#' alphabetical order. It does not move the reference level ahead of a numeric,
+#' ordinal or estimate-based sequence. The reference remains recorded in the
+#' rating-table metadata, including a reference selected with [add_rebasing()].
+#'
+#' Alternative level ordering is useful for specific review tasks. Alphabetical
+#' order supports lookup and export, while model order can retain a deliberately
+#' specified factor sequence. Use `level_order_by_risk_factor` when nominal and
+#' ordinal factors require different treatment in the same table. With several
+#' models, `order_model` defines which fitted specification provides
+#' estimate-based ordering. [as_gt()] and [autoplot.rating_table()] retain the
+#' row order established here.
+#'
+#' Only a factor stored with `ordered = TRUE` is identified automatically as an
+#' ordinal scale. A regular factor may also have deliberately arranged levels,
+#' but that intention cannot be distinguished reliably from an arbitrary model
+#' order. Use `level_order_by_risk_factor = c(variable = "model")` to preserve
+#' that sequence explicitly.
 #'
 #' Numeric labels and intervals receive separate treatment because alphabetical
 #' ordering can give an incorrect tariff sequence. With the default
@@ -1097,7 +1212,7 @@
 #'   exposure = FALSE
 #' )
 #'
-#' # Keep the reference first and order the other levels by fitted relativity
+#' # Order all levels by fitted relativity
 #' rating_table(
 #'   freq,
 #'   model_data = df,
@@ -1111,9 +1226,10 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
                          exponentiate = TRUE, significance = FALSE,
                          reference_first = TRUE,
                          level_order = c(
-                           "model", "alphabetical",
-                           "estimate_ascending", "estimate_descending"
+                           "estimate_descending", "estimate_ascending",
+                           "model", "alphabetical"
                          ),
+                         level_order_by_risk_factor = NULL,
                          numeric_level_order = c("ascending", "as_specified"),
                          risk_factor_order = c("model", "alphabetical"),
                          order_model = NULL,
@@ -1262,6 +1378,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     model_names = cols,
     reference_first = reference_first,
     level_order = level_order,
+    level_order_by_risk_factor = level_order_by_risk_factor,
     numeric_level_order = numeric_level_order,
     risk_factor_order = risk_factor_order,
     order_model_index = order_model_index
@@ -1304,6 +1421,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     reference_levels = reference_levels,
     reference_first = reference_first,
     level_order = level_order,
+    level_order_by_risk_factor = level_order_by_risk_factor,
     numeric_level_order = numeric_level_order,
     risk_factor_order = risk_factor_order,
     order_model = cols[[order_model_index]]
@@ -1314,14 +1432,16 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
   "df_stars", "models", "exposure", "model_data", "expon",
   "significance", "signif_stars", "signif_levels", "observed_experience",
   "reference_levels", "reference_first", "level_order",
-  "numeric_level_order", "risk_factor_order", "order_model"
+  "level_order_by_risk_factor", "numeric_level_order", "risk_factor_order",
+  "order_model"
 )
 
 .new_rating_table <- function(data, df_stars, models, exposure, model_data,
                               exponentiate, significance, signif_levels,
                               reference_levels = NULL,
                               reference_first = TRUE,
-                              level_order = "model",
+                              level_order = "estimate_descending",
+                              level_order_by_risk_factor = NULL,
                               numeric_level_order = "ascending",
                               risk_factor_order = "model",
                               order_model = NULL) {
@@ -1338,6 +1458,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
   attr(out, "reference_levels") <- reference_levels
   attr(out, "reference_first") <- reference_first
   attr(out, "level_order") <- level_order
+  attr(out, "level_order_by_risk_factor") <- level_order_by_risk_factor
   attr(out, "numeric_level_order") <- numeric_level_order
   attr(out, "risk_factor_order") <- risk_factor_order
   attr(out, "order_model") <- order_model

@@ -16,7 +16,8 @@ rating_table(
   exponentiate = TRUE,
   significance = FALSE,
   reference_first = TRUE,
-  level_order = c("model", "alphabetical", "estimate_ascending", "estimate_descending"),
+  level_order = c("estimate_descending", "estimate_ascending", "model", "alphabetical"),
+  level_order_by_risk_factor = NULL,
   numeric_level_order = c("ascending", "as_specified"),
   risk_factor_order = c("model", "alphabetical"),
   order_model = NULL,
@@ -65,18 +66,32 @@ rating_table(
 
 - reference_first:
 
-  Logical. If `TRUE`, place the reference level first within each risk
-  factor. For an ordinary GLM, the reference is obtained from the fitted
-  factor contrasts. After
+  Logical. If `TRUE`, place the reference level first when the global
+  ordering of a nominal risk factor is `"model"` or `"alphabetical"`.
+  Numeric levels, ordered factors, estimate-based ordering and explicit
+  per-factor overrides retain their selected order. For an ordinary GLM,
+  the reference is obtained from the fitted factor contrasts. After
   [`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md),
   the selected rebasing level is used.
 
 - level_order:
 
-  Character string controlling the order of the remaining levels within
-  each risk factor. `"model"` retains the fitted model order,
-  `"alphabetical"` sorts level labels, and `"estimate_ascending"` or
-  `"estimate_descending"` sorts by the fitted effect from `order_model`.
+  Character string controlling the default order of nominal factor
+  levels. `"estimate_descending"` (default) places the highest fitted
+  effect first, `"estimate_ascending"` places the lowest first,
+  `"model"` retains the fitted model order and `"alphabetical"` sorts
+  labels. Numeric levels and explicitly ordered factors use their
+  substantive order instead.
+
+- level_order_by_risk_factor:
+
+  Optional named character vector providing an ordering override for
+  individual risk factors. Names identify risk factors and values must
+  be `"model"`, `"alphabetical"`, `"estimate_ascending"` or
+  `"estimate_descending"`. For example,
+  `c(urbanisation = "model", sector = "estimate_descending")` preserves
+  an ordinal urbanisation scale while ordering sector relativities from
+  high to low. Numeric ordering still takes precedence.
 
 - numeric_level_order:
 
@@ -85,8 +100,8 @@ rating_table(
   value, or by the lower and then upper interval boundary, regardless of
   `level_order`. This correctly orders labels such as `(100,200]` and
   `(1000,2000]`. `"as_specified"` leaves these levels to `level_order`.
-  When `reference_first = TRUE`, the reference level remains first even
-  when it is not the numerically smallest level.
+  Numeric ordering takes precedence over `reference_first`, so the
+  reference level is not moved away from its numerical position.
 
 - risk_factor_order:
 
@@ -180,23 +195,37 @@ remain the responsibility of the analyst.
 
 ### Row order and reference levels
 
-By default, risk factors follow the model formula and levels retain
-their model order, with the reference level placed first. This makes the
-tariff basis visible without inferring the reference from a relativity
-equal to one: several levels can legitimately have the same fitted
-effect. A reference selected with
-[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)
-takes precedence over the original GLM contrast reference.
+By default, risk factors follow the model formula. Numeric levels and
+intervals are shown from low to high, explicitly ordered factors retain
+their factor-level sequence, and remaining nominal factors are shown
+from highest to lowest fitted effect. This separates structural order
+from an ordering used to compare tariff differentiation.
+
+`reference_first` applies only when a nominal factor uses model or
+alphabetical order. It does not move the reference level ahead of a
+numeric, ordinal or estimate-based sequence. The reference remains
+recorded in the rating-table metadata, including a reference selected
+with
+[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md).
 
 Alternative level ordering is useful for specific review tasks.
-Alphabetical order supports lookup and export, while ordering by
-estimate makes the lowest or highest fitted effects easier to identify.
-With several models, `order_model` defines which fitted specification
-provides that ordering.
+Alphabetical order supports lookup and export, while model order can
+retain a deliberately specified factor sequence. Use
+`level_order_by_risk_factor` when nominal and ordinal factors require
+different treatment in the same table. With several models,
+`order_model` defines which fitted specification provides estimate-based
+ordering.
 [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
 and
 [`autoplot.rating_table()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
 retain the row order established here.
+
+Only a factor stored with `ordered = TRUE` is identified automatically
+as an ordinal scale. A regular factor may also have deliberately
+arranged levels, but that intention cannot be distinguished reliably
+from an arbitrary model order. Use
+`level_order_by_risk_factor = c(variable = "model")` to preserve that
+sequence explicitly.
 
 Numeric labels and intervals receive separate treatment because
 alphabetical ordering can give an incorrect tariff sequence. With the

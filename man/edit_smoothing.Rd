@@ -14,9 +14,10 @@ edit_smoothing(
   to_value = NULL,
   control_positions = NULL,
   control_values = NULL,
+  adjustment = NULL,
+  transition = NULL,
   allow_extrapolation = FALSE,
-  extrapolation_step = NULL,
-  effect_strength = NULL
+  extrapolation_step = NULL
 )
 }
 \arguments{
@@ -29,11 +30,14 @@ and refitted GLMs are not accepted directly. Legacy \code{smooth} and
 step to edit. Required when more than one smoothing step exists and \code{step}
 is not supplied.}
 
-\item{step}{Optional numeric index of the smoothing step to edit.}
+\item{step}{Optional numeric index of the original smoothing step or one of
+its later edit steps. In both cases, the new edit is linked to the same
+original smoothing and appended after the existing workflow steps.}
 
 \item{from, to}{Optional numeric values giving the start and end of the
-source-variable interval to modify. Supply both for a local curve edit, or
-omit both when only \code{effect_strength} is changed.}
+source-variable interval to modify. For \code{adjustment}, either value may be
+omitted to use the beginning or end of the available smoothing range.
+Explicit target-value and control-point edits require both values.}
 
 \item{from_value, to_value}{Optional numeric values used to override the
 smoothed curve value at \code{from} and \code{to}.}
@@ -42,47 +46,75 @@ smoothed curve value at \code{from} and \code{to}.}
 length. These define additional points that the edited smoothing curve
 should pass through.}
 
+\item{adjustment}{Optional positive numeric scalar applied multiplicatively
+to the current smoothing within the selected interval. \code{1.05} requests an
+increase of up to 5 percent and \code{0.95} a decrease of up to 5 percent. With
+two boundaries, the default transition anchors the multiplier at 1 at
+\code{from} and \code{to}; a one-sided edit is anchored only at the supplied
+boundary.}
+
+\item{transition}{Optional character string controlling how \code{adjustment}
+connects to the unchanged smoothing. \code{NULL} inherits the original
+smoothing specification. \code{"linear"} gives continuous linear transitions
+and \code{"step"} permits immediate jumps. Smoothing methods accepted by
+\code{\link[=add_smoothing]{add_smoothing()}} can be supplied as explicit structural overrides.}
+
 \item{allow_extrapolation}{Logical. Whether edits may extend beyond the
 observed source-variable range.}
 
 \item{extrapolation_step}{Optional positive numeric scalar used to set the
 spacing of extra break points when extrapolation is allowed.}
-
-\item{effect_strength}{Optional non-negative finite numeric scalar replacing
-the effect strength stored on the smoothing step. \code{NULL} retains the
-existing value. The update is non-cumulative; see Details.}
 }
 \value{
-A \code{rating_refinement} object containing the edited smoothing
-specification. The pricing GLM is not fitted again until \code{\link[=refit]{refit()}} is
-called.
+A \code{rating_refinement} object with a separate smoothing-edit step
+appended to the ordered specification. The pricing GLM is not fitted again
+until \code{\link[=refit]{refit()}} is called.
 }
 \description{
-Modify the overall effect strength or a specified interval of a smoothing
-curve previously added with \code{\link[=add_smoothing]{add_smoothing()}}. The function can replace the
-stored strength, fix boundary values and introduce internal control points.
+Modify a specified interval of a smoothing curve previously added with
+\code{\link[=add_smoothing]{add_smoothing()}}. Use a relative adjustment when the existing shape is
+broadly appropriate, or explicit values and control points when the curve
+should follow known targets.
 }
 \details{
-\code{edit_smoothing()} stores an edit on the selected smoothing step of a
+\code{edit_smoothing()} appends a separate, ordered edit step to a
 \code{rating_refinement} object. It does not alter the fitted GLM immediately.
-The edited curve is evaluated in the recorded step order and applied when
-\code{\link[=refit]{refit()}} is called.
+Repeated calls are cumulative: every new edit starts from the smoothing
+produced by preceding edits to the same \code{\link[=add_smoothing]{add_smoothing()}} step. The selected
+cumulative curve is applied when \code{\link[=refit]{refit()}} is called.
 
-\code{effect_strength} updates the overall strength stored by \code{\link[=add_smoothing]{add_smoothing()}}.
-It is not multiplied by the previous value. For example, changing the value
-from 1.1 to 1.2 recalculates the current smoothing specification with a
-strength of 1.2; it does not multiply 1.1 by 1.2. If
-\code{effect_strength} is \code{NULL}, the value already stored on the smoothing step
-is retained. Local edits are calculated first and the selected effect
-strength is then applied to the resulting complete curve.
+Use \code{model_variable} or \code{step} to identify the smoothing to edit. \code{step} may
+identify either its original \code{\link[=add_smoothing]{add_smoothing()}} step or a later edit belonging
+to that smoothing. The interval from \code{from} to \code{to} defines the part of the source-variable
+range that should be changed. With \code{adjustment}, either boundary may be
+omitted. Supplying only \code{from} edits the curve from that value to the end of
+the smoothing range; supplying only \code{to} edits it from the beginning of the
+range to that value. \code{adjustment} multiplies the current smoothing within
+the selected range. For example, \code{adjustment = 1.05} requests an increase
+of up to 5 percent relative to the existing smoothing.
 
-Use \code{model_variable} or \code{step} to identify the smoothing step to edit. The
-interval from \code{from} to \code{to} defines the part of the source variable range
-that should be changed. Both may be omitted when only \code{effect_strength} is
-updated. \code{from_value} and \code{to_value} can be used to force the
-curve values at the interval boundaries. \code{control_positions} and
-\code{control_values} add additional points that the edited curve should follow
-inside the interval.
+With two boundaries, the multiplier is anchored at 1 at \code{from} and \code{to} and
+reaches the requested adjustment near the middle. With only \code{from}, it is
+anchored at 1 at \code{from} and moves towards the requested adjustment at the
+end of the range. With only \code{to}, it starts at the requested adjustment and
+reconnects to 1 at \code{to}. These one-sided forms are useful for refining a
+lower or upper tail without introducing a jump at the supplied boundary.
+
+By default, \code{transition = NULL} inherits the smoothing specification from
+the \code{\link[=add_smoothing]{add_smoothing()}} step. The entry and exit are adapted to their opposite
+directions and join the unchanged curve continuously. \code{"linear"} uses
+continuous straight transitions. \code{"step"} applies the multiplier
+immediately at both boundaries and therefore permits deliberate jumps.
+Explicit shape-constrained transition names accepted by \code{\link[=add_smoothing]{add_smoothing()}}
+can also be supplied. When a constrained transition is inherited or selected,
+the edited curve is checked for the corresponding monotonicity and curvature.
+
+\code{from_value} and \code{to_value} instead prescribe curve values at the interval
+boundaries. \code{control_positions} and \code{control_values} add points that the
+edited curve should follow inside the interval. Relative adjustments and
+explicit target values cannot be combined in one \code{edit_smoothing()} call
+because they represent different actuarial instructions. They may be used in
+separate consecutive edits, which are then evaluated in their stored order.
 \subsection{Actuarial interpretation}{
 
 The edited interval is an explicit tariff assumption layered on the
@@ -135,7 +167,7 @@ refinement <- prepare_refinement(model, data = portfolio) |>
 initial_model <- refit(refinement)
 
 # Edit the retained specification and fit it again.
-refinement <- refinement |>
+explicit_refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
     from = 30,
@@ -146,14 +178,27 @@ refinement <- refinement |>
     control_values = c(1.05)
   )
 
-refined_model <- refit(refinement)
+explicit_model <- refit(explicit_refinement)
 
-# Retain the smoothing shape and strengthen its complete effect. This
-# replaces the stored value; it is not multiplied by an earlier strength.
-refinement <- refinement |>
+# Keep the current shape as the basis and raise the middle of this interval
+# by up to 5 percent. The inherited transition remains continuous.
+adjusted_refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
-    effect_strength = 1.15
+    from = 30,
+    to = 50,
+    adjustment = 1.05
+  )
+
+adjusted_model <- refit(adjusted_refinement)
+
+# A one-sided adjustment applies from age 40 to the end of the range.
+upper_tail_refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 40,
+    adjustment = 1.05,
+    transition = "linear"
   )
 
 }
