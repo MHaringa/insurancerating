@@ -340,7 +340,7 @@ grid is read back into R with <code><a href="https://dplyr.tidyverse.org/referen
 <span></span>
 <span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu"><a href="https://r.duckdb.org/reference/duckdb.html" class="external-link">duckdb</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; duckdb keeps downloaded extensions and secrets in a temporary directory:</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> /tmp/RtmpQAvQd7/duckdb</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> /tmp/RtmpkMjkzb/duckdb</span></span>
 <span><span class="co">#&gt; This is removed when the R session ends.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Extensions are re-downloaded each session.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Secrets are lost.</span></span>
@@ -412,12 +412,12 @@ grid is read back into R with <code><a href="https://dplyr.tidyverse.org/referen
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
 <span><span class="co">#&gt;   sector   region reconstruction_value…¹ claim_count claim_amount earned_premium</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Services South                 1<span style="text-decoration: underline;">750</span>000           0           0          <span style="text-decoration: underline;">13</span>645.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Services South                 1<span style="text-decoration: underline;">286</span>000           1        <span style="text-decoration: underline;">3</span>047.         <span style="text-decoration: underline;">14</span>437.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Retail   South                  <span style="text-decoration: underline;">808</span>000           1        <span style="text-decoration: underline;">2</span>752.         <span style="text-decoration: underline;">27</span>160.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Retail   South                 1<span style="text-decoration: underline;">822</span>000           1        <span style="text-decoration: underline;">3</span>650.         <span style="text-decoration: underline;">12</span>495.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Retail   North                  <span style="text-decoration: underline;">256</span>000           0           0          <span style="text-decoration: underline;">16</span>777.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Retail   North                 1<span style="text-decoration: underline;">848</span>000           0           0          <span style="text-decoration: underline;">16</span>764.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Industry North                  <span style="text-decoration: underline;">638</span>000           0            0          <span style="text-decoration: underline;">4</span>099.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Industry North                 1<span style="text-decoration: underline;">642</span>000           0            0          <span style="text-decoration: underline;">7</span>925.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Services North                 1<span style="text-decoration: underline;">478</span>000           0            0         <span style="text-decoration: underline;">10</span>346.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Industry South                 1<span style="text-decoration: underline;">652</span>000           0            0         <span style="text-decoration: underline;">23</span>788.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Industry South                  <span style="text-decoration: underline;">358</span>000           0            0         <span style="text-decoration: underline;">14</span>686.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Retail   South                  <span style="text-decoration: underline;">448</span>000           0            0         <span style="text-decoration: underline;">14</span>492.</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ abbreviated name: ¹​reconstruction_value_1000</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: earned_exposure &lt;dbl&gt;</span></span></span>
 <span></span>

@@ -56,10 +56,12 @@ add_smoothing(
   smoothing. These boundaries determine the final tariff segmentation,
   not the number of portfolio observations used to estimate the curve.
   Values must be finite, strictly increasing and cover every observed
-  value of `source_variable`. Boundaries outside the interval range
-  represented by `model_variable` are allowed, but produce a warning
-  because the resulting relativities rely on extrapolation beyond the
-  fitted GLM levels. This argument is required.
+  value of `source_variable`. A boundary may extend beyond the interval
+  range represented by `model_variable`, for example to create a rounded
+  final tariff class. This does not itself produce a message. A short
+  message is shown only when a representative point of a new interval
+  lies outside the fitted GLM range and its relativity therefore
+  requires extrapolation. This argument is required.
 
 - smoothing:
 

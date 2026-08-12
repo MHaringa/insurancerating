@@ -171,7 +171,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-11 11:49:56 UTC
+#> Created: 2026-08-12 08:03:21 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -384,6 +384,91 @@ current proposal:
 refinement <- relative_age_refinement
 ```
 
+### Interpreting the premium effect
+
+A relativity curve shows the shape of a continuous tariff effect, but
+its practical magnitude is not always immediately clear.
+[`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
+reports how much the modelled premium changes when the source variable
+doubles from a selected starting value:
+
+``` r
+
+premium_change(
+  refinement,
+  variable = "age_band",
+  at = c(20, 25, 30, 35)
+)
+#> Premium change for age_policyholder
+#> 
+#> Basis: Effective smoothing curve
+#> 
+#>  From To Premium change
+#>    20 40         -46.8%
+#>    25 50         -39.0%
+#>    30 60         -39.5%
+#>    35 70         -33.8%
+```
+
+For example, a reported value of 0.12 means that the smoothing implies a
+12% higher modelled premium when age doubles from that starting value.
+The helper uses the current effective smoothing, including preceding
+[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+steps, and does not extrapolate beyond its supported range.
+
+By default, `basis = "curve"` evaluates the continuous effective
+smoothing at the exact starting and doubled values. This is the
+appropriate basis when the question concerns the shape or steepness of
+the smoothing itself. To review the premium effect of the implementable
+tariff classes instead, use:
+
+``` r
+
+premium_change(
+  refinement,
+  variable = "age_band",
+  at = c(20, 25, 30, 35),
+  basis = "segments"
+)
+#> Premium change for age_policyholder
+#> 
+#> Basis: Tariff segments
+#> 
+#>  From To Premium change
+#>    20 40         -44.5%
+#>    25 50         -44.5%
+#>    30 60         -45.0%
+#>    35 70         -34.0%
+```
+
+With `basis = "segments"`, the helper determines which effective tariff
+interval contains each value and compares the corresponding current
+segment relativities. The result can therefore be 0% when both values
+are in the same segment, even when the underlying curve increases within
+that range. A change can also occur discretely when doubling crosses a
+segment boundary. The two bases answer different questions: the curve
+describes the underlying smooth relationship, while the segments
+describe the tariff that would be applied.
+
+The initial and edited relationships can be compared directly:
+
+``` r
+
+premium_change(
+  relative_age_refinement,
+  variable = "age_band",
+  at = c(20, 25, 30),
+  steps = c(1, 2)
+) |>
+  as_gt()
+```
+
+With two selected states, the table shows both premium changes and their
+difference in percentage points. This comparison is often easier to
+interpret than small visual differences between two relativity curves.
+It remains an interpretation of the proposed smoothing and does not
+alter the refinement.
+
 ## Restricting selected levels
 
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
@@ -431,7 +516,7 @@ removing them is not an unambiguous level restriction.
 autoplot(refinement, variable = "zip")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-14-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-17-1.png)
 
 Again, the plot shows the proposed restriction before
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
@@ -482,7 +567,7 @@ effects.
 autoplot(refinement, variable = "bm_group")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-16-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-19-1.png)
 
 This remains a pre-refit comparison: it shows the current estimated
 effect and the proposed shrunken structure stored in the refinement
@@ -565,7 +650,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-11 11:49:56 UTC
+#> Created: 2026-08-12 08:03:21 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -695,9 +780,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Prepared: 2026-08-11 11:49:56 UTC
-#> Refitted: 2026-08-11 11:50:00 UTC
-#> Audited: 2026-08-11 11:50:01 UTC
+#> Prepared: 2026-08-12 08:03:21 UTC
+#> Refitted: 2026-08-12 08:03:26 UTC
+#> Audited: 2026-08-12 08:03:26 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 

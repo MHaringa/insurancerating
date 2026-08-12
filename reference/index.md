@@ -62,6 +62,9 @@ portfolio experience, and add model predictions to portfolio data.
   : Add portfolio experience to a rating table
 - [`autoplot(`*`<rating_table>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
   : Compare fitted risk-factor effects graphically
+- [`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
+  [`as_gt(`*`<premium_change>`*`)`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
+  : Interpret the premium effect of a smoothing curve
 - [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md)
   : Add model predictions to a pricing data set
 
