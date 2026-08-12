@@ -372,6 +372,32 @@ premium_change <- function(x, variable = NULL, at = NULL,
                 ties = "ordered", rule = 1)$y
 }
 
+.incremental_premium_change <- function(line, step, at = NULL,
+                                        percent = FALSE) {
+  if (!is.numeric(step) || length(step) != 1L || is.na(step) ||
+      !is.finite(step) || step <= 0) {
+    stop("`step` must be one positive finite numeric value.", call. = FALSE)
+  }
+  xy <- .premium_change_line_xy(line)
+  if (is.null(at)) at <- xy$x[xy$x + step <= max(xy$x)]
+  if (!is.numeric(at) || anyNA(at) || any(!is.finite(at))) {
+    stop("`at` must contain finite numeric values.", call. = FALSE)
+  }
+  if (any(at < min(xy$x)) || any(at + step > max(xy$x))) {
+    stop(
+      "Incremental premium change can only be evaluated where both `x` and ",
+      "`x + step` are inside the supported smoothing range.",
+      call. = FALSE
+    )
+  }
+  from <- .premium_change_evaluate(line, at)
+  to <- .premium_change_evaluate(line, at + step)
+  change <- to / from - 1
+  if (isTRUE(percent)) change <- 100 * change
+  data.frame(x = at, relativity_from = from, relativity_to = to,
+             incremental_change = change)
+}
+
 .premium_change_wide <- function(x) {
   labels <- unique(x$step_label)
   base <- unique(as.data.frame(x[c("from", "to")]))

@@ -18,6 +18,8 @@ add_smoothing(
   k = NULL,
   degree = NULL,
   weights = NULL,
+  premium_change = NULL,
+  premium_change_step = NULL,
   tariff_class = NULL,
   rating_variable = NULL,
   x_cut = NULL,
@@ -95,6 +97,21 @@ add_smoothing(
 
   Optional character string. Numeric volume column, usually exposure,
   used to weight the grouped GLM relativities during smoothing.
+
+- premium_change:
+
+  Optional fixed-increment premium-change constraint. `NULL` (default)
+  leaves the fitted smoothing unchanged. `"non_increasing"` requires
+  `R(x + h) / R(x) - 1` to remain constant or decrease as `x` increases,
+  where `h` is `premium_change_step`. This is an additional condition
+  and is not implied by an increasing-concave shape.
+
+- premium_change_step:
+
+  Optional positive numeric increment `h`, in the units of
+  `source_variable`. Required when `premium_change = "non_increasing"`.
+  The condition is evaluated only where both `x` and `x + h` lie inside
+  the supported smoothing range; no extrapolation is used.
 
 - tariff_class, rating_variable:
 

@@ -907,6 +907,220 @@ change_xy <- function(borders_model, x_org,
   invisible(TRUE)
 }
 
+#' Validate and enforce a fixed-increment premium-change constraint
+#'
+#' @noRd
+.validate_premium_change_constraint <- function(premium_change,
+                                                premium_change_step,
+                                                allow_none = FALSE,
+                                                allow_inherit = FALSE) {
+  if (is.null(premium_change)) {
+    if (!is.null(premium_change_step)) {
+      stop(
+        "`premium_change_step` can only be supplied together with ",
+        "`premium_change = \"non_increasing\"`.",
+        call. = FALSE
+      )
+    }
+    return(list(constraint = NULL, step = NULL, update = FALSE))
+  }
+  allowed <- c("non_increasing", if (isTRUE(allow_none)) "none")
+  if (!is.character(premium_change) || length(premium_change) != 1L ||
+      is.na(premium_change) || !premium_change %in% allowed) {
+    stop(
+      "`premium_change` must be ",
+      if (isTRUE(allow_none)) "NULL, \"none\" or " else "NULL or ",
+      "\"non_increasing\".",
+      call. = FALSE
+    )
+  }
+  if (identical(premium_change, "none")) {
+    if (!is.null(premium_change_step)) {
+      stop("Do not supply `premium_change_step` when removing the constraint.",
+           call. = FALSE)
+    }
+    return(list(constraint = NULL, step = NULL, update = TRUE))
+  }
+  if (is.null(premium_change_step)) {
+    stop(
+      "`premium_change_step` is required when ",
+      "`premium_change = \"non_increasing\"`.",
+      call. = FALSE
+    )
+  }
+  if (!is.numeric(premium_change_step) ||
+      length(premium_change_step) != 1L || is.na(premium_change_step) ||
+      !is.finite(premium_change_step) || premium_change_step <= 0) {
+    stop("`premium_change_step` must be one positive finite numeric value.",
+         call. = FALSE)
+  }
+  list(
+    constraint = "non_increasing",
+    step = as.numeric(premium_change_step),
+    update = TRUE
+  )
+}
+
+.premium_change_constraint_range <- function(line, step, from = NULL, to = NULL) {
+  xy <- .premium_change_line_xy(line)
+  lower <- from %||% min(xy$x)
+  upper_boundary <- to %||% max(xy$x)
+  if (lower < min(xy$x) || upper_boundary > max(xy$x)) {
+    stop(
+      "`from` and `to` for the premium-change constraint must lie inside ",
+      "the supported smoothing range [", format(min(xy$x), trim = TRUE),
+      ", ", format(max(xy$x), trim = TRUE), "].",
+      call. = FALSE
+    )
+  }
+  if (lower >= upper_boundary) {
+    stop("`from` must be smaller than `to` for the premium-change constraint.",
+         call. = FALSE)
+  }
+  upper <- upper_boundary - step
+  if (upper < lower) {
+    stop(
+      "`premium_change_step` is too large for the selected premium-change ",
+      "range. Choose an increment no greater than ",
+      format(upper_boundary - lower, trim = TRUE), ".",
+      call. = FALSE
+    )
+  }
+  list(lower = lower, upper_boundary = upper_boundary, upper = upper)
+}
+
+.premium_change_constraint_grid <- function(line, step, from = NULL, to = NULL,
+                                            n = 2001L) {
+  xy <- .premium_change_line_xy(line)
+  range <- .premium_change_constraint_range(line, step, from, to)
+  knots <- c(xy$x, xy$x - step)
+  knots <- knots[knots >= range$lower & knots <= range$upper]
+  sort(unique(c(seq(range$lower, range$upper, length.out = n), knots)))
+}
+
+.check_premium_change_constraint <- function(line, step,
+                                             from = NULL, to = NULL,
+                                             tolerance = sqrt(.Machine$double.eps)) {
+  grid <- .premium_change_constraint_grid(line, step, from, to)
+  values <- .incremental_premium_change(line, step, at = grid)
+  scale <- max(1, max(abs(values$incremental_change)))
+  list(
+    valid = all(diff(values$incremental_change) <= tolerance * scale),
+    grid = grid,
+    values = values$incremental_change,
+    tolerance = tolerance * scale
+  )
+}
+
+.enforce_premium_change_constraint <- function(smooth, line, new_rf,
+                                               source_variable,
+                                               constraint, step,
+                                               smoothing,
+                                               from = NULL, to = NULL) {
+  if (is.null(constraint)) {
+    return(list(smooth = smooth, line = line, new_rf = new_rf))
+  }
+  if (!identical(constraint, "non_increasing")) {
+    stop("Unsupported premium-change constraint: ", constraint,
+         call. = FALSE)
+  }
+  requested_boundaries <- c(from, to)
+  requested_boundaries <- requested_boundaries[!is.na(requested_boundaries)]
+  if (length(requested_boundaries) > 0L) {
+    missing_boundaries <- setdiff(requested_boundaries, line[[source_variable]])
+    if (length(missing_boundaries) > 0L) {
+      boundary_rows <- line[rep(1L, length(missing_boundaries)), , drop = FALSE]
+      boundary_rows[[source_variable]] <- missing_boundaries
+      boundary_rows$yhat <- .premium_change_evaluate(line, missing_boundaries)
+      line <- rbind(line, boundary_rows)
+      line <- line[order(line[[source_variable]]), , drop = FALSE]
+      rownames(line) <- NULL
+    }
+  }
+  selected_range <- .premium_change_constraint_range(line, step, from, to)
+  initial_check <- .check_premium_change_constraint(line, step, from, to)
+  if (isTRUE(initial_check$valid)) {
+    return(list(smooth = smooth, line = line, new_rf = new_rf))
+  }
+
+  line_x <- line[[source_variable]]
+  smooth_x <- smooth[[source_variable]]
+  endpoint_y <- .premium_change_evaluate(
+    line, c(selected_range$lower, selected_range$upper_boundary)
+  )
+  target <- function(x) stats::approx(
+    c(selected_range$lower, selected_range$upper_boundary), endpoint_y,
+    xout = x, rule = 2
+  )$y
+  line_selected <- line_x >= selected_range$lower &
+    line_x <= selected_range$upper_boundary
+  smooth_selected <- smooth_x >= selected_range$lower &
+    smooth_x <= selected_range$upper_boundary
+  target_line <- line$yhat
+  target_line[line_selected] <- target(line_x[line_selected])
+  target_smooth <- smooth$yhat
+  target_smooth[smooth_selected] <- target(smooth_x[smooth_selected])
+  if (any(target_line <= 0) || any(target_smooth <= 0)) {
+    stop(
+      "The requested premium-change constraint cannot be imposed while ",
+      "keeping positive relativities.",
+      call. = FALSE
+    )
+  }
+
+  candidate <- function(weight) {
+    candidate_line <- line
+    candidate_line$yhat <- (1 - weight) * line$yhat + weight * target_line
+    candidate_smooth <- smooth
+    candidate_smooth$yhat <-
+      (1 - weight) * smooth$yhat + weight * target_smooth
+    list(line = candidate_line, smooth = candidate_smooth)
+  }
+  if (!.check_premium_change_constraint(
+    candidate(1)$line, step, from, to
+  )$valid) {
+    stop(
+      "The requested premium-change and smoothing-shape constraints are ",
+      "infeasible for the supported range and increment. Revise the smoothing ",
+      "shape or `premium_change_step`.",
+      call. = FALSE
+    )
+  }
+  lower <- 0
+  upper <- 1
+  for (i in seq_len(50L)) {
+    middle <- (lower + upper) / 2
+    if (.check_premium_change_constraint(
+      candidate(middle)$line, step, from, to
+    )$valid) {
+      upper <- middle
+    } else {
+      lower <- middle
+    }
+  }
+  constrained <- candidate(upper)
+  .validate_adjusted_smoothing_shape(
+    constrained$line[[source_variable]], constrained$line$yhat, smoothing
+  )
+  final_check <- .check_premium_change_constraint(
+    constrained$line, step, from, to
+  )
+  if (!isTRUE(final_check$valid)) {
+    stop(
+      "The fitted smoothing violates the requested non-increasing premium-",
+      "change constraint beyond numerical tolerance.",
+      call. = FALSE
+    )
+  }
+  new_rf$yhat <- constrained$smooth$yhat
+  list(
+    smooth = constrained$smooth,
+    line = constrained$line,
+    new_rf = new_rf,
+    enforcement_weight = upper
+  )
+}
+
 
 #' Apply a relative local adjustment to an existing smoothing curve
 #'

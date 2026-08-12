@@ -623,6 +623,57 @@ testthat::test_that(
 )
 
 testthat::test_that(
+  "add_restriction warns when new numeric intervals overlap existing levels", {
+    portfolio <- data.frame(
+      claims = c(1, 2, 1, 3, 2, 4),
+      exposure = rep(1, 6),
+      insured_amount = c(25, 40, 75, 90, 125, 140)
+    )
+    portfolio$amount_band <- cut(
+      portfolio$insured_amount,
+      breaks = c(0, 50, 100, 150),
+      include.lowest = TRUE
+    )
+    model <- glm(
+      claims ~ amount_band + offset(log(exposure)),
+      family = poisson(), data = portfolio
+    )
+    refinement <- prepare_refinement(model, portfolio)
+
+    testthat::expect_warning(
+      overlapping <- add_restriction(
+        refinement,
+        data.frame(amount_band = "(50,125]", relativity = 1.1)
+      ),
+      "New numeric interval level(s) for risk factor `amount_band` overlap",
+      fixed = TRUE
+    )
+    testthat::expect_true(
+      "(50,125]" %in% overlapping$steps[[1L]]$new_levels
+    )
+
+    testthat::expect_no_warning(
+      add_restriction(
+        refinement,
+        data.frame(amount_band = "(150,200]", relativity = 1.1)
+      )
+    )
+
+    testthat::expect_warning(
+      add_restriction(
+        refinement,
+        data.frame(
+          amount_band = c("(150,225]", "(200,250]"),
+          relativity = c(1.1, 1.2)
+        )
+      ),
+      "`(150,225]` overlaps `(200,250]`",
+      fixed = TRUE
+    )
+  }
+)
+
+testthat::test_that(
   "add_restriction validates restriction inputs and strict level matching", {
     df <- data.frame(
       y = c(1, 2, 1, 3),
@@ -1773,6 +1824,93 @@ testthat::test_that(
     )
     testthat::expect_s3_class(latest_plot, "ggplot")
     testthat::expect_s3_class(refit(refinement), "glm")
+  }
+)
+
+testthat::test_that(
+  "incremental-change plots evaluate the current effective smoothing", {
+    df <- data.frame(
+      y = c(1, 2, 1, 3, 2, 4, 2, 3),
+      exposure = rep(1, 8),
+      age = c(18, 25, 32, 39, 46, 53, 60, 67)
+    )
+    df$age_band <- cut(df$age, breaks = c(18, 30, 45, 60, 70),
+                       include.lowest = TRUE)
+    model <- glm(
+      y ~ age_band + offset(log(exposure)),
+      family = poisson(),
+      data = df
+    )
+    initial <- prepare_refinement(model, data = df) |>
+      add_smoothing(
+        model_variable = "age_band",
+        source_variable = "age",
+        breaks = c(18, 30, 45, 60, 70),
+        smoothing = "poly",
+        degree = 1,
+        weights = "exposure"
+      )
+    edited <- initial |>
+      edit_smoothing(
+        model_variable = "age_band",
+        from = 30,
+        to = 60,
+        adjustment = 1.05,
+        transition = "linear"
+      )
+
+    initial_incremental <- ggplot2::autoplot(
+      initial,
+      type = "incremental_change",
+      step = 5
+    )
+    testthat::expect_s3_class(initial_incremental, "ggplot")
+
+    plot <- ggplot2::autoplot(
+      edited,
+      type = "incremental_change",
+      step = 5
+    )
+    testthat::expect_s3_class(plot, "ggplot")
+    plot_data <- plot$data
+    current_line <- preview_refinement(edited, 2L)$state$new_line
+    expected_from <- .premium_change_evaluate(current_line, plot_data$x)
+    expected_to <- .premium_change_evaluate(current_line, plot_data$x + 5)
+    testthat::expect_equal(
+      plot_data$incremental_change,
+      100 * (expected_to / expected_from - 1)
+    )
+    testthat::expect_true(all(plot_data$x + 5 <= max(current_line[[1L]])))
+    testthat::expect_identical(plot$labels$y, "Premium change (%)")
+    testthat::expect_match(plot$labels$title, "\\+5 age")
+
+    larger_step <- ggplot2::autoplot(
+      edited,
+      type = "incremental_change",
+      step = 10
+    )
+    testthat::expect_true(
+      max(larger_step$data$x) <= max(current_line[[1L]]) - 10
+    )
+
+    testthat::expect_error(
+      ggplot2::autoplot(edited, type = "incremental_change"),
+      "`step`"
+    )
+    testthat::expect_error(
+      ggplot2::autoplot(
+        edited,
+        type = "incremental_change",
+        step = diff(range(current_line[[1L]])) + 1
+      ),
+      "too large"
+    )
+
+    default_plot <- ggplot2::autoplot(initial)
+    explicit_plot <- ggplot2::autoplot(initial, type = "relativity")
+    testthat::expect_identical(default_plot$labels, explicit_plot$labels)
+    testthat::expect_identical(length(default_plot$layers),
+                               length(explicit_plot$layers))
   }
 )
 

@@ -13,6 +13,8 @@ add_smoothing(
   k = NULL,
   degree = NULL,
   weights = NULL,
+  premium_change = NULL,
+  premium_change_step = NULL,
   tariff_class = NULL,
   rating_variable = NULL,
   x_cut = NULL,
@@ -70,6 +72,17 @@ grouped model points.}
 
 \item{weights}{Optional character string. Numeric volume column, usually
 exposure, used to weight the grouped GLM relativities during smoothing.}
+
+\item{premium_change}{Optional fixed-increment premium-change constraint.
+\code{NULL} (default) leaves the fitted smoothing unchanged.
+\code{"non_increasing"} requires \code{R(x + h) / R(x) - 1} to remain constant or
+decrease as \code{x} increases, where \code{h} is \code{premium_change_step}. This is an
+additional condition and is not implied by an increasing-concave shape.}
+
+\item{premium_change_step}{Optional positive numeric increment \code{h}, in the
+units of \code{source_variable}. Required when \code{premium_change = "non_increasing"}. The condition is evaluated only where both \code{x} and
+\code{x + h} lie inside the supported smoothing range; no extrapolation is
+used.}
 
 \item{tariff_class, rating_variable}{Deprecated. Use \code{model_variable} and
 \code{source_variable} instead.}

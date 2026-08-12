@@ -64,6 +64,8 @@ should follow known targets.</p>
 <span>  control_values <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  adjustment <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  transition <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  premium_change <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  premium_change_step <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  allow_extrapolation <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  extrapolation_step <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -96,6 +98,9 @@ original smoothing and appended after the existing workflow steps.</p></dd>
 <dd><p>Optional numeric values giving the start and end of the
 source-variable interval to modify. For <code>adjustment</code>, either value may be
 omitted to use the beginning or end of the available smoothing range.
+With <code>premium_change = "non_increasing"</code>, these values also delimit the
+range over which the fixed-increment constraint applies: omitting <code>from</code>
+uses the beginning and omitting <code>to</code> uses the end of the supported range.
 Explicit target-value and control-point edits require both values.</p></dd>
 
 
@@ -125,6 +130,20 @@ connects to the unchanged smoothing. <code>NULL</code> inherits the original
 smoothing specification. <code>"linear"</code> gives continuous linear transitions
 and <code>"step"</code> permits immediate jumps. Smoothing methods accepted by
 <code><a href="add_smoothing.html">add_smoothing()</a></code> can be supplied as explicit structural overrides.</p></dd>
+
+
+<dt id="arg-premium-change">premium_change<a class="anchor" aria-label="anchor" href="#arg-premium-change"></a></dt>
+<dd><p>Optional update to the fixed-increment premium-change
+constraint. <code>NULL</code> inherits the current setting, <code>"non_increasing"</code>
+imposes or replaces the constraint, and <code>"none"</code> removes it. A constraint
+can be updated without making a local curve edit.</p></dd>
+
+
+<dt id="arg-premium-change-step">premium_change_step<a class="anchor" aria-label="anchor" href="#arg-premium-change-step"></a></dt>
+<dd><p>Positive numeric increment required with
+<code>premium_change = "non_increasing"</code>. It has the same units as the source
+variable and uses <code>R(x + h) / R(x) - 1</code>. Existing constraints and their
+increments and ranges are inherited when these arguments are omitted.</p></dd>
 
 
 <dt id="arg-allow-extrapolation">allow_extrapolation<a class="anchor" aria-label="anchor" href="#arg-allow-extrapolation"></a></dt>

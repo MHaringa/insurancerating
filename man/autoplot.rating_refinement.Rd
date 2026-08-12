@@ -14,6 +14,7 @@
   remove_underscores = FALSE,
   rotate_angle = NULL,
   custom_theme = NULL,
+  type = c("relativity", "incremental_change"),
   ...
 )
 }
@@ -26,7 +27,9 @@ the most recent smoothing or edit step is selected. An error is returned
 when no step matches or when matches belong to different refinements.}
 
 \item{step}{Optional positive integer identifying a step in the stored
-refinement sequence. This takes precedence over \code{variable}.}
+refinement sequence for \code{type = "relativity"}. This takes precedence over
+\code{variable}. For \code{type = "incremental_change"}, a required positive numeric
+increment in the units of the smoothing variable.}
 
 \item{x_max}{Optional single finite numeric value. Maximum value displayed on
 the x-axis of a smoothing plot. This changes only the visible plotting
@@ -55,6 +58,11 @@ spaces in the x-axis label. Default is \code{FALSE}.}
 
 \item{custom_theme}{Optional list passed to \code{ggplot2::theme()}.}
 
+\item{type}{Character string selecting the view. \code{"relativity"} (default)
+retains the existing tariff-effect plot. \code{"incremental_change"} shows the
+local percentage premium change over the increment supplied through
+\code{step}.}
+
 \item{...}{Additional plotting arguments passed to ggplot2 geoms.}
 }
 \value{
@@ -82,6 +90,14 @@ Each \code{\link[=edit_smoothing]{edit_smoothing()}} call is stored as a separat
 such a step shows the cumulative smoothing after all preceding edits up to
 that point. Set \code{show_initial_smoothing = TRUE} to add the curve produced by
 the corresponding \code{\link[=add_smoothing]{add_smoothing()}} step before any edits were applied.
+
+\code{type = "incremental_change"} provides a complementary diagnostic for a
+smoothing curve. For each supported value \code{x}, it shows
+\code{100 * (R(x + step) / R(x) - 1)}, where \code{R()} is the current effective
+continuous smoothing. The plot therefore shows the local modelled premium
+change over the user-supplied increment. Values for which \code{x + step} falls
+outside the smoothing range are omitted; the curve is never extrapolated.
+For this plot type, \code{step} is the increment rather than a refinement index.
 \subsection{Actuarial interpretation}{
 
 The plot supports review of the proposed tariff structure before estimation.

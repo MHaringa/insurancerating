@@ -26,3 +26,5 @@
 ^\.claude$
 ^\.github$
 ^\.github/.*$
+^.*\(Exemplaar met conflict.*\).*$
+^.*\(conflicted copy.*\).*$

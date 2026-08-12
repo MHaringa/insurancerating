@@ -2,6 +2,24 @@
 
 ## Changes since 0.8.1
 
+- `add_restriction()` now warns when a newly added numeric interval overlaps
+  the existing interval classification. The message identifies the conflicting
+  levels and explains how a separate replacement variable can be supplied with
+  `replaces` when the intention is to replace the original classification.
+- `add_smoothing()` and `edit_smoothing()` gain the optional
+  `premium_change = "non_increasing"` constraint. Given an explicit
+  `premium_change_step`, it requires the local percentage change
+  `R(x + h) / R(x) - 1` to remain flat or decrease across the supported
+  smoothing range. The choice is stored in refinement history and remains
+  inactive by default. In `edit_smoothing()`, `from` and `to` can delimit the
+  range of this constraint; either boundary may be omitted to use the beginning
+  or end of the supported smoothing range.
+- `autoplot.rating_refinement()` now supports
+  `type = "incremental_change"` for smoothing steps. Given an explicit numeric
+  increment through `step`, this diagnostic shows the local percentage premium
+  change implied by the current effective continuous smoothing without
+  extrapolating beyond its supported range. The existing relativity plot
+  remains the default.
 - `premium_change()` interprets the effective smoothing in a refinement by
   reporting the modelled premium change when its continuous source variable
   doubles. Current and historical refinement states can be compared, including

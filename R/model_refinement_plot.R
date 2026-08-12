@@ -135,6 +135,14 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #' that point. Set `show_initial_smoothing = TRUE` to add the curve produced by
 #' the corresponding [add_smoothing()] step before any edits were applied.
 #'
+#' `type = "incremental_change"` provides a complementary diagnostic for a
+#' smoothing curve. For each supported value `x`, it shows
+#' `100 * (R(x + step) / R(x) - 1)`, where `R()` is the current effective
+#' continuous smoothing. The plot therefore shows the local modelled premium
+#' change over the user-supplied increment. Values for which `x + step` falls
+#' outside the smoothing range are omitted; the curve is never extrapolated.
+#' For this plot type, `step` is the increment rather than a refinement index.
+#'
 #' ## Actuarial interpretation
 #'
 #' The plot supports review of the proposed tariff structure before estimation.
@@ -155,7 +163,13 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #'   the most recent smoothing or edit step is selected. An error is returned
 #'   when no step matches or when matches belong to different refinements.
 #' @param step Optional positive integer identifying a step in the stored
-#'   refinement sequence. This takes precedence over `variable`.
+#'   refinement sequence for `type = "relativity"`. This takes precedence over
+#'   `variable`. For `type = "incremental_change"`, a required positive numeric
+#'   increment in the units of the smoothing variable.
+#' @param type Character string selecting the view. `"relativity"` (default)
+#'   retains the existing tariff-effect plot. `"incremental_change"` shows the
+#'   local percentage premium change over the increment supplied through
+#'   `step`.
 #' @param x_max Optional single finite numeric value. Maximum value displayed on
 #'   the x-axis of a smoothing plot. This changes only the visible plotting
 #'   range; it does not remove observations, alter the fitted smoothing curve or
@@ -221,14 +235,49 @@ autoplot.rating_refinement <- function(object,
                                        remove_underscores = FALSE,
                                        rotate_angle = NULL,
                                        custom_theme = NULL,
+                                       type = c("relativity", "incremental_change"),
                                        ...) {
   .assert_refinement(object)
+  type <- match.arg(type)
   .assert_single_numeric(x_max, "x_max", allow_null = TRUE)
   .assert_single_numeric(y_max, "y_max", allow_null = TRUE)
   .assert_single_logical(show_initial_smoothing, "show_initial_smoothing")
 
   if (length(object$steps) == 0) {
     stop("No refinement steps available to plot.", call. = FALSE)
+  }
+
+  if (identical(type, "incremental_change")) {
+    if (is.null(step)) {
+      stop(
+        "`step` is required for `type = \"incremental_change\"` and must ",
+        "be a positive increment in the units of the smoothing variable.",
+        call. = FALSE
+      )
+    }
+    .assert_single_numeric(step, "step", allow_null = FALSE)
+    if (step <= 0) {
+      stop("`step` must be a positive increment for the incremental-change plot.",
+           call. = FALSE)
+    }
+    if (isTRUE(show_initial_smoothing)) {
+      stop(
+        "`show_initial_smoothing` is not available for ",
+        "`type = \"incremental_change\"`.",
+        call. = FALSE
+      )
+    }
+    idx <- .select_incremental_smoothing_step(object, variable = variable)
+    preview <- preview_refinement(object, upto = idx)
+    return(.plot_incremental_smoothing_change(
+      state = preview$state,
+      increment = step,
+      x_max = x_max,
+      y_max = y_max,
+      remove_underscores = remove_underscores,
+      custom_theme = custom_theme,
+      ...
+    ))
   }
 
   idx <- .select_plot_step(object, variable = variable, step = step)
@@ -289,6 +338,47 @@ autoplot.rating_refinement <- function(object,
   stop("No plot available for this refinement step.", call. = FALSE)
 }
 
+.select_incremental_smoothing_step <- function(ref, variable = NULL) {
+  if (!is.null(variable)) {
+    idx <- .select_plot_step(ref, variable = variable, step = NULL)
+    if (!ref$steps[[idx]]$type %in% c("smoothing", "smoothing_edit")) {
+      stop(
+        "`type = \"incremental_change\"` is only available for smoothing steps.",
+        call. = FALSE
+      )
+    }
+    return(idx)
+  }
+
+  smoothing_idx <- which(vapply(
+    ref$steps,
+    function(candidate) candidate$type %in% c("smoothing", "smoothing_edit"),
+    logical(1)
+  ))
+  if (length(smoothing_idx) == 0L) {
+    stop("No smoothing step is available for this plot.", call. = FALSE)
+  }
+  smoothing_ids <- vapply(
+    ref$steps[smoothing_idx],
+    function(candidate) {
+      if (identical(candidate$type, "smoothing")) {
+        candidate$id
+      } else {
+        candidate$smoothing_step_id
+      }
+    },
+    character(1)
+  )
+  if (length(unique(smoothing_ids)) != 1L) {
+    stop(
+      "Multiple smoothed variables are available. Supply `variable =` for ",
+      "the incremental-change plot.",
+      call. = FALSE
+    )
+  }
+  smoothing_idx[length(smoothing_idx)]
+}
+
 
 # -----------------------------------------------------------------------------
 # Internal plotting helpers
@@ -317,6 +407,76 @@ autoplot.rating_refinement <- function(object,
     axis.line = ggplot2::element_line(colour = "grey55", linewidth = 0.3),
     axis.ticks = ggplot2::element_line(colour = "grey55", linewidth = 0.3)
   )
+}
+
+.plot_incremental_smoothing_change <- function(state,
+                                               increment,
+                                               x_max = NULL,
+                                               y_max = NULL,
+                                               remove_underscores = FALSE,
+                                               custom_theme = NULL,
+                                               ...) {
+  line <- state$new_line
+  if (is.null(line)) {
+    stop("No smoothing curve is available for this plot.", call. = FALSE)
+  }
+  xy <- .premium_change_line_xy(line)
+  if (length(xy$x) < 2L) {
+    stop("The smoothing curve must contain at least two distinct points.",
+         call. = FALSE)
+  }
+  valid_x <- xy$x[xy$x + increment <= max(xy$x)]
+  if (length(valid_x) == 0L) {
+    stop(
+      "`step` is too large for the supported smoothing range; no valid ",
+      "incremental comparisons remain.",
+      call. = FALSE
+    )
+  }
+  plot_data <- .incremental_premium_change(
+    line = line, step = increment, at = valid_x, percent = TRUE
+  )
+
+  variable <- names(line)[1L]
+  axis_variable <- if (isTRUE(remove_underscores)) {
+    gsub("_", " ", variable, fixed = TRUE)
+  } else {
+    variable
+  }
+  formatted_increment <- format(
+    increment,
+    big.mark = ",",
+    scientific = FALSE,
+    trim = TRUE
+  )
+  p <- ggplot2::ggplot(
+    plot_data,
+    ggplot2::aes(x = .data$x, y = .data$incremental_change)
+  ) +
+    ggplot2::geom_line(
+      colour = .plot_palette_ir()$frequency,
+      linewidth = 0.7,
+      ...
+    ) +
+    ggplot2::labs(
+      title = paste0(
+        "Premium change for +", formatted_increment, " ", axis_variable
+      ),
+      x = axis_variable,
+      y = "Premium change (%)"
+    ) +
+    ggplot2::theme_minimal() +
+    .plot_grid_theme_ir()
+
+  if (!is.null(custom_theme)) {
+    p <- p + do.call(ggplot2::theme, custom_theme)
+  }
+  if (!is.null(x_max) || !is.null(y_max)) {
+    x_limits <- if (is.null(x_max)) NULL else c(NA_real_, x_max)
+    y_limits <- if (is.null(y_max)) NULL else c(NA_real_, y_max)
+    p <- p + ggplot2::coord_cartesian(xlim = x_limits, ylim = y_limits)
+  }
+  p
 }
 
 

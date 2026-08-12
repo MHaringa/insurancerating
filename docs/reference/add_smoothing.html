@@ -64,6 +64,8 @@ GLM.</p>
 <span>  k <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  degree <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  premium_change <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  premium_change_step <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  tariff_class <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rating_variable <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  x_cut <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -140,6 +142,21 @@ grouped model points.</p></dd>
 <dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
 <dd><p>Optional character string. Numeric volume column, usually
 exposure, used to weight the grouped GLM relativities during smoothing.</p></dd>
+
+
+<dt id="arg-premium-change">premium_change<a class="anchor" aria-label="anchor" href="#arg-premium-change"></a></dt>
+<dd><p>Optional fixed-increment premium-change constraint.
+<code>NULL</code> (default) leaves the fitted smoothing unchanged.
+<code>"non_increasing"</code> requires <code>R(x + h) / R(x) - 1</code> to remain constant or
+decrease as <code>x</code> increases, where <code>h</code> is <code>premium_change_step</code>. This is an
+additional condition and is not implied by an increasing-concave shape.</p></dd>
+
+
+<dt id="arg-premium-change-step">premium_change_step<a class="anchor" aria-label="anchor" href="#arg-premium-change-step"></a></dt>
+<dd><p>Optional positive numeric increment <code>h</code>, in the
+units of <code>source_variable</code>. Required when <code>premium_change = "non_increasing"</code>. The condition is evaluated only where both <code>x</code> and
+<code>x + h</code> lie inside the supported smoothing range; no extrapolation is
+used.</p></dd>
 
 
 <dt id="arg-tariff-class-rating-variable">tariff_class, rating_variable<a class="anchor" aria-label="anchor" href="#arg-tariff-class-rating-variable"></a></dt>
