@@ -1159,31 +1159,43 @@ testthat::test_that(
       )
     )
 
-    testthat::expect_warning(
-      add_smoothing(
+    testthat::expect_message(
+      invisible(add_smoothing(
+        ref,
+        model_variable = "age_band",
+        source_variable = "age",
+        breaks = c(10, 25, 40, 55),
+        smoothing = "poly",
+        degree = 1
+      )),
+      paste0(
+        "New smoothing intervals evaluated outside the fitted GLM range ",
+        "\\(20\u201350\\).*relativities are extrapolated.*",
+        "Use `edit_smoothing\\(\\)`"
+      )
+    )
+
+    testthat::expect_message(
+      invisible(add_smoothing(
         ref,
         model_variable = "age_band",
         source_variable = "age",
         breaks = c(15, 30, 40, 55),
         smoothing = "poly",
         degree = 1
-      ),
-      paste0(
-        "The supplied `breaks` extend beyond the fitted GLM range ",
-        "\\(20\u201350\\).*based on extrapolation rather than observed ",
-        "model estimates.*Use `edit_smoothing\\(\\)`"
-      )
+      )),
+      NA
     )
 
-    testthat::expect_warning(
-      add_smoothing(
+    testthat::expect_message(
+      invisible(add_smoothing(
         ref,
         model_variable = "age_band",
         source_variable = "age",
         breaks = c(20, 30, 40, 50),
         smoothing = "poly",
         degree = 1
-      ),
+      )),
       NA
     )
   }

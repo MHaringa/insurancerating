@@ -332,6 +332,65 @@ proposal:
 refinement <- relative_age_refinement
 ```
 
+### Interpreting the premium effect
+
+A relativity curve shows the shape of a continuous tariff effect, but its
+practical magnitude is not always immediately clear. `premium_change()` reports
+how much the modelled premium changes when the source variable doubles from a
+selected starting value:
+
+```{r}
+premium_change(
+  refinement,
+  variable = "age_band",
+  at = c(20, 25, 30, 35)
+)
+```
+
+For example, a reported value of 0.12 means that the smoothing implies a 12%
+higher modelled premium when age doubles from that starting value. The helper
+uses the current effective smoothing, including preceding `edit_smoothing()`
+steps, and does not extrapolate beyond its supported range.
+
+By default, `basis = "curve"` evaluates the continuous effective smoothing at
+the exact starting and doubled values. This is the appropriate basis when the
+question concerns the shape or steepness of the smoothing itself. To review the
+premium effect of the implementable tariff classes instead, use:
+
+```{r}
+premium_change(
+  refinement,
+  variable = "age_band",
+  at = c(20, 25, 30, 35),
+  basis = "segments"
+)
+```
+
+With `basis = "segments"`, the helper determines which effective tariff
+interval contains each value and compares the corresponding current segment
+relativities. The result can therefore be 0% when both values are in the same
+segment, even when the underlying curve increases within that range. A change
+can also occur discretely when doubling crosses a segment boundary. The two
+bases answer different questions: the curve describes the underlying smooth
+relationship, while the segments describe the tariff that would be applied.
+
+The initial and edited relationships can be compared directly:
+
+```{r, eval = FALSE}
+premium_change(
+  relative_age_refinement,
+  variable = "age_band",
+  at = c(20, 25, 30),
+  steps = c(1, 2)
+) |>
+  as_gt()
+```
+
+With two selected states, the table shows both premium changes and their
+difference in percentage points. This comparison is often easier to interpret
+than small visual differences between two relativity curves. It remains an
+interpretation of the proposed smoothing and does not alter the refinement.
+
 ## Restricting selected levels
 
 `add_restriction()` fixes tariff levels at supplied relativities. A restriction

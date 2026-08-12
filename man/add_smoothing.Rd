@@ -39,9 +39,11 @@ numeric values.}
 smoothing. These boundaries determine the final tariff segmentation, not
 the number of portfolio observations used to estimate the curve. Values
 must be finite, strictly increasing and cover every observed value of
-\code{source_variable}. Boundaries outside the interval range represented by
-\code{model_variable} are allowed, but produce a warning because the resulting
-relativities rely on extrapolation beyond the fitted GLM levels. This
+\code{source_variable}. A boundary may extend beyond the interval range
+represented by \code{model_variable}, for example to create a rounded final
+tariff class. This does not itself produce a message. A short message is
+shown only when a representative point of a new interval lies outside the
+fitted GLM range and its relativity therefore requires extrapolation. This
 argument is required.}
 
 \item{smoothing}{Character string selecting the smoothing method. Available

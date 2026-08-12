@@ -2,6 +2,13 @@
 
 ## Changes since 0.8.1
 
+- `premium_change()` interprets the effective smoothing in a refinement by
+  reporting the modelled premium change when its continuous source variable
+  doubles. Current and historical refinement states can be compared, including
+  cumulative `edit_smoothing()` changes, with print and `as_gt()` methods. The
+  default `basis = "curve"` evaluates the continuous effective smoothing;
+  `basis = "segments"` instead compares the implemented tariff-interval
+  relativities containing the starting and doubled values.
 - `add_restriction()` gains `replaces`, which allows a new fixed tariff factor
   to explicitly replace an existing standalone model term during `refit()`.
   The replacement is retained in refinement summaries and audits. The default

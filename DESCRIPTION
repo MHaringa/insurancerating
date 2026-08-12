@@ -33,7 +33,8 @@ Imports:
     rlang,
     scales,
     scam,
-    stringr
+    stringr,
+    tibble
 Depends: R (>= 4.1.0)
 Suggests: 
     classInt,

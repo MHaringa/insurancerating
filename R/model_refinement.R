@@ -516,20 +516,22 @@
 
   borders <- suppressMessages(cut_borders_model(model, model_variable))
   model_range <- c(min(borders$start_), max(borders$end_))
-  if (break_range[1] < model_range[1] || break_range[2] > model_range[2]) {
+  smoothing_points <- breaks[-length(breaks)] + diff(breaks) / 2
+  uses_extrapolation <- any(
+    smoothing_points < model_range[1] | smoothing_points > model_range[2]
+  )
+  if (uses_extrapolation) {
     formatted_model_range <- format(
       model_range,
       big.mark = ",",
       scientific = FALSE,
       trim = TRUE
     )
-    warning(
-      "The supplied `breaks` extend beyond the fitted GLM range (",
+    message(
+      "New smoothing intervals evaluated outside the fitted GLM range (",
       formatted_model_range[1], "\u2013", formatted_model_range[2], "). ",
-      "New intervals outside this range are based on extrapolation rather ",
-      "than observed model estimates. Use `edit_smoothing()` to adjust the ",
-      "extrapolated part of the smoothing curve.",
-      call. = FALSE
+      "Their relativities are extrapolated. Use `edit_smoothing()` to revise ",
+      "that part of the curve."
     )
   }
 
@@ -3255,9 +3257,11 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'   smoothing. These boundaries determine the final tariff segmentation, not
 #'   the number of portfolio observations used to estimate the curve. Values
 #'   must be finite, strictly increasing and cover every observed value of
-#'   `source_variable`. Boundaries outside the interval range represented by
-#'   `model_variable` are allowed, but produce a warning because the resulting
-#'   relativities rely on extrapolation beyond the fitted GLM levels. This
+#'   `source_variable`. A boundary may extend beyond the interval range
+#'   represented by `model_variable`, for example to create a rounded final
+#'   tariff class. This does not itself produce a message. A short message is
+#'   shown only when a representative point of a new interval lies outside the
+#'   fitted GLM range and its relativity therefore requires extrapolation. This
 #'   argument is required.
 #' @param smoothing Character string selecting the smoothing method. Available
 #'   values are `"spline"` (default), `"poly"`, `"gam"`, `"increasing"`,

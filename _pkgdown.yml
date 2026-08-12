@@ -69,6 +69,7 @@ reference:
       - rating_table
       - add_portfolio_experience
       - autoplot.rating_table
+      - premium_change
       - add_prediction
 
   - title: "Tariff refinement"
