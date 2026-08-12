@@ -149,6 +149,14 @@ level, its supplied relativity and the fact that it was not observed in the
 model data. Set <code>allow_new_levels = FALSE</code> when the restriction table should
 be checked strictly against the levels observed by the fitted model, for
 example to detect spelling errors in level names.</p>
+<p>When a newly supplied level is written as a numeric interval, the function
+checks it against the existing interval levels. A warning is issued if the
+new interval overlaps the current classification. The level is still
+retained because overlapping labels may occasionally be intentional, but
+they do not form an unambiguous tariff partition. To replace an interval
+classification, first add the complete new classification as a separate
+column in the refinement data, use that column as the first column of
+<code>restrictions</code>, and identify the old model term with <code>replaces</code>.</p>
 <p>A variable that is present in the refinement data but was not included in the
 fitted GLM can be added with <code>allow_new_risk_factors = TRUE</code>. In that case all
 observed levels must have a supplied relativity. The new factor is applied as

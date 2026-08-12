@@ -171,7 +171,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-12 08:11:32 UTC
+#> Created: 2026-08-12 14:06:00 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -384,6 +384,93 @@ current proposal:
 refinement <- relative_age_refinement
 ```
 
+The relativity plot shows the overall tariff shape. A complementary view
+shows the local modelled premium change over an increment chosen in the
+units of the source variable:
+
+``` r
+
+autoplot(refinement, variable = "age_band")
+```
+
+![](refinement-workflow_files/figure-html/unnamed-chunk-13-1.png)
+
+``` r
+
+
+autoplot(
+  refinement,
+  variable = "age_band",
+  type = "incremental_change",
+  step = 5
+)
+```
+
+![](refinement-workflow_files/figure-html/unnamed-chunk-13-2.png)
+
+For each age where the comparison remains inside the smoothing range,
+the second plot calculates the percentage change from `R(age)` to
+`R(age + 5)`. It therefore highlights where the proposed effect rises or
+falls most rapidly. The calculation uses the current effective
+continuous smoothing, including preceding
+[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+steps, and does not extrapolate. The increment is always supplied
+explicitly because a meaningful change depends on the units and
+practical interpretation of the source variable.
+
+### Optionally constraining local premium change
+
+For some continuous tariff variables, it may be appropriate to require
+that the percentage premium increase for a fixed additional amount
+remains constant or decreases along the curve. The constraint can be
+added to an existing smoothing specification:
+
+``` r
+
+constrained_refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 30,
+    premium_change = "non_increasing",
+    premium_change_step = 5
+  )
+```
+
+This uses `R(x + 5) / R(x) - 1` from age 30 to the end of the supported
+smoothing range. Only comparisons for which both `x` and `x + 5` are
+inside that selected range are constrained. Supplying only `to` applies
+the condition from the beginning through that boundary; omitting both
+boundaries uses the full range. Later
+[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+steps inherit the setting and its range unless it is replaced, or
+removed with `premium_change = "none"`. The same constraint can be
+supplied to
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+for the full initial range.
+
+This condition is stronger than an increasing-concave shape. Concavity
+concerns absolute changes in the relativity; this option concerns
+percentage changes relative to the current relativity. It is an optional
+actuarial assumption whose relevance depends on the variable, portfolio
+and modelling objective.
+
+The imposed condition can be inspected with the same fixed increment:
+
+``` r
+
+autoplot(
+  constrained_refinement,
+  variable = "age_band",
+  type = "incremental_change",
+  step = 5
+)
+```
+
+This differs from
+[`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
+below, which compares `R(2x)` with `R(x)` and therefore answers a
+doubling question.
+
 ### Interpreting the premium effect
 
 A relativity curve shows the shape of a continuous tariff effect, but
@@ -516,7 +603,7 @@ removing them is not an unambiguous level restriction.
 autoplot(refinement, variable = "zip")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-17-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-20-1.png)
 
 Again, the plot shows the proposed restriction before
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
@@ -567,7 +654,7 @@ effects.
 autoplot(refinement, variable = "bm_group")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-19-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-22-1.png)
 
 This remains a pre-refit comparison: it shows the current estimated
 effect and the proposed shrunken structure stored in the refinement
@@ -650,7 +737,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-12 08:11:32 UTC
+#> Created: 2026-08-12 14:06:00 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -780,9 +867,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Prepared: 2026-08-12 08:11:32 UTC
-#> Refitted: 2026-08-12 08:11:37 UTC
-#> Audited: 2026-08-12 08:11:37 UTC
+#> Prepared: 2026-08-12 14:06:00 UTC
+#> Refitted: 2026-08-12 14:06:05 UTC
+#> Audited: 2026-08-12 14:06:05 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
