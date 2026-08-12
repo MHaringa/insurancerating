@@ -260,7 +260,7 @@ the full set of methods and their curvature interpretation.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-08-11 11:44:31 CEST</span></span>
+<span><span class="co">#&gt; Created: 2026-08-12 10:01:46 CEST</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -436,6 +436,78 @@ when that sequence has a clear actuarial interpretation.</p>
 <code class="sourceCode R"><span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">relative_age_refinement</span></span></code></pre></div>
 </div>
 </div>
+<div class="section level3">
+<h3 id="interpreting-the-premium-effect">Interpreting the premium effect<a class="anchor" aria-label="anchor" href="#interpreting-the-premium-effect"></a>
+</h3>
+<p>A relativity curve shows the shape of a continuous tariff effect, but
+its practical magnitude is not always immediately clear.
+<code><a href="../reference/premium_change.html">premium_change()</a></code> reports how much the modelled premium
+changes when the source variable doubles from a selected starting
+value:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/premium_change.html">premium_change</a></span><span class="op">(</span></span>
+<span>  <span class="va">refinement</span>,</span>
+<span>  variable <span class="op">=</span> <span class="st">"age_band"</span>,</span>
+<span>  at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">25</span>, <span class="fl">30</span>, <span class="fl">35</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Premium change for age_policyholder</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Basis: Effective smoothing curve</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;  From To Premium change</span></span>
+<span><span class="co">#&gt;    20 40         -46.8%</span></span>
+<span><span class="co">#&gt;    25 50         -39.0%</span></span>
+<span><span class="co">#&gt;    30 60         -39.5%</span></span>
+<span><span class="co">#&gt;    35 70         -33.8%</span></span></code></pre></div>
+<p>For example, a reported value of 0.12 means that the smoothing
+implies a 12% higher modelled premium when age doubles from that
+starting value. The helper uses the current effective smoothing,
+including preceding <code><a href="../reference/edit_smoothing.html">edit_smoothing()</a></code> steps, and does not
+extrapolate beyond its supported range.</p>
+<p>By default, <code>basis = "curve"</code> evaluates the continuous
+effective smoothing at the exact starting and doubled values. This is
+the appropriate basis when the question concerns the shape or steepness
+of the smoothing itself. To review the premium effect of the
+implementable tariff classes instead, use:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/premium_change.html">premium_change</a></span><span class="op">(</span></span>
+<span>  <span class="va">refinement</span>,</span>
+<span>  variable <span class="op">=</span> <span class="st">"age_band"</span>,</span>
+<span>  at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">25</span>, <span class="fl">30</span>, <span class="fl">35</span><span class="op">)</span>,</span>
+<span>  basis <span class="op">=</span> <span class="st">"segments"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Premium change for age_policyholder</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Basis: Tariff segments</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;  From To Premium change</span></span>
+<span><span class="co">#&gt;    20 40         -44.5%</span></span>
+<span><span class="co">#&gt;    25 50         -44.5%</span></span>
+<span><span class="co">#&gt;    30 60         -45.0%</span></span>
+<span><span class="co">#&gt;    35 70         -34.0%</span></span></code></pre></div>
+<p>With <code>basis = "segments"</code>, the helper determines which
+effective tariff interval contains each value and compares the
+corresponding current segment relativities. The result can therefore be
+0% when both values are in the same segment, even when the underlying
+curve increases within that range. A change can also occur discretely
+when doubling crosses a segment boundary. The two bases answer different
+questions: the curve describes the underlying smooth relationship, while
+the segments describe the tariff that would be applied.</p>
+<p>The initial and edited relationships can be compared directly:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/premium_change.html">premium_change</a></span><span class="op">(</span></span>
+<span>  <span class="va">relative_age_refinement</span>,</span>
+<span>  variable <span class="op">=</span> <span class="st">"age_band"</span>,</span>
+<span>  at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">25</span>, <span class="fl">30</span><span class="op">)</span>,</span>
+<span>  steps <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/as_gt.html">as_gt</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>With two selected states, the table shows both premium changes and
+their difference in percentage points. This comparison is often easier
+to interpret than small visual differences between two relativity
+curves. It remains an interpretation of the proposed smoothing and does
+not alter the refinement.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="restricting-selected-levels">Restricting selected levels<a class="anchor" aria-label="anchor" href="#restricting-selected-levels"></a>
@@ -446,7 +518,7 @@ supported external assumption or a deliberate response to an unstable
 local estimate. It differs from smoothing: smoothing estimates a
 structured pattern, whereas a restriction explicitly prescribes selected
 values.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">zip_restrictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  zip <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0"</span>, <span class="st">"3"</span><span class="op">)</span>,</span>
 <span>  zip_restricted <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.95</span>, <span class="fl">1.10</span><span class="op">)</span></span>
@@ -473,9 +545,9 @@ The replacement is shown in the refinement summary and audit.
 Interactions and transformed terms must be revised explicitly in the
 model specification because removing them is not an unambiguous level
 restriction.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">refinement</span>, variable <span class="op">=</span> <span class="st">"zip"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="refinement-workflow_files/figure-html/unnamed-chunk-14-1.png" class="r-plt" alt="" width="700"></p>
+<p><img src="refinement-workflow_files/figure-html/unnamed-chunk-17-1.png" class="r-plt" alt="" width="700"></p>
 <p>Again, the plot shows the proposed restriction before
 <code><a href="../reference/refit.html">refit()</a></code>.</p>
 </div>
@@ -488,7 +560,7 @@ the direction and ordering of an estimated effect are considered
 informative, but the spread between levels is larger than is supported
 by the available experience or the intended tariff. Unlike a
 restriction, shrinkage does not prescribe individual level values.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_shrinkage.html">add_shrinkage</a></span><span class="op">(</span></span>
 <span>    model_variable <span class="op">=</span> <span class="st">"bm_group"</span>,</span>
@@ -513,9 +585,9 @@ shrinkage. The operation therefore reduces tariff differentiation
 without intentionally changing the weighted level of this risk factor.
 The later refit can still recalibrate the intercept or other free model
 effects.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">refinement</span>, variable <span class="op">=</span> <span class="st">"bm_group"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="refinement-workflow_files/figure-html/unnamed-chunk-16-1.png" class="r-plt" alt="" width="700"></p>
+<p><img src="refinement-workflow_files/figure-html/unnamed-chunk-19-1.png" class="r-plt" alt="" width="700"></p>
 <p>This remains a pre-refit comparison: it shows the current estimated
 effect and the proposed shrunken structure stored in the refinement
 specification.</p>
@@ -530,7 +602,7 @@ retain the broad parent effect while introducing documented
 differentiation between selected sublevels.</p>
 <p>The example splits the broad bonus-malus groups <code>Low</code> and
 <code>Medium</code> into their observed detailed values:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bm_relativities</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/relativity_specification.html">relativities</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/relativity_specification.html">split_level</a></span><span class="op">(</span></span>
 <span>    <span class="st">"Low"</span>,</span>
@@ -585,12 +657,12 @@ levels of the derived <code>output_variable</code>.</p>
 <h2 id="combining-and-reviewing-refinements">Combining and reviewing refinements<a class="anchor" aria-label="anchor" href="#combining-and-reviewing-refinements"></a>
 </h2>
 <p>The four operations now form one ordered specification:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-08-11 11:44:31 CEST</span></span>
+<span><span class="co">#&gt; Created: 2026-08-12 10:01:46 CEST</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -626,7 +698,7 @@ whereas shrinkage changes its degree of differentiation.</p>
 <div class="section level2">
 <h2 id="refitting-the-model">Refitting the model<a class="anchor" aria-label="anchor" href="#refitting-the-model"></a>
 </h2>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span></span>
 <span>  <span class="va">refinement</span>,</span>
 <span>  intercept_only <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -660,7 +732,7 @@ unrestricted statistical estimates.</p>
 </h2>
 <p>After <code><a href="../reference/refit.html">refit()</a></code>, the result is a fitted GLM and can be
 reviewed with the normal interpretation tools:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">refined_model</span>, exposure <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      risk_factor       level est_refined_model</span></span>
 <span><span class="co">#&gt; 1    (Intercept) (Intercept)         0.2568384</span></span>
@@ -688,7 +760,7 @@ independently of the intercept, other model terms and portfolio mix.
 <code><a href="../reference/audit_refinement.html">audit_refinement()</a></code> therefore compares predictions from the
 unrestricted and refined models on the same observed portfolio
 combinations.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">refinement_audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_refinement.html">audit_refinement</a></span><span class="op">(</span></span>
 <span>  <span class="va">refined_model</span>,</span>
 <span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
@@ -699,9 +771,9 @@ combinations.</p>
 <span><span class="co">#&gt; Refinement audit</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.1.9000</span></span>
-<span><span class="co">#&gt; Prepared: 2026-08-11 11:44:31 CEST</span></span>
-<span><span class="co">#&gt; Refitted: 2026-08-11 11:44:34 CEST</span></span>
-<span><span class="co">#&gt; Audited: 2026-08-11 11:44:34 CEST</span></span>
+<span><span class="co">#&gt; Prepared: 2026-08-12 10:01:46 CEST</span></span>
+<span><span class="co">#&gt; Refitted: 2026-08-12 10:01:49 CEST</span></span>
+<span><span class="co">#&gt; Audited: 2026-08-12 10:01:49 CEST</span></span>
 <span><span class="co">#&gt; Measure: frequency (per_exposure)</span></span>
 <span><span class="co">#&gt; Exposure: exposure</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -776,7 +848,7 @@ rationale.</p>
 <h2 id="iterating-without-losing-the-specification">Iterating without losing the specification<a class="anchor" aria-label="anchor" href="#iterating-without-losing-the-specification"></a>
 </h2>
 <p>Retain both the editable specification and the fitted result:</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="va">refinement</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span>

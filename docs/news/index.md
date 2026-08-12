@@ -4,6 +4,18 @@
 
 ### Changes since 0.8.1
 
+- [`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
+  interprets the effective smoothing in a refinement by reporting the
+  modelled premium change when its continuous source variable doubles.
+  Current and historical refinement states can be compared, including
+  cumulative
+  [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+  changes, with print and
+  [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
+  methods. The default `basis = "curve"` evaluates the continuous
+  effective smoothing; `basis = "segments"` instead compares the
+  implemented tariff-interval relativities containing the starting and
+  doubled values.
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   gains `replaces`, which allows a new fixed tariff factor to explicitly
   replace an existing standalone model term during
