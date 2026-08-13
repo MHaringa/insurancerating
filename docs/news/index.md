@@ -11,35 +11,33 @@
   `replaces` when the intention is to replace the original
   classification.
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
-  and
+  gains `scale = "relativity"` or `"log_relativity"`. The default
+  preserves existing behaviour. On the log-relativity scale, shape
+  constraints apply to `log(R(x))`; an increasing-concave smoothing
+  therefore has diminishing proportional premium increments for every
+  fixed admissible source-variable increment.
   [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
-  gain the optional `premium_change = "non_increasing"` constraint.
-  Given an explicit `premium_change_step`, it requires the local
-  percentage change `R(x + h) / R(x) - 1` to remain flat or decrease
-  across the supported smoothing range. The choice is stored in
-  refinement history and remains inactive by default. In
-  [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md),
-  `from` and `to` can delimit the range of this constraint; either
-  boundary may be omitted to use the beginning or end of the supported
-  smoothing range.
+  inherits and records the original scale. The earlier development-only
+  fixed-step constraint arguments were removed before release.
 - [`autoplot.rating_refinement()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
   now supports `type = "incremental_change"` for smoothing steps. Given
   an explicit numeric increment through `step`, this diagnostic shows
   the local percentage premium change implied by the current effective
   continuous smoothing without extrapolating beyond its supported range.
-  The existing relativity plot remains the default.
+  The existing relativity plot remains the default. The title and
+  subtitle now report the complete fixed increment, and
+  `show_segments = FALSE` can hide the proposed tariff segments in a
+  smoothing relativity plot while retaining the continuous curve.
 - [`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
-  interprets the effective smoothing in a refinement by reporting the
-  modelled premium change when its continuous source variable doubles.
-  Current and historical refinement states can be compared, including
-  cumulative
-  [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
-  changes, with print and
+  interprets the effective smoothing in a refinement using either the
+  existing doubling comparison or a fixed increment supplied with
+  `step`. Fixed-step results use the same calculation as
+  `autoplot(type = "incremental_change")`. Current and historical
+  refinement states can be compared with print and
   [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
   methods. The default `basis = "curve"` evaluates the continuous
-  effective smoothing; `basis = "segments"` instead compares the
-  implemented tariff-interval relativities containing the starting and
-  doubled values.
+  effective smoothing; `basis = "segments"` compares the implemented
+  tariff-interval relativities.
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   gains `replaces`, which allows a new fixed tariff factor to explicitly
   replace an existing standalone model term during

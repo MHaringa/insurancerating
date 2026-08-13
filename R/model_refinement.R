@@ -1855,6 +1855,10 @@ print.rating_refinement <- function(x, ...) {
 
   if (identical(step$type, "smoothing")) {
     details <- character()
+    details <- c(details, paste0(
+      "shape = ", step$smoothing %||% "spline",
+      "; scale = ", step$scale %||% "relativity"
+    ))
     if (!is.null(step$breaks)) {
       details <- c(details, paste0(
         length(step$breaks) - 1L, " intervals over ",
@@ -1865,13 +1869,6 @@ print.rating_refinement <- function(x, ...) {
     if (!is.null(step$edit)) {
       details <- c(details, paste0(nrow(step$edit), " edited values"))
     }
-    if (identical(step$premium_change %||% NULL, "non_increasing")) {
-      details <- c(details, paste0(
-        "premium-change constraint = non-increasing; increment = ",
-        format(step$premium_change_step, trim = TRUE),
-        "; range = full smoothing range"
-      ))
-    }
     return(if (length(details) == 0L) NA_character_ else {
       paste(details, collapse = "; ")
     })
@@ -1879,29 +1876,11 @@ print.rating_refinement <- function(x, ...) {
 
   if (identical(step$type, "smoothing_edit")) {
     edit <- step$edit
-    if (identical(edit$mode %||% "explicit", "constraint")) {
-      return(if (is.null(edit$premium_change)) {
-        "premium-change constraint removed"
-      } else {
-        paste0(
-          "premium-change constraint = non-increasing; increment = ",
-          format(edit$premium_change_step, trim = TRUE),
-          "; range = ",
-          if (is.null(edit$premium_change_from)) "start" else {
-            format(edit$premium_change_from, trim = TRUE)
-          },
-          " to ",
-          if (is.null(edit$premium_change_to)) "end" else {
-            format(edit$premium_change_to, trim = TRUE)
-          },
-          "; cumulative from smoothing step ", step$smoothing_step_index
-        )
-      })
-    }
     if (identical(edit$mode %||% "explicit", "adjustment")) {
       return(paste0(
         "relative adjustment = ", format(edit$adjustment, trim = TRUE),
         "; transition = ", edit$transition %||% "inherited",
+        "; scale = ", edit$scale %||% "relativity",
         "; cumulative from smoothing step ", step$smoothing_step_index
       ))
     }
@@ -3354,6 +3333,34 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #' New code should use the readable method names above. Both forms produce the
 #' same smoothing specification.
 #'
+#' ## Choosing the smoothing scale
+#'
+#' `scale` determines the actuarial meaning of a shape constraint. With
+#' `scale = "relativity"`, the smoother is fitted to the ordinary tariff
+#' relativity \eqn{R(x)}. An increasing-concave specification therefore lets
+#' the relativity rise while its absolute increments become smaller. This is
+#' the default and preserves the interpretation of existing calls.
+#'
+#' With `scale = "log_relativity"`, the same specification is fitted to
+#' \eqn{\log R(x)} and transformed back with `exp()`. The resulting tariff
+#' still contains ordinary positive multiplicative relativities. An
+#' increasing-concave smooth on this scale implies diminishing proportional
+#' premium increments: for any fixed admissible increment \eqn{h},
+#' \eqn{R(x+h)/R(x)-1} cannot increase as \eqn{x} increases. The standard
+#' relativity plot shows the overall effect; `autoplot(type =
+#' "incremental_change", step = h)` displays this finite proportional change
+#' directly.
+#'
+#' For example, an insured-amount effect may still increase while another
+#' 100,000 produces progressively smaller percentage increases at higher sums
+#' insured. This can be a useful regularisation assumption where observations
+#' become sparse in the upper tail. It is not a general actuarial requirement:
+#' credible evidence of accelerating proportional risk, structural differences
+#' at high values, material interactions, or a variable without a meaningful
+#' positive scale may justify `scale = "relativity"`, a less restrictive
+#' smoothing method, or a revised model specification. Shape constraints
+#' should stabilise poorly supported behaviour, not override strong evidence.
+#'
 #' ## Basis dimension and polynomial degree
 #'
 #' For `"spline"`, `"gam"` and the shape-constrained methods, `k` specifies the
@@ -3428,16 +3435,13 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'   grouped model points.
 #' @param weights Optional character string. Numeric volume column, usually
 #'   exposure, used to weight the grouped GLM relativities during smoothing.
-#' @param premium_change Optional fixed-increment premium-change constraint.
-#'   `NULL` (default) leaves the fitted smoothing unchanged.
-#'   `"non_increasing"` requires `R(x + h) / R(x) - 1` to remain constant or
-#'   decrease as `x` increases, where `h` is `premium_change_step`. This is an
-#'   additional condition and is not implied by an increasing-concave shape.
-#' @param premium_change_step Optional positive numeric increment `h`, in the
-#'   units of `source_variable`. Required when `premium_change =
-#'   "non_increasing"`. The condition is evaluated only where both `x` and
-#'   `x + h` lie inside the supported smoothing range; no extrapolation is
-#'   used.
+#' @param scale Character string selecting the scale on which the smoothing and
+#'   any shape constraint are fitted. `"relativity"` (default) preserves the
+#'   existing behaviour and constrains `R(x)` directly. `"log_relativity"`
+#'   constrains `log(R(x))` and transforms the result back with `exp()`, so the
+#'   stored and refitted tariff effects remain ordinary positive relativities.
+#'   See Details for the distinction between absolute and proportional
+#'   increments.
 #' @param tariff_class,rating_variable Deprecated. Use `model_variable` and
 #'   `source_variable` instead.
 #' @param x_cut,x_org Deprecated. Use `model_variable` and `source_variable`
@@ -3524,14 +3528,27 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'
 #' # Limit the visible range without changing the fitted smoothing curve.
 #' autoplot(ref, x_max = 80, y_max = 1.5)
+#'
+#' # On the log-relativity scale, increasing concavity means that percentage
+#' # premium increases over a fixed source-variable increment do not increase.
+#' log_scale_ref <- prepare_refinement(burn_unrestricted) |>
+#'   add_smoothing(
+#'     model_variable = "age_policyholder_freq_cat",
+#'     source_variable = "age_policyholder",
+#'     breaks = c(seq(18, 93, 5), 95),
+#'     smoothing = "increasing_concave",
+#'     scale = "log_relativity",
+#'     k = 6,
+#'     weights = "exposure"
+#'   )
+#' autoplot(log_scale_ref, type = "incremental_change", step = 5)
 #' }
 #'
 #' @export
 add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
                           breaks, smoothing = "spline", k = NULL,
                           degree = NULL, weights = NULL,
-                          premium_change = NULL,
-                          premium_change_step = NULL,
+                          scale = "relativity",
                           tariff_class = NULL, rating_variable = NULL,
                           x_cut = NULL, x_org = NULL) {
   .assert_refinement(model)
@@ -3605,11 +3622,7 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
   smoothing_spec <- .resolve_smoothing_method(smoothing)
   smoothing <- smoothing_spec$method
   smoothing_code <- smoothing_spec$code
-  premium_change <- .validate_premium_change_constraint(
-    premium_change = premium_change,
-    premium_change_step = premium_change_step,
-    allow_none = FALSE
-  )
+  scale <- .validate_smoothing_scale(scale)
   if (!is.numeric(breaks) || length(breaks) == 0 ||
       anyNA(breaks) || any(!is.finite(breaks))) {
     stop("'breaks' must be a numeric vector with finite values.", call. = FALSE)
@@ -3703,8 +3716,7 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
     smoothing_code = smoothing_code,
     k = k,
     weights = weights,
-    premium_change = premium_change$constraint,
-    premium_change_step = premium_change$step,
+    scale = scale,
     edit = NULL
   ))
 }
@@ -3826,6 +3838,12 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #' content of manual adjustments as part of the reproducible refinement
 #' specification.
 #'
+#' The smoothing scale is part of that specification. `scale = NULL` inherits
+#' the value recorded by [add_smoothing()], including `"log_relativity"`.
+#' Accepted edits and their transitions are assessed on that inherited scale.
+#' A scale change requires rebuilding the smoothing because changing it during
+#' an edit would reinterpret the curve that forms the basis of the edit.
+#'
 #' @param model Object of class `rating_refinement`, created with
 #'   [prepare_refinement()] and containing an existing smoothing step. Ordinary
 #'   and refitted GLMs are not accepted directly. Legacy `smooth` and
@@ -3839,9 +3857,6 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #' @param from,to Optional numeric values giving the start and end of the
 #'   source-variable interval to modify. For `adjustment`, either value may be
 #'   omitted to use the beginning or end of the available smoothing range.
-#'   With `premium_change = "non_increasing"`, these values also delimit the
-#'   range over which the fixed-increment constraint applies: omitting `from`
-#'   uses the beginning and omitting `to` uses the end of the supported range.
 #'   Explicit target-value and control-point edits require both values.
 #' @param from_value,to_value Optional numeric values used to override the
 #'   smoothed curve value at `from` and `to`.
@@ -3859,14 +3874,11 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #'   smoothing specification. `"linear"` gives continuous linear transitions
 #'   and `"step"` permits immediate jumps. Smoothing methods accepted by
 #'   [add_smoothing()] can be supplied as explicit structural overrides.
-#' @param premium_change Optional update to the fixed-increment premium-change
-#'   constraint. `NULL` inherits the current setting, `"non_increasing"`
-#'   imposes or replaces the constraint, and `"none"` removes it. A constraint
-#'   can be updated without making a local curve edit.
-#' @param premium_change_step Positive numeric increment required with
-#'   `premium_change = "non_increasing"`. It has the same units as the source
-#'   variable and uses `R(x + h) / R(x) - 1`. Existing constraints and their
-#'   increments and ranges are inherited when these arguments are omitted.
+#' @param scale Optional smoothing scale. `NULL` inherits the scale recorded by
+#'   [add_smoothing()]. Supplying the same value is allowed for clarity.
+#'   Changing scale during an edit is deliberately rejected because that would
+#'   reinterpret the previously fitted curve; rebuild the smoothing with
+#'   [add_smoothing()] instead.
 #' @param allow_extrapolation Logical. Whether edits may extend beyond the
 #'   observed source-variable range.
 #' @param extrapolation_step Optional positive numeric scalar used to set the
@@ -3962,8 +3974,7 @@ edit_smoothing <- function(model,
                            control_values = NULL,
                            adjustment = NULL,
                            transition = NULL,
-                           premium_change = NULL,
-                           premium_change_step = NULL,
+                           scale = NULL,
                            allow_extrapolation = FALSE,
                            extrapolation_step = NULL) {
   if (inherits(model, c("smooth", "restricted"))) {
@@ -3976,13 +3987,6 @@ edit_smoothing <- function(model,
   }
 
   .assert_refinement(model)
-
-  premium_change_update <- .validate_premium_change_constraint(
-    premium_change = premium_change,
-    premium_change_step = premium_change_step,
-    allow_none = TRUE,
-    allow_inherit = TRUE
-  )
 
   .assert_single_numeric(from, "from", allow_null = TRUE)
   .assert_single_numeric(to, "to", allow_null = TRUE)
@@ -4036,9 +4040,19 @@ edit_smoothing <- function(model,
     step = step
   )
   smoothing_step <- model$steps[[idx]]
+  original_scale <- smoothing_step$scale %||% "relativity"
+  if (!is.null(scale)) {
+    scale <- .validate_smoothing_scale(scale)
+    if (!identical(scale, original_scale)) {
+      stop(
+        "`edit_smoothing()` cannot change the smoothing scale. Rebuild the ",
+        "smoothing with `add_smoothing(scale = \"", scale, "\")`.",
+        call. = FALSE
+      )
+    }
+  }
 
   has_interval_edit <- !is.null(from) || !is.null(to)
-  has_constraint_update <- isTRUE(premium_change_update$update)
   has_interval_values <- !is.null(from_value) || !is.null(to_value) ||
     length(control_positions) > 0L || length(control_values) > 0L ||
     !is.null(adjustment) || !is.null(transition) ||
@@ -4050,7 +4064,7 @@ edit_smoothing <- function(model,
       call. = FALSE
     )
   }
-  if (!has_interval_edit && !has_constraint_update) {
+  if (!has_interval_edit) {
     stop(
       "Define the local interval to edit with `from`, `to`, or both.",
       call. = FALSE
@@ -4090,7 +4104,7 @@ edit_smoothing <- function(model,
       call. = FALSE
     )
   }
-  if (has_interval_edit && !has_constraint_update && is.null(adjustment) &&
+  if (has_interval_edit && is.null(adjustment) &&
       !explicit_values &&
       !isTRUE(allow_extrapolation) && is.null(extrapolation_step)) {
     stop(
@@ -4106,9 +4120,7 @@ edit_smoothing <- function(model,
          call. = FALSE)
   }
 
-  requested_mode <- if (!has_curve_edit && has_constraint_update) {
-    "constraint"
-  } else if (!is.null(adjustment)) {
+  requested_mode <- if (!is.null(adjustment)) {
     "adjustment"
   } else {
     "explicit"
@@ -4134,11 +4146,7 @@ edit_smoothing <- function(model,
       control_values = control_values,
       adjustment = if (is.null(adjustment)) NULL else as.numeric(adjustment),
       transition = transition,
-      premium_change = premium_change_update$constraint,
-      premium_change_step = premium_change_update$step,
-      premium_change_from = if (premium_change_update$update) from else NULL,
-      premium_change_to = if (premium_change_update$update) to else NULL,
-      premium_change_update = premium_change_update$update,
+      scale = original_scale,
       allow_extrapolation = allow_extrapolation,
       extrapolation_step = extrapolation_step
     )
@@ -4424,10 +4432,7 @@ add_relativities <- function(model,
     smoothing = NULL,
     adjustment = NULL,
     transition = NULL,
-    premium_change = NULL,
-    premium_change_step = NULL,
-    premium_change_from = NULL,
-    premium_change_to = NULL,
+    smoothing_scale = NULL,
     relativities_df = NULL,
     relativities_base_df = NULL,
     normalize = NULL,
@@ -4728,6 +4733,7 @@ add_relativities <- function(model,
   smoothing <- step$smoothing_code %||% smoothing_spec$code
   k <- step$k
   weights <- step$weights
+  scale <- step$scale %||% "relativity"
 
   borders_x_cut <- cut_borders_model(state$model_out, x_cut)
 
@@ -4759,7 +4765,14 @@ add_relativities <- function(model,
     breaks = breaks,
     smoothing = smoothing,
     k = k,
-    weights = exposur0
+    weights = exposur0,
+    scale = scale
+  )
+  .validate_adjusted_smoothing_shape(
+    fit_poly$poly_line[[x_org]],
+    fit_poly$poly_line$yhat,
+    smoothing,
+    scale = scale
   )
 
   df_poly <- fit_poly[["new_poly_df"]]
@@ -4784,7 +4797,8 @@ add_relativities <- function(model,
         to = edit$to,
         adjustment = edit$adjustment,
         transition = edit$transition,
-        original_smoothing = smoothing_spec$method
+        original_smoothing = smoothing_spec$method,
+        scale = scale
       )
       effective_transition <- changed$transition
     } else {
@@ -4812,20 +4826,6 @@ add_relativities <- function(model,
     df_new_rf <- changed[["new_rf"]]
   }
 
-  constrained <- .enforce_premium_change_constraint(
-    smooth = df_poly,
-    line = df_poly_line,
-    new_rf = df_new_rf,
-    source_variable = x_org,
-    constraint = step$premium_change %||% NULL,
-    step = step$premium_change_step %||% NULL,
-    smoothing = smoothing_spec$method,
-    from = step$premium_change_from %||% NULL,
-    to = step$premium_change_to %||% NULL
-  )
-  df_poly <- constrained$smooth
-  df_poly_line <- constrained$line
-  df_new_rf <- constrained$new_rf
   initial_df_poly <- df_poly
   initial_df_poly_line <- df_poly_line
   initial_df_new_rf <- df_new_rf
@@ -4867,26 +4867,20 @@ add_relativities <- function(model,
   state$smoothing <- smoothing
   state$adjustment <- step$edit$adjustment %||% NULL
   state$transition <- effective_transition
-  state$premium_change <- step$premium_change %||% NULL
-  state$premium_change_step <- step$premium_change_step %||% NULL
-  state$premium_change_from <- step$premium_change_from %||% NULL
-  state$premium_change_to <- step$premium_change_to %||% NULL
+  state$smoothing_scale <- scale
   state$smoothing_states[[step$id]] <- list(
     smoothing_step_id = step$id,
     model_variable = x_cut,
     source_variable = x_org,
     original_smoothing = smoothing_spec$method,
+    scale = scale,
     borders = borders_x_cut,
     initial_new = initial_df_poly,
     initial_line = initial_df_poly_line,
     initial_new_rf = initial_df_new_rf,
     current_new = df_poly,
     current_line = df_poly_line,
-    current_new_rf = df_new_rf,
-    premium_change = step$premium_change %||% NULL,
-    premium_change_step = step$premium_change_step %||% NULL,
-    premium_change_from = step$premium_change_from %||% NULL,
-    premium_change_to = step$premium_change_to %||% NULL
+    current_new_rf = df_new_rf
   )
 
   state
@@ -4911,11 +4905,10 @@ add_relativities <- function(model,
   df_new_rf <- smoothing_state$current_new_rf
   x_org <- smoothing_state$source_variable
   x_cut <- smoothing_state$model_variable
+  scale <- smoothing_state$scale %||% "relativity"
   effective_transition <- NULL
 
-  if (identical(edit_mode, "constraint")) {
-    changed <- list(smooth = df_poly, line = df_poly_line, new_rf = df_new_rf)
-  } else if (identical(edit_mode, "adjustment")) {
+  if (identical(edit_mode, "adjustment")) {
     changed <- .apply_smoothing_adjustment(
       smooth = df_poly,
       line = df_poly_line,
@@ -4925,7 +4918,8 @@ add_relativities <- function(model,
       to = edit$to,
       adjustment = edit$adjustment,
       transition = edit$transition,
-      original_smoothing = smoothing_state$original_smoothing
+      original_smoothing = smoothing_state$original_smoothing,
+      scale = scale
     )
     effective_transition <- changed$transition
   } else {
@@ -4951,30 +4945,10 @@ add_relativities <- function(model,
   df_poly_line <- changed[["line"]] %||% changed[["poly_line"]]
   df_new_rf <- changed[["new_rf"]]
 
-  effective_constraint <- smoothing_state$premium_change %||% NULL
-  effective_constraint_step <- smoothing_state$premium_change_step %||% NULL
-  effective_constraint_from <- smoothing_state$premium_change_from %||% NULL
-  effective_constraint_to <- smoothing_state$premium_change_to %||% NULL
-  if (isTRUE(edit$premium_change_update)) {
-    effective_constraint <- edit$premium_change %||% NULL
-    effective_constraint_step <- edit$premium_change_step %||% NULL
-    effective_constraint_from <- edit$premium_change_from %||% NULL
-    effective_constraint_to <- edit$premium_change_to %||% NULL
-  }
-  constrained <- .enforce_premium_change_constraint(
-    smooth = df_poly,
-    line = df_poly_line,
-    new_rf = df_new_rf,
-    source_variable = x_org,
-    constraint = effective_constraint,
-    step = effective_constraint_step,
-    smoothing = smoothing_state$original_smoothing,
-    from = effective_constraint_from,
-    to = effective_constraint_to
+  .validate_adjusted_smoothing_shape(
+    df_poly_line[[x_org]], df_poly_line$yhat,
+    smoothing_state$original_smoothing, scale = scale
   )
-  df_poly <- constrained$smooth
-  df_poly_line <- constrained$line
-  df_new_rf <- constrained$new_rf
 
   level_column <- paste0(x_org, "_smooth")
   smooth_column <- paste0(x_cut, "_smooth")
@@ -5001,10 +4975,6 @@ add_relativities <- function(model,
   smoothing_state$current_new <- df_poly
   smoothing_state$current_line <- df_poly_line
   smoothing_state$current_new_rf <- df_new_rf
-  smoothing_state$premium_change <- effective_constraint
-  smoothing_state$premium_change_step <- effective_constraint_step
-  smoothing_state$premium_change_from <- effective_constraint_from
-  smoothing_state$premium_change_to <- effective_constraint_to
   state$smoothing_states[[smoothing_step_id]] <- smoothing_state
   state$borders <- smoothing_state$borders
   state$new <- df_poly
@@ -5013,10 +4983,7 @@ add_relativities <- function(model,
   state$smoothing <- smoothing_state$original_smoothing
   state$adjustment <- edit$adjustment %||% NULL
   state$transition <- effective_transition
-  state$premium_change <- effective_constraint
-  state$premium_change_step <- effective_constraint_step
-  state$premium_change_from <- effective_constraint_from
-  state$premium_change_to <- effective_constraint_to
+  state$smoothing_scale <- scale
 
   state
 }
@@ -5791,12 +5758,7 @@ refit <- function(object, intercept_only = FALSE, ...) {
     } else if (!is.null(step$degree)) {
       detail <- paste0(detail, ", degree: ", step$degree)
     }
-    if (identical(step$premium_change %||% NULL, "non_increasing")) {
-      detail <- paste0(
-        detail, ", premium change: non-increasing over ",
-        format(step$premium_change_step, trim = TRUE)
-      )
-    }
+    detail <- paste0(detail, ", scale: ", step$scale %||% "relativity")
     if (identical(step$edit$mode %||% NULL, "adjustment")) {
       transition <- step$edit$transition %||% "inherited"
       edit_range <- if (is.null(step$edit$from)) {
@@ -5827,26 +5789,7 @@ refit <- function(object, intercept_only = FALSE, ...) {
   } else if (identical(step$type, "smoothing_edit")) {
     edit <- step$edit
     model_variable <- step$model_variable %||% step$variable
-    if (identical(edit$mode %||% "explicit", "constraint")) {
-      detail <- if (is.null(edit$premium_change)) {
-        paste0("Smoothing edit: ", model_variable,
-               " (premium-change constraint removed)")
-      } else {
-        paste0(
-          "Smoothing edit: ", model_variable,
-          " (premium change: non-increasing over ",
-          format(edit$premium_change_step, trim = TRUE),
-          ", range: ",
-          if (is.null(edit$premium_change_from)) "start" else {
-            format(edit$premium_change_from, trim = TRUE)
-          },
-          " to ",
-          if (is.null(edit$premium_change_to)) "end" else {
-            format(edit$premium_change_to, trim = TRUE)
-          }, ")"
-        )
-      }
-    } else if (identical(edit$mode %||% "explicit", "adjustment")) {
+    if (identical(edit$mode %||% "explicit", "adjustment")) {
       edit_range <- if (is.null(edit$from)) {
         paste0("from the start of the smoothing range to ",
                format(edit$to, trim = TRUE))
@@ -5861,7 +5804,8 @@ refit <- function(object, intercept_only = FALSE, ...) {
         "Smoothing edit: ", model_variable,
         " (relative adjustment: ", format(edit$adjustment, trim = TRUE),
         " ", edit_range,
-        ", transition: ", edit$transition %||% "inherited", ")"
+        ", transition: ", edit$transition %||% "inherited",
+        ", scale: ", edit$scale %||% "relativity", ")"
       )
     } else {
       detail <- paste0(

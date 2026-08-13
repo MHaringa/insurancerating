@@ -11,6 +11,7 @@
   x_max = NULL,
   y_max = NULL,
   show_initial_smoothing = FALSE,
+  show_segments = TRUE,
   remove_underscores = FALSE,
   rotate_angle = NULL,
   custom_theme = NULL,
@@ -50,6 +51,12 @@ plot, whether to overlay the initial curve produced by the corresponding
 \code{\link[=add_smoothing]{add_smoothing()}} step. The other smoothing line shows the cumulative curve
 at the selected \code{step}. Default is \code{FALSE}. This argument does not alter
 the refinement specification or \code{\link[=refit]{refit()}}.}
+
+\item{show_segments}{Logical. For a smoothing or smoothing-edit relativity
+plot, whether to show the horizontal relativities and boundary points of
+the new tariff segments. Set this to \code{FALSE} to inspect the continuous
+smoothing curve without the segmented tariff representation. The original
+fitted model effects remain visible. Default is \code{TRUE}.}
 
 \item{remove_underscores}{Logical; if \code{TRUE}, underscores are replaced by
 spaces in the x-axis label. Default is \code{FALSE}.}
@@ -98,6 +105,9 @@ continuous smoothing. The plot therefore shows the local modelled premium
 change over the user-supplied increment. Values for which \code{x + step} falls
 outside the smoothing range are omitted; the curve is never extrapolated.
 For this plot type, \code{step} is the increment rather than a refinement index.
+The calculation is identical to \code{\link[=premium_change]{premium_change()}} with the same \code{step};
+the plot displays it over the supported range, while \code{premium_change()}
+returns a table for selected starting values.
 \subsection{Actuarial interpretation}{
 
 The plot supports review of the proposed tariff structure before estimation.

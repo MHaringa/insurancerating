@@ -1882,7 +1882,8 @@ testthat::test_that(
     )
     testthat::expect_true(all(plot_data$x + 5 <= max(current_line[[1L]])))
     testthat::expect_identical(plot$labels$y, "Premium change (%)")
-    testthat::expect_match(plot$labels$title, "\\+5 age")
+    testthat::expect_identical(plot$labels$title, "Incremental premium change")
+    testthat::expect_match(plot$labels$subtitle, "additional 5 units of age")
 
     larger_step <- ggplot2::autoplot(
       edited,
@@ -1913,6 +1914,60 @@ testthat::test_that(
                                length(explicit_plot$layers))
   }
 )
+
+testthat::test_that("smoothing plots can hide the new tariff segments", {
+  df <- data.frame(
+    y = c(1, 2, 1, 3, 2, 4, 2, 3),
+    exposure = rep(1, 8),
+    age = c(18, 25, 32, 39, 46, 53, 60, 67)
+  )
+  df$age_band <- cut(df$age, breaks = c(18, 30, 45, 60, 70),
+                     include.lowest = TRUE)
+  model <- glm(
+    y ~ age_band + offset(log(exposure)),
+    family = poisson(),
+    data = df
+  )
+  refinement <- prepare_refinement(model, data = df) |>
+    add_smoothing(
+      model_variable = "age_band",
+      source_variable = "age",
+      breaks = c(18, 30, 45, 60, 70),
+      smoothing = "poly",
+      degree = 1,
+      weights = "exposure"
+    )
+
+  with_segments <- ggplot2::autoplot(refinement)
+  without_segments <- ggplot2::autoplot(refinement, show_segments = FALSE)
+
+  segment_rows <- function(plot) {
+    sum(vapply(
+      plot$layers,
+      function(layer) {
+        data <- layer$data
+        if (!is.data.frame(data) ||
+            !all(c("breaks_min", "breaks_max", "yhat") %in% names(data))) {
+          return(0L)
+        }
+        nrow(data)
+      },
+      integer(1)
+    ))
+  }
+  testthat::expect_gt(segment_rows(with_segments), 0L)
+  testthat::expect_identical(segment_rows(without_segments), 0L)
+  testthat::expect_s3_class(without_segments, "ggplot")
+  testthat::expect_error(
+    ggplot2::autoplot(
+      refinement,
+      type = "incremental_change",
+      step = 5,
+      show_segments = FALSE
+    ),
+    "show_segments"
+  )
+})
 
 testthat::test_that(
   "linear relative adjustments are continuous and local", {

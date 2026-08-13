@@ -9,6 +9,8 @@ premium_change(
   x,
   variable = NULL,
   at = NULL,
+  change = "double",
+  step = NULL,
   steps = "current",
   basis = c("curve", "segments"),
   ...
@@ -25,10 +27,19 @@ least one smoothing step. For \code{as_gt()}, an object returned by
 variable or its continuous source variable. This may be omitted when the
 refinement contains exactly one smoothing lineage.}
 
-\item{at}{Optional positive numeric vector of starting values. Each value and
-its doubled value must lie inside the supported smoothing range of every
-selected refinement state. If \code{NULL}, six representative values are
-selected automatically.}
+\item{at}{Optional numeric vector of starting values. Each starting and
+comparison value must lie inside the supported smoothing range of every
+selected refinement state. Doubling retains the existing requirement that
+starting values are positive. If \code{NULL}, approximately six representative
+values are selected automatically.}
+
+\item{change}{Character comparison mode. \code{"double"} (default) compares
+\eqn{x} with \eqn{2x}. When \code{step} is supplied, omit \code{change}; fixed-step
+mode is then selected automatically.}
+
+\item{step}{Optional positive finite numeric increment. When supplied,
+compares \eqn{x} with \eqn{x + step}. It cannot be combined with an
+explicitly supplied \code{change} instruction.}
 
 \item{steps}{Refinement states to evaluate. Use \code{"current"} for the latest
 state, \code{"all"} for every state from the selected smoothing onwards, or a
@@ -52,16 +63,16 @@ default.}
 }
 \value{
 A tibble with class \code{premium_change} in long format, containing the
-variable, refinement state, starting and doubled values, evaluated
+variable, refinement state, starting and comparison values, evaluated
 relativities, and premium change as a decimal.
 
 A \code{gt_tbl} object.
 }
 \description{
 Translate an effective smoothing curve in a refinement specification into
-the modelled premium change when its continuous source variable doubles.
-For a multiplicative relativity curve \eqn{R(x)}, the reported change is
-\eqn{R(2x) / R(x) - 1}.
+concrete modelled-premium comparisons. By default, each selected value is
+compared with twice that value. Supplying \code{step} instead compares each value
+with a fixed increment above it.
 
 Format an object returned by \code{premium_change()}. One refinement state is
 shown as a three-column table. Multiple states are shown side by side; when
@@ -72,6 +83,13 @@ exactly two are selected, their difference is added in percentage points.
 \code{\link[=add_smoothing]{add_smoothing()}} and subsequently modified with \code{\link[=edit_smoothing]{edit_smoothing()}}. It is
 not a smoothing method and does not change the refinement specification.
 
+For a multiplicative relativity curve \eqn{R(x)}, doubling reports
+\eqn{R(2x) / R(x) - 1}. Fixed-step mode reports
+\eqn{R(x+h) / R(x) - 1}, where \eqn{h} is \code{step}. If total modelled premium
+can be written as \eqn{P(x,z)=C(z)R(x)}, all other multiplicative model
+effects \eqn{C(z)} cancel in this ratio. No particular policy profile is
+therefore required for the interpretation.
+
 The effective curve is reconstructed from the stored refinement history.
 Consequently, \code{steps = "current"} reflects all smoothing edits recorded up
 to the current state. Numeric step identifiers refer to positions in the
@@ -81,20 +99,21 @@ smoothing step, the previously effective smoothing is carried forward.
 With the default \code{basis = "curve"}, evaluation uses the continuous effective
 smoothing line retained by the refinement system. It therefore describes
 the shape and steepness of the estimated or edited curve at exactly \eqn{x}
-and \eqn{2x}; it does not use neighbouring tariff-segment relativities.
+and the corresponding comparison value; it does not use neighbouring
+tariff-segment relativities.
 
 With \code{basis = "segments"}, both values are assigned to the effective tariff
 intervals created by the smoothing. Their current segment relativities are
 compared. This describes the premium effect of the implementable segmented
 tariff. The result can be zero when both values fall in the same segment and
-can change discretely when doubling crosses a segment boundary.
+can change discretely when the comparison crosses a segment boundary.
 
 Values are never extrapolated. When \code{at = NULL}, six representative starting
-values are selected from the common range for which both \eqn{x} and
-\eqn{2x} are supported in every selected refinement state.
+values are selected from the common range for which both the starting and
+comparison values are supported in every selected refinement state.
 
 Multiplying an entire curve by a common rebasing constant does not alter the
-result because that constant cancels in \eqn{R(2x) / R(x)}.
+result because that constant cancels in the relativity ratio.
 }
 \examples{
 age <- rep(seq(20, 70, by = 5), each = 5)
@@ -123,6 +142,7 @@ refinement <- prepare_refinement(model, data = portfolio) |>
     weights = "exposure"
   )
 premium_change(refinement, at = c(20, 25, 30))
+premium_change(refinement, at = c(20, 25, 30), step = 5)
 premium_change(refinement, at = c(20, 25, 30), basis = "segments")
 
 edited <- refinement |>

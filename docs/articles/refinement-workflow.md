@@ -163,6 +163,53 @@ basis. The function reference for
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
 describes the full set of methods and their curvature interpretation.
 
+### Choosing the smoothing scale
+
+Shape constraints can be applied to the ordinary relativity or to its
+logarithm. The distinction changes the actuarial interpretation:
+
+- `scale = "relativity"` is the default. An increasing-concave curve
+  rises while its absolute relativity increments become smaller.
+- `scale = "log_relativity"` applies the same shape to `log(R(x))`. An
+  increasing-concave curve then rises while its proportional premium
+  increments become smaller.
+
+The following specifications illustrate the two choices without
+prescribing one as generally preferable:
+
+``` r
+
+relativity_scale_refinement <- prepare_refinement(unrestricted, portfolio) |>
+  add_smoothing(
+    model_variable = "age_band",
+    source_variable = "age_policyholder",
+    breaks = age_breaks,
+    smoothing = "increasing_concave",
+    scale = "relativity",
+    k = 5,
+    weights = "exposure"
+  )
+
+log_scale_refinement <- prepare_refinement(unrestricted, portfolio) |>
+  add_smoothing(
+    model_variable = "age_band",
+    source_variable = "age_policyholder",
+    breaks = age_breaks,
+    smoothing = "increasing_concave",
+    scale = "log_relativity",
+    k = 5,
+    weights = "exposure"
+  )
+```
+
+For a scale variable such as insured amount, the latter choice may
+represent a tariff that still increases while each additional 100,000
+adds a smaller percentage to premium. For example, successive increases
+might be 20%, 16%, 13%, 11% and 9%. This can be a useful regularisation
+assumption where the upper tail has limited exposure, but it should not
+replace credible evidence of accelerating proportional risk or a
+structurally different high-value segment.
+
 ### Inspecting the proposal
 
 ``` r
@@ -171,7 +218,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-12 15:49:37 CEST
+#> Created: 2026-08-13 11:28:08 CEST
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -179,8 +226,8 @@ summary(refinement)
 #> Offset: log(exposure)
 #> 
 #> Refinement steps: 1
-#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)
-#>      8 intervals over 18 to 95
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, scale: relativity)
+#>      shape = spline; scale = relativity; 8 intervals over 18 to 95
 
 autoplot(
   refinement,
@@ -189,7 +236,7 @@ autoplot(
 )
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-6-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-7-1.png)
 
 This is a **pre-refit** plot. It compares the original fitted effect
 with the proposed smooth structure. The GLM has not yet been estimated
@@ -238,7 +285,7 @@ explicit_age_refinement <- refinement |>
 autoplot(explicit_age_refinement, variable = "age_band", x_max = 90)
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-7-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-8-1.png)
 
 The stored edit redirects the selected interval through the supplied
 target values. This is appropriate when those values have a documented
@@ -267,7 +314,7 @@ autoplot(
 )
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-8-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-9-1.png)
 
 Here, `adjustment = 1.05` raises the middle of the selected region by up
 to 5% relative to the existing smoothing. The multiplier starts at 1 at
@@ -303,7 +350,7 @@ autoplot(
 )
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-9-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-10-1.png)
 
 Selecting `step = 2` would show the curve after the first edit only. The
 initial comparison line remains the result of the original
@@ -393,7 +440,7 @@ units of the source variable:
 autoplot(refinement, variable = "age_band")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-13-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-14-1.png)
 
 ``` r
 
@@ -406,7 +453,7 @@ autoplot(
 )
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-13-2.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-14-2.png)
 
 For each age where the comparison remains inside the smoothing range,
 the second plot calculates the percentage change from `R(age)` to
@@ -418,65 +465,37 @@ steps, and does not extrapolate. The increment is always supplied
 explicitly because a meaningful change depends on the units and
 practical interpretation of the source variable.
 
-### Optionally constraining local premium change
+### Inspecting proportional increments on the log-relativity scale
 
-For some continuous tariff variables, it may be appropriate to require
-that the percentage premium increase for a fixed additional amount
-remains constant or decreases along the curve. The constraint can be
-added to an existing smoothing specification:
-
-``` r
-
-constrained_refinement <- refinement |>
-  edit_smoothing(
-    model_variable = "age_band",
-    from = 30,
-    premium_change = "non_increasing",
-    premium_change_step = 5
-  )
-```
-
-This uses `R(x + 5) / R(x) - 1` from age 30 to the end of the supported
-smoothing range. Only comparisons for which both `x` and `x + 5` are
-inside that selected range are constrained. Supplying only `to` applies
-the condition from the beginning through that boundary; omitting both
-boundaries uses the full range. Later
-[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
-steps inherit the setting and its range unless it is replaced, or
-removed with `premium_change = "none"`. The same constraint can be
-supplied to
-[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
-for the full initial range.
-
-This condition is stronger than an increasing-concave shape. Concavity
-concerns absolute changes in the relativity; this option concerns
-percentage changes relative to the current relativity. It is an optional
-actuarial assumption whose relevance depends on the variable, portfolio
-and modelling objective.
-
-The imposed condition can be inspected with the same fixed increment:
+The log-scale specification expresses the shape assumption for the whole
+curve rather than for one specially selected increment. Its practical
+consequence can still be inspected at any meaningful fixed increment:
 
 ``` r
 
 autoplot(
-  constrained_refinement,
+  log_scale_refinement,
   variable = "age_band",
   type = "incremental_change",
   step = 5
 )
 ```
 
-This differs from
-[`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
-below, which compares `R(2x)` with `R(x)` and therefore answers a
-doubling question.
+![](refinement-workflow_files/figure-html/unnamed-chunk-15-1.png)
+
+At each age, this asks how much modelled premium changes when age
+increases by another five years. For an increasing-concave
+log-relativity smoothing, the displayed finite percentage change is flat
+or decreasing over its valid domain. The same fixed-step comparison can
+be shown at selected starting values with `premium_change(step = 5)`
+below.
 
 ### Interpreting the premium effect
 
 A relativity curve shows the shape of a continuous tariff effect, but
-its practical magnitude is not always immediately clear.
+its practical magnitude is not always immediately clear. By default,
 [`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
-reports how much the modelled premium changes when the source variable
+reports how much modelled premium changes when the source variable
 doubles from a selected starting value:
 
 ``` r
@@ -488,6 +507,7 @@ premium_change(
 )
 #> Premium change for age_policyholder
 #> 
+#> Comparison: doubling
 #> Basis: Effective smoothing curve
 #> 
 #>  From To Premium change
@@ -503,8 +523,50 @@ The helper uses the current effective smoothing, including preceding
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
 steps, and does not extrapolate beyond its supported range.
 
+Supplying `step` instead asks the corresponding fixed-increment
+question:
+
+``` r
+
+premium_change(
+  log_scale_refinement,
+  variable = "age_band",
+  at = seq(20, 60, by = 5),
+  step = 5
+)
+#> Premium change for age_policyholder
+#> 
+#> Increment: 5
+#> Basis: Effective smoothing curve
+#> 
+#>  From To Premium change
+#>    20 25          +0.0%
+#>    25 30          +0.0%
+#>    30 35          +0.0%
+#>    35 40          +0.0%
+#>    40 45          +0.0%
+#>    45 50          +0.0%
+#>    50 55          +0.0%
+#>    55 60          +0.0%
+#>    60 65          +0.0%
+```
+
+Each row now compares `R(age + 5)` with `R(age)`. This is the table
+equivalent of `autoplot(type = "incremental_change", step = 5)`: the
+table gives discrete comparisons at selected starting values, while the
+plot shows the same finite proportional change across the supported
+range. For an increasing-concave log-relativity smoothing, these
+fixed-step changes are flat or decreasing, subject to numerical
+tolerance.
+
+For an insured-amount smoothing, `step = 100000` would ask how much
+modelled premium changes for another 100,000 from each displayed
+starting value. It might, for example, compare 100,000 with 200,000,
+then 200,000 with 300,000. The increment is a finite practical
+comparison, not a derivative or slope.
+
 By default, `basis = "curve"` evaluates the continuous effective
-smoothing at the exact starting and doubled values. This is the
+smoothing at the exact starting and comparison values. This is the
 appropriate basis when the question concerns the shape or steepness of
 the smoothing itself. To review the premium effect of the implementable
 tariff classes instead, use:
@@ -519,6 +581,7 @@ premium_change(
 )
 #> Premium change for age_policyholder
 #> 
+#> Comparison: doubling
 #> Basis: Tariff segments
 #> 
 #>  From To Premium change
@@ -532,8 +595,8 @@ With `basis = "segments"`, the helper determines which effective tariff
 interval contains each value and compares the corresponding current
 segment relativities. The result can therefore be 0% when both values
 are in the same segment, even when the underlying curve increases within
-that range. A change can also occur discretely when doubling crosses a
-segment boundary. The two bases answer different questions: the curve
+that range. A change can also occur discretely when a comparison crosses
+a segment boundary. The two bases answer different questions: the curve
 describes the underlying smooth relationship, while the segments
 describe the tariff that would be applied.
 
@@ -603,7 +666,7 @@ removing them is not an unambiguous level restriction.
 autoplot(refinement, variable = "zip")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-20-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-21-1.png)
 
 Again, the plot shows the proposed restriction before
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
@@ -654,7 +717,7 @@ effects.
 autoplot(refinement, variable = "bm_group")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-22-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-23-1.png)
 
 This remains a pre-refit comparison: it shows the current estimated
 effect and the proposed shrunken structure stored in the refinement
@@ -737,7 +800,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-12 15:49:37 CEST
+#> Created: 2026-08-13 11:28:08 CEST
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -745,10 +808,10 @@ summary(refinement)
 #> Offset: log(exposure)
 #> 
 #> Refinement steps: 5
-#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)
-#>      8 intervals over 18 to 95
-#>   2. Smoothing edit: age_band (relative adjustment: 1.05 from 32 to 65, transition: inherited)
-#>      relative adjustment = 1.05; transition = inherited; cumulative from smoothing step 1
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, scale: relativity)
+#>      shape = spline; scale = relativity; 8 intervals over 18 to 95
+#>   2. Smoothing edit: age_band (relative adjustment: 1.05 from 32 to 65, transition: inherited, scale: relativity)
+#>      relative adjustment = 1.05; transition = inherited; scale = relativity; cumulative from smoothing step 1
 #>   3. Restriction: zip -> zip_restricted (4 levels)
 #>      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000
 #>   4. Shrinkage: bm_group (credibility: 0.9, weights: exposure, weighted mean preserved)
@@ -867,9 +930,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Prepared: 2026-08-12 15:49:37 CEST
-#> Refitted: 2026-08-12 15:49:40 CEST
-#> Audited: 2026-08-12 15:49:41 CEST
+#> Prepared: 2026-08-13 11:28:08 CEST
+#> Refitted: 2026-08-13 11:28:13 CEST
+#> Audited: 2026-08-13 11:28:13 CEST
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
@@ -880,10 +943,10 @@ summary(refinement_audit)
 #>       log(age_band_smooth) + log(exposure))
 #> 
 #> Refinement steps: 5
-#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5)
-#>      8 intervals over 18 to 95
-#>   2. Smoothing edit: age_band (relative adjustment: 1.05 from 32 to 65, transition: inherited)
-#>      relative adjustment = 1.05; transition = inherited; cumulative from smoothing step 1
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, scale: relativity)
+#>      shape = spline; scale = relativity; 8 intervals over 18 to 95
+#>   2. Smoothing edit: age_band (relative adjustment: 1.05 from 32 to 65, transition: inherited, scale: relativity)
+#>      relative adjustment = 1.05; transition = inherited; scale = relativity; cumulative from smoothing step 1
 #>   3. Restriction: zip -> zip_restricted (4 levels)
 #>      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000
 #>   4. Shrinkage: bm_group (credibility: 0.9, weights: exposure, weighted mean preserved)

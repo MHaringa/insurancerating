@@ -88,6 +88,101 @@ testthat::test_that("premium_change evaluates the effective smoothing line", {
   )
 })
 
+testthat::test_that("explicit doubling preserves the default comparison", {
+  objects <- premium_change_objects()
+  implicit <- premium_change(objects$initial, at = c(20, 25, 30))
+  explicit <- premium_change(
+    objects$initial, at = c(20, 25, 30), change = "double"
+  )
+
+  testthat::expect_equal(implicit, explicit)
+  testthat::expect_identical(attr(explicit, "comparison"), "double")
+  testthat::expect_null(attr(explicit, "step"))
+  testthat::expect_identical(explicit$to, 2 * explicit$from)
+})
+
+testthat::test_that("fixed-step comparisons use the effective smoothing ratio", {
+  objects <- premium_change_objects()
+  result <- premium_change(objects$initial, at = c(20, 25, 30), step = 5)
+  state <- preview_refinement(objects$initial, 1)$state$smoothing_states$step_1
+  expected <- insurancerating:::.incremental_premium_change(
+    state$current_line, step = 5, at = result$from
+  )
+
+  testthat::expect_identical(result$to, result$from + 5)
+  testthat::expect_equal(result$relativity_from, expected$relativity_from)
+  testthat::expect_equal(result$relativity_to, expected$relativity_to)
+  testthat::expect_equal(result$premium_change, expected$incremental_change)
+  testthat::expect_identical(attr(result, "comparison"), "step")
+  testthat::expect_identical(attr(result, "step"), 5)
+})
+
+testthat::test_that("fixed-step comparisons validate instructions and range", {
+  objects <- premium_change_objects()
+  for (invalid in list(0, -1, NA_real_, Inf, "5", c(5, 10))) {
+    testthat::expect_error(
+      premium_change(objects$initial, at = 20, step = invalid),
+      "positive finite numeric"
+    )
+  }
+  testthat::expect_error(
+    premium_change(objects$initial, at = 20, change = "double", step = 5),
+    "not both"
+  )
+  testthat::expect_error(
+    premium_change(objects$initial, change = "half"),
+    'must be "double"'
+  )
+  testthat::expect_error(
+    premium_change(objects$initial, at = 75, step = 5),
+    "fixed-step comparison.*never extrapolates"
+  )
+})
+
+testthat::test_that("automatic fixed-step points remain supported", {
+  objects <- premium_change_objects()
+  result <- premium_change(objects$initial, step = 10)
+
+  testthat::expect_lte(length(unique(result$from)), 6L)
+  testthat::expect_gte(length(unique(result$from)), 5L)
+  testthat::expect_true(all(result$to == result$from + 10))
+  testthat::expect_true(all(result$from >= 15))
+  testthat::expect_true(all(result$to <= 75))
+})
+
+testthat::test_that("fixed-step comparisons support edits and history", {
+  objects <- premium_change_objects()
+  comparison <- premium_change(
+    objects$edited, at = c(20, 25, 30), step = 5, steps = c(1, 2)
+  )
+
+  testthat::expect_identical(unique(comparison$step_label),
+                             c("Step 1", "Step 2"))
+  wide <- insurancerating:::.premium_change_wide(comparison)
+  testthat::expect_named(wide,
+                         c("from", "to", "Step 1", "Step 2", "Difference"))
+  testthat::expect_equal(wide$Difference, wide$`Step 2` - wide$`Step 1`)
+})
+
+testthat::test_that("fixed-step mode supports log-relativity smoothing", {
+  objects <- premium_change_objects()
+  log_refinement <- prepare_refinement(objects$model, objects$portfolio) |>
+    add_smoothing(
+      model_variable = "age_band",
+      source_variable = "age",
+      breaks = seq(15, 75, by = 5),
+      smoothing = "increasing_concave",
+      scale = "log_relativity",
+      k = 4,
+      weights = "exposure"
+    )
+  result <- premium_change(
+    log_refinement, at = seq(20, 60, by = 5), step = 5
+  )
+
+  testthat::expect_true(all(diff(result$premium_change) <= 1e-7))
+})
+
 testthat::test_that("segment basis uses effective tariff interval relativities", {
   objects <- premium_change_objects()
   result <- premium_change(
@@ -237,10 +332,15 @@ testthat::test_that("premium_change has concise print and gt methods", {
   two <- premium_change(objects$edited, at = c(20, 25), steps = c(1, 2))
 
   testthat::expect_output(print(one), "Premium change for age")
+  testthat::expect_output(print(one), "Comparison: doubling")
   testthat::expect_output(print(one), "Premium change")
   testthat::expect_output(print(two), "Difference")
+
+  fixed <- premium_change(objects$initial, at = c(20, 25), step = 5)
+  testthat::expect_output(print(fixed), "Increment: 5")
 
   testthat::skip_if_not_installed("gt")
   testthat::expect_s3_class(as_gt(one), "gt_tbl")
   testthat::expect_s3_class(as_gt(two), "gt_tbl")
+  testthat::expect_s3_class(as_gt(fixed), "gt_tbl")
 })

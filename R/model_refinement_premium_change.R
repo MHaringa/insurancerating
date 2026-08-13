@@ -2,14 +2,21 @@
 #'
 #' @description
 #' Translate an effective smoothing curve in a refinement specification into
-#' the modelled premium change when its continuous source variable doubles.
-#' For a multiplicative relativity curve \eqn{R(x)}, the reported change is
-#' \eqn{R(2x) / R(x) - 1}.
+#' concrete modelled-premium comparisons. By default, each selected value is
+#' compared with twice that value. Supplying `step` instead compares each value
+#' with a fixed increment above it.
 #'
 #' @details
 #' `premium_change()` is an interpretation helper for smoothing created with
 #' [add_smoothing()] and subsequently modified with [edit_smoothing()]. It is
 #' not a smoothing method and does not change the refinement specification.
+#'
+#' For a multiplicative relativity curve \eqn{R(x)}, doubling reports
+#' \eqn{R(2x) / R(x) - 1}. Fixed-step mode reports
+#' \eqn{R(x+h) / R(x) - 1}, where \eqn{h} is `step`. If total modelled premium
+#' can be written as \eqn{P(x,z)=C(z)R(x)}, all other multiplicative model
+#' effects \eqn{C(z)} cancel in this ratio. No particular policy profile is
+#' therefore required for the interpretation.
 #'
 #' The effective curve is reconstructed from the stored refinement history.
 #' Consequently, `steps = "current"` reflects all smoothing edits recorded up
@@ -20,20 +27,21 @@
 #' With the default `basis = "curve"`, evaluation uses the continuous effective
 #' smoothing line retained by the refinement system. It therefore describes
 #' the shape and steepness of the estimated or edited curve at exactly \eqn{x}
-#' and \eqn{2x}; it does not use neighbouring tariff-segment relativities.
+#' and the corresponding comparison value; it does not use neighbouring
+#' tariff-segment relativities.
 #'
 #' With `basis = "segments"`, both values are assigned to the effective tariff
 #' intervals created by the smoothing. Their current segment relativities are
 #' compared. This describes the premium effect of the implementable segmented
 #' tariff. The result can be zero when both values fall in the same segment and
-#' can change discretely when doubling crosses a segment boundary.
+#' can change discretely when the comparison crosses a segment boundary.
 #'
 #' Values are never extrapolated. When `at = NULL`, six representative starting
-#' values are selected from the common range for which both \eqn{x} and
-#' \eqn{2x} are supported in every selected refinement state.
+#' values are selected from the common range for which both the starting and
+#' comparison values are supported in every selected refinement state.
 #'
 #' Multiplying an entire curve by a common rebasing constant does not alter the
-#' result because that constant cancels in \eqn{R(2x) / R(x)}.
+#' result because that constant cancels in the relativity ratio.
 #'
 #' @param x For `premium_change()`, a `rating_refinement` object containing at
 #'   least one smoothing step. For `as_gt()`, an object returned by
@@ -41,10 +49,17 @@
 #' @param variable Optional character string identifying the smoothed model
 #'   variable or its continuous source variable. This may be omitted when the
 #'   refinement contains exactly one smoothing lineage.
-#' @param at Optional positive numeric vector of starting values. Each value and
-#'   its doubled value must lie inside the supported smoothing range of every
-#'   selected refinement state. If `NULL`, six representative values are
-#'   selected automatically.
+#' @param at Optional numeric vector of starting values. Each starting and
+#'   comparison value must lie inside the supported smoothing range of every
+#'   selected refinement state. Doubling retains the existing requirement that
+#'   starting values are positive. If `NULL`, approximately six representative
+#'   values are selected automatically.
+#' @param change Character comparison mode. `"double"` (default) compares
+#'   \eqn{x} with \eqn{2x}. When `step` is supplied, omit `change`; fixed-step
+#'   mode is then selected automatically.
+#' @param step Optional positive finite numeric increment. When supplied,
+#'   compares \eqn{x} with \eqn{x + step}. It cannot be combined with an
+#'   explicitly supplied `change` instruction.
 #' @param steps Refinement states to evaluate. Use `"current"` for the latest
 #'   state, `"all"` for every state from the selected smoothing onwards, or a
 #'   numeric vector such as `c(1, 6)` for stored refinement positions.
@@ -56,7 +71,7 @@
 #'   currently accepted.
 #'
 #' @return A tibble with class `premium_change` in long format, containing the
-#'   variable, refinement state, starting and doubled values, evaluated
+#'   variable, refinement state, starting and comparison values, evaluated
 #'   relativities, and premium change as a decimal.
 #'
 #' @seealso [add_smoothing()], [edit_smoothing()],
@@ -89,6 +104,7 @@
 #'     weights = "exposure"
 #'   )
 #' premium_change(refinement, at = c(20, 25, 30))
+#' premium_change(refinement, at = c(20, 25, 30), step = 5)
 #' premium_change(refinement, at = c(20, 25, 30), basis = "segments")
 #'
 #' edited <- refinement |>
@@ -103,11 +119,18 @@
 #'
 #' @export
 premium_change <- function(x, variable = NULL, at = NULL,
+                           change = "double", step = NULL,
                            steps = "current",
                            basis = c("curve", "segments"), ...) {
+  change_missing <- missing(change)
   .check_dots_empty(...)
   .assert_refinement(x)
   basis <- match.arg(basis)
+  comparison <- .premium_change_comparison(
+    change = change,
+    step = step,
+    change_missing = change_missing
+  )
   lineage <- .premium_change_lineage(x, variable)
   selected_steps <- .premium_change_steps(x, steps, lineage$step_index)
   states <- lapply(selected_steps, function(step_index) {
@@ -131,24 +154,42 @@ premium_change <- function(x, variable = NULL, at = NULL,
     }
   }, numeric(2))
   common_min <- max(ranges[1, ])
-  valid_start_max <- min(ranges[2, ]) / 2
-  at <- if (is.null(at)) {
-    .premium_change_default_at(common_min, valid_start_max)
+  common_max <- min(ranges[2, ])
+  valid_start_max <- if (identical(comparison$mode, "double")) {
+    common_max / 2
   } else {
-    .premium_change_validate_at(at, common_min, valid_start_max)
+    common_max - comparison$step
   }
+  at <- if (is.null(at)) {
+    .premium_change_default_at(
+      common_min, valid_start_max,
+      comparison = comparison
+    )
+  } else {
+    .premium_change_validate_at(
+      at, common_min, valid_start_max,
+      comparison = comparison
+    )
+  }
+  to <- .premium_change_to(at, comparison)
 
   rows <- lapply(seq_along(selected_steps), function(i) {
     step_index <- selected_steps[i]
-    relativity_from <- if (identical(basis, "curve")) {
-      .premium_change_evaluate(states[[i]]$current_line, at)
+    values <- if (identical(basis, "curve")) {
+      .premium_change_ratio_curve(
+        states[[i]]$current_line,
+        from = at,
+        to = to,
+        scale = states[[i]]$scale %||% "relativity"
+      )
     } else {
-      .premium_change_evaluate_segments(states[[i]]$current_new, at)
-    }
-    relativity_to <- if (identical(basis, "curve")) {
-      .premium_change_evaluate(states[[i]]$current_line, 2 * at)
-    } else {
-      .premium_change_evaluate_segments(states[[i]]$current_new, 2 * at)
+      .premium_change_ratio(
+        evaluator = function(values) {
+          .premium_change_evaluate_segments(states[[i]]$current_new, values)
+        },
+        from = at,
+        to = to
+      )
     }
     data.frame(
       variable = lineage$source_variable,
@@ -156,10 +197,10 @@ premium_change <- function(x, variable = NULL, at = NULL,
       step_id = x$steps[[step_index]]$id,
       step_label = paste0("Step ", step_index),
       from = at,
-      to = 2 * at,
-      relativity_from = relativity_from,
-      relativity_to = relativity_to,
-      premium_change = relativity_to / relativity_from - 1,
+      to = to,
+      relativity_from = values$relativity_from,
+      relativity_to = values$relativity_to,
+      premium_change = values$premium_change,
       stringsAsFactors = FALSE
     )
   })
@@ -170,7 +211,35 @@ premium_change <- function(x, variable = NULL, at = NULL,
   attr(out, "source_variable") <- lineage$source_variable
   attr(out, "selected_steps") <- selected_steps
   attr(out, "basis") <- basis
+  attr(out, "comparison") <- comparison$mode
+  attr(out, "step") <- comparison$step
   out
+}
+
+.premium_change_comparison <- function(change, step, change_missing = FALSE) {
+  if (!is.null(step)) {
+    if (!isTRUE(change_missing)) {
+      stop(
+        "Supply either `change = \"double\"` or `step`, not both. Omit ",
+        "`change` when requesting a fixed-step comparison.",
+        call. = FALSE
+      )
+    }
+    if (!is.numeric(step) || length(step) != 1L || is.na(step) ||
+        !is.finite(step) || step <= 0) {
+      stop("`step` must be one positive finite numeric value.", call. = FALSE)
+    }
+    return(list(mode = "step", step = as.numeric(step)))
+  }
+  if (!is.character(change) || length(change) != 1L || is.na(change) ||
+      !identical(change, "double")) {
+    stop("`change` must be \"double\".", call. = FALSE)
+  }
+  list(mode = "double", step = NULL)
+}
+
+.premium_change_to <- function(from, comparison) {
+  if (identical(comparison$mode, "double")) 2 * from else from + comparison$step
 }
 
 .premium_change_lineage <- function(ref, variable) {
@@ -329,22 +398,40 @@ premium_change <- function(x, variable = NULL, at = NULL,
   }, numeric(1))
 }
 
-.premium_change_validate_at <- function(at, common_min, valid_start_max) {
+.premium_change_validate_at <- function(at, common_min, valid_start_max,
+                                        comparison) {
   if (!is.numeric(at) || length(at) == 0L || anyNA(at) ||
-      any(!is.finite(at)) || any(at <= 0)) {
-    stop("`at` must contain finite numeric values greater than zero.",
-         call. = FALSE)
+      any(!is.finite(at)) ||
+      (identical(comparison$mode, "double") && any(at <= 0))) {
+    stop(
+      if (identical(comparison$mode, "double")) {
+        "`at` must contain finite numeric values greater than zero."
+      } else {
+        "`at` must contain finite numeric values."
+      },
+      call. = FALSE
+    )
   }
   at <- sort(unique(as.numeric(at)))
   tolerance <- sqrt(.Machine$double.eps) *
     max(1, abs(common_min), abs(valid_start_max))
   invalid <- at < common_min - tolerance | at > valid_start_max + tolerance
   if (any(invalid)) {
+    comparison_label <- if (identical(comparison$mode, "double")) {
+      "doubling"
+    } else {
+      paste0("fixed-step comparison with `step = ",
+             format(comparison$step, trim = TRUE, scientific = FALSE), "`")
+    }
     stop(
-      "The requested doubling for `at = ",
+      "The requested ", comparison_label, " for `at = ",
       paste(format(at[invalid], trim = TRUE, scientific = FALSE), collapse = ", "),
       "` falls outside the supported smoothing range. Use starting values from ",
-      format(max(common_min, .Machine$double.eps), trim = TRUE, scientific = FALSE),
+      format(if (identical(comparison$mode, "double")) {
+        max(common_min, .Machine$double.eps)
+      } else {
+        common_min
+      }, trim = TRUE, scientific = FALSE),
       " through ", format(valid_start_max, trim = TRUE, scientific = FALSE),
       "; `premium_change()` never extrapolates.",
       call. = FALSE
@@ -353,12 +440,25 @@ premium_change <- function(x, variable = NULL, at = NULL,
   at
 }
 
-.premium_change_default_at <- function(common_min, valid_start_max) {
-  lower <- max(common_min, .Machine$double.eps)
+.premium_change_default_at <- function(common_min, valid_start_max,
+                                       comparison) {
+  lower <- if (identical(comparison$mode, "double")) {
+    max(common_min, .Machine$double.eps)
+  } else {
+    common_min
+  }
   if (!is.finite(lower) || !is.finite(valid_start_max) ||
       valid_start_max < lower) {
     stop(
-      "No positive starting value can be doubled within the common supported smoothing range.",
+      if (identical(comparison$mode, "double")) {
+        "No positive starting value can be doubled within the common supported smoothing range."
+      } else {
+        paste0(
+          "No starting value can be increased by `step = ",
+          format(comparison$step, trim = TRUE, scientific = FALSE),
+          "` within the common supported smoothing range."
+        )
+      },
       call. = FALSE
     )
   }
@@ -366,14 +466,49 @@ premium_change <- function(x, variable = NULL, at = NULL,
   unique(as.numeric(seq(lower, valid_start_max, length.out = 6L)))
 }
 
-.premium_change_evaluate <- function(line, values) {
+.premium_change_evaluate <- function(line, values, scale = NULL) {
   xy <- .premium_change_line_xy(line)
-  stats::approx(xy$x, xy$y, xout = values, method = "linear",
-                ties = "ordered", rule = 1)$y
+  scale <- scale %||% attr(line, "smoothing_scale", exact = TRUE) %||%
+    "relativity"
+  scale <- .validate_smoothing_scale(scale)
+  if (identical(scale, "log_relativity")) {
+    if (any(xy$y <= 0)) {
+      stop("Log-relativity smoothing requires positive relativities.",
+           call. = FALSE)
+    }
+    return(exp(stats::approx(
+      xy$x, log(xy$y), xout = values, method = "linear",
+      ties = "ordered", rule = 1
+    )$y))
+  }
+  stats::approx(
+    xy$x, xy$y, xout = values, method = "linear",
+    ties = "ordered", rule = 1
+  )$y
+}
+
+.premium_change_ratio <- function(evaluator, from, to) {
+  relativity_from <- evaluator(from)
+  relativity_to <- evaluator(to)
+  list(
+    relativity_from = relativity_from,
+    relativity_to = relativity_to,
+    premium_change = relativity_to / relativity_from - 1
+  )
+}
+
+.premium_change_ratio_curve <- function(line, from, to, scale = NULL) {
+  .premium_change_ratio(
+    evaluator = function(values) {
+      .premium_change_evaluate(line, values, scale = scale)
+    },
+    from = from,
+    to = to
+  )
 }
 
 .incremental_premium_change <- function(line, step, at = NULL,
-                                        percent = FALSE) {
+                                        percent = FALSE, scale = NULL) {
   if (!is.numeric(step) || length(step) != 1L || is.na(step) ||
       !is.finite(step) || step <= 0) {
     stop("`step` must be one positive finite numeric value.", call. = FALSE)
@@ -390,11 +525,13 @@ premium_change <- function(x, variable = NULL, at = NULL,
       call. = FALSE
     )
   }
-  from <- .premium_change_evaluate(line, at)
-  to <- .premium_change_evaluate(line, at + step)
-  change <- to / from - 1
+  values <- .premium_change_ratio_curve(
+    line, from = at, to = at + step, scale = scale
+  )
+  change <- values$premium_change
   if (isTRUE(percent)) change <- 100 * change
-  data.frame(x = at, relativity_from = from, relativity_to = to,
+  data.frame(x = at, relativity_from = values$relativity_from,
+             relativity_to = values$relativity_to,
              incremental_change = change)
 }
 
@@ -430,6 +567,14 @@ print.premium_change <- function(x, ...) {
   variable <- attr(x, "source_variable", exact = TRUE) %||%
     unique(x$variable)[1L]
   cat("Premium change for ", variable, "\n\n", sep = "")
+  comparison <- attr(x, "comparison", exact = TRUE) %||% "double"
+  if (identical(comparison, "step")) {
+    cat("Increment: ", .premium_change_format_number(
+      attr(x, "step", exact = TRUE)
+    ), "\n", sep = "")
+  } else {
+    cat("Comparison: doubling\n")
+  }
   basis <- attr(x, "basis", exact = TRUE) %||% unique(x$basis)[1L] %||% "curve"
   cat("Basis: ", if (identical(basis, "segments")) {
     "Tariff segments"
@@ -517,8 +662,17 @@ as_gt.premium_change <- function(x, locale = "en-US", decimals = 1,
   label_args <- stats::setNames(as.list(names(data)), names(data))
   out <- do.call(gt::cols_label, c(list(.data = out), label_args))
   if (is.null(title)) {
-    title <- paste("Premium change for",
-                   attr(x, "source_variable", exact = TRUE))
+    variable <- attr(x, "source_variable", exact = TRUE)
+    comparison <- attr(x, "comparison", exact = TRUE) %||% "double"
+    title <- if (identical(comparison, "step")) {
+      paste0(
+        "Premium change for +",
+        .premium_change_format_number(attr(x, "step", exact = TRUE)),
+        " ", variable
+      )
+    } else {
+      paste("Premium effect of doubling", variable)
+    }
   }
   if (is.null(subtitle)) {
     basis <- attr(x, "basis", exact = TRUE) %||% unique(x$basis)[1L] %||%

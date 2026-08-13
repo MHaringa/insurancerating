@@ -13,8 +13,7 @@ add_smoothing(
   k = NULL,
   degree = NULL,
   weights = NULL,
-  premium_change = NULL,
-  premium_change_step = NULL,
+  scale = "relativity",
   tariff_class = NULL,
   rating_variable = NULL,
   x_cut = NULL,
@@ -73,16 +72,13 @@ grouped model points.}
 \item{weights}{Optional character string. Numeric volume column, usually
 exposure, used to weight the grouped GLM relativities during smoothing.}
 
-\item{premium_change}{Optional fixed-increment premium-change constraint.
-\code{NULL} (default) leaves the fitted smoothing unchanged.
-\code{"non_increasing"} requires \code{R(x + h) / R(x) - 1} to remain constant or
-decrease as \code{x} increases, where \code{h} is \code{premium_change_step}. This is an
-additional condition and is not implied by an increasing-concave shape.}
-
-\item{premium_change_step}{Optional positive numeric increment \code{h}, in the
-units of \code{source_variable}. Required when \code{premium_change = "non_increasing"}. The condition is evaluated only where both \code{x} and
-\code{x + h} lie inside the supported smoothing range; no extrapolation is
-used.}
+\item{scale}{Character string selecting the scale on which the smoothing and
+any shape constraint are fitted. \code{"relativity"} (default) preserves the
+existing behaviour and constrains \code{R(x)} directly. \code{"log_relativity"}
+constrains \code{log(R(x))} and transforms the result back with \code{exp()}, so the
+stored and refitted tariff effects remain ordinary positive relativities.
+See Details for the distinction between absolute and proportional
+increments.}
 
 \item{tariff_class, rating_variable}{Deprecated. Use \code{model_variable} and
 \code{source_variable} instead.}
@@ -185,6 +181,34 @@ The former short codes \code{"mpi"}, \code{"mpd"}, \code{"cx"}, \code{"cv"}, \co
 \code{"micv"}, \code{"mdcx"} and \code{"mdcv"} remain accepted as compatibility aliases.
 New code should use the readable method names above. Both forms produce the
 same smoothing specification.
+}
+
+\subsection{Choosing the smoothing scale}{
+
+\code{scale} determines the actuarial meaning of a shape constraint. With
+\code{scale = "relativity"}, the smoother is fitted to the ordinary tariff
+relativity \eqn{R(x)}. An increasing-concave specification therefore lets
+the relativity rise while its absolute increments become smaller. This is
+the default and preserves the interpretation of existing calls.
+
+With \code{scale = "log_relativity"}, the same specification is fitted to
+\eqn{\log R(x)} and transformed back with \code{exp()}. The resulting tariff
+still contains ordinary positive multiplicative relativities. An
+increasing-concave smooth on this scale implies diminishing proportional
+premium increments: for any fixed admissible increment \eqn{h},
+\eqn{R(x+h)/R(x)-1} cannot increase as \eqn{x} increases. The standard
+relativity plot shows the overall effect; \code{autoplot(type = "incremental_change", step = h)} displays this finite proportional change
+directly.
+
+For example, an insured-amount effect may still increase while another
+100,000 produces progressively smaller percentage increases at higher sums
+insured. This can be a useful regularisation assumption where observations
+become sparse in the upper tail. It is not a general actuarial requirement:
+credible evidence of accelerating proportional risk, structural differences
+at high values, material interactions, or a variable without a meaningful
+positive scale may justify \code{scale = "relativity"}, a less restrictive
+smoothing method, or a revised model specification. Shape constraints
+should stabilise poorly supported behaviour, not override strong evidence.
 }
 
 \subsection{Basis dimension and polynomial degree}{
@@ -290,6 +314,20 @@ increasing_ref <- prepare_refinement(burn_unrestricted) |>
 
 # Limit the visible range without changing the fitted smoothing curve.
 autoplot(ref, x_max = 80, y_max = 1.5)
+
+# On the log-relativity scale, increasing concavity means that percentage
+# premium increases over a fixed source-variable increment do not increase.
+log_scale_ref <- prepare_refinement(burn_unrestricted) |>
+  add_smoothing(
+    model_variable = "age_policyholder_freq_cat",
+    source_variable = "age_policyholder",
+    breaks = c(seq(18, 93, 5), 95),
+    smoothing = "increasing_concave",
+    scale = "log_relativity",
+    k = 6,
+    weights = "exposure"
+  )
+autoplot(log_scale_ref, type = "incremental_change", step = 5)
 }
 
 }

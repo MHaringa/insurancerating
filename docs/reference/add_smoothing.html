@@ -64,8 +64,7 @@ GLM.</p>
 <span>  k <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  degree <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  premium_change <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  premium_change_step <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  scale <span class="op">=</span> <span class="st">"relativity"</span>,</span>
 <span>  tariff_class <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rating_variable <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  x_cut <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -144,19 +143,14 @@ grouped model points.</p></dd>
 exposure, used to weight the grouped GLM relativities during smoothing.</p></dd>
 
 
-<dt id="arg-premium-change">premium_change<a class="anchor" aria-label="anchor" href="#arg-premium-change"></a></dt>
-<dd><p>Optional fixed-increment premium-change constraint.
-<code>NULL</code> (default) leaves the fitted smoothing unchanged.
-<code>"non_increasing"</code> requires <code>R(x + h) / R(x) - 1</code> to remain constant or
-decrease as <code>x</code> increases, where <code>h</code> is <code>premium_change_step</code>. This is an
-additional condition and is not implied by an increasing-concave shape.</p></dd>
-
-
-<dt id="arg-premium-change-step">premium_change_step<a class="anchor" aria-label="anchor" href="#arg-premium-change-step"></a></dt>
-<dd><p>Optional positive numeric increment <code>h</code>, in the
-units of <code>source_variable</code>. Required when <code>premium_change = "non_increasing"</code>. The condition is evaluated only where both <code>x</code> and
-<code>x + h</code> lie inside the supported smoothing range; no extrapolation is
-used.</p></dd>
+<dt id="arg-scale">scale<a class="anchor" aria-label="anchor" href="#arg-scale"></a></dt>
+<dd><p>Character string selecting the scale on which the smoothing and
+any shape constraint are fitted. <code>"relativity"</code> (default) preserves the
+existing behaviour and constrains <code>R(x)</code> directly. <code>"log_relativity"</code>
+constrains <code>log(R(x))</code> and transforms the result back with <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp()</a></code>, so the
+stored and refitted tariff effects remain ordinary positive relativities.
+See Details for the distinction between absolute and proportional
+increments.</p></dd>
 
 
 <dt id="arg-tariff-class-rating-variable">tariff_class, rating_variable<a class="anchor" aria-label="anchor" href="#arg-tariff-class-rating-variable"></a></dt>
@@ -273,6 +267,34 @@ same smoothing specification.</p>
 </div>
 
 <div class="section">
+<h3 id="choosing-the-smoothing-scale">Choosing the smoothing scale<a class="anchor" aria-label="anchor" href="#choosing-the-smoothing-scale"></a></h3>
+
+
+<p><code>scale</code> determines the actuarial meaning of a shape constraint. With
+<code>scale = "relativity"</code>, the smoother is fitted to the ordinary tariff
+relativity \(R(x)\). An increasing-concave specification therefore lets
+the relativity rise while its absolute increments become smaller. This is
+the default and preserves the interpretation of existing calls.</p>
+<p>With <code>scale = "log_relativity"</code>, the same specification is fitted to
+\(\log R(x)\) and transformed back with <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp()</a></code>. The resulting tariff
+still contains ordinary positive multiplicative relativities. An
+increasing-concave smooth on this scale implies diminishing proportional
+premium increments: for any fixed admissible increment \(h\),
+\(R(x+h)/R(x)-1\) cannot increase as \(x\) increases. The standard
+relativity plot shows the overall effect; <code>autoplot(type = "incremental_change", step = h)</code> displays this finite proportional change
+directly.</p>
+<p>For example, an insured-amount effect may still increase while another
+100,000 produces progressively smaller percentage increases at higher sums
+insured. This can be a useful regularisation assumption where observations
+become sparse in the upper tail. It is not a general actuarial requirement:
+credible evidence of accelerating proportional risk, structural differences
+at high values, material interactions, or a variable without a meaningful
+positive scale may justify <code>scale = "relativity"</code>, a less restrictive
+smoothing method, or a revised model specification. Shape constraints
+should stabilise poorly supported behaviour, not override strong evidence.</p>
+</div>
+
+<div class="section">
 <h3 id="basis-dimension-and-polynomial-degree">Basis dimension and polynomial degree<a class="anchor" aria-label="anchor" href="#basis-dimension-and-polynomial-degree"></a></h3>
 
 
@@ -386,6 +408,20 @@ compatibility.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Limit the visible range without changing the fitted smoothing curve.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">ref</span>, x_max <span class="op">=</span> <span class="fl">80</span>, y_max <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># On the log-relativity scale, increasing concavity means that percentage</span></span></span>
+<span class="r-in"><span><span class="co"># premium increases over a fixed source-variable increment do not increase.</span></span></span>
+<span class="r-in"><span><span class="va">log_scale_ref</span> <span class="op">&lt;-</span> <span class="fu"><a href="prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">burn_unrestricted</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">add_smoothing</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    model_variable <span class="op">=</span> <span class="st">"age_policyholder_freq_cat"</span>,</span></span>
+<span class="r-in"><span>    source_variable <span class="op">=</span> <span class="st">"age_policyholder"</span>,</span></span>
+<span class="r-in"><span>    breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">93</span>, <span class="fl">5</span><span class="op">)</span>, <span class="fl">95</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    smoothing <span class="op">=</span> <span class="st">"increasing_concave"</span>,</span></span>
+<span class="r-in"><span>    scale <span class="op">=</span> <span class="st">"log_relativity"</span>,</span></span>
+<span class="r-in"><span>    k <span class="op">=</span> <span class="fl">6</span>,</span></span>
+<span class="r-in"><span>    weights <span class="op">=</span> <span class="st">"exposure"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">log_scale_ref</span>, type <span class="op">=</span> <span class="st">"incremental_change"</span>, step <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

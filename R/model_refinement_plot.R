@@ -142,6 +142,9 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #' change over the user-supplied increment. Values for which `x + step` falls
 #' outside the smoothing range are omitted; the curve is never extrapolated.
 #' For this plot type, `step` is the increment rather than a refinement index.
+#' The calculation is identical to [premium_change()] with the same `step`;
+#' the plot displays it over the supported range, while `premium_change()`
+#' returns a table for selected starting values.
 #'
 #' ## Actuarial interpretation
 #'
@@ -187,6 +190,11 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
 #'   [add_smoothing()] step. The other smoothing line shows the cumulative curve
 #'   at the selected `step`. Default is `FALSE`. This argument does not alter
 #'   the refinement specification or [refit()].
+#' @param show_segments Logical. For a smoothing or smoothing-edit relativity
+#'   plot, whether to show the horizontal relativities and boundary points of
+#'   the new tariff segments. Set this to `FALSE` to inspect the continuous
+#'   smoothing curve without the segmented tariff representation. The original
+#'   fitted model effects remain visible. Default is `TRUE`.
 #' @param remove_underscores Logical; if `TRUE`, underscores are replaced by
 #'   spaces in the x-axis label. Default is `FALSE`.
 #' @param rotate_angle Optional numeric value for the angle of x-axis labels.
@@ -232,6 +240,7 @@ autoplot.rating_refinement <- function(object,
                                        x_max = NULL,
                                        y_max = NULL,
                                        show_initial_smoothing = FALSE,
+                                       show_segments = TRUE,
                                        remove_underscores = FALSE,
                                        rotate_angle = NULL,
                                        custom_theme = NULL,
@@ -242,6 +251,7 @@ autoplot.rating_refinement <- function(object,
   .assert_single_numeric(x_max, "x_max", allow_null = TRUE)
   .assert_single_numeric(y_max, "y_max", allow_null = TRUE)
   .assert_single_logical(show_initial_smoothing, "show_initial_smoothing")
+  .assert_single_logical(show_segments, "show_segments")
 
   if (length(object$steps) == 0) {
     stop("No refinement steps available to plot.", call. = FALSE)
@@ -264,6 +274,12 @@ autoplot.rating_refinement <- function(object,
       stop(
         "`show_initial_smoothing` is not available for ",
         "`type = \"incremental_change\"`.",
+        call. = FALSE
+      )
+    }
+    if (!isTRUE(show_segments)) {
+      stop(
+        "`show_segments` is only available for smoothing relativity plots.",
         call. = FALSE
       )
     }
@@ -294,6 +310,7 @@ autoplot.rating_refinement <- function(object,
         x_max = x_max,
         y_max = y_max,
         show_initial_smoothing = show_initial_smoothing,
+        show_segments = show_segments,
         ...
       )
     )
@@ -305,6 +322,12 @@ autoplot.rating_refinement <- function(object,
       stop(
         "`show_initial_smoothing` is only available when plotting a ",
         "smoothing step.",
+        call. = FALSE
+      )
+    }
+    if (!isTRUE(show_segments)) {
+      stop(
+        "`show_segments` is only available when plotting a smoothing step.",
         call. = FALSE
       )
     }
@@ -434,7 +457,8 @@ autoplot.rating_refinement <- function(object,
     )
   }
   plot_data <- .incremental_premium_change(
-    line = line, step = increment, at = valid_x, percent = TRUE
+    line = line, step = increment, at = valid_x, percent = TRUE,
+    scale = state$smoothing_scale %||% "relativity"
   )
 
   variable <- names(line)[1L]
@@ -446,6 +470,7 @@ autoplot.rating_refinement <- function(object,
   formatted_increment <- format(
     increment,
     big.mark = ",",
+    decimal.mark = ".",
     scientific = FALSE,
     trim = TRUE
   )
@@ -459,8 +484,10 @@ autoplot.rating_refinement <- function(object,
       ...
     ) +
     ggplot2::labs(
-      title = paste0(
-        "Premium change for +", formatted_increment, " ", axis_variable
+      title = "Incremental premium change",
+      subtitle = paste0(
+        "Modelled premium change for each additional ", formatted_increment,
+        " units of ", axis_variable
       ),
       x = axis_variable,
       y = "Premium change (%)"
@@ -489,6 +516,7 @@ autoplot.rating_refinement <- function(object,
                                  x_max = NULL,
                                  y_max = NULL,
                                  show_initial_smoothing = FALSE,
+                                 show_segments = TRUE,
                                  ...) {
   rf2 <- state$borders
   new <- state$new
@@ -510,6 +538,14 @@ autoplot.rating_refinement <- function(object,
   new_start_closed <- new[new$start_oc == "closed", , drop = FALSE]
   new_end_open     <- new[new$end_oc == "open", , drop = FALSE]
   new_end_closed   <- new[new$end_oc == "closed", , drop = FALSE]
+
+  if (!isTRUE(show_segments)) {
+    new <- new[0, , drop = FALSE]
+    new_start_open <- new_start_open[0, , drop = FALSE]
+    new_start_closed <- new_start_closed[0, , drop = FALSE]
+    new_end_open <- new_end_open[0, , drop = FALSE]
+    new_end_closed <- new_end_closed[0, , drop = FALSE]
+  }
 
   x_name <- names(new_line)[1]
   names(new_line)[names(new_line) == x_name] <- "col1"
@@ -534,6 +570,10 @@ autoplot.rating_refinement <- function(object,
     "Model fit" = "Original fit",
     "New cluster" = "Clustered fit"
   )
+  if (!isTRUE(show_segments)) {
+    colour_values <- colour_values[names(colour_values) != "New cluster"]
+    colour_labels <- colour_labels[names(colour_labels) != "New cluster"]
+  }
   if (isTRUE(show_initial_smoothing)) {
     colour_values <- c(
       colour_values,
@@ -647,11 +687,13 @@ autoplot.rating_refinement <- function(object,
       guide = ggplot2::guide_legend(
         override.aes = list(
           shape = NA,
-          linetype = if (isTRUE(show_initial_smoothing)) {
-            c("solid", "solid", "solid", "dashed")
-          } else {
-            c("solid", "solid")
-          }
+          linetype = vapply(
+            names(colour_values),
+            function(label) {
+              if (identical(label, "Current smoothing")) "dashed" else "solid"
+            },
+            character(1)
+          )
         )
       )
     ) +

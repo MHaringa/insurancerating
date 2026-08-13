@@ -16,8 +16,7 @@ edit_smoothing(
   control_values = NULL,
   adjustment = NULL,
   transition = NULL,
-  premium_change = NULL,
-  premium_change_step = NULL,
+  scale = NULL,
   allow_extrapolation = FALSE,
   extrapolation_step = NULL
 )
@@ -39,9 +38,6 @@ original smoothing and appended after the existing workflow steps.}
 \item{from, to}{Optional numeric values giving the start and end of the
 source-variable interval to modify. For \code{adjustment}, either value may be
 omitted to use the beginning or end of the available smoothing range.
-With \code{premium_change = "non_increasing"}, these values also delimit the
-range over which the fixed-increment constraint applies: omitting \code{from}
-uses the beginning and omitting \code{to} uses the end of the supported range.
 Explicit target-value and control-point edits require both values.}
 
 \item{from_value, to_value}{Optional numeric values used to override the
@@ -64,15 +60,11 @@ smoothing specification. \code{"linear"} gives continuous linear transitions
 and \code{"step"} permits immediate jumps. Smoothing methods accepted by
 \code{\link[=add_smoothing]{add_smoothing()}} can be supplied as explicit structural overrides.}
 
-\item{premium_change}{Optional update to the fixed-increment premium-change
-constraint. \code{NULL} inherits the current setting, \code{"non_increasing"}
-imposes or replaces the constraint, and \code{"none"} removes it. A constraint
-can be updated without making a local curve edit.}
-
-\item{premium_change_step}{Positive numeric increment required with
-\code{premium_change = "non_increasing"}. It has the same units as the source
-variable and uses \code{R(x + h) / R(x) - 1}. Existing constraints and their
-increments and ranges are inherited when these arguments are omitted.}
+\item{scale}{Optional smoothing scale. \code{NULL} inherits the scale recorded by
+\code{\link[=add_smoothing]{add_smoothing()}}. Supplying the same value is allowed for clarity.
+Changing scale during an edit is deliberately rejected because that would
+reinterpret the previously fitted curve; rebuild the smoothing with
+\code{\link[=add_smoothing]{add_smoothing()}} instead.}
 
 \item{allow_extrapolation}{Logical. Whether edits may extend beyond the
 observed source-variable range.}
@@ -143,6 +135,12 @@ specification, edit that same refinement object, and call \code{\link[=refit]{re
 The previously fitted GLM remains unchanged. This retains the order and
 content of manual adjustments as part of the reproducible refinement
 specification.
+
+The smoothing scale is part of that specification. \code{scale = NULL} inherits
+the value recorded by \code{\link[=add_smoothing]{add_smoothing()}}, including \code{"log_relativity"}.
+Accepted edits and their transitions are assessed on that inherited scale.
+A scale change requires rebuilding the smoothing because changing it during
+an edit would reinterpret the curve that forms the basis of the edit.
 }
 }
 \examples{

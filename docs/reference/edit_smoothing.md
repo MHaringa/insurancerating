@@ -21,8 +21,7 @@ edit_smoothing(
   control_values = NULL,
   adjustment = NULL,
   transition = NULL,
-  premium_change = NULL,
-  premium_change_step = NULL,
+  scale = NULL,
   allow_extrapolation = FALSE,
   extrapolation_step = NULL
 )
@@ -55,11 +54,8 @@ edit_smoothing(
   Optional numeric values giving the start and end of the
   source-variable interval to modify. For `adjustment`, either value may
   be omitted to use the beginning or end of the available smoothing
-  range. With `premium_change = "non_increasing"`, these values also
-  delimit the range over which the fixed-increment constraint applies:
-  omitting `from` uses the beginning and omitting `to` uses the end of
-  the supported range. Explicit target-value and control-point edits
-  require both values.
+  range. Explicit target-value and control-point edits require both
+  values.
 
 - from_value, to_value:
 
@@ -89,20 +85,15 @@ edit_smoothing(
   [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   can be supplied as explicit structural overrides.
 
-- premium_change:
+- scale:
 
-  Optional update to the fixed-increment premium-change constraint.
-  `NULL` inherits the current setting, `"non_increasing"` imposes or
-  replaces the constraint, and `"none"` removes it. A constraint can be
-  updated without making a local curve edit.
-
-- premium_change_step:
-
-  Positive numeric increment required with
-  `premium_change = "non_increasing"`. It has the same units as the
-  source variable and uses `R(x + h) / R(x) - 1`. Existing constraints
-  and their increments and ranges are inherited when these arguments are
-  omitted.
+  Optional smoothing scale. `NULL` inherits the scale recorded by
+  [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md).
+  Supplying the same value is allowed for clarity. Changing scale during
+  an edit is deliberately rejected because that would reinterpret the
+  previously fitted curve; rebuild the smoothing with
+  [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+  instead.
 
 - allow_extrapolation:
 
@@ -191,6 +182,14 @@ and call
 again. The previously fitted GLM remains unchanged. This retains the
 order and content of manual adjustments as part of the reproducible
 refinement specification.
+
+The smoothing scale is part of that specification. `scale = NULL`
+inherits the value recorded by
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
+including `"log_relativity"`. Accepted edits and their transitions are
+assessed on that inherited scale. A scale change requires rebuilding the
+smoothing because changing it during an edit would reinterpret the curve
+that forms the basis of the edit.
 
 ## See also
 

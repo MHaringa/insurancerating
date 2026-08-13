@@ -18,6 +18,7 @@ autoplot(
   x_max = NULL,
   y_max = NULL,
   show_initial_smoothing = FALSE,
+  show_segments = TRUE,
   remove_underscores = FALSE,
   rotate_angle = NULL,
   custom_theme = NULL,
@@ -77,6 +78,14 @@ autoplot(
   refinement specification or
   [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
 
+- show_segments:
+
+  Logical. For a smoothing or smoothing-edit relativity plot, whether to
+  show the horizontal relativities and boundary points of the new tariff
+  segments. Set this to `FALSE` to inspect the continuous smoothing
+  curve without the segmented tariff representation. The original fitted
+  model effects remain visible. Default is `TRUE`.
+
 - remove_underscores:
 
   Logical; if `TRUE`, underscores are replaced by spaces in the x-axis
@@ -135,7 +144,12 @@ continuous smoothing. The plot therefore shows the local modelled
 premium change over the user-supplied increment. Values for which
 `x + step` falls outside the smoothing range are omitted; the curve is
 never extrapolated. For this plot type, `step` is the increment rather
-than a refinement index.
+than a refinement index. The calculation is identical to
+[`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
+with the same `step`; the plot displays it over the supported range,
+while
+[`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
+returns a table for selected starting values.
 
 ### Actuarial interpretation
 
