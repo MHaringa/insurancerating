@@ -374,7 +374,6 @@ burn_unrestricted <- glm(
   family = Gamma(link = "log"),
   data = premium_df
 )
-#> Warning in dgamma(y, 1/disp, scale = mu * disp, log = TRUE): NaNs produced
 ```
 
 This second GLM is not statistically required after fitting frequency

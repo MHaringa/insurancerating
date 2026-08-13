@@ -60,6 +60,7 @@ sublevel relativity specification produced by the selected step.</p>
 <span>  x_max <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  y_max <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  show_initial_smoothing <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  show_segments <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  remove_underscores <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  rotate_angle <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  custom_theme <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -116,6 +117,14 @@ at the selected <code>step</code>. Default is <code>FALSE</code>. This argument 
 the refinement specification or <code><a href="refit.html">refit()</a></code>.</p></dd>
 
 
+<dt id="arg-show-segments">show_segments<a class="anchor" aria-label="anchor" href="#arg-show-segments"></a></dt>
+<dd><p>Logical. For a smoothing or smoothing-edit relativity
+plot, whether to show the horizontal relativities and boundary points of
+the new tariff segments. Set this to <code>FALSE</code> to inspect the continuous
+smoothing curve without the segmented tariff representation. The original
+fitted model effects remain visible. Default is <code>TRUE</code>.</p></dd>
+
+
 <dt id="arg-remove-underscores">remove_underscores<a class="anchor" aria-label="anchor" href="#arg-remove-underscores"></a></dt>
 <dd><p>Logical; if <code>TRUE</code>, underscores are replaced by
 spaces in the x-axis label. Default is <code>FALSE</code>.</p></dd>
@@ -165,7 +174,10 @@ smoothing curve. For each supported value <code>x</code>, it shows
 continuous smoothing. The plot therefore shows the local modelled premium
 change over the user-supplied increment. Values for which <code>x + step</code> falls
 outside the smoothing range are omitted; the curve is never extrapolated.
-For this plot type, <code>step</code> is the increment rather than a refinement index.</p><div class="section">
+For this plot type, <code>step</code> is the increment rather than a refinement index.
+The calculation is identical to <code><a href="premium_change.html">premium_change()</a></code> with the same <code>step</code>;
+the plot displays it over the supported range, while <code><a href="premium_change.html">premium_change()</a></code>
+returns a table for selected starting values.</p><div class="section">
 <h3 id="actuarial-interpretation">Actuarial interpretation<a class="anchor" aria-label="anchor" href="#actuarial-interpretation"></a></h3>
 
 

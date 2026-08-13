@@ -1,9 +1,9 @@
 # Interpret the premium effect of a smoothing curve
 
 Translate an effective smoothing curve in a refinement specification
-into the modelled premium change when its continuous source variable
-doubles. For a multiplicative relativity curve \\R(x)\\, the reported
-change is \\R(2x) / R(x) - 1\\.
+into concrete modelled-premium comparisons. By default, each selected
+value is compared with twice that value. Supplying `step` instead
+compares each value with a fixed increment above it.
 
 Format an object returned by `premium_change()`. One refinement state is
 shown as a three-column table. Multiple states are shown side by side;
@@ -17,6 +17,8 @@ premium_change(
   x,
   variable = NULL,
   at = NULL,
+  change = "double",
+  step = NULL,
   steps = "current",
   basis = c("curve", "segments"),
   ...
@@ -43,10 +45,23 @@ as_gt(x, locale = "en-US", decimals = 1, title = NULL, subtitle = NULL, ...)
 
 - at:
 
-  Optional positive numeric vector of starting values. Each value and
-  its doubled value must lie inside the supported smoothing range of
-  every selected refinement state. If `NULL`, six representative values
-  are selected automatically.
+  Optional numeric vector of starting values. Each starting and
+  comparison value must lie inside the supported smoothing range of
+  every selected refinement state. Doubling retains the existing
+  requirement that starting values are positive. If `NULL`,
+  approximately six representative values are selected automatically.
+
+- change:
+
+  Character comparison mode. `"double"` (default) compares \\x\\ with
+  \\2x\\. When `step` is supplied, omit `change`; fixed-step mode is
+  then selected automatically.
+
+- step:
+
+  Optional positive finite numeric increment. When supplied, compares
+  \\x\\ with \\x + step\\. It cannot be combined with an explicitly
+  supplied `change` instruction.
 
 - steps:
 
@@ -84,7 +99,7 @@ as_gt(x, locale = "en-US", decimals = 1, title = NULL, subtitle = NULL, ...)
 ## Value
 
 A tibble with class `premium_change` in long format, containing the
-variable, refinement state, starting and doubled values, evaluated
+variable, refinement state, starting and comparison values, evaluated
 relativities, and premium change as a decimal.
 
 A `gt_tbl` object.
@@ -99,6 +114,13 @@ and subsequently modified with
 It is not a smoothing method and does not change the refinement
 specification.
 
+For a multiplicative relativity curve \\R(x)\\, doubling reports \\R(2x)
+/ R(x) - 1\\. Fixed-step mode reports \\R(x+h) / R(x) - 1\\, where \\h\\
+is `step`. If total modelled premium can be written as
+\\P(x,z)=C(z)R(x)\\, all other multiplicative model effects \\C(z)\\
+cancel in this ratio. No particular policy profile is therefore required
+for the interpretation.
+
 The effective curve is reconstructed from the stored refinement history.
 Consequently, `steps = "current"` reflects all smoothing edits recorded
 up to the current state. Numeric step identifiers refer to positions in
@@ -109,22 +131,23 @@ forward.
 With the default `basis = "curve"`, evaluation uses the continuous
 effective smoothing line retained by the refinement system. It therefore
 describes the shape and steepness of the estimated or edited curve at
-exactly \\x\\ and \\2x\\; it does not use neighbouring tariff-segment
-relativities.
+exactly \\x\\ and the corresponding comparison value; it does not use
+neighbouring tariff-segment relativities.
 
 With `basis = "segments"`, both values are assigned to the effective
 tariff intervals created by the smoothing. Their current segment
 relativities are compared. This describes the premium effect of the
 implementable segmented tariff. The result can be zero when both values
-fall in the same segment and can change discretely when doubling crosses
-a segment boundary.
+fall in the same segment and can change discretely when the comparison
+crosses a segment boundary.
 
 Values are never extrapolated. When `at = NULL`, six representative
-starting values are selected from the common range for which both \\x\\
-and \\2x\\ are supported in every selected refinement state.
+starting values are selected from the common range for which both the
+starting and comparison values are supported in every selected
+refinement state.
 
 Multiplying an entire curve by a common rebasing constant does not alter
-the result because that constant cancels in \\R(2x) / R(x)\\.
+the result because that constant cancels in the relativity ratio.
 
 ## See also
 
@@ -164,21 +187,33 @@ refinement <- prepare_refinement(model, data = portfolio) |>
 premium_change(refinement, at = c(20, 25, 30))
 #> Premium change for age
 #> 
+#> Comparison: doubling
 #> Basis: Effective smoothing curve
 #> 
 #>  From To Premium change
 #>    20 40          -0.0%
 #>    25 50          -0.0%
-#>    30 60           0.0%
+#>    30 60          -0.0%
+premium_change(refinement, at = c(20, 25, 30), step = 5)
+#> Premium change for age
+#> 
+#> Increment: 5
+#> Basis: Effective smoothing curve
+#> 
+#>  From To Premium change
+#>    20 25           0.0%
+#>    25 30           0.0%
+#>    30 35           0.0%
 premium_change(refinement, at = c(20, 25, 30), basis = "segments")
 #> Premium change for age
 #> 
+#> Comparison: doubling
 #> Basis: Tariff segments
 #> 
 #>  From To Premium change
 #>    20 40          -0.0%
 #>    25 50          -0.0%
-#>    30 60           0.0%
+#>    30 60          -0.0%
 
 edited <- refinement |>
   edit_smoothing(
@@ -191,10 +226,11 @@ edited <- refinement |>
 premium_change(edited, at = c(20, 25, 30), steps = c(1, 2))
 #> Premium change for age
 #> 
+#> Comparison: doubling
 #> Basis: Effective smoothing curve
 #> 
 #>  From To Step 1 Step 2 Difference
 #>    20 40  -0.0%  +4.4%    +4.4 pp
 #>    25 50  -0.0%  +0.8%    +0.8 pp
-#>    30 60   0.0%  -2.8%    -2.8 pp
+#>    30 60  -0.0%  -2.8%    -2.8 pp
 ```
