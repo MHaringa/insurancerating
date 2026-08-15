@@ -64,7 +64,6 @@ should follow known targets.</p>
 <span>  control_values <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  adjustment <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  transition <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  scale <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  allow_extrapolation <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  extrapolation_step <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -126,14 +125,6 @@ connects to the unchanged smoothing. <code>NULL</code> inherits the original
 smoothing specification. <code>"linear"</code> gives continuous linear transitions
 and <code>"step"</code> permits immediate jumps. Smoothing methods accepted by
 <code><a href="add_smoothing.html">add_smoothing()</a></code> can be supplied as explicit structural overrides.</p></dd>
-
-
-<dt id="arg-scale">scale<a class="anchor" aria-label="anchor" href="#arg-scale"></a></dt>
-<dd><p>Optional smoothing scale. <code>NULL</code> inherits the scale recorded by
-<code><a href="add_smoothing.html">add_smoothing()</a></code>. Supplying the same value is allowed for clarity.
-Changing scale during an edit is deliberately rejected because that would
-reinterpret the previously fitted curve; rebuild the smoothing with
-<code><a href="add_smoothing.html">add_smoothing()</a></code> instead.</p></dd>
 
 
 <dt id="arg-allow-extrapolation">allow_extrapolation<a class="anchor" aria-label="anchor" href="#arg-allow-extrapolation"></a></dt>
@@ -201,11 +192,6 @@ specification, edit that same refinement object, and call <code><a href="refit.h
 The previously fitted GLM remains unchanged. This retains the order and
 content of manual adjustments as part of the reproducible refinement
 specification.</p>
-<p>The smoothing scale is part of that specification. <code>scale = NULL</code> inherits
-the value recorded by <code><a href="add_smoothing.html">add_smoothing()</a></code>, including <code>"log_relativity"</code>.
-Accepted edits and their transitions are assessed on that inherited scale.
-A scale change requires rebuilding the smoothing because changing it during
-an edit would reinterpret the curve that forms the basis of the edit.</p>
 </div>
 
     </div>

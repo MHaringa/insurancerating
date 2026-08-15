@@ -64,7 +64,6 @@ sublevel relativity specification produced by the selected step.</p>
 <span>  remove_underscores <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  rotate_angle <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  custom_theme <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"relativity"</span>, <span class="st">"incremental_change"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -86,9 +85,7 @@ when no step matches or when matches belong to different refinements.</p></dd>
 
 <dt id="arg-step">step<a class="anchor" aria-label="anchor" href="#arg-step"></a></dt>
 <dd><p>Optional positive integer identifying a step in the stored
-refinement sequence for <code>type = "relativity"</code>. This takes precedence over
-<code>variable</code>. For <code>type = "incremental_change"</code>, a required positive numeric
-increment in the units of the smoothing variable.</p></dd>
+refinement sequence. This takes precedence over <code>variable</code>.</p></dd>
 
 
 <dt id="arg-x-max">x_max<a class="anchor" aria-label="anchor" href="#arg-x-max"></a></dt>
@@ -138,13 +135,6 @@ spaces in the x-axis label. Default is <code>FALSE</code>.</p></dd>
 <dd><p>Optional list passed to <code><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">ggplot2::theme()</a></code>.</p></dd>
 
 
-<dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
-<dd><p>Character string selecting the view. <code>"relativity"</code> (default)
-retains the existing tariff-effect plot. <code>"incremental_change"</code> shows the
-local percentage premium change over the increment supplied through
-<code>step</code>.</p></dd>
-
-
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional plotting arguments passed to ggplot2 geoms.</p></dd>
 
@@ -167,17 +157,7 @@ explicitly.</p>
 <p>Each <code><a href="edit_smoothing.html">edit_smoothing()</a></code> call is stored as a separate workflow step. Selecting
 such a step shows the cumulative smoothing after all preceding edits up to
 that point. Set <code>show_initial_smoothing = TRUE</code> to add the curve produced by
-the corresponding <code><a href="add_smoothing.html">add_smoothing()</a></code> step before any edits were applied.</p>
-<p><code>type = "incremental_change"</code> provides a complementary diagnostic for a
-smoothing curve. For each supported value <code>x</code>, it shows
-<code>100 * (R(x + step) / R(x) - 1)</code>, where <code>R()</code> is the current effective
-continuous smoothing. The plot therefore shows the local modelled premium
-change over the user-supplied increment. Values for which <code>x + step</code> falls
-outside the smoothing range are omitted; the curve is never extrapolated.
-For this plot type, <code>step</code> is the increment rather than a refinement index.
-The calculation is identical to <code><a href="premium_change.html">premium_change()</a></code> with the same <code>step</code>;
-the plot displays it over the supported range, while <code><a href="premium_change.html">premium_change()</a></code>
-returns a table for selected starting values.</p><div class="section">
+the corresponding <code><a href="add_smoothing.html">add_smoothing()</a></code> step before any edits were applied.</p><div class="section">
 <h3 id="actuarial-interpretation">Actuarial interpretation<a class="anchor" aria-label="anchor" href="#actuarial-interpretation"></a></h3>
 
 

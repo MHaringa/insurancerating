@@ -6,26 +6,13 @@
   the existing interval classification. The message identifies the conflicting
   levels and explains how a separate replacement variable can be supplied with
   `replaces` when the intention is to replace the original classification.
-- `add_smoothing()` gains `scale = "relativity"` or `"log_relativity"`.
-  The default preserves existing behaviour. On the log-relativity scale,
-  shape constraints apply to `log(R(x))`; an increasing-concave smoothing
-  therefore has diminishing proportional premium increments for every fixed
-  admissible source-variable increment. `edit_smoothing()` inherits and
-  records the original scale. The earlier development-only fixed-step
-  constraint arguments were removed before release.
-- `autoplot.rating_refinement()` now supports
-  `type = "incremental_change"` for smoothing steps. Given an explicit numeric
-  increment through `step`, this diagnostic shows the local percentage premium
-  change implied by the current effective continuous smoothing without
-  extrapolating beyond its supported range. The existing relativity plot
-  remains the default. The title and subtitle now report the complete fixed
-  increment, and `show_segments = FALSE` can hide the proposed tariff segments
-  in a smoothing relativity plot while retaining the continuous curve.
+- `autoplot.rating_refinement()` gains `show_segments = FALSE` for inspecting
+  a continuous smoothing curve without displaying the proposed tariff
+  segments.
 - `premium_change()` interprets the effective smoothing in a refinement using
   either the existing doubling comparison or a fixed increment supplied with
-  `step`. Fixed-step results use the same calculation as
-  `autoplot(type = "incremental_change")`. Current and historical refinement
-  states can be compared with print and `as_gt()` methods. The default
+  `increment`. Current and historical refinement states can be selected with
+  `steps` and compared with print and `as_gt()` methods. The default
   `basis = "curve"` evaluates the continuous effective smoothing;
   `basis = "segments"` compares the implemented tariff-interval relativities.
 - `add_restriction()` gains `replaces`, which allows a new fixed tariff factor

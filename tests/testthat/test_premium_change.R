@@ -97,36 +97,51 @@ testthat::test_that("explicit doubling preserves the default comparison", {
 
   testthat::expect_equal(implicit, explicit)
   testthat::expect_identical(attr(explicit, "comparison"), "double")
-  testthat::expect_null(attr(explicit, "step"))
+  testthat::expect_null(attr(explicit, "increment"))
   testthat::expect_identical(explicit$to, 2 * explicit$from)
 })
 
-testthat::test_that("fixed-step comparisons use the effective smoothing ratio", {
+testthat::test_that("increment and refinement-state selection are unambiguous", {
+  arguments <- formals(premium_change)
+
+  testthat::expect_true("increment" %in% names(arguments))
+  testthat::expect_false("step" %in% names(arguments))
+  testthat::expect_identical(arguments$steps, "current")
+})
+
+testthat::test_that("fixed-increment comparisons use the effective smoothing ratio", {
   objects <- premium_change_objects()
-  result <- premium_change(objects$initial, at = c(20, 25, 30), step = 5)
+  result <- premium_change(
+    objects$initial, at = c(20, 25, 30), increment = 5
+  )
   state <- preview_refinement(objects$initial, 1)$state$smoothing_states$step_1
-  expected <- insurancerating:::.incremental_premium_change(
-    state$current_line, step = 5, at = result$from
+  expected_from <- insurancerating:::.premium_change_evaluate(
+    state$current_line, result$from
+  )
+  expected_to <- insurancerating:::.premium_change_evaluate(
+    state$current_line, result$to
   )
 
   testthat::expect_identical(result$to, result$from + 5)
-  testthat::expect_equal(result$relativity_from, expected$relativity_from)
-  testthat::expect_equal(result$relativity_to, expected$relativity_to)
-  testthat::expect_equal(result$premium_change, expected$incremental_change)
-  testthat::expect_identical(attr(result, "comparison"), "step")
-  testthat::expect_identical(attr(result, "step"), 5)
+  testthat::expect_equal(result$relativity_from, expected_from)
+  testthat::expect_equal(result$relativity_to, expected_to)
+  testthat::expect_equal(result$premium_change, expected_to / expected_from - 1)
+  testthat::expect_identical(attr(result, "comparison"), "increment")
+  testthat::expect_identical(attr(result, "increment"), 5)
 })
 
-testthat::test_that("fixed-step comparisons validate instructions and range", {
+testthat::test_that("fixed-increment comparisons validate instructions and range", {
   objects <- premium_change_objects()
   for (invalid in list(0, -1, NA_real_, Inf, "5", c(5, 10))) {
     testthat::expect_error(
-      premium_change(objects$initial, at = 20, step = invalid),
+      premium_change(objects$initial, at = 20, increment = invalid),
       "positive finite numeric"
     )
   }
   testthat::expect_error(
-    premium_change(objects$initial, at = 20, change = "double", step = 5),
+    premium_change(
+      objects$initial, at = 20, change = "double", increment = 5
+    ),
     "not both"
   )
   testthat::expect_error(
@@ -134,14 +149,14 @@ testthat::test_that("fixed-step comparisons validate instructions and range", {
     'must be "double"'
   )
   testthat::expect_error(
-    premium_change(objects$initial, at = 75, step = 5),
-    "fixed-step comparison.*never extrapolates"
+    premium_change(objects$initial, at = 75, increment = 5),
+    "fixed-increment comparison.*never extrapolates"
   )
 })
 
-testthat::test_that("automatic fixed-step points remain supported", {
+testthat::test_that("automatic fixed-increment points remain supported", {
   objects <- premium_change_objects()
-  result <- premium_change(objects$initial, step = 10)
+  result <- premium_change(objects$initial, increment = 10)
 
   testthat::expect_lte(length(unique(result$from)), 6L)
   testthat::expect_gte(length(unique(result$from)), 5L)
@@ -150,10 +165,10 @@ testthat::test_that("automatic fixed-step points remain supported", {
   testthat::expect_true(all(result$to <= 75))
 })
 
-testthat::test_that("fixed-step comparisons support edits and history", {
+testthat::test_that("fixed-increment comparisons support edits and history", {
   objects <- premium_change_objects()
   comparison <- premium_change(
-    objects$edited, at = c(20, 25, 30), step = 5, steps = c(1, 2)
+    objects$edited, at = c(20, 25, 30), increment = 5, steps = c(1, 2)
   )
 
   testthat::expect_identical(unique(comparison$step_label),
@@ -162,25 +177,6 @@ testthat::test_that("fixed-step comparisons support edits and history", {
   testthat::expect_named(wide,
                          c("from", "to", "Step 1", "Step 2", "Difference"))
   testthat::expect_equal(wide$Difference, wide$`Step 2` - wide$`Step 1`)
-})
-
-testthat::test_that("fixed-step mode supports log-relativity smoothing", {
-  objects <- premium_change_objects()
-  log_refinement <- prepare_refinement(objects$model, objects$portfolio) |>
-    add_smoothing(
-      model_variable = "age_band",
-      source_variable = "age",
-      breaks = seq(15, 75, by = 5),
-      smoothing = "increasing_concave",
-      scale = "log_relativity",
-      k = 4,
-      weights = "exposure"
-    )
-  result <- premium_change(
-    log_refinement, at = seq(20, 60, by = 5), step = 5
-  )
-
-  testthat::expect_true(all(diff(result$premium_change) <= 1e-7))
 })
 
 testthat::test_that("segment basis uses effective tariff interval relativities", {
@@ -336,7 +332,9 @@ testthat::test_that("premium_change has concise print and gt methods", {
   testthat::expect_output(print(one), "Premium change")
   testthat::expect_output(print(two), "Difference")
 
-  fixed <- premium_change(objects$initial, at = c(20, 25), step = 5)
+  fixed <- premium_change(
+    objects$initial, at = c(20, 25), increment = 5
+  )
   testthat::expect_output(print(fixed), "Increment: 5")
 
   testthat::skip_if_not_installed("gt")

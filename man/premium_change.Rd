@@ -10,7 +10,7 @@ premium_change(
   variable = NULL,
   at = NULL,
   change = "double",
-  step = NULL,
+  increment = NULL,
   steps = "current",
   basis = c("curve", "segments"),
   ...
@@ -34,11 +34,12 @@ starting values are positive. If \code{NULL}, approximately six representative
 values are selected automatically.}
 
 \item{change}{Character comparison mode. \code{"double"} (default) compares
-\eqn{x} with \eqn{2x}. When \code{step} is supplied, omit \code{change}; fixed-step
-mode is then selected automatically.}
+\eqn{x} with \eqn{2x}. When \code{increment} is supplied, omit \code{change}; fixed-
+increment mode is then selected automatically.}
 
-\item{step}{Optional positive finite numeric increment. When supplied,
-compares \eqn{x} with \eqn{x + step}. It cannot be combined with an
+\item{increment}{Optional positive finite numeric increase in the units of
+the source variable. When supplied, compares \eqn{x} with
+\eqn{x + increment}. It cannot be combined with an
 explicitly supplied \code{change} instruction.}
 
 \item{steps}{Refinement states to evaluate. Use \code{"current"} for the latest
@@ -71,8 +72,8 @@ A \code{gt_tbl} object.
 \description{
 Translate an effective smoothing curve in a refinement specification into
 concrete modelled-premium comparisons. By default, each selected value is
-compared with twice that value. Supplying \code{step} instead compares each value
-with a fixed increment above it.
+compared with twice that value. Supplying \code{increment} instead compares each
+value with a fixed increment above it.
 
 Format an object returned by \code{premium_change()}. One refinement state is
 shown as a three-column table. Multiple states are shown side by side; when
@@ -84,8 +85,8 @@ exactly two are selected, their difference is added in percentage points.
 not a smoothing method and does not change the refinement specification.
 
 For a multiplicative relativity curve \eqn{R(x)}, doubling reports
-\eqn{R(2x) / R(x) - 1}. Fixed-step mode reports
-\eqn{R(x+h) / R(x) - 1}, where \eqn{h} is \code{step}. If total modelled premium
+\eqn{R(2x) / R(x) - 1}. Fixed-increment mode reports
+\eqn{R(x+h) / R(x) - 1}, where \eqn{h} is \code{increment}. If total modelled premium
 can be written as \eqn{P(x,z)=C(z)R(x)}, all other multiplicative model
 effects \eqn{C(z)} cancel in this ratio. No particular policy profile is
 therefore required for the interpretation.
@@ -142,7 +143,7 @@ refinement <- prepare_refinement(model, data = portfolio) |>
     weights = "exposure"
   )
 premium_change(refinement, at = c(20, 25, 30))
-premium_change(refinement, at = c(20, 25, 30), step = 5)
+premium_change(refinement, at = c(20, 25, 30), increment = 5)
 premium_change(refinement, at = c(20, 25, 30), basis = "segments")
 
 edited <- refinement |>

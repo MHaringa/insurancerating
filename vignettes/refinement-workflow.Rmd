@@ -152,51 +152,11 @@ directional assumption has a defensible actuarial basis. The function reference
 for `add_smoothing()` describes the full set of methods and their curvature
 interpretation.
 
-### Choosing the smoothing scale
-
-Shape constraints can be applied to the ordinary relativity or to its
-logarithm. The distinction changes the actuarial interpretation:
-
-- `scale = "relativity"` is the default. An increasing-concave curve rises
-  while its absolute relativity increments become smaller.
-- `scale = "log_relativity"` applies the same shape to `log(R(x))`. An
-  increasing-concave curve then rises while its proportional premium
-  increments become smaller.
-
-The following specifications illustrate the two choices without prescribing
-one as generally preferable:
-
-```{r}
-relativity_scale_refinement <- prepare_refinement(unrestricted, portfolio) |>
-  add_smoothing(
-    model_variable = "age_band",
-    source_variable = "age_policyholder",
-    breaks = age_breaks,
-    smoothing = "increasing_concave",
-    scale = "relativity",
-    k = 5,
-    weights = "exposure"
-  )
-
-log_scale_refinement <- prepare_refinement(unrestricted, portfolio) |>
-  add_smoothing(
-    model_variable = "age_band",
-    source_variable = "age_policyholder",
-    breaks = age_breaks,
-    smoothing = "increasing_concave",
-    scale = "log_relativity",
-    k = 5,
-    weights = "exposure"
-  )
-```
-
-For a scale variable such as insured amount, the latter choice may represent a
-tariff that still increases while each additional 100,000 adds a smaller
-percentage to premium. For example, successive increases might be 20%, 16%,
-13%, 11% and 9%. This can be a useful regularisation assumption where the
-upper tail has limited exposure, but it should not replace credible evidence
-of accelerating proportional risk or a structurally different high-value
-segment.
+All smoothing methods act directly on the tariff relativity. For example,
+`smoothing = "increasing_concave"` means that the relativity increases while
+its absolute increase becomes smaller as the source variable rises. This may
+be useful where neighbouring estimates are noisy or upper-tail exposure is
+sparse, provided the shape is supported by an explicit actuarial rationale.
 
 ### Inspecting the proposal
 
@@ -378,49 +338,11 @@ proposal:
 refinement <- relative_age_refinement
 ```
 
-The relativity plot shows the overall tariff shape. A complementary view shows
-the local modelled premium change over an increment chosen in the units of the
-source variable:
+The relativity plot shows the overall tariff shape:
 
 ```{r}
 autoplot(refinement, variable = "age_band")
-
-autoplot(
-  refinement,
-  variable = "age_band",
-  type = "incremental_change",
-  step = 5
-)
 ```
-
-For each age where the comparison remains inside the smoothing range, the
-second plot calculates the percentage change from `R(age)` to `R(age + 5)`.
-It therefore highlights where the proposed effect rises or falls most rapidly.
-The calculation uses the current effective continuous smoothing, including
-preceding `edit_smoothing()` steps, and does not extrapolate. The increment is
-always supplied explicitly because a meaningful change depends on the units
-and practical interpretation of the source variable.
-
-### Inspecting proportional increments on the log-relativity scale
-
-The log-scale specification expresses the shape assumption for the whole
-curve rather than for one specially selected increment. Its practical
-consequence can still be inspected at any meaningful fixed increment:
-
-```{r}
-autoplot(
-  log_scale_refinement,
-  variable = "age_band",
-  type = "incremental_change",
-  step = 5
-)
-```
-
-At each age, this asks how much modelled premium changes when age increases by
-another five years. For an increasing-concave log-relativity smoothing, the
-displayed finite percentage change is flat or decreasing over its valid
-domain. The same fixed-step comparison can be shown at selected starting values
-with `premium_change(step = 5)` below.
 
 ### Interpreting the premium effect
 
@@ -442,28 +364,28 @@ higher modelled premium when age doubles from that starting value. The helper
 uses the current effective smoothing, including preceding `edit_smoothing()`
 steps, and does not extrapolate beyond its supported range.
 
-Supplying `step` instead asks the corresponding fixed-increment question:
+Supplying `increment` instead asks the corresponding fixed-increment question:
 
 ```{r}
 premium_change(
-  log_scale_refinement,
+  refinement,
   variable = "age_band",
   at = seq(20, 60, by = 5),
-  step = 5
+  increment = 5
 )
 ```
 
-Each row now compares `R(age + 5)` with `R(age)`. This is the table equivalent
-of `autoplot(type = "incremental_change", step = 5)`: the table gives discrete
-comparisons at selected starting values, while the plot shows the same finite
-proportional change across the supported range. For an increasing-concave
-log-relativity smoothing, these fixed-step changes are flat or decreasing,
-subject to numerical tolerance.
+Each row now compares `R(age + 5)` with `R(age)` using the current effective
+smoothing. The table does not impose a pattern; it only translates the proposed
+relativity curve into practical premium comparisons.
 
-For an insured-amount smoothing, `step = 100000` would ask how much modelled
+For an insured-amount smoothing, `increment = 100000` would ask how much modelled
 premium changes for another 100,000 from each displayed starting value. It
 might, for example, compare 100,000 with 200,000, then 200,000 with 300,000.
-The increment is a finite practical comparison, not a derivative or slope.
+Successive percentage changes may decline, remain stable or increase depending
+on the fitted relationship. The increment is a finite practical comparison,
+not a derivative or slope, and no particular pattern is imposed by the
+package.
 
 By default, `basis = "curve"` evaluates the continuous effective smoothing at
 the exact starting and comparison values. This is the appropriate basis when the

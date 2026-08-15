@@ -21,7 +21,6 @@ edit_smoothing(
   control_values = NULL,
   adjustment = NULL,
   transition = NULL,
-  scale = NULL,
   allow_extrapolation = FALSE,
   extrapolation_step = NULL
 )
@@ -84,16 +83,6 @@ edit_smoothing(
   `"step"` permits immediate jumps. Smoothing methods accepted by
   [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   can be supplied as explicit structural overrides.
-
-- scale:
-
-  Optional smoothing scale. `NULL` inherits the scale recorded by
-  [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md).
-  Supplying the same value is allowed for clarity. Changing scale during
-  an edit is deliberately rejected because that would reinterpret the
-  previously fitted curve; rebuild the smoothing with
-  [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
-  instead.
 
 - allow_extrapolation:
 
@@ -182,14 +171,6 @@ and call
 again. The previously fitted GLM remains unchanged. This retains the
 order and content of manual adjustments as part of the reproducible
 refinement specification.
-
-The smoothing scale is part of that specification. `scale = NULL`
-inherits the value recorded by
-[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
-including `"log_relativity"`. Accepted edits and their transitions are
-assessed on that inherited scale. A scale change requires rebuilding the
-smoothing because changing it during an edit would reinterpret the curve
-that forms the basis of the edit.
 
 ## See also
 

@@ -1827,94 +1827,6 @@ testthat::test_that(
   }
 )
 
-testthat::test_that(
-  "incremental-change plots evaluate the current effective smoothing", {
-    df <- data.frame(
-      y = c(1, 2, 1, 3, 2, 4, 2, 3),
-      exposure = rep(1, 8),
-      age = c(18, 25, 32, 39, 46, 53, 60, 67)
-    )
-    df$age_band <- cut(df$age, breaks = c(18, 30, 45, 60, 70),
-                       include.lowest = TRUE)
-    model <- glm(
-      y ~ age_band + offset(log(exposure)),
-      family = poisson(),
-      data = df
-    )
-    initial <- prepare_refinement(model, data = df) |>
-      add_smoothing(
-        model_variable = "age_band",
-        source_variable = "age",
-        breaks = c(18, 30, 45, 60, 70),
-        smoothing = "poly",
-        degree = 1,
-        weights = "exposure"
-      )
-    edited <- initial |>
-      edit_smoothing(
-        model_variable = "age_band",
-        from = 30,
-        to = 60,
-        adjustment = 1.05,
-        transition = "linear"
-      )
-
-    initial_incremental <- ggplot2::autoplot(
-      initial,
-      type = "incremental_change",
-      step = 5
-    )
-    testthat::expect_s3_class(initial_incremental, "ggplot")
-
-    plot <- ggplot2::autoplot(
-      edited,
-      type = "incremental_change",
-      step = 5
-    )
-    testthat::expect_s3_class(plot, "ggplot")
-    plot_data <- plot$data
-    current_line <- preview_refinement(edited, 2L)$state$new_line
-    expected_from <- .premium_change_evaluate(current_line, plot_data$x)
-    expected_to <- .premium_change_evaluate(current_line, plot_data$x + 5)
-    testthat::expect_equal(
-      plot_data$incremental_change,
-      100 * (expected_to / expected_from - 1)
-    )
-    testthat::expect_true(all(plot_data$x + 5 <= max(current_line[[1L]])))
-    testthat::expect_identical(plot$labels$y, "Premium change (%)")
-    testthat::expect_identical(plot$labels$title, "Incremental premium change")
-    testthat::expect_match(plot$labels$subtitle, "additional 5 units of age")
-
-    larger_step <- ggplot2::autoplot(
-      edited,
-      type = "incremental_change",
-      step = 10
-    )
-    testthat::expect_true(
-      max(larger_step$data$x) <= max(current_line[[1L]]) - 10
-    )
-
-    testthat::expect_error(
-      ggplot2::autoplot(edited, type = "incremental_change"),
-      "`step`"
-    )
-    testthat::expect_error(
-      ggplot2::autoplot(
-        edited,
-        type = "incremental_change",
-        step = diff(range(current_line[[1L]])) + 1
-      ),
-      "too large"
-    )
-
-    default_plot <- ggplot2::autoplot(initial)
-    explicit_plot <- ggplot2::autoplot(initial, type = "relativity")
-    testthat::expect_identical(default_plot$labels, explicit_plot$labels)
-    testthat::expect_identical(length(default_plot$layers),
-                               length(explicit_plot$layers))
-  }
-)
-
 testthat::test_that("smoothing plots can hide the new tariff segments", {
   df <- data.frame(
     y = c(1, 2, 1, 3, 2, 4, 2, 3),
@@ -1958,15 +1870,6 @@ testthat::test_that("smoothing plots can hide the new tariff segments", {
   testthat::expect_gt(segment_rows(with_segments), 0L)
   testthat::expect_identical(segment_rows(without_segments), 0L)
   testthat::expect_s3_class(without_segments, "ggplot")
-  testthat::expect_error(
-    ggplot2::autoplot(
-      refinement,
-      type = "incremental_change",
-      step = 5,
-      show_segments = FALSE
-    ),
-    "show_segments"
-  )
 })
 
 testthat::test_that(
@@ -2706,3 +2609,17 @@ testthat::test_that(
     )
   }
 )
+
+testthat::test_that("the smoothing API uses ordinary relativities only", {
+  testthat::expect_false("scale" %in% names(formals(add_smoothing)))
+  testthat::expect_false("scale" %in% names(formals(edit_smoothing)))
+  testthat::expect_false(
+    "premium_change" %in% names(formals(add_smoothing))
+  )
+  testthat::expect_false(
+    "premium_change_step" %in% names(formals(add_smoothing))
+  )
+
+  plot_method <- utils::getS3method("autoplot", "rating_refinement")
+  testthat::expect_false("type" %in% names(formals(plot_method)))
+})

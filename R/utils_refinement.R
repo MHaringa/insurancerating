@@ -271,7 +271,7 @@ cut_borders_model <- function(model, x_cut) {
 #' @keywords internal
 fit_smoothing_curve <- function(borders_model, x_org, degree = NULL,
                                 breaks = NULL, smoothing = "spline", k = NULL,
-                                weights, scale = "relativity") {
+                                weights) {
 
   if (is.null(breaks)) {
     breaks <- seq(min(borders_model$start_), max(borders_model$end_),
@@ -292,19 +292,6 @@ fit_smoothing_curve <- function(borders_model, x_org, degree = NULL,
   if (!smoothing %in% valid_methods) {
     stop("Invalid smoothing: must be one of ",
          paste(valid_methods, collapse = ", "), call. = FALSE)
-  }
-
-  scale <- .validate_smoothing_scale(scale)
-  if (identical(scale, "log_relativity")) {
-    if (any(!is.finite(borders_model$estimate)) ||
-        any(borders_model$estimate <= 0)) {
-      stop(
-        "`scale = \"log_relativity\"` requires positive finite fitted ",
-        "relativities.",
-        call. = FALSE
-      )
-    }
-    borders_model$estimate <- log(borders_model$estimate)
   }
 
   .validate_smoothing_complexity(
@@ -357,10 +344,6 @@ fit_smoothing_curve <- function(borders_model, x_org, degree = NULL,
   poly_line$yhat <- as.numeric(predict(lm_poly, poly_line))
 
   new_poly_df$yhat <- as.numeric(predict(lm_poly, new_poly_df))
-  if (identical(scale, "log_relativity")) {
-    poly_line$yhat <- exp(poly_line$yhat)
-    new_poly_df$yhat <- exp(new_poly_df$yhat)
-  }
   new_poly_df$breaks_min <- breaks_min
   new_poly_df$breaks_max <- breaks_max
   new_poly_df$cuts <- levels_borders
@@ -374,24 +357,7 @@ fit_smoothing_curve <- function(borders_model, x_org, degree = NULL,
   new_rf <- new_poly_df[, c("risk_factor", new_colname_cat, "yhat")]
   colnames(new_rf)[2] <- "level"
 
-  attr(new_poly_df, "smoothing_scale") <- scale
-  attr(poly_line, "smoothing_scale") <- scale
-  attr(new_rf, "smoothing_scale") <- scale
   list(new_poly_df = new_poly_df, poly_line = poly_line, new_rf = new_rf)
-}
-
-#' Validate the scale used to fit and assess a smoothing curve
-#'
-#' @noRd
-.validate_smoothing_scale <- function(scale) {
-  if (!is.character(scale) || length(scale) != 1L || is.na(scale) ||
-      !scale %in% c("relativity", "log_relativity")) {
-    stop(
-      "`scale` must be either \"relativity\" or \"log_relativity\".",
-      call. = FALSE
-    )
-  }
-  scale
 }
 
 
@@ -896,10 +862,8 @@ change_xy <- function(borders_model, x_org,
 #' Check structural constraints after a local smoothing adjustment
 #'
 #' @noRd
-.validate_adjusted_smoothing_shape <- function(x, y, smoothing,
-                                               scale = "relativity") {
+.validate_adjusted_smoothing_shape <- function(x, y, smoothing) {
   canonical <- .resolve_smoothing_method(smoothing)$method
-  scale <- .validate_smoothing_scale(scale)
   constrained <- c(
     "increasing", "decreasing", "convex", "concave",
     "increasing_convex", "increasing_concave",
@@ -912,16 +876,6 @@ change_xy <- function(borders_model, x_org,
   ord <- order(x)
   x <- x[ord]
   y <- y[ord]
-  if (identical(scale, "log_relativity")) {
-    if (any(!is.finite(y)) || any(y <= 0)) {
-      stop(
-        "A smoothing on the log-relativity scale requires positive finite ",
-        "relativities.",
-        call. = FALSE
-      )
-    }
-    y <- log(y)
-  }
   tolerance <- sqrt(.Machine$double.eps) * max(1, max(abs(y)))
   slopes <- diff(y) / diff(x)
 
@@ -959,8 +913,7 @@ change_xy <- function(borders_model, x_org,
 .apply_smoothing_adjustment <- function(smooth, line, new_rf,
                                         source_variable, from, to,
                                         adjustment, transition,
-                                        original_smoothing,
-                                        scale = "relativity") {
+                                        original_smoothing) {
   smooth_x <- smooth[[source_variable]]
   line_x <- line[[source_variable]]
   smoothing_range <- range(c(smooth_x, line_x), na.rm = TRUE)
@@ -1035,17 +988,13 @@ change_xy <- function(borders_model, x_org,
     .validate_adjusted_smoothing_shape(
       line_x,
       adjusted_line,
-      structural_method,
-      scale = scale
+      structural_method
     )
   }
 
   smooth$yhat <- adjusted_smooth
   line$yhat <- adjusted_line
   new_rf$yhat <- adjusted_smooth
-  attr(smooth, "smoothing_scale") <- scale
-  attr(line, "smoothing_scale") <- scale
-  attr(new_rf, "smoothing_scale") <- scale
   attr(smooth, "adjustment") <- adjustment
   attr(smooth, "transition") <- effective_transition
   attr(smooth, "adjustment_peak") <- peak

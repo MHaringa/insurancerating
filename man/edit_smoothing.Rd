@@ -16,7 +16,6 @@ edit_smoothing(
   control_values = NULL,
   adjustment = NULL,
   transition = NULL,
-  scale = NULL,
   allow_extrapolation = FALSE,
   extrapolation_step = NULL
 )
@@ -59,12 +58,6 @@ connects to the unchanged smoothing. \code{NULL} inherits the original
 smoothing specification. \code{"linear"} gives continuous linear transitions
 and \code{"step"} permits immediate jumps. Smoothing methods accepted by
 \code{\link[=add_smoothing]{add_smoothing()}} can be supplied as explicit structural overrides.}
-
-\item{scale}{Optional smoothing scale. \code{NULL} inherits the scale recorded by
-\code{\link[=add_smoothing]{add_smoothing()}}. Supplying the same value is allowed for clarity.
-Changing scale during an edit is deliberately rejected because that would
-reinterpret the previously fitted curve; rebuild the smoothing with
-\code{\link[=add_smoothing]{add_smoothing()}} instead.}
 
 \item{allow_extrapolation}{Logical. Whether edits may extend beyond the
 observed source-variable range.}
@@ -135,12 +128,6 @@ specification, edit that same refinement object, and call \code{\link[=refit]{re
 The previously fitted GLM remains unchanged. This retains the order and
 content of manual adjustments as part of the reproducible refinement
 specification.
-
-The smoothing scale is part of that specification. \code{scale = NULL} inherits
-the value recorded by \code{\link[=add_smoothing]{add_smoothing()}}, including \code{"log_relativity"}.
-Accepted edits and their transitions are assessed on that inherited scale.
-A scale change requires rebuilding the smoothing because changing it during
-an edit would reinterpret the curve that forms the basis of the edit.
 }
 }
 \examples{
