@@ -22,7 +22,6 @@ autoplot(
   remove_underscores = FALSE,
   rotate_angle = NULL,
   custom_theme = NULL,
-  type = c("relativity", "incremental_change"),
   ...
 )
 ```
@@ -43,9 +42,7 @@ autoplot(
 - step:
 
   Optional positive integer identifying a step in the stored refinement
-  sequence for `type = "relativity"`. This takes precedence over
-  `variable`. For `type = "incremental_change"`, a required positive
-  numeric increment in the units of the smoothing variable.
+  sequence. This takes precedence over `variable`.
 
 - x_max:
 
@@ -100,13 +97,6 @@ autoplot(
   Optional list passed to
   [`ggplot2::theme()`](https://ggplot2.tidyverse.org/reference/theme.html).
 
-- type:
-
-  Character string selecting the view. `"relativity"` (default) retains
-  the existing tariff-effect plot. `"incremental_change"` shows the
-  local percentage premium change over the increment supplied through
-  `step`.
-
 - ...:
 
   Additional plotting arguments passed to ggplot2 geoms.
@@ -136,20 +126,6 @@ the cumulative smoothing after all preceding edits up to that point. Set
 corresponding
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
 step before any edits were applied.
-
-`type = "incremental_change"` provides a complementary diagnostic for a
-smoothing curve. For each supported value `x`, it shows
-`100 * (R(x + step) / R(x) - 1)`, where `R()` is the current effective
-continuous smoothing. The plot therefore shows the local modelled
-premium change over the user-supplied increment. Values for which
-`x + step` falls outside the smoothing range are omitted; the curve is
-never extrapolated. For this plot type, `step` is the increment rather
-than a refinement index. The calculation is identical to
-[`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
-with the same `step`; the plot displays it over the supported range,
-while
-[`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
-returns a table for selected starting values.
 
 ### Actuarial interpretation
 

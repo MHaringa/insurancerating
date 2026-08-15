@@ -2,7 +2,7 @@
 
 Translate an effective smoothing curve in a refinement specification
 into concrete modelled-premium comparisons. By default, each selected
-value is compared with twice that value. Supplying `step` instead
+value is compared with twice that value. Supplying `increment` instead
 compares each value with a fixed increment above it.
 
 Format an object returned by `premium_change()`. One refinement state is
@@ -18,7 +18,7 @@ premium_change(
   variable = NULL,
   at = NULL,
   change = "double",
-  step = NULL,
+  increment = NULL,
   steps = "current",
   basis = c("curve", "segments"),
   ...
@@ -54,14 +54,14 @@ as_gt(x, locale = "en-US", decimals = 1, title = NULL, subtitle = NULL, ...)
 - change:
 
   Character comparison mode. `"double"` (default) compares \\x\\ with
-  \\2x\\. When `step` is supplied, omit `change`; fixed-step mode is
-  then selected automatically.
+  \\2x\\. When `increment` is supplied, omit `change`; fixed- increment
+  mode is then selected automatically.
 
-- step:
+- increment:
 
-  Optional positive finite numeric increment. When supplied, compares
-  \\x\\ with \\x + step\\. It cannot be combined with an explicitly
-  supplied `change` instruction.
+  Optional positive finite numeric increase in the units of the source
+  variable. When supplied, compares \\x\\ with \\x + increment\\. It
+  cannot be combined with an explicitly supplied `change` instruction.
 
 - steps:
 
@@ -115,8 +115,8 @@ It is not a smoothing method and does not change the refinement
 specification.
 
 For a multiplicative relativity curve \\R(x)\\, doubling reports \\R(2x)
-/ R(x) - 1\\. Fixed-step mode reports \\R(x+h) / R(x) - 1\\, where \\h\\
-is `step`. If total modelled premium can be written as
+/ R(x) - 1\\. Fixed-increment mode reports \\R(x+h) / R(x) - 1\\, where
+\\h\\ is `increment`. If total modelled premium can be written as
 \\P(x,z)=C(z)R(x)\\, all other multiplicative model effects \\C(z)\\
 cancel in this ratio. No particular policy profile is therefore required
 for the interpretation.
@@ -193,15 +193,15 @@ premium_change(refinement, at = c(20, 25, 30))
 #>  From To Premium change
 #>    20 40          -0.0%
 #>    25 50          -0.0%
-#>    30 60          -0.0%
-premium_change(refinement, at = c(20, 25, 30), step = 5)
+#>    30 60           0.0%
+premium_change(refinement, at = c(20, 25, 30), increment = 5)
 #> Premium change for age
 #> 
 #> Increment: 5
 #> Basis: Effective smoothing curve
 #> 
 #>  From To Premium change
-#>    20 25           0.0%
+#>    20 25          -0.0%
 #>    25 30           0.0%
 #>    30 35           0.0%
 premium_change(refinement, at = c(20, 25, 30), basis = "segments")
@@ -213,7 +213,7 @@ premium_change(refinement, at = c(20, 25, 30), basis = "segments")
 #>  From To Premium change
 #>    20 40          -0.0%
 #>    25 50          -0.0%
-#>    30 60          -0.0%
+#>    30 60           0.0%
 
 edited <- refinement |>
   edit_smoothing(
@@ -232,5 +232,5 @@ premium_change(edited, at = c(20, 25, 30), steps = c(1, 2))
 #>  From To Step 1 Step 2 Difference
 #>    20 40  -0.0%  +4.4%    +4.4 pp
 #>    25 50  -0.0%  +0.8%    +0.8 pp
-#>    30 60  -0.0%  -2.8%    -2.8 pp
+#>    30 60   0.0%  -2.8%    -2.8 pp
 ```

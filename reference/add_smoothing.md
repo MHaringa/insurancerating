@@ -18,7 +18,6 @@ add_smoothing(
   k = NULL,
   degree = NULL,
   weights = NULL,
-  scale = "relativity",
   tariff_class = NULL,
   rating_variable = NULL,
   x_cut = NULL,
@@ -96,16 +95,6 @@ add_smoothing(
 
   Optional character string. Numeric volume column, usually exposure,
   used to weight the grouped GLM relativities during smoothing.
-
-- scale:
-
-  Character string selecting the scale on which the smoothing and any
-  shape constraint are fitted. `"relativity"` (default) preserves the
-  existing behaviour and constrains `R(x)` directly. `"log_relativity"`
-  constrains `log(R(x))` and transforms the result back with
-  [`exp()`](https://rdrr.io/r/base/Log.html), so the stored and refitted
-  tariff effects remain ordinary positive relativities. See Details for
-  the distinction between absolute and proportional increments.
 
 - tariff_class, rating_variable:
 
@@ -229,36 +218,6 @@ The former short codes `"mpi"`, `"mpd"`, `"cx"`, `"cv"`, `"micx"`,
 aliases. New code should use the readable method names above. Both forms
 produce the same smoothing specification.
 
-### Choosing the smoothing scale
-
-`scale` determines the actuarial meaning of a shape constraint. With
-`scale = "relativity"`, the smoother is fitted to the ordinary tariff
-relativity \\R(x)\\. An increasing-concave specification therefore lets
-the relativity rise while its absolute increments become smaller. This
-is the default and preserves the interpretation of existing calls.
-
-With `scale = "log_relativity"`, the same specification is fitted to
-\\\log R(x)\\ and transformed back with
-[`exp()`](https://rdrr.io/r/base/Log.html). The resulting tariff still
-contains ordinary positive multiplicative relativities. An
-increasing-concave smooth on this scale implies diminishing proportional
-premium increments: for any fixed admissible increment \\h\\,
-\\R(x+h)/R(x)-1\\ cannot increase as \\x\\ increases. The standard
-relativity plot shows the overall effect;
-`autoplot(type = "incremental_change", step = h)` displays this finite
-proportional change directly.
-
-For example, an insured-amount effect may still increase while another
-100,000 produces progressively smaller percentage increases at higher
-sums insured. This can be a useful regularisation assumption where
-observations become sparse in the upper tail. It is not a general
-actuarial requirement: credible evidence of accelerating proportional
-risk, structural differences at high values, material interactions, or a
-variable without a meaningful positive scale may justify
-`scale = "relativity"`, a less restrictive smoothing method, or a
-revised model specification. Shape constraints should stabilise poorly
-supported behaviour, not override strong evidence.
-
 ### Basis dimension and polynomial degree
 
 For `"spline"`, `"gam"` and the shape-constrained methods, `k` specifies
@@ -381,18 +340,5 @@ increasing_ref <- prepare_refinement(burn_unrestricted) |>
 # Limit the visible range without changing the fitted smoothing curve.
 autoplot(ref, x_max = 80, y_max = 1.5)
 
-# On the log-relativity scale, increasing concavity means that percentage
-# premium increases over a fixed source-variable increment do not increase.
-log_scale_ref <- prepare_refinement(burn_unrestricted) |>
-  add_smoothing(
-    model_variable = "age_policyholder_freq_cat",
-    source_variable = "age_policyholder",
-    breaks = c(seq(18, 93, 5), 95),
-    smoothing = "increasing_concave",
-    scale = "log_relativity",
-    k = 6,
-    weights = "exposure"
-  )
-autoplot(log_scale_ref, type = "incremental_change", step = 5)
 } # }
 ```

@@ -7,14 +7,14 @@
   };
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Interpret the premium effect of a smoothing curve — premium_change"><meta name="description" content="Translate an effective smoothing curve in a refinement specification into
 concrete modelled-premium comparisons. By default, each selected value is
-compared with twice that value. Supplying step instead compares each value
-with a fixed increment above it.
+compared with twice that value. Supplying increment instead compares each
+value with a fixed increment above it.
 Format an object returned by premium_change(). One refinement state is
 shown as a three-column table. Multiple states are shown side by side; when
 exactly two are selected, their difference is added in percentage points."><meta property="og:description" content="Translate an effective smoothing curve in a refinement specification into
 concrete modelled-premium comparisons. By default, each selected value is
-compared with twice that value. Supplying step instead compares each value
-with a fixed increment above it.
+compared with twice that value. Supplying increment instead compares each
+value with a fixed increment above it.
 Format an object returned by premium_change(). One refinement state is
 shown as a three-column table. Multiple states are shown side by side; when
 exactly two are selected, their difference is added in percentage points."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
@@ -52,8 +52,8 @@ exactly two are selected, their difference is added in percentage points."><meta
     <div class="ref-description section level2">
     <p>Translate an effective smoothing curve in a refinement specification into
 concrete modelled-premium comparisons. By default, each selected value is
-compared with twice that value. Supplying <code>step</code> instead compares each value
-with a fixed increment above it.</p>
+compared with twice that value. Supplying <code>increment</code> instead compares each
+value with a fixed increment above it.</p>
 <p>Format an object returned by <code>premium_change()</code>. One refinement state is
 shown as a three-column table. Multiple states are shown side by side; when
 exactly two are selected, their difference is added in percentage points.</p>
@@ -66,7 +66,7 @@ exactly two are selected, their difference is added in percentage points.</p>
 <span>  variable <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  at <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  change <span class="op">=</span> <span class="st">"double"</span>,</span>
-<span>  step <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  increment <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  steps <span class="op">=</span> <span class="st">"current"</span>,</span>
 <span>  basis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"curve"</span>, <span class="st">"segments"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -102,13 +102,14 @@ values are selected automatically.</p></dd>
 
 <dt id="arg-change">change<a class="anchor" aria-label="anchor" href="#arg-change"></a></dt>
 <dd><p>Character comparison mode. <code>"double"</code> (default) compares
-\(x\) with \(2x\). When <code>step</code> is supplied, omit <code>change</code>; fixed-step
-mode is then selected automatically.</p></dd>
+\(x\) with \(2x\). When <code>increment</code> is supplied, omit <code>change</code>; fixed-
+increment mode is then selected automatically.</p></dd>
 
 
-<dt id="arg-step">step<a class="anchor" aria-label="anchor" href="#arg-step"></a></dt>
-<dd><p>Optional positive finite numeric increment. When supplied,
-compares \(x\) with \(x + step\). It cannot be combined with an
+<dt id="arg-increment">increment<a class="anchor" aria-label="anchor" href="#arg-increment"></a></dt>
+<dd><p>Optional positive finite numeric increase in the units of
+the source variable. When supplied, compares \(x\) with
+\(x + increment\). It cannot be combined with an
 explicitly supplied <code>change</code> instruction.</p></dd>
 
 
@@ -159,8 +160,8 @@ relativities, and premium change as a decimal.</p>
 <code><a href="add_smoothing.html">add_smoothing()</a></code> and subsequently modified with <code><a href="edit_smoothing.html">edit_smoothing()</a></code>. It is
 not a smoothing method and does not change the refinement specification.</p>
 <p>For a multiplicative relativity curve \(R(x)\), doubling reports
-\(R(2x) / R(x) - 1\). Fixed-step mode reports
-\(R(x+h) / R(x) - 1\), where \(h\) is <code>step</code>. If total modelled premium
+\(R(2x) / R(x) - 1\). Fixed-increment mode reports
+\(R(x+h) / R(x) - 1\), where \(h\) is <code>increment</code>. If total modelled premium
 can be written as \(P(x,z)=C(z)R(x)\), all other multiplicative model
 effects \(C(z)\) cancel in this ratio. No particular policy profile is
 therefore required for the interpretation.</p>
@@ -227,15 +228,15 @@ result because that constant cancels in the relativity ratio.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  From To Premium change</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    20 40          -0.0%</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    25 50          -0.0%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    30 60          -0.0%</span>
-<span class="r-in"><span><span class="fu">premium_change</span><span class="op">(</span><span class="va">refinement</span>, at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">25</span>, <span class="fl">30</span><span class="op">)</span>, step <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    30 60           0.0%</span>
+<span class="r-in"><span><span class="fu">premium_change</span><span class="op">(</span><span class="va">refinement</span>, at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">25</span>, <span class="fl">30</span><span class="op">)</span>, increment <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Premium change for age</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Increment: 5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Basis: Effective smoothing curve</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  From To Premium change</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    20 25           0.0%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    20 25          -0.0%</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    25 30           0.0%</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    30 35           0.0%</span>
 <span class="r-in"><span><span class="fu">premium_change</span><span class="op">(</span><span class="va">refinement</span>, at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">25</span>, <span class="fl">30</span><span class="op">)</span>, basis <span class="op">=</span> <span class="st">"segments"</span><span class="op">)</span></span></span>
@@ -247,7 +248,7 @@ result because that constant cancels in the relativity ratio.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  From To Premium change</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    20 40          -0.0%</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    25 50          -0.0%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    30 60          -0.0%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    30 60           0.0%</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">edited</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="edit_smoothing.html">edit_smoothing</a></span><span class="op">(</span></span></span>
@@ -266,7 +267,7 @@ result because that constant cancels in the relativity ratio.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  From To Step 1 Step 2 Difference</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    20 40  -0.0%  +4.4%    +4.4 pp</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    25 50  -0.0%  +0.8%    +0.8 pp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    30 60  -0.0%  -2.8%    -2.8 pp</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    30 60   0.0%  -2.8%    -2.8 pp</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
