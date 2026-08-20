@@ -178,7 +178,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-14 14:18:39 CEST
+#> Created: 2026-08-20 17:17:32 CEST
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -383,6 +383,46 @@ call because they express different instructions. They can be recorded
 in separate consecutive edit steps when that sequence has a clear
 actuarial interpretation.
 
+### Adjusting the slope after an anchor
+
+Sometimes the level of the smoothing is acceptable, while the remaining
+increase above a selected value should be stronger or weaker. In that
+case, `slope_adjustment` scales the change relative to the smoothing
+value at `slope_from`:
+
+``` r
+
+slope_refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    slope_adjustment = 1.10,
+    slope_from = 50
+  )
+
+autoplot(
+  slope_refinement,
+  variable = "age_band",
+  show_initial_smoothing = TRUE
+)
+```
+
+![](refinement-workflow_files/figure-html/unnamed-chunk-12-1.png)
+
+The curve through age 50 is unchanged. Above age 50, each difference
+from the relativity at age 50 is multiplied by 1.10. The curve therefore
+remains continuous at the anchor, while its subsequent change is 10%
+stronger. A value between 0 and 1 flattens the remaining effect. This is
+different from `adjustment`, which changes the relative level over a
+selected interval. Both may be supplied in one edit; the interval
+adjustment is then applied first.
+
+The transformation preserves the direction of an increasing or
+decreasing effect. For a shape-constrained curve, a value above 1 may
+nevertheless create a visible change in slope at the anchor and need not
+preserve global concavity or convexity across that exact point. This
+should therefore be treated as an explicit actuarial intervention and
+inspected before refitting.
+
 The remainder of this vignette uses `relative_age_refinement` as the
 current proposal:
 
@@ -398,7 +438,7 @@ The relativity plot shows the overall tariff shape:
 autoplot(refinement, variable = "age_band")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-13-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-14-1.png)
 
 ### Interpreting the premium effect
 
@@ -575,7 +615,7 @@ removing them is not an unambiguous level restriction.
 autoplot(refinement, variable = "zip")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-19-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-20-1.png)
 
 Again, the plot shows the proposed restriction before
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
@@ -626,7 +666,7 @@ effects.
 autoplot(refinement, variable = "bm_group")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-21-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-22-1.png)
 
 This remains a pre-refit comparison: it shows the current estimated
 effect and the proposed shrunken structure stored in the refinement
@@ -709,7 +749,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-14 14:18:39 CEST
+#> Created: 2026-08-20 17:17:32 CEST
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -719,7 +759,7 @@ summary(refinement)
 #> Refinement steps: 5
 #>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, scale: relativity)
 #>      shape = spline; 8 intervals over 18 to 95
-#>   2. Smoothing edit: age_band (relative adjustment: 1.05 from 32 to 65, transition: inherited, scale: relativity)
+#>   2. Smoothing edit: age_band (relative adjustment: 1.05 from 32 to 65, transition: inherited)
 #>      relative adjustment = 1.05; transition = inherited; cumulative from smoothing step 1
 #>   3. Restriction: zip -> zip_restricted (4 levels)
 #>      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000
@@ -819,6 +859,42 @@ Printing `refined_model` also reports the original and refitted
 formulas, the model family, refit mode and stored refinement steps
 before showing the regular GLM output.
 
+## Calibrating the final level
+
+After the tariff structure has been refined and fitted, an externally
+selected overall calibration factor can be applied to a log-link model:
+
+``` r
+
+calibrated_model <- calibrate_model(
+  refined_model,
+  factor = 1.05
+)
+
+head(rating_table(calibrated_model, exposure = FALSE))
+#>      risk_factor       level est_calibrated_model
+#> 1    (Intercept) (Intercept)            0.2696803
+#> 2 zip_restricted           0            0.9500000
+#> 3 zip_restricted           1            0.9954865
+#> 4 zip_restricted           2            0.8971513
+#> 5 zip_restricted           3            1.1000000
+#> 6       bm_group      Medium            1.0440707
+```
+
+[`calibrate_model()`](https://mharinga.github.io/insurancerating/reference/calibrate_model.md)
+adds `log(1.05)` to the intercept. Response-scale predictions therefore
+increase by exactly 5%, while all non-intercept coefficients and the
+ratios between tariff levels remain unchanged. The original
+`refined_model` is not modified.
+
+This differs from `refit(intercept_only = TRUE)`. An intercept-only
+refit estimates the overall level from the model data conditional on the
+stored refinements. Calibration instead applies one explicit total
+factor after that fit. It is consequently a final model-level operation:
+further refinement and repeated calibration are rejected. If the tariff
+structure changes, return to the retained `refinement` specification,
+refit it and calibrate the new result.
+
 ## Auditing the portfolio effect
 
 Individual coefficient changes are difficult to interpret independently
@@ -839,9 +915,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Prepared: 2026-08-14 14:18:39 CEST
-#> Refitted: 2026-08-14 14:18:43 CEST
-#> Audited: 2026-08-14 14:18:43 CEST
+#> Prepared: 2026-08-20 17:17:32 CEST
+#> Refitted: 2026-08-20 17:17:36 CEST
+#> Audited: 2026-08-20 17:17:36 CEST
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
@@ -854,7 +930,7 @@ summary(refinement_audit)
 #> Refinement steps: 5
 #>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, scale: relativity)
 #>      shape = spline; 8 intervals over 18 to 95
-#>   2. Smoothing edit: age_band (relative adjustment: 1.05 from 32 to 65, transition: inherited, scale: relativity)
+#>   2. Smoothing edit: age_band (relative adjustment: 1.05 from 32 to 65, transition: inherited)
 #>      relative adjustment = 1.05; transition = inherited; cumulative from smoothing step 1
 #>   3. Restriction: zip -> zip_restricted (4 levels)
 #>      0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000

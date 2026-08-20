@@ -4,6 +4,19 @@
 
 ### Changes since 0.8.1
 
+- [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+  gains `slope_adjustment` and `slope_from` for changing the remaining
+  development of an effective smoothing after a selected anchor. Values
+  before the anchor remain unchanged and the edited curve is continuous
+  at the anchor. The default `slope_adjustment = 1` leaves the smoothing
+  unchanged.
+- [`calibrate_model()`](https://mharinga.github.io/insurancerating/reference/calibrate_model.md)
+  adds a final multiplicative calibration step for refined log-link
+  GLMs. It changes only the overall fitted level, records the applied
+  factor and intercept shift, and remains compatible with
+  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+  and
+  [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md).
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   now warns when a newly added numeric interval overlaps the existing
   interval classification. The message identifies the conflicting levels
@@ -157,7 +170,12 @@
   interval boundaries and remain separate from explicit target-value
   edits. Each
   [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
-  call is stored as a separate cumulative refinement step. In
+  call is stored as a separate cumulative refinement step. In addition,
+  [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+  now supports `slope_adjustment` and `slope_from`. These arguments
+  leave the curve unchanged through the anchor and scale only its
+  remaining change, allowing a continuous effect to become steeper or
+  flatter above a selected source-variable value. In
   [`autoplot.rating_refinement()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md),
   `step` selects the cumulative smoothing state and
   `show_initial_smoothing = TRUE` overlays the original

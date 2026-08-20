@@ -1011,6 +1011,78 @@ change_xy <- function(borders_model, x_org,
 }
 
 
+#' Scale the remaining change in a smoothing curve after an anchor
+#'
+#' @noRd
+.apply_smoothing_slope_adjustment <- function(smooth, line, new_rf,
+                                               source_variable,
+                                               slope_adjustment,
+                                               slope_from,
+                                               original_smoothing) {
+  line_x <- line[[source_variable]]
+  smooth_x <- smooth[[source_variable]]
+  supported_range <- range(line_x, na.rm = TRUE)
+
+  if (slope_from < supported_range[1] || slope_from >= supported_range[2]) {
+    stop(
+      "`slope_from` must lie within the smoothing range and below its upper ",
+      "boundary (", format(supported_range[1], trim = TRUE), " to ",
+      format(supported_range[2], trim = TRUE), ").",
+      call. = FALSE
+    )
+  }
+
+  anchor <- stats::approx(
+    x = line_x,
+    y = line$yhat,
+    xout = slope_from,
+    rule = 1,
+    ties = mean
+  )$y
+  if (!is.finite(anchor)) {
+    stop("The smoothing could not be evaluated at `slope_from`.", call. = FALSE)
+  }
+
+  transform_values <- function(x, y) {
+    after <- x > slope_from
+    y[after] <- anchor + slope_adjustment * (y[after] - anchor)
+    y
+  }
+  adjusted_line <- transform_values(line_x, line$yhat)
+  adjusted_smooth <- transform_values(smooth_x, smooth$yhat)
+
+  if (any(!is.finite(adjusted_line)) || any(adjusted_line <= 0) ||
+      any(!is.finite(adjusted_smooth)) || any(adjusted_smooth <= 0)) {
+    stop(
+      "The requested `slope_adjustment` produces a non-finite or ",
+      "non-positive smoothed relativity.",
+      call. = FALSE
+    )
+  }
+
+  canonical <- .resolve_smoothing_method(original_smoothing)$method
+  slopes <- diff(adjusted_line) / diff(line_x)
+  if ((canonical %in% c("increasing", "increasing_convex",
+                        "increasing_concave") && any(slopes < -1e-8)) ||
+      (canonical %in% c("decreasing", "decreasing_convex",
+                        "decreasing_concave") && any(slopes > 1e-8))) {
+    stop(
+      "The requested `slope_adjustment` would reverse the inherited `",
+      canonical, "` smoothing direction. Choose a value closer to 1.",
+      call. = FALSE
+    )
+  }
+
+  smooth$yhat <- adjusted_smooth
+  line$yhat <- adjusted_line
+  new_rf$yhat <- adjusted_smooth
+  attr(smooth, "slope_adjustment") <- slope_adjustment
+  attr(smooth, "slope_from") <- slope_from
+
+  list(smooth = smooth, line = line, new_rf = new_rf, anchor = anchor)
+}
+
+
 #' @noRd
 .check_relativities <- function(relativities) {
   ok <- vapply(relativities, is.data.frame, logical(1))

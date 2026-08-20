@@ -15,6 +15,8 @@ edit_smoothing(
   control_positions = NULL,
   control_values = NULL,
   adjustment = NULL,
+  slope_adjustment = 1,
+  slope_from = NULL,
   transition = NULL,
   allow_extrapolation = FALSE,
   extrapolation_step = NULL
@@ -52,6 +54,15 @@ increase of up to 5 percent and \code{0.95} a decrease of up to 5 percent. With
 two boundaries, the default transition anchors the multiplier at 1 at
 \code{from} and \code{to}; a one-sided edit is anchored only at the supplied
 boundary.}
+
+\item{slope_adjustment}{Positive numeric scalar controlling the change in
+slope after \code{slope_from}. The default \code{1} leaves the curve unchanged.
+Values above 1 strengthen the remaining change; values between 0 and 1
+flatten it. This argument is available only in \code{edit_smoothing()}.}
+
+\item{slope_from}{Optional numeric anchor from which \code{slope_adjustment} is
+applied. Required when \code{slope_adjustment} differs from 1 and must lie below
+the upper boundary of the supported smoothing range.}
 
 \item{transition}{Optional character string controlling how \code{adjustment}
 connects to the unchanged smoothing. \code{NULL} inherits the original
@@ -115,6 +126,15 @@ edited curve should follow inside the interval. Relative adjustments and
 explicit target values cannot be combined in one \code{edit_smoothing()} call
 because they represent different actuarial instructions. They may be used in
 separate consecutive edits, which are then evaluated in their stored order.
+
+\code{slope_adjustment} changes the remaining increase or decrease after
+\code{slope_from}, while keeping the curve before that point unchanged. If
+\eqn{R(x)} is the current smoothing and \eqn{a} is \code{slope_from}, the edited
+curve is \eqn{R(a) + s[R(x) - R(a)]} for \eqn{x > a}, where \eqn{s} is
+\code{slope_adjustment}. A value of \code{1.10} therefore makes the change after the
+anchor 10 percent stronger; \code{0.90} makes it 10 percent weaker. The curve is
+continuous at the anchor. This transformation can be combined with
+\code{adjustment}; the relative adjustment is applied first.
 \subsection{Actuarial interpretation}{
 
 The edited interval is an explicit tariff assumption layered on the
@@ -191,6 +211,15 @@ adjusted_refinement <- refinement |>
   )
 
 adjusted_model <- refit(adjusted_refinement)
+
+# Keep the curve unchanged through age 40, then strengthen its remaining
+# change by 10 percent while retaining continuity at age 40.
+steeper_refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    slope_adjustment = 1.10,
+    slope_from = 40
+  )
 
 # A one-sided adjustment applies from age 40 to the end of the range.
 upper_tail_refinement <- refinement |>

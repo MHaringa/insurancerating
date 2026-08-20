@@ -331,6 +331,41 @@ in one `edit_smoothing()` call because they express different instructions.
 They can be recorded in separate consecutive edit steps when that sequence has
 a clear actuarial interpretation.
 
+### Adjusting the slope after an anchor
+
+Sometimes the level of the smoothing is acceptable, while the remaining
+increase above a selected value should be stronger or weaker. In that case,
+`slope_adjustment` scales the change relative to the smoothing value at
+`slope_from`:
+
+```{r}
+slope_refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    slope_adjustment = 1.10,
+    slope_from = 50
+  )
+
+autoplot(
+  slope_refinement,
+  variable = "age_band",
+  show_initial_smoothing = TRUE
+)
+```
+
+The curve through age 50 is unchanged. Above age 50, each difference from the
+relativity at age 50 is multiplied by 1.10. The curve therefore remains
+continuous at the anchor, while its subsequent change is 10% stronger. A value
+between 0 and 1 flattens the remaining effect. This is different from
+`adjustment`, which changes the relative level over a selected interval. Both
+may be supplied in one edit; the interval adjustment is then applied first.
+
+The transformation preserves the direction of an increasing or decreasing
+effect. For a shape-constrained curve, a value above 1 may nevertheless create
+a visible change in slope at the anchor and need not preserve global concavity
+or convexity across that exact point. This should therefore be treated as an
+explicit actuarial intervention and inspected before refitting.
+
 The remainder of this vignette uses `relative_age_refinement` as the current
 proposal:
 
@@ -645,6 +680,32 @@ This is the **post-refit** result. It is distinct from the preview shown by
 Printing `refined_model` also reports the original and refitted formulas, the
 model family, refit mode and stored refinement steps before showing the regular
 GLM output.
+
+## Calibrating the final level
+
+After the tariff structure has been refined and fitted, an externally selected
+overall calibration factor can be applied to a log-link model:
+
+```{r}
+calibrated_model <- calibrate_model(
+  refined_model,
+  factor = 1.05
+)
+
+head(rating_table(calibrated_model, exposure = FALSE))
+```
+
+`calibrate_model()` adds `log(1.05)` to the intercept. Response-scale
+predictions therefore increase by exactly 5%, while all non-intercept
+coefficients and the ratios between tariff levels remain unchanged. The
+original `refined_model` is not modified.
+
+This differs from `refit(intercept_only = TRUE)`. An intercept-only refit
+estimates the overall level from the model data conditional on the stored
+refinements. Calibration instead applies one explicit total factor after that
+fit. It is consequently a final model-level operation: further refinement and
+repeated calibration are rejected. If the tariff structure changes, return to
+the retained `refinement` specification, refit it and calibrate the new result.
 
 ## Auditing the portfolio effect
 

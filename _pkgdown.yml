@@ -87,6 +87,7 @@ reference:
       - relativity_specification
       - autoplot.rating_refinement
       - refit
+      - calibrate_model
       - audit_refinement
 
   - title: "Model validation"

@@ -2,6 +2,15 @@
 
 ## Changes since 0.8.1
 
+- `edit_smoothing()` gains `slope_adjustment` and `slope_from` for changing
+  the remaining development of an effective smoothing after a selected
+  anchor. Values before the anchor remain unchanged and the edited curve is
+  continuous at the anchor. The default `slope_adjustment = 1` leaves the
+  smoothing unchanged.
+- `calibrate_model()` adds a final multiplicative calibration step for refined
+  log-link GLMs. It changes only the overall fitted level, records the applied
+  factor and intercept shift, and remains compatible with `rating_table()` and
+  `add_prediction()`.
 - `add_restriction()` now warns when a newly added numeric interval overlaps
   the existing interval classification. The message identifies the conflicting
   levels and explains how a separate replacement variable can be supplied with
@@ -108,6 +117,11 @@
   anchored to the unchanged smoothing at both interval boundaries and remain
   separate from explicit target-value edits. Each `edit_smoothing()` call is
   stored as a separate cumulative refinement step. In
+  addition, `edit_smoothing()` now supports `slope_adjustment` and
+  `slope_from`. These arguments leave the curve unchanged through the anchor
+  and scale only its remaining change, allowing a continuous effect to become
+  steeper or flatter above a selected source-variable value.
+  In
   `autoplot.rating_refinement()`, `step` selects the cumulative smoothing state
   and `show_initial_smoothing = TRUE` overlays the original `add_smoothing()`
   curve for comparison.

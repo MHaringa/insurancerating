@@ -249,6 +249,8 @@ relativities.
   : Inspect a model refinement step
 - [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
   : Fit a prepared refinement specification
+- [`calibrate_model()`](https://mharinga.github.io/insurancerating/reference/calibrate_model.md)
+  : Calibrate the overall level of a refined pricing model
 - [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
   : Audit the effect of a fitted model refinement
 

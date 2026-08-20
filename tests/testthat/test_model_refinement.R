@@ -2083,6 +2083,125 @@ testthat::test_that(
   }
 )
 
+testthat::test_that("slope adjustments use an anchored continuous transform", {
+  smooth <- data.frame(
+    amount = c(0, 100, 200, 300, 400),
+    yhat = c(0.8, 0.9, 1.0, 1.08, 1.14)
+  )
+
+  changed <- .apply_smoothing_slope_adjustment(
+    smooth = smooth,
+    line = smooth,
+    new_rf = data.frame(yhat = smooth$yhat),
+    source_variable = "amount",
+    slope_adjustment = 1.5,
+    slope_from = 200,
+    original_smoothing = "increasing_concave"
+  )
+
+  testthat::expect_equal(changed$line$yhat[1:3], smooth$yhat[1:3])
+  testthat::expect_equal(
+    changed$line$yhat[4:5],
+    1 + 1.5 * (smooth$yhat[4:5] - 1)
+  )
+  testthat::expect_equal(changed$anchor, 1)
+  testthat::expect_true(all(diff(changed$line$yhat) >= 0))
+})
+
+testthat::test_that("edit_smoothing stores and cumulatively applies slope adjustments", {
+  df <- data.frame(
+    y = c(1, 2, 1, 3, 2, 4, 3, 5),
+    exposure = rep(1, 8),
+    amount = c(10, 20, 30, 40, 50, 60, 70, 80)
+  )
+  df$amount_band <- cut(
+    df$amount,
+    breaks = c(0, 20, 40, 60, 80),
+    include.lowest = TRUE
+  )
+  model <- glm(
+    y ~ amount_band + offset(log(exposure)),
+    family = poisson(),
+    data = df
+  )
+  base <- prepare_refinement(model, data = df) |>
+    add_smoothing(
+      model_variable = "amount_band",
+      source_variable = "amount",
+      breaks = c(0, 20, 40, 60, 80),
+      smoothing = "poly",
+      degree = 1
+    )
+
+  edited <- edit_smoothing(
+    base,
+    model_variable = "amount_band",
+    slope_adjustment = 1.2,
+    slope_from = 40
+  )
+  initial <- preview_refinement(base, 1)$state$new_line
+  current <- preview_refinement(edited, 2)$state$new_line
+  anchor <- stats::approx(initial$amount, initial$yhat, xout = 40)$y
+
+  testthat::expect_equal(edited$steps[[2]]$edit$slope_adjustment, 1.2)
+  testthat::expect_equal(edited$steps[[2]]$edit$slope_from, 40)
+  testthat::expect_equal(
+    current$yhat[current$amount <= 40],
+    initial$yhat[initial$amount <= 40]
+  )
+  testthat::expect_equal(
+    current$yhat[current$amount > 40],
+    anchor + 1.2 * (initial$yhat[initial$amount > 40] - anchor)
+  )
+  testthat::expect_s3_class(refit(edited), "glm")
+
+  combined <- edit_smoothing(
+    base,
+    model_variable = "amount_band",
+    from = 20,
+    to = 60,
+    adjustment = 1.02,
+    transition = "linear",
+    slope_adjustment = 1.1,
+    slope_from = 40
+  )
+  testthat::expect_s3_class(refit(combined), "glm")
+})
+
+testthat::test_that("slope adjustment arguments are validated", {
+  df <- data.frame(
+    y = c(1, 2, 1, 3), exposure = 1,
+    amount = c(10, 30, 50, 70)
+  )
+  df$amount_band <- cut(df$amount, c(0, 20, 40, 60, 80),
+                        include.lowest = TRUE)
+  model <- glm(y ~ amount_band + offset(log(exposure)), poisson(), data = df)
+  ref <- prepare_refinement(model, data = df) |>
+    add_smoothing(
+      model_variable = "amount_band", source_variable = "amount",
+      breaks = c(0, 20, 40, 60, 80), smoothing = "poly", degree = 1
+    )
+
+  testthat::expect_error(
+    edit_smoothing(ref, model_variable = "amount_band", slope_adjustment = 1.1),
+    "Supply `slope_from`"
+  )
+  testthat::expect_error(
+    edit_smoothing(ref, model_variable = "amount_band", slope_from = 40),
+    "only used when"
+  )
+  testthat::expect_error(
+    edit_smoothing(ref, model_variable = "amount_band",
+                   slope_adjustment = 1.1, slope_from = 80),
+    "below its upper boundary"
+  )
+  testthat::expect_error(
+    edit_smoothing(ref, model_variable = "amount_band", from = 20, to = 60,
+                   from_value = 1, slope_adjustment = 1.1, slope_from = 40),
+    "cannot be combined with explicit"
+  )
+})
+
 testthat::test_that(
   "add_relativities validates inputs before storing a step", {
     df <- data.frame(
