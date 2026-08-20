@@ -20,6 +20,8 @@ edit_smoothing(
   control_positions = NULL,
   control_values = NULL,
   adjustment = NULL,
+  slope_adjustment = 1,
+  slope_from = NULL,
   transition = NULL,
   allow_extrapolation = FALSE,
   extrapolation_step = NULL
@@ -74,6 +76,19 @@ edit_smoothing(
   With two boundaries, the default transition anchors the multiplier at
   1 at `from` and `to`; a one-sided edit is anchored only at the
   supplied boundary.
+
+- slope_adjustment:
+
+  Positive numeric scalar controlling the change in slope after
+  `slope_from`. The default `1` leaves the curve unchanged. Values above
+  1 strengthen the remaining change; values between 0 and 1 flatten it.
+  This argument is available only in `edit_smoothing()`.
+
+- slope_from:
+
+  Optional numeric anchor from which `slope_adjustment` is applied.
+  Required when `slope_adjustment` differs from 1 and must lie below the
+  upper boundary of the supported smoothing range.
 
 - transition:
 
@@ -153,6 +168,15 @@ adjustments and explicit target values cannot be combined in one
 `edit_smoothing()` call because they represent different actuarial
 instructions. They may be used in separate consecutive edits, which are
 then evaluated in their stored order.
+
+`slope_adjustment` changes the remaining increase or decrease after
+`slope_from`, while keeping the curve before that point unchanged. If
+\\R(x)\\ is the current smoothing and \\a\\ is `slope_from`, the edited
+curve is \\R(a) + s\[R(x) - R(a)\]\\ for \\x \> a\\, where \\s\\ is
+`slope_adjustment`. A value of `1.10` therefore makes the change after
+the anchor 10 percent stronger; `0.90` makes it 10 percent weaker. The
+curve is continuous at the anchor. This transformation can be combined
+with `adjustment`; the relative adjustment is applied first.
 
 ### Actuarial interpretation
 
@@ -249,6 +273,15 @@ adjusted_refinement <- refinement |>
   )
 
 adjusted_model <- refit(adjusted_refinement)
+
+# Keep the curve unchanged through age 40, then strengthen its remaining
+# change by 10 percent while retaining continuity at age 40.
+steeper_refinement <- refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    slope_adjustment = 1.10,
+    slope_from = 40
+  )
 
 # A one-sided adjustment applies from age 40 to the end of the range.
 upper_tail_refinement <- refinement |>
