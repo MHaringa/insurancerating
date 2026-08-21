@@ -57,6 +57,7 @@ attached to support actuarial review.</p>
 <span>  model_data <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  exposure <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  exposure_output <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  estimate_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  exponentiate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  significance <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  reference_first <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -97,6 +98,13 @@ name.</p></dd>
 <dd><p>Optional character string naming the exposure column
 in the output.
 If <code>NULL</code>, the original exposure column name is used.</p></dd>
+
+
+<dt id="arg-estimate-name">estimate_name<a class="anchor" aria-label="anchor" href="#arg-estimate-name"></a></dt>
+<dd><p>Optional character vector with the exact output column
+name for each model estimate. Supply one value for one model, an unnamed
+vector in model order, or a named vector whose names identify the supplied
+model objects. If <code>NULL</code>, columns retain the default <code>est_&lt;model&gt;</code> names.</p></dd>
 
 
 <dt id="arg-exponentiate">exponentiate<a class="anchor" aria-label="anchor" href="#arg-exponentiate"></a></dt>
@@ -189,9 +197,10 @@ contains:</p><dl><dt>risk_factor</dt>
 <dt>level</dt>
 <dd><p>Factor level or term representation.</p></dd>
 
-<dt><code>est_*</code></dt>
-<dd><p>Coefficient or exponentiated relativity for each supplied
-model. The suffix is derived from the model expression.</p></dd>
+<dt>Estimate column</dt>
+<dd><p>Coefficient or exponentiated relativity for each
+supplied model. Its default <code>est_*</code> name is derived from the model
+expression and can be replaced with <code>estimate_name</code>.</p></dd>
 
 <dt><code>signif_*</code></dt>
 <dd><p>Optional significance indicator for each model.</p></dd>
@@ -214,9 +223,12 @@ the reference level is added explicitly with relativity <code>1</code> when
 <code>exponentiate = TRUE</code>, or coefficient <code>0</code> when <code>exponentiate = FALSE</code>.
 Numeric model terms are retained on the scale supplied by the fitted model
 structure.</p>
-<p>Estimate columns are named from the supplied model expressions, for example
-<code>est_frequency</code> for an object named <code>frequency</code>. When several models are
-supplied, their effects are joined by risk factor and level.</p>
+<p>By default, estimate columns are named from the supplied model expressions,
+for example <code>est_frequency</code> for an object named <code>frequency</code>.
+<code>estimate_name</code> can replace these with exact user-supplied names. With
+several models, use an unnamed vector in model order or a named vector such
+as <code>c(frequency = "freq_relativity", severity = "sev_relativity")</code>.
+Effects are joined by risk factor and level.</p>
 </div>
 
 <div class="section">
@@ -335,6 +347,41 @@ fitting a refinement specification.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4         zip           2 0.9237868     7783</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5         zip           3 0.9756337     7588</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6          bm          bm 0.9978465       NA</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Give the estimate column an explicit name</span></span></span>
+<span class="r-in"><span><span class="fu">rating_table</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">freq</span>,</span></span>
+<span class="r-in"><span>  model_data <span class="op">=</span> <span class="va">df</span>,</span></span>
+<span class="r-in"><span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span></span>
+<span class="r-in"><span>  estimate_name <span class="op">=</span> <span class="st">"frequency_relativity"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   risk_factor       level frequency_relativity exposure</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (Intercept) (Intercept)            0.1415051       NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2         zip           0            1.0000000      207</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3         zip           1            1.0252572    11081</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4         zip           2            0.9237868     7783</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5         zip           3            0.9756337     7588</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6          bm          bm            0.9978465       NA</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># For several models, names can be supplied in model order or by model name</span></span></span>
+<span class="r-in"><span><span class="va">freq_alternative</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">freq</span>, <span class="va">.</span> <span class="op">~</span> <span class="va">.</span> <span class="op">-</span> <span class="va">bm</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">rating_table</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">freq</span>,</span></span>
+<span class="r-in"><span>  <span class="va">freq_alternative</span>,</span></span>
+<span class="r-in"><span>  model_data <span class="op">=</span> <span class="va">df</span>,</span></span>
+<span class="r-in"><span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span></span>
+<span class="r-in"><span>  estimate_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    freq <span class="op">=</span> <span class="st">"current_relativity"</span>,</span></span>
+<span class="r-in"><span>    freq_alternative <span class="op">=</span> <span class="st">"alternative_relativity"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   risk_factor       level current_relativity alternative_relativity exposure</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (Intercept) (Intercept)          0.1415051              0.1402024       NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2         zip           0          1.0000000              1.0000000      207</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3         zip           1          1.0252572              1.0254064    11081</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4         zip           2          0.9237868              0.9238016     7783</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5         zip           3          0.9756337              0.9757522     7588</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6          bm          bm          0.9978465                     NA       NA</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># The historical accessor remains available for existing code</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">fitted_effects</span><span class="op">$</span><span class="va">df</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">fitted_effects</span><span class="op">)</span><span class="op">)</span></span></span>
