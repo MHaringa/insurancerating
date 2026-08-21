@@ -16,7 +16,6 @@ edit_smoothing(
   control_values = NULL,
   adjustment = NULL,
   slope_adjustment = 1,
-  slope_from = NULL,
   transition = NULL,
   allow_extrapolation = FALSE,
   extrapolation_step = NULL
@@ -39,7 +38,8 @@ original smoothing and appended after the existing workflow steps.}
 \item{from, to}{Optional numeric values giving the start and end of the
 source-variable interval to modify. For \code{adjustment}, either value may be
 omitted to use the beginning or end of the available smoothing range.
-Explicit target-value and control-point edits require both values.}
+For \code{slope_adjustment}, \code{from} is the required anchor and \code{to} must remain
+\code{NULL}. Explicit target-value and control-point edits require both values.}
 
 \item{from_value, to_value}{Optional numeric values used to override the
 smoothed curve value at \code{from} and \code{to}.}
@@ -56,13 +56,9 @@ two boundaries, the default transition anchors the multiplier at 1 at
 boundary.}
 
 \item{slope_adjustment}{Positive numeric scalar controlling the change in
-slope after \code{slope_from}. The default \code{1} leaves the curve unchanged.
+slope after \code{from}. The default \code{1} leaves the curve unchanged.
 Values above 1 strengthen the remaining change; values between 0 and 1
 flatten it. This argument is available only in \code{edit_smoothing()}.}
-
-\item{slope_from}{Optional numeric anchor from which \code{slope_adjustment} is
-applied. Required when \code{slope_adjustment} differs from 1 and must lie below
-the upper boundary of the supported smoothing range.}
 
 \item{transition}{Optional character string controlling how \code{adjustment}
 connects to the unchanged smoothing. \code{NULL} inherits the original
@@ -127,14 +123,18 @@ explicit target values cannot be combined in one \code{edit_smoothing()} call
 because they represent different actuarial instructions. They may be used in
 separate consecutive edits, which are then evaluated in their stored order.
 
-\code{slope_adjustment} changes the remaining increase or decrease after
-\code{slope_from}, while keeping the curve before that point unchanged. If
-\eqn{R(x)} is the current smoothing and \eqn{a} is \code{slope_from}, the edited
+\code{slope_adjustment} changes the remaining increase or decrease after \code{from},
+while keeping the curve before that point unchanged. If \eqn{R(x)} is the
+current smoothing and \eqn{a} is \code{from}, the edited
 curve is \eqn{R(a) + s[R(x) - R(a)]} for \eqn{x > a}, where \eqn{s} is
 \code{slope_adjustment}. A value of \code{1.10} therefore makes the change after the
 anchor 10 percent stronger; \code{0.90} makes it 10 percent weaker. The curve is
-continuous at the anchor. This transformation can be combined with
-\code{adjustment}; the relative adjustment is applied first.
+continuous at the anchor.
+
+Each call applies one edit type: a relative \code{adjustment}, a
+\code{slope_adjustment}, or explicit target/control-point values. Apply multiple
+changes in consecutive calls so that every actuarial intervention remains a
+separate, inspectable refinement step.
 \subsection{Actuarial interpretation}{
 
 The edited interval is an explicit tariff assumption layered on the
@@ -217,8 +217,8 @@ adjusted_model <- refit(adjusted_refinement)
 steeper_refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
-    slope_adjustment = 1.10,
-    slope_from = 40
+    from = 40,
+    slope_adjustment = 1.10
   )
 
 # A one-sided adjustment applies from age 40 to the end of the range.

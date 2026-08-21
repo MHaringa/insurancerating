@@ -1017,15 +1017,15 @@ change_xy <- function(borders_model, x_org,
 .apply_smoothing_slope_adjustment <- function(smooth, line, new_rf,
                                                source_variable,
                                                slope_adjustment,
-                                               slope_from,
+                                               from,
                                                original_smoothing) {
   line_x <- line[[source_variable]]
   smooth_x <- smooth[[source_variable]]
   supported_range <- range(line_x, na.rm = TRUE)
 
-  if (slope_from < supported_range[1] || slope_from >= supported_range[2]) {
+  if (from < supported_range[1] || from >= supported_range[2]) {
     stop(
-      "`slope_from` must lie within the smoothing range and below its upper ",
+      "`from` must lie within the smoothing range and below its upper ",
       "boundary (", format(supported_range[1], trim = TRUE), " to ",
       format(supported_range[2], trim = TRUE), ").",
       call. = FALSE
@@ -1035,16 +1035,16 @@ change_xy <- function(borders_model, x_org,
   anchor <- stats::approx(
     x = line_x,
     y = line$yhat,
-    xout = slope_from,
+    xout = from,
     rule = 1,
     ties = mean
   )$y
   if (!is.finite(anchor)) {
-    stop("The smoothing could not be evaluated at `slope_from`.", call. = FALSE)
+    stop("The smoothing could not be evaluated at `from`.", call. = FALSE)
   }
 
   transform_values <- function(x, y) {
-    after <- x > slope_from
+    after <- x > from
     y[after] <- anchor + slope_adjustment * (y[after] - anchor)
     y
   }
@@ -1077,7 +1077,7 @@ change_xy <- function(borders_model, x_org,
   line$yhat <- adjusted_line
   new_rf$yhat <- adjusted_smooth
   attr(smooth, "slope_adjustment") <- slope_adjustment
-  attr(smooth, "slope_from") <- slope_from
+  attr(smooth, "slope_anchor") <- from
 
   list(smooth = smooth, line = line, new_rf = new_rf, anchor = anchor)
 }

@@ -64,7 +64,6 @@ should follow known targets.</p>
 <span>  control_values <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  adjustment <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  slope_adjustment <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  slope_from <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  transition <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  allow_extrapolation <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  extrapolation_step <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -98,7 +97,8 @@ original smoothing and appended after the existing workflow steps.</p></dd>
 <dd><p>Optional numeric values giving the start and end of the
 source-variable interval to modify. For <code>adjustment</code>, either value may be
 omitted to use the beginning or end of the available smoothing range.
-Explicit target-value and control-point edits require both values.</p></dd>
+For <code>slope_adjustment</code>, <code>from</code> is the required anchor and <code>to</code> must remain
+<code>NULL</code>. Explicit target-value and control-point edits require both values.</p></dd>
 
 
 <dt id="arg-from-value-to-value">from_value, to_value<a class="anchor" aria-label="anchor" href="#arg-from-value-to-value"></a></dt>
@@ -123,15 +123,9 @@ boundary.</p></dd>
 
 <dt id="arg-slope-adjustment">slope_adjustment<a class="anchor" aria-label="anchor" href="#arg-slope-adjustment"></a></dt>
 <dd><p>Positive numeric scalar controlling the change in
-slope after <code>slope_from</code>. The default <code>1</code> leaves the curve unchanged.
+slope after <code>from</code>. The default <code>1</code> leaves the curve unchanged.
 Values above 1 strengthen the remaining change; values between 0 and 1
 flatten it. This argument is available only in <code>edit_smoothing()</code>.</p></dd>
-
-
-<dt id="arg-slope-from">slope_from<a class="anchor" aria-label="anchor" href="#arg-slope-from"></a></dt>
-<dd><p>Optional numeric anchor from which <code>slope_adjustment</code> is
-applied. Required when <code>slope_adjustment</code> differs from 1 and must lie below
-the upper boundary of the supported smoothing range.</p></dd>
 
 
 <dt id="arg-transition">transition<a class="anchor" aria-label="anchor" href="#arg-transition"></a></dt>
@@ -194,14 +188,17 @@ edited curve should follow inside the interval. Relative adjustments and
 explicit target values cannot be combined in one <code>edit_smoothing()</code> call
 because they represent different actuarial instructions. They may be used in
 separate consecutive edits, which are then evaluated in their stored order.</p>
-<p><code>slope_adjustment</code> changes the remaining increase or decrease after
-<code>slope_from</code>, while keeping the curve before that point unchanged. If
-\(R(x)\) is the current smoothing and \(a\) is <code>slope_from</code>, the edited
+<p><code>slope_adjustment</code> changes the remaining increase or decrease after <code>from</code>,
+while keeping the curve before that point unchanged. If \(R(x)\) is the
+current smoothing and \(a\) is <code>from</code>, the edited
 curve is \(R(a) + s[R(x) - R(a)]\) for \(x &gt; a\), where \(s\) is
 <code>slope_adjustment</code>. A value of <code>1.10</code> therefore makes the change after the
 anchor 10 percent stronger; <code>0.90</code> makes it 10 percent weaker. The curve is
-continuous at the anchor. This transformation can be combined with
-<code>adjustment</code>; the relative adjustment is applied first.</p><div class="section">
+continuous at the anchor.</p>
+<p>Each call applies one edit type: a relative <code>adjustment</code>, a
+<code>slope_adjustment</code>, or explicit target/control-point values. Apply multiple
+changes in consecutive calls so that every actuarial intervention remains a
+separate, inspectable refinement step.</p><div class="section">
 <h3 id="actuarial-interpretation">Actuarial interpretation<a class="anchor" aria-label="anchor" href="#actuarial-interpretation"></a></h3>
 
 
@@ -296,8 +293,8 @@ specification.</p>
 <span class="r-in"><span><span class="va">steeper_refinement</span> <span class="op">&lt;-</span> <span class="va">refinement</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">edit_smoothing</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    model_variable <span class="op">=</span> <span class="st">"age_band"</span>,</span></span>
-<span class="r-in"><span>    slope_adjustment <span class="op">=</span> <span class="fl">1.10</span>,</span></span>
-<span class="r-in"><span>    slope_from <span class="op">=</span> <span class="fl">40</span></span></span>
+<span class="r-in"><span>    from <span class="op">=</span> <span class="fl">40</span>,</span></span>
+<span class="r-in"><span>    slope_adjustment <span class="op">=</span> <span class="fl">1.10</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># A one-sided adjustment applies from age 40 to the end of the range.</span></span></span>

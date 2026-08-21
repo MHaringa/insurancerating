@@ -118,16 +118,13 @@ as_gt.rating_table <- function(x,
   }
 
   table_data <- .rating_table_data(x)
-  estimate_cols <- grep("^est_", names(table_data), value = TRUE)
-  model_names <- sub("^est_", "", estimate_cols)
+  estimate_cols <- .rating_table_estimate_columns(x, table_data)
+  model_names <- .rating_table_metadata(x, "models")
   display_model_labels <- .resolve_rating_table_model_labels(
     model_names,
     model_labels
   )
-  significance_cols <- paste0(
-    "signif_",
-    sub("^est_", "", estimate_cols)
-  )
+  significance_cols <- .rating_table_significance_columns(x)
   exposure_col <- .rating_table_metadata(x, "exposure")
 
   display_cols <- c("risk_factor", "level", estimate_cols, exposure_col)
@@ -272,13 +269,13 @@ as_gt.rating_table <- function(x,
     )
   }
 
-  estimate_cols <- grep("^est_", names(table_data), value = TRUE)
+  estimate_cols <- .rating_table_estimate_columns(x, table_data)
   if (length(estimate_cols) == 0L) {
     stop("The `rating_table` object contains no fitted model effects.",
          call. = FALSE)
   }
   .resolve_rating_table_model_labels(
-    sub("^est_", "", estimate_cols),
+    .rating_table_metadata(x, "models"),
     model_labels
   )
   exposure_col <- .rating_table_metadata(x, "exposure")
@@ -294,10 +291,7 @@ as_gt.rating_table <- function(x,
     significance
   }
   if (show_significance) {
-    significance_cols <- paste0(
-      "signif_",
-      sub("^est_", "", estimate_cols)
-    )
+    significance_cols <- .rating_table_significance_columns(x)
     missing_significance <- setdiff(significance_cols, names(table_data))
     if (length(missing_significance) > 0L) {
       stop(

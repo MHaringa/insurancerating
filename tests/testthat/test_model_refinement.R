@@ -2058,7 +2058,7 @@ testthat::test_that(
         ref, model_variable = "age_band", from = 18, to = 60,
         adjustment = 1.05, from_value = 1
       ),
-      "cannot be combined"
+      "one edit type per call"
     )
     testthat::expect_error(
       edit_smoothing(
@@ -2078,7 +2078,7 @@ testthat::test_that(
         ref, model_variable = "age_band", from = 18, to = 60,
         adjustment = 1.05, allow_extrapolation = TRUE
       ),
-      "only available for explicit"
+      "one edit type per call"
     )
   }
 )
@@ -2095,7 +2095,7 @@ testthat::test_that("slope adjustments use an anchored continuous transform", {
     new_rf = data.frame(yhat = smooth$yhat),
     source_variable = "amount",
     slope_adjustment = 1.5,
-    slope_from = 200,
+    from = 200,
     original_smoothing = "increasing_concave"
   )
 
@@ -2136,15 +2136,15 @@ testthat::test_that("edit_smoothing stores and cumulatively applies slope adjust
   edited <- edit_smoothing(
     base,
     model_variable = "amount_band",
-    slope_adjustment = 1.2,
-    slope_from = 40
+    from = 40,
+    slope_adjustment = 1.2
   )
   initial <- preview_refinement(base, 1)$state$new_line
   current <- preview_refinement(edited, 2)$state$new_line
   anchor <- stats::approx(initial$amount, initial$yhat, xout = 40)$y
 
   testthat::expect_equal(edited$steps[[2]]$edit$slope_adjustment, 1.2)
-  testthat::expect_equal(edited$steps[[2]]$edit$slope_from, 40)
+  testthat::expect_equal(edited$steps[[2]]$edit$from, 40)
   testthat::expect_equal(
     current$yhat[current$amount <= 40],
     initial$yhat[initial$amount <= 40]
@@ -2155,20 +2155,37 @@ testthat::test_that("edit_smoothing stores and cumulatively applies slope adjust
   )
   testthat::expect_s3_class(refit(edited), "glm")
 
-  combined <- edit_smoothing(
-    base,
-    model_variable = "amount_band",
-    from = 20,
-    to = 60,
-    adjustment = 1.02,
-    transition = "linear",
-    slope_adjustment = 1.1,
-    slope_from = 40
+  testthat::expect_error(
+    edit_smoothing(
+      base,
+      model_variable = "amount_band",
+      from = 40,
+      adjustment = 1.02,
+      slope_adjustment = 1.1
+    ),
+    "one edit type per call"
   )
+
+  combined <- base |>
+    edit_smoothing(
+      model_variable = "amount_band",
+      from = 20,
+      to = 60,
+      adjustment = 1.02,
+      transition = "linear"
+    ) |>
+    edit_smoothing(
+      model_variable = "amount_band",
+      from = 40,
+      slope_adjustment = 1.1
+    )
+  testthat::expect_length(combined$steps, 3)
   testthat::expect_s3_class(refit(combined), "glm")
 })
 
 testthat::test_that("slope adjustment arguments are validated", {
+  testthat::expect_false("slope_from" %in% names(formals(edit_smoothing)))
+
   df <- data.frame(
     y = c(1, 2, 1, 3), exposure = 1,
     amount = c(10, 30, 50, 70)
@@ -2184,21 +2201,22 @@ testthat::test_that("slope adjustment arguments are validated", {
 
   testthat::expect_error(
     edit_smoothing(ref, model_variable = "amount_band", slope_adjustment = 1.1),
-    "Supply `slope_from`"
-  )
-  testthat::expect_error(
-    edit_smoothing(ref, model_variable = "amount_band", slope_from = 40),
-    "only used when"
+    "Supply `from`"
   )
   testthat::expect_error(
     edit_smoothing(ref, model_variable = "amount_band",
-                   slope_adjustment = 1.1, slope_from = 80),
+                   from = 80, slope_adjustment = 1.1),
     "below its upper boundary"
   )
   testthat::expect_error(
     edit_smoothing(ref, model_variable = "amount_band", from = 20, to = 60,
-                   from_value = 1, slope_adjustment = 1.1, slope_from = 40),
-    "cannot be combined with explicit"
+                   from_value = 1, slope_adjustment = 1.1),
+    "`to` cannot be used with `slope_adjustment`"
+  )
+  testthat::expect_error(
+    edit_smoothing(ref, model_variable = "amount_band", from = 40, to = 60,
+                   slope_adjustment = 1.1),
+    "`to` cannot be used with `slope_adjustment`"
   )
 })
 

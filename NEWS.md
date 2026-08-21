@@ -2,8 +2,12 @@
 
 ## Changes since 0.8.1
 
-- `edit_smoothing()` gains `slope_adjustment` and `slope_from` for changing
-  the remaining development of an effective smoothing after a selected
+- `rating_table()` gains `estimate_name` for assigning exact names to fitted
+  coefficient or relativity columns. It accepts one name for one model, a
+  vector in model order, or a named vector for multi-model comparisons;
+  `autoplot()` and `as_gt()` retain the custom columns.
+- `edit_smoothing()` gains `slope_adjustment`, using `from` as its anchor, for
+  changing the remaining development of an effective smoothing after a selected
   anchor. Values before the anchor remain unchanged and the edited curve is
   continuous at the anchor. The default `slope_adjustment = 1` leaves the
   smoothing unchanged.
@@ -117,9 +121,9 @@
   anchored to the unchanged smoothing at both interval boundaries and remain
   separate from explicit target-value edits. Each `edit_smoothing()` call is
   stored as a separate cumulative refinement step. In
-  addition, `edit_smoothing()` now supports `slope_adjustment` and
-  `slope_from`. These arguments leave the curve unchanged through the anchor
-  and scale only its remaining change, allowing a continuous effect to become
+  addition, `edit_smoothing()` now supports `slope_adjustment`, with `from` as
+  its anchor. This leaves the curve unchanged through the anchor
+  and scales only its remaining change, allowing a continuous effect to become
   steeper or flatter above a selected source-variable value.
   In
   `autoplot.rating_refinement()`, `step` selects the cumulative smoothing state

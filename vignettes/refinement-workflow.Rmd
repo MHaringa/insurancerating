@@ -336,14 +336,14 @@ a clear actuarial interpretation.
 Sometimes the level of the smoothing is acceptable, while the remaining
 increase above a selected value should be stronger or weaker. In that case,
 `slope_adjustment` scales the change relative to the smoothing value at
-`slope_from`:
+`from`:
 
 ```{r}
 slope_refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
-    slope_adjustment = 1.10,
-    slope_from = 50
+    from = 50,
+    slope_adjustment = 1.10
   )
 
 autoplot(
@@ -357,8 +357,28 @@ The curve through age 50 is unchanged. Above age 50, each difference from the
 relativity at age 50 is multiplied by 1.10. The curve therefore remains
 continuous at the anchor, while its subsequent change is 10% stronger. A value
 between 0 and 1 flattens the remaining effect. This is different from
-`adjustment`, which changes the relative level over a selected interval. Both
-may be supplied in one edit; the interval adjustment is then applied first.
+`adjustment`, which changes the relative level over a selected interval.
+
+Each `edit_smoothing()` call records one type of intervention: a relative
+level adjustment, a slope adjustment, or explicit target/control-point values.
+When both level and slope require adjustment, use two consecutive calls:
+
+```{r, eval=FALSE}
+refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 30,
+    to = 50,
+    adjustment = 1.05
+  ) |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 50,
+    slope_adjustment = 1.10
+  )
+```
+
+The refinement history then retains both actuarial choices as separate steps.
 
 The transformation preserves the direction of an increasing or decreasing
 effect. For a shape-constrained curve, a value above 1 may nevertheless create

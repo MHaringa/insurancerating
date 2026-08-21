@@ -178,7 +178,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-20 17:17:32 CEST
+#> Created: 2026-08-21 11:31:49 CEST
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -388,15 +388,15 @@ actuarial interpretation.
 Sometimes the level of the smoothing is acceptable, while the remaining
 increase above a selected value should be stronger or weaker. In that
 case, `slope_adjustment` scales the change relative to the smoothing
-value at `slope_from`:
+value at `from`:
 
 ``` r
 
 slope_refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
-    slope_adjustment = 1.10,
-    slope_from = 50
+    from = 50,
+    slope_adjustment = 1.10
   )
 
 autoplot(
@@ -413,8 +413,32 @@ from the relativity at age 50 is multiplied by 1.10. The curve therefore
 remains continuous at the anchor, while its subsequent change is 10%
 stronger. A value between 0 and 1 flattens the remaining effect. This is
 different from `adjustment`, which changes the relative level over a
-selected interval. Both may be supplied in one edit; the interval
-adjustment is then applied first.
+selected interval.
+
+Each
+[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
+call records one type of intervention: a relative level adjustment, a
+slope adjustment, or explicit target/control-point values. When both
+level and slope require adjustment, use two consecutive calls:
+
+``` r
+
+refinement |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 30,
+    to = 50,
+    adjustment = 1.05
+  ) |>
+  edit_smoothing(
+    model_variable = "age_band",
+    from = 50,
+    slope_adjustment = 1.10
+  )
+```
+
+The refinement history then retains both actuarial choices as separate
+steps.
 
 The transformation preserves the direction of an increasing or
 decreasing effect. For a shape-constrained curve, a value above 1 may
@@ -438,7 +462,7 @@ The relativity plot shows the overall tariff shape:
 autoplot(refinement, variable = "age_band")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-14-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-15-1.png)
 
 ### Interpreting the premium effect
 
@@ -615,7 +639,7 @@ removing them is not an unambiguous level restriction.
 autoplot(refinement, variable = "zip")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-20-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-21-1.png)
 
 Again, the plot shows the proposed restriction before
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
@@ -666,7 +690,7 @@ effects.
 autoplot(refinement, variable = "bm_group")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-22-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-23-1.png)
 
 This remains a pre-refit comparison: it shows the current estimated
 effect and the proposed shrunken structure stored in the refinement
@@ -749,7 +773,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Created: 2026-08-20 17:17:32 CEST
+#> Created: 2026-08-21 11:31:49 CEST
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -915,9 +939,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.1.9000
-#> Prepared: 2026-08-20 17:17:32 CEST
-#> Refitted: 2026-08-20 17:17:36 CEST
-#> Audited: 2026-08-20 17:17:36 CEST
+#> Prepared: 2026-08-21 11:31:49 CEST
+#> Refitted: 2026-08-21 11:31:52 CEST
+#> Audited: 2026-08-21 11:31:53 CEST
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 

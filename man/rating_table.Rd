@@ -9,6 +9,7 @@ rating_table(
   model_data = NULL,
   exposure = TRUE,
   exposure_output = NULL,
+  estimate_name = NULL,
   exponentiate = TRUE,
   significance = FALSE,
   reference_first = TRUE,
@@ -38,6 +39,11 @@ name.}
 \item{exposure_output}{Optional character string naming the exposure column
 in the output.
 If \code{NULL}, the original exposure column name is used.}
+
+\item{estimate_name}{Optional character vector with the exact output column
+name for each model estimate. Supply one value for one model, an unnamed
+vector in model order, or a named vector whose names identify the supplied
+model objects. If \code{NULL}, columns retain the default \verb{est_<model>} names.}
 
 \item{exponentiate}{Logical. If \code{TRUE}, coefficients are
 exponentiated and shown as relativities. If \code{FALSE}, coefficients are shown
@@ -104,8 +110,9 @@ contains:
 \describe{
 \item{risk_factor}{Model term or risk-factor name.}
 \item{level}{Factor level or term representation.}
-\item{\verb{est_*}}{Coefficient or exponentiated relativity for each supplied
-model. The suffix is derived from the model expression.}
+\item{Estimate column}{Coefficient or exponentiated relativity for each
+supplied model. Its default \verb{est_*} name is derived from the model
+expression and can be replaced with \code{estimate_name}.}
 \item{\verb{signif_*}}{Optional significance indicator for each model.}
 \item{Exposure column}{Optional aggregated exposure, retaining the
 requested output name.}
@@ -126,9 +133,12 @@ the reference level is added explicitly with relativity \code{1} when
 Numeric model terms are retained on the scale supplied by the fitted model
 structure.
 
-Estimate columns are named from the supplied model expressions, for example
-\code{est_frequency} for an object named \code{frequency}. When several models are
-supplied, their effects are joined by risk factor and level.
+By default, estimate columns are named from the supplied model expressions,
+for example \code{est_frequency} for an object named \code{frequency}.
+\code{estimate_name} can replace these with exact user-supplied names. With
+several models, use an unnamed vector in model order or a named vector such
+as \code{c(frequency = "freq_relativity", severity = "sev_relativity")}.
+Effects are joined by risk factor and level.
 }
 
 \subsection{Actuarial interpretation}{
@@ -221,6 +231,27 @@ fitted_effects <- rating_table(
 
 fitted_effects
 head(fitted_effects)
+
+# Give the estimate column an explicit name
+rating_table(
+  freq,
+  model_data = df,
+  exposure = "exposure",
+  estimate_name = "frequency_relativity"
+)
+
+# For several models, names can be supplied in model order or by model name
+freq_alternative <- update(freq, . ~ . - bm)
+rating_table(
+  freq,
+  freq_alternative,
+  model_data = df,
+  exposure = "exposure",
+  estimate_name = c(
+    freq = "current_relativity",
+    freq_alternative = "alternative_relativity"
+  )
+)
 
 # The historical accessor remains available for existing code
 identical(fitted_effects$df, as.data.frame(fitted_effects))

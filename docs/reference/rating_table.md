@@ -13,6 +13,7 @@ rating_table(
   model_data = NULL,
   exposure = TRUE,
   exposure_output = NULL,
+  estimate_name = NULL,
   exponentiate = TRUE,
   significance = FALSE,
   reference_first = TRUE,
@@ -52,6 +53,13 @@ rating_table(
 
   Optional character string naming the exposure column in the output. If
   `NULL`, the original exposure column name is used.
+
+- estimate_name:
+
+  Optional character vector with the exact output column name for each
+  model estimate. Supply one value for one model, an unnamed vector in
+  model order, or a named vector whose names identify the supplied model
+  objects. If `NULL`, columns retain the default `est_<model>` names.
 
 - exponentiate:
 
@@ -147,10 +155,11 @@ The table contains:
 
   Factor level or term representation.
 
-- `est_*`:
+- Estimate column:
 
-  Coefficient or exponentiated relativity for each supplied model. The
-  suffix is derived from the model expression.
+  Coefficient or exponentiated relativity for each supplied model. Its
+  default `est_*` name is derived from the model expression and can be
+  replaced with `estimate_name`.
 
 - `signif_*`:
 
@@ -170,9 +179,13 @@ the reference level is added explicitly with relativity `1` when
 Numeric model terms are retained on the scale supplied by the fitted
 model structure.
 
-Estimate columns are named from the supplied model expressions, for
-example `est_frequency` for an object named `frequency`. When several
-models are supplied, their effects are joined by risk factor and level.
+By default, estimate columns are named from the supplied model
+expressions, for example `est_frequency` for an object named
+`frequency`. `estimate_name` can replace these with exact user-supplied
+names. With several models, use an unnamed vector in model order or a
+named vector such as
+`c(frequency = "freq_relativity", severity = "sev_relativity")`. Effects
+are joined by risk factor and level.
 
 ### Actuarial interpretation
 
@@ -304,6 +317,41 @@ head(fitted_effects)
 #> 4         zip           2 0.9237868     7783
 #> 5         zip           3 0.9756337     7588
 #> 6          bm          bm 0.9978465       NA
+
+# Give the estimate column an explicit name
+rating_table(
+  freq,
+  model_data = df,
+  exposure = "exposure",
+  estimate_name = "frequency_relativity"
+)
+#>   risk_factor       level frequency_relativity exposure
+#> 1 (Intercept) (Intercept)            0.1415051       NA
+#> 2         zip           0            1.0000000      207
+#> 3         zip           1            1.0252572    11081
+#> 4         zip           2            0.9237868     7783
+#> 5         zip           3            0.9756337     7588
+#> 6          bm          bm            0.9978465       NA
+
+# For several models, names can be supplied in model order or by model name
+freq_alternative <- update(freq, . ~ . - bm)
+rating_table(
+  freq,
+  freq_alternative,
+  model_data = df,
+  exposure = "exposure",
+  estimate_name = c(
+    freq = "current_relativity",
+    freq_alternative = "alternative_relativity"
+  )
+)
+#>   risk_factor       level current_relativity alternative_relativity exposure
+#> 1 (Intercept) (Intercept)          0.1415051              0.1402024       NA
+#> 2         zip           0          1.0000000              1.0000000      207
+#> 3         zip           1          1.0252572              1.0254064    11081
+#> 4         zip           2          0.9237868              0.9238016     7783
+#> 5         zip           3          0.9756337              0.9757522     7588
+#> 6          bm          bm          0.9978465                     NA       NA
 
 # The historical accessor remains available for existing code
 identical(fitted_effects$df, as.data.frame(fitted_effects))

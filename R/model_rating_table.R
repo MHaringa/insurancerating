@@ -97,7 +97,45 @@
 
 
 #' @keywords internal
-.resolve_rating_table_order_model <- function(order_model, model_names) {
+.resolve_rating_table_estimate_names <- function(estimate_name, model_names) {
+  default <- paste0("est_", model_names)
+  if (is.null(estimate_name)) {
+    return(default)
+  }
+  if (!is.character(estimate_name) || length(estimate_name) != length(model_names) ||
+      anyNA(estimate_name) || any(!nzchar(estimate_name))) {
+    stop(
+      "`estimate_name` must contain one non-empty name for each supplied model.",
+      call. = FALSE
+    )
+  }
+  if (anyDuplicated(estimate_name)) {
+    stop("Names supplied through `estimate_name` must be unique.", call. = FALSE)
+  }
+  supplied_names <- names(estimate_name)
+  if (!is.null(supplied_names) && any(nzchar(supplied_names))) {
+    if (any(!nzchar(supplied_names)) || anyDuplicated(supplied_names) ||
+        !setequal(supplied_names, model_names)) {
+      stop(
+        "A named `estimate_name` vector must be named with the supplied model ",
+        "names: ", paste(model_names, collapse = ", "), ".",
+        call. = FALSE
+      )
+    }
+    estimate_name <- unname(estimate_name[match(model_names, supplied_names)])
+  }
+  reserved <- c("risk_factor", "level")
+  if (any(estimate_name %in% reserved)) {
+    stop("`estimate_name` cannot use reserved columns `risk_factor` or `level`.",
+         call. = FALSE)
+  }
+  unname(estimate_name)
+}
+
+
+#' @keywords internal
+.resolve_rating_table_order_model <- function(order_model, model_names,
+                                              estimate_names = paste0("est_", model_names)) {
   if (is.null(order_model)) {
     return(1L)
   }
@@ -112,6 +150,9 @@
 
   requested <- sub("^est_", "", order_model)
   index <- match(requested, model_names)
+  if (is.na(index)) {
+    index <- match(order_model, estimate_names)
+  }
   if (is.na(index)) {
     stop(
       "Model `", order_model, "` supplied through `order_model` was not found. ",
@@ -231,6 +272,7 @@
 
 #' @keywords internal
 .order_rating_table <- function(data, model_tables, models, model_names,
+                                estimate_names,
                                 reference_first, level_order,
                                 level_order_by_risk_factor,
                                 numeric_level_order,
@@ -324,7 +366,7 @@
       } else if (selected_level_order %in%
                  c("estimate_ascending", "estimate_descending")) {
         decreasing <- identical(selected_level_order, "estimate_descending")
-        estimate_column <- paste0("est_", model_names[[source_model_index]])
+        estimate_column <- estimate_names[[source_model_index]]
         estimates <- data[[estimate_column]][rows]
         sort_values <- if (decreasing) -estimates else estimates
         local_order <- order(sort_values, seq_along(rows), na.last = TRUE)
@@ -344,7 +386,7 @@
     } else if (selected_level_order %in%
                c("estimate_ascending", "estimate_descending")) {
       decreasing <- identical(selected_level_order, "estimate_descending")
-      estimate_column <- paste0("est_", model_names[[source_model_index]])
+      estimate_column <- estimate_names[[source_model_index]]
       estimates <- data[[estimate_column]][rows]
       sort_values <- if (decreasing) -estimates else estimates
       local_order <- order(sort_values, seq_along(rows), na.last = TRUE)
@@ -994,6 +1036,10 @@
 #' @param ... One or more fitted `glm` objects, including models returned by
 #'   [refit()]. Object expressions are used to construct the dynamic estimate
 #'   column names.
+#' @param estimate_name Optional character vector with the exact output column
+#'   name for each model estimate. Supply one value for one model, an unnamed
+#'   vector in model order, or a named vector whose names identify the supplied
+#'   model objects. If `NULL`, columns retain the default `est_<model>` names.
 #' @param model_data Optional data frame used to fit the models. If `NULL`,
 #'   the function tries to use `model$data` for each supplied model.
 #' @param exposure Logical or character string. If `TRUE`, exposure is added
@@ -1058,9 +1104,12 @@
 #' Numeric model terms are retained on the scale supplied by the fitted model
 #' structure.
 #'
-#' Estimate columns are named from the supplied model expressions, for example
-#' `est_frequency` for an object named `frequency`. When several models are
-#' supplied, their effects are joined by risk factor and level.
+#' By default, estimate columns are named from the supplied model expressions,
+#' for example `est_frequency` for an object named `frequency`.
+#' `estimate_name` can replace these with exact user-supplied names. With
+#' several models, use an unnamed vector in model order or a named vector such
+#' as `c(frequency = "freq_relativity", severity = "sev_relativity")`.
+#' Effects are joined by risk factor and level.
 #'
 #' ## Actuarial interpretation
 #'
@@ -1139,8 +1188,9 @@
 #' \describe{
 #'   \item{risk_factor}{Model term or risk-factor name.}
 #'   \item{level}{Factor level or term representation.}
-#'   \item{`est_*`}{Coefficient or exponentiated relativity for each supplied
-#'   model. The suffix is derived from the model expression.}
+#'   \item{Estimate column}{Coefficient or exponentiated relativity for each
+#'   supplied model. Its default `est_*` name is derived from the model
+#'   expression and can be replaced with `estimate_name`.}
 #'   \item{`signif_*`}{Optional significance indicator for each model.}
 #'   \item{Exposure column}{Optional aggregated exposure, retaining the
 #'   requested output name.}
@@ -1175,6 +1225,27 @@
 #'
 #' fitted_effects
 #' head(fitted_effects)
+#'
+#' # Give the estimate column an explicit name
+#' rating_table(
+#'   freq,
+#'   model_data = df,
+#'   exposure = "exposure",
+#'   estimate_name = "frequency_relativity"
+#' )
+#'
+#' # For several models, names can be supplied in model order or by model name
+#' freq_alternative <- update(freq, . ~ . - bm)
+#' rating_table(
+#'   freq,
+#'   freq_alternative,
+#'   model_data = df,
+#'   exposure = "exposure",
+#'   estimate_name = c(
+#'     freq = "current_relativity",
+#'     freq_alternative = "alternative_relativity"
+#'   )
+#' )
 #'
 #' # The historical accessor remains available for existing code
 #' identical(fitted_effects$df, as.data.frame(fitted_effects))
@@ -1223,6 +1294,7 @@
 #' @export
 rating_table <- function(..., model_data = NULL, exposure = TRUE,
                          exposure_output = NULL,
+                         estimate_name = NULL,
                          exponentiate = TRUE, significance = FALSE,
                          reference_first = TRUE,
                          level_order = c(
@@ -1309,7 +1381,10 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
   }
 
   cols <- .rating_table_model_names(models, mc)
-  order_model_index <- .resolve_rating_table_order_model(order_model, cols)
+  estimate_cols <- .resolve_rating_table_estimate_names(estimate_name, cols)
+  order_model_index <- .resolve_rating_table_order_model(
+    order_model, cols, estimate_cols
+  )
 
   rf_list <- vector("list", length(models))
   exposure_out_nm <- NULL
@@ -1332,10 +1407,22 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
       model_data_name_out <- attr(df, "model_data_name")
     }
 
-    names(df)[names(df) == "estimate"] <- paste0("est_", cols[i])
+    names(df)[names(df) == "estimate"] <- estimate_cols[i]
     names(df)[names(df) == "pvalues"]  <- paste0("signif_", cols[i])
 
     rf_list[[i]] <- df
+  }
+
+  output_collisions <- intersect(
+    estimate_cols,
+    c(exposure_out_nm, paste0("signif_", cols))
+  )
+  if (length(output_collisions) > 0L) {
+    stop(
+      "`estimate_name` conflicts with another rating-table column: ",
+      paste(output_collisions, collapse = ", "), ".",
+      call. = FALSE
+    )
   }
 
   if (length(rf_list) == 1) {
@@ -1347,7 +1434,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 
     keep_cols <- c(
       "risk_factor", "level",
-      paste0("est_", cols),
+      estimate_cols,
       paste0("signif_", cols),
       exposure_out_nm
     )
@@ -1360,7 +1447,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 
     keep_cols <- c(
       "risk_factor", "level",
-      paste0("est_", cols),
+      estimate_cols,
       paste0("signif_", cols)
     )
     rf_fj <- rf_fj[, intersect(keep_cols, names(rf_fj)), drop = FALSE]
@@ -1376,6 +1463,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     model_tables = rf_list,
     models = models,
     model_names = cols,
+    estimate_names = estimate_cols,
     reference_first = reference_first,
     level_order = level_order,
     level_order_by_risk_factor = level_order_by_risk_factor,
@@ -1395,13 +1483,13 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     rf_fj_stars <- rf_fj
 
     for (i in seq_along(cols)) {
-      est_num  <- round(rf_fj_stars[[paste0("est_", cols[i])]], 6)
+      est_num  <- round(rf_fj_stars[[estimate_cols[i]]], 6)
       est_char <- format(est_num, digits = 6, nsmall = 2)
 
       stars_char <- rf_fj_stars[[paste0("signif_", cols[i])]]
       stars_char[is.na(stars_char)] <- ""
 
-      rf_fj_stars[[paste0("est_", cols[i])]] <-
+      rf_fj_stars[[estimate_cols[i]]] <-
         format(paste0(est_char, " ", stars_char), justify = "left")
     }
 
@@ -1413,6 +1501,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     data = rf_fj,
     df_stars = rf_fj_stars,
     models = cols,
+    estimate_columns = estimate_cols,
     exposure = exposure_out_nm,
     model_data = model_data_name_out,
     exponentiate = exponentiate,
@@ -1429,14 +1518,16 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 }
 
 .rating_table_metadata_names <- c(
-  "df_stars", "models", "exposure", "model_data", "expon",
+  "df_stars", "models", "estimate_columns", "significance_columns",
+  "exposure", "model_data", "expon",
   "significance", "signif_stars", "signif_levels", "observed_experience",
   "reference_levels", "reference_first", "level_order",
   "level_order_by_risk_factor", "numeric_level_order", "risk_factor_order",
   "order_model"
 )
 
-.new_rating_table <- function(data, df_stars, models, exposure, model_data,
+.new_rating_table <- function(data, df_stars, models, estimate_columns,
+                              exposure, model_data,
                               exponentiate, significance, signif_levels,
                               reference_levels = NULL,
                               reference_first = TRUE,
@@ -1448,6 +1539,8 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
   out <- as.data.frame(data)
   attr(out, "df_stars") <- df_stars
   attr(out, "models") <- models
+  attr(out, "estimate_columns") <- estimate_columns
+  attr(out, "significance_columns") <- paste0("signif_", models)
   attr(out, "exposure") <- exposure
   attr(out, "model_data") <- model_data
   attr(out, "expon") <- exponentiate
@@ -1484,6 +1577,27 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     return(attr(x, name, exact = TRUE))
   }
   x[[name]]
+}
+
+
+#' @keywords internal
+.rating_table_estimate_columns <- function(x, data = .rating_table_data(x)) {
+  columns <- .rating_table_metadata(x, "estimate_columns")
+  if (is.null(columns)) {
+    models <- .rating_table_metadata(x, "models")
+    columns <- paste0("est_", models)
+  }
+  intersect(columns, names(data))
+}
+
+
+#' @keywords internal
+.rating_table_significance_columns <- function(x) {
+  columns <- .rating_table_metadata(x, "significance_columns")
+  if (is.null(columns)) {
+    columns <- paste0("signif_", .rating_table_metadata(x, "models"))
+  }
+  columns
 }
 
 #' Backward-compatible access to rating-table contents

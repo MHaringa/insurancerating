@@ -1911,7 +1911,7 @@ print.rating_refinement <- function(x, ...) {
     if (!isTRUE(all.equal(edit$slope_adjustment %||% 1, 1))) {
       details <- c(details, paste0(
         "slope adjustment = ", format(edit$slope_adjustment, trim = TRUE),
-        " from ", format(edit$slope_from, trim = TRUE)
+        " from ", format(edit$from, trim = TRUE)
       ))
     }
     return(paste(c(
@@ -3802,14 +3802,18 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #' because they represent different actuarial instructions. They may be used in
 #' separate consecutive edits, which are then evaluated in their stored order.
 #'
-#' `slope_adjustment` changes the remaining increase or decrease after
-#' `slope_from`, while keeping the curve before that point unchanged. If
-#' \eqn{R(x)} is the current smoothing and \eqn{a} is `slope_from`, the edited
+#' `slope_adjustment` changes the remaining increase or decrease after `from`,
+#' while keeping the curve before that point unchanged. If \eqn{R(x)} is the
+#' current smoothing and \eqn{a} is `from`, the edited
 #' curve is \eqn{R(a) + s[R(x) - R(a)]} for \eqn{x > a}, where \eqn{s} is
 #' `slope_adjustment`. A value of `1.10` therefore makes the change after the
 #' anchor 10 percent stronger; `0.90` makes it 10 percent weaker. The curve is
-#' continuous at the anchor. This transformation can be combined with
-#' `adjustment`; the relative adjustment is applied first.
+#' continuous at the anchor.
+#'
+#' Each call applies one edit type: a relative `adjustment`, a
+#' `slope_adjustment`, or explicit target/control-point values. Apply multiple
+#' changes in consecutive calls so that every actuarial intervention remains a
+#' separate, inspectable refinement step.
 #'
 #' ## Actuarial interpretation
 #'
@@ -3838,7 +3842,8 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #' @param from,to Optional numeric values giving the start and end of the
 #'   source-variable interval to modify. For `adjustment`, either value may be
 #'   omitted to use the beginning or end of the available smoothing range.
-#'   Explicit target-value and control-point edits require both values.
+#'   For `slope_adjustment`, `from` is the required anchor and `to` must remain
+#'   `NULL`. Explicit target-value and control-point edits require both values.
 #' @param from_value,to_value Optional numeric values used to override the
 #'   smoothed curve value at `from` and `to`.
 #' @param control_positions,control_values Optional numeric vectors of equal
@@ -3851,12 +3856,9 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #'   `from` and `to`; a one-sided edit is anchored only at the supplied
 #'   boundary.
 #' @param slope_adjustment Positive numeric scalar controlling the change in
-#'   slope after `slope_from`. The default `1` leaves the curve unchanged.
+#'   slope after `from`. The default `1` leaves the curve unchanged.
 #'   Values above 1 strengthen the remaining change; values between 0 and 1
 #'   flatten it. This argument is available only in `edit_smoothing()`.
-#' @param slope_from Optional numeric anchor from which `slope_adjustment` is
-#'   applied. Required when `slope_adjustment` differs from 1 and must lie below
-#'   the upper boundary of the supported smoothing range.
 #' @param transition Optional character string controlling how `adjustment`
 #'   connects to the unchanged smoothing. `NULL` inherits the original
 #'   smoothing specification. `"linear"` gives continuous linear transitions
@@ -3943,8 +3945,8 @@ smooth_coef <- function(model, x_cut, x_org, degree = NULL, breaks = NULL,
 #' steeper_refinement <- refinement |>
 #'   edit_smoothing(
 #'     model_variable = "age_band",
-#'     slope_adjustment = 1.10,
-#'     slope_from = 40
+#'     from = 40,
+#'     slope_adjustment = 1.10
 #'   )
 #'
 #' # A one-sided adjustment applies from age 40 to the end of the range.
@@ -3966,7 +3968,6 @@ edit_smoothing <- function(model,
                            control_values = NULL,
                            adjustment = NULL,
                            slope_adjustment = 1,
-                           slope_from = NULL,
                            transition = NULL,
                            allow_extrapolation = FALSE,
                            extrapolation_step = NULL) {
@@ -4002,14 +4003,14 @@ edit_smoothing <- function(model,
     stop("`slope_adjustment` must be one finite numeric value greater than 0.",
          call. = FALSE)
   }
-  .assert_single_numeric(slope_from, "slope_from", allow_null = TRUE)
   has_slope_adjustment <- !isTRUE(all.equal(slope_adjustment, 1))
-  if (has_slope_adjustment && is.null(slope_from)) {
-    stop("Supply `slope_from` when `slope_adjustment` differs from 1.",
+  if (has_slope_adjustment && is.null(from)) {
+    stop("Supply `from` as the anchor when `slope_adjustment` differs from 1.",
          call. = FALSE)
   }
-  if (!has_slope_adjustment && !is.null(slope_from)) {
-    stop("`slope_from` is only used when `slope_adjustment` differs from 1.",
+  if (has_slope_adjustment && !is.null(to)) {
+    stop(
+      "`to` cannot be used with `slope_adjustment`; `from` is the slope anchor.",
          call. = FALSE)
   }
   if (!is.null(transition) &&
@@ -4051,9 +4052,9 @@ edit_smoothing <- function(model,
   smoothing_step <- model$steps[[idx]]
   if (has_slope_adjustment) {
     smoothing_range <- range(smoothing_step$breaks, na.rm = TRUE)
-    if (slope_from < smoothing_range[1] || slope_from >= smoothing_range[2]) {
+    if (from < smoothing_range[1] || from >= smoothing_range[2]) {
       stop(
-        "`slope_from` must lie within the smoothing range and below its upper ",
+        "`from` must lie within the smoothing range and below its upper ",
         "boundary (", format(smoothing_range[1], trim = TRUE), " to ",
         format(smoothing_range[2], trim = TRUE), ").",
         call. = FALSE
@@ -4081,6 +4082,20 @@ edit_smoothing <- function(model,
 
   explicit_values <- !is.null(from_value) || !is.null(to_value) ||
     length(control_positions) > 0L || length(control_values) > 0L
+  edit_modes <- c(
+    adjustment = !is.null(adjustment),
+    slope_adjustment = has_slope_adjustment,
+    explicit = explicit_values || isTRUE(allow_extrapolation) ||
+      !is.null(extrapolation_step)
+  )
+  if (sum(edit_modes) > 1L) {
+    stop(
+      "`edit_smoothing()` applies one edit type per call. Use separate calls ",
+      "for `adjustment`, `slope_adjustment`, and explicit target/control-point ",
+      "edits.",
+      call. = FALSE
+    )
+  }
   has_curve_edit <- !is.null(adjustment) || explicit_values ||
     isTRUE(allow_extrapolation) || !is.null(extrapolation_step)
   if (has_curve_edit && is.null(adjustment) && xor(is.null(from), is.null(to))) {
@@ -4095,13 +4110,6 @@ edit_smoothing <- function(model,
       "`adjustment` cannot be combined with `from_value`, `to_value`, ",
       "`control_positions` or `control_values`. Use a relative adjustment or ",
       "explicit target values, not both.",
-      call. = FALSE
-    )
-  }
-  if (has_slope_adjustment && explicit_values) {
-    stop(
-      "`slope_adjustment` cannot be combined with explicit target values or ",
-      "control points. Apply them in separate `edit_smoothing()` calls.",
       call. = FALSE
     )
   }
@@ -4163,7 +4171,6 @@ edit_smoothing <- function(model,
       control_values = control_values,
       adjustment = if (is.null(adjustment)) NULL else as.numeric(adjustment),
       slope_adjustment = as.numeric(slope_adjustment),
-      slope_from = slope_from,
       transition = transition,
       allow_extrapolation = allow_extrapolation,
       extrapolation_step = extrapolation_step
@@ -4846,7 +4853,7 @@ add_relativities <- function(model,
         new_rf = df_new_rf,
         source_variable = x_org,
         slope_adjustment = edit$slope_adjustment,
-        slope_from = edit$slope_from,
+        from = edit$from,
         original_smoothing = smoothing_spec$method
       )
       df_poly <- changed$smooth
@@ -4896,7 +4903,7 @@ add_relativities <- function(model,
   state$smoothing <- smoothing
   state$adjustment <- step$edit$adjustment %||% NULL
   state$slope_adjustment <- step$edit$slope_adjustment %||% 1
-  state$slope_from <- step$edit$slope_from %||% NULL
+  state$slope_anchor <- step$edit$from %||% NULL
   state$transition <- effective_transition
   state$smoothing_states[[step$id]] <- list(
     smoothing_step_id = step$id,
@@ -4981,7 +4988,7 @@ add_relativities <- function(model,
       new_rf = df_new_rf,
       source_variable = x_org,
       slope_adjustment = edit$slope_adjustment,
-      slope_from = edit$slope_from,
+      from = edit$from,
       original_smoothing = smoothing_state$original_smoothing
     )
     df_poly <- changed$smooth
@@ -5029,7 +5036,7 @@ add_relativities <- function(model,
   state$smoothing <- smoothing_state$original_smoothing
   state$adjustment <- edit$adjustment %||% NULL
   state$slope_adjustment <- edit$slope_adjustment %||% 1
-  state$slope_from <- edit$slope_from %||% NULL
+  state$slope_anchor <- edit$from %||% NULL
   state$transition <- effective_transition
 
   state
@@ -5867,7 +5874,7 @@ refit <- function(object, intercept_only = FALSE, ...) {
       detail <- paste0(
         detail, separator, "slope adjustment: ",
         format(edit$slope_adjustment, trim = TRUE), " from ",
-        format(edit$slope_from, trim = TRUE)
+        format(edit$from, trim = TRUE)
       )
     }
     detail <- paste0(detail, ")")

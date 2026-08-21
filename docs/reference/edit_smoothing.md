@@ -21,7 +21,6 @@ edit_smoothing(
   control_values = NULL,
   adjustment = NULL,
   slope_adjustment = 1,
-  slope_from = NULL,
   transition = NULL,
   allow_extrapolation = FALSE,
   extrapolation_step = NULL
@@ -55,8 +54,9 @@ edit_smoothing(
   Optional numeric values giving the start and end of the
   source-variable interval to modify. For `adjustment`, either value may
   be omitted to use the beginning or end of the available smoothing
-  range. Explicit target-value and control-point edits require both
-  values.
+  range. For `slope_adjustment`, `from` is the required anchor and `to`
+  must remain `NULL`. Explicit target-value and control-point edits
+  require both values.
 
 - from_value, to_value:
 
@@ -79,16 +79,10 @@ edit_smoothing(
 
 - slope_adjustment:
 
-  Positive numeric scalar controlling the change in slope after
-  `slope_from`. The default `1` leaves the curve unchanged. Values above
-  1 strengthen the remaining change; values between 0 and 1 flatten it.
-  This argument is available only in `edit_smoothing()`.
-
-- slope_from:
-
-  Optional numeric anchor from which `slope_adjustment` is applied.
-  Required when `slope_adjustment` differs from 1 and must lie below the
-  upper boundary of the supported smoothing range.
+  Positive numeric scalar controlling the change in slope after `from`.
+  The default `1` leaves the curve unchanged. Values above 1 strengthen
+  the remaining change; values between 0 and 1 flatten it. This argument
+  is available only in `edit_smoothing()`.
 
 - transition:
 
@@ -170,13 +164,17 @@ instructions. They may be used in separate consecutive edits, which are
 then evaluated in their stored order.
 
 `slope_adjustment` changes the remaining increase or decrease after
-`slope_from`, while keeping the curve before that point unchanged. If
-\\R(x)\\ is the current smoothing and \\a\\ is `slope_from`, the edited
-curve is \\R(a) + s\[R(x) - R(a)\]\\ for \\x \> a\\, where \\s\\ is
+`from`, while keeping the curve before that point unchanged. If \\R(x)\\
+is the current smoothing and \\a\\ is `from`, the edited curve is
+\\R(a) + s\[R(x) - R(a)\]\\ for \\x \> a\\, where \\s\\ is
 `slope_adjustment`. A value of `1.10` therefore makes the change after
 the anchor 10 percent stronger; `0.90` makes it 10 percent weaker. The
-curve is continuous at the anchor. This transformation can be combined
-with `adjustment`; the relative adjustment is applied first.
+curve is continuous at the anchor.
+
+Each call applies one edit type: a relative `adjustment`, a
+`slope_adjustment`, or explicit target/control-point values. Apply
+multiple changes in consecutive calls so that every actuarial
+intervention remains a separate, inspectable refinement step.
 
 ### Actuarial interpretation
 
@@ -279,8 +277,8 @@ adjusted_model <- refit(adjusted_refinement)
 steeper_refinement <- refinement |>
   edit_smoothing(
     model_variable = "age_band",
-    slope_adjustment = 1.10,
-    slope_from = 40
+    from = 40,
+    slope_adjustment = 1.10
   )
 
 # A one-sided adjustment applies from age 40 to the end of the range.

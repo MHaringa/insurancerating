@@ -177,7 +177,7 @@ autoplot.rating_table <- function(object,
 
   df_full <- .rating_table_data(object)
   models <- .rating_table_metadata(object, "models")
-  models_nm <- paste0("est_", models)
+  models_nm <- .rating_table_estimate_columns(object, df_full)
   exposure_nm <- .rating_table_metadata(object, "exposure")
   expon <- .rating_table_metadata(object, "expon")
 
@@ -224,14 +224,15 @@ autoplot.rating_table <- function(object,
 
   get_reference_level <- function(df_full, rf_name, model_name = NULL, expon = TRUE) {
     df_ref <- df_full[df_full$risk_factor == rf_name, , drop = FALSE]
-    est_cols <- grep("^est_", names(df_ref), value = TRUE)
+    est_cols <- models_nm
 
     if (length(est_cols) == 0 || nrow(df_ref) == 0) {
       return(NULL)
     }
 
     if (!is.null(model_name)) {
-      est_col <- paste0("est_", model_name)
+      model_index <- match(model_name, models)
+      est_col <- if (!is.na(model_index)) models_nm[[model_index]] else NA_character_
       if (!est_col %in% est_cols) {
         est_col <- est_cols[1]
       }
@@ -287,13 +288,11 @@ autoplot.rating_table <- function(object,
     varying = models_nm,
     v.names = "est",
     timevar = "model",
-    times = models_nm,
+    times = models,
     direction = "long"
   )
 
   rownames(df_long) <- NULL
-
-  df_long$model <- gsub("^est_", "", df_long$model)
 
   if (!isTRUE(expon)) {
     df_long$est <- exp(df_long$est)
