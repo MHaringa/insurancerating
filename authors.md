@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/MHaringa/insurancerating/blob/master/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/MHaringa/insurancerating/blob/v0.8.2/DESCRIPTION)
 
 Haringa M (2026). *insurancerating: Actuarial Tools for Insurance
 Pricing Models*. R package version 0.8.2,

@@ -178,7 +178,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2
-#> Created: 2026-09-01 07:04:12 UTC
+#> Created: 2026-09-01 13:49:18 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -773,7 +773,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2
-#> Created: 2026-09-01 07:04:12 UTC
+#> Created: 2026-09-01 13:49:18 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -939,9 +939,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.2
-#> Prepared: 2026-09-01 07:04:12 UTC
-#> Refitted: 2026-09-01 07:04:18 UTC
-#> Audited: 2026-09-01 07:04:18 UTC
+#> Prepared: 2026-09-01 13:49:18 UTC
+#> Refitted: 2026-09-01 13:49:24 UTC
+#> Audited: 2026-09-01 13:49:24 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
