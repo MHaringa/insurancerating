@@ -1,6 +1,6 @@
 # Changelog
 
-## insurancerating 0.8.1.9000 (development version)
+## insurancerating 0.8.2
 
 ### Changes since 0.8.1
 

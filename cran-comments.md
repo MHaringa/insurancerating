@@ -1,22 +1,24 @@
 ## Release summary
 
-This is a new release of insurancerating, version 0.8.1.
+This is a new release of insurancerating, version 0.8.2.
 
 Main changes include:
 
-* Added a large-loss severity workflow with `assess_excess_threshold()` and
-  `redistribute_excess_loss()`.
-* Improved the model-refinement workflow for smoothing, restrictions and
-  expert-based relativities.
-* Added portfolio-experience support for rating tables and expanded
-  report-ready `gt` output.
-* Improved validation, documentation and backwards compatibility across the
-  public API.
-* Expanded the package test suite.
+* Extended the model-refinement workflow with smoothing edits, shrinkage,
+  rebasing, calibration, replacement restrictions and auditable refinement
+  summaries.
+* Added interpretation tools for continuous smoothing effects, including
+  premium-change summaries and incremental-change plots.
+* Added database-backed portfolio reduction with `rating_grid_db()` and
+  `merge_date_ranges_db()` for large insurance portfolios.
+* Extended rating tables with configurable ordering, estimate names,
+  significance output and portfolio-experience comparisons.
+* Revised the package documentation and vignettes to provide a consistent,
+  modular actuarial workflow without prescribing a single methodology.
 
 ## Test environments
 
-* local macOS Tahoe 26.5, R 4.6.1
+* local macOS Tahoe 26.5.2, R 4.6.1
 
 ## R CMD check results
 
