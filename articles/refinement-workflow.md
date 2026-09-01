@@ -177,8 +177,8 @@ by an explicit actuarial rationale.
 summary(refinement)
 #> Refinement specification
 #> 
-#> Package: insurancerating 0.8.2
-#> Created: 2026-09-01 13:49:18 UTC
+#> Package: insurancerating 0.8.2.9000
+#> Created: 2026-09-01 13:53:53 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -772,8 +772,8 @@ The four operations now form one ordered specification:
 summary(refinement)
 #> Refinement specification
 #> 
-#> Package: insurancerating 0.8.2
-#> Created: 2026-09-01 13:49:18 UTC
+#> Package: insurancerating 0.8.2.9000
+#> Created: 2026-09-01 13:53:53 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -938,10 +938,10 @@ refinement_audit <- audit_refinement(
 summary(refinement_audit)
 #> Refinement audit
 #> 
-#> Package: insurancerating 0.8.2
-#> Prepared: 2026-09-01 13:49:18 UTC
-#> Refitted: 2026-09-01 13:49:24 UTC
-#> Audited: 2026-09-01 13:49:24 UTC
+#> Package: insurancerating 0.8.2.9000
+#> Prepared: 2026-09-01 13:53:53 UTC
+#> Refitted: 2026-09-01 13:53:59 UTC
+#> Audited: 2026-09-01 13:53:59 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
