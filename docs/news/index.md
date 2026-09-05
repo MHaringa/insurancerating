@@ -1,5 +1,13 @@
 # Changelog
 
+## insurancerating (development version)
+
+- [`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
+  now accepts a named numeric `new_levels` vector, keeping each new
+  level next to its relativity. This is the preferred syntax. A
+  character `new_levels` vector with a separate `relativities` vector is
+  also fully supported.
+
 ## insurancerating 0.8.2
 
 ### Changes since 0.8.1

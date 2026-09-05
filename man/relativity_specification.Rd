@@ -6,18 +6,22 @@
 \alias{relativities}
 \title{Define sublevel relativity specifications}
 \usage{
-split_level(level, new_levels, relativities)
+split_level(level, new_levels, relativities = NULL)
 
 relativities(...)
 }
 \arguments{
 \item{level}{Character string. Existing level of the risk factor to split.}
 
-\item{new_levels}{Character vector. Levels of the more detailed portfolio
-variable within \code{level}.}
+\item{new_levels}{Named numeric vector whose names identify levels of the
+more detailed portfolio variable and whose values give their
+multiplicative relativities. When \code{relativities} is supplied separately,
+this may instead be a character vector containing the level names.}
 
-\item{relativities}{Numeric vector. Multiplicative relativities corresponding
-to \code{new_levels}. Must have the same length as \code{new_levels}.}
+\item{relativities}{Optional numeric vector of multiplicative relativities
+corresponding to a character \code{new_levels} vector. It must have the same
+length as \code{new_levels}. Use this argument for the alternative two-vector
+syntax.}
 
 \item{...}{One or more objects created by \code{split_level()}.}
 }
@@ -35,9 +39,11 @@ into the specification supplied to \code{\link[=add_relativities]{add_relativiti
 }
 \details{
 \code{level} identifies the existing parent level in \code{model_variable}.
-\code{new_levels} identifies the corresponding levels of \code{split_variable}.
-\code{relativities} gives their relative tariff effects before any optional
-exposure normalisation by \code{\link[=add_relativities]{add_relativities()}}.
+\code{new_levels} identifies the corresponding levels of \code{split_variable}. The
+preferred and most concise syntax is a named numeric vector: its names are
+the new levels and its values are their relative tariff effects. Alternatively,
+supply the level names as a character vector and their effects through the
+separate \code{relativities} argument. Both forms are supported.
 
 Each call to \code{split_level()} represents one parent level. Several parent
 levels can be refined in one step by passing their definitions to
@@ -53,17 +59,22 @@ fitted GLM. Exposure normalisation, when requested, is performed by
 \examples{
 construction_split <- split_level(
   level = "residential",
-  new_levels = c("flat", "house"),
-  relativities = c(0.95, 1.05)
+  new_levels = c(flat = 0.95, house = 1.05)
 )
 
 relativities(
   construction_split,
   split_level(
     "commercial",
-    new_levels = c("shop", "office"),
-    relativities = c(1.10, 0.90)
+    new_levels = c(shop = 1.10, office = 0.90)
   )
+)
+
+# The same split can also be defined with separate vectors.
+split_level(
+  level = "commercial",
+  new_levels = c("retail shop", "office / services"),
+  relativities = c(1.10, 0.90)
 )
 
 }

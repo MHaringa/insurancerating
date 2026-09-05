@@ -124,8 +124,8 @@ refinement <- prepare_refinement(model, data = portfolio) |>
 summary(refinement)
 #> Refinement specification
 #> 
-#> Package: insurancerating 0.8.2
-#> Created: 2026-09-01 08:55:44 CEST
+#> Package: insurancerating 0.8.2.9000
+#> Created: 2026-09-05 09:47:40 CEST
 #> Observations: 6
 #> Family: poisson (log link)
 #> Base formula:

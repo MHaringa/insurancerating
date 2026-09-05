@@ -65,6 +65,7 @@
 #'   data = MTPL
 #' )
 #'
+#' \dontrun{
 #' boot <- bootstrap_coefficients(
 #'   model,
 #'   n_resamples = 25,
@@ -78,6 +79,7 @@
 #'
 #' if (requireNamespace("gt", quietly = TRUE)) {
 #'   as_gt(boot, scale = "relativity")
+#' }
 #' }
 #'
 #' @export

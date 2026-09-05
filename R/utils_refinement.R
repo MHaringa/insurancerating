@@ -1160,9 +1160,11 @@ change_xy <- function(borders_model, x_org,
 #'
 #' @details
 #' `level` identifies the existing parent level in `model_variable`.
-#' `new_levels` identifies the corresponding levels of `split_variable`.
-#' `relativities` gives their relative tariff effects before any optional
-#' exposure normalisation by [add_relativities()].
+#' `new_levels` identifies the corresponding levels of `split_variable`. The
+#' preferred and most concise syntax is a named numeric vector: its names are
+#' the new levels and its values are their relative tariff effects. Alternatively,
+#' supply the level names as a character vector and their effects through the
+#' separate `relativities` argument. Both forms are supported.
 #'
 #' Each call to `split_level()` represents one parent level. Several parent
 #' levels can be refined in one step by passing their definitions to
@@ -1176,10 +1178,14 @@ change_xy <- function(borders_model, x_org,
 #' [add_relativities()].
 #'
 #' @param level Character string. Existing level of the risk factor to split.
-#' @param new_levels Character vector. Levels of the more detailed portfolio
-#'   variable within `level`.
-#' @param relativities Numeric vector. Multiplicative relativities corresponding
-#'   to `new_levels`. Must have the same length as `new_levels`.
+#' @param new_levels Named numeric vector whose names identify levels of the
+#'   more detailed portfolio variable and whose values give their
+#'   multiplicative relativities. When `relativities` is supplied separately,
+#'   this may instead be a character vector containing the level names.
+#' @param relativities Optional numeric vector of multiplicative relativities
+#'   corresponding to a character `new_levels` vector. It must have the same
+#'   length as `new_levels`. Use this argument for the alternative two-vector
+#'   syntax.
 #' @param ... One or more objects created by `split_level()`.
 #'
 #' @author Martin Haringa
@@ -1194,17 +1200,22 @@ change_xy <- function(borders_model, x_org,
 #' @examples
 #' construction_split <- split_level(
 #'   level = "residential",
-#'   new_levels = c("flat", "house"),
-#'   relativities = c(0.95, 1.05)
+#'   new_levels = c(flat = 0.95, house = 1.05)
 #' )
 #'
 #' relativities(
 #'   construction_split,
 #'   split_level(
 #'     "commercial",
-#'     new_levels = c("shop", "office"),
-#'     relativities = c(1.10, 0.90)
+#'     new_levels = c(shop = 1.10, office = 0.90)
 #'   )
+#' )
+#'
+#' # The same split can also be defined with separate vectors.
+#' split_level(
+#'   level = "commercial",
+#'   new_levels = c("retail shop", "office / services"),
+#'   relativities = c(1.10, 0.90)
 #' )
 #'
 #' @name relativity_specification
@@ -1212,9 +1223,41 @@ NULL
 
 #' @rdname relativity_specification
 #' @export
-split_level <- function(level, new_levels, relativities) {
+split_level <- function(level, new_levels, relativities = NULL) {
   if (!is.character(level) || length(level) != 1) {
     stop("`level` must be a single character string.", call. = FALSE)
+  }
+
+  if (is.null(relativities)) {
+    if (!is.numeric(new_levels)) {
+      stop(
+        "When `relativities` is omitted, `new_levels` must be a named ",
+        "numeric vector.",
+        call. = FALSE
+      )
+    }
+
+    level_names <- names(new_levels)
+    if (is.null(level_names)) {
+      stop(
+        "When `relativities` is omitted, `new_levels` must be a named ",
+        "numeric vector.",
+        call. = FALSE
+      )
+    }
+    if (anyNA(level_names) || any(!nzchar(level_names))) {
+      stop(
+        "When `relativities` is omitted, every value in `new_levels` must ",
+        "have a non-empty name.",
+        call. = FALSE
+      )
+    }
+    if (anyDuplicated(level_names) > 0L) {
+      stop("`new_levels` contains duplicate level names.", call. = FALSE)
+    }
+
+    relativities <- unname(new_levels)
+    new_levels <- level_names
   }
 
   out <- .new_split_relativities(

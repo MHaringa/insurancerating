@@ -76,6 +76,7 @@ model <- glm(
   data = MTPL
 )
 
+\dontrun{
 boot <- bootstrap_coefficients(
   model,
   n_resamples = 25,
@@ -89,6 +90,7 @@ summary(boot, scale = "relativity")
 
 if (requireNamespace("gt", quietly = TRUE)) {
   as_gt(boot, scale = "relativity")
+}
 }
 
 }

@@ -177,8 +177,8 @@ by an explicit actuarial rationale.
 summary(refinement)
 #> Refinement specification
 #> 
-#> Package: insurancerating 0.8.2
-#> Created: 2026-09-01 08:56:23 CEST
+#> Package: insurancerating 0.8.2.9000
+#> Created: 2026-09-05 09:48:16 CEST
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -706,20 +706,20 @@ effect while introducing documented differentiation between selected
 sublevels.
 
 The example splits the broad bonus-malus groups `Low` and `Medium` into
-their observed detailed values:
+their observed detailed values. The preferred named-vector form keeps
+each level next to its relativity. The same split can also be supplied
+as character `new_levels` plus a separate numeric `relativities` vector.
 
 ``` r
 
 bm_relativities <- relativities(
   split_level(
     "Low",
-    new_levels = c("1", "2", "3", "4"),
-    relativities = c(0.95, 0.98, 1.02, 1.05)
+    new_levels = c("1" = 0.95, "2" = 0.98, "3" = 1.02, "4" = 1.05)
   ),
   split_level(
     "Medium",
-    new_levels = c("5", "6", "7", "8"),
-    relativities = c(0.96, 0.99, 1.02, 1.05)
+    new_levels = c("5" = 0.96, "6" = 0.99, "7" = 1.02, "8" = 1.05)
   )
 )
 
@@ -772,8 +772,8 @@ The four operations now form one ordered specification:
 summary(refinement)
 #> Refinement specification
 #> 
-#> Package: insurancerating 0.8.2
-#> Created: 2026-09-01 08:56:23 CEST
+#> Package: insurancerating 0.8.2.9000
+#> Created: 2026-09-05 09:48:16 CEST
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -938,10 +938,10 @@ refinement_audit <- audit_refinement(
 summary(refinement_audit)
 #> Refinement audit
 #> 
-#> Package: insurancerating 0.8.2
-#> Prepared: 2026-09-01 08:56:23 CEST
-#> Refitted: 2026-09-01 08:56:26 CEST
-#> Audited: 2026-09-01 08:56:26 CEST
+#> Package: insurancerating 0.8.2.9000
+#> Prepared: 2026-09-05 09:48:16 CEST
+#> Refitted: 2026-09-05 09:48:20 CEST
+#> Audited: 2026-09-05 09:48:20 CEST
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 

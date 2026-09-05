@@ -4320,13 +4320,11 @@ edit_smoothing <- function(model,
 #' relativities <- relativities(
 #'   split_level(
 #'     "residential",
-#'     new_levels = c("flat", "house"),
-#'     relativities = c(0.95, 1.05)
+#'     new_levels = c(flat = 0.95, house = 1.05)
 #'   ),
 #'   split_level(
 #'     "commercial",
-#'     new_levels = c("shop", "office"),
-#'     relativities = c(1.10, 0.90)
+#'     new_levels = c(shop = 1.10, office = 0.90)
 #'   )
 #' )
 #'
