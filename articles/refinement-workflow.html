@@ -266,7 +266,7 @@ supported by an explicit actuarial rationale.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.2.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-09-01 13:53:53 UTC</span></span>
+<span><span class="co">#&gt; Created: 2026-09-05 07:52:08 UTC</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -702,18 +702,19 @@ individually too sparse for stable direct estimation. The refinement can
 retain the broad parent effect while introducing documented
 differentiation between selected sublevels.</p>
 <p>The example splits the broad bonus-malus groups <code>Low</code> and
-<code>Medium</code> into their observed detailed values:</p>
+<code>Medium</code> into their observed detailed values. The preferred
+named-vector form keeps each level next to its relativity. The same
+split can also be supplied as character <code>new_levels</code> plus a
+separate numeric <code>relativities</code> vector.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bm_relativities</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/relativity_specification.html">relativities</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/relativity_specification.html">split_level</a></span><span class="op">(</span></span>
 <span>    <span class="st">"Low"</span>,</span>
-<span>    new_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span><span class="op">)</span>,</span>
-<span>    relativities <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.95</span>, <span class="fl">0.98</span>, <span class="fl">1.02</span>, <span class="fl">1.05</span><span class="op">)</span></span>
+<span>    new_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1"</span> <span class="op">=</span> <span class="fl">0.95</span>, <span class="st">"2"</span> <span class="op">=</span> <span class="fl">0.98</span>, <span class="st">"3"</span> <span class="op">=</span> <span class="fl">1.02</span>, <span class="st">"4"</span> <span class="op">=</span> <span class="fl">1.05</span><span class="op">)</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="../reference/relativity_specification.html">split_level</a></span><span class="op">(</span></span>
 <span>    <span class="st">"Medium"</span>,</span>
-<span>    new_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"5"</span>, <span class="st">"6"</span>, <span class="st">"7"</span>, <span class="st">"8"</span><span class="op">)</span>,</span>
-<span>    relativities <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.96</span>, <span class="fl">0.99</span>, <span class="fl">1.02</span>, <span class="fl">1.05</span><span class="op">)</span></span>
+<span>    new_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"5"</span> <span class="op">=</span> <span class="fl">0.96</span>, <span class="st">"6"</span> <span class="op">=</span> <span class="fl">0.99</span>, <span class="st">"7"</span> <span class="op">=</span> <span class="fl">1.02</span>, <span class="st">"8"</span> <span class="op">=</span> <span class="fl">1.05</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -763,7 +764,7 @@ levels of the derived <code>output_variable</code>.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.2.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-09-01 13:53:53 UTC</span></span>
+<span><span class="co">#&gt; Created: 2026-09-05 07:52:08 UTC</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -906,9 +907,9 @@ combinations.</p>
 <span><span class="co">#&gt; Refinement audit</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.2.9000</span></span>
-<span><span class="co">#&gt; Prepared: 2026-09-01 13:53:53 UTC</span></span>
-<span><span class="co">#&gt; Refitted: 2026-09-01 13:53:59 UTC</span></span>
-<span><span class="co">#&gt; Audited: 2026-09-01 13:53:59 UTC</span></span>
+<span><span class="co">#&gt; Prepared: 2026-09-05 07:52:08 UTC</span></span>
+<span><span class="co">#&gt; Refitted: 2026-09-05 07:52:14 UTC</span></span>
+<span><span class="co">#&gt; Audited: 2026-09-05 07:52:14 UTC</span></span>
 <span><span class="co">#&gt; Measure: frequency (per_exposure)</span></span>
 <span><span class="co">#&gt; Exposure: exposure</span></span>
 <span><span class="co">#&gt; </span></span>

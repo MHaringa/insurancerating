@@ -102,6 +102,7 @@ model <- glm(
   data = MTPL
 )
 
+if (FALSE) { # \dontrun{
 boot <- bootstrap_coefficients(
   model,
   n_resamples = 25,
@@ -110,52 +111,11 @@ boot <- bootstrap_coefficients(
 )
 
 summary(boot, scale = "link")
-#>               term      estimate bootstrap_mean          bias bootstrap_se
-#> 1      (Intercept) -1.1636200937   -1.220009055 -0.0563889610  0.249137624
-#> 2 age_policyholder -0.0170418702   -0.016712389  0.0003294813  0.001285304
-#> 3             zip1 -0.0006505428    0.039395119  0.0400456614  0.232329635
-#> 4             zip2 -0.1037738083   -0.067240901  0.0365329070  0.243555770
-#> 5             zip3 -0.0456536315   -0.007005003  0.0386486282  0.225874270
-#>         lower       upper n_successful n_requested success_rate
-#> 1 -1.68483701 -0.82875913           25          25            1
-#> 2 -0.01939017 -0.01443457           25          25            1
-#> 3 -0.32506741  0.50862020           25          25            1
-#> 4 -0.41445244  0.40491816           25          25            1
-#> 5 -0.35596929  0.40830170           25          25            1
 summary(boot, scale = "exponentiated")
-#>               term  estimate bootstrap_mean         bias bootstrap_se     lower
-#> 1      (Intercept) 0.3123534      0.3039502 -0.008403155  0.073652441 0.1856046
-#> 2 age_policyholder 0.9831025      0.9834273  0.000324747  0.001263773 0.9807967
-#> 3             zip1 0.9993497      1.0684033  0.069053585  0.263559137 0.7225523
-#> 4             zip2 0.9014292      0.9629808  0.061551629  0.249736638 0.6609599
-#> 5             zip3 0.9553728      1.0182805  0.062907708  0.241018199 0.7004985
-#>       upper n_successful n_requested success_rate
-#> 1 0.4365920           25          25            1
-#> 2 0.9856691           25          25            1
-#> 3 1.6686660           25          25            1
-#> 4 1.5047469           25          25            1
-#> 5 1.5113859           25          25            1
 summary(boot, scale = "relativity")
-#>               term  estimate bootstrap_mean         bias bootstrap_se     lower
-#> 1      (Intercept) 0.3123534      0.3039502 -0.008403155  0.073652441 0.1856046
-#> 2 age_policyholder 0.9831025      0.9834273  0.000324747  0.001263773 0.9807967
-#> 3             zip1 0.9993497      1.0684033  0.069053585  0.263559137 0.7225523
-#> 4             zip2 0.9014292      0.9629808  0.061551629  0.249736638 0.6609599
-#> 5             zip3 0.9553728      1.0182805  0.062907708  0.241018199 0.7004985
-#>       upper n_successful n_requested success_rate
-#> 1 0.4365920           25          25            1
-#> 2 0.9856691           25          25            1
-#> 3 1.6686660           25          25            1
-#> 4 1.5047469           25          25            1
-#> 5 1.5113859           25          25            1
 
 if (requireNamespace("gt", quietly = TRUE)) {
   as_gt(boot, scale = "relativity")
 }
-
-
-  
-
-
-Term
+} # }
 ```

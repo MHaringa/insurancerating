@@ -178,7 +178,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-09-01 13:53:53 UTC
+#> Created: 2026-09-05 07:52:08 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -706,20 +706,20 @@ effect while introducing documented differentiation between selected
 sublevels.
 
 The example splits the broad bonus-malus groups `Low` and `Medium` into
-their observed detailed values:
+their observed detailed values. The preferred named-vector form keeps
+each level next to its relativity. The same split can also be supplied
+as character `new_levels` plus a separate numeric `relativities` vector.
 
 ``` r
 
 bm_relativities <- relativities(
   split_level(
     "Low",
-    new_levels = c("1", "2", "3", "4"),
-    relativities = c(0.95, 0.98, 1.02, 1.05)
+    new_levels = c("1" = 0.95, "2" = 0.98, "3" = 1.02, "4" = 1.05)
   ),
   split_level(
     "Medium",
-    new_levels = c("5", "6", "7", "8"),
-    relativities = c(0.96, 0.99, 1.02, 1.05)
+    new_levels = c("5" = 0.96, "6" = 0.99, "7" = 1.02, "8" = 1.05)
   )
 )
 
@@ -773,7 +773,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-09-01 13:53:53 UTC
+#> Created: 2026-09-05 07:52:08 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -939,9 +939,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Prepared: 2026-09-01 13:53:53 UTC
-#> Refitted: 2026-09-01 13:53:59 UTC
-#> Audited: 2026-09-01 13:53:59 UTC
+#> Prepared: 2026-09-05 07:52:08 UTC
+#> Refitted: 2026-09-05 07:52:14 UTC
+#> Audited: 2026-09-05 07:52:14 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
