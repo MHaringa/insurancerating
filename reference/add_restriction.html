@@ -5,12 +5,14 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Add coefficient restrictions to a refinement workflow — add_restriction"><meta name="description" content="Fix selected risk-factor levels at user-supplied relativities before the
-refined pricing GLM is fitted. This can be appropriate when sampling
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Add coefficient restrictions to a refinement workflow — add_restriction"><meta name="description" content="Fix selected risk-factor levels at user-supplied relativities or apply
+multiplicative adjustments to their current relativities before the refined
+pricing GLM is fitted. This can be appropriate when sampling
 variation produces an implausible local effect, when an actuarial assumption
 is supported by additional information, or when a documented tariff
-constraint must be applied consistently."><meta property="og:description" content="Fix selected risk-factor levels at user-supplied relativities before the
-refined pricing GLM is fitted. This can be appropriate when sampling
+constraint must be applied consistently."><meta property="og:description" content="Fix selected risk-factor levels at user-supplied relativities or apply
+multiplicative adjustments to their current relativities before the refined
+pricing GLM is fitted. This can be appropriate when sampling
 variation produces an implausible local effect, when an actuarial assumption
 is supported by additional information, or when a documented tariff
 constraint must be applied consistently."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
@@ -46,8 +48,9 @@ constraint must be applied consistently."><meta property="og:image" content="htt
     </div>
 
     <div class="ref-description section level2">
-    <p>Fix selected risk-factor levels at user-supplied relativities before the
-refined pricing GLM is fitted. This can be appropriate when sampling
+    <p>Fix selected risk-factor levels at user-supplied relativities or apply
+multiplicative adjustments to their current relativities before the refined
+pricing GLM is fitted. This can be appropriate when sampling
 variation produces an implausible local effect, when an actuarial assumption
 is supported by additional information, or when a documented tariff
 constraint must be applied consistently.</p>
@@ -60,7 +63,10 @@ constraint must be applied consistently.</p>
 <span>  <span class="va">restrictions</span>,</span>
 <span>  allow_new_levels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  allow_new_risk_factors <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  replaces <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  replaces <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  restriction_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fixed"</span>, <span class="st">"multiplier"</span><span class="op">)</span>,</span>
+<span>  model_variable <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  output_variable <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -76,12 +82,13 @@ refinement specification instead.</p></dd>
 
 
 <dt id="arg-restrictions">restrictions<a class="anchor" aria-label="anchor" href="#arg-restrictions"></a></dt>
-<dd><p>Data frame with exactly two columns. The first column
-must have the same name as the risk factor to restrict and contains the
-levels to adjust. This can also be the <code>output_variable</code> from an earlier
-<code><a href="add_relativities.html">add_relativities()</a></code> step. The second column contains the replacement
-relativities. Levels that are not supplied are fixed at their current
-effective relativities.</p></dd>
+<dd><p>Preferably a named numeric vector: names identify levels
+and values contain fixed relativities or multipliers. In this form,
+<code>model_variable</code> is required. Alternatively, a data frame with exactly two
+columns remains fully supported. Its first column identifies the risk
+factor and contains levels; its second column names the generated tariff
+column and contains values. Unspecified levels are fixed at their current
+values or receive multiplier 1, respectively.</p></dd>
 
 
 <dt id="arg-allow-new-levels">allow_new_levels<a class="anchor" aria-label="anchor" href="#arg-allow-new-levels"></a></dt>
@@ -110,6 +117,28 @@ a new risk factor; <code>allow_new_risk_factors = TRUE</code> is then unnecessar
 Existing terms used in transformations or interactions cannot be replaced
 through this argument.</p></dd>
 
+
+<dt id="arg-restriction-type">restriction_type<a class="anchor" aria-label="anchor" href="#arg-restriction-type"></a></dt>
+<dd><p>Character string. <code>"fixed"</code> (default) sets selected
+levels to the supplied relativities. <code>"multiplier"</code> multiplies the
+relativity present at that point in the refinement workflow by each
+supplied value.</p></dd>
+
+
+<dt id="arg-model-variable">model_variable<a class="anchor" aria-label="anchor" href="#arg-model-variable"></a></dt>
+<dd><p><code>NULL</code> for the two-column data-frame form, or a
+character string identifying the risk factor when <code>restrictions</code> is a
+named numeric vector. This can also identify the <code>output_variable</code> from an
+earlier <code><a href="add_relativities.html">add_relativities()</a></code> step.</p></dd>
+
+
+<dt id="arg-output-variable">output_variable<a class="anchor" aria-label="anchor" href="#arg-output-variable"></a></dt>
+<dd><p>Optional name for the generated tariff column when
+using named-vector <code>restrictions</code>. Defaults to
+<code>paste0(model_variable, "_restricted")</code> for fixed restrictions and
+<code>paste0(model_variable, "_multiplier")</code> for multiplier restrictions. With
+data-frame <code>restrictions</code>, the second column name fulfils this role.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -123,14 +152,26 @@ called.</p>
 object. It does not alter the fitted GLM immediately. The restriction is
 evaluated in the recorded step order and applied when <code><a href="refit.html">refit()</a></code> is called.
 Retain the refinement object when reviewing or revising the specification.</p>
-<p>The <code>restrictions</code> data frame identifies the risk factor to restrict by its
-first column. This may be a variable from the original GLM or a tariff factor
-created by an earlier refinement step. The second column contains the
-relativities used for those levels in the refined model.</p><div class="section">
+<p>With <code>restriction_type = "fixed"</code>, the supplied values become the final
+relativities for the selected levels. With <code>restriction_type = "multiplier"</code>,
+each supplied value multiplies the relativity that exists at that point in
+the ordered refinement workflow. The multiplier is retained as a relative
+adjustment: it is not converted prematurely into a fixed relativity. A
+multiplier of 1 leaves a level unchanged, 1.10 increases it by 10%, and 0.95
+decreases it by 5%.</p>
+<p>The preferred input is a named numeric <code>restrictions</code> vector together with
+<code>model_variable</code>. Vector names identify the levels and values contain the
+fixed relativities or multipliers. This keeps every level directly beside
+its value. <code>output_variable</code> names the generated fixed tariff column and has
+a deterministic default.</p>
+<p>Alternatively, supply the existing two-column data-frame form. Its first
+column name identifies the risk factor and its second column name identifies
+the generated tariff column. Both forms are fully supported; the named-vector
+form is preferred for concise specifications.</p><div class="section">
 <h3 id="actuarial-interpretation">Actuarial interpretation<a class="anchor" aria-label="anchor" href="#actuarial-interpretation"></a></h3>
 
 
-<p>The restriction table may contain all levels of the model variable, or only
+<p>A fixed restriction table may contain all levels of the model variable, or only
 the levels that need a manual adjustment. If only a subset is supplied, the
 missing levels are automatically filled with their current effective
 relativities at that point in the refinement workflow. These may be the
@@ -239,6 +280,23 @@ restriction added before <code><a href="add_relativities.html">add_relativities(
 basis from which the split is derived.</p>
 </div>
 
+<div class="section">
+<h3 id="ordered-fixed-and-multiplier-restrictions">Ordered fixed and multiplier restrictions<a class="anchor" aria-label="anchor" href="#ordered-fixed-and-multiplier-restrictions"></a></h3>
+
+
+<p>Restriction steps are evaluated in their recorded order. A multiplier after
+a fixed restriction scales that fixed relativity. A later fixed restriction
+replaces the complete effect at the selected levels and therefore supersedes
+earlier multipliers for the same risk factor. For example, fixing a level at
+0.95 and then multiplying by 1.10 gives 1.045; applying those steps in the
+opposite order gives 0.95.</p>
+<p>Multipliers require an active underlying relativity. They cannot create a new
+risk factor or level, and cannot be combined with <code>replaces</code>. Their values
+must be finite and strictly positive because they are applied on the log
+scale. The stored multiplier remains visible in refinement summaries and
+audit metadata.</p>
+</div>
+
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -264,25 +322,70 @@ basis from which the split is derived.</p>
 <span class="r-in"><span>  data <span class="op">=</span> <span class="va">portfolio</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">restrictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  postal_area <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"C"</span>, <span class="st">"D"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  relativity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.10</span>, <span class="fl">1.20</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Preferred form: each level is directly beside its relativity.</span></span></span>
 <span class="r-in"><span><span class="va">refined</span> <span class="op">&lt;-</span> <span class="fu"><a href="prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span>  <span class="fu">add_restriction</span><span class="op">(</span><span class="va">restrictions</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">add_restriction</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    restrictions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>C <span class="op">=</span> <span class="fl">1.10</span>, D <span class="op">=</span> <span class="fl">1.20</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    model_variable <span class="op">=</span> <span class="st">"postal_area"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Added new level `D` to risk factor `postal_area` with relativity 1.2. This level was not observed in the model data.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Postal area D was not observed in the portfolio. Its relativity is an</span></span></span>
 <span class="r-in"><span><span class="co"># explicit tariff assumption and becomes available after refitting.</span></span></span>
 <span class="r-in"><span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="va">refined</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">refined_model</span>, exposure <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   risk_factor       level est_refined_model</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (Intercept) (Intercept)          2.096774</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  relativity           D          1.200000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3  relativity           C          1.100000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4  relativity           A          1.000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  relativity           B          1.000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              risk_factor       level est_refined_model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1            (Intercept) (Intercept)          2.096774</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 postal_area_restricted           D          1.200000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 postal_area_restricted           C          1.100000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 postal_area_restricted           A          1.000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 postal_area_restricted           B          1.000000</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The two-column data-frame form is also fully supported.</span></span></span>
+<span class="r-in"><span><span class="va">restrictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  postal_area <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"C"</span>, <span class="st">"D"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  relativity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.10</span>, <span class="fl">1.20</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">add_restriction</span><span class="op">(</span><span class="va">restrictions</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Added new level `D` to risk factor `postal_area` with relativity 1.2. This level was not observed in the model data.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;rating_refinement&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Base model: Poisson GLM (log link)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Steps: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1. Restriction: postal_area -&gt; relativity (4 levels) [new level: D]</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Multipliers remain relative to the underlying modelled relativities.</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">add_restriction</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    restrictions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>B <span class="op">=</span> <span class="fl">1.10</span>, C <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    model_variable <span class="op">=</span> <span class="st">"postal_area"</span>,</span></span>
+<span class="r-in"><span>    restriction_type <span class="op">=</span> <span class="st">"multiplier"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Refined generalized linear model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Original formula:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   claims ~ postal_area + offset(log(exposure))</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Refitted formula:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   claims ~ offset(log(.ir_multiplier_1_postal_area) + log(exposure))</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Family: poisson (link: log)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept-only refit: no</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Refinement steps:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1. Multiplier restriction: postal_area -&gt; postal_area_multiplier (3 levels)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Call:  glm(formula = claims ~ offset(log(.ir_multiplier_1_postal_area) + </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     log(exposure)), family = poisson(link = "log"), data = refined_data)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      0.6817  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Degrees of Freedom: 5 Total (i.e. Null);  5 Residual</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Null Deviance:	    3.023 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Residual Deviance: 3.023 	AIC: 20.51</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># A factor absent from the fitted GLM can replace an existing model term.</span></span></span>
 <span class="r-in"><span><span class="co"># The portfolio must already assign every observation to a hail zone.</span></span></span>

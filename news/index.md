@@ -2,6 +2,12 @@
 
 ## insurancerating (development version)
 
+- [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+  now supports relative tariff adjustments through
+  `restriction_type = "multiplier"`. Multipliers are stored as ordered
+  refinement decisions and are applied to the relativity available at
+  that point; the default `restriction_type = "fixed"` preserves the
+  existing fixed restriction behaviour.
 - [`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
   now accepts a named numeric `new_levels` vector, keeping each new
   level next to its relativity. This is the preferred syntax. A

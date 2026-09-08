@@ -1,6 +1,7 @@
 # Add coefficient restrictions to a refinement workflow
 
-Fix selected risk-factor levels at user-supplied relativities before the
+Fix selected risk-factor levels at user-supplied relativities or apply
+multiplicative adjustments to their current relativities before the
 refined pricing GLM is fitted. This can be appropriate when sampling
 variation produces an implausible local effect, when an actuarial
 assumption is supported by additional information, or when a documented
@@ -14,7 +15,10 @@ add_restriction(
   restrictions,
   allow_new_levels = TRUE,
   allow_new_risk_factors = FALSE,
-  replaces = NULL
+  replaces = NULL,
+  restriction_type = c("fixed", "multiplier"),
+  model_variable = NULL,
+  output_variable = NULL
 )
 ```
 
@@ -31,13 +35,13 @@ add_restriction(
 
 - restrictions:
 
-  Data frame with exactly two columns. The first column must have the
-  same name as the risk factor to restrict and contains the levels to
-  adjust. This can also be the `output_variable` from an earlier
-  [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
-  step. The second column contains the replacement relativities. Levels
-  that are not supplied are fixed at their current effective
-  relativities.
+  Preferably a named numeric vector: names identify levels and values
+  contain fixed relativities or multipliers. In this form,
+  `model_variable` is required. Alternatively, a data frame with exactly
+  two columns remains fully supported. Its first column identifies the
+  risk factor and contains levels; its second column names the generated
+  tariff column and contains values. Unspecified levels are fixed at
+  their current values or receive multiplier 1, respectively.
 
 - allow_new_levels:
 
@@ -67,6 +71,29 @@ add_restriction(
   Existing terms used in transformations or interactions cannot be
   replaced through this argument.
 
+- restriction_type:
+
+  Character string. `"fixed"` (default) sets selected levels to the
+  supplied relativities. `"multiplier"` multiplies the relativity
+  present at that point in the refinement workflow by each supplied
+  value.
+
+- model_variable:
+
+  `NULL` for the two-column data-frame form, or a character string
+  identifying the risk factor when `restrictions` is a named numeric
+  vector. This can also identify the `output_variable` from an earlier
+  [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+  step.
+
+- output_variable:
+
+  Optional name for the generated tariff column when using named-vector
+  `restrictions`. Defaults to `paste0(model_variable, "_restricted")`
+  for fixed restrictions and `paste0(model_variable, "_multiplier")` for
+  multiplier restrictions. With data-frame `restrictions`, the second
+  column name fulfils this role.
+
 ## Value
 
 A `rating_refinement` object containing the stored restriction
@@ -83,15 +110,29 @@ evaluated in the recorded step order and applied when
 is called. Retain the refinement object when reviewing or revising the
 specification.
 
-The `restrictions` data frame identifies the risk factor to restrict by
-its first column. This may be a variable from the original GLM or a
-tariff factor created by an earlier refinement step. The second column
-contains the relativities used for those levels in the refined model.
+With `restriction_type = "fixed"`, the supplied values become the final
+relativities for the selected levels. With
+`restriction_type = "multiplier"`, each supplied value multiplies the
+relativity that exists at that point in the ordered refinement workflow.
+The multiplier is retained as a relative adjustment: it is not converted
+prematurely into a fixed relativity. A multiplier of 1 leaves a level
+unchanged, 1.10 increases it by 10%, and 0.95 decreases it by 5%.
+
+The preferred input is a named numeric `restrictions` vector together
+with `model_variable`. Vector names identify the levels and values
+contain the fixed relativities or multipliers. This keeps every level
+directly beside its value. `output_variable` names the generated fixed
+tariff column and has a deterministic default.
+
+Alternatively, supply the existing two-column data-frame form. Its first
+column name identifies the risk factor and its second column name
+identifies the generated tariff column. Both forms are fully supported;
+the named-vector form is preferred for concise specifications.
 
 ### Actuarial interpretation
 
-The restriction table may contain all levels of the model variable, or
-only the levels that need a manual adjustment. If only a subset is
+A fixed restriction table may contain all levels of the model variable,
+or only the levels that need a manual adjustment. If only a subset is
 supplied, the missing levels are automatically filled with their current
 effective relativities at that point in the refinement workflow. These
 may be the original fitted GLM relativities or values produced by
@@ -217,6 +258,21 @@ operates on the derived split relativities. A restriction added before
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
 instead changes the coefficient basis from which the split is derived.
 
+### Ordered fixed and multiplier restrictions
+
+Restriction steps are evaluated in their recorded order. A multiplier
+after a fixed restriction scales that fixed relativity. A later fixed
+restriction replaces the complete effect at the selected levels and
+therefore supersedes earlier multipliers for the same risk factor. For
+example, fixing a level at 0.95 and then multiplying by 1.10 gives
+1.045; applying those steps in the opposite order gives 0.95.
+
+Multipliers require an active underlying relativity. They cannot create
+a new risk factor or level, and cannot be combined with `replaces`.
+Their values must be finite and strictly positive because they are
+applied on the log scale. The stored multiplier remains visible in
+refinement summaries and audit metadata.
+
 ## See also
 
 [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md),
@@ -246,25 +302,70 @@ model <- glm(
   data = portfolio
 )
 
-restrictions <- data.frame(
-  postal_area = c("C", "D"),
-  relativity = c(1.10, 1.20)
-)
-
+# Preferred form: each level is directly beside its relativity.
 refined <- prepare_refinement(model, data = portfolio) |>
-  add_restriction(restrictions)
+  add_restriction(
+    restrictions = c(C = 1.10, D = 1.20),
+    model_variable = "postal_area"
+  )
 #> Added new level `D` to risk factor `postal_area` with relativity 1.2. This level was not observed in the model data.
 
 # Postal area D was not observed in the portfolio. Its relativity is an
 # explicit tariff assumption and becomes available after refitting.
 refined_model <- refit(refined)
 rating_table(refined_model, exposure = FALSE)
-#>   risk_factor       level est_refined_model
-#> 1 (Intercept) (Intercept)          2.096774
-#> 2  relativity           D          1.200000
-#> 3  relativity           C          1.100000
-#> 4  relativity           A          1.000000
-#> 5  relativity           B          1.000000
+#>              risk_factor       level est_refined_model
+#> 1            (Intercept) (Intercept)          2.096774
+#> 2 postal_area_restricted           D          1.200000
+#> 3 postal_area_restricted           C          1.100000
+#> 4 postal_area_restricted           A          1.000000
+#> 5 postal_area_restricted           B          1.000000
+
+# The two-column data-frame form is also fully supported.
+restrictions <- data.frame(
+  postal_area = c("C", "D"),
+  relativity = c(1.10, 1.20)
+)
+prepare_refinement(model, data = portfolio) |>
+  add_restriction(restrictions)
+#> Added new level `D` to risk factor `postal_area` with relativity 1.2. This level was not observed in the model data.
+#> <rating_refinement>
+#> Base model: Poisson GLM (log link)
+#> Steps: 1
+#>   1. Restriction: postal_area -> relativity (4 levels) [new level: D]
+
+# Multipliers remain relative to the underlying modelled relativities.
+prepare_refinement(model, data = portfolio) |>
+  add_restriction(
+    restrictions = c(B = 1.10, C = 0.95),
+    model_variable = "postal_area",
+    restriction_type = "multiplier"
+  ) |>
+  refit()
+#> Refined generalized linear model
+#> 
+#> Original formula:
+#>   claims ~ postal_area + offset(log(exposure))
+#> 
+#> Refitted formula:
+#>   claims ~ offset(log(.ir_multiplier_1_postal_area) + log(exposure))
+#> 
+#> Family: poisson (link: log)
+#> Intercept-only refit: no
+#> Refinement steps:
+#>   1. Multiplier restriction: postal_area -> postal_area_multiplier (3 levels)
+#> 
+#> 
+#> Call:  glm(formula = claims ~ offset(log(.ir_multiplier_1_postal_area) + 
+#>     log(exposure)), family = poisson(link = "log"), data = refined_data)
+#> 
+#> Coefficients:
+#> (Intercept)  
+#>      0.6817  
+#> 
+#> Degrees of Freedom: 5 Total (i.e. Null);  5 Residual
+#> Null Deviance:       3.023 
+#> Residual Deviance: 3.023     AIC: 20.51
 
 # A factor absent from the fitted GLM can replace an existing model term.
 # The portfolio must already assign every observation to a hail zone.
