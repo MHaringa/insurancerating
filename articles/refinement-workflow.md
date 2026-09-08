@@ -178,7 +178,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-09-08 11:01:20 UTC
+#> Created: 2026-09-08 12:03:52 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -778,7 +778,7 @@ This operation is not equivalent to restriction or smoothing:
 
 - smoothing regularises an ordered effect already represented by the
   model;
-- restriction fixes selected tariff values;
+- restriction fixes or multiplies selected tariff values;
 - shrinkage reduces differences between categorical levels while
   retaining their ordering;
 - additional relativities introduce finer differentiation inside a
@@ -788,7 +788,9 @@ Step order matters. A restriction or shrinkage step added before
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
 changes the parent coefficient used as the basis for the split. A later
 restriction can instead adjust selected levels of the derived
-`output_variable`.
+`output_variable`. With `restriction_type = "multiplier"`, the parent
+adjustment is included once in the split; the earlier restricted effect
+is replaced in the model offset.
 
 ## Combining and reviewing refinements
 
@@ -800,7 +802,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-09-08 11:01:20 UTC
+#> Created: 2026-09-08 12:03:52 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -966,9 +968,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Prepared: 2026-09-08 11:01:20 UTC
-#> Refitted: 2026-09-08 11:01:26 UTC
-#> Audited: 2026-09-08 11:01:27 UTC
+#> Prepared: 2026-09-08 12:03:52 UTC
+#> Refitted: 2026-09-08 12:03:57 UTC
+#> Audited: 2026-09-08 12:03:58 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 

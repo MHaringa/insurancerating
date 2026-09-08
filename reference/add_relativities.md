@@ -137,6 +137,13 @@ have been used to derive the final split,
 reports `output_variable` as the tariff factor and does not also show
 the intermediate restricted variable.
 
+This also applies to `restriction_type = "multiplier"`: a multiplier on
+a parent level is included once in the coefficient from which its
+sublevels are derived. The split replaces the preceding restricted
+effect in the model offset. For example, a parent relativity of 0.80,
+multiplied by 1.15 and split with an unnormalised sublevel relativity of
+0.90, gives `0.80 * 1.15 * 0.90`.
+
 Conversely,
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
 can be called after `add_relativities()` to adjust selected levels of

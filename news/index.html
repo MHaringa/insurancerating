@@ -39,6 +39,8 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="insurancerating-development-version">insurancerating (development version)<a class="anchor" aria-label="anchor" href="#insurancerating-development-version"></a></h2>
 <ul><li>
+<code><a href="../reference/add_relativities.html">add_relativities()</a></code> now correctly replaces the active offset from a preceding multiplier restriction on the same model variable. The adjusted parent effect is included exactly once in the split, preventing spurious missing-model-term warnings, double counting in predictions and duplicate intermediate factors in <code><a href="../reference/rating_table.html">rating_table()</a></code>.</li>
+<li>
 <code><a href="../reference/add_restriction.html">add_restriction()</a></code> now supports relative tariff adjustments through <code>restriction_type = "multiplier"</code>. Multipliers are stored as ordered refinement decisions and are applied to the relativity available at that point; the default <code>restriction_type = "fixed"</code> preserves the existing fixed restriction behaviour.</li>
 <li>
 <code><a href="../reference/relativity_specification.html">split_level()</a></code> now accepts a named numeric <code>new_levels</code> vector, keeping each new level next to its relativity. This is the preferred syntax. A character <code>new_levels</code> vector with a separate <code>relativities</code> vector is also fully supported.</li>

@@ -2,6 +2,13 @@
 
 ## insurancerating (development version)
 
+- [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+  now correctly replaces the active offset from a preceding multiplier
+  restriction on the same model variable. The adjusted parent effect is
+  included exactly once in the split, preventing spurious
+  missing-model-term warnings, double counting in predictions and
+  duplicate intermediate factors in
+  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   now supports relative tariff adjustments through
   `restriction_type = "multiplier"`. Multipliers are stored as ordered

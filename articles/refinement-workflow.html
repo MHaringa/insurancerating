@@ -266,7 +266,7 @@ supported by an explicit actuarial rationale.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.2.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-09-08 11:01:20 UTC</span></span>
+<span><span class="co">#&gt; Created: 2026-09-08 12:03:52 UTC</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -765,7 +765,7 @@ directly.</p>
 <ul>
 <li>smoothing regularises an ordered effect already represented by the
 model;</li>
-<li>restriction fixes selected tariff values;</li>
+<li>restriction fixes or multiplies selected tariff values;</li>
 <li>shrinkage reduces differences between categorical levels while
 retaining their ordering;</li>
 <li>additional relativities introduce finer differentiation inside a
@@ -774,7 +774,10 @@ broader model level.</li>
 <p>Step order matters. A restriction or shrinkage step added before
 <code><a href="../reference/add_relativities.html">add_relativities()</a></code> changes the parent coefficient used as
 the basis for the split. A later restriction can instead adjust selected
-levels of the derived <code>output_variable</code>.</p>
+levels of the derived <code>output_variable</code>. With
+<code>restriction_type = "multiplier"</code>, the parent adjustment is
+included once in the split; the earlier restricted effect is replaced in
+the model offset.</p>
 </div>
 <div class="section level2">
 <h2 id="combining-and-reviewing-refinements">Combining and reviewing refinements<a class="anchor" aria-label="anchor" href="#combining-and-reviewing-refinements"></a>
@@ -785,7 +788,7 @@ levels of the derived <code>output_variable</code>.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.2.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-09-08 11:01:20 UTC</span></span>
+<span><span class="co">#&gt; Created: 2026-09-08 12:03:52 UTC</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -928,9 +931,9 @@ combinations.</p>
 <span><span class="co">#&gt; Refinement audit</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.2.9000</span></span>
-<span><span class="co">#&gt; Prepared: 2026-09-08 11:01:20 UTC</span></span>
-<span><span class="co">#&gt; Refitted: 2026-09-08 11:01:26 UTC</span></span>
-<span><span class="co">#&gt; Audited: 2026-09-08 11:01:27 UTC</span></span>
+<span><span class="co">#&gt; Prepared: 2026-09-08 12:03:52 UTC</span></span>
+<span><span class="co">#&gt; Refitted: 2026-09-08 12:03:57 UTC</span></span>
+<span><span class="co">#&gt; Audited: 2026-09-08 12:03:58 UTC</span></span>
 <span><span class="co">#&gt; Measure: frequency (per_exposure)</span></span>
 <span><span class="co">#&gt; Exposure: exposure</span></span>
 <span><span class="co">#&gt; </span></span>
