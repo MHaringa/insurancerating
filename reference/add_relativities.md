@@ -152,6 +152,20 @@ an existing refinement factor; users do not need to set
 `allow_new_risk_factors = TRUE`. Levels omitted from the restriction
 table are fixed at the relativities calculated by this step.
 
+### Rating grids and audits
+
+After
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
+[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+groups by the output factor in place of its parent. The numeric split
+relativity is mapped to the output levels, which may have different
+values within one parent level. Later shrinkage and rebasing retain this
+segment-level grid, including when `refit(intercept_only = TRUE)` is
+used.
+[`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
+reviews these final segments while retaining the original variables for
+baseline predictions.
+
 ### Appropriate use
 
 `add_relativities()` is intended for refinement within an already

@@ -177,6 +177,18 @@ table are fixed at the relativities calculated by this step.</p>
 </div>
 
 <div class="section">
+<h3 id="rating-grids-and-audits">Rating grids and audits<a class="anchor" aria-label="anchor" href="#rating-grids-and-audits"></a></h3>
+
+
+<p>After <code><a href="refit.html">refit()</a></code>, <code><a href="rating_grid.html">rating_grid()</a></code> groups by the output factor in place of
+its parent. The numeric split relativity is mapped to the output levels,
+which may have different values within one parent level. Later shrinkage
+and rebasing retain this segment-level grid, including when
+<code>refit(intercept_only = TRUE)</code> is used. <code><a href="audit_refinement.html">audit_refinement()</a></code> reviews these
+final segments while retaining the original variables for baseline predictions.</p>
+</div>
+
+<div class="section">
 <h3 id="appropriate-use">Appropriate use<a class="anchor" aria-label="anchor" href="#appropriate-use"></a></h3>
 
 

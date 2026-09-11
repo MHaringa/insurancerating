@@ -69,7 +69,8 @@ model diagnostics.</p>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>data.frame</code> of class <code>"model_data"</code> with additional attributes:</p><ul><li><p><code>response</code>: response variable in the model;</p></li>
-<li><p><code>rf</code>: names of risk factors in the model;</p></li>
+<li><p><code>rf</code>: risk factors used for default rating-grid grouping, including
+the output factors of split refinements;</p></li>
 <li><p><code>offweights</code>: weight and offset variables if present;</p></li>
 <li><p><code>terms</code>: model terms object for plain GLMs;</p></li>
 <li><p><code>mgd_rst</code>, <code>mgd_smt</code>: merged restrictions and smooths for refit
@@ -90,7 +91,11 @@ fitted model. Rows omitted during fitting, for example because of missing
 model variables, may therefore not be present.</p>
 <p>For a refined model, technical columns used to construct smoothing and
 restriction terms are removed from the returned data. The mappings required
-to interpret the refined coefficients are retained as attributes.</p>
+to interpret the refined coefficients are retained as attributes.
+A factor created by <code><a href="add_relativities.html">add_relativities()</a></code> replaces its parent in the
+default rating-grid grouping. Its numeric relativity columns are mapped to
+the new segment levels using the stored refinement specification; the
+original portfolio columns remain available for explicit grouping and audits.</p>
 </div>
 
 <div class="section">

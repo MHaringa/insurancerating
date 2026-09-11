@@ -26,7 +26,8 @@ A `data.frame` of class `"model_data"` with additional attributes:
 
 - `response`: response variable in the model;
 
-- `rf`: names of risk factors in the model;
+- `rf`: risk factors used for default rating-grid grouping, including
+  the output factors of split refinements;
 
 - `offweights`: weight and offset variables if present;
 
@@ -51,7 +52,12 @@ present.
 For a refined model, technical columns used to construct smoothing and
 restriction terms are removed from the returned data. The mappings
 required to interpret the refined coefficients are retained as
-attributes.
+attributes. A factor created by
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+replaces its parent in the default rating-grid grouping. Its numeric
+relativity columns are mapped to the new segment levels using the stored
+refinement specification; the original portfolio columns remain
+available for explicit grouping and audits.
 
 ### Actuarial use
 

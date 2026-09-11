@@ -232,8 +232,14 @@ weights do not represent the underlying claims correctly.</p>
 <p>If <code>exposure_by</code> is supplied, exposure or row counts are split across levels
 of that variable and returned in wide format, for example
 <code>"exposure_2020"</code> or <code>"count_2020"</code>.</p>
+<p>After <code><a href="add_relativities.html">add_relativities()</a></code> creates an output factor, the default grid uses
+that factor instead of its parent. Split relativities and subsequent
+shrinkage or rebasing columns are joined by the output segment, not by the
+original parent level. Ordinary one-to-one restriction mappings continue
+to use their existing grouping variables.</p>
 <p>For objects returned by <code><a href="extract_model_data.html">extract_model_data()</a></code>, refinement mappings are joined
-by their original factor column. They are not cross-joined onto every row.</p>
+by the factor key recorded in the refinement metadata. They are not
+cross-joined onto every row.</p>
 <p>Aggregation, reshaping and refinement joins are performed internally with
 <code><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table::data.table()</a></code> to support large pricing portfolios. A local copy
 is used, so the supplied object is not modified by reference. The output is

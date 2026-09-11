@@ -178,7 +178,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-09-08 12:03:52 UTC
+#> Created: 2026-09-11 07:13:22 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -766,6 +766,19 @@ identifies the detailed portfolio levels within each parent.
 `output_variable` names the resulting hybrid tariff factor; unsplit
 parent levels retain their existing model effect.
 
+After refitting,
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+reports this output factor and
+[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+uses its segment levels instead of the parent grouping. The numeric
+split relativity is linked to the new segment, since one parent can now
+contain several different relativities. Later shrinkage and rebasing of
+`bm_tariff_segment` retain that grouping, also with
+`refit(intercept_only = TRUE)`.
+[`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
+can therefore review the final segments without discarding the original
+variables needed to predict the unrestricted model.
+
 With `normalize = TRUE`, the sublevel relativities are normalised within
 each parent so their exposure-weighted average equals one. The split
 therefore redistributes the parent effect without changing its
@@ -802,7 +815,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-09-08 12:03:52 UTC
+#> Created: 2026-09-11 07:13:22 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -968,9 +981,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Prepared: 2026-09-08 12:03:52 UTC
-#> Refitted: 2026-09-08 12:03:57 UTC
-#> Audited: 2026-09-08 12:03:58 UTC
+#> Prepared: 2026-09-11 07:13:22 UTC
+#> Refitted: 2026-09-11 07:13:28 UTC
+#> Audited: 2026-09-11 07:13:28 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 

@@ -2,6 +2,15 @@
 
 ## insurancerating (development version)
 
+- Split factors created by
+  [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+  now define their own
+  [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+  grouping, with numeric refinements mapped to the output segments
+  rather than their parent levels. This removes spurious multiple-value
+  warnings in grid-based audits, also after shrinkage, rebasing and
+  intercept-only refitting. Existing saved models with split metadata
+  are resolved on extraction; fitted predictions are unchanged.
 - [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
   now correctly replaces the active offset from a preceding multiplier
   restriction on the same model variable. The adjusted parent effect is
@@ -22,6 +31,8 @@
   also fully supported.
 
 ## insurancerating 0.8.2
+
+CRAN release: 2026-09-01
 
 ### Changes since 0.8.1
 

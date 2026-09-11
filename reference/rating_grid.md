@@ -170,10 +170,18 @@ If `exposure_by` is supplied, exposure or row counts are split across
 levels of that variable and returned in wide format, for example
 `"exposure_2020"` or `"count_2020"`.
 
+After
+[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
+creates an output factor, the default grid uses that factor instead of
+its parent. Split relativities and subsequent shrinkage or rebasing
+columns are joined by the output segment, not by the original parent
+level. Ordinary one-to-one restriction mappings continue to use their
+existing grouping variables.
+
 For objects returned by
 [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md),
-refinement mappings are joined by their original factor column. They are
-not cross-joined onto every row.
+refinement mappings are joined by the factor key recorded in the
+refinement metadata. They are not cross-joined onto every row.
 
 Aggregation, reshaping and refinement joins are performed internally
 with
