@@ -266,7 +266,7 @@ supported by an explicit actuarial rationale.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.2.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-09-11 07:13:22 UTC</span></span>
+<span><span class="co">#&gt; Created: 2026-10-18 08:08:03 UTC</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -632,6 +632,12 @@ complete fixed structure for that risk factor. The named-vector form is
 preferred because each level remains directly beside its relativity. A
 two-column data frame remains a fully supported alternative; its column
 names identify the source factor and generated tariff column.</p>
+<p>In that data frame, the level column must be character or factor and
+the value column must be numeric. Numeric category codes must be
+converted explicitly with <code><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character()</a></code> or
+<code><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor()</a></code>. Named-vector input such as
+<code>c("0" = 1.00, "3" = 1.10)</code> already uses character labels,
+even though the category names look numeric.</p>
 <p>Alternatively, <code>restriction_type = "multiplier"</code> retains
 an adjustment relative to the effect that exists at that point in the
 refinement. Here the current ZIP 3 relativity is increased by 10%; it is
@@ -658,6 +664,13 @@ New levels may be added when they represent explicit tariff assumptions;
 new risk factors require the corresponding portfolio column and an
 explicit opt-in. These behaviours are documented in the
 <code><a href="../reference/add_restriction.html">add_restriction()</a></code> reference.</p>
+<p><code>allow_new_risk_factors = TRUE</code> is permission to introduce
+a new fixed factor, not a requirement that the factor be new. For a
+factor already in the GLM or created by an earlier refinement step, it
+has no additional effect and does not itself produce a warning or
+message. This also holds for multipliers, which still require an
+existing relativity and cannot introduce a new factor. The flag does not
+request replacement of another model variable.</p>
 <p>A new fixed tariff factor can also replace an existing standalone
 model term. For example,
 <code>add_restriction(..., replaces = "postal_area")</code> records that
@@ -798,7 +811,7 @@ the model offset.</p>
 <span><span class="co">#&gt; Refinement specification</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.2.9000</span></span>
-<span><span class="co">#&gt; Created: 2026-09-11 07:13:22 UTC</span></span>
+<span><span class="co">#&gt; Created: 2026-10-18 08:08:03 UTC</span></span>
 <span><span class="co">#&gt; Observations: 30,000</span></span>
 <span><span class="co">#&gt; Family: poisson (log link)</span></span>
 <span><span class="co">#&gt; Base formula:</span></span>
@@ -941,9 +954,9 @@ combinations.</p>
 <span><span class="co">#&gt; Refinement audit</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Package: insurancerating 0.8.2.9000</span></span>
-<span><span class="co">#&gt; Prepared: 2026-09-11 07:13:22 UTC</span></span>
-<span><span class="co">#&gt; Refitted: 2026-09-11 07:13:28 UTC</span></span>
-<span><span class="co">#&gt; Audited: 2026-09-11 07:13:28 UTC</span></span>
+<span><span class="co">#&gt; Prepared: 2026-10-18 08:08:03 UTC</span></span>
+<span><span class="co">#&gt; Refitted: 2026-10-18 08:08:08 UTC</span></span>
+<span><span class="co">#&gt; Audited: 2026-10-18 08:08:09 UTC</span></span>
 <span><span class="co">#&gt; Measure: frequency (per_exposure)</span></span>
 <span><span class="co">#&gt; Exposure: exposure</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -968,7 +981,7 @@ combinations.</p>
 <span><span class="co">#&gt; Portfolio effect</span></span>
 <span><span class="co">#&gt;   Before: 0.137596</span></span>
 <span><span class="co">#&gt;   After:  0.137596</span></span>
-<span><span class="co">#&gt;   Change: -1.95122e-14 (-1.418e-11%)</span></span>
+<span><span class="co">#&gt;   Change: -1.95399e-14 (-1.42e-11%)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Largest level changes (10 of 24)</span></span>
 <span><span class="co">#&gt;              risk_factor   level     before      after       change</span></span>

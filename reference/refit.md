@@ -123,7 +123,7 @@ Martin Haringa
 
 ``` r
 zip_df <- data.frame(
-  zip = c(0, 1, 2, 3),
+  zip = c("0", "1", "2", "3"),
   zip_adj = c(0.8, 0.9, 1.0, 1.2)
 )
 

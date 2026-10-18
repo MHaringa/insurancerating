@@ -435,8 +435,7 @@ commercial premium.</p>
 <span>  weights <span class="op">=</span> <span class="va">exposure</span>,</span>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma</a></span><span class="op">(</span>link <span class="op">=</span> <span class="st">"log"</span><span class="op">)</span>,</span>
 <span>  data <span class="op">=</span> <span class="va">premium_df</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in dgamma(y, 1/disp, scale = mu * disp, log = TRUE): NaNs produced</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
 <p>This second GLM is not statistically required after fitting frequency
 and severity. Here it is used as a tariff-construction step: it
 approximates the combined technical risk with a compact multiplicative

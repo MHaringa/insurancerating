@@ -178,7 +178,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-09-11 07:13:22 UTC
+#> Created: 2026-10-18 08:08:03 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -619,6 +619,14 @@ preferred because each level remains directly beside its relativity. A
 two-column data frame remains a fully supported alternative; its column
 names identify the source factor and generated tariff column.
 
+In that data frame, the level column must be character or factor and the
+value column must be numeric. Numeric category codes must be converted
+explicitly with
+[`as.character()`](https://rdrr.io/r/base/character.html) or
+[`factor()`](https://rdrr.io/r/base/factor.html). Named-vector input
+such as `c("0" = 1.00, "3" = 1.10)` already uses character labels, even
+though the category names look numeric.
+
 Alternatively, `restriction_type = "multiplier"` retains an adjustment
 relative to the effect that exists at that point in the refinement. Here
 the current ZIP 3 relativity is increased by 10%; it is not stored as a
@@ -651,6 +659,14 @@ risk factors require the corresponding portfolio column and an explicit
 opt-in. These behaviours are documented in the
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
 reference.
+
+`allow_new_risk_factors = TRUE` is permission to introduce a new fixed
+factor, not a requirement that the factor be new. For a factor already
+in the GLM or created by an earlier refinement step, it has no
+additional effect and does not itself produce a warning or message. This
+also holds for multipliers, which still require an existing relativity
+and cannot introduce a new factor. The flag does not request replacement
+of another model variable.
 
 A new fixed tariff factor can also replace an existing standalone model
 term. For example, `add_restriction(..., replaces = "postal_area")`
@@ -815,7 +831,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-09-11 07:13:22 UTC
+#> Created: 2026-10-18 08:08:03 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -981,9 +997,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Prepared: 2026-09-11 07:13:22 UTC
-#> Refitted: 2026-09-11 07:13:28 UTC
-#> Audited: 2026-09-11 07:13:28 UTC
+#> Prepared: 2026-10-18 08:08:03 UTC
+#> Refitted: 2026-10-18 08:08:08 UTC
+#> Audited: 2026-10-18 08:08:09 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
@@ -1008,7 +1024,7 @@ summary(refinement_audit)
 #> Portfolio effect
 #>   Before: 0.137596
 #>   After:  0.137596
-#>   Change: -1.95122e-14 (-1.418e-11%)
+#>   Change: -1.95399e-14 (-1.42e-11%)
 #> 
 #> Largest level changes (10 of 24)
 #>              risk_factor   level     before      after       change

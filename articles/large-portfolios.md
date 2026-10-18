@@ -267,7 +267,7 @@ library(duckdb)
 
 con <- dbConnect(duckdb())
 #> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmpfNQtr0/duckdb
+#> ℹ /tmp/Rtmpd9OaNW/duckdb
 #> This is removed when the R session ends.
 #> • Extensions are re-downloaded each session.
 #> • Secrets are lost.
@@ -339,12 +339,12 @@ head(database_grid)
 #> # A tibble: 6 × 7
 #>   sector   region reconstruction_value…¹ claim_count claim_amount earned_premium
 #>   <chr>    <chr>                   <dbl>       <dbl>        <dbl>          <dbl>
-#> 1 Services South                 1750000           0           0          13645.
-#> 2 Services South                 1286000           1        3047.         14437.
-#> 3 Retail   South                  808000           1        2752.         27160.
-#> 4 Retail   South                 1822000           1        3650.         12495.
-#> 5 Retail   North                  256000           0           0          16777.
-#> 6 Retail   North                 1848000           0           0          16764.
+#> 1 Industry West                  1050000           0           0           9991.
+#> 2 Retail   North                 1139000           0           0           7081.
+#> 3 Retail   South                 1000000           0           0          15647.
+#> 4 Services North                  514000           0           0          19320.
+#> 5 Industry West                   389000           1         843.          8935.
+#> 6 Retail   West                   212000           0           0          18353.
 #> # ℹ abbreviated name: ¹​reconstruction_value_1000
 #> # ℹ 1 more variable: earned_exposure <dbl>
 

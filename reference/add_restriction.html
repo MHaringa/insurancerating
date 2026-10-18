@@ -86,8 +86,9 @@ refinement specification instead.</p></dd>
 and values contain fixed relativities or multipliers. In this form,
 <code>model_variable</code> is required. Alternatively, a data frame with exactly two
 columns remains fully supported. Its first column identifies the risk
-factor and contains levels; its second column names the generated tariff
-column and contains values. Unspecified levels are fixed at their current
+factor and must contain character or factor levels; numeric level columns
+are rejected. Its second column names the generated tariff column and
+contains numeric values. Unspecified levels are fixed at their current
 values or receive multiplier 1, respectively.</p></dd>
 
 
@@ -105,7 +106,9 @@ tariff factor created by an earlier refinement step. Set this to <code>TRUE</cod
 add an external variable that is present in the refinement data but absent
 from both the model and preceding refinement steps. All observed levels
 must then have supplied relativities, which are treated as fixed tariff
-assumptions.</p></dd>
+assumptions. For an existing model or refinement factor, <code>TRUE</code> is also
+valid, has no additional effect, and does not itself emit a warning or
+message. This permission never allows a multiplier to create a new factor.</p></dd>
 
 
 <dt id="arg-replaces">replaces<a class="anchor" aria-label="anchor" href="#arg-replaces"></a></dt>
@@ -167,7 +170,12 @@ a deterministic default.</p>
 <p>Alternatively, supply the existing two-column data-frame form. Its first
 column name identifies the risk factor and its second column name identifies
 the generated tariff column. Both forms are fully supported; the named-vector
-form is preferred for concise specifications.</p><div class="section">
+form is preferred for concise specifications.
+The first column must contain character or factor levels, not numeric values.
+Convert numeric category codes explicitly with <code><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character()</a></code> or <code><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor()</a></code>.
+Labels such as <code>"1"</code> and <code>"2"</code> are valid, including as names in
+<code>c("1" = 0.90, "2" = 1.10)</code>. The supplied relativities or multipliers remain
+numeric; they are not category labels.</p><div class="section">
 <h3 id="actuarial-interpretation">Actuarial interpretation<a class="anchor" aria-label="anchor" href="#actuarial-interpretation"></a></h3>
 
 
@@ -209,6 +217,13 @@ information.</p>
 refinement data must already contain a column assigning every observation to
 a level. This is required to apply the supplied relativities to individual
 records.</p>
+<p>Setting <code>allow_new_risk_factors = TRUE</code> permits a new factor; it does not
+require one. For a factor already in the fitted model or introduced by an
+earlier refinement step, <code>TRUE</code> has no additional effect and does not itself
+produce a warning or message. This applies to both fixed restrictions and
+multipliers. Multipliers still require an existing relativity and cannot
+create a new factor, even when this permission is enabled. The flag does not
+request replacement of another model variable; use <code>replaces</code> for that.</p>
 </div>
 
 <div class="section">
@@ -355,11 +370,13 @@ audit metadata.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   1. Restriction: postal_area -&gt; relativity (4 levels) [new level: D]</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Multipliers remain relative to the underlying modelled relativities.</span></span></span>
+<span class="r-in"><span><span class="co"># TRUE is valid here: postal_area already exists, so the flag has no effect.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">add_restriction</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    restrictions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>B <span class="op">=</span> <span class="fl">1.10</span>, C <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>    model_variable <span class="op">=</span> <span class="st">"postal_area"</span>,</span></span>
-<span class="r-in"><span>    restriction_type <span class="op">=</span> <span class="st">"multiplier"</span></span></span>
+<span class="r-in"><span>    restriction_type <span class="op">=</span> <span class="st">"multiplier"</span>,</span></span>
+<span class="r-in"><span>    allow_new_risk_factors <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Refined generalized linear model</span>
