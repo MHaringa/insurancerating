@@ -25,8 +25,9 @@ refinement specification instead.}
 and values contain fixed relativities or multipliers. In this form,
 \code{model_variable} is required. Alternatively, a data frame with exactly two
 columns remains fully supported. Its first column identifies the risk
-factor and contains levels; its second column names the generated tariff
-column and contains values. Unspecified levels are fixed at their current
+factor and must contain character or factor levels; numeric level columns
+are rejected. Its second column names the generated tariff column and
+contains numeric values. Unspecified levels are fixed at their current
 values or receive multiplier 1, respectively.}
 
 \item{allow_new_levels}{Logical. If \code{TRUE} (default), \code{restrictions} may
@@ -40,7 +41,9 @@ tariff factor created by an earlier refinement step. Set this to \code{TRUE} to
 add an external variable that is present in the refinement data but absent
 from both the model and preceding refinement steps. All observed levels
 must then have supplied relativities, which are treated as fixed tariff
-assumptions.}
+assumptions. For an existing model or refinement factor, \code{TRUE} is also
+valid, has no additional effect, and does not itself emit a warning or
+message. This permission never allows a multiplier to create a new factor.}
 
 \item{replaces}{\code{NULL} (default) or a character string naming an existing
 standalone model term that the new fixed risk factor replaces. During
@@ -103,6 +106,11 @@ Alternatively, supply the existing two-column data-frame form. Its first
 column name identifies the risk factor and its second column name identifies
 the generated tariff column. Both forms are fully supported; the named-vector
 form is preferred for concise specifications.
+The first column must contain character or factor levels, not numeric values.
+Convert numeric category codes explicitly with \code{as.character()} or \code{factor()}.
+Labels such as \code{"1"} and \code{"2"} are valid, including as names in
+\code{c("1" = 0.90, "2" = 1.10)}. The supplied relativities or multipliers remain
+numeric; they are not category labels.
 \subsection{Actuarial interpretation}{
 
 A fixed restriction table may contain all levels of the model variable, or only
@@ -148,6 +156,14 @@ information.
 refinement data must already contain a column assigning every observation to
 a level. This is required to apply the supplied relativities to individual
 records.
+
+Setting \code{allow_new_risk_factors = TRUE} permits a new factor; it does not
+require one. For a factor already in the fitted model or introduced by an
+earlier refinement step, \code{TRUE} has no additional effect and does not itself
+produce a warning or message. This applies to both fixed restrictions and
+multipliers. Multipliers still require an existing relativity and cannot
+create a new factor, even when this permission is enabled. The flag does not
+request replacement of another model variable; use \code{replaces} for that.
 }
 
 \subsection{Replacing an existing model variable}{
@@ -269,11 +285,13 @@ prepare_refinement(model, data = portfolio) |>
   add_restriction(restrictions)
 
 # Multipliers remain relative to the underlying modelled relativities.
+# TRUE is valid here: postal_area already exists, so the flag has no effect.
 prepare_refinement(model, data = portfolio) |>
   add_restriction(
     restrictions = c(B = 1.10, C = 0.95),
     model_variable = "postal_area",
-    restriction_type = "multiplier"
+    restriction_type = "multiplier",
+    allow_new_risk_factors = TRUE
   ) |>
   refit()
 

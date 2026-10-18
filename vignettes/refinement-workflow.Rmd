@@ -505,6 +505,12 @@ level remains directly beside its relativity. A two-column data frame remains a
 fully supported alternative; its column names identify the source factor and
 generated tariff column.
 
+In that data frame, the level column must be character or factor and the value
+column must be numeric. Numeric category codes must be converted explicitly
+with `as.character()` or `factor()`. Named-vector input such as
+`c("0" = 1.00, "3" = 1.10)` already uses character labels, even though the
+category names look numeric.
+
 Alternatively, `restriction_type = "multiplier"` retains an adjustment relative
 to the effect that exists at that point in the refinement. Here the current ZIP
 3 relativity is increased by 10%; it is not stored as a prematurely calculated
@@ -530,6 +536,13 @@ retain earlier restrictions for levels not supplied again. New levels may be
 added when they represent explicit tariff assumptions; new risk factors require
 the corresponding portfolio column and an explicit opt-in. These behaviours
 are documented in the `add_restriction()` reference.
+
+`allow_new_risk_factors = TRUE` is permission to introduce a new fixed factor,
+not a requirement that the factor be new. For a factor already in the GLM or
+created by an earlier refinement step, it has no additional effect and does
+not itself produce a warning or message. This also holds for multipliers,
+which still require an existing relativity and cannot introduce a new factor.
+The flag does not request replacement of another model variable.
 
 A new fixed tariff factor can also replace an existing standalone model term.
 For example, `add_restriction(..., replaces = "postal_area")` records that the

@@ -19,7 +19,7 @@ premium_df <- MTPL |>
   mutate(premium = pred_nclaims_freq * pred_amount_sev)
 
 # Restrictions on risk factors for region (zip)
-zip_df <- data.frame(zip = c(0, 1, 2, 3),
+zip_df <- data.frame(zip = c("0", "1", "2", "3"),
                      zip_rst = c(0.8, 0.9, 1, 1.2))
 
 # Fit unrestricted model
@@ -725,7 +725,7 @@ testthat::test_that(
 )
 
 
-zip_df <- data.frame(zip = c(0,1,2,3),
+zip_df <- data.frame(zip = c("0", "1", "2", "3"),
                      zip_restricted = c(0.8, 0.9, 1, 1.2))
 
 burn_restricted2 <- prepare_refinement(burn_unrestricted) |>

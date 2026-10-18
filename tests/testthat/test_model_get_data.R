@@ -316,7 +316,7 @@ premium_df <- add_prediction(MTPL, freq, sev)
 premium_df$premium <- premium_df$pred_nclaims_freq * premium_df$pred_amount_sev
 
 zip_df <- data.frame(
-  zip = c(0, 1, 2, 3),
+  zip = c("0", "1", "2", "3"),
   zip_rst = c(0.8, 0.9, 1, 1.2)
 )
 

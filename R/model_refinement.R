@@ -2265,6 +2265,11 @@ print.summary.rating_refinement <- function(x, ...) {
 #' column name identifies the risk factor and its second column name identifies
 #' the generated tariff column. Both forms are fully supported; the named-vector
 #' form is preferred for concise specifications.
+#' The first column must contain character or factor levels, not numeric values.
+#' Convert numeric category codes explicitly with `as.character()` or `factor()`.
+#' Labels such as `"1"` and `"2"` are valid, including as names in
+#' `c("1" = 0.90, "2" = 1.10)`. The supplied relativities or multipliers remain
+#' numeric; they are not category labels.
 #'
 #' ## Actuarial interpretation
 #'
@@ -2311,6 +2316,14 @@ print.summary.rating_refinement <- function(x, ...) {
 #' refinement data must already contain a column assigning every observation to
 #' a level. This is required to apply the supplied relativities to individual
 #' records.
+#'
+#' Setting `allow_new_risk_factors = TRUE` permits a new factor; it does not
+#' require one. For a factor already in the fitted model or introduced by an
+#' earlier refinement step, `TRUE` has no additional effect and does not itself
+#' produce a warning or message. This applies to both fixed restrictions and
+#' multipliers. Multipliers still require an existing relativity and cannot
+#' create a new factor, even when this permission is enabled. The flag does not
+#' request replacement of another model variable; use `replaces` for that.
 #'
 #' ## Replacing an existing model variable
 #'
@@ -2401,8 +2414,9 @@ print.summary.rating_refinement <- function(x, ...) {
 #'   and values contain fixed relativities or multipliers. In this form,
 #'   `model_variable` is required. Alternatively, a data frame with exactly two
 #'   columns remains fully supported. Its first column identifies the risk
-#'   factor and contains levels; its second column names the generated tariff
-#'   column and contains values. Unspecified levels are fixed at their current
+#'   factor and must contain character or factor levels; numeric level columns
+#'   are rejected. Its second column names the generated tariff column and
+#'   contains numeric values. Unspecified levels are fixed at their current
 #'   values or receive multiplier 1, respectively.
 #' @param restriction_type Character string. `"fixed"` (default) sets selected
 #'   levels to the supplied relativities. `"multiplier"` multiplies the
@@ -2418,7 +2432,9 @@ print.summary.rating_refinement <- function(x, ...) {
 #'   add an external variable that is present in the refinement data but absent
 #'   from both the model and preceding refinement steps. All observed levels
 #'   must then have supplied relativities, which are treated as fixed tariff
-#'   assumptions.
+#'   assumptions. For an existing model or refinement factor, `TRUE` is also
+#'   valid, has no additional effect, and does not itself emit a warning or
+#'   message. This permission never allows a multiplier to create a new factor.
 #' @param replaces `NULL` (default) or a character string naming an existing
 #'   standalone model term that the new fixed risk factor replaces. During
 #'   [refit()], this term is removed before the restricted relativity column is
@@ -2479,11 +2495,13 @@ print.summary.rating_refinement <- function(x, ...) {
 #'   add_restriction(restrictions)
 #'
 #' # Multipliers remain relative to the underlying modelled relativities.
+#' # TRUE is valid here: postal_area already exists, so the flag has no effect.
 #' prepare_refinement(model, data = portfolio) |>
 #'   add_restriction(
 #'     restrictions = c(B = 1.10, C = 0.95),
 #'     model_variable = "postal_area",
-#'     restriction_type = "multiplier"
+#'     restriction_type = "multiplier",
+#'     allow_new_risk_factors = TRUE
 #'   ) |>
 #'   refit()
 #'
@@ -2544,6 +2562,15 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
 
   variable <- names(restrictions)[1]
   value_col <- names(restrictions)[2]
+  if (!is.character(restrictions[[variable]]) &&
+      !is.factor(restrictions[[variable]])) {
+    stop(
+      "The level column `", variable,
+      "` in `restrictions` must be character or factor. Convert numeric ",
+      "category codes explicitly with `as.character()` or `factor()`.",
+      call. = FALSE
+    )
+  }
   if (length(unique(restrictions[[variable]])) != nrow(restrictions)) {
     stop("`", variable, "` in `restrictions` must have unique values.",
          call. = FALSE)
@@ -2553,6 +2580,7 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
          call. = FALSE)
   }
   .assert_restriction_relativities(restrictions, value_col)
+  .assert_single_logical(allow_new_risk_factors, "allow_new_risk_factors")
 
   if (identical(restriction_type, "multiplier")) {
     if (any(restrictions[[value_col]] <= 0)) {
@@ -2565,13 +2593,6 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
     if (!is.null(replaces)) {
       stop("`replaces` can only be used with `restriction_type = \"fixed\"`.",
            call. = FALSE)
-    }
-    if (!allow_new_risk_factors_missing && isTRUE(allow_new_risk_factors)) {
-      stop(
-        "A multiplier requires an existing relativity and cannot create a new ",
-        "risk factor. Do not set `allow_new_risk_factors = TRUE`.",
-        call. = FALSE
-      )
     }
     if (!allow_new_levels_missing && isTRUE(allow_new_levels)) {
       allow_new_levels <- FALSE
@@ -6148,7 +6169,7 @@ add_relativities <- function(model,
 #'
 #' @examples
 #' zip_df <- data.frame(
-#'   zip = c(0, 1, 2, 3),
+#'   zip = c("0", "1", "2", "3"),
 #'   zip_adj = c(0.8, 0.9, 1.0, 1.2)
 #' )
 #'

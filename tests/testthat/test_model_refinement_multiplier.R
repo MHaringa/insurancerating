@@ -509,7 +509,7 @@ testthat::test_that("multiplier validation is explicit", {
       restriction_type = "multiplier",
       allow_new_risk_factors = TRUE
     ),
-    "cannot create a new risk factor"
+    NA
   )
   testthat::expect_error(
     add_restriction(

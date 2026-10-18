@@ -1,5 +1,11 @@
 # insurancerating (development version)
 
+- `add_restriction()` now requires character or factor levels in the first
+  column of data-frame input. Numeric category codes must be converted
+  explicitly; numeric-looking named-vector labels remain supported.
+  `allow_new_risk_factors = TRUE` is accepted without an additional warning
+  for existing model or refinement factors, including multiplier restrictions.
+  Multipliers still cannot create new factors or levels.
 - Split factors created by `add_relativities()` now define their own
   `rating_grid()` grouping, with numeric refinements mapped to the output
   segments rather than their parent levels. This removes spurious

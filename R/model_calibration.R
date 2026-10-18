@@ -42,7 +42,7 @@
 #'
 #' @examples
 #' restrictions <- data.frame(
-#'   zip = c(0, 1, 2, 3),
+#'   zip = c("0", "1", "2", "3"),
 #'   zip_restricted = c(0.90, 1.00, 1.05, 1.10)
 #' )
 #'
