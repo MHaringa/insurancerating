@@ -1,5 +1,10 @@
 # insurancerating (development version)
 
+- `add_monotonicity()` enforces increasing or decreasing relativities across
+  numeric bands, numeric-labelled factors or explicitly ordered categories,
+  using weighted isotonic projection on the log scale or one-sided adjustments.
+  Numeric levels are sorted by value, not alphabetically; no smoothing or
+  new segmentation is performed. Proposed effects can be inspected before refitting.
 - `merge_date_ranges()` accepts `allow_na_in` to group missing values in
   selected `group_by` columns. Other grouping columns still reject missing
   values; the error identifies them and shows how to opt in.

@@ -39,7 +39,7 @@ The refinement architecture is:
 |---|---|
 | Unrestricted GLM | Statistical starting point |
 | `prepare_refinement()` | Create an editable specification around that model |
-| `add_smoothing()`, `add_restriction()`, `add_shrinkage()`, `add_relativities()` | Record proposed actuarial adjustments |
+| `add_smoothing()`, `add_monotonicity()`, `add_restriction()`, `add_shrinkage()`, `add_relativities()` | Record proposed actuarial adjustments |
 | `summary()` and `autoplot()` | Inspect the proposal before fitting |
 | `refit()` | Reconstruct and fit the GLM under the stored specification |
 | `rating_table()` and `audit_refinement()` | Inspect the fitted tariff and its portfolio effect |
@@ -557,6 +557,43 @@ autoplot(refinement, variable = "zip")
 ```
 
 Again, the plot shows the proposed restriction before `refit()`.
+
+## Enforcing an order without smoothing
+
+For grouped continuous variables such as insured amount or reconstruction
+value, a tariff may require increasing relativities without a smooth curve.
+`add_monotonicity()` accepts the existing grouped model factor, including
+ordinary factors from `cut()`. Numeric labels such as `"100"`, `"200"`,
+`"1000"` and non-overlapping numeric intervals are put in numeric order.
+There is no need to convert those factors to `ordered()`.
+
+The following alternative uses the existing age bands, whose estimated
+effects mostly decrease, to demonstrate the decreasing variant. Choosing a
+direction remains an explicit actuarial assumption, not a universal rule
+for age. This starts from the unrestricted model and does not change the
+refinement below.
+
+```{r}
+ordinal <- prepare_refinement(unrestricted) |>
+  add_monotonicity("age_band", direction = "decreasing", weights = "exposure")
+ordinal$steps[[1]]$values
+```
+
+Unlike `add_smoothing()`, this keeps the existing categories and only adjusts
+their relativities; there is no `source_variable`, new `breaks` or fitted
+curve. For non-numeric categories such as `"Low"`, `"Medium"`, `"High"`,
+declare an ordered factor with explicit levels before fitting the GLM.
+That declared order is retained; alphabetical order is never assumed to be
+a tariff order. The original reference level does not have to come first
+in the monotonic sequence.
+
+The default isotonic method pools adjacent violations on the log-relativity
+scale; equal fitted levels are allowed. It does not fit a smooth curve.
+Use `method = "increase_only"` if no level may fall, or `"decrease_only"`
+if no level may rise. These restrictions apply to the factor effect, not the
+final premium: `refit(ordinal)` fixes the projected ratios but re-estimates
+the intercept and remaining free effects. This differs from estimating a GLM
+with order constraints in its likelihood.
 
 ## Shrinking a categorical effect
 

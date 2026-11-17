@@ -68,7 +68,7 @@
     reference_first = FALSE
   )$df
   colnames(rfdf)[3] <- "estimate"
-  as.data.frame(rfdf)
+  .categorical_refinement_effects(model, as.data.frame(rfdf))
 }
 
 .refinement_model_variables <- function(model, data) {
@@ -779,7 +779,7 @@
 
 .restriction_variable_map <- function(steps) {
   restriction_steps <- Filter(
-    function(step) identical(step$type, "restriction") &&
+    function(step) step$type %in% c("restriction", "monotonicity") &&
       identical(step$restriction_type %||% "fixed", "fixed") &&
       is.data.frame(step$restrictions) &&
       ncol(step$restrictions) == 2L,
@@ -995,7 +995,19 @@
   ]
 }
 
+.refinement_display_term <- function(steps, term) {
+  if (is.null(term)) return(NULL)
+  # A multiplier changes its execution column but keeps the preceding label.
+  for (step in rev(steps)) {
+    if (identical(step$execution_column, term)) {
+      return(step$coefficient_variable %||% step$variable)
+    }
+  }
+  term
+}
+
 .current_refinement_coefficients <- function(state, model_variable) {
+  model_variable <- .refinement_display_term(state$refinement_steps, model_variable)
   sources <- list(state$rf_restricted_df, state$new_rf, state$rating_factors)
   value_columns <- c("yhat", "yhat", "estimate")
 
@@ -1030,7 +1042,7 @@
         model_term <- step$derived_model_variable %||%
           paste0(step$source_model_variable %||% step$model_variable, "_rel")
       }
-    } else if (identical(step$type, "restriction") &&
+    } else if (step$type %in% c("restriction", "monotonicity") &&
                identical(step$variable, model_variable)) {
       model_term <- if (identical(
         step$restriction_type %||% "fixed", "multiplier"
@@ -1401,7 +1413,7 @@
             step$split_variable %||% step$risk_factor_split,
           variable
         )) ||
-        (identical(step$type, "shrinkage") &&
+        (step$type %in% c("shrinkage", "monotonicity") &&
            identical(step$model_variable, variable)) ||
         (identical(step$type, "rebasing") &&
            identical(step$model_variable, variable)) ||
@@ -1426,7 +1438,12 @@
     }
   }
 
-  coefficients <- .current_refinement_coefficients(state, variable)
+  display <- if (identical(derived_step$type, "monotonicity")) {
+    derived_step$output_variable
+  } else {
+    derived_step$coefficient_variable %||% variable
+  }
+  coefficients <- .current_refinement_coefficients(state, display)
   if (is.null(coefficients)) {
     return(NULL)
   }
@@ -1446,6 +1463,7 @@
 
   context <- list(
     coefficients = coefficients,
+    previous_display = display,
     model_term = .refinement_term_for_variable(
       model$steps[prior_indices],
       variable
@@ -1868,6 +1886,10 @@ print.rating_refinement <- function(x, ...) {
 }
 
 .refinement_step_details <- function(step) {
+  if (identical(step$type, "monotonicity")) {
+    return(paste0(step$direction, "; method = ", step$method,
+                  "; weights = ", step$weights %||% "equal"))
+  }
   if (identical(step$type, "restriction")) {
     restrictions <- step$restrictions
     if (is.null(restrictions) || ncol(restrictions) < 2L) {
@@ -2095,7 +2117,7 @@ print.summary.rating_refinement <- function(x, ...) {
   }
 
   current_model_term <- .refinement_term_for_variable(model$steps, variable)
-  coefficient_variable <- current_model_term
+  coefficient_variable <- .refinement_display_term(model$steps, current_model_term)
   current <- .current_refinement_coefficients(state, coefficient_variable)
   if (is.null(current) || nrow(current) == 0L) {
     coefficient_variable <- variable
@@ -2613,17 +2635,18 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
   ))
 
   if (length(restriction_steps) > 0L) {
-    later_multipliers <- which(vapply(
+    later_adjustments <- which(vapply(
       model$steps,
       function(step) {
-        identical(step$type, "restriction") &&
-          identical(step$restriction_type %||% "fixed", "multiplier") &&
+        (identical(step$type, "monotonicity") ||
+           (identical(step$type, "restriction") &&
+              identical(step$restriction_type %||% "fixed", "multiplier"))) &&
           identical(step$variable %||% NULL, variable)
       },
       logical(1)
     ))
     latest_fixed <- utils::tail(restriction_steps, 1L)
-    if (any(later_multipliers > latest_fixed)) {
+    if (any(later_adjustments > latest_fixed)) {
       restriction_steps <- integer()
     } else {
       restriction_steps <- latest_fixed
@@ -2860,6 +2883,7 @@ add_restriction <- function(model, restrictions, allow_new_levels = TRUE,
     derived_from_step = existing_step$derived_from_step %||%
       restriction_context$derived_from_step %||%
       NULL,
+    previous_display = restriction_context$previous_display,
     derived_source_model_variable =
       existing_step$derived_source_model_variable %||%
       restriction_context$derived_source_model_variable %||%
@@ -3901,6 +3925,12 @@ add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,
   }
 
   .assert_smoothing_model_variable(model, model_variable)
+  if (any(vapply(model$steps, function(step) {
+    identical(step$type, "monotonicity") && identical(step$variable, model_variable)
+  }, logical(1)))) {
+    stop("Cannot smooth a factor already fixed by monotonicity. ",
+         "Start from the specification before that step.", call. = FALSE)
+  }
   .assert_column_name(source_variable, "source_variable", model$base$data)
   .assert_optional_column_name(weights, "weights", model$base$data)
   model_variable_missing <- sum(is.na(model$base$data[[model_variable]]))
@@ -4872,7 +4902,8 @@ add_relativities <- function(model,
   } else {
     if (isTRUE(step$replace_refinement_offset)) {
       state$rf_restricted_df <- state$rf_restricted_df[
-        state$rf_restricted_df$risk_factor != variable,
+        !state$rf_restricted_df$risk_factor %in% c(variable, model_term,
+                                                  step$previous_display),
         ,
         drop = FALSE
       ]
@@ -5042,7 +5073,8 @@ add_relativities <- function(model,
   )
   if (!is.null(state$rf_restricted_df)) {
     state$rf_restricted_df <- state$rf_restricted_df[
-      state$rf_restricted_df$risk_factor != model_variable,
+      !state$rf_restricted_df$risk_factor %in% c(model_variable,
+        .refinement_display_term(state$refinement_steps, step$effective_model_term)),
       ,
       drop = FALSE
     ]
@@ -5125,7 +5157,8 @@ add_relativities <- function(model,
   )
   if (!is.null(state$rf_restricted_df)) {
     state$rf_restricted_df <- state$rf_restricted_df[
-      state$rf_restricted_df$risk_factor != model_variable,
+      !state$rf_restricted_df$risk_factor %in% c(model_variable,
+        .refinement_display_term(state$refinement_steps, step$effective_model_term)),
       ,
       drop = FALSE
     ]
@@ -5725,6 +5758,7 @@ add_relativities <- function(model,
 .apply_refinement_step <- function(state, step) {
   switch(
     step$type,
+    monotonicity = .apply_monotonicity_step(state, step),
     restriction = .apply_restriction_step(state, step),
     shrinkage = .apply_shrinkage_step(state, step),
     rebasing = .apply_rebasing_step(state, step),
@@ -6209,7 +6243,10 @@ refit <- function(object, intercept_only = FALSE, ...) {
 # -----------------------------------------------------------------------------
 
 .format_refinement_step <- function(step, index) {
-  if (identical(step$type, "restriction")) {
+  if (identical(step$type, "monotonicity")) {
+    detail <- paste0("Monotonicity: ", step$variable, " -> ", step$output_variable,
+                     " (", step$direction, ", ", step$method, ")")
+  } else if (identical(step$type, "restriction")) {
     target <- names(step$restrictions)[2]
     restriction_type <- step$restriction_type %||% "fixed"
     detail <- paste0(

@@ -490,7 +490,10 @@ add_restrictions_df <- function(model_data, restrictions_df,
   }
 
 
-  if (is.factor(model_data[[rcol1]])) {
+  if (is.ordered(model_data[[rcol1]]) && !length(restricted_not_present)) {
+    restrictions_df[[rcol1]] <- ordered(restrictions_df[[rcol1]],
+                                         levels = levels(model_data[[rcol1]]))
+  } else if (is.factor(model_data[[rcol1]])) {
     restrictions_df[[rcol1]] <- as.factor(restrictions_df[[rcol1]])
   }
 

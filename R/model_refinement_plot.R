@@ -259,7 +259,7 @@ autoplot.rating_refinement <- function(object,
   }
 
   if (selected_step$type %in%
-      c("restriction", "shrinkage", "rebasing", "relativities")) {
+      c("restriction", "shrinkage", "monotonicity", "rebasing", "relativities")) {
     if (isTRUE(show_initial_smoothing)) {
       stop(
         "`show_initial_smoothing` is only available when plotting a ",
@@ -593,12 +593,14 @@ autoplot.rating_refinement <- function(object,
   pal <- .plot_palette_ir()
   grid_theme <- .plot_grid_theme_ir()
 
-  if (identical(step$type, "shrinkage")) {
-    values <- state$shrinkage_df
+  if (step$type %in% c("shrinkage", "monotonicity")) {
+    monotone <- identical(step$type, "monotonicity")
+    values <- if (monotone) state$monotonicity_df else state$shrinkage_df
+    label <- if (monotone) "Monotone relativity" else "Shrunk relativity"
     if (is.null(values) || !all(c(
       "level", "original_relativity", "adjusted_relativity"
     ) %in% names(values))) {
-      stop("No shrinkage plot data found for this step.", call. = FALSE)
+      stop("No adjusted relativities found for this step.", call. = FALSE)
     }
 
     plot_data <- rbind(
@@ -610,7 +612,7 @@ autoplot.rating_refinement <- function(object,
       ),
       data.frame(
         level = values$level,
-        type = "Shrunk relativity",
+        type = label,
         Coef = values$adjusted_relativity,
         stringsAsFactors = FALSE
       )
@@ -640,10 +642,8 @@ autoplot.rating_refinement <- function(object,
         labels = level_order
       ) +
       ggplot2::scale_colour_manual(
-        values = c(
-          "Current relativity" = pal$frequency,
-          "Shrunk relativity" = pal$risk_premium
-        ),
+        values = stats::setNames(c(pal$frequency, pal$risk_premium),
+                                 c("Current relativity", label)),
         name = NULL
       ) +
       ggplot2::labs(x = x_lab, y = "Relativity") +

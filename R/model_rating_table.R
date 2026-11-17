@@ -167,6 +167,12 @@
 
 #' @keywords internal
 .rating_table_ordered_levels <- function(model, risk_factor) {
+  for (step in rev(attr(model, "refinement_steps", exact = TRUE))) {
+    if (identical(step$type, "monotonicity") &&
+        identical(step$output_variable, risk_factor)) {
+      return(step$values$level)
+    }
+  }
   model_frame <- tryCatch(
     stats::model.frame(model),
     error = function(e) NULL
