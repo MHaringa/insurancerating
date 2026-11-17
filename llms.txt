@@ -236,6 +236,9 @@ relativities.
   : Edit a smoothing curve in a refinement workflow
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   : Add coefficient restrictions to a refinement workflow
+- [`add_monotonicity()`](https://mharinga.github.io/insurancerating/reference/add_monotonicity.md)
+  : Enforce monotone tariff relativities for numeric bands or ordered
+  categories
 - [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md)
   : Shrink categorical tariff relativities towards a common level
 - [`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)

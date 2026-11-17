@@ -28,7 +28,7 @@ The refinement architecture is:
 |----|----|
 | Unrestricted GLM | Statistical starting point |
 | [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md) | Create an editable specification around that model |
-| [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md), [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md), [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md), [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md) | Record proposed actuarial adjustments |
+| [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md), [`add_monotonicity()`](https://mharinga.github.io/insurancerating/reference/add_monotonicity.md), [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md), [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md), [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md) | Record proposed actuarial adjustments |
 | [`summary()`](https://rdrr.io/r/base/summary.html) and [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) | Inspect the proposal before fitting |
 | [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md) | Reconstruct and fit the GLM under the stored specification |
 | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md) and [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md) | Inspect the fitted tariff and its portfolio effect |
@@ -178,7 +178,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-11-17 15:14:51 UTC
+#> Created: 2026-11-17 17:41:13 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -687,6 +687,59 @@ autoplot(refinement, variable = "zip")
 Again, the plot shows the proposed restriction before
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
 
+## Enforcing an order without smoothing
+
+For grouped continuous variables such as insured amount or
+reconstruction value, a tariff may require increasing relativities
+without a smooth curve.
+[`add_monotonicity()`](https://mharinga.github.io/insurancerating/reference/add_monotonicity.md)
+accepts the existing grouped model factor, including ordinary factors
+from [`cut()`](https://rdrr.io/r/base/cut.html). Numeric labels such as
+`"100"`, `"200"`, `"1000"` and non-overlapping numeric intervals are put
+in numeric order. There is no need to convert those factors to
+[`ordered()`](https://rdrr.io/r/base/factor.html).
+
+The following alternative uses the existing age bands, whose estimated
+effects mostly decrease, to demonstrate the decreasing variant. Choosing
+a direction remains an explicit actuarial assumption, not a universal
+rule for age. This starts from the unrestricted model and does not
+change the refinement below.
+
+``` r
+
+ordinal <- prepare_refinement(unrestricted) |>
+  add_monotonicity("age_band", direction = "decreasing", weights = "exposure")
+ordinal$steps[[1]]$values
+#>     level original_relativity     weight adjusted_relativity
+#> 1 [18,25]           1.0000000 1331.17534           1.0000000
+#> 2 (25,32]           0.6853582 3648.72055           0.6853582
+#> 3 (32,39]           0.5540633 4247.34795           0.5540633
+#> 4 (39,51]           0.5197098 7421.35890           0.5197098
+#> 5 (51,58]           0.4381469 3245.45479           0.4381469
+#> 6 (58,65]           0.3731925 2790.83288           0.3809452
+#> 7 (65,84]           0.3865907 3900.75890           0.3809452
+#> 8 (84,95]           0.2660084   72.01644           0.2660084
+```
+
+Unlike
+[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
+this keeps the existing categories and only adjusts their relativities;
+there is no `source_variable`, new `breaks` or fitted curve. For
+non-numeric categories such as `"Low"`, `"Medium"`, `"High"`, declare an
+ordered factor with explicit levels before fitting the GLM. That
+declared order is retained; alphabetical order is never assumed to be a
+tariff order. The original reference level does not have to come first
+in the monotonic sequence.
+
+The default isotonic method pools adjacent violations on the
+log-relativity scale; equal fitted levels are allowed. It does not fit a
+smooth curve. Use `method = "increase_only"` if no level may fall, or
+`"decrease_only"` if no level may rise. These restrictions apply to the
+factor effect, not the final premium: `refit(ordinal)` fixes the
+projected ratios but re-estimates the intercept and remaining free
+effects. This differs from estimating a GLM with order constraints in
+its likelihood.
+
 ## Shrinking a categorical effect
 
 [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md)
@@ -733,7 +786,7 @@ effects.
 autoplot(refinement, variable = "bm_group")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-24-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-25-1.png)
 
 This remains a pre-refit comparison: it shows the current estimated
 effect and the proposed shrunken structure stored in the refinement
@@ -831,7 +884,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-11-17 15:14:51 UTC
+#> Created: 2026-11-17 17:41:13 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -997,9 +1050,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Prepared: 2026-11-17 15:14:51 UTC
-#> Refitted: 2026-11-17 15:14:56 UTC
-#> Audited: 2026-11-17 15:14:56 UTC
+#> Prepared: 2026-11-17 17:41:13 UTC
+#> Refitted: 2026-11-17 17:41:19 UTC
+#> Audited: 2026-11-17 17:41:19 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
@@ -1024,7 +1077,7 @@ summary(refinement_audit)
 #> Portfolio effect
 #>   Before: 0.137596
 #>   After:  0.137596
-#>   Change: -1.95122e-14 (-1.418e-11%)
+#>   Change: -1.93734e-14 (-1.408e-11%)
 #> 
 #> Largest level changes (10 of 24)
 #>              risk_factor   level     before      after       change

@@ -2,6 +2,13 @@
 
 ## insurancerating (development version)
 
+- [`add_monotonicity()`](https://mharinga.github.io/insurancerating/reference/add_monotonicity.md)
+  enforces increasing or decreasing relativities across numeric bands,
+  numeric-labelled factors or explicitly ordered categories, using
+  weighted isotonic projection on the log scale or one-sided
+  adjustments. Numeric levels are sorted by value, not alphabetically;
+  no smoothing or new segmentation is performed. Proposed effects can be
+  inspected before refitting.
 - [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
   accepts `allow_na_in` to group missing values in selected `group_by`
   columns. Other grouping columns still reject missing values; the error
