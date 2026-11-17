@@ -2,6 +2,10 @@
 
 ## insurancerating (development version)
 
+- [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
+  accepts `allow_na_in` to group missing values in selected `group_by`
+  columns. Other grouping columns still reject missing values; the error
+  identifies them and shows how to opt in.
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   now requires character or factor levels in the first column of
   data-frame input. Numeric category codes must be converted explicitly;

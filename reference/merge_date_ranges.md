@@ -25,6 +25,7 @@ merge_date_ranges(
   aggregate_cols = NULL,
   aggregate_fun = "sum",
   merge_gap_days = 1,
+  allow_na_in = NULL,
   df = NULL,
   begin = NULL,
   end = NULL,
@@ -73,6 +74,12 @@ merge_date_ranges(
   also bridges short uncovered gaps and should represent an explicit
   administrative assumption.
 
+- allow_na_in:
+
+  Optional character vector naming columns in `group_by` where missing
+  values may form a group. The default, `NULL`, rejects missing values
+  in every grouping column.
+
 - df, begin, end, ..., agg_cols, agg, min.gapwidth:
 
   Deprecated argument names kept for backward compatibility. Use `data`,
@@ -115,9 +122,12 @@ as one continuous interval. If `aggregate_cols` is supplied, those
 columns are aggregated over the merged interval. The grouping columns
 should identify records for which combining coverage periods is
 actuarially and operationally meaningful; periods belonging to different
-risks or contracts should not be pooled. Missing values are not
-permitted in `group_by`, because such records cannot be assigned
-reliably to the same policy, risk or segment.
+risks or contracts should not be pooled. For an optional grouping
+attribute, use e.g. `allow_na_in = "coverage"` to retain `NA` as a
+distinct value. Two missing values then match if the other grouping keys
+match; a missing value never matches a known coverage. The usual
+date-gap rule still applies. Keep policy or risk identifiers out of
+`allow_na_in` when missing identifiers could pool unrelated risks.
 
 Start and end dates are treated as inclusive. Consequently, two periods
 for which the second starts one day after the first ends have zero

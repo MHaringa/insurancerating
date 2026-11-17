@@ -70,7 +70,11 @@ to import the consolidated periods into R.
 Merging connected intervals is a SQL gaps-and-islands calculation. The
 query uses ordered window functions to compare each start date with the
 latest preceding end date, assigns an interval identifier, and then
-aggregates each resulting interval.
+aggregates each resulting interval. SQL groups missing (`NULL`) keys
+together. Unlike the in-memory
+[`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md),
+this lazy query does not check for missing grouping keys; check policy
+or risk identifiers before merging unrelated records.
 
 Date arithmetic differs between database systems. This implementation is
 therefore deliberately restricted to DuckDB. It does not download the

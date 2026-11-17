@@ -178,7 +178,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-10-18 08:08:03 UTC
+#> Created: 2026-11-17 15:14:51 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -831,7 +831,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-10-18 08:08:03 UTC
+#> Created: 2026-11-17 15:14:51 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -997,9 +997,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Prepared: 2026-10-18 08:08:03 UTC
-#> Refitted: 2026-10-18 08:08:08 UTC
-#> Audited: 2026-10-18 08:08:09 UTC
+#> Prepared: 2026-11-17 15:14:51 UTC
+#> Refitted: 2026-11-17 15:14:56 UTC
+#> Audited: 2026-11-17 15:14:56 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
@@ -1024,7 +1024,7 @@ summary(refinement_audit)
 #> Portfolio effect
 #>   Before: 0.137596
 #>   After:  0.137596
-#>   Change: -1.95399e-14 (-1.42e-11%)
+#>   Change: -1.95122e-14 (-1.418e-11%)
 #> 
 #> Largest level changes (10 of 24)
 #>              risk_factor   level     before      after       change
