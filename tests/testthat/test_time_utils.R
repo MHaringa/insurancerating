@@ -348,9 +348,58 @@ test_that("merge_date_ranges validates inputs", {
       period_end = "end",
       group_by = "policy"
     ),
-    "missing values in `group_by`: policy (1)",
+    'NA values in `group_by` columns: policy (1). If NA is an intended grouping value, use `allow_na_in = "policy"`',
     fixed = TRUE
   )
+})
+
+test_that("allowed missing attributes form distinct groups without changing the gap rule", {
+  days <- as.Date("2024-01-01") + c(0, 1, 2, 4, 0)
+  portfolio <- data.frame(
+    policy = c("A", "A", "A", "A", "B"),
+    coverage = factor(c(NA, NA, "Fire", NA, NA)),
+    zone = NA_integer_, begin = days, end = days, premium = 1:5
+  )
+  for (input in list(portfolio, data.table::as.data.table(portfolio))) {
+    result <- merge_date_ranges(
+      input, period_start = "begin", period_end = "end",
+      group_by = c("policy", "coverage", "zone"), aggregate_cols = "premium",
+      allow_na_in = c("coverage", "zone")
+    )
+    expect_equal(nrow(result), 4L)
+    expect_identical(result$zone, rep(NA_integer_, 4))
+    expect_true(is.factor(result$coverage))
+    missing_a <- result[result$policy == "A" & is.na(result$coverage), ]
+    expect_equal(missing_a$begin, days[c(1, 4)])
+    expect_equal(missing_a$end, days[c(2, 4)])
+    expect_equal(missing_a$premium, c(3, 4))
+    expect_equal(result$premium[!is.na(result$coverage)], 3)
+    expect_equal(result$premium[result$policy == "B"], 5)
+  }
+})
+
+test_that("allow_na_in names only grouping columns and preserves other checks", {
+  portfolio <- data.frame(
+    policy = c(NA, "P"), coverage = NA_character_,
+    begin = as.Date("2024-01-01"), end = as.Date("2024-01-02")
+  )
+  merge <- function(allow = NULL) merge_date_ranges(
+    portfolio, period_start = "begin", period_end = "end",
+    group_by = c("policy", "coverage"), allow_na_in = allow
+  )
+  expect_error(merge(), "policy (1), coverage (2)", fixed = TRUE)
+  expect_error(merge("coverage"),
+               'policy (1). If NA is an intended grouping value, use `allow_na_in = c("coverage", "policy")`',
+               fixed = TRUE)
+  for (bad in list(TRUE, NA_character_, "")) {
+    expect_error(merge(bad), "`allow_na_in` must be NULL or a character vector",
+                 fixed = TRUE)
+  }
+  expect_error(merge("begin"), "must also be in `group_by`: begin", fixed = TRUE)
+  expect_error(merge("typo"), "must also be in `group_by`: typo", fixed = TRUE)
+  expect_equal(nrow(merge(c("policy", "coverage"))), 2L)
+  portfolio$end[1] <- NA
+  expect_error(merge(c("policy", "coverage")), "missing period start or end dates")
 })
 
 test_that("merge_date_ranges retains deprecated named df compatibility", {

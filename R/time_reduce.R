@@ -83,6 +83,9 @@
 #' @param period_end Character string. Name of the column with period end dates.
 #' @param group_by Character vector with columns that identify the portfolio
 #' entity or rating segment within which date ranges should be merged.
+#' @param allow_na_in Optional character vector naming columns in `group_by`
+#'   where missing values may form a group. The default, `NULL`, rejects
+#'   missing values in every grouping column.
 #' @param aggregate_cols Character vector with numeric columns to aggregate over
 #' merged ranges, for example premium or exposure.
 #' @param aggregate_fun Function or function name used to combine
@@ -126,8 +129,11 @@
 #' the merged interval. The grouping columns should identify records for which
 #' combining coverage periods is actuarially and operationally meaningful;
 #' periods belonging to different risks or contracts should not be pooled.
-#' Missing values are not permitted in `group_by`, because such records cannot
-#' be assigned reliably to the same policy, risk or segment.
+#' For an optional grouping attribute, use e.g. `allow_na_in = "coverage"`
+#' to retain `NA` as a distinct value. Two missing values then match if the
+#' other grouping keys match; a missing value never matches a known coverage.
+#' The usual date-gap rule still applies. Keep policy or risk identifiers
+#' out of `allow_na_in` when missing identifiers could pool unrelated risks.
 #'
 #' Start and end dates are treated as inclusive. Consequently, two periods for
 #' which the second starts one day after the first ends have zero uncovered
@@ -209,6 +215,7 @@ merge_date_ranges <- function(data = NULL,
                               aggregate_cols = NULL,
                               aggregate_fun = "sum",
                               merge_gap_days = 1,
+                              allow_na_in = NULL,
                               df = NULL,
                               begin = NULL,
                               end = NULL,
@@ -273,18 +280,32 @@ merge_date_ranges <- function(data = NULL,
     stop("`group_by` must contain at least one column name.", call. = FALSE)
   }
   .time_validate_columns(data, group_by, "`group_by`")
+  if (!is.null(allow_na_in)) {
+    if (!is.character(allow_na_in) || !is.null(dim(allow_na_in)) ||
+        anyNA(allow_na_in) || any(allow_na_in == "")) {
+      stop("`allow_na_in` must be NULL or a character vector of column names.",
+           call. = FALSE)
+    }
+    unknown <- setdiff(allow_na_in, group_by)
+    if (length(unknown)) {
+      stop("Columns in `allow_na_in` must also be in `group_by`: ",
+           paste(unknown, collapse = ", "), ".", call. = FALSE)
+    }
+  }
   missing_groups <- vapply(
-    data[group_by],
-    function(column) sum(is.na(column)),
+    setdiff(group_by, allow_na_in),
+    function(column) sum(is.na(data[[column]])),
     integer(1)
   )
   missing_groups <- missing_groups[missing_groups > 0L]
   if (length(missing_groups) > 0L) {
     details <- paste0(names(missing_groups), " (", missing_groups, ")")
     stop(
-      "`data` contains missing values in `group_by`: ",
+      "NA values in `group_by` columns: ",
       paste(details, collapse = ", "),
-      ". Periods with a missing policy or risk identifier cannot be merged reliably.",
+      ". If NA is an intended grouping value, use `allow_na_in = ",
+      deparse1(union(allow_na_in, names(missing_groups))),
+      "`. Otherwise, resolve the missing values before merging.",
       call. = FALSE
     )
   }
@@ -302,7 +323,9 @@ merge_date_ranges <- function(data = NULL,
       call. = FALSE
     )
   }
-  non_numeric <- aggregate_cols[!vapply(data[aggregate_cols], is.numeric, logical(1))]
+  non_numeric <- aggregate_cols[!vapply(
+    aggregate_cols, function(column) is.numeric(data[[column]]), logical(1)
+  )]
   if (length(non_numeric) > 0L) {
     stop(
       sprintf("`aggregate_cols` must be numeric: %s.", paste(non_numeric, collapse = ", ")),

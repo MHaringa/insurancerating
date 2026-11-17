@@ -1,20 +1,29 @@
-packrat/lib*/
-.Rproj.user
-doc
-Meta
-^model_refinement\.html$
-^model_refinement\.Rmd$
-inst/doc
-/doc/
-/Meta/
-.positai
+# Local IDE state and generated plots
+.Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
-.Rcheck/
+.positai/
+.claude/
+.DS_Store
+Rplots.pdf
+
+# Generated package and website output
+/doc/
+/Meta/
+/inst/doc/
+/docs/
+*.Rcheck/
+00LOCK*/
 *.tar.gz
-docs/articles/*.utf8.md
-^CRAN-SUBMISSION$
-^\.github$
-^\.github/.*$
-docs
+/CRAN-SUBMISSION
+/CRAN-RELEASE
+
+# Local scratch files and dependency libraries
+/model_refinement.html
+/model_refinement.Rmd
+/packrat/lib*/
+
+# Synchronisation conflict copies
+*(Exemplaar met conflict*)*
+*(conflicted copy*)*

@@ -218,6 +218,9 @@ rating_grid_db <- function(x,
 #' uses ordered window functions to compare each start date with the latest
 #' preceding end date, assigns an interval identifier, and then aggregates each
 #' resulting interval.
+#' SQL groups missing (`NULL`) keys together. Unlike the in-memory
+#' [merge_date_ranges()], this lazy query does not check for missing grouping
+#' keys; check policy or risk identifiers before merging unrelated records.
 #'
 #' Date arithmetic differs between database systems. This implementation is
 #' therefore deliberately restricted to DuckDB. It does not download the

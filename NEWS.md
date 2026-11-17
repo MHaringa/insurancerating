@@ -1,5 +1,8 @@
 # insurancerating (development version)
 
+- `merge_date_ranges()` accepts `allow_na_in` to group missing values in
+  selected `group_by` columns. Other grouping columns still reject missing
+  values; the error identifies them and shows how to opt in.
 - `add_restriction()` now requires character or factor levels in the first
   column of data-frame input. Numeric category codes must be converted
   explicitly; numeric-looking named-vector labels remain supported.
