@@ -121,8 +121,15 @@ Each output row represents one consolidated period within a \code{group_by}
 combination. This is a temporal reduction of the portfolio; records with the
 same risk-factor values are not combined when their periods remain separate.
 
-Internally, interval construction and aggregation use \code{\link[data.table:data.table]{data.table::data.table()}}
-on a local copy. The supplied object is not modified by reference.
+Internally, grouping keys are ranked once and interval construction uses a
+compact \code{\link[data.table:data.table]{data.table::data.table()}} with group identifiers, dates and row
+positions. Only requested aggregation columns are added to that working
+table; grouping attributes are retrieved for the output rows afterwards.
+The wide input portfolio is not copied or sorted in place, and the supplied
+object is not modified by reference. Standard \code{sum} aggregation of ordinary
+numeric columns uses an optimized grouped calculation. Other aggregation
+functions and numeric classes retain the general aggregation route.
+Large inputs and outputs still require sufficient memory.
 For a portfolio that should remain outside R memory, use
 \code{\link[=merge_date_ranges_db]{merge_date_ranges_db()}} to perform the same interval reduction in DuckDB.
 }

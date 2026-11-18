@@ -54,10 +54,9 @@
     stop("`", variable, "` requires at least two categories with no missing levels.",
          call. = FALSE)
   }
-  if (is.ordered(group)) return(lv)
-
   bounds <- .parse_rating_table_numeric_levels(lv)
   if (is.null(bounds)) {
+    if (is.ordered(group)) return(lv)
     stop("`", variable, "` must have numeric level labels or numeric intervals, ",
          "or be an ordered factor with explicit levels before fitting the GLM. ",
          "Alphabetical order is not a tariff order.", call. = FALSE)
@@ -77,6 +76,11 @@
   } else if (any(is_interval) || anyDuplicated(bounds$lower)) {
     stop("Numeric levels of `", variable, "` must represent distinct values ",
          "or non-overlapping intervals; do not mix the two.", call. = FALSE)
+  }
+  if (is.ordered(group) && !identical(lv, lv[idx])) {
+    warning("Using ascending numeric order for `", variable,
+            "`; its ordered-factor levels have a different order. ",
+            "`direction` applies to numeric values.", call. = FALSE)
   }
   lv[idx]
 }
@@ -165,9 +169,11 @@
 #' @param model_variable Name of a standalone factor in a log-link GLM with
 #'   an intercept. Numeric labels (e.g. `"100"`, `"200"`, `"1000"`) and numeric
 #'   intervals (e.g. levels created by `cut()`) are ordered numerically, not
-#'   alphabetically. Intervals must not overlap. An ordered factor instead
-#'   uses its explicitly declared level order. For non-numeric labels, declare
-#'   that order with `ordered(x, levels = ...)` before fitting.
+#'   alphabetically, including for ordered factors. A conflicting ordered-factor
+#'   level order produces a warning; numeric order is used for the projection.
+#'   Intervals must not overlap, even for ordered factors. For non-numeric
+#'   labels, declare the order with `ordered(x, levels = ...)` before fitting;
+#'   that explicit order is retained.
 #' @param direction Desired order of relativities in the numeric or declared level order.
 #'   Both directions permit ties.
 #' @param method `"isotonic"` minimizes the weighted sum of squared changes
@@ -180,7 +186,8 @@
 #'   Weights are recorded but do not affect the two one-sided methods.
 #' @param output_variable Name of the new numeric tariff column used as a
 #'   fixed offset at refit and displayed in [rating_table()]. Defaults to
-#'   the model variable name followed by `_monotone`.
+#'   the model variable name followed by `_monotone`, with a unique suffix
+#'   (`_1`, `_2`, ...) if needed. An explicitly supplied name must be new.
 #'
 #' @details For grouped insured amount, reconstruction value or similar
 #'   variables, pass the existing factor used in the GLM, just as the
@@ -194,6 +201,12 @@
 #'   individual contrast coefficient. Projected values are not renormalized.
 #'   [refit()] fixes their ratios and estimates the intercept and remaining
 #'   free coefficients. Later explicit refinements can change these ratios.
+#'
+#'   Repeated calls for the same `model_variable` append separate steps and
+#'   use the current relativities, including any intervening refinements.
+#'   Earlier steps remain in the history; the latest projection replaces the
+#'   preceding effect at refit, rather than multiplying it again. Applying the
+#'   same direction to an already monotone effect leaves its values unchanged.
 #'
 #' @return A `rating_refinement` with an appended step; no GLM is fitted.
 #'   The step's `values` table contains the ordered levels, input and adjusted
@@ -212,6 +225,11 @@
 #'   add_monotonicity("amount_band", weights = "exposure")
 #' spec$steps[[1]]$values
 #' rating_table(refit(spec))
+#'
+#' # Rechecking appends a step without overwriting the earlier specification.
+#' rechecked <- spec |>
+#'   add_monotonicity("amount_band", weights = "exposure")
+#' vapply(rechecked$steps, function(step) step$output_variable, character(1))
 #' @export
 add_monotonicity <- function(model, model_variable,
                              direction = c("increasing", "decreasing"),
@@ -245,7 +263,11 @@ add_monotonicity <- function(model, model_variable,
   }
   level_order <- .monotonicity_level_order(state$data[[model_variable]], model_variable)
   .assert_optional_column_name(weights, "weights", state$data)
-  output_variable <- output_variable %||% paste0(model_variable, "_monotone")
+  if (is.null(output_variable)) {
+    output_variable <- utils::tail(make.unique(
+      c(names(state$data), paste0(model_variable, "_monotone")), sep = "_"
+    ), 1L)
+  }
   if (!.is_single_string(output_variable) ||
       !identical(make.names(output_variable), output_variable) ||
       output_variable %in% names(state$data)) {

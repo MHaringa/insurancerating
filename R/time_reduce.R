@@ -43,9 +43,11 @@
 }
 
 #' @noRd
-.time_apply_aggregate <- function(fun, x, column) {
-  fun_args <- names(formals(args(fun)))
-  supports_na_rm <- "na.rm" %in% fun_args || "..." %in% fun_args
+.time_apply_aggregate <- function(fun, x, column, supports_na_rm = NULL) {
+  if (is.null(supports_na_rm)) {
+    fun_args <- names(formals(args(fun)))
+    supports_na_rm <- "na.rm" %in% fun_args || "..." %in% fun_args
+  }
   value <- if (supports_na_rm) {
     fun(x, na.rm = TRUE)
   } else {
@@ -152,8 +154,15 @@
 #' combination. This is a temporal reduction of the portfolio; records with the
 #' same risk-factor values are not combined when their periods remain separate.
 #'
-#' Internally, interval construction and aggregation use [data.table::data.table()]
-#' on a local copy. The supplied object is not modified by reference.
+#' Internally, grouping keys are ranked once and interval construction uses a
+#' compact [data.table::data.table()] with group identifiers, dates and row
+#' positions. Only requested aggregation columns are added to that working
+#' table; grouping attributes are retrieved for the output rows afterwards.
+#' The wide input portfolio is not copied or sorted in place, and the supplied
+#' object is not modified by reference. Standard `sum` aggregation of ordinary
+#' numeric columns uses an optimized grouped calculation. Other aggregation
+#' functions and numeric classes retain the general aggregation route.
+#' Large inputs and outputs still require sufficient memory.
 #' For a portfolio that should remain outside R memory, use
 #' [merge_date_ranges_db()] to perform the same interval reduction in DuckDB.
 #'
@@ -338,43 +347,83 @@ merge_date_ranges <- function(data = NULL,
   }
   agg_fun <- .time_aggregate_function(aggregate_fun)
 
-  dt <- data.table::as.data.table(data.table::copy(data))
-  data.table::setorderv(dt, c(group_by, period_start, period_end))
-  period_start_name <- period_start
-  period_end_name <- period_end
-
   output_cols <- unique(c(group_by, period_start, period_end, aggregate_cols))
-  if (nrow(dt) == 0L) {
-    dt_reduce <- dt[, output_cols, with = FALSE]
+  if (nrow(data) == 0L) {
+    dt_reduce <- stats::setNames(lapply(output_cols, function(col) data[[col]][integer()]),
+                                 output_cols)
   } else {
-    previous_end_col <- ".merge_previous_end"
-    interval_col <- ".merge_interval"
-    dt[, (previous_end_col) := data.table::shift(
-      cummax(as.numeric(.SD[[1L]]))
-    ), by = group_by, .SDcols = period_end]
-    dt[, (interval_col) := cumsum(
-      is.na(.SD[[1L]]) |
-        (as.numeric(.SD[[2L]]) - .SD[[1L]] - 1) >= merge_gap_days
-    ), by = group_by, .SDcols = c(previous_end_col, period_start)]
+    # Dense ranks use data.table's key equality/order, including NA and factors,
+    # without sorting or copying the wide grouping columns themselves.
+    work <- data.table::data.table(
+      group_id = data.table::frankv(data, cols = group_by, ties.method = "dense",
+                                    na.last = FALSE),
+      row_id = seq_len(nrow(data)),
+      start = data[[period_start]], end = data[[period_end]]
+    )
+    data.table::setorderv(work, c("group_id", "start", "end"))
+    running_end <- NULL # data.table NSE
+    data.table::set(work, j = "running_end", value = as.numeric(work[["end"]]))
+    work[, running_end := cummax(running_end), by = "group_id"]
+    previous_end <- data.table::shift(work[["running_end"]])
+    new_group <- work[["group_id"]] != data.table::shift(work[["group_id"]], fill = 0L)
+    new_interval <- new_group | is.na(previous_end) |
+      (as.numeric(work[["start"]]) - previous_end - 1) >= merge_gap_days
+    data.table::set(work, j = "interval", value = cumsum(new_interval))
+    data.table::set(work, j = c("group_id", "running_end"), value = NULL)
+    rm(previous_end, new_group, new_interval)
 
-    interval_by <- c(group_by, interval_col)
-    value_cols <- unique(c(period_start, period_end, aggregate_cols))
-    dt_reduce <- dt[, {
-      values <- list(
-        min(.SD[[period_start_name]]),
-        max(.SD[[period_end_name]])
-      )
-      names(values) <- c(period_start_name, period_end_name)
-      for (col in aggregate_cols) {
-        values[[col]] <- .time_apply_aggregate(agg_fun, .SD[[col]], col)
+    aggregate_cols <- unique(aggregate_cols)
+    value_names <- sprintf("value_%d", seq_along(aggregate_cols))
+    fast_sum <- identical(agg_fun, base::sum) && all(vapply(
+      aggregate_cols, function(col) !is.object(data[[col]]), logical(1)
+    ))
+    integer_cols <- vapply(aggregate_cols, function(col) is.integer(data[[col]]), logical(1))
+    for (i in seq_along(aggregate_cols)) {
+      value <- data[[aggregate_cols[i]]][work[["row_id"]]]
+      # Avoid integer-overflow warnings in gsum; restore integer totals below
+      # when representable, just as base sum does for ordinary integer input.
+      if (fast_sum && integer_cols[i]) value <- as.double(value)
+      data.table::set(work, j = value_names[i], value = value)
+    }
+    if (!length(aggregate_cols) || fast_sum) {
+      sums <- lapply(value_names, function(col) {
+        substitute(sum(value, na.rm = TRUE), list(value = as.name(col)))
+      })
+      query <- as.call(c(list(quote(list)),
+        list(row_id = quote(row_id[1L]), start = quote(min(start)), end = quote(max(end))),
+        stats::setNames(sums, value_names)))
+      reduced <- work[, eval(query), by = "interval"]
+      for (i in which(integer_cols)) {
+        total <- reduced[[value_names[i]]]
+        if (all(is.finite(total) & abs(total) <= .Machine$integer.max)) {
+          data.table::set(reduced, j = value_names[i], value = as.integer(total))
+        }
       }
-      values
-    }, by = interval_by, .SDcols = value_cols]
-    dt_reduce[, (interval_col) := NULL]
-  }
+    } else {
+      fun_args <- names(formals(args(agg_fun)))
+      supports_na_rm <- "na.rm" %in% fun_args || "..." %in% fun_args
+      reduced <- work[, {
+        values <- list(row_id = .SD[["row_id"]][1L],
+                       start = min(.SD[["start"]]), end = max(.SD[["end"]]))
+        for (i in seq_along(aggregate_cols)) {
+          values[[value_names[i]]] <- .time_apply_aggregate(
+            agg_fun, .SD[[value_names[i]]], aggregate_cols[i], supports_na_rm
+          )
+        }
+        values
+      }, by = "interval", .SDcols = c("row_id", "start", "end", value_names)]
+    }
+    rm(work)
 
-  data.table::setorderv(dt_reduce, c(group_by, period_start, period_end))
-  dt_reduce <- as.data.frame(dt_reduce, stringsAsFactors = FALSE)
+    # Intervals are already in key/date order. Gather the wide keys only for
+    # output rows, preserving their classes and missing values.
+    dt_reduce <- c(
+      lapply(group_by, function(col) data[[col]][reduced[["row_id"]]]),
+      lapply(c("start", "end", value_names), function(col) reduced[[col]])
+    )
+    names(dt_reduce) <- c(group_by, period_start, period_end, aggregate_cols)
+  }
+  data.table::setDF(dt_reduce)
   rownames(dt_reduce) <- NULL
   attr(dt_reduce, "begin") <- period_start
   attr(dt_reduce, "end") <- period_end

@@ -222,22 +222,124 @@ test_that("numeric ordering handles boundaries without guessing ambiguous labels
   numeric_lv <- c("-1e3", "-20", "0", "100", "2e3")
   spec <- add_monotonicity(numeric_monotone_fixture(numeric_lv), "grade")
   expect_identical(spec$steps[[1]]$values$level, numeric_lv)
-  for (labels in list(c("1", "1.0", "2", "3", "4"),
-                      c("1", "(0,2]", "3", "4", "5"))) {
-    expect_error(add_monotonicity(numeric_monotone_fixture(labels), "grade"),
-                  "distinct values.*do not mix")
-  }
-  for (labels in list(c("(0,100]", "(50,200]", "(200,300]", "(300,400]", "(400,500]"),
-                      c("[0,100]", "[100,200]", "(200,300]", "(300,400]", "(400,500]"))) {
-    expect_error(add_monotonicity(numeric_monotone_fixture(labels), "grade"),
-                  "non-overlapping")
+  for (ordered in c(FALSE, TRUE)) {
+    for (labels in list(c("1", "1.0", "2", "3", "4"),
+                        c("1", "(0,2]", "3", "4", "5"))) {
+      expect_error(add_monotonicity(numeric_monotone_fixture(labels, ordered), "grade"),
+                    "distinct values.*do not mix")
+    }
+    for (labels in list(c("(0,100]", "(50,200]", "(200,300]", "(300,400]", "(400,500]"),
+                        c("[0,100]", "[100,200]", "(200,300]", "(300,400]", "(400,500]"),
+                        c("(0,0]", "(0,200]", "(200,300]", "(300,400]", "(400,500]"))) {
+      expect_error(add_monotonicity(numeric_monotone_fixture(labels, ordered), "grade"),
+                    "non-overlapping")
+    }
   }
   expect_error(add_monotonicity(numeric_monotone_fixture(c("1", "2", "3", "4", "unknown")),
                                 "grade"), "ordered factor with explicit levels")
-  # Explicit business order continues to take precedence for ordered factors.
-  ordered_ref <- numeric_monotone_fixture(ordered = TRUE)
-  spec <- add_monotonicity(ordered_ref, "grade")
-  expect_identical(spec$steps[[1]]$values$level, levels(ordered_ref$base$data$grade))
+})
+
+test_that("ordered numeric factors use the same order in projection, plots and tables", {
+  for (lv in list(c("10", "20", "100", "200", "1000"),
+                  c("(-Inf,15]", "(15,50]", "(50,150]", "(150,500]", "(500,Inf)"))) {
+    ref <- numeric_monotone_fixture(lv, ordered = TRUE)
+    before <- serialize(ref, NULL)
+    for (direction in c("increasing", "decreasing")) {
+      expect_warning(
+        spec <- add_monotonicity(ref, "grade", direction = direction, weights = "volume"),
+        "ascending numeric order for `grade`.*ordered-factor levels.*`direction`"
+      )
+      vals <- spec$steps[[1]]$values
+      expect_identical(vals$level, lv)
+      expect_identical(spec$steps[[1]]$level_order, lv)
+      expect_equal(vals$weight, c(2, 6, 2, 4, 4))
+      change <- diff(vals$adjusted_relativity)
+      expect_true(if (direction == "increasing") all(change >= 0) else all(change <= 0))
+      expect_no_warning(p <- autoplot(spec))
+      expect_identical(p$data$level, rep(lv, 2))
+      expect_no_warning(fit <- refit(spec))
+      tab <- rating_table(fit, estimate_name = "est")
+      rows <- tab$risk_factor == "grade_monotone"
+      expect_identical(tab$level[rows], lv)
+      expect_equal(tab$est[rows], vals$adjusted_relativity)
+      expect_identical(levels(fit$data$grade), levels(ref$base$data$grade))
+    }
+    expect_identical(serialize(ref, NULL), before)
+    d <- ref$base$data
+    d$grade <- ordered(d$grade, levels = lv)
+    m <- glm(claims ~ grade + band + offset(log(exposure)), data = d, family = poisson())
+    expect_no_warning(add_monotonicity(prepare_refinement(m, d), "grade"))
+  }
+  # Business order is still retained for non-numeric categories.
+  ref <- monotone_fixture()
+  expect_no_warning(spec <- add_monotonicity(ref, "grade"))
+  expect_identical(spec$steps[[1]]$level_order, levels(ref$base$data$grade))
+})
+
+test_that("repeated projections keep history and apply the effective effect only once", {
+  for (ref in list(monotone_fixture(), numeric_monotone_fixture())) {
+    first <- add_monotonicity(ref, "grade", weights = "volume")
+    first_copy <- serialize(first, NULL)
+    second <- add_monotonicity(first, "grade", weights = "volume")
+    expect_length(second$steps, 2L)
+    expect_identical(second$steps[[1]], first$steps[[1]])
+    expect_identical(second$steps[[2]]$values$original_relativity,
+                      first$steps[[1]]$values$adjusted_relativity)
+    expect_identical(second$steps[[2]]$values$adjusted_relativity,
+                      first$steps[[1]]$values$adjusted_relativity)
+    third <- add_monotonicity(second, "grade", direction = "decreasing", weights = "volume")
+    expect_identical(vapply(third$steps, `[[`, character(1), "output_variable"),
+                      c("grade_monotone", "grade_monotone_1", "grade_monotone_2"))
+    expect_identical(third$steps[1:2], second$steps)
+    vals <- third$steps[[3]]$values
+    d <- ref$base$data
+    d$tariff <- vals$adjusted_relativity[match(d$grade, vals$level)]
+    independent <- glm(claims ~ band + offset(log(exposure * tariff)),
+                       data = d, family = poisson())
+    fit <- refit(third)
+    expect_equal(fitted(fit), fitted(independent))
+    expect_equal(fit$data$grade_monotone_2, d$tariff)
+    expect_setequal(unique(rating_table(fit)$risk_factor),
+                     c("(Intercept)", "band", "grade_monotone_2"))
+    expect_identical(audit_refinement(fit)$steps$type, rep("monotonicity", 3))
+    expect_length(summary(third)$steps$step, 3L)
+    expect_equal(autoplot(third, step = 1)$data$Coef,
+                  c(first$steps[[1]]$values$original_relativity,
+                    first$steps[[1]]$values$adjusted_relativity))
+    expect_equal(autoplot(third, step = 3)$data$Coef,
+                  c(vals$original_relativity, vals$adjusted_relativity))
+    expect_identical(serialize(first, NULL), first_copy)
+
+    level <- first$steps[[1]]$values$level[1]
+    restricted <- add_restriction(first, model_variable = "grade",
+                                  restrictions = stats::setNames(2, level),
+                                  restriction_type = "multiplier")
+    again <- add_monotonicity(restricted, "grade", method = "increase_only")
+    vals <- again$steps[[3]]$values
+    expect_equal(vals$original_relativity,
+                  first$steps[[1]]$values$adjusted_relativity * c(2, 1, 1, 1, 1))
+    expect_equal(vals$adjusted_relativity, cummax(vals$original_relativity))
+    fit <- refit(again)
+    expect_equal(exp(fit$offset) / fit$data$exposure,
+                  vals$adjusted_relativity[match(fit$data$grade, vals$level)])
+    expect_identical(again$steps[[3]]$output_variable, "grade_monotone_1")
+  }
+})
+
+test_that("automatic output names avoid existing columns but explicit collisions fail", {
+  ref <- monotone_fixture()
+  ref$base$data$grade_monotone <- 99
+  ref$base$data$grade_monotone_1 <- 101
+  spec <- add_monotonicity(ref, "grade")
+  expect_identical(spec$steps[[1]]$output_variable, "grade_monotone_2")
+  expect_identical(preview_refinement(spec)$state$data$grade_monotone,
+                    ref$base$data$grade_monotone)
+  expect_identical(preview_refinement(spec)$state$data$grade_monotone_1,
+                    ref$base$data$grade_monotone_1)
+  expect_error(add_monotonicity(spec, "grade", output_variable = "grade_monotone_2"),
+                "must be a new")
+  explicit <- add_monotonicity(spec, "grade", output_variable = "final_tariff")
+  expect_identical(explicit$steps[[2]]$output_variable, "final_tariff")
 })
 
 test_that("numeric factor projections use level contributions with non-treatment contrasts", {

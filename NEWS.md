@@ -5,9 +5,18 @@
   using weighted isotonic projection on the log scale or one-sided adjustments.
   Numeric levels are sorted by value, not alphabetically; no smoothing or
   new segmentation is performed. Proposed effects can be inspected before refitting.
+  Numeric ordering and interval-overlap checks also apply to ordered factors;
+  conflicting declared numeric orders produce a warning. Repeated calls use
+  unique default output names and preserve the history of prior projections.
 - `merge_date_ranges()` accepts `allow_na_in` to group missing values in
   selected `group_by` columns. Other grouping columns still reject missing
   values; the error identifies them and shows how to opt in.
+- `merge_date_ranges()` now builds intervals using compact group identifiers
+  instead of copying and repeatedly grouping the full-width portfolio.
+  Standard numeric sums use optimized grouped aggregation; custom aggregation
+  functions remain supported. Grouping attributes are gathered only for the
+  output rows, reducing temporary memory use for wide portfolios without
+  changing the public interface or modifying the input.
 - `add_restriction()` now requires character or factor levels in the first
   column of data-frame input. Numeric category codes must be converted
   explicitly; numeric-looking named-vector labels remain supported.

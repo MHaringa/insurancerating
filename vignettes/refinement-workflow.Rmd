@@ -566,6 +566,9 @@ value, a tariff may require increasing relativities without a smooth curve.
 ordinary factors from `cut()`. Numeric labels such as `"100"`, `"200"`,
 `"1000"` and non-overlapping numeric intervals are put in numeric order.
 There is no need to convert those factors to `ordered()`.
+Numeric order also takes precedence for ordered factors: a conflicting
+declared order produces a warning, and the projection uses ascending numeric
+order. Interval overlap is rejected for both ordinary and ordered factors.
 
 The following alternative uses the existing age bands, whose estimated
 effects mostly decrease, to demonstrate the decreasing variant. Choosing a
@@ -594,6 +597,14 @@ if no level may rise. These restrictions apply to the factor effect, not the
 final premium: `refit(ordinal)` fixes the projected ratios but re-estimates
 the intercept and remaining free effects. This differs from estimating a GLM
 with order constraints in its likelihood.
+
+After another refinement, `add_monotonicity()` can be called again for the
+same model variable. It projects the current effects and appends a new step;
+it does not overwrite the earlier decision. Default output columns receive
+unique names such as `age_band_monotone` and `age_band_monotone_1`. At refit,
+only the latest effective relativity is applied, without double counting.
+An explicit `output_variable` must still name a new column. Reapplying the
+same direction to an already monotone effect leaves its values unchanged.
 
 ## Shrinking a categorical effect
 
