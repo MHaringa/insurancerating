@@ -2,7 +2,9 @@ reference_period_merge <- function(data, group_by, aggregate_cols = character(),
                                     gap = 1, fun = sum) {
   d <- data.table::as.data.table(data.table::copy(data))
   data.table::setorderv(d, c(group_by, "begin", "end"))
-  groups <- split(seq_len(nrow(d)), data.table::rleidv(d, group_by))
+  groups <- split(seq_len(nrow(d)), data.table::frankv(
+    d, cols = group_by, ties.method = "dense", na.last = FALSE
+  ))
   intervals <- list()
   for (rows in groups) {
     current <- integer()
@@ -19,16 +21,19 @@ reference_period_merge <- function(data, group_by, aggregate_cols = character(),
     intervals[[length(intervals) + 1L]] <- current
   }
   records <- lapply(intervals, function(rows) {
-    fields <- c(lapply(group_by, function(col) d[[col]][rows[1L]]),
-                list(min(d$begin[rows]), max(d$end[rows])),
+    fields <- c(list(min(d$begin[rows]), max(d$end[rows])),
                 lapply(aggregate_cols, function(col) {
                   x <- d[[col]][rows]
                   fun(x[!is.na(x)])
                 }))
-    names(fields) <- c(group_by, "begin", "end", aggregate_cols)
+    names(fields) <- c("begin", "end", aggregate_cols)
     fields
   })
-  out <- as.data.frame(data.table::rbindlist(records))
+  first <- vapply(intervals, function(rows) rows[1L], integer(1))
+  out <- c(lapply(group_by, function(col) d[[col]][first]),
+           as.list(data.table::rbindlist(records)))
+  names(out) <- c(group_by, "begin", "end", aggregate_cols)
+  data.table::setDF(out)
   attr(out, "begin") <- "begin"
   attr(out, "end") <- "end"
   attr(out, "cols") <- group_by
@@ -180,4 +185,102 @@ test_that("missing numeric key values retain data.table grouping semantics", {
                               group_by = "key", allow_na_in = "key", aggregate_cols = "amount")
   expect_identical(nrow(actual), 3L)
   expect_equal(actual, reference_period_merge(d, "key", "amount"))
+})
+
+test_that("hash grouping preserves equality, classes and key order", {
+  numeric_values <- c(NA_real_, NaN, -Inf, -1, 0, -0, 1, 1 + 2^-52, Inf)
+  text_values <- c("a", "A", "", NA_character_, "1", "01", "a|b", "caf\u00e9",
+                   iconv("caf\u00e9", from = "UTF-8", to = "latin1"))
+  keys <- list(
+    numeric = numeric_values,
+    integer = c(NA_integer_, -.Machine$integer.max, -1L, 0L, .Machine$integer.max),
+    logical = c(TRUE, FALSE, NA),
+    character = text_values,
+    factor = factor(text_values, levels = rev(unique(text_values))),
+    ordered = ordered(c("low", "high", NA), levels = c("high", "low")),
+    missing_factor_level = factor(c("a", "b", NA), exclude = NULL),
+    Date = as.Date("2024-01-01") + c(NA, -1, 0, 0.25, 1),
+    IDate = data.table::as.IDate("2024-01-01") + c(NA_integer_, -1L, 0L, 1L),
+    POSIXct = as.POSIXct("2024-01-01", tz = "UTC") + c(NA, -1, 0, .1, 1)
+  )
+  original_rounding <- data.table::getNumericRounding()
+  on.exit(data.table::setNumericRounding(original_rounding), add = TRUE)
+  data.table::setNumericRounding(0L)
+  for (key in keys) {
+    # Each key has two disconnected periods, presented in reverse date order.
+    d <- data.frame(key = rep(key, 4L), amount = seq_len(4L * length(key)))
+    d$begin <- as.Date("2024-01-01") + rep(c(31, 30, 1, 0), each = length(key))
+    d$end <- d$begin
+    expect_true(.time_can_hash_groups(d, "key"))
+    before <- data.table::copy(d)
+    actual <- merge_date_ranges(d, period_start = "begin", period_end = "end",
+                                group_by = "key", allow_na_in = "key", aggregate_cols = "amount")
+    expect_equal(actual, reference_period_merge(d, "key", "amount"))
+    expect_identical(class(actual$key), class(d$key))
+    expect_identical(d, before)
+  }
+})
+
+test_that("nonzero numeric rounding retains the original grouping semantics", {
+  original_rounding <- data.table::getNumericRounding()
+  on.exit(data.table::setNumericRounding(original_rounding), add = TRUE)
+  d <- data.frame(key = c(0.3, 0.1 + 0.2), amount = c(2, 3),
+                  begin = as.Date("2024-01-01"), end = as.Date("2024-01-31"))
+  for (rounding in 0:2) {
+    data.table::setNumericRounding(rounding)
+    expect_identical(.time_can_hash_groups(d, "key"), rounding == 0L)
+    actual <- merge_date_ranges(d, period_start = "begin", period_end = "end",
+                                group_by = "key", aggregate_cols = "amount")
+    expect_equal(actual, reference_period_merge(d, "key", "amount"))
+    expect_equal(nrow(actual), if (rounding == 0L) 2L else 1L)
+    expect_identical(data.table::getNumericRounding(), as.integer(rounding))
+  }
+})
+
+test_that("custom equality proxies cannot change period grouping", {
+  method_name <- "vec_proxy_equal.ir_merge_test_key"
+  methods <- get(".__S3MethodsTable__.", envir = asNamespace("vctrs"))
+  original <- get0(method_name, envir = methods, inherits = FALSE)
+  on.exit({
+    if (is.null(original)) rm(list = method_name, envir = methods)
+    else assign(method_name, original, envir = methods)
+  }, add = TRUE)
+  registerS3method("vec_proxy_equal", "ir_merge_test_key",
+                   function(x, ...) rep(1L, length(x)), envir = asNamespace("vctrs"))
+  d <- data.frame(key = c(2, 1, 2, 1), amount = 1:4,
+                  begin = as.Date("2024-01-01"), end = as.Date("2024-01-31"))
+  class(d$key) <- "ir_merge_test_key"
+  expect_equal(length(unique(vctrs::vec_group_id(d["key"]))), 1L)
+  expect_false(.time_can_hash_groups(d, "key"))
+  actual <- merge_date_ranges(d, period_start = "begin", period_end = "end",
+                              group_by = "key", aggregate_cols = "amount")
+  expect_equal(nrow(actual), 2L)
+  expect_equal(actual, reference_period_merge(d, "key", "amount"))
+})
+
+test_that("custom aggregators keep their original group processing order", {
+  d <- data.frame(key = c("B", "A", "B", "A"), amount = 1:4,
+                  begin = as.Date("2024-01-01"), end = as.Date("2024-01-31"))
+  visited <- list()
+  aggregate <- function(x) {
+    visited[[length(visited) + 1L]] <<- x
+    length(visited)
+  }
+  actual <- merge_date_ranges(d, period_start = "begin", period_end = "end",
+                              group_by = "key", aggregate_cols = "amount",
+                              aggregate_fun = aggregate)
+  expect_identical(actual$key, c("A", "B"))
+  expect_identical(actual$amount, 1:2)
+  expect_identical(visited, list(c(2L, 4L), c(1L, 3L)))
+})
+
+test_that("unsupported key shapes and duplicate keys retain the ranked route", {
+  d <- data.frame(key = c(2, 1))
+  expect_false(.time_can_hash_groups(d, c("key", "key")))
+  d$key <- I(d$key)
+  expect_false(.time_can_hash_groups(d, "key"))
+  d$key <- I(matrix(1:4, nrow = 2))
+  expect_false(.time_can_hash_groups(d, "key"))
+  d$key <- I(list(1L, 2L))
+  expect_false(.time_can_hash_groups(d, "key"))
 })

@@ -67,6 +67,24 @@
   value
 }
 
+#' @noRd
+.time_can_hash_groups <- function(data, group_by) {
+  if (data.table::getNumericRounding() != 0L || anyDuplicated(group_by)) {
+    return(FALSE)
+  }
+  # Unknown classes may define equality differently in vctrs and data.table.
+  supported_classes <- list("factor", c("ordered", "factor"), "Date",
+                            c("IDate", "Date"), c("POSIXct", "POSIXt"))
+  all(vapply(group_by, function(col) {
+    x <- data[[col]]
+    if (!is.null(dim(x))) return(FALSE)
+    if (!is.object(x)) {
+      return(typeof(x) %in% c("logical", "integer", "double", "character"))
+    }
+    any(vapply(supported_classes, identical, logical(1), y = class(x)))
+  }, logical(1)))
+}
+
 #' Reduce portfolio periods by merging adjacent date ranges
 #'
 #' @description
@@ -154,10 +172,15 @@
 #' combination. This is a temporal reduction of the portfolio; records with the
 #' same risk-factor values are not combined when their periods remain separate.
 #'
-#' Internally, grouping keys are ranked once and interval construction uses a
+#' Internally, interval construction uses a
 #' compact [data.table::data.table()] with group identifiers, dates and row
 #' positions. Only requested aggregation columns are added to that working
 #' table; grouping attributes are retrieved for the output rows afterwards.
+#' For ordinary grouping columns and standard numeric sums (or no aggregation),
+#' groups are identified by hashing and only the output is sorted by grouping
+#' columns and dates. Other column classes, custom aggregation functions and
+#' nonzero [data.table::setNumericRounding()] settings retain the ranked-group
+#' route, preserving their existing grouping and processing behaviour.
 #' The wide input portfolio is not copied or sorted in place, and the supplied
 #' object is not modified by reference. Standard `sum` aggregation of ordinary
 #' numeric columns uses an optimized grouped calculation. Other aggregation
@@ -346,20 +369,34 @@ merge_date_ranges <- function(data = NULL,
          call. = FALSE)
   }
   agg_fun <- .time_aggregate_function(aggregate_fun)
+  fast_sum <- identical(agg_fun, base::sum) && all(vapply(
+    aggregate_cols, function(col) !is.object(data[[col]]), logical(1)
+  ))
 
   output_cols <- unique(c(group_by, period_start, period_end, aggregate_cols))
   if (nrow(data) == 0L) {
     dt_reduce <- stats::setNames(lapply(output_cols, function(col) data[[col]][integer()]),
                                  output_cols)
   } else {
-    # Dense ranks use data.table's key equality/order, including NA and factors,
-    # without sorting or copying the wide grouping columns themselves.
+    hash_groups <- (!length(aggregate_cols) || fast_sum) &&
+      .time_can_hash_groups(data, group_by)
+    if (hash_groups) {
+      # A shallow key frame avoids sorting/copying the wide input columns.
+      keys <- structure(lapply(group_by, function(col) data[[col]]),
+                        names = group_by, class = "data.frame",
+                        row.names = c(NA_integer_, -nrow(data)))
+      group_id <- as.integer(vctrs::vec_group_id(keys))
+      rm(keys)
+    } else {
+      group_id <- data.table::frankv(data, cols = group_by, ties.method = "dense",
+                                    na.last = FALSE)
+    }
     work <- data.table::data.table(
-      group_id = data.table::frankv(data, cols = group_by, ties.method = "dense",
-                                    na.last = FALSE),
+      group_id = group_id,
       row_id = seq_len(nrow(data)),
       start = data[[period_start]], end = data[[period_end]]
     )
+    rm(group_id)
     data.table::setorderv(work, c("group_id", "start", "end"))
     running_end <- NULL # data.table NSE
     data.table::set(work, j = "running_end", value = as.numeric(work[["end"]]))
@@ -374,9 +411,6 @@ merge_date_ranges <- function(data = NULL,
 
     aggregate_cols <- unique(aggregate_cols)
     value_names <- sprintf("value_%d", seq_along(aggregate_cols))
-    fast_sum <- identical(agg_fun, base::sum) && all(vapply(
-      aggregate_cols, function(col) !is.object(data[[col]]), logical(1)
-    ))
     integer_cols <- vapply(aggregate_cols, function(col) is.integer(data[[col]]), logical(1))
     for (i in seq_along(aggregate_cols)) {
       value <- data[[aggregate_cols[i]]][work[["row_id"]]]
@@ -415,13 +449,17 @@ merge_date_ranges <- function(data = NULL,
     }
     rm(work)
 
-    # Intervals are already in key/date order. Gather the wide keys only for
-    # output rows, preserving their classes and missing values.
+    # Gather keys only for output rows. Hash IDs follow first appearance;
+    # sorting the reduced result restores the same key/date order as ranks.
     dt_reduce <- c(
       lapply(group_by, function(col) data[[col]][reduced[["row_id"]]]),
       lapply(c("start", "end", value_names), function(col) reduced[[col]])
     )
     names(dt_reduce) <- c(group_by, period_start, period_end, aggregate_cols)
+    if (hash_groups) {
+      data.table::setDT(dt_reduce)
+      data.table::setorderv(dt_reduce, unique(c(group_by, period_start, period_end)))
+    }
   }
   data.table::setDF(dt_reduce)
   rownames(dt_reduce) <- NULL
