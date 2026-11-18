@@ -148,9 +148,17 @@ combination. This is a temporal reduction of the portfolio; records with
 the same risk-factor values are not combined when their periods remain
 separate.
 
-Internally, interval construction and aggregation use
+Internally, grouping keys are ranked once and interval construction uses
+a compact
 [`data.table::data.table()`](https://rdrr.io/pkg/data.table/man/data.table.html)
-on a local copy. The supplied object is not modified by reference. For a
+with group identifiers, dates and row positions. Only requested
+aggregation columns are added to that working table; grouping attributes
+are retrieved for the output rows afterwards. The wide input portfolio
+is not copied or sorted in place, and the supplied object is not
+modified by reference. Standard `sum` aggregation of ordinary numeric
+columns uses an optimized grouped calculation. Other aggregation
+functions and numeric classes retain the general aggregation route.
+Large inputs and outputs still require sufficient memory. For a
 portfolio that should remain outside R memory, use
 [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md)
 to perform the same interval reduction in DuckDB.

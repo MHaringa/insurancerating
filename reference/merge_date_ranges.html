@@ -192,8 +192,15 @@ aggregation to avoid double counting.</p>
 <p>Each output row represents one consolidated period within a <code>group_by</code>
 combination. This is a temporal reduction of the portfolio; records with the
 same risk-factor values are not combined when their periods remain separate.</p>
-<p>Internally, interval construction and aggregation use <code><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table::data.table()</a></code>
-on a local copy. The supplied object is not modified by reference.
+<p>Internally, grouping keys are ranked once and interval construction uses a
+compact <code><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table::data.table()</a></code> with group identifiers, dates and row
+positions. Only requested aggregation columns are added to that working
+table; grouping attributes are retrieved for the output rows afterwards.
+The wide input portfolio is not copied or sorted in place, and the supplied
+object is not modified by reference. Standard <code>sum</code> aggregation of ordinary
+numeric columns uses an optimized grouped calculation. Other aggregation
+functions and numeric classes retain the general aggregation route.
+Large inputs and outputs still require sufficient memory.
 For a portfolio that should remain outside R memory, use
 <code><a href="merge_date_ranges_db.html">merge_date_ranges_db()</a></code> to perform the same interval reduction in DuckDB.</p>
 </div>

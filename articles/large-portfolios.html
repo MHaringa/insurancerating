@@ -186,6 +186,18 @@ otherwise unchanged characteristics.</p>
 <span><span class="co">#&gt; 2      P002     Fire   2025-01-01 2025-12-31               1</span></span></code></pre></div>
 <p>This step is optional. It is not required when the source periods
 already have the intended modelling granularity.</p>
+<p>For wide portfolios, <code><a href="../reference/merge_date_ranges.html">merge_date_ranges()</a></code> identifies
+equal grouping keys once and constructs intervals in a compact working
+table. It retrieves the grouping attributes only for the output rows
+instead of sorting a full-width copy of the portfolio. The default
+<code>aggregate_fun = "sum"</code> uses optimized grouped sums for
+ordinary numeric columns; custom aggregation functions remain available.
+Include in <code>group_by</code> the attributes that must remain
+unchanged within a merged period, and use <code>allow_na_in</code> for
+grouping columns where missing values are intentional. Input, output and
+temporary vectors still need to fit in memory; use
+<code><a href="../reference/merge_date_ranges_db.html">merge_date_ranges_db()</a></code> when consolidation should happen
+before importing the portfolio into R.</p>
 </div>
 <div class="section level3">
 <h3 id="local-model-point-aggregation">Local model-point aggregation<a class="anchor" aria-label="anchor" href="#local-model-point-aggregation"></a>
@@ -339,7 +351,7 @@ grid is read back into R with <code><a href="https://dplyr.tidyverse.org/referen
 <span></span>
 <span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu"><a href="https://r.duckdb.org/reference/duckdb.html" class="external-link">duckdb</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; duckdb keeps downloaded extensions and secrets in a temporary directory:</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> /tmp/RtmpO1bGjB/duckdb</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> /tmp/RtmpgdP2Yu/duckdb</span></span>
 <span><span class="co">#&gt; This is removed when the R session ends.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Extensions are re-downloaded each session.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Secrets are lost.</span></span>

@@ -77,9 +77,11 @@ between levels and does not impose smoothness.</p>
 <dd><p>Name of a standalone factor in a log-link GLM with
 an intercept. Numeric labels (e.g. <code>"100"</code>, <code>"200"</code>, <code>"1000"</code>) and numeric
 intervals (e.g. levels created by <code><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut()</a></code>) are ordered numerically, not
-alphabetically. Intervals must not overlap. An ordered factor instead
-uses its explicitly declared level order. For non-numeric labels, declare
-that order with <code>ordered(x, levels = ...)</code> before fitting.</p></dd>
+alphabetically, including for ordered factors. A conflicting ordered-factor
+level order produces a warning; numeric order is used for the projection.
+Intervals must not overlap, even for ordered factors. For non-numeric
+labels, declare the order with <code>ordered(x, levels = ...)</code> before fitting;
+that explicit order is retained.</p></dd>
 
 
 <dt id="arg-direction">direction<a class="anchor" aria-label="anchor" href="#arg-direction"></a></dt>
@@ -104,7 +106,8 @@ Weights are recorded but do not affect the two one-sided methods.</p></dd>
 <dt id="arg-output-variable">output_variable<a class="anchor" aria-label="anchor" href="#arg-output-variable"></a></dt>
 <dd><p>Name of the new numeric tariff column used as a
 fixed offset at refit and displayed in <code><a href="rating_table.html">rating_table()</a></code>. Defaults to
-the model variable name followed by <code>_monotone</code>.</p></dd>
+the model variable name followed by <code>_monotone</code>, with a unique suffix
+(<code>_1</code>, <code>_2</code>, ...) if needed. An explicitly supplied name must be new.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -126,6 +129,11 @@ the input is the exponentiated fitted level contribution, not an
 individual contrast coefficient. Projected values are not renormalized.
 <code><a href="refit.html">refit()</a></code> fixes their ratios and estimates the intercept and remaining
 free coefficients. Later explicit refinements can change these ratios.</p>
+<p>Repeated calls for the same <code>model_variable</code> append separate steps and
+use the current relativities, including any intervening refinements.
+Earlier steps remain in the history; the latest projection replaces the
+preceding effect at refit, rather than multiplying it again. Applying the
+same direction to an already monotone effect leaves its values unchanged.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -159,6 +167,12 @@ free coefficients. Later explicit refinements can change these ratios.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4 amount_band_monotone (5e+05,1e+06] 1.1247222</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 amount_band_monotone (1e+06,2e+06] 1.3247641</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6 amount_band_monotone   (2e+06,Inf] 1.3247641</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Rechecking appends a step without overwriting the earlier specification.</span></span></span>
+<span class="r-in"><span><span class="va">rechecked</span> <span class="op">&lt;-</span> <span class="va">spec</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">add_monotonicity</span><span class="op">(</span><span class="st">"amount_band"</span>, weights <span class="op">=</span> <span class="st">"exposure"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">rechecked</span><span class="op">$</span><span class="va">steps</span>, <span class="kw">function</span><span class="op">(</span><span class="va">step</span><span class="op">)</span> <span class="va">step</span><span class="op">$</span><span class="va">output_variable</span>, <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "amount_band_monotone"   "amount_band_monotone_1"</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

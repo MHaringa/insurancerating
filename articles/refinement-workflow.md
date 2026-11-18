@@ -178,7 +178,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-11-17 17:41:13 UTC
+#> Created: 2026-11-18 11:55:29 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -697,7 +697,10 @@ accepts the existing grouped model factor, including ordinary factors
 from [`cut()`](https://rdrr.io/r/base/cut.html). Numeric labels such as
 `"100"`, `"200"`, `"1000"` and non-overlapping numeric intervals are put
 in numeric order. There is no need to convert those factors to
-[`ordered()`](https://rdrr.io/r/base/factor.html).
+[`ordered()`](https://rdrr.io/r/base/factor.html). Numeric order also
+takes precedence for ordered factors: a conflicting declared order
+produces a warning, and the projection uses ascending numeric order.
+Interval overlap is rejected for both ordinary and ordered factors.
 
 The following alternative uses the existing age bands, whose estimated
 effects mostly decrease, to demonstrate the decreasing variant. Choosing
@@ -739,6 +742,16 @@ factor effect, not the final premium: `refit(ordinal)` fixes the
 projected ratios but re-estimates the intercept and remaining free
 effects. This differs from estimating a GLM with order constraints in
 its likelihood.
+
+After another refinement,
+[`add_monotonicity()`](https://mharinga.github.io/insurancerating/reference/add_monotonicity.md)
+can be called again for the same model variable. It projects the current
+effects and appends a new step; it does not overwrite the earlier
+decision. Default output columns receive unique names such as
+`age_band_monotone` and `age_band_monotone_1`. At refit, only the latest
+effective relativity is applied, without double counting. An explicit
+`output_variable` must still name a new column. Reapplying the same
+direction to an already monotone effect leaves its values unchanged.
 
 ## Shrinking a categorical effect
 
@@ -884,7 +897,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-11-17 17:41:13 UTC
+#> Created: 2026-11-18 11:55:29 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -1050,9 +1063,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Prepared: 2026-11-17 17:41:13 UTC
-#> Refitted: 2026-11-17 17:41:19 UTC
-#> Audited: 2026-11-17 17:41:19 UTC
+#> Prepared: 2026-11-18 11:55:29 UTC
+#> Refitted: 2026-11-18 11:55:34 UTC
+#> Audited: 2026-11-18 11:55:34 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
@@ -1077,7 +1090,7 @@ summary(refinement_audit)
 #> Portfolio effect
 #>   Before: 0.137596
 #>   After:  0.137596
-#>   Change: -1.93734e-14 (-1.408e-11%)
+#>   Change: -1.95122e-14 (-1.418e-11%)
 #> 
 #> Largest level changes (10 of 24)
 #>              risk_factor   level     before      after       change

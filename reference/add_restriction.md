@@ -338,8 +338,8 @@ rating_table(refined_model, exposure = FALSE)
 #> 1            (Intercept) (Intercept)          2.096774
 #> 2 postal_area_restricted           D          1.200000
 #> 3 postal_area_restricted           C          1.100000
-#> 4 postal_area_restricted           B          1.000000
-#> 5 postal_area_restricted           A          1.000000
+#> 4 postal_area_restricted           A          1.000000
+#> 5 postal_area_restricted           B          1.000000
 
 # The two-column data-frame form is also fully supported.
 restrictions <- data.frame(

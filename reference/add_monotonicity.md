@@ -33,10 +33,12 @@ add_monotonicity(
   Name of a standalone factor in a log-link GLM with an intercept.
   Numeric labels (e.g. `"100"`, `"200"`, `"1000"`) and numeric intervals
   (e.g. levels created by [`cut()`](https://rdrr.io/r/base/cut.html))
-  are ordered numerically, not alphabetically. Intervals must not
-  overlap. An ordered factor instead uses its explicitly declared level
-  order. For non-numeric labels, declare that order with
-  `ordered(x, levels = ...)` before fitting.
+  are ordered numerically, not alphabetically, including for ordered
+  factors. A conflicting ordered-factor level order produces a warning;
+  numeric order is used for the projection. Intervals must not overlap,
+  even for ordered factors. For non-numeric labels, declare the order
+  with `ordered(x, levels = ...)` before fitting; that explicit order is
+  retained.
 
 - direction:
 
@@ -62,7 +64,9 @@ add_monotonicity(
   Name of the new numeric tariff column used as a fixed offset at refit
   and displayed in
   [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
-  Defaults to the model variable name followed by `_monotone`.
+  Defaults to the model variable name followed by `_monotone`, with a
+  unique suffix (`_1`, `_2`, ...) if needed. An explicitly supplied name
+  must be new.
 
 ## Value
 
@@ -89,6 +93,13 @@ contrast coefficient. Projected values are not renormalized.
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
 fixes their ratios and estimates the intercept and remaining free
 coefficients. Later explicit refinements can change these ratios.
+
+Repeated calls for the same `model_variable` append separate steps and
+use the current relativities, including any intervening refinements.
+Earlier steps remain in the history; the latest projection replaces the
+preceding effect at refit, rather than multiplying it again. Applying
+the same direction to an already monotone effect leaves its values
+unchanged.
 
 ## See also
 
@@ -124,4 +135,10 @@ rating_table(refit(spec))
 #> 4 amount_band_monotone (5e+05,1e+06] 1.1247222
 #> 5 amount_band_monotone (1e+06,2e+06] 1.3247641
 #> 6 amount_band_monotone   (2e+06,Inf] 1.3247641
+
+# Rechecking appends a step without overwriting the earlier specification.
+rechecked <- spec |>
+  add_monotonicity("amount_band", weights = "exposure")
+vapply(rechecked$steps, function(step) step$output_variable, character(1))
+#> [1] "amount_band_monotone"   "amount_band_monotone_1"
 ```
