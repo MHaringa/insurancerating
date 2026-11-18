@@ -148,18 +148,24 @@ combination. This is a temporal reduction of the portfolio; records with
 the same risk-factor values are not combined when their periods remain
 separate.
 
-Internally, grouping keys are ranked once and interval construction uses
-a compact
+Internally, interval construction uses a compact
 [`data.table::data.table()`](https://rdrr.io/pkg/data.table/man/data.table.html)
 with group identifiers, dates and row positions. Only requested
 aggregation columns are added to that working table; grouping attributes
-are retrieved for the output rows afterwards. The wide input portfolio
-is not copied or sorted in place, and the supplied object is not
-modified by reference. Standard `sum` aggregation of ordinary numeric
-columns uses an optimized grouped calculation. Other aggregation
-functions and numeric classes retain the general aggregation route.
-Large inputs and outputs still require sufficient memory. For a
-portfolio that should remain outside R memory, use
+are retrieved for the output rows afterwards. For ordinary grouping
+columns and standard numeric sums (or no aggregation), groups are
+identified by hashing and only the output is sorted by grouping columns
+and dates. Other column classes, custom aggregation functions and
+nonzero
+[`data.table::setNumericRounding()`](https://rdrr.io/pkg/data.table/man/setNumericRounding.html)
+settings retain the ranked-group route, preserving their existing
+grouping and processing behaviour. The wide input portfolio is not
+copied or sorted in place, and the supplied object is not modified by
+reference. Standard `sum` aggregation of ordinary numeric columns uses
+an optimized grouped calculation. Other aggregation functions and
+numeric classes retain the general aggregation route. Large inputs and
+outputs still require sufficient memory. For a portfolio that should
+remain outside R memory, use
 [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md)
 to perform the same interval reduction in DuckDB.
 

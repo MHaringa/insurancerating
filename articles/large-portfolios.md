@@ -111,13 +111,16 @@ For wide portfolios,
 [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
 identifies equal grouping keys once and constructs intervals in a
 compact working table. It retrieves the grouping attributes only for the
-output rows instead of sorting a full-width copy of the portfolio. The
-default `aggregate_fun = "sum"` uses optimized grouped sums for ordinary
-numeric columns; custom aggregation functions remain available. Include
-in `group_by` the attributes that must remain unchanged within a merged
-period, and use `allow_na_in` for grouping columns where missing values
-are intentional. Input, output and temporary vectors still need to fit
-in memory; use
+output rows instead of sorting a full-width copy of the portfolio. For
+ordinary grouping columns and numeric sums, it identifies groups by
+hashing and sorts only the reduced output. Other column classes, custom
+aggregation functions and nonzero `data.table` numeric-rounding settings
+retain the ranked-group route. The default `aggregate_fun = "sum"` uses
+optimized grouped sums for ordinary numeric columns; custom aggregation
+functions remain available. Include in `group_by` the attributes that
+must remain unchanged within a merged period, and use `allow_na_in` for
+grouping columns where missing values are intentional. Input, output and
+temporary vectors still need to fit in memory; use
 [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md)
 when consolidation should happen before importing the portfolio into R.
 
@@ -281,7 +284,7 @@ library(duckdb)
 
 con <- dbConnect(duckdb())
 #> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmpgdP2Yu/duckdb
+#> ℹ /tmp/Rtmpc38srq/duckdb
 #> This is removed when the R session ends.
 #> • Extensions are re-downloaded each session.
 #> • Secrets are lost.

@@ -22,7 +22,11 @@
   numeric sums use optimized grouped aggregation; custom aggregation
   functions remain supported. Grouping attributes are gathered only for
   the output rows, reducing temporary memory use for wide portfolios
-  without changing the public interface or modifying the input.
+  without changing the public interface or modifying the input. For
+  ordinary grouping columns and numeric sums, hashing now avoids sorting
+  the full input by all keys; only the reduced result is sorted. Custom
+  aggregation functions, other column classes and nonzero `data.table`
+  numeric-rounding settings retain the ranked-group route.
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   now requires character or factor levels in the first column of
   data-frame input. Numeric category codes must be converted explicitly;
