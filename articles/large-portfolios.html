@@ -189,11 +189,7 @@ already have the intended modelling granularity.</p>
 <p>For wide portfolios, <code><a href="../reference/merge_date_ranges.html">merge_date_ranges()</a></code> identifies
 equal grouping keys once and constructs intervals in a compact working
 table. It retrieves the grouping attributes only for the output rows
-instead of sorting a full-width copy of the portfolio. For ordinary
-grouping columns and numeric sums, it identifies groups by hashing and
-sorts only the reduced output. Other column classes, custom aggregation
-functions and nonzero <code>data.table</code> numeric-rounding settings
-retain the ranked-group route. The default
+instead of sorting a full-width copy of the portfolio. The default
 <code>aggregate_fun = "sum"</code> uses optimized grouped sums for
 ordinary numeric columns; custom aggregation functions remain available.
 Include in <code>group_by</code> the attributes that must remain
@@ -355,7 +351,7 @@ grid is read back into R with <code><a href="https://dplyr.tidyverse.org/referen
 <span></span>
 <span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu"><a href="https://r.duckdb.org/reference/duckdb.html" class="external-link">duckdb</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; duckdb keeps downloaded extensions and secrets in a temporary directory:</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> /tmp/Rtmpc38srq/duckdb</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> /tmp/RtmpPvgZxc/duckdb</span></span>
 <span><span class="co">#&gt; This is removed when the R session ends.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Extensions are re-downloaded each session.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Secrets are lost.</span></span>
