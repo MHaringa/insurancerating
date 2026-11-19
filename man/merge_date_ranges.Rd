@@ -121,15 +121,10 @@ Each output row represents one consolidated period within a \code{group_by}
 combination. This is a temporal reduction of the portfolio; records with the
 same risk-factor values are not combined when their periods remain separate.
 
-Internally, interval construction uses a
+Internally, grouping keys are ranked once and interval construction uses a
 compact \code{\link[data.table:data.table]{data.table::data.table()}} with group identifiers, dates and row
 positions. Only requested aggregation columns are added to that working
 table; grouping attributes are retrieved for the output rows afterwards.
-For ordinary grouping columns and standard numeric sums (or no aggregation),
-groups are identified by hashing and only the output is sorted by grouping
-columns and dates. Other column classes, custom aggregation functions and
-nonzero \code{\link[data.table:setNumericRounding]{data.table::setNumericRounding()}} settings retain the ranked-group
-route, preserving their existing grouping and processing behaviour.
 The wide input portfolio is not copied or sorted in place, and the supplied
 object is not modified by reference. Standard \code{sum} aggregation of ordinary
 numeric columns uses an optimized grouped calculation. Other aggregation

@@ -187,7 +187,7 @@ test_that("missing numeric key values retain data.table grouping semantics", {
   expect_equal(actual, reference_period_merge(d, "key", "amount"))
 })
 
-test_that("hash grouping preserves equality, classes and key order", {
+test_that("period grouping preserves equality, classes and key order", {
   numeric_values <- c(NA_real_, NaN, -Inf, -1, 0, -0, 1, 1 + 2^-52, Inf)
   text_values <- c("a", "A", "", NA_character_, "1", "01", "a|b", "caf\u00e9",
                    iconv("caf\u00e9", from = "UTF-8", to = "latin1"))
@@ -211,7 +211,6 @@ test_that("hash grouping preserves equality, classes and key order", {
     d <- data.frame(key = rep(key, 4L), amount = seq_len(4L * length(key)))
     d$begin <- as.Date("2024-01-01") + rep(c(31, 30, 1, 0), each = length(key))
     d$end <- d$begin
-    expect_true(.time_can_hash_groups(d, "key"))
     before <- data.table::copy(d)
     actual <- merge_date_ranges(d, period_start = "begin", period_end = "end",
                                 group_by = "key", allow_na_in = "key", aggregate_cols = "amount")
@@ -228,7 +227,6 @@ test_that("nonzero numeric rounding retains the original grouping semantics", {
                   begin = as.Date("2024-01-01"), end = as.Date("2024-01-31"))
   for (rounding in 0:2) {
     data.table::setNumericRounding(rounding)
-    expect_identical(.time_can_hash_groups(d, "key"), rounding == 0L)
     actual <- merge_date_ranges(d, period_start = "begin", period_end = "end",
                                 group_by = "key", aggregate_cols = "amount")
     expect_equal(actual, reference_period_merge(d, "key", "amount"))
@@ -237,21 +235,10 @@ test_that("nonzero numeric rounding retains the original grouping semantics", {
   }
 })
 
-test_that("custom equality proxies cannot change period grouping", {
-  method_name <- "vec_proxy_equal.ir_merge_test_key"
-  methods <- get(".__S3MethodsTable__.", envir = asNamespace("vctrs"))
-  original <- get0(method_name, envir = methods, inherits = FALSE)
-  on.exit({
-    if (is.null(original)) rm(list = method_name, envir = methods)
-    else assign(method_name, original, envir = methods)
-  }, add = TRUE)
-  registerS3method("vec_proxy_equal", "ir_merge_test_key",
-                   function(x, ...) rep(1L, length(x)), envir = asNamespace("vctrs"))
+test_that("custom key classes retain data.table grouping semantics", {
   d <- data.frame(key = c(2, 1, 2, 1), amount = 1:4,
                   begin = as.Date("2024-01-01"), end = as.Date("2024-01-31"))
   class(d$key) <- "ir_merge_test_key"
-  expect_equal(length(unique(vctrs::vec_group_id(d["key"]))), 1L)
-  expect_false(.time_can_hash_groups(d, "key"))
   actual <- merge_date_ranges(d, period_start = "begin", period_end = "end",
                               group_by = "key", aggregate_cols = "amount")
   expect_equal(nrow(actual), 2L)
@@ -272,15 +259,4 @@ test_that("custom aggregators keep their original group processing order", {
   expect_identical(actual$key, c("A", "B"))
   expect_identical(actual$amount, 1:2)
   expect_identical(visited, list(c(2L, 4L), c(1L, 3L)))
-})
-
-test_that("unsupported key shapes and duplicate keys retain the ranked route", {
-  d <- data.frame(key = c(2, 1))
-  expect_false(.time_can_hash_groups(d, c("key", "key")))
-  d$key <- I(d$key)
-  expect_false(.time_can_hash_groups(d, "key"))
-  d$key <- I(matrix(1:4, nrow = 2))
-  expect_false(.time_can_hash_groups(d, "key"))
-  d$key <- I(list(1L, 2L))
-  expect_false(.time_can_hash_groups(d, "key"))
 })

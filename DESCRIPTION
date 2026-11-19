@@ -34,8 +34,7 @@ Imports:
     scales,
     scam,
     stringr,
-    tibble,
-    vctrs (>= 0.3.0)
+    tibble
 Depends: R (>= 4.1.0)
 Suggests: 
     classInt,
