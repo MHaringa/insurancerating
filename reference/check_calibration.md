@@ -20,7 +20,10 @@ check_calibration(model, data, by = NULL, groups = NULL)
 
   A non-empty data frame with the response and variables used in the
   model, including any weight and offset variables. Responses,
-  predictions and weights must be finite and non-negative.
+  predictions and weights must be finite and non-negative. For a refined
+  model's own portfolio, use
+  [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
+  to include the columns created by the refinement.
 
 - by:
 
@@ -30,9 +33,9 @@ check_calibration(model, data, by = NULL, groups = NULL)
 
 - groups:
 
-  Optional number of groups of increasing predicted risk. Supply a
-  positive whole number no larger than the number of rows. Use either
-  `groups` or `by`, not both.
+  Optional number of groups formed by sorting records from lowest to
+  highest predicted risk. Supply a positive whole number no larger than
+  the number of rows. Use either `groups` or `by`, not both.
 
 ## Value
 
@@ -69,20 +72,60 @@ on the denominator column of a response such as `I(claims / duration)`,
 identify exposure used as prior weights. Other weight variables and
 unused columns are not assumed to represent exposure.
 
-Risk groups use expected outcomes per unit exposure for models with a
-recognised exposure offset, and response-scale predictions otherwise.
-For models with an offset that cannot be identified as exposure, use
-`by` or overall calibration rather than risk groups. Groups approximate
-equal exposure by cutting at the nearest cumulative-exposure targets
-without splitting records. If exposure is unavailable or totals zero,
-groups approximate equal row counts. Ties are broken in input row order.
+### Calibration by predicted risk
+
+With `groups = 5`, group 1 contains the lowest predicted risks and group
+5 the highest. With a recognised exposure offset, the ranking uses
+predictions per unit of exposure. For a claim-count model this means
+predicted claims per policy-year rather than predicted claims for the
+observed period. A longer policy period therefore does not by itself put
+a policy in a higher risk group. Without an offset, the function ranks
+the response-scale predictions. If an offset cannot be identified as
+exposure, use `by` or overall calibration instead.
+
+The sorted records are divided so each group has roughly the same total
+exposure (about 20% each for five groups), without splitting any record.
+If exposure is unavailable or totals zero, the aim is equal row counts.
+Ties follow the input row order, so policies with the same prediction on
+the ranking scale can appear in different groups.
+
+Compare the observed and expected totals within each group. For example,
+24 observed claims versus 20 expected means O/E is 1.2: the model
+underpredicts for that group. Look for patterns across groups and
+consider exposure and claim volume before interpreting a gap. This is a
+calibration diagnostic, not a hypothesis test or a measure of how well
+the model ranks individual risks. Use separate evaluation data to assess
+calibration outside the estimation sample.
+
+### Calibration after refinement
+
+Use the fitted model returned by
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
+not the refinement plan.
+`check_calibration(smoothed_model, extract_model_data(smoothed_model))`
+evaluates the smoothed model on its own portfolio. To review the new
+tariff bands, use the band column as `by`: for example,
+`by = "age_smooth"` when smoothing from `source_variable = "age"`. The
+numeric relativity column used by the model is a separate column. For a
+separate evaluation portfolio, create both columns using the same
+refinement mappings. When a grouping column is unavailable, the error
+can suggest the related smoothing band or a similar column name. A valid
+`by` is never replaced: `by = "age"` groups by the original ages, not
+the tariff bands.
+
+To compare observed outcomes with the expected outcomes before and after
+a restriction, evaluate both fitted models on the same records and group
+them by the same `by` column. Do not match `groups` by group number
+across models: each model can rank the records differently.
 
 ## See also
 
 [`autoplot.calibration_result()`](https://mharinga.github.io/insurancerating/reference/autoplot.calibration_result.md),
 [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
 [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md),
-[`adjust_intercept()`](https://mharinga.github.io/insurancerating/reference/adjust_intercept.md)
+[`adjust_intercept()`](https://mharinga.github.io/insurancerating/reference/adjust_intercept.md),
+[`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md),
+[`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
 
 ## Examples
 
@@ -107,16 +150,12 @@ check_calibration(model, portfolio, by = "area")
 #> 2    1      146      146  1 1194 1065.74795
 #> 3    2       98       98  1  921  818.53973
 #> 4    3      113      113  1  870  764.99178
-check_calibration(model, portfolio, groups = 10)
-#>    Group Observed Expected        OE   N Exposure
-#> 1      1       23 31.26429 0.7356637 293 266.0877
-#> 2      2       35 31.95487 1.0952946 306 266.9014
-#> 3      3       35 31.83351 1.0994704 300 265.8877
-#> 4      4       41 35.85394 1.1435286 298 265.8767
-#> 5      5       38 36.54710 1.0397541 296 266.7808
-#> 6      6       32 36.39960 0.8791305 297 265.7041
-#> 7      7       40 36.57263 1.0937142 303 266.9671
-#> 8      8       38 38.92222 0.9763060 305 265.9205
-#> 9      9       39 39.32916 0.9916307 301 266.2521
-#> 10    10       37 39.32268 0.9409328 301 266.2082
+# Compare the lowest to highest predicted claim frequencies.
+check_calibration(model, portfolio, groups = 5)
+#>   Group Observed Expected        OE   N Exposure
+#> 1     1       58 63.21916 0.9174434 599 532.9890
+#> 2     2       76 67.68745 1.1228079 598 531.7644
+#> 3     3       70 72.94670 0.9596047 593 532.4849
+#> 4     4       78 75.49485 1.0331831 608 532.8877
+#> 5     5       76 78.65184 0.9662838 602 532.4603
 ```

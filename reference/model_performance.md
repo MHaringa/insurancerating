@@ -65,16 +65,16 @@ The following measures are reported:
   [`stats::deviance()`](https://rdrr.io/r/stats/deviance.html).
 
 AIC, BIC and residual deviance describe in-sample fit. RMSE measures
-prediction error on the response scale, comparing observed responses
-with fitted values from the model. It uses the model's stored data, or
-the model frame if those data are unavailable. With the same records as
-in the fit, RMSE is an in-sample measure of prediction error. None of
-these metrics establishes out-of-sample predictive performance.
+in-sample prediction error on the response scale, comparing observed
+responses with fitted values on the same rows used to estimate the
+model. It is unweighted and uses the same response scale as
+[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md).
+None of these metrics establishes out-of-sample predictive performance.
 
 For a Poisson frequency model with `offset(log(exposure))`, the fitted
 values are expected claim counts for each observation's exposure. RMSE
 therefore measures error in claim counts, not claim frequencies per unit
-exposure.
+exposure. For binomial GLMs it measures errors on the probability scale.
 
 Compare models on the same response, estimation records, weights and
 offsets. For residual deviance, also use the same model family.

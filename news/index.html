@@ -45,11 +45,11 @@
 <li>
 <code><a href="../reference/add_factor_experience.html">add_factor_experience()</a></code> replaces <code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code> for attaching marginal observed experience to a rating table. The old name remains as a deprecated alias; calculations and plotting behaviour are unchanged.</li>
 <li>
-<code><a href="../reference/check_calibration.html">check_calibration()</a></code> compares observed and expected totals overall, by portfolio segment or calendar year, and across predicted-risk groups.</li>
+<code><a href="../reference/check_calibration.html">check_calibration()</a></code> compares observed and expected totals overall, by portfolio segment or calendar year, and across predicted-risk groups. For refined GLMs it distinguishes tariff offsets from exposure and points users to <code><a href="../reference/extract_model_data.html">extract_model_data()</a></code> when refinement columns are missing.</li>
 <li>
-<code><a href="../reference/resample_performance.html">resample_performance()</a></code> replaces <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code>, which remains available as a deprecated alias. The default RMSE results are unchanged; <code>metrics</code> can also request MAE and weighted predictive deviance.</li>
+<code><a href="../reference/resample_performance.html">resample_performance()</a></code> replaces <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code>, which remains available as a deprecated alias. RMSE remains the default; <code>metrics</code> can also request MAE and weighted predictive deviance. The resampling plot identifies the evaluation rows and original model reference.</li>
 <li>
-<code><a href="../reference/model_performance.html">model_performance()</a></code> now reports residual deviance after AIC, BIC and RMSE. RMSE is unchanged and documented on the response scale.</li>
+<code><a href="../reference/model_performance.html">model_performance()</a></code> now reports residual deviance after AIC, BIC and RMSE. In-sample RMSE uses the rows retained in the fit. Both performance functions now calculate binomial RMSE on the probability scale.</li>
 <li>
 <code><a href="../reference/adjust_intercept.html">adjust_intercept()</a></code> replaces <code><a href="../reference/calibrate_model.html">calibrate_model()</a></code> with the same behaviour. <code><a href="../reference/calibrate_model.html">calibrate_model()</a></code> remains available as a deprecated alias.</li>
 <li>

@@ -96,14 +96,15 @@ reports AIC, BIC, response-scale RMSE and residual deviance:
 - residual deviance describes the remaining lack of fit on the
   estimation data;
 - RMSE summarises prediction error in the response unit and gives
-  relatively high weight to large errors. Here the response unit is
-  claim count, not claims per unit exposure.
+  relatively high weight to large errors because it squares them. The
+  RMSE itself is unweighted. Here the response unit is claim count, not
+  claims per unit exposure.
 
 These values are most directly comparable when models use the same
 response, estimation records, weights and offsets, as they do here.
 Residual deviances should also be compared within the same model family.
-The RMSE shown is calculated on the estimation data. None of these
-values establishes performance on a future portfolio.
+RMSE uses only the rows retained in the fit. None of these values
+establishes performance on a future portfolio.
 
 Lower values can support a model comparison, but a small improvement
 does not automatically imply a better tariff. Exposure by level,
@@ -201,10 +202,13 @@ With this specification,
 [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
 samples portfolio rows with replacement, refits the model and evaluates
 on out-of-bag rows. RMSE and MAE measure error in claim counts here.
-Predictive deviance uses the GLM family and evaluation weights; as a
-total, it can also vary with the size of the out-of-bag sample. Unlike
+Predictive deviance uses the GLM family and evaluation weights. It is
+the same calculation as residual deviance, applied to the evaluation
+rows and predictions instead. As a total, it also depends on the number
+and weight of the evaluated rows, so the original model’s reference line
+is not directly comparable when those differ. Unlike
 [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
-each score comes from a newly fitted model.
+each resampling score comes from a newly fitted model.
 
 This is a resampling-stability diagnostic. It is not independent
 validation on a genuinely later or external portfolio, and it does not
@@ -333,18 +337,9 @@ autoplot(area_calibration)
 
 ![](model-validation_files/figure-html/unnamed-chunk-9-1.png)
 
-``` r
-
-autoplot(check_calibration(area_model, portfolio, groups = 5))
-```
-
-![](model-validation_files/figure-html/unnamed-chunk-9-2.png)
-
 An O/E ratio above one indicates more observed claims than expected; a
 ratio below one indicates fewer. The overall ratio describes
-calibration-in-the-large. Risk groups are ranked by expected claim
-frequency, not by expected count, so longer exposure alone does not put
-a policy in a higher risk group.
+calibration-in-the-large.
 
 Use `by = "year"` when the evaluation data contain a calendar year. A
 change in O/E across years can indicate a change in the overall
@@ -353,14 +348,111 @@ policies equally well.
 [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
 shows that comparison as an O/E line over time.
 
-O:E differences should always be read with exposure and claim volume. A
-large ratio in a small segment may reflect limited experience, while a
-persistent deviation in a well-exposed segment can indicate missing
-structure or miscalibration. For model-point aggregation before
-modelling rather than calibration, see [Large
+### Does the model get claim frequency right at different risk levels?
+
+With `groups = 5`, the function sorts policy records from lowest to
+highest **predicted claims per policy-year**. Dividing each prediction
+by its exposure for this ranking means a longer policy period is not
+treated as a higher risk just because more claims are expected during
+it.
+
+The sorted records are split into five groups. Group 1 contains the
+lowest predicted risks and group 5 the highest. Each group aims for
+about 20% of the portfolio’s total exposure, not 20% of the policies.
+These are groups of model predictions, not rating-factor levels such as
+area. Policies with the same predicted frequency can fall on either side
+of a group boundary; ties follow the input row order.
+
+``` r
+
+risk_calibration <- check_calibration(area_model, portfolio, groups = 5)
+knitr::kable(risk_calibration, digits = 2)
+```
+
+| Group | Observed | Expected |   OE |   N | Exposure |
+|------:|---------:|---------:|-----:|----:|---------:|
+|     1 |       58 |    63.22 | 0.92 | 599 |   532.99 |
+|     2 |       76 |    67.69 | 1.12 | 598 |   531.76 |
+|     3 |       70 |    72.95 | 0.96 | 593 |   532.48 |
+|     4 |       78 |    75.49 | 1.03 | 608 |   532.89 |
+|     5 |       76 |    78.65 | 0.97 | 602 |   532.46 |
+
+``` r
+
+autoplot(risk_calibration)
+```
+
+![Observed against expected claims per policy-year for five groups of
+predicted risk, with a diagonal line where the frequencies are
+equal.](model-validation_files/figure-html/unnamed-chunk-10-1.png)
+
+Each dot is one group. Its x-coordinate is total expected claims divided
+by the group’s total policy-years; its y-coordinate is total observed
+claims divided by the same policy-years. For group 2 (the second dot
+from the left), there were 76 observed claims versus about 68 expected,
+so the dot lies **above** the diagonal: the model predicted too few
+claims for that group. A dot below the diagonal means it predicted too
+many.
+
+This is a visual check for systematic over- or under-prediction, not a
+statistical test or a measure of how well the model ranks individual
+risks. Read a gap alongside the group’s exposure and claim volume: a
+large O/E deviation based on few claims may have little credibility.
+This example uses the estimation data; use separate evaluation data to
+assess calibration on unseen policies. For model-point aggregation
+before modelling rather than calibration, see [Large
 Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.md).
 
 ## Validation, investigation and refinement
+
+### Comparing observed claims before and after refinement
+
+For a model returned by
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
+the original portfolio may not contain the columns added by smoothing or
+restrictions. To check the refit’s own portfolio, use
+`extract_model_data(refined_model)`. For a smoothed model, group by the
+column containing the new tariff bands (for example, `by = "age_smooth"`
+if the source variable was `age`), rather than by the numeric relativity
+column used in the offset. On separate evaluation data, apply the same
+refinement mappings to those rows first.
+
+To check a restriction, put **observed claims, expected claims before
+and expected claims after** side by side. Use the same records and the
+same grouping column for both models so that any change comes from the
+predictions rather than a change in portfolio mix.
+
+``` r
+
+restricted_model <- prepare_refinement(area_model, data = portfolio) |>
+  add_restriction(c("3" = 1.10), model_variable = "area") |>
+  refit()
+
+evaluation <- extract_model_data(restricted_model)
+before <- check_calibration(area_model, evaluation, by = "area")
+after <- check_calibration(restricted_model, evaluation, by = "area")
+
+knitr::kable(data.frame(
+  Area = after$area,
+  Exposure = after$Exposure,
+  Observed = after$Observed,
+  Expected_before = before$Expected,
+  Expected_after = after$Expected
+), digits = 2)
+```
+
+| Area | Exposure | Observed | Expected_before | Expected_after |
+|:-----|---------:|---------:|----------------:|---------------:|
+| 1    |  1065.75 |      146 |             146 |         145.08 |
+| 0    |    13.31 |        1 |               1 |           0.99 |
+| 2    |   818.54 |       98 |              98 |          97.38 |
+| 3    |   764.99 |      113 |             113 |         114.55 |
+
+Use fixed bands or rating-factor levels for this comparison. With
+`groups = 5`, each model can rank policies differently, so its group 1
+need not contain the same policies as group 1 from the other model.
+
+### Acting on validation findings
 
 Validation identifies evidence; it should not silently alter the model.
 A useful response to an issue is:

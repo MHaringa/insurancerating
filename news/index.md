@@ -17,16 +17,21 @@
   behaviour are unchanged.
 - [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
   compares observed and expected totals overall, by portfolio segment or
-  calendar year, and across predicted-risk groups.
+  calendar year, and across predicted-risk groups. For refined GLMs it
+  distinguishes tariff offsets from exposure and points users to
+  [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
+  when refinement columns are missing.
 - [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
   replaces
   [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md),
-  which remains available as a deprecated alias. The default RMSE
-  results are unchanged; `metrics` can also request MAE and weighted
-  predictive deviance.
+  which remains available as a deprecated alias. RMSE remains the
+  default; `metrics` can also request MAE and weighted predictive
+  deviance. The resampling plot identifies the evaluation rows and
+  original model reference.
 - [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md)
-  now reports residual deviance after AIC, BIC and RMSE. RMSE is
-  unchanged and documented on the response scale.
+  now reports residual deviance after AIC, BIC and RMSE. In-sample RMSE
+  uses the rows retained in the fit. Both performance functions now
+  calculate binomial RMSE on the probability scale.
 - [`adjust_intercept()`](https://mharinga.github.io/insurancerating/reference/adjust_intercept.md)
   replaces
   [`calibrate_model()`](https://mharinga.github.io/insurancerating/reference/calibrate_model.md)

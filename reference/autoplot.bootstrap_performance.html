@@ -87,7 +87,10 @@ metric, or RMSE for an RMSE-only result.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The dashed orange line marks the score of the original fitted model. The
-dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles of the
+subtitle identifies which rows were used to score the refits. Total
+predictive deviance depends on the number and weight of evaluated rows,
+so the orange line is not directly comparable when those differ.</p>
+<p>The dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles of the
 resampled values when these can be calculated. Their distance provides a
 practical indication of sampling variability; it is not a formal prediction
 interval for future portfolio performance.</p>

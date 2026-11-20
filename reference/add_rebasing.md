@@ -149,7 +149,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-11-20 13:39:50 UTC
+#> Created: 2026-11-20 17:20:37 UTC
 #> Observations: 8
 #> Family: poisson (log link)
 #> Base formula:
@@ -167,8 +167,8 @@ rating_table(refined_model)
 #> 1 (Intercept) (Intercept)         2.9451658
 #> 2      sector   Transport         1.2955222
 #> 3      sector      Office         1.0000000
-#> 4      sector    Industry         0.3720411
-#> 5      sector      Retail         0.3720411
+#> 4      sector      Retail         0.3720411
+#> 5      sector    Industry         0.3720411
 
 # Omitting reference_level selects the level with the largest exposure.
 exposure_reference <- prepare_refinement(model, data = portfolio) |>

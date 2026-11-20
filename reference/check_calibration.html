@@ -60,7 +60,9 @@ by calendar year, rating factor or predicted risk. The model is not changed.</p>
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>A non-empty data frame with the response and variables used in
 the model, including any weight and offset variables. Responses,
-predictions and weights must be finite and non-negative.</p></dd>
+predictions and weights must be finite and non-negative.
+For a refined model's own portfolio, use <code><a href="extract_model_data.html">extract_model_data()</a></code> to
+include the columns created by the refinement.</p></dd>
 
 
 <dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
@@ -70,8 +72,9 @@ a separate group at the end.</p></dd>
 
 
 <dt id="arg-groups">groups<a class="anchor" aria-label="anchor" href="#arg-groups"></a></dt>
-<dd><p>Optional number of groups of increasing predicted risk.
-Supply a positive whole number no larger than the number of rows.
+<dd><p>Optional number of groups formed by sorting records from
+lowest to highest predicted risk. Supply a positive whole number no
+larger than the number of rows.
 Use either <code>groups</code> or <code>by</code>, not both.</p></dd>
 
 </dl></div>
@@ -106,19 +109,58 @@ several candidate terms, a single column named <code>exposure</code> takes prece
 Without an offset, explicit <code>weights = exposure</code>, or weights on the
 denominator column of a response such as <code>I(claims / duration)</code>, identify
 exposure used as prior weights. Other weight variables and unused columns
-are not assumed to represent exposure.</p>
-<p>Risk groups use expected outcomes per unit exposure for models with a
-recognised exposure offset, and response-scale predictions otherwise.
-For models with an offset that cannot be identified as exposure, use
-<code>by</code> or overall calibration rather than risk groups. Groups approximate
-equal exposure by cutting at the nearest cumulative-exposure targets
-without splitting records. If exposure is unavailable or totals zero,
-groups approximate equal row counts. Ties are broken in input row order.</p>
+are not assumed to represent exposure.</p><div class="section">
+<h3 id="calibration-by-predicted-risk">Calibration by predicted risk<a class="anchor" aria-label="anchor" href="#calibration-by-predicted-risk"></a></h3>
+
+
+<p>With <code>groups = 5</code>, group 1 contains the lowest predicted risks and group 5
+the highest. With a recognised exposure offset, the ranking uses
+predictions per unit of exposure. For a claim-count model this means
+predicted claims per policy-year rather than predicted claims for the
+observed period. A longer policy period therefore does not by itself
+put a policy in a higher risk group. Without an offset, the
+function ranks the response-scale predictions. If an offset cannot be
+identified as exposure, use <code>by</code> or overall calibration instead.</p>
+<p>The sorted records are divided so each group has roughly the same total
+exposure (about 20% each for five groups), without splitting any record.
+If exposure is unavailable or totals zero, the aim is equal row counts.
+Ties follow the input row order, so policies with the same prediction
+on the ranking scale can appear in different groups.</p>
+<p>Compare the observed and expected totals within each group. For example,
+24 observed claims versus 20 expected means O/E is 1.2: the model
+underpredicts for that group. Look for patterns across groups and
+consider exposure and claim volume before interpreting a gap. This is
+a calibration diagnostic, not a hypothesis test or a measure of how
+well the model ranks individual risks. Use separate evaluation data to
+assess calibration outside the estimation sample.</p>
+</div>
+
+<div class="section">
+<h3 id="calibration-after-refinement">Calibration after refinement<a class="anchor" aria-label="anchor" href="#calibration-after-refinement"></a></h3>
+
+
+<p>Use the fitted model returned by <code><a href="refit.html">refit()</a></code>, not the refinement plan.
+<code>check_calibration(smoothed_model, extract_model_data(smoothed_model))</code>
+evaluates the smoothed model on its own portfolio. To review the new
+tariff bands, use the band column as <code>by</code>: for example, <code>by = "age_smooth"</code>
+when smoothing from <code>source_variable = "age"</code>. The numeric relativity
+column used by the model is a separate column. For a separate evaluation
+portfolio, create both columns using the same refinement mappings.
+When a grouping column is unavailable, the error can suggest the related
+smoothing band or a similar column name. A valid <code>by</code> is never replaced:
+<code>by = "age"</code> groups by the original ages, not the tariff bands.</p>
+<p>To compare observed outcomes with the expected outcomes before and after a
+restriction, evaluate both fitted models on the same records and group
+them by the same <code>by</code> column. Do not match <code>groups</code> by group number across
+models: each model can rank the records differently.</p>
+</div>
+
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="autoplot.calibration_result.html">autoplot.calibration_result()</a></code>, <code><a href="model_performance.html">model_performance()</a></code>,
-<code><a href="resample_performance.html">resample_performance()</a></code>, <code><a href="adjust_intercept.html">adjust_intercept()</a></code></p></div>
+<code><a href="resample_performance.html">resample_performance()</a></code>, <code><a href="adjust_intercept.html">adjust_intercept()</a></code>, <code><a href="extract_model_data.html">extract_model_data()</a></code>,
+<code><a href="audit_refinement.html">audit_refinement()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -143,18 +185,14 @@ groups approximate equal row counts. Ties are broken in input row order.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2    1      146      146  1 1194 1065.74795</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3    2       98       98  1  921  818.53973</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4    3      113      113  1  870  764.99178</span>
-<span class="r-in"><span><span class="fu">check_calibration</span><span class="op">(</span><span class="va">model</span>, <span class="va">portfolio</span>, groups <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Group Observed Expected        OE   N Exposure</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1      1       23 31.26429 0.7356637 293 266.0877</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2      2       35 31.95487 1.0952946 306 266.9014</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3      3       35 31.83351 1.0994704 300 265.8877</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4      4       41 35.85394 1.1435286 298 265.8767</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5      5       38 36.54710 1.0397541 296 266.7808</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6      6       32 36.39960 0.8791305 297 265.7041</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7      7       40 36.57263 1.0937142 303 266.9671</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8      8       38 38.92222 0.9763060 305 265.9205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9      9       39 39.32916 0.9916307 301 266.2521</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10    10       37 39.32268 0.9409328 301 266.2082</span>
+<span class="r-in"><span><span class="co"># Compare the lowest to highest predicted claim frequencies.</span></span></span>
+<span class="r-in"><span><span class="fu">check_calibration</span><span class="op">(</span><span class="va">model</span>, <span class="va">portfolio</span>, groups <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Group Observed Expected        OE   N Exposure</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1     1       58 63.21916 0.9174434 599 532.9890</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2     2       76 67.68745 1.1228079 598 531.7644</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3       70 72.94670 0.9596047 593 532.4849</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4     4       78 75.49485 1.0331831 608 532.8877</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5     5       76 78.65184 0.9662838 602 532.4603</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

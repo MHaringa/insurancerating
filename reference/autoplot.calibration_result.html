@@ -83,10 +83,15 @@ that choice (for example, when years are stored as ordered factors).</p></dd>
     <p>Overall, temporal and factor plots use a reference line at O/E = 1.
 Factor plots preserve the result's order and label missing groups.
 Temporal plots omit missing periods; undefined O/E values are not drawn.</p>
-<p>The predicted-risk plot shows observed against expected with a 45-degree
-reference line and the same scale on both axes. If exposure is available,
-reported totals are divided by it and groups with zero exposure are not
-plotted. If no group has positive exposure, the plot uses totals instead.
+<p>Each point in the predicted-risk plot represents one group from
+<code><a href="check_calibration.html">check_calibration()</a></code>. Expected is on the horizontal axis and observed
+on the vertical axis, using the same scale. A point above the diagonal
+means the model predicted too little for that group; a point below
+means it predicted too much.</p>
+<p>If exposure is available, both totals are divided by the group's total
+exposure. For a claim-count model this shows claims per unit of exposure.
+Groups with zero exposure are not plotted. If no group has positive
+exposure, the plot uses totals instead.
 With case weights, these are weighted totals divided by the reported
 exposure, not necessarily unweighted portfolio rates.</p>
     </div>
@@ -106,7 +111,8 @@ exposure, not necessarily unweighted portfolio rates.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="fu"><a href="check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">portfolio</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="autoplot.calibration_result-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="fu"><a href="check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">portfolio</span>, groups <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Each point compares observed and expected claims per policy-year.</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="fu"><a href="check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">portfolio</span>, groups <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="autoplot.calibration_result-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="fu"><a href="check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">portfolio</span>, by <span class="op">=</span> <span class="st">"year"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="autoplot.calibration_result-3.png" alt="" width="700" height="433"></span>

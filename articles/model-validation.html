@@ -218,14 +218,15 @@ complexity;</li>
 <li>residual deviance describes the remaining lack of fit on the
 estimation data;</li>
 <li>RMSE summarises prediction error in the response unit and gives
-relatively high weight to large errors. Here the response unit is claim
-count, not claims per unit exposure.</li>
+relatively high weight to large errors because it squares them. The RMSE
+itself is unweighted. Here the response unit is claim count, not claims
+per unit exposure.</li>
 </ul>
 <p>These values are most directly comparable when models use the same
 response, estimation records, weights and offsets, as they do here.
 Residual deviances should also be compared within the same model family.
-The RMSE shown is calculated on the estimation data. None of these
-values establishes performance on a future portfolio.</p>
+RMSE uses only the rows retained in the fit. None of these values
+establishes performance on a future portfolio.</p>
 <p>Lower values can support a model comparison, but a small improvement
 does not automatically imply a better tariff. Exposure by level,
 coefficient stability, residual behaviour, observed experience and
@@ -312,10 +313,13 @@ to compare full-model predictions with actual outcomes.</p>
 <p>With this specification, <code><a href="../reference/resample_performance.html">resample_performance()</a></code> samples
 portfolio rows with replacement, refits the model and evaluates on
 out-of-bag rows. RMSE and MAE measure error in claim counts here.
-Predictive deviance uses the GLM family and evaluation weights; as a
-total, it can also vary with the size of the out-of-bag sample. Unlike
-<code><a href="../reference/model_performance.html">model_performance()</a></code>, each score comes from a newly fitted
-model.</p>
+Predictive deviance uses the GLM family and evaluation weights. It is
+the same calculation as residual deviance, applied to the evaluation
+rows and predictions instead. As a total, it also depends on the number
+and weight of the evaluated rows, so the original model’s reference line
+is not directly comparable when those differ. Unlike
+<code><a href="../reference/model_performance.html">model_performance()</a></code>, each resampling score comes from a
+newly fitted model.</p>
 <p>This is a resampling-stability diagnostic. It is not independent
 validation on a genuinely later or external portfolio, and it does not
 capture all future claim, trend, mix or specification uncertainty. A
@@ -429,28 +433,185 @@ earned exposure, so both totals are claim counts.</p>
 <span><span class="co">#&gt; 4    3      113      113  1  870  764.99178</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">area_calibration</span><span class="op">)</span></span></code></pre></div>
 <p><img src="model-validation_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="700"></p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="fu"><a href="../reference/check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">area_model</span>, <span class="va">portfolio</span>, groups <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="model-validation_files/figure-html/unnamed-chunk-9-2.png" class="r-plt" alt="" width="700"></p>
 <p>An O/E ratio above one indicates more observed claims than expected;
 a ratio below one indicates fewer. The overall ratio describes
-calibration-in-the-large. Risk groups are ranked by expected claim
-frequency, not by expected count, so longer exposure alone does not put
-a policy in a higher risk group.</p>
+calibration-in-the-large.</p>
 <p>Use <code>by = "year"</code> when the evaluation data contain a
 calendar year. A change in O/E across years can indicate a change in the
 overall prediction level, even if the model still ranks high- and
 low-risk policies equally well. <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> shows that
 comparison as an O/E line over time.</p>
-<p>O:E differences should always be read with exposure and claim volume.
-A large ratio in a small segment may reflect limited experience, while a
-persistent deviation in a well-exposed segment can indicate missing
-structure or miscalibration. For model-point aggregation before
-modelling rather than calibration, see <a href="large-portfolios.html">Large Portfolios</a>.</p>
+<div class="section level3">
+<h3 id="does-the-model-get-claim-frequency-right-at-different-risk-levels">Does the model get claim frequency right at different risk
+levels?<a class="anchor" aria-label="anchor" href="#does-the-model-get-claim-frequency-right-at-different-risk-levels"></a>
+</h3>
+<p>With <code>groups = 5</code>, the function sorts policy records from
+lowest to highest <strong>predicted claims per policy-year</strong>.
+Dividing each prediction by its exposure for this ranking means a longer
+policy period is not treated as a higher risk just because more claims
+are expected during it.</p>
+<p>The sorted records are split into five groups. Group 1 contains the
+lowest predicted risks and group 5 the highest. Each group aims for
+about 20% of the portfolio’s total exposure, not 20% of the policies.
+These are groups of model predictions, not rating-factor levels such as
+area. Policies with the same predicted frequency can fall on either side
+of a group boundary; ties follow the input row order.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">risk_calibration</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">area_model</span>, <span class="va">portfolio</span>, groups <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">risk_calibration</span>, digits <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr class="header">
+<th align="right">Group</th>
+<th align="right">Observed</th>
+<th align="right">Expected</th>
+<th align="right">OE</th>
+<th align="right">N</th>
+<th align="right">Exposure</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">58</td>
+<td align="right">63.22</td>
+<td align="right">0.92</td>
+<td align="right">599</td>
+<td align="right">532.99</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">76</td>
+<td align="right">67.69</td>
+<td align="right">1.12</td>
+<td align="right">598</td>
+<td align="right">531.76</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="right">70</td>
+<td align="right">72.95</td>
+<td align="right">0.96</td>
+<td align="right">593</td>
+<td align="right">532.48</td>
+</tr>
+<tr class="even">
+<td align="right">4</td>
+<td align="right">78</td>
+<td align="right">75.49</td>
+<td align="right">1.03</td>
+<td align="right">608</td>
+<td align="right">532.89</td>
+</tr>
+<tr class="odd">
+<td align="right">5</td>
+<td align="right">76</td>
+<td align="right">78.65</td>
+<td align="right">0.97</td>
+<td align="right">602</td>
+<td align="right">532.46</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">risk_calibration</span><span class="op">)</span></span></code></pre></div>
+<p><img src="model-validation_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="Observed against expected claims per policy-year for five groups of predicted risk, with a diagonal line where the frequencies are equal." width="700"></p>
+<p>Each dot is one group. Its x-coordinate is total expected claims
+divided by the group’s total policy-years; its y-coordinate is total
+observed claims divided by the same policy-years. For group 2 (the
+second dot from the left), there were 76 observed claims versus about 68
+expected, so the dot lies <strong>above</strong> the diagonal: the model
+predicted too few claims for that group. A dot below the diagonal means
+it predicted too many.</p>
+<p>This is a visual check for systematic over- or under-prediction, not
+a statistical test or a measure of how well the model ranks individual
+risks. Read a gap alongside the group’s exposure and claim volume: a
+large O/E deviation based on few claims may have little credibility.
+This example uses the estimation data; use separate evaluation data to
+assess calibration on unseen policies. For model-point aggregation
+before modelling rather than calibration, see <a href="large-portfolios.html">Large Portfolios</a>.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="validation-investigation-and-refinement">Validation, investigation and refinement<a class="anchor" aria-label="anchor" href="#validation-investigation-and-refinement"></a>
 </h2>
+<div class="section level3">
+<h3 id="comparing-observed-claims-before-and-after-refinement">Comparing observed claims before and after refinement<a class="anchor" aria-label="anchor" href="#comparing-observed-claims-before-and-after-refinement"></a>
+</h3>
+<p>For a model returned by <code><a href="../reference/refit.html">refit()</a></code>, the original portfolio
+may not contain the columns added by smoothing or restrictions. To check
+the refit’s own portfolio, use
+<code>extract_model_data(refined_model)</code>. For a smoothed model,
+group by the column containing the new tariff bands (for example,
+<code>by = "age_smooth"</code> if the source variable was
+<code>age</code>), rather than by the numeric relativity column used in
+the offset. On separate evaluation data, apply the same refinement
+mappings to those rows first.</p>
+<p>To check a restriction, put <strong>observed claims, expected claims
+before and expected claims after</strong> side by side. Use the same
+records and the same grouping column for both models so that any change
+comes from the predictions rather than a change in portfolio mix.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">restricted_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">area_model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"3"</span> <span class="op">=</span> <span class="fl">1.10</span><span class="op">)</span>, model_variable <span class="op">=</span> <span class="st">"area"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">evaluation</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extract_model_data.html">extract_model_data</a></span><span class="op">(</span><span class="va">restricted_model</span><span class="op">)</span></span>
+<span><span class="va">before</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">area_model</span>, <span class="va">evaluation</span>, by <span class="op">=</span> <span class="st">"area"</span><span class="op">)</span></span>
+<span><span class="va">after</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">restricted_model</span>, <span class="va">evaluation</span>, by <span class="op">=</span> <span class="st">"area"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  Area <span class="op">=</span> <span class="va">after</span><span class="op">$</span><span class="va">area</span>,</span>
+<span>  Exposure <span class="op">=</span> <span class="va">after</span><span class="op">$</span><span class="va">Exposure</span>,</span>
+<span>  Observed <span class="op">=</span> <span class="va">after</span><span class="op">$</span><span class="va">Observed</span>,</span>
+<span>  Expected_before <span class="op">=</span> <span class="va">before</span><span class="op">$</span><span class="va">Expected</span>,</span>
+<span>  Expected_after <span class="op">=</span> <span class="va">after</span><span class="op">$</span><span class="va">Expected</span></span>
+<span><span class="op">)</span>, digits <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr class="header">
+<th align="left">Area</th>
+<th align="right">Exposure</th>
+<th align="right">Observed</th>
+<th align="right">Expected_before</th>
+<th align="right">Expected_after</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">1</td>
+<td align="right">1065.75</td>
+<td align="right">146</td>
+<td align="right">146</td>
+<td align="right">145.08</td>
+</tr>
+<tr class="even">
+<td align="left">0</td>
+<td align="right">13.31</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">0.99</td>
+</tr>
+<tr class="odd">
+<td align="left">2</td>
+<td align="right">818.54</td>
+<td align="right">98</td>
+<td align="right">98</td>
+<td align="right">97.38</td>
+</tr>
+<tr class="even">
+<td align="left">3</td>
+<td align="right">764.99</td>
+<td align="right">113</td>
+<td align="right">113</td>
+<td align="right">114.55</td>
+</tr>
+</tbody>
+</table>
+<p>Use fixed bands or rating-factor levels for this comparison. With
+<code>groups = 5</code>, each model can rank policies differently, so
+its group 1 need not contain the same policies as group 1 from the other
+model.</p>
+</div>
+<div class="section level3">
+<h3 id="acting-on-validation-findings">Acting on validation findings<a class="anchor" aria-label="anchor" href="#acting-on-validation-findings"></a>
+</h3>
 <p>Validation identifies evidence; it should not silently alter the
 model. A useful response to an issue is:</p>
 <ol style="list-style-type: decimal">
@@ -469,6 +630,7 @@ revisiting the model rather than smoothing or restricting its
 coefficients. The <a href="refinement-workflow.html">Refinement building
 blocks</a> vignette explains how justified tariff adjustments can be
 recorded and refitted explicitly.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="putting-the-evidence-together">Putting the evidence together<a class="anchor" aria-label="anchor" href="#putting-the-evidence-together"></a>

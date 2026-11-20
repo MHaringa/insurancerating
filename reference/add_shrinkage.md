@@ -158,7 +158,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-11-20 13:39:51 UTC
+#> Created: 2026-11-20 17:20:38 UTC
 #> Observations: 8
 #> Family: poisson (log link)
 #> Base formula:
@@ -174,8 +174,8 @@ rating_table(refined_model)
 #> 1 (Intercept) (Intercept)          1.000000
 #> 2      sector   Transport          3.815528
 #> 3      sector      Office          2.945166
-#> 4      sector    Industry          1.095723
-#> 5      sector      Retail          1.095723
+#> 4      sector      Retail          1.095723
+#> 5      sector    Industry          1.095723
 
 # Use equal level weights explicitly when portfolio weighting is not wanted.
 equal_level_refinement <- prepare_refinement(model, data = portfolio) |>

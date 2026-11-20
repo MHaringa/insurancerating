@@ -45,8 +45,12 @@ object.
 ## Details
 
 The dashed orange line marks the score of the original fitted model. The
-dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles of
-the resampled values when these can be calculated. Their distance
+subtitle identifies which rows were used to score the refits. Total
+predictive deviance depends on the number and weight of evaluated rows,
+so the orange line is not directly comparable when those differ.
+
+The dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles
+of the resampled values when these can be calculated. Their distance
 provides a practical indication of sampling variability; it is not a
 formal prediction interval for future portfolio performance.
 
