@@ -1,4 +1,4 @@
-calibration_fixture <- function() {
+calibration_fixture <- function(intercept_only = TRUE) {
   portfolio <- data.frame(
     claims = c(0, 1, 2, 1, 3, 2, 4, 1),
     exposure = c(1, 1, 2, 1, 2, 1, 3, 1),
@@ -17,7 +17,7 @@ calibration_fixture <- function() {
   mod_refined <- mod_initial |>
     prepare_refinement(data = portfolio) |>
     add_restriction(restrictions) |>
-    refit(intercept_only = TRUE)
+    refit(intercept_only = intercept_only)
 
   list(
     data = portfolio,
@@ -28,14 +28,14 @@ calibration_fixture <- function() {
 }
 
 testthat::test_that("calibration changes only the overall prediction level", {
-  fixture <- calibration_fixture()
+  fixture <- calibration_fixture(intercept_only = FALSE)
   refined <- fixture$refined
   original_coefficients <- stats::coef(refined)
   original_predictions <- stats::predict(refined, type = "response")
 
-  unchanged <- calibrate_model(refined, factor = 1)
-  increased <- calibrate_model(refined, factor = 1.05)
-  decreased <- calibrate_model(refined, factor = 0.95)
+  unchanged <- adjust_intercept(refined, factor = 1)
+  increased <- adjust_intercept(refined, factor = 1.05)
+  decreased <- adjust_intercept(refined, factor = 0.95)
 
   testthat::expect_equal(
     stats::predict(unchanged, type = "response"),
@@ -49,7 +49,8 @@ testthat::test_that("calibration changes only the overall prediction level", {
     unname(stats::predict(decreased, type = "response") / original_predictions),
     rep(0.95, length(original_predictions))
   )
-  testthat::expect_equal(
+  testthat::expect_gt(length(original_coefficients), 1L)
+  testthat::expect_identical(
     stats::coef(increased)[-1],
     original_coefficients[-1]
   )
@@ -64,9 +65,27 @@ testthat::test_that("calibration changes only the overall prediction level", {
   )
 })
 
+testthat::test_that("calibrate_model forwards named arguments and warns", {
+  model <- calibration_fixture(intercept_only = FALSE)$refined
+  expected <- adjust_intercept(model = model, factor = 1.05)
+  testthat::expect_warning(
+    actual <- calibrate_model(factor = 1.05, model = model),
+    "adjust_intercept",
+    class = "deprecatedWarning"
+  )
+  testthat::expect_identical(
+    attr(actual, "calibration_call"),
+    quote(calibrate_model(model = model, factor = 1.05))
+  )
+  for (attribute in c("calibration_call", "calibrated_at")) {
+    attr(actual, attribute) <- attr(expected, attribute) <- NULL
+  }
+  testthat::expect_identical(actual, expected)
+})
+
 testthat::test_that("calibration metadata and fitted components are consistent", {
   fixture <- calibration_fixture()
-  calibrated <- calibrate_model(fixture$refined, factor = 1.10)
+  calibrated <- adjust_intercept(fixture$refined, factor = 1.10)
 
   testthat::expect_s3_class(calibrated, "calibrated_model")
   testthat::expect_s3_class(calibrated, "glm")
@@ -93,7 +112,7 @@ testthat::test_that("calibration metadata and fitted components are consistent",
 
 testthat::test_that("rating_table uses the calibrated intercept only", {
   fixture <- calibration_fixture()
-  calibrated <- calibrate_model(fixture$refined, factor = 1.10)
+  calibrated <- adjust_intercept(fixture$refined, factor = 1.10)
   refined_table <- as.data.frame(rating_table(fixture$refined, exposure = FALSE))
   calibrated_table <- as.data.frame(rating_table(calibrated, exposure = FALSE))
 
@@ -114,7 +133,7 @@ testthat::test_that("rating_table uses the calibrated intercept only", {
 
 testthat::test_that("add_prediction uses the calibrated model state", {
   fixture <- calibration_fixture()
-  calibrated <- calibrate_model(fixture$refined, factor = 1.05)
+  calibrated <- adjust_intercept(fixture$refined, factor = 1.05)
   prediction_data <- fixture$refined$data
 
   refined_prediction <- add_prediction(
@@ -136,14 +155,14 @@ testthat::test_that("add_prediction uses the calibrated model state", {
 
 testthat::test_that("calibration enforces the final workflow position", {
   fixture <- calibration_fixture()
-  calibrated <- calibrate_model(fixture$refined, factor = 1.05)
+  calibrated <- adjust_intercept(fixture$refined, factor = 1.05)
 
   testthat::expect_error(
-    calibrate_model(fixture$initial, factor = 1.05),
+    adjust_intercept(fixture$initial, factor = 1.05),
     "returned by `refit"
   )
   testthat::expect_error(
-    calibrate_model(calibrated, factor = 1.02),
+    adjust_intercept(calibrated, factor = 1.02),
     "already been calibrated"
   )
   testthat::expect_error(
@@ -161,7 +180,7 @@ testthat::test_that("calibration factors and model links are validated", {
   invalid <- list(0, -1, NA_real_, Inf, c(1, 1.1), "1.05")
   for (factor in invalid) {
     testthat::expect_error(
-      calibrate_model(fixture$refined, factor = factor),
+      adjust_intercept(fixture$refined, factor = factor),
       "one finite numeric value greater than 0"
     )
   }
@@ -173,7 +192,7 @@ testthat::test_that("calibration factors and model links are validated", {
   )
   class(gaussian_model) <- c("refitrestricted", class(gaussian_model))
   testthat::expect_error(
-    calibrate_model(gaussian_model, factor = 1.05),
+    adjust_intercept(gaussian_model, factor = 1.05),
     "requires a refined GLM with a log link"
   )
 })

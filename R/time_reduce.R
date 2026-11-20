@@ -67,27 +67,50 @@
   value
 }
 
+#' @noRd
+.time_summary_date_column <- function(object, attribute, legacy_attribute) {
+  column <- attr(object, attribute, exact = TRUE)
+  if (is.null(column)) column <- attr(object, legacy_attribute, exact = TRUE)
+  if (is.null(column)) {
+    stop("Missing `", attribute, "` metadata. Recreate the result with ",
+         "`merge_date_ranges()` or set `attr(object, \"", attribute,
+         "\")` to the corresponding date-column name.", call. = FALSE)
+  }
+  if (!is.character(column) || length(column) != 1L || !is.null(dim(column)) ||
+      is.na(column) || !nzchar(column)) {
+    stop("The `", attribute, "` attribute must name one date column ",
+         "using a non-missing, non-empty character string.", call. = FALSE)
+  }
+  if (!column %in% names(object)) {
+    stop("The `", attribute, "` attribute refers to column `", column,
+         "`, which is missing. Restore the column, or update `attr(object, \"",
+         attribute, "\")` if it was renamed.", call. = FALSE)
+  }
+  if (!inherits(object[[column]], "Date")) {
+    stop("Column `", column, "` named by `", attribute,
+         "` must be a Date column.", call. = FALSE)
+  }
+  column
+}
+
 #' Reduce portfolio periods by merging adjacent date ranges
 #'
 #' @description
 #' Combine overlapping or nearly adjacent coverage periods for the same policy,
-#' risk or portfolio segment. The result provides a consolidated time basis for
-#' exposure calculations, active-policy counts and period-based reporting.
-#'
-#' Together with [rating_grid()], this function belongs to the portfolio
-#' reduction workflow. Both functions reduce row-level portfolio data while
-#' retaining selected totals. `merge_date_ranges()` reduces temporally connected
-#' records; [rating_grid()] reduces records with identical risk-factor values.
+#' risk or portfolio segment, optionally aggregating amounts such as premium
+#' or exposure. Separate periods remain separate rows.
 #'
 #' @param data A `data.frame` or `data.table` containing the portfolio periods.
 #' @param period_start Character string. Name of the column with period start
-#' dates.
-#' @param period_end Character string. Name of the column with period end dates.
+#' dates (class `Date`).
+#' @param period_end Character string. Name of the period-end column (class `Date`).
 #' @param group_by Character vector with columns that identify the portfolio
 #' entity or rating segment within which date ranges should be merged.
 #' @param allow_na_in Optional character vector naming columns in `group_by`
-#'   where missing values may form a group. The default, `NULL`, rejects
-#'   missing values in every grouping column.
+#'   where missing values may form a distinct grouping value. Missing values
+#'   in any other grouping column cause an error. The default, `NULL`, allows
+#'   none. Unlike `drop_na` in [rating_grid()], this argument does not filter
+#'   rows out.
 #' @param aggregate_cols Character vector with numeric columns to aggregate over
 #' merged ranges, for example premium or exposure.
 #' @param aggregate_fun Function or function name used to combine
@@ -110,68 +133,50 @@
 #' @author Martin Haringa
 #'
 #' @details
-#' ## Portfolio reduction
-#'
-#' `merge_date_ranges()` performs temporal portfolio reduction. It combines
-#' connected periods within the same `group_by` values and retains the selected
-#' additive amounts. Use [rating_grid()] for the complementary categorical
-#' reduction of records with identical risk-factor combinations.
-#'
 #' ## Connected periods
 #'
-#' Insurance portfolio extracts often contain multiple rows for the same policy
-#' or risk because of renewals, endorsements, product changes, or short
-#' administrative gaps. Before calculating portfolio in/outflow, active exposure
-#' windows, or policy counts, it can be useful to reduce those rows to stable
-#' coverage intervals.
+#' Periods merge only when their `group_by` values match. Include the policy
+#' or risk identifier when unrelated contracts must remain separate.
 #'
-#' `merge_date_ranges()` merges date ranges within each `group_by` combination.
-#' Ranges with a gap smaller than `merge_gap_days` are treated as one continuous
-#' interval. If `aggregate_cols` is supplied, those columns are aggregated over
-#' the merged interval. The grouping columns should identify records for which
-#' combining coverage periods is actuarially and operationally meaningful;
-#' periods belonging to different risks or contracts should not be pooled.
-#' For an optional grouping attribute, use e.g. `allow_na_in = "coverage"`
-#' to retain `NA` as a distinct value. Two missing values then match if the
-#' other grouping keys match; a missing value never matches a known coverage.
-#' The usual date-gap rule still applies. Keep policy or risk identifiers
-#' out of `allow_na_in` when missing identifiers could pool unrelated risks.
+#' Dates are inclusive: a period ending on 31 January and one starting on
+#' 1 February have no uncovered days and merge by default. With
+#' `merge_gap_days = 5`, gaps of up to four uncovered days are also bridged.
 #'
-#' Start and end dates are treated as inclusive. Consequently, two periods for
-#' which the second starts one day after the first ends have zero uncovered
-#' days. They are merged with the default `merge_gap_days = 1`. A value of `5`
-#' merges periods with at most four uncovered days between them.
+#' Use e.g. `allow_na_in = "coverage"` to treat missing coverage as a distinct
+#' group value. Missing values match each other, not known values; other
+#' grouping values and the date-gap rule still apply. Avoid allowing missing
+#' identifiers if this could combine unrelated risks.
 #'
-#' ## Aggregation and implementation
+#' ## Aggregation
 #'
-#' Aggregated amounts are combined over the source rows, not prorated over
-#' calendar days. Summing premium or exposure is appropriate when each source
-#' row contains a distinct additive amount. If overlapping rows already contain
-#' amounts for the same covered days, users should resolve that overlap before
-#' aggregation to avoid double counting.
+#' `aggregate_cols` are combined over source rows, not prorated over calendar
+#' days. Sum only distinct additive amounts: merging overlapping dates does
+#' not remove duplicated premium or exposure. Resolve such duplicates first.
 #'
-#' Each output row represents one consolidated period within a `group_by`
-#' combination. This is a temporal reduction of the portfolio; records with the
-#' same risk-factor values are not combined when their periods remain separate.
+#' The input is not modified. For database-backed processing, use
+#' [merge_date_ranges_db()]. To aggregate identical rating-factor combinations
+#' rather than connected periods, use [rating_grid()].
 #'
-#' Internally, grouping keys are ranked once and interval construction uses a
-#' compact [data.table::data.table()] with group identifiers, dates and row
-#' positions. Only requested aggregation columns are added to that working
-#' table; grouping attributes are retrieved for the output rows afterwards.
-#' The wide input portfolio is not copied or sorted in place, and the supplied
-#' object is not modified by reference. Standard `sum` aggregation of ordinary
-#' numeric columns uses an optimized grouped calculation. Other aggregation
-#' functions and numeric classes retain the general aggregation route.
-#' Large inputs and outputs still require sufficient memory.
-#' For a portfolio that should remain outside R memory, use
-#' [merge_date_ranges_db()] to perform the same interval reduction in DuckDB.
+#' ## Summaries
 #'
-#' @return A regular `data.frame` with classes `"merged_date_ranges"` and
-#' `"reduce"`, and attributes:
+#' `summary()` counts consolidated periods entering and leaving the portfolio.
+#' Choose `period = "days"` (default), `"weeks"`, `"months"`, `"quarters"` or
+#' `"years"`, and optionally rename the count column with `name`.
+#' Supply grouping columns explicitly, e.g. `summary(x, coverage, period = "months")`;
+#' the original `group_by` is not applied automatically. These are period
+#' movement counts, not counts of unique policies.
+#'
+#' If you rename a date column, update its `period_start` or `period_end`
+#' attribute so `summary()` can find it. Older saved objects with `begin` and
+#' `end` attributes remain supported when the new attributes are absent.
+#'
+#' @return A `data.frame` with one row per consolidated period, containing the
+#' grouping columns, dates and requested aggregates. It has classes
+#' `"merged_date_ranges"` and `"reduce"`, and attributes:
 #' \itemize{
-#'   \item `begin` — name of the period-start column
-#'   \item `end`   — name of the period-end column
-#'   \item `cols`  — grouping columns
+#'   \item `period_start`: name of the period-start column
+#'   \item `period_end`: name of the period-end column
+#'   \item `group_by`: original grouping columns
 #' }
 #'
 #' @examples
@@ -197,6 +202,7 @@
 #'   group_by = c("policy_id", "coverage")
 #' )
 #'
+#' # Count movements by month, policy and coverage.
 #' summary(pt1, period = "months", policy_id, coverage)
 #'
 #' # Bridge a short administrative gap and retain additive premium totals.
@@ -210,7 +216,7 @@
 #'   merge_gap_days = 5
 #' )
 #'
-#' summary(pt2, period = "months", policy_id, coverage)
+#' pt2
 #'
 #' @seealso [merge_date_ranges_db()], [rating_grid()], [rating_grid_db()],
 #'   [active_rows_by_date()], [split_periods_to_months()]
@@ -425,9 +431,9 @@ merge_date_ranges <- function(data = NULL,
   }
   data.table::setDF(dt_reduce)
   rownames(dt_reduce) <- NULL
-  attr(dt_reduce, "begin") <- period_start
-  attr(dt_reduce, "end") <- period_end
-  attr(dt_reduce, "cols") <- group_by
+  attr(dt_reduce, "period_start") <- period_start
+  attr(dt_reduce, "period_end") <- period_end
+  attr(dt_reduce, "group_by") <- group_by
   class(dt_reduce) <- c("merged_date_ranges", "reduce", "data.frame")
   dt_reduce
 }
@@ -500,9 +506,8 @@ as.data.frame.merged_date_ranges <- as.data.frame.reduce
 #' @export
 summary.reduce <- function(object, ..., period = "days", name = "count") {
 
-  df <- data.table::as.data.table(data.table::copy(as.data.frame(object)))
-  begin <- attr(object, "begin")
-  end <- attr(object, "end")
+  begin <- .time_summary_date_column(object, "period_start", "begin")
+  end <- .time_summary_date_column(object, "period_end", "end")
 
   by_begin <- begin
   by_end <- end
@@ -514,6 +519,11 @@ summary.reduce <- function(object, ..., period = "days", name = "count") {
   }
 
   cols0 <- vapply(substitute(list(...))[-1], deparse, FUN.VALUE = character(1))
+  selected_columns <- unique(c(begin, end, cols0))
+  # Project before conversion so wide portfolio columns are not copied.
+  df <- data.table::as.data.table(
+    as.data.frame(object)[, selected_columns, drop = FALSE]
+  )
 
   if (length(cols0) > 0) {
     by_begin <- c(by_begin, cols0)
@@ -522,10 +532,8 @@ summary.reduce <- function(object, ..., period = "days", name = "count") {
 
   type <- week <- month <- quarter <- NULL # due to NSE notes in R CMD check
 
-  new <- data.table::data.table(df)[, list(count = .N),
-                                    by = c(by_begin)][, type := "in"]
-  lost <- data.table::data.table(df)[, list(count = .N),
-                                     by = c(by_end)][, type := "out"]
+  new <- df[, list(count = .N), by = c(by_begin)][, type := "in"]
+  lost <- df[, list(count = .N), by = c(by_end)][, type := "out"]
 
   if (period %in% c("days", "day")) {
     new[, date := .SD[[1]], .SDcols = begin]

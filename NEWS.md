@@ -1,5 +1,30 @@
 # insurancerating (development version)
 
+- `check_calibration()` compares observed and expected totals overall, by
+  portfolio segment or calendar year, and across predicted-risk groups.
+- `resample_performance()` replaces `bootstrap_performance()`, which remains
+  available as a deprecated alias. The default RMSE results are unchanged;
+  `metrics` can also request MAE and weighted predictive deviance.
+- `model_performance()` now reports residual deviance after AIC, BIC and RMSE.
+  RMSE is unchanged and documented on the response scale.
+- `adjust_intercept()` replaces `calibrate_model()` with the same behaviour.
+  `calibrate_model()` remains available as a deprecated alias.
+- `active_rows_by_date()` joins on a compact set of keys and dates, then
+  retrieves the matching rows. This reduces copying and sorting for wide
+  portfolios.
+- `rating_grid()` avoids copying unused portfolio columns. With
+  `exposure_by`, it aggregates only exposure or counts within each split;
+  additional totals are still calculated over the original model-point rows.
+- `summary()` for `merge_date_ranges()` results now copies only the date
+  columns and explicitly requested summary grouping columns, avoiding repeated
+  copies of the full-width portfolio. Movement counts, period handling and
+  output ordering are unchanged; the input is not modified.
+- `merge_date_ranges()` now stores its column metadata in `period_start`,
+  `period_end` and `group_by`, matching the argument names. Direct attribute
+  access should use these names instead of `begin`, `end` and `cols`.
+  `summary()` still accepts older saved objects and reports missing or invalid
+  date metadata clearly. Summary grouping remains explicitly selected through
+  `...`; the stored `group_by` does not change the summary's granularity.
 - `add_monotonicity()` enforces increasing or decreasing relativities across
   numeric bands, numeric-labelled factors or explicitly ordered categories,
   using weighted isotonic projection on the log scale or one-sided adjustments.

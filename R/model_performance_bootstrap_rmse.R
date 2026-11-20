@@ -1,10 +1,10 @@
-#' Assess performance stability under repeated resampling
+#' Assess predictive performance across resampled datasets
 #'
 #' @description
-#' Refit a pricing model on repeated samples and record the resulting
-#' response-scale prediction error. The distribution of RMSE values describes
-#' how sensitive model performance is to changes in the observed portfolio
-#' sample.
+#' Refit a pricing model on repeated samples to assess variability in predictive
+#' performance. Unlike [model_performance()], which compares fitted models,
+#' this function refits the model at each replicate and evaluates it on rows
+#' selected by the resampling design.
 #'
 #' @param model A fitted model object that can be updated on resampled data.
 #' @param data Data frame containing the model response and predictors.
@@ -12,60 +12,63 @@
 #'   Default is 50.
 #' @param sample_fraction Fraction of the data used in the training sample. Must
 #'   be in `(0, 1]`. Default is 1.
-#' @param metric Character string. Performance metric to compute. Currently only
-#'   `"rmse"` is supported.
-#' @param sampling Character string. Sampling scheme. `"bootstrap"` samples
-#'   training
-#'   rows with replacement and evaluates on out-of-bag rows when
-#'   `sample_fraction < 1`.
-#'   `"split"` samples training rows without replacement and evaluates on the
-#'   remaining rows when `sample_fraction < 1`.
+#' @param metric Legacy argument that accepts only `"rmse"`. Use `metrics`
+#'   to select metrics.
+#' @param metrics Character vector of distinct metrics in the desired output
+#'   order: `"rmse"` (default), `"mae"`, or `"deviance"`.
+#' @param sampling Character string. Use `"bootstrap"` (default) to sample
+#'   training rows with replacement or `"split"` to sample without replacement.
 #' @param show_progress Logical. Show a progress bar during resampling.
 #'   Default is `TRUE`.
 #' @param rmse_model Optional finite numeric RMSE for the original fitted model.
-#'   If `NULL`, it is calculated from `model` and `data`.
+#'   If `NULL` and RMSE is selected, it is calculated from `model` and `data`.
 #' @param n,frac Deprecated argument names. Use `n_resamples` and
 #'   `sample_fraction` instead.
 #'
 #' @details
 #' ## Resampling design
 #'
-#' With `sampling = "bootstrap"`, training rows are sampled with replacement.
-#' With `sampling = "split"`, they are sampled without replacement. When
-#' `sample_fraction < 1`, performance is evaluated on records not used for
-#' fitting. When `sample_fraction = 1`, performance is evaluated on the sampled
-#' training data and should be interpreted as an in-sample stability measure.
+#' - With `sampling = "bootstrap"` and `sample_fraction = 1`, scores are
+#'   evaluated on the resampled training rows (in sample, including duplicates).
+#' - With `sampling = "bootstrap"` and `sample_fraction < 1`, scores are
+#'   evaluated on out-of-bag rows (out of sample for each replicate).
+#' - With `sampling = "split"` and `sample_fraction < 1`, scores are evaluated
+#'   on the held-out rows of each split (out of sample for each replicate).
+#'   At `sample_fraction = 1`, all rows are used for both fitting and evaluation.
 #'
 #' Character columns and factor columns are converted to factors with levels
 #' taken from the full input data before resampling. For factor variables used
 #' in the model, the training sample is augmented when needed so every observed
 #' level is represented at least once. This prevents prediction failures when a
 #' level is present in the evaluation data but absent from a particular training
-#' sample.
+#' sample. If this leaves no evaluation rows, use a smaller `sample_fraction`.
 #'
-#' ## Actuarial interpretation
+#' ## Metrics and interpretation
 #'
-#' The resampled RMSE distribution is useful for comparing the stability of
-#' alternative frequency, severity or risk-premium specifications under
-#' repeated portfolio sampling. A narrow distribution indicates that the
-#' measured error is relatively insensitive to the sampled records; a wide
-#' distribution indicates greater sampling sensitivity.
+#' RMSE (root mean squared error) and MAE (mean absolute error) are unweighted
+#' summaries of response-scale errors. For an exposure-offset Poisson model
+#' these are errors in claim counts, not claim frequency per unit exposure.
+#' Predictive deviance sums the fitted GLM family's deviance contributions on
+#' the evaluation rows, using those rows' response-scale predictions (including
+#' offsets) and observation weights. Specify weights and offsets using columns
+#' in `data`, rather than separate row-aligned vectors, so the model can be
+#' refitted and evaluated on each sample. Total deviance can vary with the
+#' number and weight of evaluation rows as well as with prediction quality.
 #'
-#' This is an experience-based diagnostic and does not by itself represent the
-#' full uncertainty in future claims, trend, portfolio mix or model
-#' specification. Sparse factor levels are retained in training samples where
-#' necessary to avoid new-level prediction failures. That protection is useful
-#' operationally, but should be considered when interpreting the resampling
-#' design.
+#' A wide score distribution indicates sensitivity to the sampled rows. Even
+#' with held-out rows, resampling the observed portfolio is not independent
+#' validation on a future or external portfolio.
 #'
-#' @return An object of class `"bootstrap_performance"`, which is a list with
-#' components:
-#' \describe{
-#'   \item{rmse_bs}{Numeric vector with `n_resamples` bootstrap RMSE values.}
-#'   \item{rmse_mod}{Root mean squared error for the original fitted model.}
-#'   \item{metric}{Metric name.}
-#'   \item{sampling}{Sampling scheme.}
-#' }
+#' @return A list of class `"bootstrap_performance"`. For RMSE alone, the
+#'   original structure is unchanged: `rmse_bs` contains the resampled scores,
+#'   `rmse_mod` contains the original model's RMSE, and `metric`, `sampling`,
+#'   `n_resamples`, `sample_fraction`, `n` and `frac` describe the run.
+#'   When another metric is selected, `scores` is a data frame with one row
+#'   per replicate and a column for each requested metric, and `original_scores`
+#'   is a named numeric vector for the original model on `data`.
+#'   `metric` records the selected metric names; `rmse_bs` and `rmse_mod` are
+#'   `NULL` if RMSE was not selected. For these results, `as.vector()` returns
+#'   scores for the first requested metric.
 #'
 #' @author Martin Haringa
 #'
@@ -77,43 +80,46 @@
 #'             offset = log(exposure), family = poisson())
 #'
 #' # Use all records
-#' x <- bootstrap_performance(mod1, MTPL, n_resamples = 80,
-#'                            show_progress = FALSE)
+#' x <- resample_performance(mod1, MTPL, n_resamples = 80,
+#'                           show_progress = FALSE)
 #' print(x)
 #' autoplot(x)
 #'
 #' # Use 80% of records and evaluate on the remaining records
-#' x_frac <- bootstrap_performance(mod1, MTPL, n_resamples = 50,
-#'                                 sample_fraction = .8, sampling = "split",
-#'                                 show_progress = FALSE)
-#' autoplot(x_frac)
+#' x_frac <- resample_performance(mod1, MTPL, n_resamples = 50,
+#'                                sample_fraction = .8, sampling = "split",
+#'                                show_progress = FALSE,
+#'                                metrics = c("rmse", "mae", "deviance"))
+#' head(x_frac$scores)
+#' autoplot(x_frac, metric = "deviance")
 #' }
 #'
 #' @seealso [rmse()], [model_performance()],
 #'   [autoplot.bootstrap_performance()]
 #'
 #' @export
-bootstrap_performance <- function(model, data, n_resamples = 50,
+resample_performance <- function(model, data, n_resamples = 50,
                                   sample_fraction = 1,
                                   metric = "rmse",
                                   sampling = c("bootstrap", "split"),
                                   show_progress = TRUE,
                                   rmse_model = NULL,
                                   n = NULL,
-                                  frac = NULL) {
+                                  frac = NULL,
+                                  metrics = "rmse") {
   if (!is.null(n)) {
-    lifecycle::deprecate_warn("0.9.0", "bootstrap_performance(n)",
-                              "bootstrap_performance(n_resamples)")
+    lifecycle::deprecate_warn("0.9.0", "resample_performance(n)",
+                              "resample_performance(n_resamples)")
     n_resamples <- n
   }
   if (!is.null(frac)) {
-    lifecycle::deprecate_warn("0.9.0", "bootstrap_performance(frac)",
-                              "bootstrap_performance(sample_fraction)")
+    lifecycle::deprecate_warn("0.9.0", "resample_performance(frac)",
+                              "resample_performance(sample_fraction)")
     sample_fraction <- frac
   }
 
   sampling <- match.arg(sampling)
-  metric <- validate_bootstrap_performance_args(
+  validate_bootstrap_performance_args(
     model = model,
     data = data,
     n_resamples = n_resamples,
@@ -123,16 +129,36 @@ bootstrap_performance <- function(model, data, n_resamples = 50,
     show_progress = show_progress,
     rmse_model = rmse_model
   )
+  if (!is.character(metrics) || !is.null(dim(metrics)) || !length(metrics) ||
+      anyNA(metrics) || anyDuplicated(metrics) ||
+      !all(metrics %in% c("rmse", "mae", "deviance"))) {
+    stop("`metrics` must contain distinct values from 'rmse', 'mae', ",
+         "and 'deviance'.", call. = FALSE)
+  }
+  metrics <- unname(metrics)
 
   data <- preserve_model_levels(as.data.frame(data))
   level_cols <- intersect(names(model$xlevels), names(data))
   n_sample <- floor(sample_fraction * nrow(data))
 
-  if (is.null(rmse_model)) {
-    rmse_model <- rmse(model, data)
+  if ("rmse" %in% metrics) {
+    if (is.null(rmse_model)) rmse_model <- rmse(model, data)
+  } else {
+    rmse_model <- NULL
   }
 
-  rmse_vec <- numeric(n_resamples)
+  scores <- matrix(NA_real_, n_resamples, length(metrics),
+                   dimnames = list(NULL, metrics))
+  original_scores <- stats::setNames(numeric(length(metrics)), metrics)
+  if ("rmse" %in% metrics) original_scores[["rmse"]] <- rmse_model
+  extra_metrics <- setdiff(metrics, "rmse")
+  if (length(extra_metrics)) {
+    response_formula <- stats::formula(model)[[2L]]
+    original_scores[extra_metrics] <- .resample_scores(
+      model, data, eval(response_formula, data, parent.frame()),
+      stats::predict(model, data, type = "response"), extra_metrics
+    )
+  }
 
   if (isTRUE(show_progress)) {
     pb <- utils::txtProgressBar(max = n_resamples, style = 3)
@@ -168,14 +194,14 @@ bootstrap_performance <- function(model, data, n_resamples = 50,
     resp <- eval(resp_formula, eval_data, parent.frame())
     pred <- stats::predict(model_train, eval_data, type = "response")
 
-    rmse_vec[i] <- sqrt(mean((resp - pred)^2, na.rm = TRUE))
+    scores[i, ] <- .resample_scores(model_train, eval_data, resp, pred, metrics)
   }
 
-  structure(
+  result <- structure(
     list(
-      rmse_bs = rmse_vec,
+      rmse_bs = if ("rmse" %in% metrics) scores[, "rmse"],
       rmse_mod = rmse_model,
-      metric = metric,
+      metric = if (identical(metrics, "rmse")) metric else metrics,
       sampling = sampling,
       n_resamples = n_resamples,
       sample_fraction = sample_fraction,
@@ -184,6 +210,65 @@ bootstrap_performance <- function(model, data, n_resamples = 50,
     ),
     class = "bootstrap_performance"
   )
+  if (!identical(metrics, "rmse")) {
+    result$scores <- as.data.frame(scores)
+    result$original_scores <- original_scores
+  }
+  result
+}
+
+
+.resample_scores <- function(model, data, response, predictions, metrics) {
+  scores <- stats::setNames(numeric(length(metrics)), metrics)
+  if ("rmse" %in% metrics) {
+    scores[["rmse"]] <- .response_rmse(response, predictions)
+  }
+  deviance <- "deviance" %in% metrics
+  trials <- NULL
+  if ((deviance || "mae" %in% metrics) &&
+      (is.matrix(response) || is.factor(response))) {
+    if (stats::family(model)$family %in% c("binomial", "quasibinomial")) {
+      if (is.factor(response)) {
+        response <- as.numeric(response != levels(response)[1L])
+      } else if (ncol(response) == 2L) {
+        trials <- rowSums(response)
+        response <- ifelse(trials == 0, 0, response[, 1L] / trials)
+      }
+    }
+  }
+  if ("mae" %in% metrics) {
+    scores[["mae"]] <- mean(abs(response - predictions), na.rm = TRUE)
+  }
+  if (deviance) {
+    scores[["deviance"]] <- .resample_deviance(model, data, response, predictions, trials)
+  }
+  scores
+}
+
+
+.resample_deviance <- function(model, data, response, predictions, trials) {
+  family <- stats::family(model)
+  if (!is.function(family$dev.resids)) {
+    stop("Predictive deviance requires a family with deviance residuals.",
+         call. = FALSE)
+  }
+  weight_expr <- stats::getCall(model)[["weights"]]
+  weights <- if (!is.null(weight_expr)) {
+    eval(weight_expr, data, environment(stats::formula(model)))
+  }
+  if (is.null(weights)) weights <- rep.int(1, nrow(data))
+  if (!is.numeric(weights) || length(weights) != nrow(data) ||
+      any(!is.finite(weights[!is.na(weights)]) | weights[!is.na(weights)] < 0)) {
+    stop("Evaluation weights must be finite, non-negative numeric values, ",
+         "one per row (missing weights are excluded). Supply the model's ",
+         "weight variables in `data`.", call. = FALSE)
+  }
+  if (!is.null(trials)) weights <- weights * trials
+  complete <- stats::complete.cases(response, predictions, weights)
+  if (!any(complete)) return(NA_real_)
+  keep <- which(complete & weights > 0)
+  if (!length(keep)) return(0)
+  sum(family$dev.resids(response[keep], predictions[keep], weights[keep]))
 }
 
 
@@ -279,19 +364,44 @@ ensure_training_levels <- function(train_rows, data, level_cols) {
   train_rows
 }
 
-#' Deprecated alias for `bootstrap_performance()`
+#' Deprecated alias for `resample_performance()`
 #'
 #' @description
-#' `bootstrap_rmse()` is deprecated in favour of [bootstrap_performance()].
+#' `bootstrap_performance()` is deprecated. Use [resample_performance()] instead.
+#'
+#' @inheritParams resample_performance
+#' @return See [resample_performance()].
+#' @keywords internal
+#' @export
+bootstrap_performance <- function(model, data, n_resamples = 50,
+                                  sample_fraction = 1,
+                                  metric = "rmse",
+                                  sampling = c("bootstrap", "split"),
+                                  show_progress = TRUE,
+                                  rmse_model = NULL,
+                                  n = NULL,
+                                  frac = NULL,
+                                  metrics = "rmse") {
+  .Deprecated("resample_performance")
+  call <- match.call()
+  call[[1L]] <- resample_performance
+  eval.parent(call)
+}
+
+
+#' Deprecated RMSE wrapper for `resample_performance()`
+#'
+#' @description
+#' `bootstrap_rmse()` is deprecated in favour of [resample_performance()].
 #' Objects returned by `bootstrap_rmse()` keep class `"bootstrap_rmse"` for
 #' backward compatibility and also inherit from `"bootstrap_performance"`.
 #'
-#' @inheritParams bootstrap_performance
-#' @param n Deprecated. Use `n_resamples` in [bootstrap_performance()] instead.
-#' @param frac Deprecated. Use `sample_fraction` in [bootstrap_performance()]
+#' @inheritParams resample_performance
+#' @param n Deprecated. Use `n_resamples` in [resample_performance()] instead.
+#' @param frac Deprecated. Use `sample_fraction` in [resample_performance()]
 #'   instead.
 #'
-#' @return See [bootstrap_performance()].
+#' @return See [resample_performance()].
 #'
 #' @export
 #' @keywords internal
@@ -303,10 +413,10 @@ bootstrap_rmse <- function(model, data, n = 50, frac = 1,
   lifecycle::deprecate_warn(
     "0.9.0",
     "bootstrap_rmse()",
-    "bootstrap_performance()"
+    "resample_performance()"
   )
 
-  out <- bootstrap_performance(
+  out <- resample_performance(
     model = model,
     data = data,
     n_resamples = n,
@@ -323,33 +433,39 @@ bootstrap_rmse <- function(model, data, n = 50, frac = 1,
 
 #' @export
 print.bootstrap_performance <- function(x, ...) {
-  print(x$rmse_bs)
+  if (is.null(x$scores)) {
+    print(x$rmse_bs)
+  } else {
+    print(x$scores, ...)
+  }
   invisible(x)
 }
 
 
 #' @export
 as.vector.bootstrap_performance <- function(x, ...) {
-  as.vector(x$rmse_bs, ...)
+  as.vector(if (is.null(x$scores)) x$rmse_bs else x$scores[[1L]], ...)
 }
 
 
 #' Plot the resampled performance distribution
 #'
 #' @description
-#' Display the empirical distribution of resampled RMSE values from
-#' [bootstrap_performance()]. The histogram shows the observed resampling
+#' Display the empirical distribution of resampled scores from
+#' [resample_performance()]. The histogram shows the observed resampling
 #' distribution, while the density curve provides a smooth visual summary.
 #'
 #' @param object An object of class `"bootstrap_performance"`, produced by
-#'   [bootstrap_performance()].
+#'   [resample_performance()].
 #' @param fill Fill colour of the histogram bars. Default is `"#E6E6E6"`.
 #' @param color Border colour of the histogram bars. Default is `NA`, which
 #'   removes bar borders.
 #' @param ... Currently unused.
+#' @param metric Metric to plot. The default, `NULL`, uses the first requested
+#'   metric, or RMSE for an RMSE-only result.
 #'
 #' @details
-#' The dashed orange line marks the RMSE of the original fitted model. The
+#' The dashed orange line marks the score of the original fitted model. The
 #' dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles of the
 #' resampled values when these can be calculated. Their distance provides a
 #' practical indication of sampling variability; it is not a formal prediction
@@ -367,28 +483,40 @@ as.vector.bootstrap_performance <- function(x, ...) {
 #' \dontrun{
 #' mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
 #'             offset = log(exposure), family = poisson())
-#' x <- bootstrap_performance(mod1, MTPL, n_resamples = 100,
+#' x <- resample_performance(mod1, MTPL, n_resamples = 100,
 #'                            show_progress = FALSE)
 #' autoplot(x)
 #' }
 #'
-#' @seealso [bootstrap_performance()], [rmse()]
+#' @seealso [resample_performance()], [rmse()]
 #'
 #' @export
 autoplot.bootstrap_performance <- function(object,
                                            fill = "#E6E6E6",
                                            color = NA,
-                                           ...) {
+                                           ...,
+                                           metric = NULL) {
   if (!inherits(object, "bootstrap_performance")) {
     stop("Input must be of class 'bootstrap_performance'.", call. = FALSE)
   }
 
-  rmse_bs <- object$rmse_bs
-  rmse_mod <- object$rmse_mod
-  dat <- data.frame(x = rmse_bs)
+  available <- if (is.null(object$scores)) "rmse" else names(object$scores)
+  if (is.null(metric)) metric <- available[[1L]]
+  if (!is.character(metric) || length(metric) != 1L ||
+      !metric %in% available) {
+    stop("`metric` must be one of: ", paste(available, collapse = ", "),
+         ".", call. = FALSE)
+  }
+  scores <- if (is.null(object$scores)) object$rmse_bs else object$scores[[metric]]
+  original_score <- if (is.null(object$scores)) {
+    object$rmse_mod
+  } else {
+    object$original_scores[[metric]]
+  }
+  dat <- data.frame(x = scores)
 
   conf_bounds <- tryCatch(
-    stats::quantile(rmse_bs, c(0.025, 0.975)),
+    stats::quantile(scores, c(0.025, 0.975)),
     error = function(e) NULL
   )
 
@@ -419,7 +547,7 @@ autoplot.bootstrap_performance <- function(object,
 
   p <- p +
     ggplot2::geom_vline(
-      xintercept = rmse_mod,
+      xintercept = original_score,
       linetype = 2,
       color = "#F28E2B",
       linewidth = 0.7
@@ -430,8 +558,13 @@ autoplot.bootstrap_performance <- function(object,
     ggplot2::theme_minimal() +
     .plot_grid_theme_ir() +
     ggplot2::labs(
-      title = "Bootstrapped model performance",
-      x = "(Simulated) RMSE",
+      title = if (identical(object$sampling, "split")) {
+        "Model performance across repeated splits"
+      } else {
+        "Bootstrapped model performance"
+      },
+      x = switch(metric, rmse = "(Simulated) RMSE", mae = "(Simulated) MAE",
+                 deviance = "(Simulated) predictive deviance"),
       y = "Density"
     )
 

@@ -1,10 +1,9 @@
-#' Calibrate the overall level of a refined pricing model
+#' Adjust the intercept of a refined pricing model
 #'
 #' @description
-#' Adjust the overall prediction level of a fitted model returned by [refit()]
-#' without re-estimating its relative tariff structure. Calibration is a final
-#' model-level operation: all refinement decisions must be completed before
-#' calling `calibrate_model()`.
+#' Adjust the intercept of a log-link GLM returned by [refit()] to multiply its
+#' response-scale predictions by a specified factor while preserving tariff
+#' relativities. Apply this adjustment after all refinement decisions are complete.
 #'
 #' @details
 #' For a refined GLM with a log link, calibration adds `log(factor)` to the
@@ -57,7 +56,7 @@
 #'   add_restriction(restrictions) |>
 #'   refit(intercept_only = TRUE)
 #'
-#' mod_calibrated <- calibrate_model(mod_refined, factor = 1.05)
+#' mod_calibrated <- adjust_intercept(mod_refined, factor = 1.05)
 #'
 #' rating_table(mod_calibrated)
 #'
@@ -68,7 +67,7 @@
 #'   )
 #'
 #' @export
-calibrate_model <- function(model, factor) {
+adjust_intercept <- function(model, factor) {
   if (inherits(model, "calibrated_model")) {
     stop(
       "This model has already been calibrated. Apply one final total ",
@@ -80,7 +79,7 @@ calibrate_model <- function(model, factor) {
   if (!inherits(model, c("refitrestricted", "refitsmooth"))) {
     stop(
       "`model` must be a fitted refined model returned by `refit()`. ",
-      "Complete model refinement before calling `calibrate_model()`.",
+      "Complete model refinement before calling `adjust_intercept()`.",
       call. = FALSE
     )
   }
@@ -94,7 +93,7 @@ calibrate_model <- function(model, factor) {
   }
   if (!identical(model$family$link, "log")) {
     stop(
-      "`calibrate_model()` currently requires a refined GLM with a log link, ",
+      "`adjust_intercept()` currently requires a refined GLM with a log link, ",
       "so calibration can be represented as an intercept shift of ",
       "`log(factor)`.",
       call. = FALSE
@@ -145,6 +144,23 @@ calibrate_model <- function(model, factor) {
   attr(calibrated, "calibration_call") <- match.call()
   attr(calibrated, "calibrated_at") <- Sys.time()
   class(calibrated) <- unique(c("calibrated_model", class(calibrated)))
+  calibrated
+}
+
+
+#' Deprecated alias for `adjust_intercept()`
+#'
+#' @description
+#' `calibrate_model()` is deprecated. Use [adjust_intercept()] instead.
+#'
+#' @inheritParams adjust_intercept
+#' @return See [adjust_intercept()].
+#' @keywords internal
+#' @export
+calibrate_model <- function(model, factor) {
+  .Deprecated("adjust_intercept")
+  calibrated <- adjust_intercept(model = model, factor = factor)
+  attr(calibrated, "calibration_call") <- match.call()
   calibrated
 }
 

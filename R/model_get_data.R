@@ -188,27 +188,23 @@ model_data <- function(x) {
 
 
 .rating_grid_sum <- function(df, by_vars, sum_vars) {
-  df <- data.table::as.data.table(df)
-
   if (length(by_vars) == 0) {
     return(df[, lapply(.SD, sum, na.rm = TRUE), .SDcols = sum_vars])
   }
 
   out <- df[, lapply(.SD, sum, na.rm = TRUE),
-            by = by_vars, .SDcols = sum_vars]
+            by = c(by_vars), .SDcols = sum_vars]
   data.table::setorderv(out, by_vars)
   out
 }
 
 
 .rating_grid_count <- function(df, by_vars) {
-  df <- data.table::as.data.table(df)
-
   if (length(by_vars) == 0) {
     return(data.frame(count = nrow(df)))
   }
 
-  out <- df[, list(count = .N), by = by_vars]
+  out <- df[, list(count = .N), by = c(by_vars)]
   data.table::setorderv(out, by_vars)
   out
 }
@@ -307,7 +303,9 @@ model_data <- function(x) {
 
 .rating_grid_add_refinement <- function(out, xdf, refinement_pairs) {
   out <- data.table::as.data.table(out)
-  xdf <- data.table::as.data.table(xdf)
+  if (!data.table::is.data.table(xdf)) {
+    xdf <- data.table::as.data.table(xdf)
+  }
   refinement_pairs <- refinement_pairs[vapply(refinement_pairs, length, integer(1)) >= 2]
 
   for (pair in refinement_pairs) {
@@ -371,13 +369,20 @@ model_data <- function(x) {
 #'   plain `data.frame`, all columns except those listed in `exposure`,
 #'   `exposure_by`, and `aggregate_cols` are used.
 #' @param exposure Optional character; name of the exposure column to aggregate.
-#' @param exposure_by Optional character; name of a column used to split
-#'   exposure or counts, for example a year variable.
+#' @param exposure_by Optional character; name of a column, such as year,
+#'   whose levels become separate output columns. If `exposure` is supplied,
+#'   each column contains total exposure for that level; otherwise, it
+#'   contains the number of source rows. For example, the output might
+#'   contain `exposure_2020` or `count_2020`. The totals in `aggregate_cols`
+#'   are calculated once per model point, across all split levels.
 #' @param aggregate_cols Optional character vector with additional numeric
 #'   columns to aggregate using `sum(na.rm = TRUE)`.
-#' @param drop_na Logical; if `TRUE`, rows with missing values in `group_by`
-#'   are removed before aggregation. If `FALSE`, missing values define an
-#'   explicit observed group and are retained. Default is `FALSE`.
+#' @param drop_na Logical. With `FALSE` (default), missing values in
+#'   `group_by` form a distinct grouping value and those rows still contribute
+#'   to the totals. With `TRUE`, a missing value in any `group_by` column
+#'   excludes the entire row from counts, exposure and other totals.
+#'   Only `group_by` columns are checked; missing values in the split or
+#'   aggregation columns do not trigger this filter.
 #' @param group_vars,agg_cols Deprecated argument names. Use `group_by` and
 #'   `aggregate_cols` instead.
 #'
@@ -453,10 +458,6 @@ model_data <- function(x) {
 #' lost if a severity predictor varies within a grid row or if the totals and
 #' weights do not represent the underlying claims correctly.
 #'
-#' If `exposure_by` is supplied, exposure or row counts are split across levels
-#' of that variable and returned in wide format, for example
-#' `"exposure_2020"` or `"count_2020"`.
-#'
 #' After [add_relativities()] creates an output factor, the default grid uses
 #' that factor instead of its parent. Split relativities and subsequent
 #' shrinkage or rebasing columns are joined by the output segment, not by the
@@ -467,10 +468,9 @@ model_data <- function(x) {
 #' by the factor key recorded in the refinement metadata. They are not
 #' cross-joined onto every row.
 #'
-#' Aggregation, reshaping and refinement joins are performed internally with
-#' [data.table::data.table()] to support large pricing portfolios. A local copy
-#' is used, so the supplied object is not modified by reference. The output is
-#' a regular `data.frame`, irrespective of the class of the input data.
+#' On wide portfolios, supply `group_by` explicitly to avoid grouping by
+#' unused columns. The input is not modified, and the output is always a
+#' regular `data.frame`.
 #'
 #' When the row-level portfolio does not fit comfortably in R memory, use
 #' [rating_grid_db()] to perform the grouped reduction in a database and collect
@@ -640,11 +640,20 @@ rating_grid <- function(x,
     stop("`drop_na` must be TRUE or FALSE.", call. = FALSE)
   }
 
-  xdf <- data.table::as.data.table(data.table::copy(
+  xdf <- if (data.table::is.data.table(x)) {
+    x
+  } else {
     as.data.frame(x, stringsAsFactors = FALSE)
-  ))
+  }
+  # Matrix-like columns can expand to new names during conversion.
+  if (any(vapply(xdf, function(column) !is.null(dim(column)), logical(1)))) {
+    xdf <- data.table::as.data.table(as.data.frame(xdf, stringsAsFactors = FALSE))
+  }
+  available_cols <- names(xdf)
   offweights <- NULL
+  offweights_tmp <- NULL
   agg_cols_all <- aggregate_cols
+  refinement_pairs <- NULL
 
   if (inherits(x, "model_data")) {
     offweights <- unique(attr(x, "offweights"))
@@ -653,7 +662,7 @@ rating_grid <- function(x,
     if (is.null(default_group_vars) || length(default_group_vars) == 0) {
       term_labels <- attr(x, "term.labels")
       if (!is.null(term_labels)) {
-        default_group_vars <- intersect(term_labels, names(xdf))
+        default_group_vars <- intersect(term_labels, available_cols)
       }
     }
 
@@ -661,7 +670,7 @@ rating_grid <- function(x,
       terms_obj <- attr(x, "terms")
       if (!is.null(terms_obj)) {
         term_labels <- attr(terms_obj, "term.labels")
-        default_group_vars <- intersect(term_labels, names(xdf))
+        default_group_vars <- intersect(term_labels, available_cols)
       }
     }
 
@@ -674,7 +683,7 @@ rating_grid <- function(x,
         exposure_by,
         aggregate_cols
       ))
-      default_group_vars <- setdiff(names(xdf), cols_excluded)
+      default_group_vars <- setdiff(available_cols, cols_excluded)
     }
 
     if (length(default_group_vars) == 0) {
@@ -709,42 +718,63 @@ rating_grid <- function(x,
         !is.null(offweights) &&
         identical(offweights, exposure)) {
       offweights_tmp <- paste0(offweights, "_99")
-      xdf[[offweights_tmp]] <- xdf[[exposure]]
+      if (exposure %in% available_cols) {
+        available_cols <- union(available_cols, offweights_tmp)
+      } else {
+        available_cols <- setdiff(available_cols, offweights_tmp)
+      }
       offweights <- offweights_tmp
     }
 
     if (!is.null(offweights) && !is.null(aggregate_cols) &&
-        offweights %in% aggregate_cols) {
+        any(offweights %in% aggregate_cols)) {
       offweights <- NULL
     }
 
     agg_cols_all <- unique(c(aggregate_cols, offweights))
+    refinement_pairs <- c(attr(x, "mgd_rst"), attr(x, "mgd_smt"))
   } else if (is.null(group_by)) {
     cols_excluded <- c(aggregate_cols, exposure, exposure_by)
-    group_by <- setdiff(names(xdf), cols_excluded)
+    group_by <- setdiff(available_cols, cols_excluded)
   }
 
-  if (!all(group_by %in% names(xdf))) {
-    missing_cols <- setdiff(group_by, names(xdf))
+  if (!all(group_by %in% available_cols)) {
+    missing_cols <- setdiff(group_by, available_cols)
     stop(
       "The following `group_by` columns are not present in `x`: ",
       paste(missing_cols, collapse = ", "),
       call. = FALSE
     )
   }
-  if (!is.null(exposure) && !exposure %in% names(xdf)) {
+  if (!is.null(exposure) && !exposure %in% available_cols) {
     stop("Column in `exposure` not found in `x`.", call. = FALSE)
   }
-  if (!is.null(exposure_by) && !exposure_by %in% names(xdf)) {
+  if (!is.null(exposure_by) && !exposure_by %in% available_cols) {
     stop("Column in `exposure_by` not found in `x`.", call. = FALSE)
   }
-  if (!is.null(agg_cols_all) && !all(agg_cols_all %in% names(xdf))) {
-    missing_cols <- setdiff(agg_cols_all, names(xdf))
+  if (!is.null(agg_cols_all) && !all(agg_cols_all %in% available_cols)) {
+    missing_cols <- setdiff(agg_cols_all, available_cols)
     stop(
       "The following `aggregate_cols` are not present in `x`: ",
       paste(missing_cols, collapse = ", "),
       call. = FALSE
     )
+  }
+
+  grid_cols <- intersect(names(xdf), c(
+    group_by, exposure, exposure_by, agg_cols_all,
+    unlist(refinement_pairs, use.names = FALSE)
+  ))
+  if (!length(grid_cols)) {
+    return(data.frame(count = if (length(xdf)) nrow(xdf) else 0L))
+  }
+  if (data.table::is.data.table(xdf)) {
+    xdf <- xdf[, grid_cols, with = FALSE]
+  } else {
+    xdf <- data.table::as.data.table(xdf[grid_cols])
+  }
+  if (!is.null(offweights_tmp)) {
+    xdf[[offweights_tmp]] <- xdf[[exposure]]
   }
 
   if (drop_na) {
@@ -782,7 +812,7 @@ rating_grid <- function(x,
     if (is.null(exposure_by)) {
       out <- .rating_grid_sum(xdf, group_by, sum_vars)
     } else {
-      agg0 <- .rating_grid_sum(xdf, c(group_by, exposure_by), sum_vars)
+      agg0 <- .rating_grid_sum(xdf, c(group_by, exposure_by), exposure)
       out <- .rating_grid_wide(
         agg0,
         group_vars = group_by,
@@ -802,11 +832,8 @@ rating_grid <- function(x,
     }
   }
 
-  if (inherits(x, "model_data")) {
-    refinement_pairs <- c(attr(x, "mgd_rst"), attr(x, "mgd_smt"))
-    if (length(refinement_pairs) > 0) {
-      out <- .rating_grid_add_refinement(out, xdf, refinement_pairs)
-    }
+  if (length(refinement_pairs) > 0) {
+    out <- .rating_grid_add_refinement(out, xdf, refinement_pairs)
   }
 
   out <- as.data.frame(out, stringsAsFactors = FALSE)

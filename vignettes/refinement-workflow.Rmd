@@ -799,7 +799,7 @@ After the tariff structure has been refined and fitted, an externally selected
 overall calibration factor can be applied to a log-link model:
 
 ```{r}
-calibrated_model <- calibrate_model(
+calibrated_model <- adjust_intercept(
   refined_model,
   factor = 1.05
 )
@@ -807,7 +807,7 @@ calibrated_model <- calibrate_model(
 head(rating_table(calibrated_model, exposure = FALSE))
 ```
 
-`calibrate_model()` adds `log(1.05)` to the intercept. Response-scale
+`adjust_intercept()` adds `log(1.05)` to the intercept. Response-scale
 predictions therefore increase by exactly 5%, while all non-intercept
 coefficients and the ratios between tariff levels remain unchanged. The
 original `refined_model` is not modified.

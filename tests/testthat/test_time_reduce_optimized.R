@@ -34,9 +34,9 @@ reference_period_merge <- function(data, group_by, aggregate_cols = character(),
            as.list(data.table::rbindlist(records)))
   names(out) <- c(group_by, "begin", "end", aggregate_cols)
   data.table::setDF(out)
-  attr(out, "begin") <- "begin"
-  attr(out, "end") <- "end"
-  attr(out, "cols") <- group_by
+  attr(out, "period_start") <- "begin"
+  attr(out, "period_end") <- "end"
+  attr(out, "group_by") <- group_by
   class(out) <- c("merged_date_ranges", "reduce", "data.frame")
   out
 }

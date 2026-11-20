@@ -4,11 +4,11 @@
 \alias{autoplot.bootstrap_performance}
 \title{Plot the resampled performance distribution}
 \usage{
-\method{autoplot}{bootstrap_performance}(object, fill = "#E6E6E6", color = NA, ...)
+\method{autoplot}{bootstrap_performance}(object, fill = "#E6E6E6", color = NA, ..., metric = NULL)
 }
 \arguments{
 \item{object}{An object of class \code{"bootstrap_performance"}, produced by
-\code{\link[=bootstrap_performance]{bootstrap_performance()}}.}
+\code{\link[=resample_performance]{resample_performance()}}.}
 
 \item{fill}{Fill colour of the histogram bars. Default is \code{"#E6E6E6"}.}
 
@@ -16,17 +16,20 @@
 removes bar borders.}
 
 \item{...}{Currently unused.}
+
+\item{metric}{Metric to plot. The default, \code{NULL}, uses the first requested
+metric, or RMSE for an RMSE-only result.}
 }
 \value{
 A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
 }
 \description{
-Display the empirical distribution of resampled RMSE values from
-\code{\link[=bootstrap_performance]{bootstrap_performance()}}. The histogram shows the observed resampling
+Display the empirical distribution of resampled scores from
+\code{\link[=resample_performance]{resample_performance()}}. The histogram shows the observed resampling
 distribution, while the density curve provides a smooth visual summary.
 }
 \details{
-The dashed orange line marks the RMSE of the original fitted model. The
+The dashed orange line marks the score of the original fitted model. The
 dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles of the
 resampled values when these can be calculated. Their distance provides a
 practical indication of sampling variability; it is not a formal prediction
@@ -36,14 +39,14 @@ interval for future portfolio performance.
 \dontrun{
 mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
             offset = log(exposure), family = poisson())
-x <- bootstrap_performance(mod1, MTPL, n_resamples = 100,
+x <- resample_performance(mod1, MTPL, n_resamples = 100,
                            show_progress = FALSE)
 autoplot(x)
 }
 
 }
 \seealso{
-\code{\link[=bootstrap_performance]{bootstrap_performance()}}, \code{\link[=rmse]{rmse()}}
+\code{\link[=resample_performance]{resample_performance()}}, \code{\link[=rmse]{rmse()}}
 }
 \author{
 Martin Haringa

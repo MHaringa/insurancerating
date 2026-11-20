@@ -37,24 +37,27 @@
 #'          family = poisson(), data = MTPL2)
 #' rmse(x, MTPL2)
 #'
-#' @seealso [model_performance()], [bootstrap_performance()],
+#' @seealso [model_performance()], [resample_performance()],
 #'   [check_residuals()]
 #'
 #' @export
 rmse <- function(x, data = NULL) {
   res_var <- stats::formula(x)[[2L]]
   resp <- eval(res_var, as.data.frame(data))
-  res <- resp - stats::predict(x, data, type = "response")
-  sqrt(mean(res^2, na.rm = TRUE))
+  .response_rmse(resp, stats::predict(x, data, type = "response"))
 }
 
 
-#' Compare fitted GLMs using common performance measures
+.response_rmse <- function(response, prediction) {
+  sqrt(mean((response - prediction)^2, na.rm = TRUE))
+}
+
+
+#' Compare GLM fit and predictive error metrics
 #'
 #' @description
-#' Compare one or more fitted GLMs using AIC, BIC and response-scale RMSE.
-#' The resulting table provides a concise first comparison of alternative
-#' pricing-model specifications fitted to the same portfolio outcome.
+#' Compare GLM fit and predictive error metrics. The table reports AIC, BIC,
+#' response-scale RMSE and residual deviance for one or more fitted GLMs.
 #'
 #' @param ... One or more objects of class `"glm"`.
 #'
@@ -67,13 +70,24 @@ rmse <- function(x, data = NULL) {
 #'   sample-size-dependent complexity penalty.}
 #'   \item{RMSE}{Root mean squared error between observed and response-scale
 #'   predicted values.}
+#'   \item{Residual_Deviance}{Residual deviance of the fitted GLM, as returned
+#'   by [stats::deviance()].}
 #' }
 #'
-#' Lower values are preferred within each measure, but the measures answer
-#' different questions. AIC and BIC depend on the model likelihood, whereas
-#' RMSE measures error on the response scale. Comparisons are therefore most
-#' meaningful when models use the same response, estimation records, weights
-#' and offsets.
+#' AIC, BIC and residual deviance describe in-sample fit. RMSE measures
+#' prediction error on the response scale, comparing observed responses with
+#' fitted values from the model. It uses the model's stored data, or the
+#' model frame if those data are unavailable. With the same records as in the
+#' fit, RMSE is an in-sample measure of prediction error. None of these
+#' metrics establishes out-of-sample predictive performance.
+#'
+#' For a Poisson frequency model with `offset(log(exposure))`, the fitted
+#' values are expected claim counts for each observation's exposure. RMSE
+#' therefore measures error in claim counts, not claim frequencies per unit
+#' exposure.
+#'
+#' Compare models on the same response, estimation records, weights and
+#' offsets. For residual deviance, also use the same model family.
 #'
 #' The table does not select a pricing model automatically. In actuarial model
 #' assessment, statistical fit should be considered together with portfolio
@@ -87,7 +101,8 @@ rmse <- function(x, data = NULL) {
 #'   \item{Model}{Name of the model object as passed to the function.}
 #'   \item{AIC}{AIC value.}
 #'   \item{BIC}{BIC value.}
-#'   \item{RMSE}{Root mean squared error.}
+#'   \item{RMSE}{Response-scale root mean squared error.}
+#'   \item{Residual_Deviance}{Residual deviance.}
 #' }
 #'
 #' @author Martin Haringa
@@ -99,9 +114,10 @@ rmse <- function(x, data = NULL) {
 #'           data = MTPL2)
 #' m2 <- glm(nclaims ~ area + premium, offset = log(exposure), family = poisson(),
 #'           data = MTPL2)
+#' # RMSE is in claim counts for these exposure-offset models.
 #' model_performance(m1, m2)
 #'
-#' @seealso [rmse()], [bootstrap_performance()], [check_overdispersion()],
+#' @seealso [rmse()], [resample_performance()], [check_overdispersion()],
 #'   [check_residuals()]
 #'
 #' @export
@@ -121,6 +137,7 @@ model_performance <- function(...) {
       AIC = stats::AIC(mod),
       BIC = stats::BIC(mod),
       RMSE = rmse(mod, dat),
+      Residual_Deviance = stats::deviance(mod),
       stringsAsFactors = FALSE
     )
     out

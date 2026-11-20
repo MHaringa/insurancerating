@@ -11,7 +11,7 @@
   if (inherits(x, "calibrated_model")) {
     stop(
       "Model refinement cannot be applied after calibration. Apply all ",
-      "refinement steps before calling `calibrate_model()`.",
+      "refinement steps before calling `adjust_intercept()`.",
       call. = FALSE
     )
   }
@@ -1596,7 +1596,7 @@ as_refinement.glm <- function(x, data = NULL, ...) {
   if (inherits(x, "calibrated_model")) {
     stop(
       "Model refinement cannot be applied after calibration. Apply all ",
-      "refinement steps before calling `calibrate_model()`.",
+      "refinement steps before calling `adjust_intercept()`.",
       call. = FALSE
     )
   }
@@ -1831,7 +1831,7 @@ prepare_refinement <- function(model, data = NULL) {
   if (inherits(model, "calibrated_model")) {
     stop(
       "Model refinement cannot be applied after calibration. Apply all ",
-      "refinement steps before calling `calibrate_model()`.",
+      "refinement steps before calling `adjust_intercept()`.",
       call. = FALSE
     )
   }

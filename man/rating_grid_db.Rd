@@ -26,8 +26,11 @@ records in each combination.}
 \item{aggregate_cols}{Optional character vector naming additional columns to
 sum within each combination.}
 
-\item{drop_na}{Logical. If \code{TRUE}, records with missing \code{group_by} values are
-excluded. If \code{FALSE}, missing values remain an observed group.}
+\item{drop_na}{Logical. With \code{FALSE} (default), missing values in
+\code{group_by} form a distinct grouping value and those rows still contribute
+to the totals. With \code{TRUE}, a missing value in any \code{group_by} column
+excludes the entire row from counts, exposure and other totals.
+Only \code{group_by} columns are checked by this filter.}
 
 \item{exposure_by}{Reserved for consistency with \code{\link[=rating_grid]{rating_grid()}}. Splitting
 an exposure into dynamically named wide columns is not performed in a lazy

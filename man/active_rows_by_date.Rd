@@ -40,7 +40,10 @@ portfolio information. The default is \code{"drop"}.}
 
 \item{multiple_matches}{Character string controlling events that match
 multiple active portfolio rows. Use \code{"all"} to retain every match, or
-\code{"first"} or \code{"last"} to retain one matching row. The default is \code{"all"}.}
+\code{"first"} or \code{"last"} to retain one. Matches for these two choices are
+ordered by period start, then period end, then original portfolio row
+order for ties. The default, \code{"all"}, returns matches for each event in
+original portfolio row order.}
 
 \item{nomatch, mult}{Deprecated technical argument names. Use \code{unmatched} and
 \code{multiple_matches} instead.}
@@ -78,9 +81,9 @@ are omitted. With \code{unmatched = "keep"}, they remain visible with missing
 portfolio fields. Retaining unmatched events is generally preferable during
 data-quality review because it makes gaps in the policy history explicit.
 
-The interval join is performed internally with \code{\link[data.table:foverlaps]{data.table::foverlaps()}} on
-local copies. Neither input is modified by reference. The output follows the
-original order of \code{dates} and is always returned as a regular \code{data.frame}.
+The interval join includes both the start and end date. Neither input is
+modified. The output follows the original order of \code{dates} and is always
+a regular \code{data.frame}.
 }
 \examples{
 portfolio <- data.frame(

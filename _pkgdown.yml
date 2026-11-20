@@ -78,28 +78,48 @@ reference:
       relativities.
     contents:
       - prepare_refinement
+
+  - subtitle: "Shape ordered effects"
+    contents:
       - add_smoothing
       - edit_smoothing
-      - add_restriction
       - add_monotonicity
+
+  - subtitle: "Adjust & split tariff levels"
+    contents:
+      - add_restriction
       - add_shrinkage
-      - add_rebasing
       - add_relativities
-      - relativity_specification
+
+  - subtitle: "Finalise & audit"
+    contents:
+      - add_rebasing
       - autoplot.rating_refinement
       - refit
-      - calibrate_model
+      - adjust_intercept
       - audit_refinement
 
   - title: "Model validation"
     desc: >
       Assess model performance, resampling stability, distributional assumptions
       and residual behaviour.
+
+  - subtitle: "Model performance & calibration"
+    desc: >
+      Compare fit, prediction error and calibration. See the
+      [observed-versus-expected review](../articles/model-validation.html#reviewing-observed-versus-expected-experience).
     contents:
       - model_performance
-      - bootstrap_performance
+      - check_calibration
+
+  - subtitle: "Model stability"
+    contents:
+      - resample_performance
       - autoplot.bootstrap_performance
       - bootstrap_coefficients
+
+  - subtitle: "Model diagnostics"
+    contents:
       - check_overdispersion
       - check_residuals
       - autoplot.check_residuals
@@ -138,10 +158,16 @@ reference:
       - MTPL
       - MTPL2
 
+  # Keep the shared helper page linked from add_relativities(), off the index.
+  - title: "internal"
+    contents:
+      - relativity_specification
+
   - title: "Deprecated"
     desc: >
       Legacy functions retained for backward compatibility. New code should use the updated API.
     contents:
+      - calibrate_model
       - univariate
       - riskfactor_gam
       - fit_gam
@@ -151,6 +177,7 @@ reference:
       - model_data
       - construct_model_points
       - construct_tariff_classes
+      - bootstrap_performance
       - bootstrap_rmse
       - fit_truncated_dist
       - fisher

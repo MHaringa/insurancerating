@@ -1,12 +1,12 @@
-context("bootstrap_performance")
+context("resample_performance")
 
-test_that("bootstrap_performance returns RMSE performance object", {
+test_that("resample_performance returns the legacy RMSE performance object", {
   mod1 <- glm(nclaims ~ age_policyholder,
               data = MTPL,
               offset = log(exposure),
               family = poisson())
 
-  x <- bootstrap_performance(
+  x <- resample_performance(
     mod1,
     MTPL,
     n_resamples = 10,
@@ -15,6 +15,8 @@ test_that("bootstrap_performance returns RMSE performance object", {
   )
 
   expect_s3_class(x, "bootstrap_performance")
+  expect_named(x, c("rmse_bs", "rmse_mod", "metric", "sampling", "n_resamples",
+                    "sample_fraction", "n", "frac"))
   expect_equal(length(x$rmse_bs), 10)
   expect_equal(x$metric, "rmse")
   expect_equal(x$sampling, "bootstrap")
@@ -25,13 +27,13 @@ test_that("bootstrap_performance returns RMSE performance object", {
   expect_true(is.numeric(x$rmse_mod))
 })
 
-test_that("bootstrap_performance supports split sampling", {
+test_that("resample_performance supports split sampling", {
   mod1 <- glm(nclaims ~ age_policyholder,
               data = MTPL,
               offset = log(exposure),
               family = poisson())
 
-  x <- bootstrap_performance(
+  x <- resample_performance(
     mod1,
     MTPL,
     n_resamples = 5,
@@ -46,13 +48,13 @@ test_that("bootstrap_performance supports split sampling", {
   expect_false(anyNA(x$rmse_bs))
 })
 
-test_that("bootstrap_performance supports supplied model RMSE", {
+test_that("resample_performance supports supplied model RMSE", {
   mod1 <- glm(nclaims ~ age_policyholder,
               data = MTPL,
               offset = log(exposure),
               family = poisson())
 
-  x <- bootstrap_performance(
+  x <- resample_performance(
     mod1,
     MTPL,
     n_resamples = 3,
@@ -63,7 +65,7 @@ test_that("bootstrap_performance supports supplied model RMSE", {
   expect_equal(x$rmse_mod, 123)
 })
 
-test_that("bootstrap_performance handles character levels absent from training sample", {
+test_that("resample_performance handles character levels absent from training sample", {
   data <- data.frame(
     y = rep(c(0, 1), 8),
     rating_factor = rep(c("a", "b", "c", "d"), each = 4)
@@ -72,7 +74,7 @@ test_that("bootstrap_performance handles character levels absent from training s
 
   set.seed(1)
   expect_silent(
-    x <- bootstrap_performance(
+    x <- resample_performance(
       mod1,
       data,
       n_resamples = 3,
@@ -84,42 +86,42 @@ test_that("bootstrap_performance handles character levels absent from training s
   expect_equal(length(x$rmse_bs), 3)
 })
 
-test_that("bootstrap_performance validates inputs", {
+test_that("resample_performance validates inputs", {
   mod1 <- glm(nclaims ~ age_policyholder,
               data = MTPL,
               offset = log(exposure),
               family = poisson())
 
   expect_error(
-    bootstrap_performance(mod1, MTPL, n_resamples = 0, show_progress = FALSE),
+    resample_performance(mod1, MTPL, n_resamples = 0, show_progress = FALSE),
     "`n_resamples`"
   )
   expect_error(
-    bootstrap_performance(mod1, MTPL, n_resamples = 1.5, show_progress = FALSE),
+    resample_performance(mod1, MTPL, n_resamples = 1.5, show_progress = FALSE),
     "`n_resamples`"
   )
   expect_error(
-    bootstrap_performance(mod1, MTPL, sample_fraction = NA_real_, show_progress = FALSE),
+    resample_performance(mod1, MTPL, sample_fraction = NA_real_, show_progress = FALSE),
     "`sample_fraction`"
   )
   expect_error(
-    bootstrap_performance(mod1, MTPL, metric = "mae", show_progress = FALSE),
+    resample_performance(mod1, MTPL, metric = "mae", show_progress = FALSE),
     "`metric`"
   )
   expect_error(
-    bootstrap_performance(mod1, MTPL, sampling = "cv", show_progress = FALSE),
+    resample_performance(mod1, MTPL, sampling = "cv", show_progress = FALSE),
     "'arg' should be one of"
   )
   expect_error(
-    bootstrap_performance(mod1, MTPL, show_progress = NA),
+    resample_performance(mod1, MTPL, show_progress = NA),
     "`show_progress`"
   )
   expect_error(
-    bootstrap_performance(mod1, MTPL, rmse_model = Inf, show_progress = FALSE),
+    resample_performance(mod1, MTPL, rmse_model = Inf, show_progress = FALSE),
     "`rmse_model`"
   )
   expect_error(
-    bootstrap_performance(mod1, MTPL[0, ], show_progress = FALSE),
+    resample_performance(mod1, MTPL[0, ], show_progress = FALSE),
     "`data`"
   )
 })
@@ -140,15 +142,15 @@ test_that("bootstrap_rmse remains available as deprecated wrapper", {
   expect_equal(length(x$rmse_bs), 3)
 })
 
-test_that("deprecated bootstrap_performance argument names remain available", {
+test_that("deprecated resampling argument names remain available", {
   mod1 <- glm(nclaims ~ age_policyholder,
               data = MTPL,
               offset = log(exposure),
               family = poisson())
 
   expect_warning(
-    x <- bootstrap_performance(mod1, MTPL, n = 3, frac = 0.8,
-                               sampling = "split", show_progress = FALSE),
+    x <- resample_performance(mod1, MTPL, n = 3, frac = 0.8,
+                              sampling = "split", show_progress = FALSE),
     "deprecated"
   )
 
@@ -161,7 +163,7 @@ test_that("bootstrap_performance methods work", {
               data = MTPL,
               offset = log(exposure),
               family = poisson())
-  x <- bootstrap_performance(mod1, MTPL, n_resamples = 3, show_progress = FALSE)
+  x <- resample_performance(mod1, MTPL, n_resamples = 3, show_progress = FALSE)
 
   expect_type(as.vector(x), "double")
   expect_equal(length(as.vector(x)), 3)

@@ -26,9 +26,9 @@ merge_date_ranges(
 \item{data}{A \code{data.frame} or \code{data.table} containing the portfolio periods.}
 
 \item{period_start}{Character string. Name of the column with period start
-dates.}
+dates (class \code{Date}).}
 
-\item{period_end}{Character string. Name of the column with period end dates.}
+\item{period_end}{Character string. Name of the period-end column (class \code{Date}).}
 
 \item{group_by}{Character vector with columns that identify the portfolio
 entity or rating segment within which date ranges should be merged.}
@@ -48,90 +48,69 @@ also bridges short uncovered gaps and should represent an explicit
 administrative assumption.}
 
 \item{allow_na_in}{Optional character vector naming columns in \code{group_by}
-where missing values may form a group. The default, \code{NULL}, rejects
-missing values in every grouping column.}
+where missing values may form a distinct grouping value. Missing values
+in any other grouping column cause an error. The default, \code{NULL}, allows
+none. Unlike \code{drop_na} in \code{\link[=rating_grid]{rating_grid()}}, this argument does not filter
+rows out.}
 
 \item{df, begin, end, ..., agg_cols, agg, min.gapwidth}{Deprecated argument names
 kept for backward compatibility. Use \code{data}, \code{period_start}, \code{period_end},
 \code{group_by}, \code{aggregate_cols}, \code{aggregate_fun}, and \code{merge_gap_days}.}
 }
 \value{
-A regular \code{data.frame} with classes \code{"merged_date_ranges"} and
-\code{"reduce"}, and attributes:
+A \code{data.frame} with one row per consolidated period, containing the
+grouping columns, dates and requested aggregates. It has classes
+\code{"merged_date_ranges"} and \code{"reduce"}, and attributes:
 \itemize{
-\item \code{begin} — name of the period-start column
-\item \code{end}   — name of the period-end column
-\item \code{cols}  — grouping columns
+\item \code{period_start}: name of the period-start column
+\item \code{period_end}: name of the period-end column
+\item \code{group_by}: original grouping columns
 }
 }
 \description{
 Combine overlapping or nearly adjacent coverage periods for the same policy,
-risk or portfolio segment. The result provides a consolidated time basis for
-exposure calculations, active-policy counts and period-based reporting.
-
-Together with \code{\link[=rating_grid]{rating_grid()}}, this function belongs to the portfolio
-reduction workflow. Both functions reduce row-level portfolio data while
-retaining selected totals. \code{merge_date_ranges()} reduces temporally connected
-records; \code{\link[=rating_grid]{rating_grid()}} reduces records with identical risk-factor values.
+risk or portfolio segment, optionally aggregating amounts such as premium
+or exposure. Separate periods remain separate rows.
 }
 \details{
-\subsection{Portfolio reduction}{
-
-\code{merge_date_ranges()} performs temporal portfolio reduction. It combines
-connected periods within the same \code{group_by} values and retains the selected
-additive amounts. Use \code{\link[=rating_grid]{rating_grid()}} for the complementary categorical
-reduction of records with identical risk-factor combinations.
-}
-
 \subsection{Connected periods}{
 
-Insurance portfolio extracts often contain multiple rows for the same policy
-or risk because of renewals, endorsements, product changes, or short
-administrative gaps. Before calculating portfolio in/outflow, active exposure
-windows, or policy counts, it can be useful to reduce those rows to stable
-coverage intervals.
+Periods merge only when their \code{group_by} values match. Include the policy
+or risk identifier when unrelated contracts must remain separate.
 
-\code{merge_date_ranges()} merges date ranges within each \code{group_by} combination.
-Ranges with a gap smaller than \code{merge_gap_days} are treated as one continuous
-interval. If \code{aggregate_cols} is supplied, those columns are aggregated over
-the merged interval. The grouping columns should identify records for which
-combining coverage periods is actuarially and operationally meaningful;
-periods belonging to different risks or contracts should not be pooled.
-For an optional grouping attribute, use e.g. \code{allow_na_in = "coverage"}
-to retain \code{NA} as a distinct value. Two missing values then match if the
-other grouping keys match; a missing value never matches a known coverage.
-The usual date-gap rule still applies. Keep policy or risk identifiers
-out of \code{allow_na_in} when missing identifiers could pool unrelated risks.
+Dates are inclusive: a period ending on 31 January and one starting on
+1 February have no uncovered days and merge by default. With
+\code{merge_gap_days = 5}, gaps of up to four uncovered days are also bridged.
 
-Start and end dates are treated as inclusive. Consequently, two periods for
-which the second starts one day after the first ends have zero uncovered
-days. They are merged with the default \code{merge_gap_days = 1}. A value of \code{5}
-merges periods with at most four uncovered days between them.
+Use e.g. \code{allow_na_in = "coverage"} to treat missing coverage as a distinct
+group value. Missing values match each other, not known values; other
+grouping values and the date-gap rule still apply. Avoid allowing missing
+identifiers if this could combine unrelated risks.
 }
 
-\subsection{Aggregation and implementation}{
+\subsection{Aggregation}{
 
-Aggregated amounts are combined over the source rows, not prorated over
-calendar days. Summing premium or exposure is appropriate when each source
-row contains a distinct additive amount. If overlapping rows already contain
-amounts for the same covered days, users should resolve that overlap before
-aggregation to avoid double counting.
+\code{aggregate_cols} are combined over source rows, not prorated over calendar
+days. Sum only distinct additive amounts: merging overlapping dates does
+not remove duplicated premium or exposure. Resolve such duplicates first.
 
-Each output row represents one consolidated period within a \code{group_by}
-combination. This is a temporal reduction of the portfolio; records with the
-same risk-factor values are not combined when their periods remain separate.
+The input is not modified. For database-backed processing, use
+\code{\link[=merge_date_ranges_db]{merge_date_ranges_db()}}. To aggregate identical rating-factor combinations
+rather than connected periods, use \code{\link[=rating_grid]{rating_grid()}}.
+}
 
-Internally, grouping keys are ranked once and interval construction uses a
-compact \code{\link[data.table:data.table]{data.table::data.table()}} with group identifiers, dates and row
-positions. Only requested aggregation columns are added to that working
-table; grouping attributes are retrieved for the output rows afterwards.
-The wide input portfolio is not copied or sorted in place, and the supplied
-object is not modified by reference. Standard \code{sum} aggregation of ordinary
-numeric columns uses an optimized grouped calculation. Other aggregation
-functions and numeric classes retain the general aggregation route.
-Large inputs and outputs still require sufficient memory.
-For a portfolio that should remain outside R memory, use
-\code{\link[=merge_date_ranges_db]{merge_date_ranges_db()}} to perform the same interval reduction in DuckDB.
+\subsection{Summaries}{
+
+\code{summary()} counts consolidated periods entering and leaving the portfolio.
+Choose \code{period = "days"} (default), \code{"weeks"}, \code{"months"}, \code{"quarters"} or
+\code{"years"}, and optionally rename the count column with \code{name}.
+Supply grouping columns explicitly, e.g. \code{summary(x, coverage, period = "months")};
+the original \code{group_by} is not applied automatically. These are period
+movement counts, not counts of unique policies.
+
+If you rename a date column, update its \code{period_start} or \code{period_end}
+attribute so \code{summary()} can find it. Older saved objects with \code{begin} and
+\code{end} attributes remain supported when the new attributes are absent.
 }
 }
 \examples{
@@ -157,6 +136,7 @@ pt1 <- merge_date_ranges(
   group_by = c("policy_id", "coverage")
 )
 
+# Count movements by month, policy and coverage.
 summary(pt1, period = "months", policy_id, coverage)
 
 # Bridge a short administrative gap and retain additive premium totals.
@@ -170,7 +150,7 @@ pt2 <- merge_date_ranges(
   merge_gap_days = 5
 )
 
-summary(pt2, period = "months", policy_id, coverage)
+pt2
 
 }
 \seealso{

@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_performance_bootstrap_rmse.R
 \name{bootstrap_performance}
 \alias{bootstrap_performance}
-\title{Assess performance stability under repeated resampling}
+\title{Deprecated alias for \code{resample_performance()}}
 \usage{
 bootstrap_performance(
   model,
@@ -14,7 +14,8 @@ bootstrap_performance(
   show_progress = TRUE,
   rmse_model = NULL,
   n = NULL,
-  frac = NULL
+  frac = NULL,
+  metrics = "rmse"
 )
 }
 \arguments{
@@ -28,97 +29,28 @@ Default is 50.}
 \item{sample_fraction}{Fraction of the data used in the training sample. Must
 be in \verb{(0, 1]}. Default is 1.}
 
-\item{metric}{Character string. Performance metric to compute. Currently only
-\code{"rmse"} is supported.}
+\item{metric}{Legacy argument that accepts only \code{"rmse"}. Use \code{metrics}
+to select metrics.}
 
-\item{sampling}{Character string. Sampling scheme. \code{"bootstrap"} samples
-training
-rows with replacement and evaluates on out-of-bag rows when
-\code{sample_fraction < 1}.
-\code{"split"} samples training rows without replacement and evaluates on the
-remaining rows when \code{sample_fraction < 1}.}
+\item{sampling}{Character string. Use \code{"bootstrap"} (default) to sample
+training rows with replacement or \code{"split"} to sample without replacement.}
 
 \item{show_progress}{Logical. Show a progress bar during resampling.
 Default is \code{TRUE}.}
 
 \item{rmse_model}{Optional finite numeric RMSE for the original fitted model.
-If \code{NULL}, it is calculated from \code{model} and \code{data}.}
+If \code{NULL} and RMSE is selected, it is calculated from \code{model} and \code{data}.}
 
 \item{n, frac}{Deprecated argument names. Use \code{n_resamples} and
 \code{sample_fraction} instead.}
+
+\item{metrics}{Character vector of distinct metrics in the desired output
+order: \code{"rmse"} (default), \code{"mae"}, or \code{"deviance"}.}
 }
 \value{
-An object of class \code{"bootstrap_performance"}, which is a list with
-components:
-\describe{
-\item{rmse_bs}{Numeric vector with \code{n_resamples} bootstrap RMSE values.}
-\item{rmse_mod}{Root mean squared error for the original fitted model.}
-\item{metric}{Metric name.}
-\item{sampling}{Sampling scheme.}
-}
+See \code{\link[=resample_performance]{resample_performance()}}.
 }
 \description{
-Refit a pricing model on repeated samples and record the resulting
-response-scale prediction error. The distribution of RMSE values describes
-how sensitive model performance is to changes in the observed portfolio
-sample.
+\code{bootstrap_performance()} is deprecated. Use \code{\link[=resample_performance]{resample_performance()}} instead.
 }
-\details{
-\subsection{Resampling design}{
-
-With \code{sampling = "bootstrap"}, training rows are sampled with replacement.
-With \code{sampling = "split"}, they are sampled without replacement. When
-\code{sample_fraction < 1}, performance is evaluated on records not used for
-fitting. When \code{sample_fraction = 1}, performance is evaluated on the sampled
-training data and should be interpreted as an in-sample stability measure.
-
-Character columns and factor columns are converted to factors with levels
-taken from the full input data before resampling. For factor variables used
-in the model, the training sample is augmented when needed so every observed
-level is represented at least once. This prevents prediction failures when a
-level is present in the evaluation data but absent from a particular training
-sample.
-}
-
-\subsection{Actuarial interpretation}{
-
-The resampled RMSE distribution is useful for comparing the stability of
-alternative frequency, severity or risk-premium specifications under
-repeated portfolio sampling. A narrow distribution indicates that the
-measured error is relatively insensitive to the sampled records; a wide
-distribution indicates greater sampling sensitivity.
-
-This is an experience-based diagnostic and does not by itself represent the
-full uncertainty in future claims, trend, portfolio mix or model
-specification. Sparse factor levels are retained in training samples where
-necessary to avoid new-level prediction failures. That protection is useful
-operationally, but should be considered when interpreting the resampling
-design.
-}
-}
-\examples{
-\dontrun{
-mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
-            offset = log(exposure), family = poisson())
-
-# Use all records
-x <- bootstrap_performance(mod1, MTPL, n_resamples = 80,
-                           show_progress = FALSE)
-print(x)
-autoplot(x)
-
-# Use 80\% of records and evaluate on the remaining records
-x_frac <- bootstrap_performance(mod1, MTPL, n_resamples = 50,
-                                sample_fraction = .8, sampling = "split",
-                                show_progress = FALSE)
-autoplot(x_frac)
-}
-
-}
-\seealso{
-\code{\link[=rmse]{rmse()}}, \code{\link[=model_performance]{model_performance()}},
-\code{\link[=autoplot.bootstrap_performance]{autoplot.bootstrap_performance()}}
-}
-\author{
-Martin Haringa
-}
+\keyword{internal}

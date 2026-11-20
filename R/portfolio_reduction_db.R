@@ -70,8 +70,11 @@
 #'   records in each combination.
 #' @param aggregate_cols Optional character vector naming additional columns to
 #'   sum within each combination.
-#' @param drop_na Logical. If `TRUE`, records with missing `group_by` values are
-#'   excluded. If `FALSE`, missing values remain an observed group.
+#' @param drop_na Logical. With `FALSE` (default), missing values in
+#'   `group_by` form a distinct grouping value and those rows still contribute
+#'   to the totals. With `TRUE`, a missing value in any `group_by` column
+#'   excludes the entire row from counts, exposure and other totals.
+#'   Only `group_by` columns are checked by this filter.
 #' @param exposure_by Reserved for consistency with [rating_grid()]. Splitting
 #'   an exposure into dynamically named wide columns is not performed in a lazy
 #'   database query. Include this variable in `group_by`, collect the reduced

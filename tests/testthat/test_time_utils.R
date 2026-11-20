@@ -177,9 +177,12 @@ test_that("merge_date_ranges merges ranges and aggregates without mutation", {
   expect_false(data.table::is.data.table(result))
   expect_equal(nrow(result), 3)
   expect_equal(result$premium[result$policy == "A" & result$begin == as.Date("2020-01-01")], 300)
-  expect_equal(attr(result, "begin"), "begin")
-  expect_equal(attr(result, "end"), "end")
-  expect_equal(attr(result, "cols"), "policy")
+  expect_equal(attr(result, "period_start", exact = TRUE), "begin")
+  expect_equal(attr(result, "period_end", exact = TRUE), "end")
+  expect_equal(attr(result, "group_by", exact = TRUE), "policy")
+  expect_null(attr(result, "begin", exact = TRUE))
+  expect_null(attr(result, "end", exact = TRUE))
+  expect_null(attr(result, "cols", exact = TRUE))
 })
 
 test_that("merge_date_ranges uses direct adjacency as its default boundary", {

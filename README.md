@@ -116,7 +116,7 @@ implementation.
 | Structure continuous risk factors | `risk_factor_gam()`, `derive_tariff_segments()` |
 | Interpret fitted model effects | `rating_table()`, `add_portfolio_experience()` |
 | Refine tariff structures | `prepare_refinement()`, `add_smoothing()`, `add_restriction()`, `refit()` |
-| Validate fitted models | `model_performance()`, `check_overdispersion()`, `check_residuals()`, `bootstrap_performance()` |
+| Validate fitted models | `model_performance()`, `check_overdispersion()`, `check_residuals()`, `resample_performance()` |
 | Treat large losses | `assess_excess_threshold()`, `redistribute_excess_loss()` |
 | Reduce portfolio data locally | `rating_grid()`, `merge_date_ranges()` |
 | Reduce portfolios in a database | `rating_grid_db()`, `merge_date_ranges_db()` |

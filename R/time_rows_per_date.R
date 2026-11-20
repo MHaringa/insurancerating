@@ -21,7 +21,10 @@
 #'   portfolio information. The default is `"drop"`.
 #' @param multiple_matches Character string controlling events that match
 #'   multiple active portfolio rows. Use `"all"` to retain every match, or
-#'   `"first"` or `"last"` to retain one matching row. The default is `"all"`.
+#'   `"first"` or `"last"` to retain one. Matches for these two choices are
+#'   ordered by period start, then period end, then original portfolio row
+#'   order for ties. The default, `"all"`, returns matches for each event in
+#'   original portfolio row order.
 #' @param nomatch,mult Deprecated technical argument names. Use `unmatched` and
 #'   `multiple_matches` instead.
 #'
@@ -47,9 +50,9 @@
 #' portfolio fields. Retaining unmatched events is generally preferable during
 #' data-quality review because it makes gaps in the policy history explicit.
 #'
-#' The interval join is performed internally with [data.table::foverlaps()] on
-#' local copies. Neither input is modified by reference. The output follows the
-#' original order of `dates` and is always returned as a regular `data.frame`.
+#' The interval join includes both the start and end date. Neither input is
+#' modified. The output follows the original order of `dates` and is always
+#' a regular `data.frame`.
 #'
 #' @author Martin Haringa
 #'
@@ -110,8 +113,6 @@ active_rows_by_date <- function(portfolio,
                                 multiple_matches = c("all", "first", "last"),
                                 nomatch = NULL,
                                 mult = NULL) {
-  .portfolio_row_id <- .date_row_id <- .event_date <- NULL
-
   unmatched_supplied <- !missing(unmatched)
   if (!missing(nomatch)) {
     if (unmatched_supplied) {
@@ -162,11 +163,9 @@ active_rows_by_date <- function(portfolio,
   }
   .time_validate_columns(portfolio, by, "`by`")
   .time_validate_columns(dates, by, "`by`")
-  missing_by <- c(
-    vapply(by, function(column) sum(is.na(portfolio[[column]])), integer(1)),
-    vapply(by, function(column) sum(is.na(dates[[column]])), integer(1))
-  )
-  if (any(missing_by > 0L)) {
+  if (any(vapply(by, function(column) {
+    anyNA(portfolio[[column]]) || anyNA(dates[[column]])
+  }, logical(1)))) {
     stop(
       "Columns supplied through `by` must not contain missing values in ",
       "`portfolio` or `dates`.",
@@ -186,48 +185,69 @@ active_rows_by_date <- function(portfolio,
     )
   }
 
-  portfolio_dt <- data.table::as.data.table(data.table::copy(portfolio))
-  dates_dt <- data.table::as.data.table(data.table::copy(dates))
-
-  portfolio_dt[, .portfolio_row_id := .I]
-  dates_dt[, .date_row_id := .I]
-  dates_dt[, .event_date := get(date)]
-
-  lookup <- data.table::copy(dates_dt)
-  data.table::setnames(lookup, old = date, new = period_start)
-  lookup[, (period_end) := get(period_start)]
-
   key_cols <- c(by, period_start, period_end)
-  data.table::setkeyv(portfolio_dt, key_cols)
-  data.table::setkeyv(lookup, key_cols)
+  if (anyDuplicated(key_cols) || date %in% by) {
+    stop("Join keys and date columns must be distinct within each input.",
+         call. = FALSE)
+  }
+  portfolio_cols <- .active_rows_as_columns(portfolio)
+  date_cols <- .active_rows_as_columns(dates)
+  if (anyDuplicated(names(portfolio_cols)) || anyDuplicated(names(date_cols))) {
+    stop("Column names must be unique within each input.", call. = FALSE)
+  }
 
-  ans <- data.table::foverlaps(
-    lookup,
-    portfolio_dt,
-    by.x = key_cols,
-    by.y = key_cols,
+  # Sort only the interval keys. Keep original row numbers for selecting output.
+  keys <- paste0("key", seq_along(key_cols))
+  periods <- data.table::as.data.table(stats::setNames(portfolio_cols[key_cols], keys))
+  data.table::set(periods, j = "row_id", value = seq_len(nrow(portfolio)))
+  data.table::setkeyv(periods, keys)
+  event_date <- date_cols[[date]]
+  events <- data.table::as.data.table(stats::setNames(
+    c(date_cols[by], list(event_date, event_date)), keys
+  ))
+
+  ids <- data.table::foverlaps(
+    events,
+    periods,
+    by.x = keys,
+    by.y = keys,
     type = "any",
-    which = FALSE,
-    nomatch = if (identical(unmatched, "keep")) NA else NULL,
+    which = TRUE,
+    nomatch = NA,
     mult = multiple_matches
   )
 
-  event_start <- paste0("i.", period_start)
-  event_end <- paste0("i.", period_end)
-  event_date <- ".event_date"
-  if (event_start %in% names(ans)) ans[, (event_start) := NULL]
-  if (event_end %in% names(ans)) ans[, (event_end) := NULL]
-  if (event_date %in% names(ans)) {
-    data.table::setnames(ans, old = event_date, new = date)
+  all_matches <- identical(multiple_matches, "all")
+  event_id <- if (all_matches) ids$xid else seq_along(ids)
+  portfolio_id <- periods$row_id[if (all_matches) ids$yid else ids]
+  if (identical(unmatched, "drop")) {
+    matched <- !is.na(portfolio_id)
+    event_id <- event_id[matched]
+    portfolio_id <- portfolio_id[matched]
   }
-  order_cols <- intersect(c(".date_row_id", ".portfolio_row_id"), names(ans))
-  if (length(order_cols) > 0L) {
-    data.table::setorderv(ans, order_cols, na.last = TRUE)
+  if (all_matches) {
+    ord <- order(event_id, portfolio_id, method = "radix")
+    event_id <- event_id[ord]
+    portfolio_id <- portfolio_id[ord]
   }
-  ans[, intersect(c(".portfolio_row_id", ".date_row_id"), names(ans)) := NULL]
-  ans <- as.data.frame(ans, stringsAsFactors = FALSE)
-  rownames(ans) <- NULL
-  ans
+
+  event_keys <- lapply(date_cols[by], function(column) unname(column[event_id]))
+  history <- lapply(portfolio_cols[setdiff(names(portfolio_cols), by)],
+                    function(column) unname(column[portfolio_id]))
+  event_fields <- lapply(date_cols[setdiff(names(date_cols), c(by, date))],
+                         function(column) unname(column[event_id]))
+  event_fields[[date]] <- unname(event_date[event_id])
+  structure(c(event_keys, history, event_fields), class = "data.frame",
+            row.names = .set_row_names(length(event_id)))
+}
+
+
+.active_rows_as_columns <- function(data) {
+  # Retain data.table's expansion of matrix-like columns when present.
+  if (any(vapply(data, function(column) !is.null(dim(column)), logical(1)))) {
+    data <- data.table::as.data.table(data)
+  }
+  as.list(data)
 }
 
 #' Deprecated alias for `active_rows_by_date()`

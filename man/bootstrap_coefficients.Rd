@@ -95,7 +95,7 @@ if (requireNamespace("gt", quietly = TRUE)) {
 
 }
 \seealso{
-\code{\link[=summary.bootstrap_coefficients]{summary.bootstrap_coefficients()}}, \code{\link[=bootstrap_performance]{bootstrap_performance()}},
+\code{\link[=summary.bootstrap_coefficients]{summary.bootstrap_coefficients()}}, \code{\link[=resample_performance]{resample_performance()}},
 \code{\link[=model_performance]{model_performance()}}, \code{\link[=as_gt]{as_gt()}}
 }
 \author{

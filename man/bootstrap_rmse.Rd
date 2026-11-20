@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_performance_bootstrap_rmse.R
 \name{bootstrap_rmse}
 \alias{bootstrap_rmse}
-\title{Deprecated alias for \code{bootstrap_performance()}}
+\title{Deprecated RMSE wrapper for \code{resample_performance()}}
 \usage{
 bootstrap_rmse(
   model,
@@ -20,32 +20,28 @@ bootstrap_rmse(
 
 \item{data}{Data frame containing the model response and predictors.}
 
-\item{n}{Deprecated. Use \code{n_resamples} in \code{\link[=bootstrap_performance]{bootstrap_performance()}} instead.}
+\item{n}{Deprecated. Use \code{n_resamples} in \code{\link[=resample_performance]{resample_performance()}} instead.}
 
-\item{frac}{Deprecated. Use \code{sample_fraction} in \code{\link[=bootstrap_performance]{bootstrap_performance()}}
+\item{frac}{Deprecated. Use \code{sample_fraction} in \code{\link[=resample_performance]{resample_performance()}}
 instead.}
 
-\item{metric}{Character string. Performance metric to compute. Currently only
-\code{"rmse"} is supported.}
+\item{metric}{Legacy argument that accepts only \code{"rmse"}. Use \code{metrics}
+to select metrics.}
 
-\item{sampling}{Character string. Sampling scheme. \code{"bootstrap"} samples
-training
-rows with replacement and evaluates on out-of-bag rows when
-\code{sample_fraction < 1}.
-\code{"split"} samples training rows without replacement and evaluates on the
-remaining rows when \code{sample_fraction < 1}.}
+\item{sampling}{Character string. Use \code{"bootstrap"} (default) to sample
+training rows with replacement or \code{"split"} to sample without replacement.}
 
 \item{show_progress}{Logical. Show a progress bar during resampling.
 Default is \code{TRUE}.}
 
 \item{rmse_model}{Optional finite numeric RMSE for the original fitted model.
-If \code{NULL}, it is calculated from \code{model} and \code{data}.}
+If \code{NULL} and RMSE is selected, it is calculated from \code{model} and \code{data}.}
 }
 \value{
-See \code{\link[=bootstrap_performance]{bootstrap_performance()}}.
+See \code{\link[=resample_performance]{resample_performance()}}.
 }
 \description{
-\code{bootstrap_rmse()} is deprecated in favour of \code{\link[=bootstrap_performance]{bootstrap_performance()}}.
+\code{bootstrap_rmse()} is deprecated in favour of \code{\link[=resample_performance]{resample_performance()}}.
 Objects returned by \code{bootstrap_rmse()} keep class \code{"bootstrap_rmse"} for
 backward compatibility and also inherit from \code{"bootstrap_performance"}.
 }

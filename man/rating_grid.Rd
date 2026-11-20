@@ -28,15 +28,22 @@ plain \code{data.frame}, all columns except those listed in \code{exposure},
 
 \item{exposure}{Optional character; name of the exposure column to aggregate.}
 
-\item{exposure_by}{Optional character; name of a column used to split
-exposure or counts, for example a year variable.}
+\item{exposure_by}{Optional character; name of a column, such as year,
+whose levels become separate output columns. If \code{exposure} is supplied,
+each column contains total exposure for that level; otherwise, it
+contains the number of source rows. For example, the output might
+contain \code{exposure_2020} or \code{count_2020}. The totals in \code{aggregate_cols}
+are calculated once per model point, across all split levels.}
 
 \item{aggregate_cols}{Optional character vector with additional numeric
 columns to aggregate using \code{sum(na.rm = TRUE)}.}
 
-\item{drop_na}{Logical; if \code{TRUE}, rows with missing values in \code{group_by}
-are removed before aggregation. If \code{FALSE}, missing values define an
-explicit observed group and are retained. Default is \code{FALSE}.}
+\item{drop_na}{Logical. With \code{FALSE} (default), missing values in
+\code{group_by} form a distinct grouping value and those rows still contribute
+to the totals. With \code{TRUE}, a missing value in any \code{group_by} column
+excludes the entire row from counts, exposure and other totals.
+Only \code{group_by} columns are checked; missing values in the split or
+aggregation columns do not trigger this filter.}
 
 \item{group_vars, agg_cols}{Deprecated argument names. Use \code{group_by} and
 \code{aggregate_cols} instead.}
@@ -141,10 +148,6 @@ influential-claim analysis and model validation. The equivalence is also
 lost if a severity predictor varies within a grid row or if the totals and
 weights do not represent the underlying claims correctly.
 
-If \code{exposure_by} is supplied, exposure or row counts are split across levels
-of that variable and returned in wide format, for example
-\code{"exposure_2020"} or \code{"count_2020"}.
-
 After \code{\link[=add_relativities]{add_relativities()}} creates an output factor, the default grid uses
 that factor instead of its parent. Split relativities and subsequent
 shrinkage or rebasing columns are joined by the output segment, not by the
@@ -155,10 +158,9 @@ For objects returned by \code{\link[=extract_model_data]{extract_model_data()}},
 by the factor key recorded in the refinement metadata. They are not
 cross-joined onto every row.
 
-Aggregation, reshaping and refinement joins are performed internally with
-\code{\link[data.table:data.table]{data.table::data.table()}} to support large pricing portfolios. A local copy
-is used, so the supplied object is not modified by reference. The output is
-a regular \code{data.frame}, irrespective of the class of the input data.
+On wide portfolios, supply \code{group_by} explicitly to avoid grouping by
+unused columns. The input is not modified, and the output is always a
+regular \code{data.frame}.
 
 When the row-level portfolio does not fit comfortably in R memory, use
 \code{\link[=rating_grid_db]{rating_grid_db()}} to perform the grouped reduction in a database and collect

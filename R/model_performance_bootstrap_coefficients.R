@@ -55,7 +55,7 @@
 #'
 #' @author Martin Haringa
 #'
-#' @seealso [summary.bootstrap_coefficients()], [bootstrap_performance()],
+#' @seealso [summary.bootstrap_coefficients()], [resample_performance()],
 #'   [model_performance()], [as_gt()]
 #'
 #' @examples

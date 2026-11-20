@@ -53,7 +53,7 @@ The main building blocks can be placed in the following broad architecture:
 | Estimate technical risk | Estimate frequency, severity and expected loss | standard R modelling functions such as `glm()`, supported by `add_prediction()` |
 | Model interpretation | Express fitted effects as tariff relativities and compare them with experience | `rating_table()`, `add_portfolio_experience()` |
 | Tariff refinement | Apply explicit actuarial adjustments and refit the tariff model | `prepare_refinement()`, `add_smoothing()`, `add_restriction()`, `add_relativities()`, `refit()` |
-| Model validation | Examine assumptions, residuals, performance and stability | `check_overdispersion()`, `check_residuals()`, `model_performance()`, `bootstrap_performance()` |
+| Model validation | Examine assumptions, residuals, performance and stability | `check_overdispersion()`, `check_residuals()`, `model_performance()`, `resample_performance()` |
 | Portfolio preparation and reduction | Consolidate periods and construct observed model points locally or in a database | `merge_date_ranges()`, `rating_grid()`, `merge_date_ranges_db()`, `rating_grid_db()` |
 | Policy period operations | Split periods or match dated events to active policies | `split_periods_to_months()`, `active_rows_by_date()` |
 
@@ -333,7 +333,7 @@ Validation consists of several questions rather than one performance measure:
 | Does a Poisson model show material overdispersion? | `check_overdispersion()` |
 | Do simulated residuals show systematic structure? | `check_residuals()` |
 | How do comparable fitted models differ in likelihood and response-scale error? | `model_performance()` |
-| How sensitive is measured performance to portfolio resampling? | `bootstrap_performance()` |
+| How sensitive is measured performance to portfolio resampling? | `resample_performance()` |
 
 ```{r}
 check_overdispersion(frequency_model)

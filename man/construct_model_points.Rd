@@ -28,15 +28,22 @@ plain \code{data.frame}, all columns except those listed in \code{exposure},
 
 \item{exposure}{Optional character; name of the exposure column to aggregate.}
 
-\item{exposure_by}{Optional character; name of a column used to split
-exposure or counts, for example a year variable.}
+\item{exposure_by}{Optional character; name of a column, such as year,
+whose levels become separate output columns. If \code{exposure} is supplied,
+each column contains total exposure for that level; otherwise, it
+contains the number of source rows. For example, the output might
+contain \code{exposure_2020} or \code{count_2020}. The totals in \code{aggregate_cols}
+are calculated once per model point, across all split levels.}
 
 \item{aggregate_cols}{Optional character vector with additional numeric
 columns to aggregate using \code{sum(na.rm = TRUE)}.}
 
-\item{drop_na}{Logical; if \code{TRUE}, rows with missing values in \code{group_by}
-are removed before aggregation. If \code{FALSE}, missing values define an
-explicit observed group and are retained. Default is \code{FALSE}.}
+\item{drop_na}{Logical. With \code{FALSE} (default), missing values in
+\code{group_by} form a distinct grouping value and those rows still contribute
+to the totals. With \code{TRUE}, a missing value in any \code{group_by} column
+excludes the entire row from counts, exposure and other totals.
+Only \code{group_by} columns are checked; missing values in the split or
+aggregation columns do not trigger this filter.}
 
 \item{group_vars, agg_cols}{Deprecated argument names. Use \code{group_by} and
 \code{aggregate_cols} instead.}
