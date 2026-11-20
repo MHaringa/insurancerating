@@ -162,6 +162,7 @@ test_that("invalid grouping, model families and missing model inputs are rejecte
   }
   expect_error(check_calibration(model, portfolio, by = "year", groups = 2), "not both")
   expect_error(check_calibration(model, portfolio, by = "missing"), "one column")
+  expect_error(check_calibration(model, portfolio, by = "yaer"), "Did you mean `year`")
   absent <- portfolio[c("claims", "region")]
   expect_error(check_calibration(model, absent), "Missing model variables.*x.*exposure")
   expect_error(check_calibration(model, transform(portfolio, claims = NA_real_)),
@@ -228,4 +229,72 @@ test_that("autoplot preserves period and factor ordering and handles missing val
   override <- ggplot2::autoplot(check_calibration(model, portfolio, by = "calendar"),
                                type = "factor")
   expect_identical(override$scales$get_scales("x")$labels, c("2023", "2024", "(Missing)"))
+})
+.calibration_refinement_fixture <- function() {
+  data <- data.frame(
+    age = rep(21:60, each = 4),
+    earned = rep(c(0.4, 0.7, 1, 1), 40)
+  )
+  data$age_band <- cut(data$age, c(20, 30, 40, 50, 60))
+  data$claims <- rep(c(0, 0, 0, 1), 40) + as.integer(data$age > 40)
+  data
+}
+
+test_that("calibration uses the new smoothing bands and actual exposure", {
+  portfolio <- .calibration_refinement_fixture()
+  base <- glm(claims ~ age_band + offset(log(earned)), poisson(), data = portfolio)
+  model <- prepare_refinement(base, portfolio) |>
+    add_smoothing("age_band", "age", breaks = c(20, 35, 50, 60),
+                  smoothing = "poly", degree = 2) |>
+    refit()
+
+  expect_error(check_calibration(model, portfolio),
+               "age_band_smooth.*extract_model_data")
+  expect_error(check_calibration(model, portfolio, by = "age_smooth"),
+               "age_smooth.*extract_model_data")
+  expect_error(check_calibration(model, portfolio, by = "age"),
+               "age_band_smooth.*Did you mean `age_smooth`.*extract_model_data")
+  expect_error(check_calibration(model, portfolio, by = "age_smoth"),
+               "Did you mean `age_smooth`.*extract_model_data")
+  expect_error(check_calibration(model, portfolio, by = "typo"),
+               "must name one column")
+
+  refined_data <- extract_model_data(model)
+  expect_error(check_calibration(model, refined_data, by = "age_smoth"),
+               "Did you mean `age_smooth`")
+  expect_identical(check_calibration(model, refined_data, by = "age")$age, 21:60)
+  bands <- check_calibration(model, refined_data, by = "age_smooth")
+  expect_length(bands$age_smooth, 3L)
+  expect_equal(sum(bands$Observed), sum(portfolio$claims))
+  expect_equal(sum(bands$Expected), sum(fitted(model)))
+  expect_equal(sum(bands$Exposure), sum(portfolio$earned))
+  expected <- tapply(fitted(model), refined_data$age_smooth, sum)
+  expect_equal(bands$Expected, as.numeric(expected[as.character(bands$age_smooth)]))
+
+  groups <- check_calibration(model, refined_data, groups = 3)
+  expect_equal(sum(groups$Exposure), sum(portfolio$earned))
+  expect_equal(sum(groups$Expected), sum(fitted(model)))
+  expect_true(all(diff(groups$Expected / groups$Exposure) >= 0))
+})
+
+test_that("a fixed restriction offset is not treated as exposure", {
+  portfolio <- .calibration_refinement_fixture()
+  for (formula in list(claims ~ age_band + offset(log(earned)), claims ~ age_band)) {
+    base <- glm(formula, poisson(), data = portfolio)
+    model <- prepare_refinement(base, portfolio) |>
+      add_restriction(c("(50,60]" = 1.3), model_variable = "age_band") |>
+      refit()
+    expect_error(check_calibration(model, portfolio),
+                 "age_band_restricted.*extract_model_data")
+    data <- extract_model_data(model)
+    before <- check_calibration(base, data, by = "age_band")
+    after <- check_calibration(model, data, by = "age_band")
+    expect_identical(before$Observed, after$Observed)
+    expect_false(isTRUE(all.equal(before$Expected, after$Expected)))
+    expect_equal(sum(after$Expected), sum(fitted(model)))
+    groups <- check_calibration(model, data, groups = 2)
+    expect_identical(after$Exposure, before$Exposure)
+    expect_equal(sum(groups$Expected), sum(after$Expected))
+    expect_identical("Exposure" %in% names(groups), "Exposure" %in% names(before))
+  }
 })

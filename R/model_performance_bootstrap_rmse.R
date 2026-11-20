@@ -79,12 +79,17 @@
 #' RMSE (root mean squared error) and MAE (mean absolute error) are unweighted
 #' summaries of response-scale errors. For an exposure-offset Poisson model
 #' these are errors in claim counts, not claim frequency per unit exposure.
+#' For a binomial GLM, the errors are on the probability scale: two-column
+#' responses are converted to proportions, and factor responses use the
+#' fitted model's reference level to define zero.
 #' Predictive deviance sums the fitted GLM family's deviance contributions on
 #' the evaluation rows, using those rows' response-scale predictions (including
 #' offsets) and observation weights. Specify weights and offsets using columns
 #' in `data`, rather than separate row-aligned vectors, so the model can be
 #' refitted and evaluated on each sample. Total deviance can vary with the
 #' number and weight of evaluation rows as well as with prediction quality.
+#' On the original estimation rows with the same predictions and weights, it
+#' agrees with the residual deviance reported by [model_performance()].
 #'
 #' A wide score distribution indicates sensitivity to the sampled rows. Even
 #' with held-out rows, resampling the observed portfolio is not independent
@@ -229,10 +234,8 @@ resample_performance <- function(model, data, n_resamples = 50,
   if ("rmse" %in% metrics) original_scores[["rmse"]] <- rmse_model
   extra_metrics <- setdiff(metrics, "rmse")
   if (length(extra_metrics)) {
-    response_formula <- stats::formula(model)[[2L]]
     original_scores[extra_metrics] <- .resample_scores(
-      model, data, eval(response_formula, data, parent.frame()),
-      stats::predict(model, data, type = "response"), extra_metrics
+      model, data, stats::predict(model, data, type = "response"), extra_metrics
     )
   }
 
@@ -241,6 +244,7 @@ resample_performance <- function(model, data, n_resamples = 50,
     on.exit(close(pb), add = TRUE)
   }
 
+  binomial <- .is_binomial_performance_model(model)
   for (i in seq_len(n_resamples)) {
     if (isTRUE(show_progress)) {
       utils::setTxtProgressBar(pb, i)
@@ -265,12 +269,14 @@ resample_performance <- function(model, data, n_resamples = 50,
       )
     }
 
-    model_train <- stats::update(model, . ~ ., data = train)
-    resp_formula <- stats::formula(model_train)[[2L]]
-    resp <- eval(resp_formula, eval_data, parent.frame())
+    model_train <- if (binomial) {
+      stats::update(model, . ~ ., data = train, model = TRUE)
+    } else {
+      stats::update(model, . ~ ., data = train)
+    }
     pred <- stats::predict(model_train, eval_data, type = "response")
 
-    scores[i, ] <- .resample_scores(model_train, eval_data, resp, pred, metrics)
+    scores[i, ] <- .resample_scores(model_train, eval_data, pred, metrics)
   }
 
   result <- structure(
@@ -294,33 +300,19 @@ resample_performance <- function(model, data, n_resamples = 50,
 }
 
 
-.resample_scores <- function(model, data, response, predictions, metrics,
-                             legacy_rmse = TRUE) {
+.resample_scores <- function(model, data, predictions, metrics) {
   scores <- stats::setNames(numeric(length(metrics)), metrics)
-  if (legacy_rmse && "rmse" %in% metrics) {
-    scores[["rmse"]] <- .response_rmse(response, predictions)
-  }
-  deviance <- "deviance" %in% metrics
-  trials <- NULL
-  if ((deviance || "mae" %in% metrics || !legacy_rmse) &&
-      (is.matrix(response) || is.factor(response))) {
-    if (stats::family(model)$family %in% c("binomial", "quasibinomial")) {
-      if (is.factor(response)) {
-        response <- as.numeric(response != levels(response)[1L])
-      } else if (ncol(response) == 2L) {
-        trials <- rowSums(response)
-        response <- ifelse(trials == 0, 0, response[, 1L] / trials)
-      }
-    }
-  }
-  if (!legacy_rmse && "rmse" %in% metrics) {
+  observed <- .performance_response_scale(model, .performance_observed(model, data))
+  response <- observed$response
+  if ("rmse" %in% metrics) {
     scores[["rmse"]] <- .response_rmse(response, predictions)
   }
   if ("mae" %in% metrics) {
     scores[["mae"]] <- mean(abs(response - predictions), na.rm = TRUE)
   }
-  if (deviance) {
-    scores[["deviance"]] <- .resample_deviance(model, data, response, predictions, trials)
+  if ("deviance" %in% metrics) {
+    scores[["deviance"]] <- .resample_deviance(model, data, response, predictions,
+                                             observed$trials)
   }
   scores
 }
@@ -549,7 +541,11 @@ as.vector.bootstrap_performance <- function(x, ...) {
 #'
 #' @details
 #' The dashed orange line marks the score of the original fitted model. The
-#' dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles of the
+#' subtitle identifies which rows were used to score the refits. Total
+#' predictive deviance depends on the number and weight of evaluated rows,
+#' so the orange line is not directly comparable when those differ.
+#'
+#' The dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles of the
 #' resampled values when these can be calculated. Their distance provides a
 #' practical indication of sampling variability; it is not a formal prediction
 #' interval for future portfolio performance.
@@ -597,6 +593,20 @@ autoplot.bootstrap_performance <- function(object,
     object$original_scores[[metric]]
   }
   dat <- data.frame(x = scores)
+  split <- identical(object$sampling, "split")
+  fraction <- if (is.null(object$sample_fraction)) object$frac else object$sample_fraction
+  evaluation <- if (length(fraction) != 1L || is.na(fraction)) {
+    NULL
+  } else if (fraction == 1) {
+    if (split) "Scores on the training rows" else "Scores on the resampled training rows"
+  } else {
+    if (split) "Scores on held-out rows" else "Scores on out-of-bag rows"
+  }
+  caption <- "Dashed orange line: reference score for the original model."
+  if (metric == "deviance") {
+    caption <- paste(caption, "Total deviance depends on the evaluation row count and weights.",
+                     sep = "\n")
+  }
 
   conf_bounds <- tryCatch(
     stats::quantile(scores, c(0.025, 0.975)),
@@ -641,14 +651,15 @@ autoplot.bootstrap_performance <- function(object,
     ggplot2::theme_minimal() +
     .plot_grid_theme_ir() +
     ggplot2::labs(
-      title = if (identical(object$sampling, "split")) {
+      title = if (split) {
         "Model performance across repeated splits"
       } else {
         "Bootstrapped model performance"
       },
-      x = switch(metric, rmse = "(Simulated) RMSE", mae = "(Simulated) MAE",
-                 deviance = "(Simulated) predictive deviance"),
-      y = "Density"
+      subtitle = evaluation,
+      x = switch(metric, rmse = "RMSE", mae = "MAE", deviance = "Predictive deviance"),
+      y = "Density",
+      caption = caption
     )
 
   p

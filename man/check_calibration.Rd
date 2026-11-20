@@ -11,14 +11,17 @@ check_calibration(model, data, by = NULL, groups = NULL)
 
 \item{data}{A non-empty data frame with the response and variables used in
 the model, including any weight and offset variables. Responses,
-predictions and weights must be finite and non-negative.}
+predictions and weights must be finite and non-negative.
+For a refined model's own portfolio, use \code{\link[=extract_model_data]{extract_model_data()}} to
+include the columns created by the refinement.}
 
 \item{by}{Optional name of one grouping column. Factor levels follow
 their declared order; other values are sorted. Missing values form
 a separate group at the end.}
 
-\item{groups}{Optional number of groups of increasing predicted risk.
-Supply a positive whole number no larger than the number of rows.
+\item{groups}{Optional number of groups formed by sorting records from
+lowest to highest predicted risk. Supply a positive whole number no
+larger than the number of rows.
 Use either \code{groups} or \code{by}, not both.}
 }
 \value{
@@ -57,14 +60,50 @@ Without an offset, explicit \code{weights = exposure}, or weights on the
 denominator column of a response such as \code{I(claims / duration)}, identify
 exposure used as prior weights. Other weight variables and unused columns
 are not assumed to represent exposure.
+\subsection{Calibration by predicted risk}{
 
-Risk groups use expected outcomes per unit exposure for models with a
-recognised exposure offset, and response-scale predictions otherwise.
-For models with an offset that cannot be identified as exposure, use
-\code{by} or overall calibration rather than risk groups. Groups approximate
-equal exposure by cutting at the nearest cumulative-exposure targets
-without splitting records. If exposure is unavailable or totals zero,
-groups approximate equal row counts. Ties are broken in input row order.
+With \code{groups = 5}, group 1 contains the lowest predicted risks and group 5
+the highest. With a recognised exposure offset, the ranking uses
+predictions per unit of exposure. For a claim-count model this means
+predicted claims per policy-year rather than predicted claims for the
+observed period. A longer policy period therefore does not by itself
+put a policy in a higher risk group. Without an offset, the
+function ranks the response-scale predictions. If an offset cannot be
+identified as exposure, use \code{by} or overall calibration instead.
+
+The sorted records are divided so each group has roughly the same total
+exposure (about 20\% each for five groups), without splitting any record.
+If exposure is unavailable or totals zero, the aim is equal row counts.
+Ties follow the input row order, so policies with the same prediction
+on the ranking scale can appear in different groups.
+
+Compare the observed and expected totals within each group. For example,
+24 observed claims versus 20 expected means O/E is 1.2: the model
+underpredicts for that group. Look for patterns across groups and
+consider exposure and claim volume before interpreting a gap. This is
+a calibration diagnostic, not a hypothesis test or a measure of how
+well the model ranks individual risks. Use separate evaluation data to
+assess calibration outside the estimation sample.
+}
+
+\subsection{Calibration after refinement}{
+
+Use the fitted model returned by \code{\link[=refit]{refit()}}, not the refinement plan.
+\code{check_calibration(smoothed_model, extract_model_data(smoothed_model))}
+evaluates the smoothed model on its own portfolio. To review the new
+tariff bands, use the band column as \code{by}: for example, \code{by = "age_smooth"}
+when smoothing from \code{source_variable = "age"}. The numeric relativity
+column used by the model is a separate column. For a separate evaluation
+portfolio, create both columns using the same refinement mappings.
+When a grouping column is unavailable, the error can suggest the related
+smoothing band or a similar column name. A valid \code{by} is never replaced:
+\code{by = "age"} groups by the original ages, not the tariff bands.
+
+To compare observed outcomes with the expected outcomes before and after a
+restriction, evaluate both fitted models on the same records and group
+them by the same \code{by} column. Do not match \code{groups} by group number across
+models: each model can rank the records differently.
+}
 }
 \examples{
 portfolio <- as.data.frame(MTPL2)
@@ -77,10 +116,12 @@ model <- glm(nclaims ~ area + offset(log(exposure)),
 check_calibration(model, portfolio)
 check_calibration(model, portfolio, by = "year")
 check_calibration(model, portfolio, by = "area")
-check_calibration(model, portfolio, groups = 10)
+# Compare the lowest to highest predicted claim frequencies.
+check_calibration(model, portfolio, groups = 5)
 
 }
 \seealso{
 \code{\link[=autoplot.calibration_result]{autoplot.calibration_result()}}, \code{\link[=model_performance]{model_performance()}},
-\code{\link[=resample_performance]{resample_performance()}}, \code{\link[=adjust_intercept]{adjust_intercept()}}
+\code{\link[=resample_performance]{resample_performance()}}, \code{\link[=adjust_intercept]{adjust_intercept()}}, \code{\link[=extract_model_data]{extract_model_data()}},
+\code{\link[=audit_refinement]{audit_refinement()}}
 }

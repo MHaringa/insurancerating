@@ -116,7 +116,7 @@ implementation.
 | Structure continuous risk factors | `risk_factor_gam()`, `derive_tariff_segments()` |
 | Interpret fitted model effects | `rating_table()`, `add_factor_experience()` |
 | Refine tariff structures | `prepare_refinement()`, `add_smoothing()`, `add_restriction()`, `refit()` |
-| Validate fitted models | `model_performance()`, `check_overdispersion()`, `check_residuals()`, `resample_performance()` |
+| Validate fitted models | `model_performance()`, `check_calibration()`, `check_residuals()`, `resample_performance()` |
 | Treat large losses | `assess_excess_threshold()`, `redistribute_excess_loss()` |
 | Reduce portfolio data locally | `rating_grid()`, `merge_date_ranges()` |
 | Reduce portfolios in a database | `rating_grid_db()`, `merge_date_ranges_db()` |
@@ -140,8 +140,8 @@ implementation.
 
 - [Model
   validation](https://mharinga.github.io/insurancerating/articles/model-validation.html)
-  Assess statistical adequacy, resampling stability, tariff plausibility
-  and observed portfolio behaviour.
+  Assess model fit, stability and tariff plausibility, compare observed
+  with expected claims, and evaluate predictions on later periods.
 
 - [Large
   Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.html)

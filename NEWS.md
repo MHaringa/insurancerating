@@ -9,11 +9,15 @@
   deprecated alias; calculations and plotting behaviour are unchanged.
 - `check_calibration()` compares observed and expected totals overall, by
   portfolio segment or calendar year, and across predicted-risk groups.
+  For refined GLMs it distinguishes tariff offsets from exposure and points
+  users to `extract_model_data()` when refinement columns are missing.
 - `resample_performance()` replaces `bootstrap_performance()`, which remains
-  available as a deprecated alias. The default RMSE results are unchanged;
-  `metrics` can also request MAE and weighted predictive deviance.
+  available as a deprecated alias. RMSE remains the default; `metrics` can
+  also request MAE and weighted predictive deviance. The resampling plot
+  identifies the evaluation rows and original model reference.
 - `model_performance()` now reports residual deviance after AIC, BIC and RMSE.
-  RMSE is unchanged and documented on the response scale.
+  In-sample RMSE uses the rows retained in the fit. Both performance functions
+  now calculate binomial RMSE on the probability scale.
 - `adjust_intercept()` replaces `calibrate_model()` with the same behaviour.
   `calibrate_model()` remains available as a deprecated alias.
 - `active_rows_by_date()` joins on a compact set of keys and dates, then

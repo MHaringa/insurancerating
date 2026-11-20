@@ -68,9 +68,7 @@
     scores[i, ] <- tryCatch({
       fitted <- eval(fit_call, fit_env)
       predictions <- stats::predict(fitted, newdata = assessment, type = "response")
-      response <- eval(formula[[2L]], assessment, environment(formula))
-      .resample_scores(fitted, assessment, response, predictions, metrics,
-                       legacy_rmse = FALSE)
+      .resample_scores(fitted, assessment, predictions, metrics)
     }, error = function(e) {
       stop("Rolling window ", i, " (test ", format(result$test_start[i]), " to ",
            format(result$test_end[i]), "): ", conditionMessage(e),
@@ -121,5 +119,6 @@
   call$formula <- quote(.rolling_formula)
   call$family <- quote(.rolling_family)
   call$data <- quote(.rolling_data)
+  if (.is_binomial_performance_model(model)) call$model <- TRUE
   call
 }

@@ -17,10 +17,16 @@
 #' Factor plots preserve the result's order and label missing groups.
 #' Temporal plots omit missing periods; undefined O/E values are not drawn.
 #'
-#' The predicted-risk plot shows observed against expected with a 45-degree
-#' reference line and the same scale on both axes. If exposure is available,
-#' reported totals are divided by it and groups with zero exposure are not
-#' plotted. If no group has positive exposure, the plot uses totals instead.
+#' Each point in the predicted-risk plot represents one group from
+#' [check_calibration()]. Expected is on the horizontal axis and observed
+#' on the vertical axis, using the same scale. A point above the diagonal
+#' means the model predicted too little for that group; a point below
+#' means it predicted too much.
+#'
+#' If exposure is available, both totals are divided by the group's total
+#' exposure. For a claim-count model this shows claims per unit of exposure.
+#' Groups with zero exposure are not plotted. If no group has positive
+#' exposure, the plot uses totals instead.
 #' With case weights, these are weighted totals divided by the reported
 #' exposure, not necessarily unweighted portfolio rates.
 #'
@@ -34,7 +40,8 @@
 #'              family = poisson(), data = portfolio)
 #'
 #' autoplot(check_calibration(model, portfolio))
-#' autoplot(check_calibration(model, portfolio, groups = 10))
+#' # Each point compares observed and expected claims per policy-year.
+#' autoplot(check_calibration(model, portfolio, groups = 5))
 #' autoplot(check_calibration(model, portfolio, by = "year"))
 #' autoplot(check_calibration(model, portfolio, by = "area"))
 #'

@@ -8,11 +8,14 @@
 #' @param data A non-empty data frame with the response and variables used in
 #'   the model, including any weight and offset variables. Responses,
 #'   predictions and weights must be finite and non-negative.
+#'   For a refined model's own portfolio, use [extract_model_data()] to
+#'   include the columns created by the refinement.
 #' @param by Optional name of one grouping column. Factor levels follow
 #'   their declared order; other values are sorted. Missing values form
 #'   a separate group at the end.
-#' @param groups Optional number of groups of increasing predicted risk.
-#'   Supply a positive whole number no larger than the number of rows.
+#' @param groups Optional number of groups formed by sorting records from
+#'   lowest to highest predicted risk. Supply a positive whole number no
+#'   larger than the number of rows.
 #'   Use either `groups` or `by`, not both.
 #'
 #' @details
@@ -40,13 +43,48 @@
 #' exposure used as prior weights. Other weight variables and unused columns
 #' are not assumed to represent exposure.
 #'
-#' Risk groups use expected outcomes per unit exposure for models with a
-#' recognised exposure offset, and response-scale predictions otherwise.
-#' For models with an offset that cannot be identified as exposure, use
-#' `by` or overall calibration rather than risk groups. Groups approximate
-#' equal exposure by cutting at the nearest cumulative-exposure targets
-#' without splitting records. If exposure is unavailable or totals zero,
-#' groups approximate equal row counts. Ties are broken in input row order.
+#' ## Calibration by predicted risk
+#'
+#' With `groups = 5`, group 1 contains the lowest predicted risks and group 5
+#' the highest. With a recognised exposure offset, the ranking uses
+#' predictions per unit of exposure. For a claim-count model this means
+#' predicted claims per policy-year rather than predicted claims for the
+#' observed period. A longer policy period therefore does not by itself
+#' put a policy in a higher risk group. Without an offset, the
+#' function ranks the response-scale predictions. If an offset cannot be
+#' identified as exposure, use `by` or overall calibration instead.
+#'
+#' The sorted records are divided so each group has roughly the same total
+#' exposure (about 20% each for five groups), without splitting any record.
+#' If exposure is unavailable or totals zero, the aim is equal row counts.
+#' Ties follow the input row order, so policies with the same prediction
+#' on the ranking scale can appear in different groups.
+#'
+#' Compare the observed and expected totals within each group. For example,
+#' 24 observed claims versus 20 expected means O/E is 1.2: the model
+#' underpredicts for that group. Look for patterns across groups and
+#' consider exposure and claim volume before interpreting a gap. This is
+#' a calibration diagnostic, not a hypothesis test or a measure of how
+#' well the model ranks individual risks. Use separate evaluation data to
+#' assess calibration outside the estimation sample.
+#'
+#' ## Calibration after refinement
+#'
+#' Use the fitted model returned by [refit()], not the refinement plan.
+#' `check_calibration(smoothed_model, extract_model_data(smoothed_model))`
+#' evaluates the smoothed model on its own portfolio. To review the new
+#' tariff bands, use the band column as `by`: for example, `by = "age_smooth"`
+#' when smoothing from `source_variable = "age"`. The numeric relativity
+#' column used by the model is a separate column. For a separate evaluation
+#' portfolio, create both columns using the same refinement mappings.
+#' When a grouping column is unavailable, the error can suggest the related
+#' smoothing band or a similar column name. A valid `by` is never replaced:
+#' `by = "age"` groups by the original ages, not the tariff bands.
+#'
+#' To compare observed outcomes with the expected outcomes before and after a
+#' restriction, evaluate both fitted models on the same records and group
+#' them by the same `by` column. Do not match `groups` by group number across
+#' models: each model can rank the records differently.
 #'
 #' @return A data frame of class `calibration_result` with `Observed`,
 #'   `Expected`, `OE` (observed divided
@@ -66,10 +104,12 @@
 #' check_calibration(model, portfolio)
 #' check_calibration(model, portfolio, by = "year")
 #' check_calibration(model, portfolio, by = "area")
-#' check_calibration(model, portfolio, groups = 10)
+#' # Compare the lowest to highest predicted claim frequencies.
+#' check_calibration(model, portfolio, groups = 5)
 #'
 #' @seealso [autoplot.calibration_result()], [model_performance()],
-#'   [resample_performance()], [adjust_intercept()]
+#'   [resample_performance()], [adjust_intercept()], [extract_model_data()],
+#'   [audit_refinement()]
 #' @export
 check_calibration <- function(model, data, by = NULL, groups = NULL) {
   if (!inherits(model, "glm")) {
@@ -87,15 +127,39 @@ check_calibration <- function(model, data, by = NULL, groups = NULL) {
   }
   data <- as.data.frame(data)
   n <- nrow(data)
+  smoothing <- attr(model, "mgd_smt", exact = TRUE)
+  refinement_columns <- unique(c(
+    attr(model, "new_col_nm", exact = TRUE),
+    unlist(smoothing, use.names = FALSE)
+  ))
+  reserved <- c("Observed", "Expected", "OE", "N", "Exposure")
   if (!is.null(by) && !is.null(groups)) {
     stop("Supply either `by` or `groups`, not both.", call. = FALSE)
   }
   if (!is.null(by)) {
     if (!is.character(by) || length(by) != 1L || !is.null(dim(by)) ||
-        is.na(by) || !nzchar(by) || !by %in% names(data)) {
+        is.na(by) || !nzchar(by)) {
       stop("`by` must name one column of `data`.", call. = FALSE)
     }
-    if (by %in% c("Observed", "Expected", "OE", "N", "Exposure")) {
+    if (!by %in% names(data)) {
+      if (by %in% refinement_columns) .calibration_missing_refinement(by)
+      suggested <- .calibration_smoothing_bands(by, smoothing)
+      if (!length(suggested)) {
+        bands <- vapply(smoothing, `[[`, character(1), 1L)
+        groupable <- names(data)[vapply(data, function(x) {
+          is.atomic(x) && is.null(dim(x))
+        }, logical(1))]
+        candidates <- setdiff(union(groupable, bands),
+                              c(reserved, setdiff(refinement_columns, bands)))
+        suggested <- .closest_refinement_value(by, candidates)
+      }
+      if (any(!suggested %in% names(data))) {
+        .calibration_missing_refinement(by, suggested)
+      }
+      stop("`by` must name one column of `data`; `", by, "` was not found.",
+           .calibration_by_hint(suggested), call. = FALSE)
+    }
+    if (by %in% reserved) {
       stop("Rename the `by` column to avoid a calibration output name: ", by, ".",
            call. = FALSE)
     }
@@ -122,6 +186,9 @@ check_calibration <- function(model, data, by = NULL, groups = NULL) {
   vars <- unique(c(all.vars(formula), all.vars(weight_expr), all.vars(offset_expr)))
   absent <- setdiff(vars, names(data))
   if (length(absent)) {
+    if (any(absent %in% refinement_columns)) {
+      .calibration_missing_refinement(absent, .calibration_smoothing_bands(by, smoothing))
+    }
     stop("Missing model variables in `data`: ", paste(absent, collapse = ", "),
          ".", call. = FALSE)
   }
@@ -131,6 +198,14 @@ check_calibration <- function(model, data, by = NULL, groups = NULL) {
     attr(model_terms, "variables")[[i + 1L]][[2L]]
   })
   if (!is.null(offset_expr)) offsets <- c(offsets, list(offset_expr))
+  if (length(refinement_columns) && length(offsets)) {
+    # Fixed tariff relativities are prediction offsets, not exposure offsets.
+    offsets <- unlist(lapply(offsets, .calibration_offset_terms), recursive = FALSE)
+    offsets <- Filter(function(term) {
+      columns <- all.vars(term)
+      !length(columns) || !all(columns %in% refinement_columns)
+    }, offsets)
+  }
   exposure_column <- .calibration_exposure_column(
     family$link, offsets, weight_expr, formula[[2L]]
   )
@@ -209,6 +284,34 @@ check_calibration <- function(model, data, by = NULL, groups = NULL) {
   grouping <- if (!is.null(groups)) "risk" else if (!is.null(by)) "by" else "overall"
   structure(out, class = c("calibration_result", class(out)),
             calibration_grouping = grouping, calibration_by = by)
+}
+
+
+.calibration_smoothing_bands <- function(by, smoothing) {
+  if (is.null(by)) return(character())
+  unique(unlist(lapply(smoothing, function(pair) {
+    source_names <- sub("_smooth$", "", pair)
+    if (tolower(by) %in% tolower(source_names)) pair[1L]
+  }), use.names = FALSE))
+}
+
+
+.calibration_by_hint <- function(suggestions) {
+  if (!length(suggestions)) return("")
+  paste0(" Did you mean ", paste0("`", suggestions, "`", collapse = " or "),
+         " for `by`?")
+}
+
+
+.calibration_missing_refinement <- function(columns, suggested_by = NULL) {
+  stop(
+    "Missing columns for the refined model or grouping: ",
+    paste0("`", columns, "`", collapse = ", "), ".",
+    .calibration_by_hint(suggested_by),
+    " For the refit's own portfolio, use `data = extract_model_data(model)`. ",
+    "For a separate evaluation portfolio, apply the same refinement mappings first.",
+    call. = FALSE
+  )
 }
 
 

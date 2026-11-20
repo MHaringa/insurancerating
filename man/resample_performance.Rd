@@ -136,12 +136,17 @@ For temporal calibration of one fixed fitted model, use
 RMSE (root mean squared error) and MAE (mean absolute error) are unweighted
 summaries of response-scale errors. For an exposure-offset Poisson model
 these are errors in claim counts, not claim frequency per unit exposure.
+For a binomial GLM, the errors are on the probability scale: two-column
+responses are converted to proportions, and factor responses use the
+fitted model's reference level to define zero.
 Predictive deviance sums the fitted GLM family's deviance contributions on
 the evaluation rows, using those rows' response-scale predictions (including
 offsets) and observation weights. Specify weights and offsets using columns
 in \code{data}, rather than separate row-aligned vectors, so the model can be
 refitted and evaluated on each sample. Total deviance can vary with the
 number and weight of evaluation rows as well as with prediction quality.
+On the original estimation rows with the same predictions and weights, it
+agrees with the residual deviance reported by \code{\link[=model_performance]{model_performance()}}.
 
 A wide score distribution indicates sensitivity to the sampled rows. Even
 with held-out rows, resampling the observed portfolio is not independent

@@ -7,7 +7,8 @@
 #'
 #' @param x A fitted model object, for example a `"glm"`.
 #' @param data Optional data frame on which the observed response and predictions
-#'   are evaluated. If `NULL`, the data stored with the fitted model are used.
+#'   are evaluated. If `NULL`, use the observations retained in the fit and
+#'   their fitted values.
 #'
 #' @details
 #' RMSE is defined as
@@ -19,6 +20,9 @@
 #' smaller response-scale errors. Because errors are squared, individual large
 #' deviations receive relatively high weight. This can be relevant for severity
 #' models, but it also makes RMSE sensitive to large claims.
+#' RMSE is unweighted. For binomial GLMs it compares predicted probabilities
+#' with observed proportions for a two-column response, or with zero and one
+#' for a factor response using the reference level of the fitted model.
 #'
 #' RMSE values should not be compared across responses with different units or
 #' scales. A value calculated on the estimation data is an in-sample diagnostic,
@@ -42,9 +46,58 @@
 #'
 #' @export
 rmse <- function(x, data = NULL) {
-  res_var <- stats::formula(x)[[2L]]
-  resp <- eval(res_var, as.data.frame(data))
-  .response_rmse(resp, stats::predict(x, data, type = "response"))
+  if (is.null(data)) {
+    if (inherits(x, "glm") && is.null(x$model) && !is.null(x$y) &&
+        !.is_binomial_performance_model(x)) {
+      response <- x$y
+    } else {
+      response <- stats::model.response(stats::model.frame(x))
+      response <- .performance_response_scale(x, response, fitting_rows = TRUE)$response
+    }
+    # The stored values do not reinsert rows dropped by na.exclude.
+    prediction <- if (is.null(x$fitted.values)) stats::fitted(x) else x$fitted.values
+  } else {
+    response <- .performance_observed(x, data)
+    response <- .performance_response_scale(x, response)$response
+    prediction <- stats::predict(x, data, type = "response")
+  }
+  .response_rmse(response, prediction)
+}
+
+
+.performance_observed <- function(model, data) {
+  formula <- stats::formula(model)
+  eval(formula[[2L]], as.data.frame(data), environment(formula))
+}
+
+
+.is_binomial_performance_model <- function(model) {
+  inherits(model, "glm") &&
+    stats::family(model)$family %in% c("binomial", "quasibinomial")
+}
+
+
+.performance_response_scale <- function(model, response, fitting_rows = FALSE) {
+  trials <- NULL
+  if ((is.factor(response) || is.matrix(response)) &&
+      .is_binomial_performance_model(model)) {
+    if (is.factor(response)) {
+      fitted_response <- if (fitting_rows) response else {
+        stats::model.response(stats::model.frame(model))
+      }
+      fitted_levels <- levels(fitted_response)
+      if (!length(fitted_levels) ||
+          any(!is.na(response) & !response %in% fitted_levels)) {
+        stop("The evaluated binomial factor response must use levels from the fitted response.",
+             call. = FALSE)
+      }
+      response <- as.numeric(response != fitted_levels[[1L]])
+    } else if (ncol(response) == 2L) {
+      trials <- rowSums(response)
+      response <- ifelse(trials == 0, 0, response[, 1L] / trials)
+    }
+  }
+  list(response = response, trials = trials)
 }
 
 
@@ -75,16 +128,15 @@ rmse <- function(x, data = NULL) {
 #' }
 #'
 #' AIC, BIC and residual deviance describe in-sample fit. RMSE measures
-#' prediction error on the response scale, comparing observed responses with
-#' fitted values from the model. It uses the model's stored data, or the
-#' model frame if those data are unavailable. With the same records as in the
-#' fit, RMSE is an in-sample measure of prediction error. None of these
-#' metrics establishes out-of-sample predictive performance.
+#' in-sample prediction error on the response scale, comparing observed
+#' responses with fitted values on the same rows used to estimate the model.
+#' It is unweighted and uses the same response scale as [resample_performance()].
+#' None of these metrics establishes out-of-sample predictive performance.
 #'
 #' For a Poisson frequency model with `offset(log(exposure))`, the fitted
 #' values are expected claim counts for each observation's exposure. RMSE
 #' therefore measures error in claim counts, not claim frequencies per unit
-#' exposure.
+#' exposure. For binomial GLMs it measures errors on the probability scale.
 #'
 #' Compare models on the same response, estimation records, weights and
 #' offsets. For residual deviance, also use the same model family.
@@ -126,17 +178,11 @@ model_performance <- function(...) {
   object_names <- as.character(match.call(expand.dots = FALSE)$`...`)
 
   m <- mapply(function(mod, name) {
-    # try to get model frame safely
-    dat <- tryCatch(mod$data, error = function(e) NULL)
-    if (is.null(dat)) {
-      dat <- model.frame(mod)
-    }
-
     out <- data.frame(
       Model = name,
       AIC = stats::AIC(mod),
       BIC = stats::BIC(mod),
-      RMSE = rmse(mod, dat),
+      RMSE = rmse(mod),
       Residual_Deviance = stats::deviance(mod),
       stringsAsFactors = FALSE
     )

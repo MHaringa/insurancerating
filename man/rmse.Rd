@@ -10,7 +10,8 @@ rmse(x, data = NULL)
 \item{x}{A fitted model object, for example a \code{"glm"}.}
 
 \item{data}{Optional data frame on which the observed response and predictions
-are evaluated. If \code{NULL}, the data stored with the fitted model are used.}
+are evaluated. If \code{NULL}, use the observations retained in the fit and
+their fitted values.}
 }
 \value{
 A numeric value: the root mean squared error.
@@ -30,6 +31,9 @@ the same response, portfolio and exposure treatment. Lower values indicate
 smaller response-scale errors. Because errors are squared, individual large
 deviations receive relatively high weight. This can be relevant for severity
 models, but it also makes RMSE sensitive to large claims.
+RMSE is unweighted. For binomial GLMs it compares predicted probabilities
+with observed proportions for a two-column response, or with zero and one
+for a factor response using the reference level of the fitted model.
 
 RMSE values should not be compared across responses with different units or
 scales. A value calculated on the estimation data is an in-sample diagnostic,

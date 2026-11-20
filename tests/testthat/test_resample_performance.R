@@ -120,7 +120,7 @@ test_that("metric selection is validated and works with print and plot methods",
   expect_error(autoplot(result, metric = "auc"), "`metric`")
 })
 
-test_that("predictive deviance includes trial counts for grouped binomial models", {
+test_that("grouped binomial scores use proportions and trial-weighted deviance", {
   portfolio <- data.frame(
     successes = c(2, 4, 1, 0, 2, 1),
     failures = c(2, 1, 2, 5, 3, 2),
@@ -129,9 +129,10 @@ test_that("predictive deviance includes trial counts for grouped binomial models
   model <- glm(cbind(successes, failures) ~ 1, binomial(),
                data = portfolio, weights = weight)
   set.seed(8)
+  metrics <- c("rmse", "mae", "deviance")
   result <- resample_performance(
     model, portfolio, n_resamples = 1, sample_fraction = 0.5,
-    sampling = "split", show_progress = FALSE, metrics = "deviance"
+    sampling = "split", show_progress = FALSE, metrics = metrics
   )
   set.seed(8)
   train_rows <- sample(seq_len(nrow(portfolio)), 3)
@@ -140,8 +141,54 @@ test_that("predictive deviance includes trial counts for grouped binomial models
   mu <- with(train, sum(weight * successes) / sum(weight * (successes + failures)))
   with(assessment, {
     trials <- successes + failures
+    error <- successes / trials - mu
+    expect_equal(result$scores$rmse, sqrt(mean(error^2)))
+    expect_equal(result$scores$mae, mean(abs(error)))
     term <- ifelse(successes == 0, 0, successes * log(successes / (trials * mu))) +
       ifelse(failures == 0, 0, failures * log(failures / (trials * (1 - mu))))
     expect_equal(result$scores$deviance, 2 * sum(weight * term))
   })
+
+  comparison <- model_performance(model)
+  expect_equal(result$original_scores[["rmse"]], comparison$RMSE)
+  expect_equal(result$original_scores[["deviance"]], comparison$Residual_Deviance)
+  portfolio$year <- ifelse(seq_len(nrow(portfolio)) %in% train_rows, 2020L, 2021L)
+  rolling <- resample_performance(model, portfolio, sampling = "rolling", time = "year",
+                                  initial = 1, metrics = metrics, show_progress = FALSE)
+  expect_equal(rolling[metrics], result$scores)
+})
+
+test_that("resampling can score a binomial factor without a stored model frame", {
+  portfolio <- data.frame(claim = factor(c("no", "yes", "yes", "yes")))
+  model <- glm(claim ~ 1, binomial(), data = portfolio, model = FALSE)
+  result <- resample_performance(model, portfolio, sampling = "split",
+                                 n_resamples = 1, show_progress = FALSE)
+  expected <- sqrt(mean((c(0, 1, 1, 1) - 0.75)^2))
+  expect_equal(unname(result$rmse_bs), expected)
+  expect_equal(result$rmse_mod, expected)
+})
+
+test_that("resampling plots explain the evaluation rows and reference score", {
+  portfolio <- resampling_fixture()
+  model <- glm(claims ~ z, poisson(), data = portfolio)
+  for (sampling in c("bootstrap", "split")) {
+    for (fraction in c(1, 0.6)) {
+      result <- resample_performance(
+        model, portfolio, n_resamples = 3, sample_fraction = fraction,
+        sampling = sampling, metrics = c("rmse", "deviance"), show_progress = FALSE
+      )
+      evaluation <- if (fraction == 1) "training rows" else if (sampling == "split") {
+        "held-out rows"
+      } else {
+        "out-of-bag rows"
+      }
+      plot <- autoplot(result)
+      expect_identical(plot$labels$x, "RMSE")
+      expect_match(plot$labels$subtitle, evaluation)
+      expect_match(plot$labels$caption, "original model")
+      deviance_plot <- autoplot(result, metric = "deviance")
+      expect_identical(deviance_plot$labels$x, "Predictive deviance")
+      expect_match(deviance_plot$labels$caption, "evaluation row count and weights")
+    }
+  }
 })
