@@ -99,8 +99,11 @@ sum within each combination.</p></dd>
 
 
 <dt id="arg-drop-na">drop_na<a class="anchor" aria-label="anchor" href="#arg-drop-na"></a></dt>
-<dd><p>Logical. If <code>TRUE</code>, records with missing <code>group_by</code> values are
-excluded. If <code>FALSE</code>, missing values remain an observed group.</p></dd>
+<dd><p>Logical. With <code>FALSE</code> (default), missing values in
+<code>group_by</code> form a distinct grouping value and those rows still contribute
+to the totals. With <code>TRUE</code>, a missing value in any <code>group_by</code> column
+excludes the entire row from counts, exposure and other totals.
+Only <code>group_by</code> columns are checked by this filter.</p></dd>
 
 
 <dt id="arg-exposure-by">exposure_by<a class="anchor" aria-label="anchor" href="#arg-exposure-by"></a></dt>

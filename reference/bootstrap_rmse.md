@@ -1,7 +1,7 @@
-# Deprecated alias for `bootstrap_performance()`
+# Deprecated RMSE wrapper for `resample_performance()`
 
 `bootstrap_rmse()` is deprecated in favour of
-[`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md).
+[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md).
 Objects returned by `bootstrap_rmse()` keep class `"bootstrap_rmse"` for
 backward compatibility and also inherit from `"bootstrap_performance"`.
 
@@ -33,27 +33,24 @@ bootstrap_rmse(
 - n:
 
   Deprecated. Use `n_resamples` in
-  [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
+  [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
   instead.
 
 - frac:
 
   Deprecated. Use `sample_fraction` in
-  [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
+  [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
   instead.
 
 - metric:
 
-  Character string. Performance metric to compute. Currently only
-  `"rmse"` is supported.
+  Legacy argument that accepts only `"rmse"`. Use `metrics` to select
+  metrics.
 
 - sampling:
 
-  Character string. Sampling scheme. `"bootstrap"` samples training rows
-  with replacement and evaluates on out-of-bag rows when
-  `sample_fraction < 1`. `"split"` samples training rows without
-  replacement and evaluates on the remaining rows when
-  `sample_fraction < 1`.
+  Character string. Use `"bootstrap"` (default) to sample training rows
+  with replacement or `"split"` to sample without replacement.
 
 - show_progress:
 
@@ -61,10 +58,10 @@ bootstrap_rmse(
 
 - rmse_model:
 
-  Optional finite numeric RMSE for the original fitted model. If `NULL`,
-  it is calculated from `model` and `data`.
+  Optional finite numeric RMSE for the original fitted model. If `NULL`
+  and RMSE is selected, it is calculated from `model` and `data`.
 
 ## Value
 
 See
-[`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md).
+[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md).

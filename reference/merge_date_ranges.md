@@ -1,17 +1,8 @@
 # Reduce portfolio periods by merging adjacent date ranges
 
 Combine overlapping or nearly adjacent coverage periods for the same
-policy, risk or portfolio segment. The result provides a consolidated
-time basis for exposure calculations, active-policy counts and
-period-based reporting.
-
-Together with
-[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md),
-this function belongs to the portfolio reduction workflow. Both
-functions reduce row-level portfolio data while retaining selected
-totals. `merge_date_ranges()` reduces temporally connected records;
-[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-reduces records with identical risk-factor values.
+policy, risk or portfolio segment, optionally aggregating amounts such
+as premium or exposure. Separate periods remain separate rows.
 
 ## Usage
 
@@ -43,11 +34,12 @@ merge_date_ranges(
 
 - period_start:
 
-  Character string. Name of the column with period start dates.
+  Character string. Name of the column with period start dates (class
+  `Date`).
 
 - period_end:
 
-  Character string. Name of the column with period end dates.
+  Character string. Name of the period-end column (class `Date`).
 
 - group_by:
 
@@ -77,8 +69,11 @@ merge_date_ranges(
 - allow_na_in:
 
   Optional character vector naming columns in `group_by` where missing
-  values may form a group. The default, `NULL`, rejects missing values
-  in every grouping column.
+  values may form a distinct grouping value. Missing values in any other
+  grouping column cause an error. The default, `NULL`, allows none.
+  Unlike `drop_na` in
+  [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md),
+  this argument does not filter rows out.
 
 - df, begin, end, ..., agg_cols, agg, min.gapwidth:
 
@@ -88,80 +83,60 @@ merge_date_ranges(
 
 ## Value
 
-A regular `data.frame` with classes `"merged_date_ranges"` and
-`"reduce"`, and attributes:
+A `data.frame` with one row per consolidated period, containing the
+grouping columns, dates and requested aggregates. It has classes
+`"merged_date_ranges"` and `"reduce"`, and attributes:
 
-- `begin` — name of the period-start column
+- `period_start`: name of the period-start column
 
-- `end` — name of the period-end column
+- `period_end`: name of the period-end column
 
-- `cols` — grouping columns
+- `group_by`: original grouping columns
 
 ## Details
 
-### Portfolio reduction
-
-`merge_date_ranges()` performs temporal portfolio reduction. It combines
-connected periods within the same `group_by` values and retains the
-selected additive amounts. Use
-[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-for the complementary categorical reduction of records with identical
-risk-factor combinations.
-
 ### Connected periods
 
-Insurance portfolio extracts often contain multiple rows for the same
-policy or risk because of renewals, endorsements, product changes, or
-short administrative gaps. Before calculating portfolio in/outflow,
-active exposure windows, or policy counts, it can be useful to reduce
-those rows to stable coverage intervals.
+Periods merge only when their `group_by` values match. Include the
+policy or risk identifier when unrelated contracts must remain separate.
 
-`merge_date_ranges()` merges date ranges within each `group_by`
-combination. Ranges with a gap smaller than `merge_gap_days` are treated
-as one continuous interval. If `aggregate_cols` is supplied, those
-columns are aggregated over the merged interval. The grouping columns
-should identify records for which combining coverage periods is
-actuarially and operationally meaningful; periods belonging to different
-risks or contracts should not be pooled. For an optional grouping
-attribute, use e.g. `allow_na_in = "coverage"` to retain `NA` as a
-distinct value. Two missing values then match if the other grouping keys
-match; a missing value never matches a known coverage. The usual
-date-gap rule still applies. Keep policy or risk identifiers out of
-`allow_na_in` when missing identifiers could pool unrelated risks.
+Dates are inclusive: a period ending on 31 January and one starting on 1
+February have no uncovered days and merge by default. With
+`merge_gap_days = 5`, gaps of up to four uncovered days are also
+bridged.
 
-Start and end dates are treated as inclusive. Consequently, two periods
-for which the second starts one day after the first ends have zero
-uncovered days. They are merged with the default `merge_gap_days = 1`. A
-value of `5` merges periods with at most four uncovered days between
-them.
+Use e.g. `allow_na_in = "coverage"` to treat missing coverage as a
+distinct group value. Missing values match each other, not known values;
+other grouping values and the date-gap rule still apply. Avoid allowing
+missing identifiers if this could combine unrelated risks.
 
-### Aggregation and implementation
+### Aggregation
 
-Aggregated amounts are combined over the source rows, not prorated over
-calendar days. Summing premium or exposure is appropriate when each
-source row contains a distinct additive amount. If overlapping rows
-already contain amounts for the same covered days, users should resolve
-that overlap before aggregation to avoid double counting.
+`aggregate_cols` are combined over source rows, not prorated over
+calendar days. Sum only distinct additive amounts: merging overlapping
+dates does not remove duplicated premium or exposure. Resolve such
+duplicates first.
 
-Each output row represents one consolidated period within a `group_by`
-combination. This is a temporal reduction of the portfolio; records with
-the same risk-factor values are not combined when their periods remain
-separate.
+The input is not modified. For database-backed processing, use
+[`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md).
+To aggregate identical rating-factor combinations rather than connected
+periods, use
+[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md).
 
-Internally, grouping keys are ranked once and interval construction uses
-a compact
-[`data.table::data.table()`](https://rdrr.io/pkg/data.table/man/data.table.html)
-with group identifiers, dates and row positions. Only requested
-aggregation columns are added to that working table; grouping attributes
-are retrieved for the output rows afterwards. The wide input portfolio
-is not copied or sorted in place, and the supplied object is not
-modified by reference. Standard `sum` aggregation of ordinary numeric
-columns uses an optimized grouped calculation. Other aggregation
-functions and numeric classes retain the general aggregation route.
-Large inputs and outputs still require sufficient memory. For a
-portfolio that should remain outside R memory, use
-[`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md)
-to perform the same interval reduction in DuckDB.
+### Summaries
+
+[`summary()`](https://rdrr.io/r/base/summary.html) counts consolidated
+periods entering and leaving the portfolio. Choose `period = "days"`
+(default), `"weeks"`, `"months"`, `"quarters"` or `"years"`, and
+optionally rename the count column with `name`. Supply grouping columns
+explicitly, e.g. `summary(x, coverage, period = "months")`; the original
+`group_by` is not applied automatically. These are period movement
+counts, not counts of unique policies.
+
+If you rename a date column, update its `period_start` or `period_end`
+attribute so [`summary()`](https://rdrr.io/r/base/summary.html) can find
+it. Older saved objects with `begin` and `end` attributes remain
+supported when the new attributes are absent.
 
 ## See also
 
@@ -200,6 +175,7 @@ pt1 <- merge_date_ranges(
   group_by = c("policy_id", "coverage")
 )
 
+# Count movements by month, policy and coverage.
 summary(pt1, period = "months", policy_id, coverage)
 #>     month type count policy_id  coverage
 #> 1 2024M05  out     1      P001      Fire
@@ -222,12 +198,9 @@ pt2 <- merge_date_ranges(
   merge_gap_days = 5
 )
 
-summary(pt2, period = "months", policy_id, coverage)
-#>     month type count policy_id  coverage
-#> 1 2024M05  out     1      P001      Fire
-#> 2 2024M04   in     1      P001      Fire
-#> 3 2024M04  out     1      P002 Liability
-#> 4 2024M03  out     1      P001      Fire
-#> 5 2024M01   in     1      P001      Fire
-#> 6 2024M01   in     1      P002 Liability
+pt2
+#>   policy_id  coverage period_start period_end earned_premium
+#> 1      P001      Fire   2024-01-01 2024-02-29            210
+#> 2      P001      Fire   2024-04-01 2024-04-30            120
+#> 3      P002 Liability   2024-01-01 2024-03-31            265
 ```

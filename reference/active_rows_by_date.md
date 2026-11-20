@@ -61,7 +61,10 @@ active_rows_by_date(
 
   Character string controlling events that match multiple active
   portfolio rows. Use `"all"` to retain every match, or `"first"` or
-  `"last"` to retain one matching row. The default is `"all"`.
+  `"last"` to retain one. Matches for these two choices are ordered by
+  period start, then period end, then original portfolio row order for
+  ties. The default, `"all"`, returns matches for each event in original
+  portfolio row order.
 
 - nomatch, mult:
 
@@ -101,11 +104,9 @@ missing portfolio fields. Retaining unmatched events is generally
 preferable during data-quality review because it makes gaps in the
 policy history explicit.
 
-The interval join is performed internally with
-[`data.table::foverlaps()`](https://rdrr.io/pkg/data.table/man/foverlaps.html)
-on local copies. Neither input is modified by reference. The output
-follows the original order of `dates` and is always returned as a
-regular `data.frame`.
+The interval join includes both the start and end date. Neither input is
+modified. The output follows the original order of `dates` and is always
+a regular `data.frame`.
 
 ## See also
 

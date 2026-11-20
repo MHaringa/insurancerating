@@ -482,21 +482,22 @@ factor-level checks.
 model_performance(mod_freq)
 #> # Comparison of Model Performance Indices
 #> 
-#>  Model   |   AIC    |    BIC    | RMSE  
-#> ---------+----------+-----------+------ 
-#> mod_freq | 22949.04 | 23015.512 | 0.362
+#>  Model   |   AIC    |    BIC    | RMSE  | Residual_Deviance 
+#> ---------+----------+-----------+-------+------------------ 
+#> mod_freq | 22949.04 | 23015.512 | 0.362 |         16079.343
 ```
 
-This reports AIC, BIC and response-scale RMSE for the expected
-claim-count model. These measures are most meaningful when models use
-the same response, records, weights and offsets.
+This reports AIC, BIC, response-scale RMSE and residual deviance. RMSE
+is in claim counts, not claims per unit exposure. These measures
+describe the fit and prediction error on the estimation data, not
+out-of-sample performance.
 
 ### Bootstrap performance
 
 ``` r
 
 
-bp <- bootstrap_performance(
+bp <- resample_performance(
   mod_freq,
   dat,
   n_resamples = 50,
@@ -594,7 +595,7 @@ glm()                         # estimate frequency and severity
 add_prediction()              # construct technical risk premium
 glm()                         # represent risk in a tariff structure
 rating_table()                # interpret tariff relativities
-bootstrap_performance()       # assess stability
+resample_performance()        # assess stability
 prepare_refinement()          # prepare an actuarial refinement
 refit()                       # fit the refined tariff model
 ```

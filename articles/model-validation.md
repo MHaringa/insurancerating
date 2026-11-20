@@ -40,17 +40,17 @@ every model requires every diagnostic.
 | How do alternative fitted models compare? | [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md) |
 | Are tariff relativities plausible and sufficiently supported? | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md) |
 | Does observed portfolio experience support the fitted pattern? | [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md) |
-| How sensitive is measured performance to portfolio resampling? | [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md) |
+| How sensitive is measured performance to portfolio resampling? | [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md) |
 | Is a Poisson frequency model materially overdispersed? | [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md) |
 | Do simulation-based residuals show remaining structure? | [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md) |
-| Where does the model over- or under-predict? | exposure-aware observed-versus-expected review |
+| Where does the model over- or under-predict? | [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md) |
 
 ## Compact example setup
 
 The examples use two Poisson frequency models fitted to the same
-records, response and exposure definition. `expected_claims` from these
-models is the expected claim count for each observed policy period,
-because the prediction includes its earned-exposure offset.
+records, response and exposure definition. Each prediction is an
+expected claim count for the observed policy period because it includes
+the earned-exposure offset.
 
 ``` r
 
@@ -83,24 +83,27 @@ severity and technical risk-premium models is covered elsewhere.
 model_performance(intercept_model, area_model)
 #> # Comparison of Model Performance Indices
 #> 
-#>      Model      |   AIC    |   BIC    | RMSE  
-#> ----------------+----------+----------+------ 
-#> intercept_model | 2284.056 | 2290.063 | 0.356 
-#>      area_model |  2287.25 | 2311.275 | 0.356
+#>      Model      |   AIC    |   BIC    | RMSE  | Residual_Deviance 
+#> ----------------+----------+----------+-------+------------------ 
+#> intercept_model | 2284.056 | 2290.063 | 0.356 |          1608.352 
+#>      area_model |  2287.25 | 2311.275 | 0.356 |          1605.545
 ```
 
 [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md)
-reports AIC, BIC and response-scale RMSE:
+reports AIC, BIC, response-scale RMSE and residual deviance:
 
 - AIC and BIC compare likelihood fit while penalising model complexity;
+- residual deviance describes the remaining lack of fit on the
+  estimation data;
 - RMSE summarises prediction error in the response unit and gives
-  relatively high weight to large errors.
+  relatively high weight to large errors. Here the response unit is
+  claim count, not claims per unit exposure.
 
 These values are most directly comparable when models use the same
-response, estimation records, weights and offsets, as they do here. The
-RMSE shown is calculated on the estimation data. It is therefore an
-in-sample description, not an estimate of performance on a future
-portfolio.
+response, estimation records, weights and offsets, as they do here.
+Residual deviances should also be compared within the same model family.
+The RMSE shown is calculated on the estimation data. None of these
+values establishes performance on a future portfolio.
 
 Lower values can support a model comparison, but a small improvement
 does not automatically imply a better tariff. Exposure by level,
@@ -168,26 +171,37 @@ investigation, especially when interpreted with their exposure.
 
 set.seed(123)
 
-bootstrap_result <- bootstrap_performance(
+resample_result <- resample_performance(
   area_model,
   portfolio,
   n_resamples = 50,
   sample_fraction = 0.8,
   sampling = "bootstrap",
-  show_progress = FALSE
+  show_progress = FALSE,
+  metrics = c("rmse", "mae", "deviance")
 )
 
-autoplot(bootstrap_result)
+head(resample_result$scores)
+#>        rmse       mae deviance
+#> 1 0.3436239 0.2051759 708.7991
+#> 2 0.3715056 0.2115858 746.2368
+#> 3 0.3766939 0.2101049 785.8242
+#> 4 0.3584633 0.2047888 761.8024
+#> 5 0.3542650 0.2069595 716.3567
+#> 6 0.3422794 0.2106021 687.1987
+autoplot(resample_result, metric = "rmse")
 ```
 
 ![](model-validation_files/figure-html/unnamed-chunk-5-1.png)
 
 With this specification,
-[`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
+[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
 samples portfolio rows with replacement, refits the model and evaluates
-response-scale RMSE on rows that were not selected for that replicate.
-Its RMSE distribution describes how sensitive measured performance is to
-repeated sampling from the observed portfolio.
+on out-of-bag rows. RMSE and MAE measure error in claim counts here.
+Predictive deviance uses the GLM family and evaluation weights; as a
+total, it can also vary with the size of the out-of-bag sample. Unlike
+[`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
+each score comes from a newly fitted model.
 
 This is a resampling-stability diagnostic. It is not independent
 validation on a genuinely later or external portfolio, and it does not
@@ -198,9 +212,10 @@ specification.
 
 When prediction on unseen data is central to the objective, this
 evidence should be complemented by a suitable holdout, cross-validation
-or temporal validation design. With `sample_fraction = 1`, the function
-instead evaluates on sampled training rows and should be interpreted as
-in-sample stability.
+or temporal validation design. With `sampling = "split"` and
+`sample_fraction < 1`, the evaluation uses held-out rows from a split
+without replacement. At `sample_fraction = 1`, both sampling schemes
+evaluate on their training rows and measure in-sample stability.
 
 ## Checking distributional assumptions
 
@@ -259,69 +274,49 @@ exposure and relevant risk-factor levels.
 
 ## Reviewing observed versus expected experience
 
-An observed-versus-expected review asks where the fitted model
-systematically over- or under-predicts the portfolio. The following
-example aggregates actual and expected claim counts by area.
+Use
+[`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
+to compare observed and expected outcomes overall and within segments.
+Here the predictions include earned exposure, so both totals are claim
+counts.
 
 ``` r
 
-validation_data <- portfolio
-validation_data$expected_claims <- predict(
-  area_model,
-  newdata = validation_data,
-  type = "response"
-)
-
-area_oe <- rating_grid(
-  validation_data,
-  group_by = "area",
-  exposure = "exposure",
-  aggregate_cols = c("nclaims", "expected_claims")
-)
-
-area_oe$observed_frequency <-
-  area_oe$nclaims / area_oe$exposure
-area_oe$expected_frequency <-
-  area_oe$expected_claims / area_oe$exposure
-area_oe$observed_expected_ratio <- ifelse(
-  area_oe$expected_claims > 0,
-  area_oe$nclaims / area_oe$expected_claims,
-  NA_real_
-)
-
-area_oe
-#>   area nclaims expected_claims   exposure observed_frequency expected_frequency
-#> 1    1     146             146 1065.74795         0.13699299         0.13699299
-#> 2    0       1               1   13.30685         0.07514927         0.07514927
-#> 3    2      98              98  818.53973         0.11972540         0.11972540
-#> 4    3     113             113  764.99178         0.14771401         0.14771401
-#>   observed_expected_ratio
-#> 1                       1
-#> 2                       1
-#> 3                       1
-#> 4                       1
+check_calibration(area_model, portfolio)
+#>   Observed Expected OE    N Exposure
+#> 1      358      358  1 3000 2662.586
+check_calibration(area_model, portfolio, by = "area")
+#>   area Observed Expected OE    N   Exposure
+#> 1    1      146      146  1 1194 1065.74795
+#> 2    0        1        1  1   15   13.30685
+#> 3    2       98       98  1  921  818.53973
+#> 4    3      113      113  1  870  764.99178
+check_calibration(area_model, portfolio, groups = 5)
+#>   Group Observed Expected        OE   N Exposure
+#> 1     1       58 63.21916 0.9174434 599 532.9890
+#> 2     2       76 67.68745 1.1228079 598 531.7644
+#> 3     3       70 72.94670 0.9596047 593 532.4849
+#> 4     4       78 75.49485 1.0331831 608 532.8877
+#> 5     5       76 78.65184 0.9662838 602 532.4603
 ```
 
-Because the model prediction includes earned exposure, summing
-`expected_claims` gives the expected number of claims for each area.
-Dividing observed and expected counts by aggregated exposure gives the
-corresponding frequencies. A ratio above one indicates more observed
-claims than expected; a ratio below one indicates fewer.
+An O/E ratio above one indicates more observed claims than expected; a
+ratio below one indicates fewer. The overall ratio describes
+calibration-in-the-large. Risk groups are ranked by expected claim
+frequency, not by expected count, so longer exposure alone does not put
+a policy in a higher risk group.
 
-[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-does not validate the model by itself. It prepares a compact model-point
-or segment-level view by aggregating additive portfolio quantities. Here
-it supports an O:E review; elsewhere it is primarily used to reduce
-portfolios before modelling or implementation. See [Large
-Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.md)
-for that role.
+Use `by = "year"` when the evaluation data contain a calendar year. A
+change in O/E across years can indicate a change in the overall
+prediction level, even if the model still ranks high- and low-risk
+policies equally well.
 
 O:E differences should always be read with exposure and claim volume. A
 large ratio in a small segment may reflect limited experience, while a
 persistent deviation in a well-exposed segment can indicate missing
-structure or miscalibration. Similar reviews can be made by rating
-level, predicted-risk band, underwriting period or another segment
-relevant to the portfolio.
+structure or miscalibration. For model-point aggregation before
+modelling rather than calibration, see [Large
+Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.md).
 
 ## Validation, investigation and refinement
 

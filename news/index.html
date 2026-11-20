@@ -39,6 +39,22 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="insurancerating-development-version">insurancerating (development version)<a class="anchor" aria-label="anchor" href="#insurancerating-development-version"></a></h2>
 <ul><li>
+<code><a href="../reference/check_calibration.html">check_calibration()</a></code> compares observed and expected totals overall, by portfolio segment or calendar year, and across predicted-risk groups.</li>
+<li>
+<code><a href="../reference/resample_performance.html">resample_performance()</a></code> replaces <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code>, which remains available as a deprecated alias. The default RMSE results are unchanged; <code>metrics</code> can also request MAE and weighted predictive deviance.</li>
+<li>
+<code><a href="../reference/model_performance.html">model_performance()</a></code> now reports residual deviance after AIC, BIC and RMSE. RMSE is unchanged and documented on the response scale.</li>
+<li>
+<code><a href="../reference/adjust_intercept.html">adjust_intercept()</a></code> replaces <code><a href="../reference/calibrate_model.html">calibrate_model()</a></code> with the same behaviour. <code><a href="../reference/calibrate_model.html">calibrate_model()</a></code> remains available as a deprecated alias.</li>
+<li>
+<code><a href="../reference/active_rows_by_date.html">active_rows_by_date()</a></code> joins on a compact set of keys and dates, then retrieves the matching rows. This reduces copying and sorting for wide portfolios.</li>
+<li>
+<code><a href="../reference/rating_grid.html">rating_grid()</a></code> avoids copying unused portfolio columns. With <code>exposure_by</code>, it aggregates only exposure or counts within each split; additional totals are still calculated over the original model-point rows.</li>
+<li>
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> for <code><a href="../reference/merge_date_ranges.html">merge_date_ranges()</a></code> results now copies only the date columns and explicitly requested summary grouping columns, avoiding repeated copies of the full-width portfolio. Movement counts, period handling and output ordering are unchanged; the input is not modified.</li>
+<li>
+<code><a href="../reference/merge_date_ranges.html">merge_date_ranges()</a></code> now stores its column metadata in <code>period_start</code>, <code>period_end</code> and <code>group_by</code>, matching the argument names. Direct attribute access should use these names instead of <code>begin</code>, <code>end</code> and <code>cols</code>. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> still accepts older saved objects and reports missing or invalid date metadata clearly. Summary grouping remains explicitly selected through <code>...</code>; the stored <code>group_by</code> does not change the summary’s granularity.</li>
+<li>
 <code><a href="../reference/add_monotonicity.html">add_monotonicity()</a></code> enforces increasing or decreasing relativities across numeric bands, numeric-labelled factors or explicitly ordered categories, using weighted isotonic projection on the log scale or one-sided adjustments. Numeric levels are sorted by value, not alphabetically; no smoothing or new segmentation is performed. Proposed effects can be inspected before refitting. Numeric ordering and interval-overlap checks also apply to ordered factors; conflicting declared numeric orders produce a warning. Repeated calls use unique default output names and preserve the history of prior projections.</li>
 <li>
 <code><a href="../reference/merge_date_ranges.html">merge_date_ranges()</a></code> accepts <code>allow_na_in</code> to group missing values in selected <code>group_by</code> columns. Other grouping columns still reject missing values; the error identifies them and shows how to opt in.</li>

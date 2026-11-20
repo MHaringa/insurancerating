@@ -178,7 +178,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-11-19 09:56:44 UTC
+#> Created: 2026-11-20 10:43:59 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -897,7 +897,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-11-19 09:56:44 UTC
+#> Created: 2026-11-20 10:43:59 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -1014,7 +1014,7 @@ selected overall calibration factor can be applied to a log-link model:
 
 ``` r
 
-calibrated_model <- calibrate_model(
+calibrated_model <- adjust_intercept(
   refined_model,
   factor = 1.05
 )
@@ -1029,7 +1029,7 @@ head(rating_table(calibrated_model, exposure = FALSE))
 #> 6       bm_group      Medium            1.0440707
 ```
 
-[`calibrate_model()`](https://mharinga.github.io/insurancerating/reference/calibrate_model.md)
+[`adjust_intercept()`](https://mharinga.github.io/insurancerating/reference/adjust_intercept.md)
 adds `log(1.05)` to the intercept. Response-scale predictions therefore
 increase by exactly 5%, while all non-intercept coefficients and the
 ratios between tariff levels remain unchanged. The original
@@ -1063,9 +1063,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Prepared: 2026-11-19 09:56:44 UTC
-#> Refitted: 2026-11-19 09:56:50 UTC
-#> Audited: 2026-11-19 09:56:50 UTC
+#> Prepared: 2026-11-20 10:43:59 UTC
+#> Refitted: 2026-11-20 10:44:04 UTC
+#> Audited: 2026-11-20 10:44:04 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
@@ -1090,7 +1090,7 @@ summary(refinement_audit)
 #> Portfolio effect
 #>   Before: 0.137596
 #>   After:  0.137596
-#>   Change: -1.93734e-14 (-1.408e-11%)
+#>   Change: -1.95122e-14 (-1.418e-11%)
 #> 
 #> Largest level changes (10 of 24)
 #>              risk_factor   level     before      after       change

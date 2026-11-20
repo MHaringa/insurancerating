@@ -6,18 +6,10 @@
     }
   };
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Reduce portfolio periods by merging adjacent date ranges — merge_date_ranges"><meta name="description" content="Combine overlapping or nearly adjacent coverage periods for the same policy,
-risk or portfolio segment. The result provides a consolidated time basis for
-exposure calculations, active-policy counts and period-based reporting.
-Together with rating_grid(), this function belongs to the portfolio
-reduction workflow. Both functions reduce row-level portfolio data while
-retaining selected totals. merge_date_ranges() reduces temporally connected
-records; rating_grid() reduces records with identical risk-factor values."><meta property="og:description" content="Combine overlapping or nearly adjacent coverage periods for the same policy,
-risk or portfolio segment. The result provides a consolidated time basis for
-exposure calculations, active-policy counts and period-based reporting.
-Together with rating_grid(), this function belongs to the portfolio
-reduction workflow. Both functions reduce row-level portfolio data while
-retaining selected totals. merge_date_ranges() reduces temporally connected
-records; rating_grid() reduces records with identical risk-factor values."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+risk or portfolio segment, optionally aggregating amounts such as premium
+or exposure. Separate periods remain separate rows."><meta property="og:description" content="Combine overlapping or nearly adjacent coverage periods for the same policy,
+risk or portfolio segment, optionally aggregating amounts such as premium
+or exposure. Separate periods remain separate rows."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -51,12 +43,8 @@ records; rating_grid() reduces records with identical risk-factor values."><meta
 
     <div class="ref-description section level2">
     <p>Combine overlapping or nearly adjacent coverage periods for the same policy,
-risk or portfolio segment. The result provides a consolidated time basis for
-exposure calculations, active-policy counts and period-based reporting.</p>
-<p>Together with <code><a href="rating_grid.html">rating_grid()</a></code>, this function belongs to the portfolio
-reduction workflow. Both functions reduce row-level portfolio data while
-retaining selected totals. <code>merge_date_ranges()</code> reduces temporally connected
-records; <code><a href="rating_grid.html">rating_grid()</a></code> reduces records with identical risk-factor values.</p>
+risk or portfolio segment, optionally aggregating amounts such as premium
+or exposure. Separate periods remain separate rows.</p>
     </div>
 
     <div class="section level2">
@@ -90,11 +78,11 @@ records; <code><a href="rating_grid.html">rating_grid()</a></code> reduces recor
 
 <dt id="arg-period-start">period_start<a class="anchor" aria-label="anchor" href="#arg-period-start"></a></dt>
 <dd><p>Character string. Name of the column with period start
-dates.</p></dd>
+dates (class <code>Date</code>).</p></dd>
 
 
 <dt id="arg-period-end">period_end<a class="anchor" aria-label="anchor" href="#arg-period-end"></a></dt>
-<dd><p>Character string. Name of the column with period end dates.</p></dd>
+<dd><p>Character string. Name of the period-end column (class <code>Date</code>).</p></dd>
 
 
 <dt id="arg-group-by">group_by<a class="anchor" aria-label="anchor" href="#arg-group-by"></a></dt>
@@ -124,8 +112,10 @@ administrative assumption.</p></dd>
 
 <dt id="arg-allow-na-in">allow_na_in<a class="anchor" aria-label="anchor" href="#arg-allow-na-in"></a></dt>
 <dd><p>Optional character vector naming columns in <code>group_by</code>
-where missing values may form a group. The default, <code>NULL</code>, rejects
-missing values in every grouping column.</p></dd>
+where missing values may form a distinct grouping value. Missing values
+in any other grouping column cause an error. The default, <code>NULL</code>, allows
+none. Unlike <code>drop_na</code> in <code><a href="rating_grid.html">rating_grid()</a></code>, this argument does not filter
+rows out.</p></dd>
 
 
 <dt id="arg-df-begin-end-agg-cols-agg-min-gapwidth">df, begin, end, ..., agg_cols, agg, min.gapwidth<a class="anchor" aria-label="anchor" href="#arg-df-begin-end-agg-cols-agg-min-gapwidth"></a></dt>
@@ -136,73 +126,55 @@ kept for backward compatibility. Use <code>data</code>, <code>period_start</code
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A regular <code>data.frame</code> with classes <code>"merged_date_ranges"</code> and
-<code>"reduce"</code>, and attributes:</p><ul><li><p><code>begin</code> — name of the period-start column</p></li>
-<li><p><code>end</code>   — name of the period-end column</p></li>
-<li><p><code>cols</code>  — grouping columns</p></li>
+    <p>A <code>data.frame</code> with one row per consolidated period, containing the
+grouping columns, dates and requested aggregates. It has classes
+<code>"merged_date_ranges"</code> and <code>"reduce"</code>, and attributes:</p><ul><li><p><code>period_start</code>: name of the period-start column</p></li>
+<li><p><code>period_end</code>: name of the period-end column</p></li>
+<li><p><code>group_by</code>: original grouping columns</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
 
 <div class="section">
-<h3 id="portfolio-reduction">Portfolio reduction<a class="anchor" aria-label="anchor" href="#portfolio-reduction"></a></h3>
-
-
-<p><code>merge_date_ranges()</code> performs temporal portfolio reduction. It combines
-connected periods within the same <code>group_by</code> values and retains the selected
-additive amounts. Use <code><a href="rating_grid.html">rating_grid()</a></code> for the complementary categorical
-reduction of records with identical risk-factor combinations.</p>
-</div>
-
-<div class="section">
 <h3 id="connected-periods">Connected periods<a class="anchor" aria-label="anchor" href="#connected-periods"></a></h3>
 
 
-<p>Insurance portfolio extracts often contain multiple rows for the same policy
-or risk because of renewals, endorsements, product changes, or short
-administrative gaps. Before calculating portfolio in/outflow, active exposure
-windows, or policy counts, it can be useful to reduce those rows to stable
-coverage intervals.</p>
-<p><code>merge_date_ranges()</code> merges date ranges within each <code>group_by</code> combination.
-Ranges with a gap smaller than <code>merge_gap_days</code> are treated as one continuous
-interval. If <code>aggregate_cols</code> is supplied, those columns are aggregated over
-the merged interval. The grouping columns should identify records for which
-combining coverage periods is actuarially and operationally meaningful;
-periods belonging to different risks or contracts should not be pooled.
-For an optional grouping attribute, use e.g. <code>allow_na_in = "coverage"</code>
-to retain <code>NA</code> as a distinct value. Two missing values then match if the
-other grouping keys match; a missing value never matches a known coverage.
-The usual date-gap rule still applies. Keep policy or risk identifiers
-out of <code>allow_na_in</code> when missing identifiers could pool unrelated risks.</p>
-<p>Start and end dates are treated as inclusive. Consequently, two periods for
-which the second starts one day after the first ends have zero uncovered
-days. They are merged with the default <code>merge_gap_days = 1</code>. A value of <code>5</code>
-merges periods with at most four uncovered days between them.</p>
+<p>Periods merge only when their <code>group_by</code> values match. Include the policy
+or risk identifier when unrelated contracts must remain separate.</p>
+<p>Dates are inclusive: a period ending on 31 January and one starting on
+1 February have no uncovered days and merge by default. With
+<code>merge_gap_days = 5</code>, gaps of up to four uncovered days are also bridged.</p>
+<p>Use e.g. <code>allow_na_in = "coverage"</code> to treat missing coverage as a distinct
+group value. Missing values match each other, not known values; other
+grouping values and the date-gap rule still apply. Avoid allowing missing
+identifiers if this could combine unrelated risks.</p>
 </div>
 
 <div class="section">
-<h3 id="aggregation-and-implementation">Aggregation and implementation<a class="anchor" aria-label="anchor" href="#aggregation-and-implementation"></a></h3>
+<h3 id="aggregation">Aggregation<a class="anchor" aria-label="anchor" href="#aggregation"></a></h3>
 
 
-<p>Aggregated amounts are combined over the source rows, not prorated over
-calendar days. Summing premium or exposure is appropriate when each source
-row contains a distinct additive amount. If overlapping rows already contain
-amounts for the same covered days, users should resolve that overlap before
-aggregation to avoid double counting.</p>
-<p>Each output row represents one consolidated period within a <code>group_by</code>
-combination. This is a temporal reduction of the portfolio; records with the
-same risk-factor values are not combined when their periods remain separate.</p>
-<p>Internally, grouping keys are ranked once and interval construction uses a
-compact <code><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table::data.table()</a></code> with group identifiers, dates and row
-positions. Only requested aggregation columns are added to that working
-table; grouping attributes are retrieved for the output rows afterwards.
-The wide input portfolio is not copied or sorted in place, and the supplied
-object is not modified by reference. Standard <code>sum</code> aggregation of ordinary
-numeric columns uses an optimized grouped calculation. Other aggregation
-functions and numeric classes retain the general aggregation route.
-Large inputs and outputs still require sufficient memory.
-For a portfolio that should remain outside R memory, use
-<code><a href="merge_date_ranges_db.html">merge_date_ranges_db()</a></code> to perform the same interval reduction in DuckDB.</p>
+<p><code>aggregate_cols</code> are combined over source rows, not prorated over calendar
+days. Sum only distinct additive amounts: merging overlapping dates does
+not remove duplicated premium or exposure. Resolve such duplicates first.</p>
+<p>The input is not modified. For database-backed processing, use
+<code><a href="merge_date_ranges_db.html">merge_date_ranges_db()</a></code>. To aggregate identical rating-factor combinations
+rather than connected periods, use <code><a href="rating_grid.html">rating_grid()</a></code>.</p>
+</div>
+
+<div class="section">
+<h3 id="summaries">Summaries<a class="anchor" aria-label="anchor" href="#summaries"></a></h3>
+
+
+<p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> counts consolidated periods entering and leaving the portfolio.
+Choose <code>period = "days"</code> (default), <code>"weeks"</code>, <code>"months"</code>, <code>"quarters"</code> or
+<code>"years"</code>, and optionally rename the count column with <code>name</code>.
+Supply grouping columns explicitly, e.g. <code>summary(x, coverage, period = "months")</code>;
+the original <code>group_by</code> is not applied automatically. These are period
+movement counts, not counts of unique policies.</p>
+<p>If you rename a date column, update its <code>period_start</code> or <code>period_end</code>
+attribute so <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> can find it. Older saved objects with <code>begin</code> and
+<code>end</code> attributes remain supported when the new attributes are absent.</p>
 </div>
 
     </div>
@@ -240,6 +212,7 @@ For a portfolio that should remain outside R memory, use
 <span class="r-in"><span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"policy_id"</span>, <span class="st">"coverage"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Count movements by month, policy and coverage.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">pt1</span>, period <span class="op">=</span> <span class="st">"months"</span>, <span class="va">policy_id</span>, <span class="va">coverage</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     month type count policy_id  coverage</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 2024M05  out     1      P001      Fire</span>
@@ -262,14 +235,11 @@ For a portfolio that should remain outside R memory, use
 <span class="r-in"><span>  merge_gap_days <span class="op">=</span> <span class="fl">5</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">pt2</span>, period <span class="op">=</span> <span class="st">"months"</span>, <span class="va">policy_id</span>, <span class="va">coverage</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     month type count policy_id  coverage</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 2024M05  out     1      P001      Fire</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 2024M04   in     1      P001      Fire</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 2024M04  out     1      P002 Liability</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 2024M03  out     1      P001      Fire</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 2024M01   in     1      P001      Fire</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6 2024M01   in     1      P002 Liability</span>
+<span class="r-in"><span><span class="va">pt2</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   policy_id  coverage period_start period_end earned_premium</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1      P001      Fire   2024-01-01 2024-02-29            210</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2      P001      Fire   2024-04-01 2024-04-30            120</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3      P002 Liability   2024-01-01 2024-03-31            265</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

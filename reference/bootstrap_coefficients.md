@@ -85,7 +85,7 @@ require a different resampling design.
 ## See also
 
 [`summary.bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/summary.bootstrap_coefficients.md),
-[`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md),
+[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md),
 [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
 [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
 

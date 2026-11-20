@@ -126,8 +126,12 @@ plain <code>data.frame</code>, all columns except those listed in <code>exposure
 
 
 <dt id="arg-exposure-by">exposure_by<a class="anchor" aria-label="anchor" href="#arg-exposure-by"></a></dt>
-<dd><p>Optional character; name of a column used to split
-exposure or counts, for example a year variable.</p></dd>
+<dd><p>Optional character; name of a column, such as year,
+whose levels become separate output columns. If <code>exposure</code> is supplied,
+each column contains total exposure for that level; otherwise, it
+contains the number of source rows. For example, the output might
+contain <code>exposure_2020</code> or <code>count_2020</code>. The totals in <code>aggregate_cols</code>
+are calculated once per model point, across all split levels.</p></dd>
 
 
 <dt id="arg-aggregate-cols">aggregate_cols<a class="anchor" aria-label="anchor" href="#arg-aggregate-cols"></a></dt>
@@ -136,9 +140,12 @@ columns to aggregate using <code>sum(na.rm = TRUE)</code>.</p></dd>
 
 
 <dt id="arg-drop-na">drop_na<a class="anchor" aria-label="anchor" href="#arg-drop-na"></a></dt>
-<dd><p>Logical; if <code>TRUE</code>, rows with missing values in <code>group_by</code>
-are removed before aggregation. If <code>FALSE</code>, missing values define an
-explicit observed group and are retained. Default is <code>FALSE</code>.</p></dd>
+<dd><p>Logical. With <code>FALSE</code> (default), missing values in
+<code>group_by</code> form a distinct grouping value and those rows still contribute
+to the totals. With <code>TRUE</code>, a missing value in any <code>group_by</code> column
+excludes the entire row from counts, exposure and other totals.
+Only <code>group_by</code> columns are checked; missing values in the split or
+aggregation columns do not trigger this filter.</p></dd>
 
 
 <dt id="arg-group-vars-agg-cols">group_vars, agg_cols<a class="anchor" aria-label="anchor" href="#arg-group-vars-agg-cols"></a></dt>
@@ -229,9 +236,6 @@ level data should remain available for severity-distribution checks,
 influential-claim analysis and model validation. The equivalence is also
 lost if a severity predictor varies within a grid row or if the totals and
 weights do not represent the underlying claims correctly.</p>
-<p>If <code>exposure_by</code> is supplied, exposure or row counts are split across levels
-of that variable and returned in wide format, for example
-<code>"exposure_2020"</code> or <code>"count_2020"</code>.</p>
 <p>After <code><a href="add_relativities.html">add_relativities()</a></code> creates an output factor, the default grid uses
 that factor instead of its parent. Split relativities and subsequent
 shrinkage or rebasing columns are joined by the output segment, not by the
@@ -240,10 +244,9 @@ to use their existing grouping variables.</p>
 <p>For objects returned by <code><a href="extract_model_data.html">extract_model_data()</a></code>, refinement mappings are joined
 by the factor key recorded in the refinement metadata. They are not
 cross-joined onto every row.</p>
-<p>Aggregation, reshaping and refinement joins are performed internally with
-<code><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table::data.table()</a></code> to support large pricing portfolios. A local copy
-is used, so the supplied object is not modified by reference. The output is
-a regular <code>data.frame</code>, irrespective of the class of the input data.</p>
+<p>On wide portfolios, supply <code>group_by</code> explicitly to avoid grouping by
+unused columns. The input is not modified, and the output is always a
+regular <code>data.frame</code>.</p>
 <p>When the row-level portfolio does not fit comfortably in R memory, use
 <code><a href="rating_grid_db.html">rating_grid_db()</a></code> to perform the grouped reduction in a database and collect
 only the resulting grid.</p>

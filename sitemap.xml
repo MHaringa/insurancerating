@@ -22,6 +22,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/add_shrinkage.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/add_smoothing.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/add_tariff_segments.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/adjust_intercept.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/as_gt.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/as_gt.refinement_audit.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.html</loc></url>
@@ -39,6 +40,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/bootstrap_rmse.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/calibrate_model.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/cash-.rating_table.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/check_calibration.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/check_overdispersion.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/check_residuals.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/construct_model_points.html</loc></url>
@@ -76,6 +78,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/refit.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/refit_glm.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/relativity_specification.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/resample_performance.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/restrict_coef.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/rgammat.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/risk_factor_gam.html</loc></url>

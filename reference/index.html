@@ -222,8 +222,17 @@
 
         </dt>
         <dd>Prepare a model refinement workflow</dd>
+      </dl></div><div class="section level2">
 
-        <dt>
+      <h3 id="shape-ordered-effects">Shape ordered effects<a class="anchor" aria-label="anchor" href="#shape-ordered-effects"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="add_smoothing.html">add_smoothing()</a></code>
 
@@ -239,17 +248,26 @@
 
         <dt>
 
-          <code><a href="add_restriction.html">add_restriction()</a></code>
-
-        </dt>
-        <dd>Add coefficient restrictions to a refinement workflow</dd>
-
-        <dt>
-
           <code><a href="add_monotonicity.html">add_monotonicity()</a></code>
 
         </dt>
         <dd>Enforce monotone tariff relativities for numeric bands or ordered categories</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="adjust-split-tariff-levels">Adjust &amp; split tariff levels<a class="anchor" aria-label="anchor" href="#adjust-split-tariff-levels"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="add_restriction.html">add_restriction()</a></code>
+
+        </dt>
+        <dd>Add coefficient restrictions to a refinement workflow</dd>
 
         <dt>
 
@@ -260,24 +278,26 @@
 
         <dt>
 
-          <code><a href="add_rebasing.html">add_rebasing()</a></code>
-
-        </dt>
-        <dd>Rebase categorical tariff relativities to a reference level</dd>
-
-        <dt>
-
           <code><a href="add_relativities.html">add_relativities()</a></code>
 
         </dt>
         <dd>Add sublevel relativities to a refinement workflow</dd>
+      </dl></div><div class="section level2">
 
-        <dt>
+      <h3 id="finalise-audit">Finalise &amp; audit<a class="anchor" aria-label="anchor" href="#finalise-audit"></a></h3>
 
-          <code><a href="relativity_specification.html">split_level()</a></code> <code><a href="relativity_specification.html">relativities()</a></code>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="add_rebasing.html">add_rebasing()</a></code>
 
         </dt>
-        <dd>Define sublevel relativity specifications</dd>
+        <dd>Rebase categorical tariff relativities to a reference level</dd>
 
         <dt>
 
@@ -295,10 +315,10 @@
 
         <dt>
 
-          <code><a href="calibrate_model.html">calibrate_model()</a></code>
+          <code><a href="adjust_intercept.html">adjust_intercept()</a></code>
 
         </dt>
-        <dd>Calibrate the overall level of a refined pricing model</dd>
+        <dd>Adjust the intercept of a refined pricing model</dd>
 
         <dt>
 
@@ -313,6 +333,11 @@
 
       <dl></dl></div><div class="section level2">
 
+      <h3 id="model-performance-calibration">Model performance &amp; calibration<a class="anchor" aria-label="anchor" href="#model-performance-calibration"></a></h3>
+      <div class="section-desc"><p>Compare fit, prediction error and calibration. See the <a href="../articles/model-validation.html#reviewing-observed-versus-expected-experience">observed-versus-expected review</a>.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
 
 
 
@@ -321,14 +346,30 @@
           <code><a href="model_performance.html">model_performance()</a></code>
 
         </dt>
-        <dd>Compare fitted GLMs using common performance measures</dd>
+        <dd>Compare GLM fit and predictive error metrics</dd>
 
         <dt>
 
-          <code><a href="bootstrap_performance.html">bootstrap_performance()</a></code>
+          <code><a href="check_calibration.html">check_calibration()</a></code>
 
         </dt>
-        <dd>Assess performance stability under repeated resampling</dd>
+        <dd>Check observed versus expected insurance experience</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="model-stability">Model stability<a class="anchor" aria-label="anchor" href="#model-stability"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="resample_performance.html">resample_performance()</a></code>
+
+        </dt>
+        <dd>Assess predictive performance across resampled datasets</dd>
 
         <dt>
 
@@ -343,8 +384,17 @@
 
         </dt>
         <dd>Assess GLM coefficient stability by portfolio-row bootstrap</dd>
+      </dl></div><div class="section level2">
 
-        <dt>
+      <h3 id="model-diagnostics">Model diagnostics<a class="anchor" aria-label="anchor" href="#model-diagnostics"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="check_overdispersion.html">check_overdispersion()</a></code>
 
@@ -510,6 +560,13 @@
 
       <dl><dt>
 
+          <code><a href="calibrate_model.html">calibrate_model()</a></code>
+
+        </dt>
+        <dd>Deprecated alias for <code><a href="../reference/adjust_intercept.html">adjust_intercept()</a></code></dd>
+
+        <dt>
+
           <code><a href="univariate.html">univariate()</a></code>
 
         </dt>
@@ -573,10 +630,17 @@
 
         <dt>
 
+          <code><a href="bootstrap_performance.html">bootstrap_performance()</a></code>
+
+        </dt>
+        <dd>Deprecated alias for <code><a href="../reference/resample_performance.html">resample_performance()</a></code></dd>
+
+        <dt>
+
           <code><a href="bootstrap_rmse.html">bootstrap_rmse()</a></code>
 
         </dt>
-        <dd>Deprecated alias for <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code></dd>
+        <dd>Deprecated RMSE wrapper for <code><a href="../reference/resample_performance.html">resample_performance()</a></code></dd>
 
         <dt>
 

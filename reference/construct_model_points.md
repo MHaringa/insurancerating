@@ -41,8 +41,12 @@ construct_model_points(
 
 - exposure_by:
 
-  Optional character; name of a column used to split exposure or counts,
-  for example a year variable.
+  Optional character; name of a column, such as year, whose levels
+  become separate output columns. If `exposure` is supplied, each column
+  contains total exposure for that level; otherwise, it contains the
+  number of source rows. For example, the output might contain
+  `exposure_2020` or `count_2020`. The totals in `aggregate_cols` are
+  calculated once per model point, across all split levels.
 
 - aggregate_cols:
 
@@ -51,9 +55,12 @@ construct_model_points(
 
 - drop_na:
 
-  Logical; if `TRUE`, rows with missing values in `group_by` are removed
-  before aggregation. If `FALSE`, missing values define an explicit
-  observed group and are retained. Default is `FALSE`.
+  Logical. With `FALSE` (default), missing values in `group_by` form a
+  distinct grouping value and those rows still contribute to the totals.
+  With `TRUE`, a missing value in any `group_by` column excludes the
+  entire row from counts, exposure and other totals. Only `group_by`
+  columns are checked; missing values in the split or aggregation
+  columns do not trigger this filter.
 
 - group_vars, agg_cols:
 

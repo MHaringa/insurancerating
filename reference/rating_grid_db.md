@@ -50,8 +50,11 @@ rating_grid_db(
 
 - drop_na:
 
-  Logical. If `TRUE`, records with missing `group_by` values are
-  excluded. If `FALSE`, missing values remain an observed group.
+  Logical. With `FALSE` (default), missing values in `group_by` form a
+  distinct grouping value and those rows still contribute to the totals.
+  With `TRUE`, a missing value in any `group_by` column excludes the
+  entire row from counts, exposure and other totals. Only `group_by`
+  columns are checked by this filter.
 
 - exposure_by:
 

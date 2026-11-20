@@ -75,30 +75,36 @@ relativities.
 
 - [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md)
   : Prepare a model refinement workflow
+
+### Shape ordered effects
+
 - [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
   : Smooth grouped tariff relativities in a refinement workflow
 - [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
   : Edit a smoothing curve in a refinement workflow
-- [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
-  : Add coefficient restrictions to a refinement workflow
 - [`add_monotonicity()`](https://mharinga.github.io/insurancerating/reference/add_monotonicity.md)
   : Enforce monotone tariff relativities for numeric bands or ordered
   categories
+
+### Adjust & split tariff levels
+
+- [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
+  : Add coefficient restrictions to a refinement workflow
 - [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md)
   : Shrink categorical tariff relativities towards a common level
-- [`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)
-  : Rebase categorical tariff relativities to a reference level
 - [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
   : Add sublevel relativities to a refinement workflow
-- [`split_level()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
-  [`relativities()`](https://mharinga.github.io/insurancerating/reference/relativity_specification.md)
-  : Define sublevel relativity specifications
+
+### Finalise & audit
+
+- [`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md)
+  : Rebase categorical tariff relativities to a reference level
 - [`autoplot(`*`<rating_refinement>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.md)
   : Inspect a model refinement step
 - [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
   : Fit a prepared refinement specification
-- [`calibrate_model()`](https://mharinga.github.io/insurancerating/reference/calibrate_model.md)
-  : Calibrate the overall level of a refined pricing model
+- [`adjust_intercept()`](https://mharinga.github.io/insurancerating/reference/adjust_intercept.md)
+  : Adjust the intercept of a refined pricing model
 - [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
   : Audit the effect of a fitted model refinement
 
@@ -107,14 +113,28 @@ relativities.
 Assess model performance, resampling stability, distributional
 assumptions and residual behaviour.
 
+### Model performance & calibration
+
+Compare fit, prediction error and calibration. See the
+[observed-versus-expected
+review](https://mharinga.github.io/insurancerating/articles/model-validation.html#reviewing-observed-versus-expected-experience).
+
 - [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md)
-  : Compare fitted GLMs using common performance measures
-- [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
-  : Assess performance stability under repeated resampling
+  : Compare GLM fit and predictive error metrics
+- [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
+  : Check observed versus expected insurance experience
+
+### Model stability
+
+- [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
+  : Assess predictive performance across resampled datasets
 - [`autoplot(`*`<bootstrap_performance>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.md)
   : Plot the resampled performance distribution
 - [`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md)
   : Assess GLM coefficient stability by portfolio-row bootstrap
+
+### Model diagnostics
+
 - [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md)
   : Check overdispersion of a Poisson claim frequency model
 - [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
@@ -175,6 +195,12 @@ calculations and simulations.
 Legacy functions retained for backward compatibility. New code should
 use the updated API.
 
+- [`calibrate_model()`](https://mharinga.github.io/insurancerating/reference/calibrate_model.md)
+  :
+
+  Deprecated alias for
+  [`adjust_intercept()`](https://mharinga.github.io/insurancerating/reference/adjust_intercept.md)
+
 - [`univariate()`](https://mharinga.github.io/insurancerating/reference/univariate.md)
   :
 
@@ -226,11 +252,17 @@ use the updated API.
   Deprecated alias for
   [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md)
 
-- [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_rmse.md)
+- [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
   :
 
   Deprecated alias for
-  [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
+  [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
+
+- [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_rmse.md)
+  :
+
+  Deprecated RMSE wrapper for
+  [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
 
 - [`fit_truncated_dist()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_dist.md)
   :

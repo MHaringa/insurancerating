@@ -107,7 +107,10 @@ portfolio information. The default is <code>"drop"</code>.</p></dd>
 <dt id="arg-multiple-matches">multiple_matches<a class="anchor" aria-label="anchor" href="#arg-multiple-matches"></a></dt>
 <dd><p>Character string controlling events that match
 multiple active portfolio rows. Use <code>"all"</code> to retain every match, or
-<code>"first"</code> or <code>"last"</code> to retain one matching row. The default is <code>"all"</code>.</p></dd>
+<code>"first"</code> or <code>"last"</code> to retain one. Matches for these two choices are
+ordered by period start, then period end, then original portfolio row
+order for ties. The default, <code>"all"</code>, returns matches for each event in
+original portfolio row order.</p></dd>
 
 
 <dt id="arg-nomatch-mult">nomatch, mult<a class="anchor" aria-label="anchor" href="#arg-nomatch-mult"></a></dt>
@@ -140,9 +143,9 @@ should take precedence.</p>
 are omitted. With <code>unmatched = "keep"</code>, they remain visible with missing
 portfolio fields. Retaining unmatched events is generally preferable during
 data-quality review because it makes gaps in the policy history explicit.</p>
-<p>The interval join is performed internally with <code><a href="https://rdrr.io/pkg/data.table/man/foverlaps.html" class="external-link">data.table::foverlaps()</a></code> on
-local copies. Neither input is modified by reference. The output follows the
-original order of <code>dates</code> and is always returned as a regular <code>data.frame</code>.</p>
+<p>The interval join includes both the start and end date. Neither input is
+modified. The output follows the original order of <code>dates</code> and is always
+a regular <code>data.frame</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

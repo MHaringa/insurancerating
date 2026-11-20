@@ -49,7 +49,7 @@ distributional diagnostics.
 ## See also
 
 [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
-[`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md),
+[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md),
 [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
 
 ## Author

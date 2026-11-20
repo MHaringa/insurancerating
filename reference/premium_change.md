@@ -193,7 +193,7 @@ premium_change(refinement, at = c(20, 25, 30))
 #>  From To Premium change
 #>    20 40          -0.0%
 #>    25 50          -0.0%
-#>    30 60           0.0%
+#>    30 60          -0.0%
 premium_change(refinement, at = c(20, 25, 30), increment = 5)
 #> Premium change for age
 #> 
@@ -201,7 +201,7 @@ premium_change(refinement, at = c(20, 25, 30), increment = 5)
 #> Basis: Effective smoothing curve
 #> 
 #>  From To Premium change
-#>    20 25          -0.0%
+#>    20 25           0.0%
 #>    25 30           0.0%
 #>    30 35           0.0%
 premium_change(refinement, at = c(20, 25, 30), basis = "segments")
@@ -213,7 +213,7 @@ premium_change(refinement, at = c(20, 25, 30), basis = "segments")
 #>  From To Premium change
 #>    20 40          -0.0%
 #>    25 50          -0.0%
-#>    30 60           0.0%
+#>    30 60          -0.0%
 
 edited <- refinement |>
   edit_smoothing(
@@ -232,5 +232,5 @@ premium_change(edited, at = c(20, 25, 30), steps = c(1, 2))
 #>  From To Step 1 Step 2 Difference
 #>    20 40  -0.0%  +4.4%    +4.4 pp
 #>    25 50  -0.0%  +0.8%    +0.8 pp
-#>    30 60   0.0%  -2.8%    -2.8 pp
+#>    30 60  -0.0%  -2.8%    -2.8 pp
 ```

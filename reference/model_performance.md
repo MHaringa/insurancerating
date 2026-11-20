@@ -1,8 +1,8 @@
-# Compare fitted GLMs using common performance measures
+# Compare GLM fit and predictive error metrics
 
-Compare one or more fitted GLMs using AIC, BIC and response-scale RMSE.
-The resulting table provides a concise first comparison of alternative
-pricing-model specifications fitted to the same portfolio outcome.
+Compare GLM fit and predictive error metrics. The table reports AIC,
+BIC, response-scale RMSE and residual deviance for one or more fitted
+GLMs.
 
 ## Usage
 
@@ -34,7 +34,11 @@ A data frame of class `"model_performance"`, with columns:
 
 - RMSE:
 
-  Root mean squared error.
+  Response-scale root mean squared error.
+
+- Residual_Deviance:
+
+  Residual deviance.
 
 ## Details
 
@@ -55,11 +59,25 @@ The following measures are reported:
   Root mean squared error between observed and response-scale predicted
   values.
 
-Lower values are preferred within each measure, but the measures answer
-different questions. AIC and BIC depend on the model likelihood, whereas
-RMSE measures error on the response scale. Comparisons are therefore
-most meaningful when models use the same response, estimation records,
-weights and offsets.
+- Residual_Deviance:
+
+  Residual deviance of the fitted GLM, as returned by
+  [`stats::deviance()`](https://rdrr.io/r/stats/deviance.html).
+
+AIC, BIC and residual deviance describe in-sample fit. RMSE measures
+prediction error on the response scale, comparing observed responses
+with fitted values from the model. It uses the model's stored data, or
+the model frame if those data are unavailable. With the same records as
+in the fit, RMSE is an in-sample measure of prediction error. None of
+these metrics establishes out-of-sample predictive performance.
+
+For a Poisson frequency model with `offset(log(exposure))`, the fitted
+values are expected claim counts for each observation's exposure. RMSE
+therefore measures error in claim counts, not claim frequencies per unit
+exposure.
+
+Compare models on the same response, estimation records, weights and
+offsets. For residual deviance, also use the same model family.
 
 The table does not select a pricing model automatically. In actuarial
 model assessment, statistical fit should be considered together with
@@ -72,7 +90,7 @@ The implementation is adapted from `performance::model_performance()`.
 ## See also
 
 [`rmse()`](https://mharinga.github.io/insurancerating/reference/rmse.md),
-[`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md),
+[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md),
 [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md),
 [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
 
@@ -87,11 +105,12 @@ m1 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
           data = MTPL2)
 m2 <- glm(nclaims ~ area + premium, offset = log(exposure), family = poisson(),
           data = MTPL2)
+# RMSE is in claim counts for these exposure-offset models.
 model_performance(m1, m2)
 #> # Comparison of Model Performance Indices
 #> 
-#> Model |   AIC    |   BIC    | RMSE  
-#> ------+----------+----------+------ 
-#>    m1 | 2285.729 | 2297.741 | 0.356 
-#>    m2 | 2287.546 | 2305.566 | 0.356 
+#> Model |   AIC    |   BIC    | RMSE  | Residual_Deviance 
+#> ------+----------+----------+-------+------------------ 
+#>    m1 | 2285.729 | 2297.741 | 0.356 |          1608.024 
+#>    m2 | 2287.546 | 2305.566 | 0.356 |          1607.842 
 ```

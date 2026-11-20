@@ -64,8 +64,12 @@ rating_grid(
 
 - exposure_by:
 
-  Optional character; name of a column used to split exposure or counts,
-  for example a year variable.
+  Optional character; name of a column, such as year, whose levels
+  become separate output columns. If `exposure` is supplied, each column
+  contains total exposure for that level; otherwise, it contains the
+  number of source rows. For example, the output might contain
+  `exposure_2020` or `count_2020`. The totals in `aggregate_cols` are
+  calculated once per model point, across all split levels.
 
 - aggregate_cols:
 
@@ -74,9 +78,12 @@ rating_grid(
 
 - drop_na:
 
-  Logical; if `TRUE`, rows with missing values in `group_by` are removed
-  before aggregation. If `FALSE`, missing values define an explicit
-  observed group and are retained. Default is `FALSE`.
+  Logical. With `FALSE` (default), missing values in `group_by` form a
+  distinct grouping value and those rows still contribute to the totals.
+  With `TRUE`, a missing value in any `group_by` column excludes the
+  entire row from counts, exposure and other totals. Only `group_by`
+  columns are checked; missing values in the split or aggregation
+  columns do not trigger this filter.
 
 - group_vars, agg_cols:
 
@@ -166,10 +173,6 @@ validation. The equivalence is also lost if a severity predictor varies
 within a grid row or if the totals and weights do not represent the
 underlying claims correctly.
 
-If `exposure_by` is supplied, exposure or row counts are split across
-levels of that variable and returned in wide format, for example
-`"exposure_2020"` or `"count_2020"`.
-
 After
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
 creates an output factor, the default grid uses that factor instead of
@@ -183,12 +186,9 @@ For objects returned by
 refinement mappings are joined by the factor key recorded in the
 refinement metadata. They are not cross-joined onto every row.
 
-Aggregation, reshaping and refinement joins are performed internally
-with
-[`data.table::data.table()`](https://rdrr.io/pkg/data.table/man/data.table.html)
-to support large pricing portfolios. A local copy is used, so the
-supplied object is not modified by reference. The output is a regular
-`data.frame`, irrespective of the class of the input data.
+On wide portfolios, supply `group_by` explicitly to avoid grouping by
+unused columns. The input is not modified, and the output is always a
+regular `data.frame`.
 
 When the row-level portfolio does not fit comfortably in R memory, use
 [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md)

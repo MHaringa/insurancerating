@@ -538,19 +538,20 @@ factor-level checks.</p>
 <span><span class="fu"><a href="../reference/model_performance.html">model_performance</a></span><span class="op">(</span><span class="va">mod_freq</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Comparison of Model Performance Indices</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  Model   |   AIC    |    BIC    | RMSE  </span></span>
-<span><span class="co">#&gt; ---------+----------+-----------+------ </span></span>
-<span><span class="co">#&gt; mod_freq | 22949.04 | 23015.512 | 0.362</span></span></code></pre></div>
-<p>This reports AIC, BIC and response-scale RMSE for the expected
-claim-count model. These measures are most meaningful when models use
-the same response, records, weights and offsets.</p>
+<span><span class="co">#&gt;  Model   |   AIC    |    BIC    | RMSE  | Residual_Deviance </span></span>
+<span><span class="co">#&gt; ---------+----------+-----------+-------+------------------ </span></span>
+<span><span class="co">#&gt; mod_freq | 22949.04 | 23015.512 | 0.362 |         16079.343</span></span></code></pre></div>
+<p>This reports AIC, BIC, response-scale RMSE and residual deviance.
+RMSE is in claim counts, not claims per unit exposure. These measures
+describe the fit and prediction error on the estimation data, not
+out-of-sample performance.</p>
 </div>
 <div class="section level3">
 <h3 id="bootstrap-performance">Bootstrap performance<a class="anchor" aria-label="anchor" href="#bootstrap-performance"></a>
 </h3>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="va">bp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span></span>
+<span><span class="va">bp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/resample_performance.html">resample_performance</a></span><span class="op">(</span></span>
 <span>  <span class="va">mod_freq</span>,</span>
 <span>  <span class="va">dat</span>,</span>
 <span>  n_resamples <span class="op">=</span> <span class="fl">50</span>,</span>
@@ -640,7 +641,7 @@ rebasing and more extensive restrictions are described in <a href="refinement-wo
 <span><span class="fu"><a href="../reference/add_prediction.html">add_prediction</a></span><span class="op">(</span><span class="op">)</span>              <span class="co"># construct technical risk premium</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="op">)</span>                         <span class="co"># represent risk in a tariff structure</span></span>
 <span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="op">)</span>                <span class="co"># interpret tariff relativities</span></span>
-<span><span class="fu"><a href="../reference/bootstrap_performance.html">bootstrap_performance</a></span><span class="op">(</span><span class="op">)</span>       <span class="co"># assess stability</span></span>
+<span><span class="fu"><a href="../reference/resample_performance.html">resample_performance</a></span><span class="op">(</span><span class="op">)</span>        <span class="co"># assess stability</span></span>
 <span><span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="op">)</span>          <span class="co"># prepare an actuarial refinement</span></span>
 <span><span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span>                       <span class="co"># fit the refined tariff model</span></span></code></pre></div>
 <p>The sequence distinguishes observed experience, fitted model effects,
