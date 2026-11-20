@@ -1635,14 +1635,23 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 }
 
 
-#' Add portfolio experience to a rating table
+#' Add observed factor experience to a rating table
 #'
 #' @description
-#' `add_portfolio_experience()` enriches a [rating_table()] object with observed
-#' portfolio experience. When `data` is supplied, observed experience is
-#' calculated automatically for all risk factors in the rating table, unless
-#' `risk_factors` is specified. Existing [factor_analysis()] results can also be
-#' supplied through `observed`.
+#' Add observed claims experience by rating factor to a rating table for
+#' comparison with estimated GLM relativities.
+#'
+#' @details
+#' The observed experience is marginal: it is summarised for each rating
+#' factor separately. Supply `data` to calculate it for all factors available
+#' in both the rating table and the data (or specify `risk_factors`), or pass
+#' existing [factor_analysis()] results through `observed`.
+#'
+#' Estimated GLM relativities adjust for other predictors; marginal observed
+#' experience does not. Differences can reflect the mix of other risks and
+#' do not necessarily indicate model misspecification. Use this comparison
+#' for model interpretation, not formal calibration. Use [check_calibration()]
+#' to compare full-model predictions with observed outcomes.
 #'
 #' This makes it possible to compare fitted GLM relativities with observed
 #' portfolio patterns in [autoplot.rating_table()]. The full observed output is
@@ -1652,13 +1661,14 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 #'
 #' The observed metric is scaled before plotting. With `scale = "reference"`
 #' the metric is divided by the observed value of the model reference level. If
-#' a clear reference level cannot be found, the metric is scaled to its mean.
-#' With `scale = "mean"`, the metric is always scaled to its mean.
+#' a clear reference level cannot be found, the metric is divided by its mean
+#' across the observed levels of that factor. With `scale = "mean"`, this mean
+#' is always used.
 #'
 #' @usage
-#' add_portfolio_experience(x, ...)
+#' add_factor_experience(x, ...)
 #'
-#' \method{add_portfolio_experience}{rating_table}(
+#' \method{add_factor_experience}{rating_table}(
 #'   x,
 #'   observed = NULL,
 #'   data = NULL,
@@ -1674,7 +1684,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 #'   ...
 #' )
 #'
-#' @aliases add_portfolio_experience.rating_table
+#' @aliases add_factor_experience.rating_table
 #'
 #' @param x A `rating_table` object returned by [rating_table()].
 #' @param observed Optional [factor_analysis()] object or list of
@@ -1703,7 +1713,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 #' @param experience Deprecated alias for `observed`.
 #' @param ... Unused.
 #'
-#' @return A `rating_table` object with observed portfolio experience attached.
+#' @return A `rating_table` object with marginal observed experience attached.
 #'
 #' @author
 #'   Martin Haringa
@@ -1719,7 +1729,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 #' )
 #'
 #' rating_table(model, model_data = df, exposure = "exposure") |>
-#'   add_portfolio_experience(
+#'   add_factor_experience(
 #'     data = df,
 #'     claim_count = "nclaims",
 #'     exposure = "exposure"
@@ -1734,28 +1744,28 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 #' )
 #'
 #' rating_table(model, model_data = df, exposure = "exposure") |>
-#'   add_portfolio_experience(observed = observed) |>
+#'   add_factor_experience(observed = observed) |>
 #'   autoplot(risk_factors = "area")
 #'
 #' @export
-add_portfolio_experience <- function(x, ...) {
-  UseMethod("add_portfolio_experience")
+add_factor_experience <- function(x, ...) {
+  UseMethod("add_factor_experience")
 }
 
 #' @export
-add_portfolio_experience.rating_table <- function(x,
-                                                  observed = NULL,
-                                                  data = NULL,
-                                                  risk_factors = NULL,
-                                                  claim_count = NULL,
-                                                  exposure = NULL,
-                                                  claim_amount = NULL,
-                                                  metric = NULL,
-                                                  label = "Observed experience",
-                                                  color = NULL,
-                                                  scale = c("reference", "mean"),
-                                                  experience = NULL,
-                                                  ...) {
+add_factor_experience.rating_table <- function(x,
+                                               observed = NULL,
+                                               data = NULL,
+                                               risk_factors = NULL,
+                                               claim_count = NULL,
+                                               exposure = NULL,
+                                               claim_amount = NULL,
+                                               metric = NULL,
+                                               label = "Observed experience",
+                                               color = NULL,
+                                               scale = c("reference", "mean"),
+                                               experience = NULL,
+                                               ...) {
   .check_dots_empty(...)
   if (!is.null(experience)) {
     if (!is.null(observed)) {
@@ -1764,8 +1774,8 @@ add_portfolio_experience.rating_table <- function(x,
     }
     lifecycle::deprecate_warn(
       "0.9.0",
-      "add_portfolio_experience(experience)",
-      "add_portfolio_experience(observed)"
+      "add_factor_experience(experience)",
+      "add_factor_experience(observed)"
     )
     observed <- experience
   }
@@ -1813,15 +1823,32 @@ add_portfolio_experience.rating_table <- function(x,
   x
 }
 
-#' Deprecated alias for `add_portfolio_experience()`
+#' Deprecated alias for `add_factor_experience()`
+#'
+#' @description
+#' `add_portfolio_experience()` is deprecated. Use [add_factor_experience()]
+#' instead. Both the `data` and `observed` input methods remain supported.
+#'
+#' @inheritParams add_factor_experience
+#' @param ... Arguments forwarded to [add_factor_experience()].
+#' @return See [add_factor_experience()].
+#' @aliases add_portfolio_experience.rating_table
+#' @keywords internal
+#' @export
+add_portfolio_experience <- function(x, ...) {
+  .Deprecated("add_factor_experience")
+  add_factor_experience(x = x, ...)
+}
+
+#' Deprecated alias for `add_factor_experience()`
 #'
 #' @description
 #' `add_observed_experience()` is deprecated. Use
-#' [add_portfolio_experience()] instead.
+#' [add_factor_experience()] instead.
 #'
-#' @inheritParams add_portfolio_experience
+#' @inheritParams add_factor_experience
 #'
-#' @return See [add_portfolio_experience()].
+#' @return See [add_factor_experience()].
 #'
 #' @author Martin Haringa
 #'
@@ -1831,9 +1858,9 @@ add_observed_experience <- function(...) {
   lifecycle::deprecate_warn(
     "0.8.1",
     "add_observed_experience()",
-    "add_portfolio_experience()"
+    "add_factor_experience()"
   )
-  add_portfolio_experience(...)
+  add_factor_experience(...)
 }
 
 calculate_rating_table_observed_experience <- function(x,

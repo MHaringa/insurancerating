@@ -17,7 +17,16 @@
 #' @param metrics Character vector of distinct metrics in the desired output
 #'   order: `"rmse"` (default), `"mae"`, or `"deviance"`.
 #' @param sampling Character string. Use `"bootstrap"` (default) to sample
-#'   training rows with replacement or `"split"` to sample without replacement.
+#'   training rows with replacement, `"split"` to sample without replacement,
+#'   or `"rolling"` for expanding-window temporal validation.
+#' @param method Alternative name for `sampling`. Supply only one of the two.
+#' @param time For rolling validation, name of a column containing numeric
+#'   periods, dates, date-times or an ordered factor. Missing periods are not
+#'   allowed.
+#' @param initial For rolling validation, number of distinct periods in the
+#'   first training window.
+#' @param horizon For rolling validation, number of subsequent distinct
+#'   periods evaluated at each origin. Default is 1.
 #' @param show_progress Logical. Show a progress bar during resampling.
 #'   Default is `TRUE`.
 #' @param rmse_model Optional finite numeric RMSE for the original fitted model.
@@ -43,6 +52,28 @@
 #' level is present in the evaluation data but absent from a particular training
 #' sample. If this leaves no evaluation rows, use a smaller `sample_fraction`.
 #'
+#' ## Rolling-origin validation
+#'
+#' With `sampling = "rolling"`, fit the GLM to the earliest `initial` periods,
+#' score the next `horizon` periods, then advance the origin by one observed
+#' period at a time. Training and test periods never overlap within a window,
+#' but test windows can overlap across origins when `horizon > 1`.
+#' The number of windows follows from the available periods, not `n_resamples`
+#' or `sample_fraction`.
+#'
+#' Supply an unrestricted [stats::glm()] as the model specification. It is
+#' fitted on each training window. Transformations such as `scale()` learn
+#' their parameters
+#' from the training rows. Precomputed predictors must not use future data.
+#' Supply weights and offsets using columns in `data`, and filter any intended
+#' subset before calling the function. Observation-level starting values are
+#' not supported. A factor level unseen in training produces an error; future
+#' observations are not added to the training window.
+#'
+#' Rolling validation assesses a specification repeatedly fitted to history.
+#' For temporal calibration of one fixed fitted model, use
+#' [check_calibration()] with `by` set to the period column.
+#'
 #' ## Metrics and interpretation
 #'
 #' RMSE (root mean squared error) and MAE (mean absolute error) are unweighted
@@ -59,8 +90,14 @@
 #' with held-out rows, resampling the observed portfolio is not independent
 #' validation on a future or external portfolio.
 #'
-#' @return A list of class `"bootstrap_performance"`. For RMSE alone, the
-#'   original structure is unchanged: `rmse_bs` contains the resampled scores,
+#' @return For rolling validation, a data frame with one row per origin:
+#'   `iteration`, `train_start`, `train_end`, `test_start`, `test_end`,
+#'   `n_train`, `n_test` and the requested metric columns. Counts refer to the
+#'   input rows in each window. Scores are calculated on the test rows;
+#'   binomial prediction errors use proportions for grouped responses.
+#'
+#'   For random resampling, a list of class `"bootstrap_performance"`. For RMSE
+#'   alone, the original structure is unchanged: `rmse_bs` contains the scores,
 #'   `rmse_mod` contains the original model's RMSE, and `metric`, `sampling`,
 #'   `n_resamples`, `sample_fraction`, `n` and `frac` describe the run.
 #'   When another metric is selected, `scores` is a data frame with one row
@@ -94,6 +131,16 @@
 #' autoplot(x_frac, metric = "deviance")
 #' }
 #'
+#' # Illustrative years; MTPL2 does not contain real policy dates.
+#' portfolio <- as.data.frame(MTPL2)
+#' portfolio$year <- rep(2020:2025, length.out = nrow(portfolio))
+#' model <- glm(nclaims ~ factor(area) + offset(log(exposure)),
+#'              family = poisson(), data = portfolio)
+#' resample_performance(
+#'   model, portfolio, sampling = "rolling", time = "year", initial = 3,
+#'   metrics = c("rmse", "mae", "deviance"), show_progress = FALSE
+#' )
+#'
 #' @seealso [rmse()], [model_performance()],
 #'   [autoplot.bootstrap_performance()]
 #'
@@ -106,7 +153,32 @@ resample_performance <- function(model, data, n_resamples = 50,
                                   rmse_model = NULL,
                                   n = NULL,
                                   frac = NULL,
-                                  metrics = "rmse") {
+                                  metrics = "rmse",
+                                  method = NULL,
+                                  time = NULL,
+                                  initial = NULL,
+                                  horizon = 1) {
+  if (!is.null(method)) {
+    if (!missing(sampling)) {
+      stop("Supply either `sampling` or `method`, not both.", call. = FALSE)
+    }
+    sampling <- method
+  }
+  if (identical(sampling, c("bootstrap", "split"))) sampling <- "bootstrap"
+  sampling <- match.arg(sampling, c("bootstrap", "split", "rolling"))
+  rolling <- identical(sampling, "rolling")
+  if (rolling) {
+    if (!missing(n_resamples) || !missing(sample_fraction) ||
+        !is.null(n) || !is.null(frac) || !is.null(rmse_model)) {
+      stop("Rolling validation determines windows from periods; do not supply ",
+           "`n_resamples`, `sample_fraction`, `n`, `frac` or `rmse_model`.",
+           call. = FALSE)
+    }
+  } else if (!is.null(time) || !is.null(initial) || !missing(horizon)) {
+    stop("`time`, `initial` and `horizon` are only used for rolling validation.",
+         call. = FALSE)
+  }
+
   if (!is.null(n)) {
     lifecycle::deprecate_warn("0.9.0", "resample_performance(n)",
                               "resample_performance(n_resamples)")
@@ -118,17 +190,18 @@ resample_performance <- function(model, data, n_resamples = 50,
     sample_fraction <- frac
   }
 
-  sampling <- match.arg(sampling)
-  validate_bootstrap_performance_args(
-    model = model,
-    data = data,
-    n_resamples = n_resamples,
-    sample_fraction = sample_fraction,
-    metric = metric,
-    sampling = sampling,
-    show_progress = show_progress,
-    rmse_model = rmse_model
-  )
+  if (!rolling) {
+    validate_bootstrap_performance_args(
+      model = model,
+      data = data,
+      n_resamples = n_resamples,
+      sample_fraction = sample_fraction,
+      metric = metric,
+      sampling = sampling,
+      show_progress = show_progress,
+      rmse_model = rmse_model
+    )
+  }
   if (!is.character(metrics) || !is.null(dim(metrics)) || !length(metrics) ||
       anyNA(metrics) || anyDuplicated(metrics) ||
       !all(metrics %in% c("rmse", "mae", "deviance"))) {
@@ -136,6 +209,9 @@ resample_performance <- function(model, data, n_resamples = 50,
          "and 'deviance'.", call. = FALSE)
   }
   metrics <- unname(metrics)
+  if (rolling) {
+    return(.resample_rolling(model, data, time, initial, horizon, metrics, show_progress))
+  }
 
   data <- preserve_model_levels(as.data.frame(data))
   level_cols <- intersect(names(model$xlevels), names(data))
@@ -218,14 +294,15 @@ resample_performance <- function(model, data, n_resamples = 50,
 }
 
 
-.resample_scores <- function(model, data, response, predictions, metrics) {
+.resample_scores <- function(model, data, response, predictions, metrics,
+                             legacy_rmse = TRUE) {
   scores <- stats::setNames(numeric(length(metrics)), metrics)
-  if ("rmse" %in% metrics) {
+  if (legacy_rmse && "rmse" %in% metrics) {
     scores[["rmse"]] <- .response_rmse(response, predictions)
   }
   deviance <- "deviance" %in% metrics
   trials <- NULL
-  if ((deviance || "mae" %in% metrics) &&
+  if ((deviance || "mae" %in% metrics || !legacy_rmse) &&
       (is.matrix(response) || is.factor(response))) {
     if (stats::family(model)$family %in% c("binomial", "quasibinomial")) {
       if (is.factor(response)) {
@@ -235,6 +312,9 @@ resample_performance <- function(model, data, n_resamples = 50,
         response <- ifelse(trials == 0, 0, response[, 1L] / trials)
       }
     }
+  }
+  if (!legacy_rmse && "rmse" %in% metrics) {
+    scores[["rmse"]] <- .response_rmse(response, predictions)
   }
   if ("mae" %in% metrics) {
     scores[["mae"]] <- mean(abs(response - predictions), na.rm = TRUE)
@@ -370,6 +450,8 @@ ensure_training_levels <- function(train_rows, data, level_cols) {
 #' `bootstrap_performance()` is deprecated. Use [resample_performance()] instead.
 #'
 #' @inheritParams resample_performance
+#' @param sampling Random sampling scheme: `"bootstrap"` or `"split"`. For
+#'   rolling validation, call [resample_performance()] directly.
 #' @return See [resample_performance()].
 #' @keywords internal
 #' @export
@@ -397,6 +479,7 @@ bootstrap_performance <- function(model, data, n_resamples = 50,
 #' backward compatibility and also inherit from `"bootstrap_performance"`.
 #'
 #' @inheritParams resample_performance
+#' @param sampling Random sampling scheme: `"bootstrap"` or `"split"`.
 #' @param n Deprecated. Use `n_resamples` in [resample_performance()] instead.
 #' @param frac Deprecated. Use `sample_fraction` in [resample_performance()]
 #'   instead.

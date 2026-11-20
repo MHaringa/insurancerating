@@ -51,7 +51,7 @@ The main building blocks can be placed in the following broad architecture:
 | Severity modelling | Inspect claim amounts and truncated severity distributions | `plot_severity_distribution()`, `fit_truncated_severity()` |
 | Large-loss treatment | Assess a threshold and decide how excess loss enters the model | `assess_excess_threshold()`, `redistribute_excess_loss()` |
 | Estimate technical risk | Estimate frequency, severity and expected loss | standard R modelling functions such as `glm()`, supported by `add_prediction()` |
-| Model interpretation | Express fitted effects as tariff relativities and compare them with experience | `rating_table()`, `add_portfolio_experience()` |
+| Model interpretation | Express fitted effects as tariff relativities and compare them with experience | `rating_table()`, `add_factor_experience()` |
 | Tariff refinement | Apply explicit actuarial adjustments and refit the tariff model | `prepare_refinement()`, `add_smoothing()`, `add_restriction()`, `add_relativities()`, `refit()` |
 | Model validation | Examine assumptions, residuals, performance and stability | `check_overdispersion()`, `check_residuals()`, `model_performance()`, `resample_performance()` |
 | Portfolio preparation and reduction | Consolidate periods and construct observed model points locally or in a database | `merge_date_ranges()`, `rating_grid()`, `merge_date_ranges_db()`, `rating_grid_db()` |
@@ -274,12 +274,12 @@ to a tariff representation.
 ## Interpreting model effects
 
 `rating_table()` expresses fitted coefficients as tariff relativities and makes
-reference levels explicit. `add_portfolio_experience()` adds the unadjusted
+reference levels explicit. `add_factor_experience()` adds the unadjusted
 experience observed for those same risk-factor levels.
 
 ```{r}
 rating_table(frequency_model, exposure = "exposure") |>
-  add_portfolio_experience(
+  add_factor_experience(
     data = portfolio,
     claim_count = "nclaims",
     exposure = "exposure",

@@ -114,7 +114,7 @@ implementation.
 |----|----|
 | Explore portfolio experience | `factor_analysis()`, `outlier_histogram()` |
 | Structure continuous risk factors | `risk_factor_gam()`, `derive_tariff_segments()` |
-| Interpret fitted model effects | `rating_table()`, `add_portfolio_experience()` |
+| Interpret fitted model effects | `rating_table()`, `add_factor_experience()` |
 | Refine tariff structures | `prepare_refinement()`, `add_smoothing()`, `add_restriction()`, `refit()` |
 | Validate fitted models | `model_performance()`, `check_overdispersion()`, `check_residuals()`, `resample_performance()` |
 | Treat large losses | `assess_excess_threshold()`, `redistribute_excess_loss()` |

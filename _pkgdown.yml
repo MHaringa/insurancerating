@@ -67,7 +67,7 @@ reference:
       portfolio experience, and add model predictions to portfolio data.
     contents:
       - rating_table
-      - add_portfolio_experience
+      - add_factor_experience
       - autoplot.rating_table
       - premium_change
       - add_prediction
@@ -111,6 +111,7 @@ reference:
     contents:
       - model_performance
       - check_calibration
+      - autoplot.calibration_result
 
   - subtitle: "Model stability"
     contents:
@@ -174,6 +175,7 @@ reference:
       - rating_factors
       - rating_factors2
       - add_observed_experience
+      - add_portfolio_experience
       - model_data
       - construct_model_points
       - construct_tariff_classes

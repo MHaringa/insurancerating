@@ -22,7 +22,8 @@ Supply a positive whole number no larger than the number of rows.
 Use either \code{groups} or \code{by}, not both.}
 }
 \value{
-A data frame with \code{Observed}, \code{Expected}, \code{OE} (observed divided
+A data frame of class \code{calibration_result} with \code{Observed},
+\code{Expected}, \code{OE} (observed divided
 by expected) and \code{N} (number of observations). If expected is zero,
 \code{OE} is \code{NA}. The grouping column or integer \code{Group} is included when
 applicable. \code{Exposure} is the sum of the identified exposure column,
@@ -80,5 +81,6 @@ check_calibration(model, portfolio, groups = 10)
 
 }
 \seealso{
-\code{\link[=model_performance]{model_performance()}}, \code{\link[=resample_performance]{resample_performance()}}, \code{\link[=adjust_intercept]{adjust_intercept()}}
+\code{\link[=autoplot.calibration_result]{autoplot.calibration_result()}}, \code{\link[=model_performance]{model_performance()}},
+\code{\link[=resample_performance]{resample_performance()}}, \code{\link[=adjust_intercept]{adjust_intercept()}}
 }

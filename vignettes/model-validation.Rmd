@@ -51,7 +51,7 @@ model requires every diagnostic.
 |---|---|
 | How do alternative fitted models compare? | `model_performance()` |
 | Are tariff relativities plausible and sufficiently supported? | `rating_table()` |
-| Does observed portfolio experience support the fitted pattern? | `add_portfolio_experience()` |
+| Does marginal observed experience support the fitted pattern? | `add_factor_experience()` |
 | How sensitive is measured performance to portfolio resampling? | `resample_performance()` |
 | Is a Poisson frequency model materially overdispersed? | `check_overdispersion()` |
 | Do simulation-based residuals show remaining structure? | `check_residuals()` |
@@ -128,7 +128,7 @@ area_table <- rating_table(
 area_table
 
 area_review <- area_table |>
-  add_portfolio_experience(
+  add_factor_experience(
     data = portfolio,
     claim_count = "nclaims",
     exposure = "exposure",
@@ -153,7 +153,8 @@ unadjusted portfolio experience by area. They answer different questions and
 need not coincide exactly: observed experience also reflects differences in
 the mix of other risk characteristics. The comparison is useful for identifying
 levels that require further investigation, especially when interpreted with
-their exposure.
+their exposure. This plot does not assess calibration: use
+`check_calibration()` to compare full-model predictions with actual outcomes.
 
 ## Assessing resampling stability
 
@@ -193,6 +194,30 @@ validation design. With `sampling = "split"` and `sample_fraction < 1`, the
 evaluation uses held-out rows from a split without replacement. At
 `sample_fraction = 1`, both sampling schemes evaluate on their training rows
 and measure in-sample stability.
+
+## Testing on later periods
+
+Rolling validation fits the specification on earlier periods and scores it
+on the next period or periods. The training window expands one period at a
+time. The example years here illustrate the interface; MTPL2 has no actual
+calendar-year information.
+
+```{r}
+temporal_data <- as.data.frame(MTPL2)
+temporal_data$year <- rep(2020:2025, length.out = nrow(temporal_data))
+temporal_model <- glm(
+  nclaims ~ factor(area) + offset(log(exposure)),
+  family = poisson(), data = temporal_data
+)
+resample_performance(
+  temporal_model, temporal_data, sampling = "rolling", time = "year",
+  initial = 3, metrics = c("rmse", "mae", "deviance"), show_progress = FALSE
+)
+```
+
+Use actual historical periods to assess temporal predictive performance.
+Unlike plotting calibration by year for a fixed model, this refits the model
+on only the information available in each training window.
 
 ## Checking distributional assumptions
 
@@ -246,8 +271,10 @@ both totals are claim counts.
 
 ```{r}
 check_calibration(area_model, portfolio)
-check_calibration(area_model, portfolio, by = "area")
-check_calibration(area_model, portfolio, groups = 5)
+area_calibration <- check_calibration(area_model, portfolio, by = "area")
+area_calibration
+autoplot(area_calibration)
+autoplot(check_calibration(area_model, portfolio, groups = 5))
 ```
 
 An O/E ratio above one indicates more observed claims than expected; a ratio
@@ -258,6 +285,7 @@ so longer exposure alone does not put a policy in a higher risk group.
 Use `by = "year"` when the evaluation data contain a calendar year. A change
 in O/E across years can indicate a change in the overall prediction level,
 even if the model still ranks high- and low-risk policies equally well.
+`autoplot()` shows that comparison as an O/E line over time.
 
 O:E differences should always be read with exposure and claim volume. A large
 ratio in a small segment may reflect limited experience, while a persistent

@@ -48,7 +48,8 @@
 #' without splitting records. If exposure is unavailable or totals zero,
 #' groups approximate equal row counts. Ties are broken in input row order.
 #'
-#' @return A data frame with `Observed`, `Expected`, `OE` (observed divided
+#' @return A data frame of class `calibration_result` with `Observed`,
+#'   `Expected`, `OE` (observed divided
 #'   by expected) and `N` (number of observations). If expected is zero,
 #'   `OE` is `NA`. The grouping column or integer `Group` is included when
 #'   applicable. `Exposure` is the sum of the identified exposure column,
@@ -67,7 +68,8 @@
 #' check_calibration(model, portfolio, by = "area")
 #' check_calibration(model, portfolio, groups = 10)
 #'
-#' @seealso [model_performance()], [resample_performance()], [adjust_intercept()]
+#' @seealso [autoplot.calibration_result()], [model_performance()],
+#'   [resample_performance()], [adjust_intercept()]
 #' @export
 check_calibration <- function(model, data, by = NULL, groups = NULL) {
   if (!inherits(model, "glm")) {
@@ -204,7 +206,9 @@ check_calibration <- function(model, data, by = NULL, groups = NULL) {
     out[[label]] <- labels
     out <- out[c(label, setdiff(names(out), label))]
   }
-  out
+  grouping <- if (!is.null(groups)) "risk" else if (!is.null(by)) "by" else "overall"
+  structure(out, class = c("calibration_result", class(out)),
+            calibration_grouping = grouping, calibration_by = by)
 }
 
 

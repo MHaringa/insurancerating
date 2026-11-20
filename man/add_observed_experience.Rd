@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_rating_table.R
 \name{add_observed_experience}
 \alias{add_observed_experience}
-\title{Deprecated alias for \code{add_portfolio_experience()}}
+\title{Deprecated alias for \code{add_factor_experience()}}
 \usage{
 add_observed_experience(...)
 }
@@ -10,11 +10,11 @@ add_observed_experience(...)
 \item{...}{Unused.}
 }
 \value{
-See \code{\link[=add_portfolio_experience]{add_portfolio_experience()}}.
+See \code{\link[=add_factor_experience]{add_factor_experience()}}.
 }
 \description{
 \code{add_observed_experience()} is deprecated. Use
-\code{\link[=add_portfolio_experience]{add_portfolio_experience()}} instead.
+\code{\link[=add_factor_experience]{add_factor_experience()}} instead.
 }
 \author{
 Martin Haringa

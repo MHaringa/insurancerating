@@ -4,7 +4,7 @@
 #' Plot the coefficients or relativities stored in a [rating_table()] object by
 #' risk factor. Multiple fitted models can be compared, exposure can be shown as
 #' background bars, and observed portfolio experience attached with
-#' [add_portfolio_experience()] can be added as a separate line.
+#' [add_factor_experience()] can be added as a separate line.
 #'
 #' @details
 #' ## Plot contents
@@ -17,9 +17,9 @@
 #' between the data frame, [as_gt()] and the plot.
 #'
 #' Observed experience is plotted only after it has been attached with
-#' [add_portfolio_experience()]. The selected `metric` is converted to the
+#' [add_factor_experience()]. The selected `metric` is converted to the
 #' relative scale recorded in that object, using either the model reference
-#' level or the portfolio mean.
+#' level or the mean across observed levels within each factor.
 #'
 #' ## Actuarial interpretation
 #'
@@ -40,7 +40,7 @@
 #'   plot. If `NULL`, all available risk factors are shown.
 #' @param metric Optional character string. Observed-experience metric to plot
 #'   when observed experience has been attached with
-#'   [add_portfolio_experience()]. Common choices are `"frequency"`,
+#'   [add_factor_experience()]. Common choices are `"frequency"`,
 #'   `"severity"`/`"average_severity"` and `"risk_premium"`.
 #' @param ncol Positive integer specifying the number of columns in the
 #'   patchwork layout.
@@ -87,7 +87,7 @@
 #'
 #' @author Martin Haringa
 #'
-#' @seealso [rating_table()], [add_portfolio_experience()],
+#' @seealso [rating_table()], [add_factor_experience()],
 #'   [factor_analysis()], [as_gt.rating_table()]
 #'
 #' @examples

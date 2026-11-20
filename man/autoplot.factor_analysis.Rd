@@ -196,7 +196,7 @@ autoplot(x, metrics = c("frequency", "risk_premium"))
 
 }
 \seealso{
-\code{\link[=factor_analysis]{factor_analysis()}}, \code{\link[=add_portfolio_experience]{add_portfolio_experience()}}
+\code{\link[=factor_analysis]{factor_analysis()}}, \code{\link[=add_factor_experience]{add_factor_experience()}}
 }
 \author{
 Marc Haine, Martin Haringa

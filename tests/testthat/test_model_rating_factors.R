@@ -543,7 +543,7 @@ testthat::test_that(
       exposure = "exposure"
     )
 
-    rt_observed <- add_portfolio_experience(
+    rt_observed <- add_factor_experience(
       rt,
       observed,
       metric = "frequency",
@@ -570,7 +570,7 @@ testthat::test_that(
   "observed experience can be calculated automatically for rating table factors", {
     rt <- rating_table(mod1, model_data = df, exposure = "exposure")
 
-    rt_observed <- add_portfolio_experience(
+    rt_observed <- add_factor_experience(
       rt,
       data = df,
       claim_count = "nclaims",
@@ -618,7 +618,7 @@ testthat::test_that(
       model_data = portfolio,
       exposure = "exposure"
     ) |>
-      add_portfolio_experience(
+      add_factor_experience(
         data = portfolio,
         claim_count = "nclaims",
         exposure = "exposure",
@@ -649,7 +649,7 @@ testthat::test_that(
       exposure = "exposure"
     )
 
-    rt_observed <- add_portfolio_experience(
+    rt_observed <- add_factor_experience(
       rt,
       observed = list(observed_area, observed_premium)
     )
@@ -662,6 +662,37 @@ testthat::test_that(
       ggplot2::autoplot(rt_observed, risk_factors = "area", metric = "frequency"),
       "ggplot"
     )
+  }
+)
+
+testthat::test_that(
+  "add_portfolio_experience forwards both named input methods", {
+    rt <- rating_table(mod1, model_data = df, exposure = "exposure")
+    observed <- factor_analysis(
+      df, risk_factors = "area", claim_count = "nclaims", exposure = "exposure"
+    )
+    inputs <- list(
+      list(data = df, risk_factors = "area", claim_count = "nclaims",
+           exposure = "exposure", scale = "mean"),
+      list(observed = observed, scale = "reference")
+    )
+    for (input in inputs) {
+      args <- c(input, list(x = rt, label = "Observed frequency", metric = "frequency"))
+      expected <- do.call(add_factor_experience, args)
+      testthat::expect_warning(
+        actual <- do.call(add_portfolio_experience, args),
+        "add_factor_experience",
+        class = "deprecatedWarning"
+      )
+      testthat::expect_identical(actual, expected)
+
+      without_observed <- actual
+      attr(without_observed, "observed_experience") <- NULL
+      testthat::expect_identical(without_observed, rt)
+      plot <- ggplot2::autoplot(actual, risk_factors = "area")
+      testthat::expect_s3_class(plot, "ggplot")
+      testthat::expect_s3_class(ggplot2::ggplot_build(plot), "ggplot_built")
+    }
   }
 )
 

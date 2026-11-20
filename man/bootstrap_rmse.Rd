@@ -28,8 +28,7 @@ instead.}
 \item{metric}{Legacy argument that accepts only \code{"rmse"}. Use \code{metrics}
 to select metrics.}
 
-\item{sampling}{Character string. Use \code{"bootstrap"} (default) to sample
-training rows with replacement or \code{"split"} to sample without replacement.}
+\item{sampling}{Random sampling scheme: \code{"bootstrap"} or \code{"split"}.}
 
 \item{show_progress}{Logical. Show a progress bar during resampling.
 Default is \code{TRUE}.}

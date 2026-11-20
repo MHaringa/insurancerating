@@ -20,7 +20,8 @@ test_that("offset calibration totals are on the claim-count scale", {
 
   result <- check_calibration(formula_offset, evaluation)
   expect_named(result, c("Observed", "Expected", "OE", "N", "Exposure"))
-  expect_equal(result, data.frame(
+  expect_s3_class(result, "calibration_result")
+  expect_equal(data.frame(as.list(result)), data.frame(
     Observed = sum(evaluation$claims),
     Expected = sum(expected),
     OE = sum(evaluation$claims) / sum(expected),
@@ -173,4 +174,58 @@ test_that("invalid grouping, model families and missing model inputs are rejecte
   expect_error(check_calibration(lm(claims ~ x, portfolio), portfolio), "fitted GLM")
   gaussian <- glm(claims ~ x, data = portfolio)
   expect_error(check_calibration(gaussian, portfolio), "family is 'gaussian'")
+})
+
+test_that("autoplot chooses overall and equal-scale predicted-risk views", {
+  portfolio <- calibration_portfolio()
+  model <- glm(claims ~ x + offset(log(exposure)), poisson(), portfolio)
+  overall <- check_calibration(model, portfolio)
+  plot <- ggplot2::autoplot(overall)
+  expect_s3_class(plot, "ggplot")
+  expect_equal(ggplot2::ggplot_build(plot)$data[[1L]]$yintercept, 1)
+  expect_equal(plot$data$OE, overall$OE)
+
+  risk <- check_calibration(model, portfolio, groups = 3)
+  original <- risk
+  plot <- ggplot2::autoplot(risk)
+  expect_s3_class(plot, "ggplot")
+  expect_equal(plot$data$Expected, risk$Expected / risk$Exposure)
+  expect_equal(plot$data$Observed, risk$Observed / risk$Exposure)
+  expect_equal(ggplot2::ggplot_build(plot)$data[[1L]]$slope, 1)
+  expect_equal(ggplot2::ggplot_build(plot)$data[[1L]]$intercept, 0)
+  expect_identical(plot$coordinates$limits$x, plot$coordinates$limits$y)
+  expect_identical(risk, original)
+
+  unweighted <- glm(claims ~ x, poisson(), portfolio)
+  totals <- check_calibration(unweighted, portfolio, groups = 3)
+  expect_identical(ggplot2::autoplot(totals)$data$Observed, totals$Observed)
+})
+
+test_that("autoplot preserves period and factor ordering and handles missing values", {
+  portfolio <- calibration_portfolio()
+  portfolio$period <- as.Date(paste0(portfolio$year, "-01-01"), format = "%Y-%m-%d")
+  portfolio$calendar <- portfolio$year
+  portfolio$benchmark <- portfolio$claims + 1
+  model <- glm(claims ~ 0 + offset(benchmark), poisson(link = "identity"), portfolio)
+  portfolio$benchmark[portfolio$region %in% "B"] <- 0
+
+  for (column in c("period", "calendar")) {
+    results <- check_calibration(model, portfolio, by = column)
+    temporal <- ggplot2::autoplot(results)
+    expect_s3_class(temporal, "ggplot")
+    expect_identical(temporal$data$.group, results[[column]][!is.na(results[[column]])])
+    expect_true(inherits(temporal$layers[[2L]]$geom, "GeomLine"))
+    expect_match(temporal$labels$caption, "Missing periods")
+  }
+
+  factor_results <- check_calibration(model, portfolio, by = "region")
+  level_plot <- ggplot2::autoplot(factor_results)
+  expect_s3_class(level_plot, "ggplot")
+  expect_identical(level_plot$scales$get_scales("x")$labels, c("B", "A", "(Missing)"))
+  expect_equal(ggplot2::ggplot_build(level_plot)$data[[1L]]$yintercept, 1)
+  expect_true(is.na(level_plot$data$OE[1L]))
+  expect_silent(ggplot2::ggplot_gtable(ggplot2::ggplot_build(level_plot)))
+  override <- ggplot2::autoplot(check_calibration(model, portfolio, by = "calendar"),
+                               type = "factor")
+  expect_identical(override$scales$get_scales("x")$labels, c("2023", "2024", "(Missing)"))
 })

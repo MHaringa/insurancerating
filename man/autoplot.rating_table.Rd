@@ -39,7 +39,7 @@ plot. If \code{NULL}, all available risk factors are shown.}
 
 \item{metric}{Optional character string. Observed-experience metric to plot
 when observed experience has been attached with
-\code{\link[=add_portfolio_experience]{add_portfolio_experience()}}. Common choices are \code{"frequency"},
+\code{\link[=add_factor_experience]{add_factor_experience()}}. Common choices are \code{"frequency"},
 \code{"severity"}/\code{"average_severity"} and \code{"risk_premium"}.}
 
 \item{ncol}{Positive integer specifying the number of columns in the
@@ -110,7 +110,7 @@ factor.
 Plot the coefficients or relativities stored in a \code{\link[=rating_table]{rating_table()}} object by
 risk factor. Multiple fitted models can be compared, exposure can be shown as
 background bars, and observed portfolio experience attached with
-\code{\link[=add_portfolio_experience]{add_portfolio_experience()}} can be added as a separate line.
+\code{\link[=add_factor_experience]{add_factor_experience()}} can be added as a separate line.
 }
 \details{
 \subsection{Plot contents}{
@@ -123,9 +123,9 @@ the reference level and any explicit actuarial review order consistent
 between the data frame, \code{\link[=as_gt]{as_gt()}} and the plot.
 
 Observed experience is plotted only after it has been attached with
-\code{\link[=add_portfolio_experience]{add_portfolio_experience()}}. The selected \code{metric} is converted to the
+\code{\link[=add_factor_experience]{add_factor_experience()}}. The selected \code{metric} is converted to the
 relative scale recorded in that object, using either the model reference
-level or the portfolio mean.
+level or the mean across observed levels within each factor.
 }
 
 \subsection{Actuarial interpretation}{
@@ -163,7 +163,7 @@ autoplot(effects, risk_factors = "zip", show_exposure_labels = FALSE)
 
 }
 \seealso{
-\code{\link[=rating_table]{rating_table()}}, \code{\link[=add_portfolio_experience]{add_portfolio_experience()}},
+\code{\link[=rating_table]{rating_table()}}, \code{\link[=add_factor_experience]{add_factor_experience()}},
 \code{\link[=factor_analysis]{factor_analysis()}}, \code{\link[=as_gt.rating_table]{as_gt.rating_table()}}
 }
 \author{

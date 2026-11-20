@@ -106,7 +106,7 @@ autoplot(area_experience, metrics = c("frequency", "risk_premium"))
 }
 \seealso{
 \code{\link[=autoplot.factor_analysis]{autoplot.factor_analysis()}}, \code{\link[=rating_table]{rating_table()}},
-\code{\link[=add_portfolio_experience]{add_portfolio_experience()}}
+\code{\link[=add_factor_experience]{add_factor_experience()}}
 }
 \author{
 Martin Haringa

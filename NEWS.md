@@ -1,5 +1,12 @@
 # insurancerating (development version)
 
+- `resample_performance(sampling = "rolling")` fits expanding historical
+  windows and scores subsequent periods with RMSE, MAE or predictive deviance.
+- `autoplot()` for `check_calibration()` shows overall, predicted-risk,
+  temporal or rating-factor calibration.
+- `add_factor_experience()` replaces `add_portfolio_experience()` for attaching
+  marginal observed experience to a rating table. The old name remains as a
+  deprecated alias; calculations and plotting behaviour are unchanged.
 - `check_calibration()` compares observed and expected totals overall, by
   portfolio segment or calendar year, and across predicted-risk groups.
 - `resample_performance()` replaces `bootstrap_performance()`, which remains

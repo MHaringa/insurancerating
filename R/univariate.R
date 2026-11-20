@@ -61,7 +61,7 @@
 #' @author Martin Haringa
 #'
 #' @seealso [autoplot.factor_analysis()], [rating_table()],
-#'   [add_portfolio_experience()]
+#'   [add_factor_experience()]
 #'
 #' @importFrom data.table data.table
 #'
@@ -468,7 +468,7 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #'                      exposure = "exposure")
 #' autoplot(x, metrics = c("frequency", "risk_premium"))
 #'
-#' @seealso [factor_analysis()], [add_portfolio_experience()]
+#' @seealso [factor_analysis()], [add_factor_experience()]
 #'
 #' @export
 autoplot.factor_analysis <- function(object,
