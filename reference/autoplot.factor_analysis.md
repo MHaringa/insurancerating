@@ -270,7 +270,7 @@ Other valid metrics and exposure information remain in the figure.
 ## See also
 
 [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md),
-[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+[`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
 
 ## Author
 

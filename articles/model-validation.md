@@ -39,7 +39,7 @@ every model requires every diagnostic.
 |----|----|
 | How do alternative fitted models compare? | [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md) |
 | Are tariff relativities plausible and sufficiently supported? | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md) |
-| Does observed portfolio experience support the fitted pattern? | [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md) |
+| Does marginal observed experience support the fitted pattern? | [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md) |
 | How sensitive is measured performance to portfolio resampling? | [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md) |
 | Is a Poisson frequency model materially overdispersed? | [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md) |
 | Do simulation-based residuals show remaining structure? | [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md) |
@@ -135,7 +135,7 @@ area_table
 #> 5        area           3      1.0782596      765
 
 area_review <- area_table |>
-  add_portfolio_experience(
+  add_factor_experience(
     data = portfolio,
     claim_count = "nclaims",
     exposure = "exposure",
@@ -163,7 +163,10 @@ shows unadjusted portfolio experience by area. They answer different
 questions and need not coincide exactly: observed experience also
 reflects differences in the mix of other risk characteristics. The
 comparison is useful for identifying levels that require further
-investigation, especially when interpreted with their exposure.
+investigation, especially when interpreted with their exposure. This
+plot does not assess calibration: use
+[`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
+to compare full-model predictions with actual outcomes.
 
 ## Assessing resampling stability
 
@@ -217,6 +220,39 @@ or temporal validation design. With `sampling = "split"` and
 without replacement. At `sample_fraction = 1`, both sampling schemes
 evaluate on their training rows and measure in-sample stability.
 
+## Testing on later periods
+
+Rolling validation fits the specification on earlier periods and scores
+it on the next period or periods. The training window expands one period
+at a time. The example years here illustrate the interface; MTPL2 has no
+actual calendar-year information.
+
+``` r
+
+temporal_data <- as.data.frame(MTPL2)
+temporal_data$year <- rep(2020:2025, length.out = nrow(temporal_data))
+temporal_model <- glm(
+  nclaims ~ factor(area) + offset(log(exposure)),
+  family = poisson(), data = temporal_data
+)
+resample_performance(
+  temporal_model, temporal_data, sampling = "rolling", time = "year",
+  initial = 3, metrics = c("rmse", "mae", "deviance"), show_progress = FALSE
+)
+#>   iteration train_start train_end test_start test_end n_train n_test      rmse
+#> 1         1        2020      2022       2023     2023    1500    500 0.3148918
+#> 2         2        2020      2023       2024     2024    2000    500 0.3402196
+#> 3         3        2020      2024       2025     2025    2500    500 0.3490226
+#>         mae deviance
+#> 1 0.2056950 237.7274
+#> 2 0.2084982 259.1681
+#> 3 0.2086374 255.4882
+```
+
+Use actual historical periods to assess temporal predictive performance.
+Unlike plotting calibration by year for a fixed model, this refits the
+model on only the information available in each training window.
+
 ## Checking distributional assumptions
 
 ### Overdispersion
@@ -258,7 +294,7 @@ residual_check <- check_residuals(
 autoplot(residual_check)
 ```
 
-![](model-validation_files/figure-html/unnamed-chunk-7-1.png)
+![](model-validation_files/figure-html/unnamed-chunk-8-1.png)
 
 [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
 uses DHARMa simulations from the fitted model to construct scaled
@@ -285,20 +321,24 @@ counts.
 check_calibration(area_model, portfolio)
 #>   Observed Expected OE    N Exposure
 #> 1      358      358  1 3000 2662.586
-check_calibration(area_model, portfolio, by = "area")
+area_calibration <- check_calibration(area_model, portfolio, by = "area")
+area_calibration
 #>   area Observed Expected OE    N   Exposure
 #> 1    1      146      146  1 1194 1065.74795
 #> 2    0        1        1  1   15   13.30685
 #> 3    2       98       98  1  921  818.53973
 #> 4    3      113      113  1  870  764.99178
-check_calibration(area_model, portfolio, groups = 5)
-#>   Group Observed Expected        OE   N Exposure
-#> 1     1       58 63.21916 0.9174434 599 532.9890
-#> 2     2       76 67.68745 1.1228079 598 531.7644
-#> 3     3       70 72.94670 0.9596047 593 532.4849
-#> 4     4       78 75.49485 1.0331831 608 532.8877
-#> 5     5       76 78.65184 0.9662838 602 532.4603
+autoplot(area_calibration)
 ```
+
+![](model-validation_files/figure-html/unnamed-chunk-9-1.png)
+
+``` r
+
+autoplot(check_calibration(area_model, portfolio, groups = 5))
+```
+
+![](model-validation_files/figure-html/unnamed-chunk-9-2.png)
 
 An O/E ratio above one indicates more observed claims than expected; a
 ratio below one indicates fewer. The overall ratio describes
@@ -310,6 +350,8 @@ Use `by = "year"` when the evaluation data contain a calendar year. A
 change in O/E across years can indicate a change in the overall
 prediction level, even if the model still ranks high- and low-risk
 policies equally well.
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+shows that comparison as an O/E line over time.
 
 O:E differences should always be read with exposure and claim volume. A
 large ratio in a small segment may reflect limited experience, while a

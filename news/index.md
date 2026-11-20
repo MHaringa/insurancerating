@@ -2,6 +2,19 @@
 
 ## insurancerating (development version)
 
+- `resample_performance(sampling = "rolling")` fits expanding historical
+  windows and scores subsequent periods with RMSE, MAE or predictive
+  deviance.
+- [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  for
+  [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
+  shows overall, predicted-risk, temporal or rating-factor calibration.
+- [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
+  replaces
+  [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+  for attaching marginal observed experience to a rating table. The old
+  name remains as a deprecated alias; calculations and plotting
+  behaviour are unchanged.
 - [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
   compares observed and expected totals overall, by portfolio segment or
   calendar year, and across predicted-risk groups.

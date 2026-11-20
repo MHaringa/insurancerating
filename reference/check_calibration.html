@@ -77,7 +77,8 @@ Use either <code>groups</code> or <code>by</code>, not both.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame with <code>Observed</code>, <code>Expected</code>, <code>OE</code> (observed divided
+    <p>A data frame of class <code>calibration_result</code> with <code>Observed</code>,
+<code>Expected</code>, <code>OE</code> (observed divided
 by expected) and <code>N</code> (number of observations). If expected is zero,
 <code>OE</code> is <code>NA</code>. The grouping column or integer <code>Group</code> is included when
 applicable. <code>Exposure</code> is the sum of the identified exposure column,
@@ -116,7 +117,8 @@ groups approximate equal row counts. Ties are broken in input row order.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="model_performance.html">model_performance()</a></code>, <code><a href="resample_performance.html">resample_performance()</a></code>, <code><a href="adjust_intercept.html">adjust_intercept()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="autoplot.calibration_result.html">autoplot.calibration_result()</a></code>, <code><a href="model_performance.html">model_performance()</a></code>,
+<code><a href="resample_performance.html">resample_performance()</a></code>, <code><a href="adjust_intercept.html">adjust_intercept()</a></code></p></div>
     </div>
 
     <div class="section level2">

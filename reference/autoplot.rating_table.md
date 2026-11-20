@@ -5,7 +5,7 @@ Plot the coefficients or relativities stored in a
 object by risk factor. Multiple fitted models can be compared, exposure
 can be shown as background bars, and observed portfolio experience
 attached with
-[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+[`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
 can be added as a separate line.
 
 ## Usage
@@ -56,7 +56,7 @@ autoplot(
 
   Optional character string. Observed-experience metric to plot when
   observed experience has been attached with
-  [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md).
+  [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md).
   Common choices are `"frequency"`, `"severity"`/`"average_severity"`
   and `"risk_premium"`.
 
@@ -181,10 +181,10 @@ order consistent between the data frame,
 and the plot.
 
 Observed experience is plotted only after it has been attached with
-[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md).
+[`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md).
 The selected `metric` is converted to the relative scale recorded in
-that object, using either the model reference level or the portfolio
-mean.
+that object, using either the model reference level or the mean across
+observed levels within each factor.
 
 ### Actuarial interpretation
 
@@ -203,7 +203,7 @@ intervals.
 ## See also
 
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md),
-[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md),
+[`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md),
 [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md),
 [`as_gt.rating_table()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
 

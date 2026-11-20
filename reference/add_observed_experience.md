@@ -1,7 +1,7 @@
-# Deprecated alias for `add_portfolio_experience()`
+# Deprecated alias for `add_factor_experience()`
 
 `add_observed_experience()` is deprecated. Use
-[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+[`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
 instead.
 
 ## Usage
@@ -19,7 +19,7 @@ add_observed_experience(...)
 ## Value
 
 See
-[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md).
+[`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md).
 
 ## Author
 

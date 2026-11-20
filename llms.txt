@@ -111,7 +111,7 @@ implementation.
 |----|----|
 | Explore portfolio experience | [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md), [`outlier_histogram()`](https://mharinga.github.io/insurancerating/reference/outlier_histogram.md) |
 | Structure continuous risk factors | [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md), [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md) |
-| Interpret fitted model effects | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md), [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md) |
+| Interpret fitted model effects | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md), [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md) |
 | Refine tariff structures | [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md), [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md), [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md), [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md) |
 | Validate fitted models | [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md), [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md), [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md), [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md) |
 | Treat large losses | [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md), [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md) |
@@ -213,8 +213,8 @@ portfolio experience, and add model predictions to portfolio data.
 
 - [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
   : Present fitted pricing-model effects as a rating table
-- [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
-  : Add portfolio experience to a rating table
+- [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
+  : Add observed factor experience to a rating table
 - [`autoplot(`*`<rating_table>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
   : Compare fitted risk-factor effects graphically
 - [`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
@@ -278,6 +278,8 @@ review](https://mharinga.github.io/insurancerating/articles/model-validation.htm
   : Compare GLM fit and predictive error metrics
 - [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
   : Check observed versus expected insurance experience
+- [`autoplot(`*`<calibration_result>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.calibration_result.md)
+  : Plot observed-versus-expected calibration
 
 ### Model stability
 
@@ -387,7 +389,13 @@ use the updated API.
   :
 
   Deprecated alias for
-  [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+  [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
+
+- [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+  :
+
+  Deprecated alias for
+  [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
 
 - [`model_data()`](https://mharinga.github.io/insurancerating/reference/model_data.md)
   :

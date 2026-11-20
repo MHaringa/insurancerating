@@ -156,7 +156,7 @@ by <code><a href="../reference/add_prediction.html">add_prediction()</a></code>
 experience</td>
 <td>
 <code><a href="../reference/rating_table.html">rating_table()</a></code>,
-<code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code>
+<code><a href="../reference/add_factor_experience.html">add_factor_experience()</a></code>
 </td>
 </tr>
 <tr class="odd">
@@ -459,11 +459,11 @@ followed through to a tariff representation.</p>
 </h2>
 <p><code><a href="../reference/rating_table.html">rating_table()</a></code> expresses fitted coefficients as tariff
 relativities and makes reference levels explicit.
-<code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code> adds the unadjusted experience
+<code><a href="../reference/add_factor_experience.html">add_factor_experience()</a></code> adds the unadjusted experience
 observed for those same risk-factor levels.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">frequency_model</span>, exposure <span class="op">=</span> <span class="st">"exposure"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_portfolio_experience.html">add_portfolio_experience</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/add_factor_experience.html">add_factor_experience</a></span><span class="op">(</span></span>
 <span>    data <span class="op">=</span> <span class="va">portfolio</span>,</span>
 <span>    claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
 <span>    exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>

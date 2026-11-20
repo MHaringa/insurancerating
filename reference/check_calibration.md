@@ -36,11 +36,11 @@ check_calibration(model, data, by = NULL, groups = NULL)
 
 ## Value
 
-A data frame with `Observed`, `Expected`, `OE` (observed divided by
-expected) and `N` (number of observations). If expected is zero, `OE` is
-`NA`. The grouping column or integer `Group` is included when
-applicable. `Exposure` is the sum of the identified exposure column,
-without applying any case weights.
+A data frame of class `calibration_result` with `Observed`, `Expected`,
+`OE` (observed divided by expected) and `N` (number of observations). If
+expected is zero, `OE` is `NA`. The grouping column or integer `Group`
+is included when applicable. `Exposure` is the sum of the identified
+exposure column, without applying any case weights.
 
 ## Details
 
@@ -79,6 +79,7 @@ groups approximate equal row counts. Ties are broken in input row order.
 
 ## See also
 
+[`autoplot.calibration_result()`](https://mharinga.github.io/insurancerating/reference/autoplot.calibration_result.md),
 [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
 [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md),
 [`adjust_intercept()`](https://mharinga.github.io/insurancerating/reference/adjust_intercept.md)

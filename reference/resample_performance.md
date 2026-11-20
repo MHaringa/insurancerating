@@ -20,7 +20,11 @@ resample_performance(
   rmse_model = NULL,
   n = NULL,
   frac = NULL,
-  metrics = "rmse"
+  metrics = "rmse",
+  method = NULL,
+  time = NULL,
+  initial = NULL,
+  horizon = 1
 )
 ```
 
@@ -51,7 +55,8 @@ resample_performance(
 - sampling:
 
   Character string. Use `"bootstrap"` (default) to sample training rows
-  with replacement or `"split"` to sample without replacement.
+  with replacement, `"split"` to sample without replacement, or
+  `"rolling"` for expanding-window temporal validation.
 
 - show_progress:
 
@@ -72,17 +77,43 @@ resample_performance(
   Character vector of distinct metrics in the desired output order:
   `"rmse"` (default), `"mae"`, or `"deviance"`.
 
+- method:
+
+  Alternative name for `sampling`. Supply only one of the two.
+
+- time:
+
+  For rolling validation, name of a column containing numeric periods,
+  dates, date-times or an ordered factor. Missing periods are not
+  allowed.
+
+- initial:
+
+  For rolling validation, number of distinct periods in the first
+  training window.
+
+- horizon:
+
+  For rolling validation, number of subsequent distinct periods
+  evaluated at each origin. Default is 1.
+
 ## Value
 
-A list of class `"bootstrap_performance"`. For RMSE alone, the original
-structure is unchanged: `rmse_bs` contains the resampled scores,
-`rmse_mod` contains the original model's RMSE, and `metric`, `sampling`,
-`n_resamples`, `sample_fraction`, `n` and `frac` describe the run. When
-another metric is selected, `scores` is a data frame with one row per
-replicate and a column for each requested metric, and `original_scores`
-is a named numeric vector for the original model on `data`. `metric`
-records the selected metric names; `rmse_bs` and `rmse_mod` are `NULL`
-if RMSE was not selected. For these results,
+For rolling validation, a data frame with one row per origin:
+`iteration`, `train_start`, `train_end`, `test_start`, `test_end`,
+`n_train`, `n_test` and the requested metric columns. Counts refer to
+the input rows in each window. Scores are calculated on the test rows;
+binomial prediction errors use proportions for grouped responses.
+
+For random resampling, a list of class `"bootstrap_performance"`. For
+RMSE alone, the original structure is unchanged: `rmse_bs` contains the
+scores, `rmse_mod` contains the original model's RMSE, and `metric`,
+`sampling`, `n_resamples`, `sample_fraction`, `n` and `frac` describe
+the run. When another metric is selected, `scores` is a data frame with
+one row per replicate and a column for each requested metric, and
+`original_scores` is a named numeric vector for the original model on
+`data`. `metric` records the selected metric names; `rmse_bs` and
+`rmse_mod` are `NULL` if RMSE was not selected. For these results,
 [`as.vector()`](https://rdrr.io/r/base/vector.html) returns scores for
 the first requested metric.
 
@@ -109,6 +140,31 @@ needed so every observed level is represented at least once. This
 prevents prediction failures when a level is present in the evaluation
 data but absent from a particular training sample. If this leaves no
 evaluation rows, use a smaller `sample_fraction`.
+
+### Rolling-origin validation
+
+With `sampling = "rolling"`, fit the GLM to the earliest `initial`
+periods, score the next `horizon` periods, then advance the origin by
+one observed period at a time. Training and test periods never overlap
+within a window, but test windows can overlap across origins when
+`horizon > 1`. The number of windows follows from the available periods,
+not `n_resamples` or `sample_fraction`.
+
+Supply an unrestricted
+[`stats::glm()`](https://rdrr.io/r/stats/glm.html) as the model
+specification. It is fitted on each training window. Transformations
+such as [`scale()`](https://rdrr.io/r/base/scale.html) learn their
+parameters from the training rows. Precomputed predictors must not use
+future data. Supply weights and offsets using columns in `data`, and
+filter any intended subset before calling the function.
+Observation-level starting values are not supported. A factor level
+unseen in training produces an error; future observations are not added
+to the training window.
+
+Rolling validation assesses a specification repeatedly fitted to
+history. For temporal calibration of one fixed fitted model, use
+[`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
+with `by` set to the period column.
 
 ### Metrics and interpretation
 
@@ -158,4 +214,22 @@ x_frac <- resample_performance(mod1, MTPL, n_resamples = 50,
 head(x_frac$scores)
 autoplot(x_frac, metric = "deviance")
 } # }
+
+# Illustrative years; MTPL2 does not contain real policy dates.
+portfolio <- as.data.frame(MTPL2)
+portfolio$year <- rep(2020:2025, length.out = nrow(portfolio))
+model <- glm(nclaims ~ factor(area) + offset(log(exposure)),
+             family = poisson(), data = portfolio)
+resample_performance(
+  model, portfolio, sampling = "rolling", time = "year", initial = 3,
+  metrics = c("rmse", "mae", "deviance"), show_progress = FALSE
+)
+#>   iteration train_start train_end test_start test_end n_train n_test      rmse
+#> 1         1        2020      2022       2023     2023    1500    500 0.3148918
+#> 2         2        2020      2023       2024     2024    2000    500 0.3402196
+#> 3         3        2020      2024       2025     2025    2500    500 0.3490226
+#>         mae deviance
+#> 1 0.2056950 237.7274
+#> 2 0.2084982 259.1681
+#> 3 0.2086374 255.4882
 ```

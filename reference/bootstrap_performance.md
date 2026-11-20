@@ -48,8 +48,10 @@ bootstrap_performance(
 
 - sampling:
 
-  Character string. Use `"bootstrap"` (default) to sample training rows
-  with replacement or `"split"` to sample without replacement.
+  Random sampling scheme: `"bootstrap"` or `"split"`. For rolling
+  validation, call
+  [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
+  directly.
 
 - show_progress:
 

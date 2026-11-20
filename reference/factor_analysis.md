@@ -115,7 +115,7 @@ remains available for compatibility with its former interface.
 
 [`autoplot.factor_analysis()`](https://mharinga.github.io/insurancerating/reference/autoplot.factor_analysis.md),
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md),
-[`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+[`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
 
 ## Author
 

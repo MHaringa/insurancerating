@@ -8,10 +8,10 @@
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Compare fitted risk-factor effects graphically — autoplot.rating_table"><meta name="description" content="Plot the coefficients or relativities stored in a rating_table() object by
 risk factor. Multiple fitted models can be compared, exposure can be shown as
 background bars, and observed portfolio experience attached with
-add_portfolio_experience() can be added as a separate line."><meta property="og:description" content="Plot the coefficients or relativities stored in a rating_table() object by
+add_factor_experience() can be added as a separate line."><meta property="og:description" content="Plot the coefficients or relativities stored in a rating_table() object by
 risk factor. Multiple fitted models can be compared, exposure can be shown as
 background bars, and observed portfolio experience attached with
-add_portfolio_experience() can be added as a separate line."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+add_factor_experience() can be added as a separate line."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -47,7 +47,7 @@ add_portfolio_experience() can be added as a separate line."><meta property="og:
     <p>Plot the coefficients or relativities stored in a <code><a href="rating_table.html">rating_table()</a></code> object by
 risk factor. Multiple fitted models can be compared, exposure can be shown as
 background bars, and observed portfolio experience attached with
-<code><a href="add_portfolio_experience.html">add_portfolio_experience()</a></code> can be added as a separate line.</p>
+<code><a href="add_factor_experience.html">add_factor_experience()</a></code> can be added as a separate line.</p>
     </div>
 
     <div class="section level2">
@@ -97,7 +97,7 @@ plot. If <code>NULL</code>, all available risk factors are shown.</p></dd>
 <dt id="arg-metric">metric<a class="anchor" aria-label="anchor" href="#arg-metric"></a></dt>
 <dd><p>Optional character string. Observed-experience metric to plot
 when observed experience has been attached with
-<code><a href="add_portfolio_experience.html">add_portfolio_experience()</a></code>. Common choices are <code>"frequency"</code>,
+<code><a href="add_factor_experience.html">add_factor_experience()</a></code>. Common choices are <code>"frequency"</code>,
 <code>"severity"</code>/<code>"average_severity"</code> and <code>"risk_premium"</code>.</p></dd>
 
 
@@ -222,9 +222,9 @@ Panel and level order follow the input <code><a href="rating_table.html">rating_
 the reference level and any explicit actuarial review order consistent
 between the data frame, <code><a href="as_gt.html">as_gt()</a></code> and the plot.</p>
 <p>Observed experience is plotted only after it has been attached with
-<code><a href="add_portfolio_experience.html">add_portfolio_experience()</a></code>. The selected <code>metric</code> is converted to the
+<code><a href="add_factor_experience.html">add_factor_experience()</a></code>. The selected <code>metric</code> is converted to the
 relative scale recorded in that object, using either the model reference
-level or the portfolio mean.</p>
+level or the mean across observed levels within each factor.</p>
 </div>
 
 <div class="section">
@@ -246,7 +246,7 @@ intervals.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="rating_table.html">rating_table()</a></code>, <code><a href="add_portfolio_experience.html">add_portfolio_experience()</a></code>,
+    <div class="dont-index"><p><code><a href="rating_table.html">rating_table()</a></code>, <code><a href="add_factor_experience.html">add_factor_experience()</a></code>,
 <code><a href="factor_analysis.html">factor_analysis()</a></code>, <code><a href="as_gt.html">as_gt.rating_table()</a></code></p></div>
     </div>
     <div class="section level2">

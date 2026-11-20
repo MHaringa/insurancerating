@@ -395,7 +395,7 @@ underlying frequency and severity analyses.
 
 
 rt <- rating_table(burn_unrestricted) |>
-  add_portfolio_experience(
+  add_factor_experience(
     data = premium_df,
     claim_count = "nclaims",
     exposure = "exposure",

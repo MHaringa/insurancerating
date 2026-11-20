@@ -12,6 +12,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/MTPL.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/MTPL2.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/active_rows_by_date.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/add_factor_experience.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/add_monotonicity.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/add_observed_experience.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.html</loc></url>
@@ -28,6 +29,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/audit_refinement.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.calibration_result.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.check_residuals.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.factor_analysis.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.html</loc></url>

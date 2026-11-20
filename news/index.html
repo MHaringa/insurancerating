@@ -39,6 +39,12 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="insurancerating-development-version">insurancerating (development version)<a class="anchor" aria-label="anchor" href="#insurancerating-development-version"></a></h2>
 <ul><li>
+<code>resample_performance(sampling = "rolling")</code> fits expanding historical windows and scores subsequent periods with RMSE, MAE or predictive deviance.</li>
+<li>
+<code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> for <code><a href="../reference/check_calibration.html">check_calibration()</a></code> shows overall, predicted-risk, temporal or rating-factor calibration.</li>
+<li>
+<code><a href="../reference/add_factor_experience.html">add_factor_experience()</a></code> replaces <code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code> for attaching marginal observed experience to a rating table. The old name remains as a deprecated alias; calculations and plotting behaviour are unchanged.</li>
+<li>
 <code><a href="../reference/check_calibration.html">check_calibration()</a></code> compares observed and expected totals overall, by portfolio segment or calendar year, and across predicted-risk groups.</li>
 <li>
 <code><a href="../reference/resample_performance.html">resample_performance()</a></code> replaces <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code>, which remains available as a deprecated alias. The default RMSE results are unchanged; <code>metrics</code> can also request MAE and weighted predictive deviance.</li>

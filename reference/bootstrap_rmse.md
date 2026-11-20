@@ -49,8 +49,7 @@ bootstrap_rmse(
 
 - sampling:
 
-  Character string. Use `"bootstrap"` (default) to sample training rows
-  with replacement or `"split"` to sample without replacement.
+  Random sampling scheme: `"bootstrap"` or `"split"`.
 
 - show_progress:
 

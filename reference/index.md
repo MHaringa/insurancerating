@@ -58,8 +58,8 @@ portfolio experience, and add model predictions to portfolio data.
 
 - [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
   : Present fitted pricing-model effects as a rating table
-- [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
-  : Add portfolio experience to a rating table
+- [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
+  : Add observed factor experience to a rating table
 - [`autoplot(`*`<rating_table>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
   : Compare fitted risk-factor effects graphically
 - [`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
@@ -123,6 +123,8 @@ review](https://mharinga.github.io/insurancerating/articles/model-validation.htm
   : Compare GLM fit and predictive error metrics
 - [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
   : Check observed versus expected insurance experience
+- [`autoplot(`*`<calibration_result>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.calibration_result.md)
+  : Plot observed-versus-expected calibration
 
 ### Model stability
 
@@ -232,7 +234,13 @@ use the updated API.
   :
 
   Deprecated alias for
-  [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+  [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
+
+- [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
+  :
+
+  Deprecated alias for
+  [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
 
 - [`model_data()`](https://mharinga.github.io/insurancerating/reference/model_data.md)
   :

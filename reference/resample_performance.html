@@ -63,7 +63,11 @@ selected by the resampling design.</p>
 <span>  rmse_model <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  frac <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  metrics <span class="op">=</span> <span class="st">"rmse"</span></span>
+<span>  metrics <span class="op">=</span> <span class="st">"rmse"</span>,</span>
+<span>  method <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  time <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  initial <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  horizon <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -96,7 +100,8 @@ to select metrics.</p></dd>
 
 <dt id="arg-sampling">sampling<a class="anchor" aria-label="anchor" href="#arg-sampling"></a></dt>
 <dd><p>Character string. Use <code>"bootstrap"</code> (default) to sample
-training rows with replacement or <code>"split"</code> to sample without replacement.</p></dd>
+training rows with replacement, <code>"split"</code> to sample without replacement,
+or <code>"rolling"</code> for expanding-window temporal validation.</p></dd>
 
 
 <dt id="arg-show-progress">show_progress<a class="anchor" aria-label="anchor" href="#arg-show-progress"></a></dt>
@@ -118,11 +123,36 @@ If <code>NULL</code> and RMSE is selected, it is calculated from <code>model</co
 <dd><p>Character vector of distinct metrics in the desired output
 order: <code>"rmse"</code> (default), <code>"mae"</code>, or <code>"deviance"</code>.</p></dd>
 
+
+<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
+<dd><p>Alternative name for <code>sampling</code>. Supply only one of the two.</p></dd>
+
+
+<dt id="arg-time">time<a class="anchor" aria-label="anchor" href="#arg-time"></a></dt>
+<dd><p>For rolling validation, name of a column containing numeric
+periods, dates, date-times or an ordered factor. Missing periods are not
+allowed.</p></dd>
+
+
+<dt id="arg-initial">initial<a class="anchor" aria-label="anchor" href="#arg-initial"></a></dt>
+<dd><p>For rolling validation, number of distinct periods in the
+first training window.</p></dd>
+
+
+<dt id="arg-horizon">horizon<a class="anchor" aria-label="anchor" href="#arg-horizon"></a></dt>
+<dd><p>For rolling validation, number of subsequent distinct
+periods evaluated at each origin. Default is 1.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list of class <code>"bootstrap_performance"</code>. For RMSE alone, the
-original structure is unchanged: <code>rmse_bs</code> contains the resampled scores,
+    <p>For rolling validation, a data frame with one row per origin:
+<code>iteration</code>, <code>train_start</code>, <code>train_end</code>, <code>test_start</code>, <code>test_end</code>,
+<code>n_train</code>, <code>n_test</code> and the requested metric columns. Counts refer to the
+input rows in each window. Scores are calculated on the test rows;
+binomial prediction errors use proportions for grouped responses.</p>
+<p>For random resampling, a list of class <code>"bootstrap_performance"</code>. For RMSE
+alone, the original structure is unchanged: <code>rmse_bs</code> contains the scores,
 <code>rmse_mod</code> contains the original model's RMSE, and <code>metric</code>, <code>sampling</code>,
 <code>n_resamples</code>, <code>sample_fraction</code>, <code>n</code> and <code>frac</code> describe the run.
 When another metric is selected, <code>scores</code> is a data frame with one row
@@ -151,6 +181,29 @@ in the model, the training sample is augmented when needed so every observed
 level is represented at least once. This prevents prediction failures when a
 level is present in the evaluation data but absent from a particular training
 sample. If this leaves no evaluation rows, use a smaller <code>sample_fraction</code>.</p>
+</div>
+
+<div class="section">
+<h3 id="rolling-origin-validation">Rolling-origin validation<a class="anchor" aria-label="anchor" href="#rolling-origin-validation"></a></h3>
+
+
+<p>With <code>sampling = "rolling"</code>, fit the GLM to the earliest <code>initial</code> periods,
+score the next <code>horizon</code> periods, then advance the origin by one observed
+period at a time. Training and test periods never overlap within a window,
+but test windows can overlap across origins when <code>horizon &gt; 1</code>.
+The number of windows follows from the available periods, not <code>n_resamples</code>
+or <code>sample_fraction</code>.</p>
+<p>Supply an unrestricted <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">stats::glm()</a></code> as the model specification. It is
+fitted on each training window. Transformations such as <code><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale()</a></code> learn
+their parameters
+from the training rows. Precomputed predictors must not use future data.
+Supply weights and offsets using columns in <code>data</code>, and filter any intended
+subset before calling the function. Observation-level starting values are
+not supported. A factor level unseen in training produces an error; future
+observations are not added to the training window.</p>
+<p>Rolling validation assesses a specification repeatedly fitted to history.
+For temporal calibration of one fixed fitted model, use
+<code><a href="check_calibration.html">check_calibration()</a></code> with <code>by</code> set to the period column.</p>
 </div>
 
 <div class="section">
@@ -202,6 +255,24 @@ validation on a future or external portfolio.</p>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">x_frac</span><span class="op">$</span><span class="va">scores</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">x_frac</span>, metric <span class="op">=</span> <span class="st">"deviance"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Illustrative years; MTPL2 does not contain real policy dates.</span></span></span>
+<span class="r-in"><span><span class="va">portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">MTPL2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">portfolio</span><span class="op">$</span><span class="va">year</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">2020</span><span class="op">:</span><span class="fl">2025</span>, length.out <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">portfolio</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">area</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>             family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">resample_performance</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">model</span>, <span class="va">portfolio</span>, sampling <span class="op">=</span> <span class="st">"rolling"</span>, time <span class="op">=</span> <span class="st">"year"</span>, initial <span class="op">=</span> <span class="fl">3</span>,</span></span>
+<span class="r-in"><span>  metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rmse"</span>, <span class="st">"mae"</span>, <span class="st">"deviance"</span><span class="op">)</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   iteration train_start train_end test_start test_end n_train n_test      rmse</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1         1        2020      2022       2023     2023    1500    500 0.3148918</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2         2        2020      2023       2024     2024    2000    500 0.3402196</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3         3        2020      2024       2025     2025    2500    500 0.3490226</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         mae deviance</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.2056950 237.7274</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.2084982 259.1681</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.2086374 255.4882</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
