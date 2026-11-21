@@ -5,7 +5,7 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Package index"><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.5.0/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.5.0/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Package index"><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -350,17 +350,17 @@
 
         <dt>
 
-          <code><a href="check_calibration.html">check_calibration()</a></code>
+          <code><a href="validate_performance.html">validate_performance()</a></code>
 
         </dt>
-        <dd>Check observed versus expected insurance experience</dd>
+        <dd>Evaluate model performance across resamples or time windows</dd>
 
         <dt>
 
-          <code><a href="autoplot.calibration_result.html">autoplot(<i>&lt;calibration_result&gt;</i>)</a></code>
+          <code><a href="calibration_analysis.html">calibration_analysis()</a></code>
 
         </dt>
-        <dd>Plot observed-versus-expected calibration</dd>
+        <dd>Check observed versus expected insurance experience</dd>
       </dl></div><div class="section level2">
 
       <h3 id="model-stability">Model stability<a class="anchor" aria-label="anchor" href="#model-stability"></a></h3>
@@ -373,21 +373,7 @@
 
       <dl><dt>
 
-          <code><a href="resample_performance.html">resample_performance()</a></code>
-
-        </dt>
-        <dd>Assess predictive performance across resampled datasets</dd>
-
-        <dt>
-
-          <code><a href="autoplot.bootstrap_performance.html">autoplot(<i>&lt;bootstrap_performance&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Plot the resampled performance distribution</dd>
-
-        <dt>
-
-          <code><a href="bootstrap_coefficients.html">bootstrap_coefficients()</a></code>
+          <code><a href="coefficient_stability.html">coefficient_stability()</a></code>
 
         </dt>
         <dd>Assess GLM coefficient stability by portfolio-row bootstrap</dd>
@@ -414,13 +400,6 @@
 
         </dt>
         <dd>Check simulation-based model residuals</dd>
-
-        <dt>
-
-          <code><a href="autoplot.check_residuals.html">autoplot(<i>&lt;check_residuals&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Inspect simulation-based residual uniformity</dd>
       </dl></div><div class="section level2">
       <h2 id="portfolio-preparation-and-reduction">Portfolio preparation and reduction<a class="anchor" aria-label="anchor" href="#portfolio-preparation-and-reduction"></a></h2>
 
@@ -647,14 +626,14 @@
           <code><a href="bootstrap_performance.html">bootstrap_performance()</a></code>
 
         </dt>
-        <dd>Deprecated alias for <code><a href="../reference/resample_performance.html">resample_performance()</a></code></dd>
+        <dd>Deprecated alias for <code><a href="../reference/validate_performance.html">validate_performance()</a></code></dd>
 
         <dt>
 
-          <code><a href="bootstrap_rmse.html">bootstrap_rmse()</a></code>
+          <code><a href="bootstrap_coefficients.html">bootstrap_coefficients()</a></code>
 
         </dt>
-        <dd>Deprecated RMSE wrapper for <code><a href="../reference/resample_performance.html">resample_performance()</a></code></dd>
+        <dd>Deprecated alias for <code><a href="../reference/coefficient_stability.html">coefficient_stability()</a></code></dd>
 
         <dt>
 

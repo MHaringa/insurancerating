@@ -113,7 +113,7 @@ implementation.
 | Structure continuous risk factors | [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md), [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md) |
 | Interpret fitted model effects | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md), [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md) |
 | Refine tariff structures | [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md), [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md), [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md), [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md) |
-| Validate fitted models | [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md), [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md), [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md), [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md) |
+| Validate fitted models | [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md), [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md), [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md), [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md) |
 | Treat large losses | [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md), [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md) |
 | Reduce portfolio data locally | [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md), [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md) |
 | Reduce portfolios in a database | [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md), [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md) |
@@ -276,18 +276,14 @@ review](https://mharinga.github.io/insurancerating/articles/model-validation.htm
 
 - [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md)
   : Compare GLM fit and predictive error metrics
-- [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
+- [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md)
+  : Evaluate model performance across resamples or time windows
+- [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
   : Check observed versus expected insurance experience
-- [`autoplot(`*`<calibration_result>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.calibration_result.md)
-  : Plot observed-versus-expected calibration
 
 ### Model stability
 
-- [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
-  : Assess predictive performance across resampled datasets
-- [`autoplot(`*`<bootstrap_performance>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.md)
-  : Plot the resampled performance distribution
-- [`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md)
+- [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
   : Assess GLM coefficient stability by portfolio-row bootstrap
 
 ### Model diagnostics
@@ -296,8 +292,6 @@ review](https://mharinga.github.io/insurancerating/articles/model-validation.htm
   : Check overdispersion of a Poisson claim frequency model
 - [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
   : Check simulation-based model residuals
-- [`autoplot(`*`<check_residuals>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.check_residuals.md)
-  : Inspect simulation-based residual uniformity
 
 ## Portfolio preparation and reduction
 
@@ -419,13 +413,13 @@ use the updated API.
   :
 
   Deprecated alias for
-  [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
+  [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md)
 
-- [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_rmse.md)
+- [`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md)
   :
 
-  Deprecated RMSE wrapper for
-  [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
+  Deprecated alias for
+  [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
 
 - [`fit_truncated_dist()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_dist.md)
   :

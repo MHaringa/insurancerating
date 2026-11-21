@@ -5,7 +5,7 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Compare GLM fit and predictive error metrics — model_performance"><meta name="description" content="Compare GLM fit and predictive error metrics. The table reports AIC, BIC,
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.5.0/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.5.0/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Compare GLM fit and predictive error metrics — model_performance"><meta name="description" content="Compare GLM fit and predictive error metrics. The table reports AIC, BIC,
 response-scale RMSE and residual deviance for one or more fitted GLMs."><meta property="og:description" content="Compare GLM fit and predictive error metrics. The table reports AIC, BIC,
 response-scale RMSE and residual deviance for one or more fitted GLMs."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -98,7 +98,7 @@ by <code><a href="https://rdrr.io/r/stats/deviance.html" class="external-link">s
 </dl><p>AIC, BIC and residual deviance describe in-sample fit. RMSE measures
 in-sample prediction error on the response scale, comparing observed
 responses with fitted values on the same rows used to estimate the model.
-It is unweighted and uses the same response scale as <code><a href="resample_performance.html">resample_performance()</a></code>.
+It is unweighted and uses the same response scale as <code><a href="validate_performance.html">validate_performance()</a></code>.
 None of these metrics establishes out-of-sample predictive performance.</p>
 <p>For a Poisson frequency model with <code>offset(log(exposure))</code>, the fitted
 values are expected claim counts for each observation's exposure. RMSE
@@ -114,7 +114,7 @@ and the practical interpretability of the resulting tariff structure.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="rmse.html">rmse()</a></code>, <code><a href="resample_performance.html">resample_performance()</a></code>, <code><a href="check_overdispersion.html">check_overdispersion()</a></code>,
+    <div class="dont-index"><p><code><a href="rmse.html">rmse()</a></code>, <code><a href="validate_performance.html">validate_performance()</a></code>, <code><a href="check_overdispersion.html">check_overdispersion()</a></code>,
 <code><a href="check_residuals.html">check_residuals()</a></code></p></div>
     </div>
     <div class="section level2">

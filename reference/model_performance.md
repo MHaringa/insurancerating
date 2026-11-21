@@ -68,7 +68,7 @@ AIC, BIC and residual deviance describe in-sample fit. RMSE measures
 in-sample prediction error on the response scale, comparing observed
 responses with fitted values on the same rows used to estimate the
 model. It is unweighted and uses the same response scale as
-[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md).
+[`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md).
 None of these metrics establishes out-of-sample predictive performance.
 
 For a Poisson frequency model with `offset(log(exposure))`, the fitted
@@ -90,7 +90,7 @@ The implementation is adapted from `performance::model_performance()`.
 ## See also
 
 [`rmse()`](https://mharinga.github.io/insurancerating/reference/rmse.md),
-[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md),
+[`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md),
 [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md),
 [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
 

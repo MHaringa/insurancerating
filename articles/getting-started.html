@@ -18,8 +18,8 @@
   };
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
-<link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.5.0/font.css" rel="stylesheet">
+<link href="../deps/Google_Sans_Code-0.5.0/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
@@ -551,7 +551,7 @@ out-of-sample performance.</p>
 </h3>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="va">bp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/resample_performance.html">resample_performance</a></span><span class="op">(</span></span>
+<span><span class="va">bp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/validate_performance.html">validate_performance</a></span><span class="op">(</span></span>
 <span>  <span class="va">mod_freq</span>,</span>
 <span>  <span class="va">dat</span>,</span>
 <span>  n_resamples <span class="op">=</span> <span class="fl">50</span>,</span>
@@ -561,10 +561,11 @@ out-of-sample performance.</p>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">bp</span><span class="op">)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/unnamed-chunk-16-1.png" class="r-plt" alt="" width="700"></p>
-<p>This refits the model on repeated bootstrap samples and evaluates
-RMSE on out-of-bag records. The resulting distribution describes
-sensitivity to the sampled portfolio records; it is not a prediction
-interval for future claims.</p>
+<p>This draws 80 rows per 100 input rows with replacement and evaluates
+RMSE on the rows not used for training (out of bag). It is not an 80/20
+split. The score distribution reflects both refitting the model and
+scoring it on different records; it is not a prediction interval for
+future claims.</p>
 <p>A single fit statistic is not sufficient. In pricing practice, the
 numerical results should be reviewed together with exposure, observed
 experience, residual diagnostics and stability of effects over time. The
@@ -641,7 +642,7 @@ rebasing and more extensive restrictions are described in <a href="refinement-wo
 <span><span class="fu"><a href="../reference/add_prediction.html">add_prediction</a></span><span class="op">(</span><span class="op">)</span>              <span class="co"># construct technical risk premium</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="op">)</span>                         <span class="co"># represent risk in a tariff structure</span></span>
 <span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="op">)</span>                <span class="co"># interpret tariff relativities</span></span>
-<span><span class="fu"><a href="../reference/resample_performance.html">resample_performance</a></span><span class="op">(</span><span class="op">)</span>        <span class="co"># assess stability</span></span>
+<span><span class="fu"><a href="../reference/validate_performance.html">validate_performance</a></span><span class="op">(</span><span class="op">)</span>        <span class="co"># assess stability</span></span>
 <span><span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="op">)</span>          <span class="co"># prepare an actuarial refinement</span></span>
 <span><span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span>                       <span class="co"># fit the refined tariff model</span></span></code></pre></div>
 <p>The sequence distinguishes observed experience, fitted model effects,

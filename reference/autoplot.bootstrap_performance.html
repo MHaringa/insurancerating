@@ -5,10 +5,10 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Plot the resampled performance distribution — autoplot.bootstrap_performance"><meta name="description" content="Display the empirical distribution of resampled scores from
-resample_performance(). The histogram shows the observed resampling
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.5.0/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.5.0/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Plot the resampled performance distribution — autoplot.bootstrap_performance"><meta name="description" content="Display the empirical distribution of resampled scores from
+validate_performance(). The histogram shows the observed resampling
 distribution, while the density curve provides a smooth visual summary."><meta property="og:description" content="Display the empirical distribution of resampled scores from
-resample_performance(). The histogram shows the observed resampling
+validate_performance(). The histogram shows the observed resampling
 distribution, while the density curve provides a smooth visual summary."><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
@@ -43,7 +43,7 @@ distribution, while the density curve provides a smooth visual summary."><meta p
 
     <div class="ref-description section level2">
     <p>Display the empirical distribution of resampled scores from
-<code><a href="resample_performance.html">resample_performance()</a></code>. The histogram shows the observed resampling
+<code><a href="validate_performance.html">validate_performance()</a></code>. The histogram shows the observed resampling
 distribution, while the density curve provides a smooth visual summary.</p>
     </div>
 
@@ -59,7 +59,7 @@ distribution, while the density curve provides a smooth visual summary.</p>
 
 <dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
 <dd><p>An object of class <code>"bootstrap_performance"</code>, produced by
-<code><a href="resample_performance.html">resample_performance()</a></code>.</p></dd>
+<code><a href="validate_performance.html">validate_performance()</a></code>.</p></dd>
 
 
 <dt id="arg-fill">fill<a class="anchor" aria-label="anchor" href="#arg-fill"></a></dt>
@@ -86,10 +86,12 @@ metric, or RMSE for an RMSE-only result.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The dashed orange line marks the score of the original fitted model. The
-subtitle identifies which rows were used to score the refits. Total
-predictive deviance depends on the number and weight of evaluated rows,
-so the orange line is not directly comparable when those differ.</p>
+    <p>The dashed orange line marks the score of the original fitted model on
+the full data supplied to <code><a href="validate_performance.html">validate_performance()</a></code>, unless <code>rmse_model</code>
+supplied a reference RMSE. The subtitle identifies which rows were used to
+score the refits; these are not necessarily the same rows as the reference.
+Total predictive deviance depends on the number and weight of evaluated
+rows, so the orange line is not directly comparable when those differ.</p>
 <p>The dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles of the
 resampled values when these can be calculated. Their distance provides a
 practical indication of sampling variability; it is not a formal prediction
@@ -97,7 +99,7 @@ interval for future portfolio performance.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="resample_performance.html">resample_performance()</a></code>, <code><a href="rmse.html">rmse()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="validate_performance.html">validate_performance()</a></code>, <code><a href="rmse.html">rmse()</a></code></p></div>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
@@ -109,7 +111,7 @@ interval for future portfolio performance.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="va">mod1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">nclaims</span> <span class="op">~</span> <span class="va">age_policyholder</span>, data <span class="op">=</span> <span class="va">MTPL</span>,</span></span>
 <span class="r-in"><span>            offset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="resample_performance.html">resample_performance</a></span><span class="op">(</span><span class="va">mod1</span>, <span class="va">MTPL</span>, n_resamples <span class="op">=</span> <span class="fl">100</span>,</span></span>
+<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="validate_performance.html">validate_performance</a></span><span class="op">(</span><span class="va">mod1</span>, <span class="va">MTPL</span>, n_resamples <span class="op">=</span> <span class="fl">100</span>,</span></span>
 <span class="r-in"><span>                           show_progress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>

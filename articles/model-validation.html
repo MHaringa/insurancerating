@@ -18,8 +18,8 @@
   };
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
-<link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.5.0/font.css" rel="stylesheet">
+<link href="../deps/Google_Sans_Code-0.5.0/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
@@ -153,19 +153,24 @@ every model requires every diagnostic.</p>
 </tr>
 <tr class="even">
 <td>How sensitive is measured performance to portfolio resampling?</td>
-<td><code><a href="../reference/resample_performance.html">resample_performance()</a></code></td>
+<td><code><a href="../reference/validate_performance.html">validate_performance()</a></code></td>
 </tr>
 <tr class="odd">
+<td>How sensitive are the fitted coefficients to portfolio
+resampling?</td>
+<td><code><a href="../reference/coefficient_stability.html">coefficient_stability()</a></code></td>
+</tr>
+<tr class="even">
 <td>Is a Poisson frequency model materially overdispersed?</td>
 <td><code><a href="../reference/check_overdispersion.html">check_overdispersion()</a></code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Do simulation-based residuals show remaining structure?</td>
 <td><code><a href="../reference/check_residuals.html">check_residuals()</a></code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Where does the model over- or under-predict?</td>
-<td><code><a href="../reference/check_calibration.html">check_calibration()</a></code></td>
+<td><code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code></td>
 </tr>
 </tbody>
 </table>
@@ -173,7 +178,7 @@ every model requires every diagnostic.</p>
 <div class="section level2">
 <h2 id="compact-example-setup">Compact example setup<a class="anchor" aria-label="anchor" href="#compact-example-setup"></a>
 </h2>
-<p>The examples use two Poisson frequency models fitted to the same
+<p>Most examples use two Poisson frequency models fitted to the same
 records, response and exposure definition. Each prediction is an
 expected claim count for the observed policy period because it includes
 the earned-exposure offset.</p>
@@ -240,57 +245,77 @@ relativities and shows the exposure supporting each level. This makes
 the statistical output easier to review in actuarial terms. Observed
 experience can be attached to the same table for a direct graphical
 comparison.</p>
+<p>For this comparison, use <code>MTPL</code>, which also contains
+policyholder age. The model estimates regional effects at the same age,
+while the observed frequency reflects each region’s actual mix of
+ages.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">area_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span></span>
-<span>  <span class="va">area_model</span>,</span>
-<span>  model_data <span class="op">=</span> <span class="va">portfolio</span>,</span>
+<code class="sourceCode R"><span><span class="va">tariff_portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">MTPL</span><span class="op">)</span></span>
+<span><span class="va">tariff_portfolio</span><span class="op">$</span><span class="va">zip</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/set_reference_level.html">set_reference_level</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">tariff_portfolio</span><span class="op">$</span><span class="va">zip</span><span class="op">)</span>, <span class="va">tariff_portfolio</span><span class="op">$</span><span class="va">exposure</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">tariff_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
+<span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">zip</span> <span class="op">+</span> <span class="va">age_policyholder</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">tariff_portfolio</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">tariff_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span></span>
+<span>  <span class="st">"Age-adjusted model"</span> <span class="op">=</span> <span class="va">tariff_model</span>,</span>
+<span>  model_data <span class="op">=</span> <span class="va">tariff_portfolio</span>,</span>
 <span>  exposure <span class="op">=</span> <span class="st">"exposure"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">area_table</span></span>
-<span><span class="co">#&gt;   risk_factor       level est_area_model exposure</span></span>
-<span><span class="co">#&gt; 1 (Intercept) (Intercept)      0.1369930       NA</span></span>
-<span><span class="co">#&gt; 2        area           0      0.5485629       13</span></span>
-<span><span class="co">#&gt; 3        area           1      1.0000000     1066</span></span>
-<span><span class="co">#&gt; 4        area           2      0.8739528      819</span></span>
-<span><span class="co">#&gt; 5        area           3      1.0782596      765</span></span>
+<span><span class="va">tariff_table</span></span>
+<span><span class="co">#&gt;        risk_factor            level est_Age-adjusted model exposure</span></span>
+<span><span class="co">#&gt; 1      (Intercept)      (Intercept)              0.3121503       NA</span></span>
+<span><span class="co">#&gt; 2              zip                0              1.0006508      207</span></span>
+<span><span class="co">#&gt; 3              zip                1              1.0000000    11081</span></span>
+<span><span class="co">#&gt; 4              zip                2              0.9020158     7783</span></span>
+<span><span class="co">#&gt; 5              zip                3              0.9559945     7588</span></span>
+<span><span class="co">#&gt; 6 age_policyholder age_policyholder              0.9831025       NA</span></span>
 <span></span>
-<span><span class="va">area_review</span> <span class="op">&lt;-</span> <span class="va">area_table</span> <span class="op">|&gt;</span></span>
+<span><span class="va">tariff_review</span> <span class="op">&lt;-</span> <span class="va">tariff_table</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_factor_experience.html">add_factor_experience</a></span><span class="op">(</span></span>
-<span>    data <span class="op">=</span> <span class="va">portfolio</span>,</span>
+<span>    data <span class="op">=</span> <span class="va">tariff_portfolio</span>,</span>
+<span>    risk_factors <span class="op">=</span> <span class="st">"zip"</span>,</span>
 <span>    claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
 <span>    exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
-<span>    metric <span class="op">=</span> <span class="st">"frequency"</span></span>
+<span>    metric <span class="op">=</span> <span class="st">"frequency"</span>,</span>
+<span>    label <span class="op">=</span> <span class="st">"Observed frequency"</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span></span>
-<span>  <span class="va">area_review</span>,</span>
-<span>  risk_factors <span class="op">=</span> <span class="st">"area"</span>,</span>
+<span>  <span class="va">tariff_review</span>,</span>
+<span>  risk_factors <span class="op">=</span> <span class="st">"zip"</span>,</span>
 <span>  metric <span class="op">=</span> <span class="st">"frequency"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><img src="model-validation_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="700"></p>
+<p><img src="model-validation_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="Modelled regional relativities adjusted for age and observed claim-frequency relativities, with exposure by region." width="700"></p>
 <p>A model with slightly better aggregate fit can still be unattractive
 when it creates volatile neighbouring relativities, extreme effects
 supported by little exposure or shapes without a plausible risk
 interpretation. An extreme coefficient in a small segment should
 therefore not be interpreted in the same way as the same coefficient
 supported by a substantial share of the portfolio.</p>
-<p>The model line shows conditional tariff relativities. The observed
-line shows unadjusted portfolio experience by area. They answer
-different questions and need not coincide exactly: observed experience
-also reflects differences in the mix of other risk characteristics. The
-comparison is useful for identifying levels that require further
-investigation, especially when interpreted with their exposure. This
-plot does not assess calibration: use <code><a href="../reference/check_calibration.html">check_calibration()</a></code>
-to compare full-model predictions with actual outcomes.</p>
+<p>For region 0, the observed frequency is about 2.5% below the
+reference region’s frequency, while the fitted model estimates almost no
+difference at the same age. Region 0 also has relatively little
+exposure. The gap is a reason to look at the age mix and claim volume,
+not evidence by itself of poor calibration. Use
+<code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code> to compare full-model predictions
+with actual outcomes.</p>
 </div>
 <div class="section level2">
 <h2 id="assessing-resampling-stability">Assessing resampling stability<a class="anchor" aria-label="anchor" href="#assessing-resampling-stability"></a>
 </h2>
+<p>Unlike <code><a href="../reference/model_performance.html">model_performance()</a></code>,
+<code><a href="../reference/validate_performance.html">validate_performance()</a></code> refits the model for each sample. By
+default, it fits and scores on the same bootstrap sample. The example
+below instead scores on rows left out of each fit.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">resample_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/resample_performance.html">resample_performance</a></span><span class="op">(</span></span>
+<span><span class="va">resample_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/validate_performance.html">validate_performance</a></span><span class="op">(</span></span>
 <span>  <span class="va">area_model</span>,</span>
 <span>  <span class="va">portfolio</span>,</span>
 <span>  n_resamples <span class="op">=</span> <span class="fl">50</span>,</span>
@@ -310,29 +335,90 @@ to compare full-model predictions with actual outcomes.</p>
 <span><span class="co">#&gt; 6 0.3422794 0.2106021 687.1987</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">resample_result</span>, metric <span class="op">=</span> <span class="st">"rmse"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="model-validation_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="700"></p>
-<p>With this specification, <code><a href="../reference/resample_performance.html">resample_performance()</a></code> samples
-portfolio rows with replacement, refits the model and evaluates on
-out-of-bag rows. RMSE and MAE measure error in claim counts here.
-Predictive deviance uses the GLM family and evaluation weights. It is
-the same calculation as residual deviance, applied to the evaluation
-rows and predictions instead. As a total, it also depends on the number
-and weight of the evaluated rows, so the original model’s reference line
-is not directly comparable when those differ. Unlike
-<code><a href="../reference/model_performance.html">model_performance()</a></code>, each resampling score comes from a
-newly fitted model.</p>
-<p>This is a resampling-stability diagnostic. It is not independent
-validation on a genuinely later or external portfolio, and it does not
-capture all future claim, trend, mix or specification uncertainty. A
-narrow distribution indicates less sensitivity to the sampled records; a
-wide distribution may point to sparse segments or an unstable
-specification.</p>
-<p>When prediction on unseen data is central to the objective, this
-evidence should be complemented by a suitable holdout, cross-validation
-or temporal validation design. With <code>sampling = "split"</code> and
-<code>sample_fraction &lt; 1</code>, the evaluation uses held-out rows
-from a split without replacement. At <code>sample_fraction = 1</code>,
-both sampling schemes evaluate on their training rows and measure
-in-sample stability.</p>
+<p>Here, <code>sample_fraction = 0.8</code> means 80 draws per 100 rows,
+<strong>with replacement</strong>. Some rows can be drawn more than
+once. The model is scored on rows not used for training (the
+<em>out-of-bag</em> rows), not on a fixed 20% test set. With
+<code>sampling = "split"</code> and a fraction below 1, the draw is
+without replacement and the remaining rows are held out.</p>
+<p>RMSE and MAE measure error in claim counts here. The dashed orange
+line is the original model’s RMSE on the full supplied portfolio, not on
+the out-of-bag rows used for the histogram. The table also reports
+predictive deviance: the same calculation as residual deviance, applied
+to the evaluation rows and their predictions. Total deviance depends on
+the number and weight of those rows as well as prediction quality.</p>
+<p>A wide spread of scores may reflect differences between refitted
+models, differences in the claim mix of the evaluation samples, or both.
+Use <code><a href="../reference/coefficient_stability.html">coefficient_stability()</a></code> to examine the fitted effects
+themselves. Evaluation on out-of-bag or split rows is out of sample for
+each refit, but does not replace validation on a later or external
+portfolio.</p>
+<div class="section level3">
+<h3 id="how-stable-are-the-tariff-relativities">How stable are the tariff relativities?<a class="anchor" aria-label="anchor" href="#how-stable-are-the-tariff-relativities"></a>
+</h3>
+<p><code><a href="../reference/coefficient_stability.html">coefficient_stability()</a></code> draws rows with replacement from
+the estimation portfolio and refits the GLM. It summarises the fitted
+effects, not prediction errors. For this log-link model,
+<code>scale = "relativity"</code> expresses each area effect as a ratio
+to the original reference area.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">area_stability</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/coefficient_stability.html">coefficient_stability</a></span><span class="op">(</span></span>
+<span>  <span class="va">area_model</span>, n_resamples <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">123</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">effects</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">area_stability</span>, scale <span class="op">=</span> <span class="st">"relativity"</span><span class="op">)</span></span>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
+<span>  <span class="va">effects</span><span class="op">[</span><span class="va">effects</span><span class="op">$</span><span class="va">term</span> <span class="op">!=</span> <span class="st">"(Intercept)"</span>,</span>
+<span>          <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"term"</span>, <span class="st">"estimate"</span>, <span class="st">"lower"</span>, <span class="st">"upper"</span>, <span class="st">"n_successful"</span>, <span class="st">"n_requested"</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>  digits <span class="op">=</span> <span class="fl">2</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr class="header">
+<th align="left"></th>
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">lower</th>
+<th align="right">upper</th>
+<th align="right">n_successful</th>
+<th align="right">n_requested</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">2</td>
+<td align="left">area0</td>
+<td align="right">0.55</td>
+<td align="right">0.00</td>
+<td align="right">1.78</td>
+<td align="right">100</td>
+<td align="right">100</td>
+</tr>
+<tr class="even">
+<td align="left">3</td>
+<td align="left">area2</td>
+<td align="right">0.87</td>
+<td align="right">0.69</td>
+<td align="right">1.11</td>
+<td align="right">100</td>
+<td align="right">100</td>
+</tr>
+<tr class="odd">
+<td align="left">4</td>
+<td align="left">area3</td>
+<td align="right">1.08</td>
+<td align="right">0.81</td>
+<td align="right">1.36</td>
+<td align="right">100</td>
+<td align="right">100</td>
+</tr>
+</tbody>
+</table>
+<p>Read the interval together with <code>n_successful</code>, the number
+of comparable estimates for that effect. A refit can converge without
+yielding a comparable estimate for every level, for example when a
+reference level is absent from the draw. A narrow interval based on few
+usable draws offers little reassurance. Area 0 has about 13 policy-years
+and one claim in the estimation portfolio, so interpret its interval
+with that limited experience in mind.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="testing-on-later-periods">Testing on later periods<a class="anchor" aria-label="anchor" href="#testing-on-later-periods"></a>
@@ -341,14 +427,14 @@ in-sample stability.</p>
 scores it on the next period or periods. The training window expands one
 period at a time. The example years here illustrate the interface; MTPL2
 has no actual calendar-year information.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">temporal_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">MTPL2</span><span class="op">)</span></span>
 <span><span class="va">temporal_data</span><span class="op">$</span><span class="va">year</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">2020</span><span class="op">:</span><span class="fl">2025</span>, length.out <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">temporal_data</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">temporal_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
 <span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">area</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">temporal_data</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/resample_performance.html">resample_performance</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="../reference/validate_performance.html">validate_performance</a></span><span class="op">(</span></span>
 <span>  <span class="va">temporal_model</span>, <span class="va">temporal_data</span>, sampling <span class="op">=</span> <span class="st">"rolling"</span>, time <span class="op">=</span> <span class="st">"year"</span>,</span>
 <span>  initial <span class="op">=</span> <span class="fl">3</span>, metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rmse"</span>, <span class="st">"mae"</span>, <span class="st">"deviance"</span><span class="op">)</span>, show_progress <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
@@ -371,7 +457,7 @@ window.</p>
 <div class="section level3">
 <h3 id="overdispersion">Overdispersion<a class="anchor" aria-label="anchor" href="#overdispersion"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dispersion_check</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_overdispersion.html">check_overdispersion</a></span><span class="op">(</span><span class="va">area_model</span><span class="op">)</span></span>
 <span><span class="va">dispersion_check</span></span>
 <span><span class="co">#&gt; Dispersion ratio =    1.220</span></span>
@@ -393,7 +479,7 @@ model misspecification, but does not by itself identify the cause.</p>
 <div class="section level3">
 <h3 id="simulation-based-residuals">Simulation-based residuals<a class="anchor" aria-label="anchor" href="#simulation-based-residuals"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">residual_check</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_residuals.html">check_residuals</a></span><span class="op">(</span></span>
@@ -402,7 +488,7 @@ model misspecification, but does not by itself identify the cause.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">residual_check</span><span class="op">)</span></span></code></pre></div>
-<p><img src="model-validation_files/figure-html/unnamed-chunk-8-1.png" class="r-plt" alt="" width="700"></p>
+<p><img src="model-validation_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="700"></p>
 <p><code><a href="../reference/check_residuals.html">check_residuals()</a></code> uses DHARMa simulations from the
 fitted model to construct scaled residuals. The QQ plot and uniformity
 test assess whether the observed response behaves consistently with the
@@ -417,14 +503,14 @@ departures, fitted values, exposure and relevant risk-factor levels.</p>
 <div class="section level2">
 <h2 id="reviewing-observed-versus-expected-experience">Reviewing observed versus expected experience<a class="anchor" aria-label="anchor" href="#reviewing-observed-versus-expected-experience"></a>
 </h2>
-<p>Use <code><a href="../reference/check_calibration.html">check_calibration()</a></code> to compare observed and expected
-outcomes overall and within segments. Here the predictions include
-earned exposure, so both totals are claim counts.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">area_model</span>, <span class="va">portfolio</span><span class="op">)</span></span>
+<p>Use <code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code> to compare observed and
+expected outcomes overall and within segments. Here the predictions
+include earned exposure, so both totals are claim counts.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/calibration_analysis.html">calibration_analysis</a></span><span class="op">(</span><span class="va">area_model</span>, <span class="va">portfolio</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   Observed Expected OE    N Exposure</span></span>
 <span><span class="co">#&gt; 1      358      358  1 3000 2662.586</span></span>
-<span><span class="va">area_calibration</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">area_model</span>, <span class="va">portfolio</span>, by <span class="op">=</span> <span class="st">"area"</span><span class="op">)</span></span>
+<span><span class="va">area_calibration</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calibration_analysis.html">calibration_analysis</a></span><span class="op">(</span><span class="va">area_model</span>, <span class="va">portfolio</span>, by <span class="op">=</span> <span class="st">"area"</span><span class="op">)</span></span>
 <span><span class="va">area_calibration</span></span>
 <span><span class="co">#&gt;   area Observed Expected OE    N   Exposure</span></span>
 <span><span class="co">#&gt; 1    1      146      146  1 1194 1065.74795</span></span>
@@ -432,15 +518,23 @@ earned exposure, so both totals are claim counts.</p>
 <span><span class="co">#&gt; 3    2       98       98  1  921  818.53973</span></span>
 <span><span class="co">#&gt; 4    3      113      113  1  870  764.99178</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">area_calibration</span><span class="op">)</span></span></code></pre></div>
-<p><img src="model-validation_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="700"></p>
-<p>An O/E ratio above one indicates more observed claims than expected;
-a ratio below one indicates fewer. The overall ratio describes
-calibration-in-the-large.</p>
+<p><img src="model-validation_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="" width="700"></p>
+<p>O/E is observed claims divided by expected claims. A ratio above 1
+means more claims were observed than expected; a ratio below 1 means
+fewer. The overall ratio describes calibration-in-the-large.</p>
+<p>Here, O/E is 1 in every area: the Poisson model estimates a separate
+rate for each area and is evaluated on the same records used to fit it.
+This illustrates how to read the output, but does not demonstrate
+calibration on new data.</p>
 <p>Use <code>by = "year"</code> when the evaluation data contain a
 calendar year. A change in O/E across years can indicate a change in the
 overall prediction level, even if the model still ranks high- and
 low-risk policies equally well. <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> shows that
-comparison as an O/E line over time.</p>
+comparison as an O/E line over time. To check whether the pattern
+differs by area, use <code>by = c("year", "area")</code>. This gives one
+row per observed year and area combination, with their exposure and
+claim totals. The plot shows a point per combination rather than joining
+areas into a single time series.</p>
 <div class="section level3">
 <h3 id="does-the-model-get-claim-frequency-right-at-different-risk-levels">Does the model get claim frequency right at different risk
 levels?<a class="anchor" aria-label="anchor" href="#does-the-model-get-claim-frequency-right-at-different-risk-levels"></a>
@@ -456,8 +550,8 @@ about 20% of the portfolio’s total exposure, not 20% of the policies.
 These are groups of model predictions, not rating-factor levels such as
 area. Policies with the same predicted frequency can fall on either side
 of a group boundary; ties follow the input row order.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">risk_calibration</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">area_model</span>, <span class="va">portfolio</span>, groups <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">risk_calibration</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calibration_analysis.html">calibration_analysis</a></span><span class="op">(</span><span class="va">area_model</span>, <span class="va">portfolio</span>, groups <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">risk_calibration</span>, digits <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
 <thead><tr class="header">
@@ -511,9 +605,9 @@ of a group boundary; ties follow the input row order.</p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">risk_calibration</span><span class="op">)</span></span></code></pre></div>
-<p><img src="model-validation_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="Observed against expected claims per policy-year for five groups of predicted risk, with a diagonal line where the frequencies are equal." width="700"></p>
+<p><img src="model-validation_files/figure-html/unnamed-chunk-11-1.png" class="r-plt" alt="Observed against expected claims per policy-year for five groups of predicted risk, with a diagonal line where the frequencies are equal." width="700"></p>
 <p>Each dot is one group. Its x-coordinate is total expected claims
 divided by the group’s total policy-years; its y-coordinate is total
 observed claims divided by the same policy-years. For group 2 (the
@@ -534,7 +628,7 @@ before modelling rather than calibration, see <a href="large-portfolios.html">La
 <h2 id="validation-investigation-and-refinement">Validation, investigation and refinement<a class="anchor" aria-label="anchor" href="#validation-investigation-and-refinement"></a>
 </h2>
 <div class="section level3">
-<h3 id="comparing-observed-claims-before-and-after-refinement">Comparing observed claims before and after refinement<a class="anchor" aria-label="anchor" href="#comparing-observed-claims-before-and-after-refinement"></a>
+<h3 id="comparing-expected-claims-before-and-after-refinement">Comparing expected claims before and after refinement<a class="anchor" aria-label="anchor" href="#comparing-expected-claims-before-and-after-refinement"></a>
 </h3>
 <p>For a model returned by <code><a href="../reference/refit.html">refit()</a></code>, the original portfolio
 may not contain the columns added by smoothing or restrictions. To check
@@ -549,14 +643,14 @@ mappings to those rows first.</p>
 before and expected claims after</strong> side by side. Use the same
 records and the same grouping column for both models so that any change
 comes from the predictions rather than a change in portfolio mix.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">restricted_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span><span class="va">area_model</span>, data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"3"</span> <span class="op">=</span> <span class="fl">1.10</span><span class="op">)</span>, model_variable <span class="op">=</span> <span class="st">"area"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">evaluation</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extract_model_data.html">extract_model_data</a></span><span class="op">(</span><span class="va">restricted_model</span><span class="op">)</span></span>
-<span><span class="va">before</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">area_model</span>, <span class="va">evaluation</span>, by <span class="op">=</span> <span class="st">"area"</span><span class="op">)</span></span>
-<span><span class="va">after</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_calibration.html">check_calibration</a></span><span class="op">(</span><span class="va">restricted_model</span>, <span class="va">evaluation</span>, by <span class="op">=</span> <span class="st">"area"</span><span class="op">)</span></span>
+<span><span class="va">before</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calibration_analysis.html">calibration_analysis</a></span><span class="op">(</span><span class="va">area_model</span>, <span class="va">evaluation</span>, by <span class="op">=</span> <span class="st">"area"</span><span class="op">)</span></span>
+<span><span class="va">after</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calibration_analysis.html">calibration_analysis</a></span><span class="op">(</span><span class="va">restricted_model</span>, <span class="va">evaluation</span>, by <span class="op">=</span> <span class="st">"area"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  Area <span class="op">=</span> <span class="va">after</span><span class="op">$</span><span class="va">area</span>,</span>

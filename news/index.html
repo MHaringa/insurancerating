@@ -5,7 +5,7 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Changelog"><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.5.0/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.5.0/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Changelog"><meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -38,16 +38,19 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="insurancerating-development-version">insurancerating (development version)<a class="anchor" aria-label="anchor" href="#insurancerating-development-version"></a></h2>
-<ul><li>
-<code>resample_performance(sampling = "rolling")</code> fits expanding historical windows and scores subsequent periods with RMSE, MAE or predictive deviance.</li>
+<ul><li>The model validation API now uses <code><a href="../reference/validate_performance.html">validate_performance()</a></code>, <code><a href="../reference/coefficient_stability.html">coefficient_stability()</a></code> and <code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code>. The historical <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code> and <code><a href="../reference/bootstrap_coefficients.html">bootstrap_coefficients()</a></code> names remain as deprecated aliases. Use <code><a href="../reference/validate_performance.html">validate_performance()</a></code> for legacy RMSE workflows. Calculations, defaults and result classes are unchanged.</li>
 <li>
-<code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> for <code><a href="../reference/check_calibration.html">check_calibration()</a></code> shows overall, predicted-risk, temporal or rating-factor calibration.</li>
+<code>validate_performance(sampling = "rolling")</code> fits expanding historical windows and scores subsequent periods with RMSE, MAE or predictive deviance.</li>
+<li>
+<code><a href="../reference/coefficient_stability.html">coefficient_stability()</a></code> excludes estimates whose factor coding changed in a bootstrap refit, for example when the original reference level is absent.</li>
+<li>
+<code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> for <code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code> shows overall, predicted-risk, temporal or rating-factor calibration.</li>
 <li>
 <code><a href="../reference/add_factor_experience.html">add_factor_experience()</a></code> replaces <code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code> for attaching marginal observed experience to a rating table. The old name remains as a deprecated alias; calculations and plotting behaviour are unchanged.</li>
 <li>
-<code><a href="../reference/check_calibration.html">check_calibration()</a></code> compares observed and expected totals overall, by portfolio segment or calendar year, and across predicted-risk groups. For refined GLMs it distinguishes tariff offsets from exposure and points users to <code><a href="../reference/extract_model_data.html">extract_model_data()</a></code> when refinement columns are missing.</li>
+<code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code> compares observed and expected totals overall, by portfolio segment or calendar year, and across predicted-risk groups. For refined GLMs it distinguishes tariff offsets from exposure and points users to <code><a href="../reference/extract_model_data.html">extract_model_data()</a></code> when refinement columns are missing. Pass several columns to <code>by</code> to review calibration for observed combinations, for example <code>by = c("year", "area")</code>.</li>
 <li>
-<code><a href="../reference/resample_performance.html">resample_performance()</a></code> replaces <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code>, which remains available as a deprecated alias. RMSE remains the default; <code>metrics</code> can also request MAE and weighted predictive deviance. The resampling plot identifies the evaluation rows and original model reference.</li>
+<code><a href="../reference/validate_performance.html">validate_performance()</a></code> defaults to RMSE; <code>metrics</code> can also request MAE and weighted predictive deviance. The resampling plot identifies the evaluation rows and original model reference.</li>
 <li>
 <code><a href="../reference/model_performance.html">model_performance()</a></code> now reports residual deviance after AIC, BIC and RMSE. In-sample RMSE uses the rows retained in the fit. Both performance functions now calculate binomial RMSE on the probability scale.</li>
 <li>
@@ -336,7 +339,7 @@
 <li>
 <code><a href="../reference/autoplot.bootstrap_performance.html">autoplot.bootstrap_performance()</a></code> now uses a package-consistent visual style: subtle grey histogram, transparent blue density, orange original-model reference line, subtle confidence interval lines and no gap between the bars and x-axis.</li>
 <li>
-<code><a href="../reference/bootstrap_rmse.html">bootstrap_rmse()</a></code> remains available as a deprecated compatibility wrapper and returned objects retain class <code>"bootstrap_rmse"</code> for older code.</li>
+<code>bootstrap_rmse()</code> remains available as a deprecated compatibility wrapper and returned objects retain class <code>"bootstrap_rmse"</code> for older code.</li>
 <li>
 <code><a href="../reference/check_overdispersion.html">check_overdispersion()</a></code> now validates non-GLM input, checks for Poisson models and fails clearly when residual degrees of freedom are not positive.</li>
 <li>
@@ -389,7 +392,7 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.4" id="insurancerating-074">insurancerating 0.7.4<a class="anchor" aria-label="anchor" href="#insurancerating-074"></a></h2><p class="text-muted">CRAN release: 2024-05-20</p>
 <ul><li>
-<code><a href="../reference/bootstrap_rmse.html">bootstrap_rmse()</a></code> now uses <code>after_stat(density)</code> instead of the deprecated dot-dot notation</li>
+<code>bootstrap_rmse()</code> now uses <code>after_stat(density)</code> instead of the deprecated dot-dot notation</li>
 <li>
 <code>custom_theme</code> in <code>autoplot.univariate()</code> is added to customize the theme</li>
 </ul></div>
@@ -492,7 +495,7 @@
 <ul><li>
 <code>univariate_all()</code> and <code>autoplot.univ_all()</code> are now depreciated; use <code><a href="../reference/univariate.html">univariate()</a></code> and <code>autoplot.univariate()</code> instead</li>
 <li>
-<code><a href="../reference/check_overdispersion.html">check_overdispersion()</a></code>, <code>check_normality()</code>, <code><a href="../reference/model_performance.html">model_performance()</a></code>, <code><a href="../reference/bootstrap_rmse.html">bootstrap_rmse()</a></code>, and <code><a href="../reference/add_prediction.html">add_prediction()</a></code> are added to test model quality and return performance metrics</li>
+<code><a href="../reference/check_overdispersion.html">check_overdispersion()</a></code>, <code>check_normality()</code>, <code><a href="../reference/model_performance.html">model_performance()</a></code>, <code>bootstrap_rmse()</code>, and <code><a href="../reference/add_prediction.html">add_prediction()</a></code> are added to test model quality and return performance metrics</li>
 <li>
 <code><a href="../reference/reduce.html">reduce()</a></code> is added to reduce an insurance portfolio by merging redundant date ranges</li>
 </ul></div>

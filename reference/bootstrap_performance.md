@@ -1,7 +1,7 @@
-# Deprecated alias for `resample_performance()`
+# Deprecated alias for `validate_performance()`
 
 `bootstrap_performance()` is deprecated. Use
-[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
+[`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md)
 instead.
 
 ## Usage
@@ -38,8 +38,9 @@ bootstrap_performance(
 
 - sample_fraction:
 
-  Fraction of the data used in the training sample. Must be in `(0, 1]`.
-  Default is 1.
+  Fraction of input rows to draw for each random training sample, before
+  adding any rows for missing factor levels. Must be in `(0, 1]`.
+  Default is 1. Not used for rolling validation.
 
 - metric:
 
@@ -50,7 +51,7 @@ bootstrap_performance(
 
   Random sampling scheme: `"bootstrap"` or `"split"`. For rolling
   validation, call
-  [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
+  [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md)
   directly.
 
 - show_progress:
@@ -75,4 +76,4 @@ bootstrap_performance(
 ## Value
 
 See
-[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md).
+[`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md).

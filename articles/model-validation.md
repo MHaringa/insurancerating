@@ -40,14 +40,15 @@ every model requires every diagnostic.
 | How do alternative fitted models compare? | [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md) |
 | Are tariff relativities plausible and sufficiently supported? | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md) |
 | Does marginal observed experience support the fitted pattern? | [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md) |
-| How sensitive is measured performance to portfolio resampling? | [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md) |
+| How sensitive is measured performance to portfolio resampling? | [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md) |
+| How sensitive are the fitted coefficients to portfolio resampling? | [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md) |
 | Is a Poisson frequency model materially overdispersed? | [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md) |
 | Do simulation-based residuals show remaining structure? | [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md) |
-| Where does the model over- or under-predict? | [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md) |
+| Where does the model over- or under-predict? | [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md) |
 
 ## Compact example setup
 
-The examples use two Poisson frequency models fitted to the same
+Most examples use two Poisson frequency models fitted to the same
 records, response and exposure definition. Each prediction is an
 expected claim count for the observed policy period because it includes
 the earned-exposure offset.
@@ -119,38 +120,57 @@ exposure supporting each level. This makes the statistical output easier
 to review in actuarial terms. Observed experience can be attached to the
 same table for a direct graphical comparison.
 
+For this comparison, use `MTPL`, which also contains policyholder age.
+The model estimates regional effects at the same age, while the observed
+frequency reflects each region’s actual mix of ages.
+
 ``` r
 
-area_table <- rating_table(
-  area_model,
-  model_data = portfolio,
+tariff_portfolio <- as.data.frame(MTPL)
+tariff_portfolio$zip <- set_reference_level(
+  factor(tariff_portfolio$zip), tariff_portfolio$exposure
+)
+
+tariff_model <- glm(
+  nclaims ~ zip + age_policyholder + offset(log(exposure)),
+  family = poisson(), data = tariff_portfolio
+)
+
+tariff_table <- rating_table(
+  "Age-adjusted model" = tariff_model,
+  model_data = tariff_portfolio,
   exposure = "exposure"
 )
 
-area_table
-#>   risk_factor       level est_area_model exposure
-#> 1 (Intercept) (Intercept)      0.1369930       NA
-#> 2        area           0      0.5485629       13
-#> 3        area           1      1.0000000     1066
-#> 4        area           2      0.8739528      819
-#> 5        area           3      1.0782596      765
+tariff_table
+#>        risk_factor            level est_Age-adjusted model exposure
+#> 1      (Intercept)      (Intercept)              0.3121503       NA
+#> 2              zip                0              1.0006508      207
+#> 3              zip                1              1.0000000    11081
+#> 4              zip                2              0.9020158     7783
+#> 5              zip                3              0.9559945     7588
+#> 6 age_policyholder age_policyholder              0.9831025       NA
 
-area_review <- area_table |>
+tariff_review <- tariff_table |>
   add_factor_experience(
-    data = portfolio,
+    data = tariff_portfolio,
+    risk_factors = "zip",
     claim_count = "nclaims",
     exposure = "exposure",
-    metric = "frequency"
+    metric = "frequency",
+    label = "Observed frequency"
   )
 
 autoplot(
-  area_review,
-  risk_factors = "area",
+  tariff_review,
+  risk_factors = "zip",
   metric = "frequency"
 )
 ```
 
-![](model-validation_files/figure-html/unnamed-chunk-4-1.png)
+![Modelled regional relativities adjusted for age and observed
+claim-frequency relativities, with exposure by
+region.](model-validation_files/figure-html/unnamed-chunk-4-1.png)
 
 A model with slightly better aggregate fit can still be unattractive
 when it creates volatile neighbouring relativities, extreme effects
@@ -159,23 +179,28 @@ interpretation. An extreme coefficient in a small segment should
 therefore not be interpreted in the same way as the same coefficient
 supported by a substantial share of the portfolio.
 
-The model line shows conditional tariff relativities. The observed line
-shows unadjusted portfolio experience by area. They answer different
-questions and need not coincide exactly: observed experience also
-reflects differences in the mix of other risk characteristics. The
-comparison is useful for identifying levels that require further
-investigation, especially when interpreted with their exposure. This
-plot does not assess calibration: use
-[`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
+For region 0, the observed frequency is about 2.5% below the reference
+region’s frequency, while the fitted model estimates almost no
+difference at the same age. Region 0 also has relatively little
+exposure. The gap is a reason to look at the age mix and claim volume,
+not evidence by itself of poor calibration. Use
+[`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
 to compare full-model predictions with actual outcomes.
 
 ## Assessing resampling stability
+
+Unlike
+[`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
+[`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md)
+refits the model for each sample. By default, it fits and scores on the
+same bootstrap sample. The example below instead scores on rows left out
+of each fit.
 
 ``` r
 
 set.seed(123)
 
-resample_result <- resample_performance(
+resample_result <- validate_performance(
   area_model,
   portfolio,
   n_resamples = 50,
@@ -198,31 +223,60 @@ autoplot(resample_result, metric = "rmse")
 
 ![](model-validation_files/figure-html/unnamed-chunk-5-1.png)
 
-With this specification,
-[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
-samples portfolio rows with replacement, refits the model and evaluates
-on out-of-bag rows. RMSE and MAE measure error in claim counts here.
-Predictive deviance uses the GLM family and evaluation weights. It is
-the same calculation as residual deviance, applied to the evaluation
-rows and predictions instead. As a total, it also depends on the number
-and weight of the evaluated rows, so the original model’s reference line
-is not directly comparable when those differ. Unlike
-[`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
-each resampling score comes from a newly fitted model.
+Here, `sample_fraction = 0.8` means 80 draws per 100 rows, **with
+replacement**. Some rows can be drawn more than once. The model is
+scored on rows not used for training (the *out-of-bag* rows), not on a
+fixed 20% test set. With `sampling = "split"` and a fraction below 1,
+the draw is without replacement and the remaining rows are held out.
 
-This is a resampling-stability diagnostic. It is not independent
-validation on a genuinely later or external portfolio, and it does not
-capture all future claim, trend, mix or specification uncertainty. A
-narrow distribution indicates less sensitivity to the sampled records; a
-wide distribution may point to sparse segments or an unstable
-specification.
+RMSE and MAE measure error in claim counts here. The dashed orange line
+is the original model’s RMSE on the full supplied portfolio, not on the
+out-of-bag rows used for the histogram. The table also reports
+predictive deviance: the same calculation as residual deviance, applied
+to the evaluation rows and their predictions. Total deviance depends on
+the number and weight of those rows as well as prediction quality.
 
-When prediction on unseen data is central to the objective, this
-evidence should be complemented by a suitable holdout, cross-validation
-or temporal validation design. With `sampling = "split"` and
-`sample_fraction < 1`, the evaluation uses held-out rows from a split
-without replacement. At `sample_fraction = 1`, both sampling schemes
-evaluate on their training rows and measure in-sample stability.
+A wide spread of scores may reflect differences between refitted models,
+differences in the claim mix of the evaluation samples, or both. Use
+[`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
+to examine the fitted effects themselves. Evaluation on out-of-bag or
+split rows is out of sample for each refit, but does not replace
+validation on a later or external portfolio.
+
+### How stable are the tariff relativities?
+
+[`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
+draws rows with replacement from the estimation portfolio and refits the
+GLM. It summarises the fitted effects, not prediction errors. For this
+log-link model, `scale = "relativity"` expresses each area effect as a
+ratio to the original reference area.
+
+``` r
+
+area_stability <- coefficient_stability(
+  area_model, n_resamples = 100, seed = 123, show_progress = FALSE
+)
+effects <- summary(area_stability, scale = "relativity")
+knitr::kable(
+  effects[effects$term != "(Intercept)",
+          c("term", "estimate", "lower", "upper", "n_successful", "n_requested")],
+  digits = 2
+)
+```
+
+|     | term  | estimate | lower | upper | n_successful | n_requested |
+|:----|:------|---------:|------:|------:|-------------:|------------:|
+| 2   | area0 |     0.55 |  0.00 |  1.78 |          100 |         100 |
+| 3   | area2 |     0.87 |  0.69 |  1.11 |          100 |         100 |
+| 4   | area3 |     1.08 |  0.81 |  1.36 |          100 |         100 |
+
+Read the interval together with `n_successful`, the number of comparable
+estimates for that effect. A refit can converge without yielding a
+comparable estimate for every level, for example when a reference level
+is absent from the draw. A narrow interval based on few usable draws
+offers little reassurance. Area 0 has about 13 policy-years and one
+claim in the estimation portfolio, so interpret its interval with that
+limited experience in mind.
 
 ## Testing on later periods
 
@@ -239,7 +293,7 @@ temporal_model <- glm(
   nclaims ~ factor(area) + offset(log(exposure)),
   family = poisson(), data = temporal_data
 )
-resample_performance(
+validate_performance(
   temporal_model, temporal_data, sampling = "rolling", time = "year",
   initial = 3, metrics = c("rmse", "mae", "deviance"), show_progress = FALSE
 )
@@ -298,7 +352,7 @@ residual_check <- check_residuals(
 autoplot(residual_check)
 ```
 
-![](model-validation_files/figure-html/unnamed-chunk-8-1.png)
+![](model-validation_files/figure-html/unnamed-chunk-9-1.png)
 
 [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
 uses DHARMa simulations from the fitted model to construct scaled
@@ -315,17 +369,17 @@ exposure and relevant risk-factor levels.
 ## Reviewing observed versus expected experience
 
 Use
-[`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
+[`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
 to compare observed and expected outcomes overall and within segments.
 Here the predictions include earned exposure, so both totals are claim
 counts.
 
 ``` r
 
-check_calibration(area_model, portfolio)
+calibration_analysis(area_model, portfolio)
 #>   Observed Expected OE    N Exposure
 #> 1      358      358  1 3000 2662.586
-area_calibration <- check_calibration(area_model, portfolio, by = "area")
+area_calibration <- calibration_analysis(area_model, portfolio, by = "area")
 area_calibration
 #>   area Observed Expected OE    N   Exposure
 #> 1    1      146      146  1 1194 1065.74795
@@ -335,18 +389,27 @@ area_calibration
 autoplot(area_calibration)
 ```
 
-![](model-validation_files/figure-html/unnamed-chunk-9-1.png)
+![](model-validation_files/figure-html/unnamed-chunk-10-1.png)
 
-An O/E ratio above one indicates more observed claims than expected; a
-ratio below one indicates fewer. The overall ratio describes
-calibration-in-the-large.
+O/E is observed claims divided by expected claims. A ratio above 1 means
+more claims were observed than expected; a ratio below 1 means fewer.
+The overall ratio describes calibration-in-the-large.
+
+Here, O/E is 1 in every area: the Poisson model estimates a separate
+rate for each area and is evaluated on the same records used to fit it.
+This illustrates how to read the output, but does not demonstrate
+calibration on new data.
 
 Use `by = "year"` when the evaluation data contain a calendar year. A
 change in O/E across years can indicate a change in the overall
 prediction level, even if the model still ranks high- and low-risk
 policies equally well.
 [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
-shows that comparison as an O/E line over time.
+shows that comparison as an O/E line over time. To check whether the
+pattern differs by area, use `by = c("year", "area")`. This gives one
+row per observed year and area combination, with their exposure and
+claim totals. The plot shows a point per combination rather than joining
+areas into a single time series.
 
 ### Does the model get claim frequency right at different risk levels?
 
@@ -365,7 +428,7 @@ of a group boundary; ties follow the input row order.
 
 ``` r
 
-risk_calibration <- check_calibration(area_model, portfolio, groups = 5)
+risk_calibration <- calibration_analysis(area_model, portfolio, groups = 5)
 knitr::kable(risk_calibration, digits = 2)
 ```
 
@@ -384,7 +447,7 @@ autoplot(risk_calibration)
 
 ![Observed against expected claims per policy-year for five groups of
 predicted risk, with a diagonal line where the frequencies are
-equal.](model-validation_files/figure-html/unnamed-chunk-10-1.png)
+equal.](model-validation_files/figure-html/unnamed-chunk-11-1.png)
 
 Each dot is one group. Its x-coordinate is total expected claims divided
 by the group’s total policy-years; its y-coordinate is total observed
@@ -405,7 +468,7 @@ Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios
 
 ## Validation, investigation and refinement
 
-### Comparing observed claims before and after refinement
+### Comparing expected claims before and after refinement
 
 For a model returned by
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md),
@@ -429,8 +492,8 @@ restricted_model <- prepare_refinement(area_model, data = portfolio) |>
   refit()
 
 evaluation <- extract_model_data(restricted_model)
-before <- check_calibration(area_model, evaluation, by = "area")
-after <- check_calibration(restricted_model, evaluation, by = "area")
+before <- calibration_analysis(area_model, evaluation, by = "area")
+after <- calibration_analysis(restricted_model, evaluation, by = "area")
 
 knitr::kable(data.frame(
   Area = after$area,

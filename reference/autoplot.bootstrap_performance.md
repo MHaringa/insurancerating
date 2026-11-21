@@ -1,7 +1,7 @@
 # Plot the resampled performance distribution
 
 Display the empirical distribution of resampled scores from
-[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md).
+[`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md).
 The histogram shows the observed resampling distribution, while the
 density curve provides a smooth visual summary.
 
@@ -17,7 +17,7 @@ autoplot(object, fill = "#E6E6E6", color = NA, ..., metric = NULL)
 - object:
 
   An object of class `"bootstrap_performance"`, produced by
-  [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md).
+  [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md).
 
 - fill:
 
@@ -44,10 +44,14 @@ object.
 
 ## Details
 
-The dashed orange line marks the score of the original fitted model. The
-subtitle identifies which rows were used to score the refits. Total
-predictive deviance depends on the number and weight of evaluated rows,
-so the orange line is not directly comparable when those differ.
+The dashed orange line marks the score of the original fitted model on
+the full data supplied to
+[`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md),
+unless `rmse_model` supplied a reference RMSE. The subtitle identifies
+which rows were used to score the refits; these are not necessarily the
+same rows as the reference. Total predictive deviance depends on the
+number and weight of evaluated rows, so the orange line is not directly
+comparable when those differ.
 
 The dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles
 of the resampled values when these can be calculated. Their distance
@@ -56,7 +60,7 @@ formal prediction interval for future portfolio performance.
 
 ## See also
 
-[`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md),
+[`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md),
 [`rmse()`](https://mharinga.github.io/insurancerating/reference/rmse.md)
 
 ## Author
@@ -69,7 +73,7 @@ Martin Haringa
 if (FALSE) { # \dontrun{
 mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
             offset = log(exposure), family = poisson())
-x <- resample_performance(mod1, MTPL, n_resamples = 100,
+x <- validate_performance(mod1, MTPL, n_resamples = 100,
                            show_progress = FALSE)
 autoplot(x)
 } # }

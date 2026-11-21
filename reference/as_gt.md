@@ -10,7 +10,7 @@ is only used when a presentation table is needed for a report, tariff
 note or pricing review.
 
 Format the coefficient-level result from
-[`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md)
+[`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
 as a `gt` table. The table retains the requested link or exponentiated
 scale and shows how many bootstrap estimates were available for each
 coefficient.
@@ -127,8 +127,12 @@ as_gt(
   [`exp()`](https://rdrr.io/r/base/Log.html) to every original and
   bootstrap coefficient. `"relativity"` is an alias for
   `"exponentiated"`; this interpretation is most direct for a log-link
-  GLM. For a logit-link model, exponentiated coefficients are odds
-  ratios rather than response probabilities.
+  GLM. For treatment-coded factors, these are ratios to the reference
+  level. For an untransformed numeric predictor without interactions,
+  the ratio is for a one-unit increase. The exponentiated intercept is a
+  baseline level, not a factor relativity. For a logit-link model,
+  exponentiated coefficients are odds ratios rather than response
+  probabilities.
 
 - confidence:
 

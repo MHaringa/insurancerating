@@ -497,7 +497,7 @@ out-of-sample performance.
 ``` r
 
 
-bp <- resample_performance(
+bp <- validate_performance(
   mod_freq,
   dat,
   n_resamples = 50,
@@ -510,9 +510,10 @@ autoplot(bp)
 
 ![](getting-started_files/figure-html/unnamed-chunk-16-1.png)
 
-This refits the model on repeated bootstrap samples and evaluates RMSE
-on out-of-bag records. The resulting distribution describes sensitivity
-to the sampled portfolio records; it is not a prediction interval for
+This draws 80 rows per 100 input rows with replacement and evaluates
+RMSE on the rows not used for training (out of bag). It is not an 80/20
+split. The score distribution reflects both refitting the model and
+scoring it on different records; it is not a prediction interval for
 future claims.
 
 A single fit statistic is not sufficient. In pricing practice, the
@@ -595,7 +596,7 @@ glm()                         # estimate frequency and severity
 add_prediction()              # construct technical risk premium
 glm()                         # represent risk in a tariff structure
 rating_table()                # interpret tariff relativities
-resample_performance()        # assess stability
+validate_performance()        # assess stability
 prepare_refinement()          # prepare an actuarial refinement
 refit()                       # fit the refined tariff model
 ```

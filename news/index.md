@@ -2,12 +2,28 @@
 
 ## insurancerating (development version)
 
-- `resample_performance(sampling = "rolling")` fits expanding historical
+- The model validation API now uses
+  [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md),
+  [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
+  and
+  [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md).
+  The historical
+  [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md)
+  and
+  [`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md)
+  names remain as deprecated aliases. Use
+  [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md)
+  for legacy RMSE workflows. Calculations, defaults and result classes
+  are unchanged.
+- `validate_performance(sampling = "rolling")` fits expanding historical
   windows and scores subsequent periods with RMSE, MAE or predictive
   deviance.
+- [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
+  excludes estimates whose factor coding changed in a bootstrap refit,
+  for example when the original reference level is absent.
 - [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
   for
-  [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
+  [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
   shows overall, predicted-risk, temporal or rating-factor calibration.
 - [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
   replaces
@@ -15,19 +31,18 @@
   for attaching marginal observed experience to a rating table. The old
   name remains as a deprecated alias; calculations and plotting
   behaviour are unchanged.
-- [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
+- [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
   compares observed and expected totals overall, by portfolio segment or
   calendar year, and across predicted-risk groups. For refined GLMs it
   distinguishes tariff offsets from exposure and points users to
   [`extract_model_data()`](https://mharinga.github.io/insurancerating/reference/extract_model_data.md)
-  when refinement columns are missing.
-- [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
-  replaces
-  [`bootstrap_performance()`](https://mharinga.github.io/insurancerating/reference/bootstrap_performance.md),
-  which remains available as a deprecated alias. RMSE remains the
-  default; `metrics` can also request MAE and weighted predictive
-  deviance. The resampling plot identifies the evaluation rows and
-  original model reference.
+  when refinement columns are missing. Pass several columns to `by` to
+  review calibration for observed combinations, for example
+  `by = c("year", "area")`.
+- [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md)
+  defaults to RMSE; `metrics` can also request MAE and weighted
+  predictive deviance. The resampling plot identifies the evaluation
+  rows and original model reference.
 - [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md)
   now reports residual deviance after AIC, BIC and RMSE. In-sample RMSE
   uses the rows retained in the fit. Both performance functions now
@@ -778,9 +793,9 @@ CRAN release: 2026-06-02
   now uses a package-consistent visual style: subtle grey histogram,
   transparent blue density, orange original-model reference line, subtle
   confidence interval lines and no gap between the bars and x-axis.
-- [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_rmse.md)
-  remains available as a deprecated compatibility wrapper and returned
-  objects retain class `"bootstrap_rmse"` for older code.
+- `bootstrap_rmse()` remains available as a deprecated compatibility
+  wrapper and returned objects retain class `"bootstrap_rmse"` for older
+  code.
 - [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md)
   now validates non-GLM input, checks for Poisson models and fails
   clearly when residual degrees of freedom are not positive.
@@ -867,9 +882,8 @@ CRAN release: 2024-10-09
 
 CRAN release: 2024-05-20
 
-- [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_rmse.md)
-  now uses `after_stat(density)` instead of the deprecated dot-dot
-  notation
+- `bootstrap_rmse()` now uses `after_stat(density)` instead of the
+  deprecated dot-dot notation
 - `custom_theme` in `autoplot.univariate()` is added to customize the
   theme
 
@@ -1015,8 +1029,7 @@ CRAN release: 2020-04-29
 - [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md),
   `check_normality()`,
   [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
-  [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_rmse.md),
-  and
+  `bootstrap_rmse()`, and
   [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md)
   are added to test model quality and return performance metrics
 - [`reduce()`](https://mharinga.github.io/insurancerating/reference/reduce.md)

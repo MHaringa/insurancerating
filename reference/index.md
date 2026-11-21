@@ -121,18 +121,14 @@ review](https://mharinga.github.io/insurancerating/articles/model-validation.htm
 
 - [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md)
   : Compare GLM fit and predictive error metrics
-- [`check_calibration()`](https://mharinga.github.io/insurancerating/reference/check_calibration.md)
+- [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md)
+  : Evaluate model performance across resamples or time windows
+- [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
   : Check observed versus expected insurance experience
-- [`autoplot(`*`<calibration_result>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.calibration_result.md)
-  : Plot observed-versus-expected calibration
 
 ### Model stability
 
-- [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
-  : Assess predictive performance across resampled datasets
-- [`autoplot(`*`<bootstrap_performance>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.md)
-  : Plot the resampled performance distribution
-- [`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md)
+- [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
   : Assess GLM coefficient stability by portfolio-row bootstrap
 
 ### Model diagnostics
@@ -141,8 +137,6 @@ review](https://mharinga.github.io/insurancerating/articles/model-validation.htm
   : Check overdispersion of a Poisson claim frequency model
 - [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
   : Check simulation-based model residuals
-- [`autoplot(`*`<check_residuals>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.check_residuals.md)
-  : Inspect simulation-based residual uniformity
 
 ## Portfolio preparation and reduction
 
@@ -264,13 +258,13 @@ use the updated API.
   :
 
   Deprecated alias for
-  [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
+  [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md)
 
-- [`bootstrap_rmse()`](https://mharinga.github.io/insurancerating/reference/bootstrap_rmse.md)
+- [`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md)
   :
 
-  Deprecated RMSE wrapper for
-  [`resample_performance()`](https://mharinga.github.io/insurancerating/reference/resample_performance.md)
+  Deprecated alias for
+  [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
 
 - [`fit_truncated_dist()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_dist.md)
   :

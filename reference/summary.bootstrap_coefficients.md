@@ -1,7 +1,7 @@
 # Summarise bootstrap coefficient stability
 
 Summarise the coefficient distributions returned by
-[`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md)
+[`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
 on the GLM link scale or after exponentiation.
 
 ## Usage
@@ -30,8 +30,12 @@ summary(
   [`exp()`](https://rdrr.io/r/base/Log.html) to every original and
   bootstrap coefficient. `"relativity"` is an alias for
   `"exponentiated"`; this interpretation is most direct for a log-link
-  GLM. For a logit-link model, exponentiated coefficients are odds
-  ratios rather than response probabilities.
+  GLM. For treatment-coded factors, these are ratios to the reference
+  level. For an untransformed numeric predictor without interactions,
+  the ratio is for a one-unit increase. The exponentiated intercept is a
+  baseline level, not a factor relativity. For a logit-link model,
+  exponentiated coefficients are odds ratios rather than response
+  probabilities.
 
 - confidence:
 
@@ -77,7 +81,8 @@ A data frame with one row per original coefficient and columns:
 
 - n_successful:
 
-  Number of finite bootstrap estimates for the term.
+  Number of finite, comparable estimates for the term. This can be lower
+  than the number of converged refits.
 
 - n_requested:
 
@@ -89,7 +94,7 @@ A data frame with one row per original coefficient and columns:
 
 ## See also
 
-[`bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/bootstrap_coefficients.md),
+[`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md),
 [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
 
 ## Author
