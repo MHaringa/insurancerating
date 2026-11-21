@@ -13,16 +13,19 @@
 #' Rows omitted during the original model fit are excluded so the resampling
 #' population remains aligned with the fitted GLM.
 #'
-#' Original factor levels, the model formula, offsets and model weights are
-#' retained during refitting. A factor level may nevertheless be absent from a
-#' particular bootstrap sample. Its coefficient can then be non-estimable and
-#' is stored as `NA` for that replicate.
+#' Refits use the original model specification, including its formula, offsets
+#' and weights. A bootstrap sample can omit factor levels. If the original
+#' reference is absent or the factor contrasts have changed, estimates affected
+#' by the change in coding are stored as `NA`, even when the refit converges.
+#' This prevents the summary from mixing estimates of different effects.
 #'
 #' A failed or non-converged GLM refit does not stop the procedure. The failed
 #' replicate is recorded and the function continues. After resampling, an
 #' informative message reports how many requested refits produced usable model
-#' objects. [summary.bootstrap_coefficients()] reports the number of finite
-#' estimates separately for each coefficient.
+#' objects. [summary.bootstrap_coefficients()] reports the number of finite,
+#' comparable estimates separately for each coefficient. Read the interval
+#' alongside this count: a narrow interval based on few estimates is less
+#' informative than one based on most of the requested resamples.
 #'
 #' ## Actuarial interpretation
 #'
@@ -55,7 +58,7 @@
 #'
 #' @author Martin Haringa
 #'
-#' @seealso [summary.bootstrap_coefficients()], [resample_performance()],
+#' @seealso [summary.bootstrap_coefficients()], [validate_performance()],
 #'   [model_performance()], [as_gt()]
 #'
 #' @examples
@@ -66,7 +69,7 @@
 #' )
 #'
 #' \dontrun{
-#' boot <- bootstrap_coefficients(
+#' boot <- coefficient_stability(
 #'   model,
 #'   n_resamples = 25,
 #'   seed = 123,
@@ -83,8 +86,8 @@
 #' }
 #'
 #' @export
-bootstrap_coefficients <- function(object, n_resamples = 500, seed = NULL,
-                                   show_progress = interactive()) {
+coefficient_stability <- function(object, n_resamples = 500, seed = NULL,
+                                  show_progress = interactive()) {
   .validate_bootstrap_coefficients_args(
     object = object,
     n_resamples = n_resamples,
@@ -96,6 +99,7 @@ bootstrap_coefficients <- function(object, n_resamples = 500, seed = NULL,
   data <- .bootstrap_coefficients_model_data(object)
   original <- stats::coef(object)
   coefficient_names <- names(original)
+  coefficient_terms <- NULL
   replicates <- matrix(
     NA_real_,
     nrow = n_resamples,
@@ -147,6 +151,17 @@ bootstrap_coefficients <- function(object, n_resamples = 500, seed = NULL,
 
     fit_coefficients <- stats::coef(fit)
     common <- intersect(names(fit_coefficients), coefficient_names)
+    changed <- .bootstrap_changed_factor_coding(object, fit)
+    if (length(changed)) {
+      if (is.null(coefficient_terms)) {
+        design <- stats::model.matrix(object)
+        coefficient_terms <- stats::setNames(attr(design, "assign"), colnames(design))
+        rm(design)
+      }
+      common <- .bootstrap_comparable_coefficients(
+        common, coefficient_terms, attr(stats::terms(object), "factors"), changed
+      )
+    }
     replicates[i, common] <- fit_coefficients[common]
     successful_fit[i] <- TRUE
     if (length(fit_warnings) > 0L) {
@@ -182,6 +197,26 @@ bootstrap_coefficients <- function(object, n_resamples = 500, seed = NULL,
   )
 }
 
+#' Deprecated alias for `coefficient_stability()`
+#'
+#' @description
+#' `bootstrap_coefficients()` is deprecated. Use [coefficient_stability()] instead.
+#'
+#' @inheritParams coefficient_stability
+#' @return See [coefficient_stability()].
+#' @keywords internal
+#' @export
+bootstrap_coefficients <- function(object, n_resamples = 500, seed = NULL,
+                                   show_progress = interactive()) {
+  .Deprecated("coefficient_stability")
+  original_call <- match.call()
+  call <- original_call
+  call[[1L]] <- coefficient_stability
+  result <- eval.parent(call)
+  result$call <- original_call
+  result
+}
+
 .validate_bootstrap_coefficients_args <- function(object, n_resamples, seed,
                                                    show_progress) {
   if (!inherits(object, "glm")) {
@@ -213,6 +248,44 @@ bootstrap_coefficients <- function(object, n_resamples = 500, seed = NULL,
   # The recovered data already contain exactly the observations used by the
   # original fit. Reapplying an original subset would subset them a second time.
   stats::update(object, . ~ ., data = bootstrap_data, subset = NULL)
+}
+
+.bootstrap_changed_factor_coding <- function(object, fit) {
+  factors <- union(names(object$xlevels), names(fit$xlevels))
+  comparable <- vapply(factors, function(column) {
+    original_levels <- object$xlevels[[column]]
+    fitted_levels <- fit$xlevels[[column]]
+    contrast <- object$contrasts[[column]]
+    if (!identical(contrast, fit$contrasts[[column]])) return(FALSE)
+    if (identical(original_levels, fitted_levels)) return(TRUE)
+    if (!length(fitted_levels) || !all(fitted_levels %in% original_levels)) return(FALSE)
+
+    # Treatment contrasts still represent the same comparisons if only
+    # non-reference levels have dropped out.
+    if (identical(contrast, "contr.treatment")) {
+      return(identical(original_levels[1L], fitted_levels[1L]))
+    }
+    if (identical(contrast, "contr.SAS")) {
+      return(identical(utils::tail(original_levels, 1L), utils::tail(fitted_levels, 1L)))
+    }
+    FALSE
+  }, logical(1))
+  factors[!comparable]
+}
+
+.bootstrap_comparable_coefficients <- function(common, coefficient_terms, factors, changed) {
+  if (!all(changed %in% rownames(factors))) return(character())
+
+  contains_changed <- colSums(factors[changed, , drop = FALSE] != 0L) > 0L
+  terms <- lapply(seq_len(ncol(factors)), function(i) which(factors[, i] != 0L))
+  affected <- which(contains_changed)
+  # Rebaselining an interaction can also change its lower-order terms.
+  for (i in affected) {
+    contains_changed <- contains_changed |
+      vapply(terms, function(term) all(term %in% terms[[i]]), logical(1))
+  }
+  keep <- !c(TRUE, contains_changed)[coefficient_terms[common] + 1L]
+  common[which(keep)]
 }
 
 .bootstrap_coefficients_model_data <- function(object) {
@@ -267,13 +340,17 @@ bootstrap_coefficients <- function(object, n_resamples = 500, seed = NULL,
 #'
 #' @description
 #' Summarise the coefficient distributions returned by
-#' [bootstrap_coefficients()] on the GLM link scale or after exponentiation.
+#' [coefficient_stability()] on the GLM link scale or after exponentiation.
 #'
 #' @param object A `bootstrap_coefficients` object.
 #' @param scale Character string. `"link"` reports coefficients on their fitted
 #'   GLM scale. `"exponentiated"` applies `exp()` to every original and
 #'   bootstrap coefficient. `"relativity"` is an alias for
 #'   `"exponentiated"`; this interpretation is most direct for a log-link GLM.
+#'   For treatment-coded factors, these are ratios to the reference level.
+#'   For an untransformed numeric predictor without interactions, the ratio
+#'   is for a one-unit increase. The exponentiated intercept is a baseline
+#'   level, not a factor relativity.
 #'   For a logit-link model, exponentiated coefficients are odds ratios rather
 #'   than response probabilities.
 #' @param confidence Numeric scalar between 0 and 1 giving the confidence level.
@@ -290,13 +367,14 @@ bootstrap_coefficients <- function(object, n_resamples = 500, seed = NULL,
 #'   \item{bias}{Bootstrap mean minus the original estimate.}
 #'   \item{bootstrap_se}{Standard deviation of the bootstrap estimates.}
 #'   \item{lower, upper}{Requested bootstrap interval.}
-#'   \item{n_successful}{Number of finite bootstrap estimates for the term.}
+#'   \item{n_successful}{Number of finite, comparable estimates for the term.
+#'   This can be lower than the number of converged refits.}
 #'   \item{n_requested}{Number of requested bootstrap samples.}
 #'   \item{success_rate}{`n_successful / n_requested`.}
 #' }
 #'
 #' @author Martin Haringa
-#' @seealso [bootstrap_coefficients()], [as_gt()]
+#' @seealso [coefficient_stability()], [as_gt()]
 #' @keywords internal
 #' @export
 summary.bootstrap_coefficients <- function(object,
@@ -376,7 +454,7 @@ print.bootstrap_coefficients <- function(x, ...) {
 #' Present bootstrap coefficient stability as a gt table
 #'
 #' @description
-#' Format the coefficient-level result from [bootstrap_coefficients()] as a
+#' Format the coefficient-level result from [coefficient_stability()] as a
 #' `gt` table. The table retains the requested link or exponentiated scale and
 #' shows how many bootstrap estimates were available for each coefficient.
 #'

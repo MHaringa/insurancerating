@@ -1,8 +1,10 @@
 #' Check observed versus expected insurance experience
 #'
 #' @description
-#' Compare the observed and predicted totals from a fitted GLM, overall or
-#' by calendar year, rating factor or predicted risk. The model is not changed.
+#' Compare outcomes observed in the supplied data with outcomes expected under
+#' the fitted GLM. The ratio O/E is calculated as `Observed / Expected`.
+#' Compare totals overall or by calendar year, rating factor, combinations of
+#' columns or predicted risk. The model is not changed.
 #'
 #' @param model A fitted Poisson, quasi-Poisson, Gamma or Tweedie GLM.
 #' @param data A non-empty data frame with the response and variables used in
@@ -10,9 +12,10 @@
 #'   predictions and weights must be finite and non-negative.
 #'   For a refined model's own portfolio, use [extract_model_data()] to
 #'   include the columns created by the refinement.
-#' @param by Optional name of one grouping column. Factor levels follow
-#'   their declared order; other values are sorted. Missing values form
-#'   a separate group at the end.
+#' @param by Optional character vector of distinct grouping column names, such
+#'   as `c("year", "area")`. Only combinations present in the data are returned.
+#'   Results are sorted in the order of the supplied columns. Factor levels
+#'   follow their declared order, and missing values come last within each column.
 #' @param groups Optional number of groups formed by sorting records from
 #'   lowest to highest predicted risk. Supply a positive whole number no
 #'   larger than the number of rows.
@@ -71,7 +74,7 @@
 #' ## Calibration after refinement
 #'
 #' Use the fitted model returned by [refit()], not the refinement plan.
-#' `check_calibration(smoothed_model, extract_model_data(smoothed_model))`
+#' `calibration_analysis(smoothed_model, extract_model_data(smoothed_model))`
 #' evaluates the smoothed model on its own portfolio. To review the new
 #' tariff bands, use the band column as `by`: for example, `by = "age_smooth"`
 #' when smoothing from `source_variable = "age"`. The numeric relativity
@@ -86,12 +89,11 @@
 #' them by the same `by` column. Do not match `groups` by group number across
 #' models: each model can rank the records differently.
 #'
-#' @return A data frame of class `calibration_result` with `Observed`,
-#'   `Expected`, `OE` (observed divided
-#'   by expected) and `N` (number of observations). If expected is zero,
-#'   `OE` is `NA`. The grouping column or integer `Group` is included when
-#'   applicable. `Exposure` is the sum of the identified exposure column,
-#'   without applying any case weights.
+#' @return A data frame of class `calibration_result` with the totals
+#'   `Observed` and `Expected`, their ratio `OE` and the number of
+#'   observations `N`. If `Expected` is zero, `OE` is `NA`. The grouping
+#'   columns or integer `Group` are included when applicable. `Exposure`
+#'   is the sum of the identified exposure column, without applying case weights.
 #'
 #' @examples
 #' portfolio <- as.data.frame(MTPL2)
@@ -101,17 +103,18 @@
 #' model <- glm(nclaims ~ area + offset(log(exposure)),
 #'              family = poisson(), data = portfolio)
 #'
-#' check_calibration(model, portfolio)
-#' check_calibration(model, portfolio, by = "year")
-#' check_calibration(model, portfolio, by = "area")
+#' calibration_analysis(model, portfolio)
+#' calibration_analysis(model, portfolio, by = "year")
+#' calibration_analysis(model, portfolio, by = "area")
+#' calibration_analysis(model, portfolio, by = c("year", "area"))
 #' # Compare the lowest to highest predicted claim frequencies.
-#' check_calibration(model, portfolio, groups = 5)
+#' calibration_analysis(model, portfolio, groups = 5)
 #'
 #' @seealso [autoplot.calibration_result()], [model_performance()],
-#'   [resample_performance()], [adjust_intercept()], [extract_model_data()],
+#'   [validate_performance()], [adjust_intercept()], [extract_model_data()],
 #'   [audit_refinement()]
 #' @export
-check_calibration <- function(model, data, by = NULL, groups = NULL) {
+calibration_analysis <- function(model, data, by = NULL, groups = NULL) {
   if (!inherits(model, "glm")) {
     stop("`model` must be a fitted GLM.", call. = FALSE)
   }
@@ -137,13 +140,18 @@ check_calibration <- function(model, data, by = NULL, groups = NULL) {
     stop("Supply either `by` or `groups`, not both.", call. = FALSE)
   }
   if (!is.null(by)) {
-    if (!is.character(by) || length(by) != 1L || !is.null(dim(by)) ||
-        is.na(by) || !nzchar(by)) {
-      stop("`by` must name one column of `data`.", call. = FALSE)
+    if (!is.character(by) || !length(by) || !is.null(dim(by)) ||
+        anyNA(by) || any(!nzchar(by)) || anyDuplicated(by)) {
+      stop("`by` must contain one or more distinct column names from `data`.",
+           call. = FALSE)
     }
-    if (!by %in% names(data)) {
-      if (by %in% refinement_columns) .calibration_missing_refinement(by)
-      suggested <- .calibration_smoothing_bands(by, smoothing)
+    missing_by <- setdiff(by, names(data))
+    if (length(missing_by)) {
+      if (any(missing_by %in% refinement_columns)) {
+        .calibration_missing_refinement(missing_by)
+      }
+      column <- missing_by[[1L]]
+      suggested <- .calibration_smoothing_bands(column, smoothing)
       if (!length(suggested)) {
         bands <- vapply(smoothing, `[[`, character(1), 1L)
         groupable <- names(data)[vapply(data, function(x) {
@@ -151,20 +159,23 @@ check_calibration <- function(model, data, by = NULL, groups = NULL) {
         }, logical(1))]
         candidates <- setdiff(union(groupable, bands),
                               c(reserved, setdiff(refinement_columns, bands)))
-        suggested <- .closest_refinement_value(by, candidates)
+        suggested <- .closest_refinement_value(column, setdiff(candidates, by))
       }
       if (any(!suggested %in% names(data))) {
-        .calibration_missing_refinement(by, suggested)
+        .calibration_missing_refinement(missing_by, suggested)
       }
-      stop("`by` must name one column of `data`; `", by, "` was not found.",
+      stop("Column `", column, "` supplied in `by` was not found in `data`.",
            .calibration_by_hint(suggested), call. = FALSE)
     }
-    if (by %in% reserved) {
-      stop("Rename the `by` column to avoid a calibration output name: ", by, ".",
-           call. = FALSE)
-    }
-    if (!is.atomic(data[[by]]) || !is.null(dim(data[[by]]))) {
-      stop("The `by` column must be a vector of grouping values.", call. = FALSE)
+    for (column in by) {
+      if (column %in% reserved) {
+        stop("Rename the `by` column to avoid a calibration output name: ", column, ".",
+             call. = FALSE)
+      }
+      if (!is.atomic(data[[column]]) || !is.null(dim(data[[column]]))) {
+        stop("The `by` column `", column, "` must be a vector of grouping values.",
+             call. = FALSE)
+      }
     }
   }
   if (!is.null(groups) &&
@@ -245,17 +256,25 @@ check_calibration <- function(model, data, by = NULL, groups = NULL) {
 
   labels <- NULL
   if (!is.null(by)) {
-    group_values <- data[[by]]
-    group_values[is.na(group_values)] <- NA
-    labels <- sort(unique(group_values), na.last = TRUE)
-    group_id <- match(group_values, labels)
+    grouping_data <- data[by]
+    grouping_data[] <- lapply(grouping_data, function(x) {
+      x[is.na(x)] <- NA
+      x
+    })
+    ranks <- lapply(grouping_data, function(x) match(x, sort(unique(x), na.last = TRUE)))
+    # Rank integer tuples without collapsing distinct values into text labels.
+    group_id <- if (length(ranks) == 1L) ranks[[1L]] else {
+      data.table::frankv(ranks, ties.method = "dense")
+    }
+    labels <- grouping_data[match(seq_len(max(group_id)), group_id), , drop = FALSE]
+    rownames(labels) <- NULL
   } else if (!is.null(groups)) {
     if (length(offsets)) {
       # Ignore rounding noise when undoing the exposure offset for ranking.
       risk <- signif(risk / exposure, digits = 14L)
     }
     group_id <- .calibration_risk_groups(risk, exposure, as.integer(groups))
-    labels <- seq_len(groups)
+    labels <- data.frame(Group = seq_len(groups))
   } else {
     group_id <- rep.int(1L, n)
   }
@@ -277,9 +296,7 @@ check_calibration <- function(model, data, by = NULL, groups = NULL) {
     out$Exposure <- totals[, "Exposure"]
   }
   if (!is.null(labels)) {
-    label <- if (is.null(by)) "Group" else by
-    out[[label]] <- labels
-    out <- out[c(label, setdiff(names(out), label))]
+    out <- cbind(labels, out)
   }
   grouping <- if (!is.null(groups)) "risk" else if (!is.null(by)) "by" else "overall"
   structure(out, class = c("calibration_result", class(out)),
@@ -291,7 +308,7 @@ check_calibration <- function(model, data, by = NULL, groups = NULL) {
   if (is.null(by)) return(character())
   unique(unlist(lapply(smoothing, function(pair) {
     source_names <- sub("_smooth$", "", pair)
-    if (tolower(by) %in% tolower(source_names)) pair[1L]
+    if (any(tolower(by) %in% tolower(source_names))) pair[1L]
   }), use.names = FALSE))
 }
 

@@ -48,7 +48,7 @@ rmse(x, MTPL2)
 
 }
 \seealso{
-\code{\link[=model_performance]{model_performance()}}, \code{\link[=resample_performance]{resample_performance()}},
+\code{\link[=model_performance]{model_performance()}}, \code{\link[=validate_performance]{validate_performance()}},
 \code{\link[=check_residuals]{check_residuals()}}
 }
 \author{

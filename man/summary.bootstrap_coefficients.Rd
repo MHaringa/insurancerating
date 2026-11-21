@@ -19,6 +19,10 @@
 GLM scale. \code{"exponentiated"} applies \code{exp()} to every original and
 bootstrap coefficient. \code{"relativity"} is an alias for
 \code{"exponentiated"}; this interpretation is most direct for a log-link GLM.
+For treatment-coded factors, these are ratios to the reference level.
+For an untransformed numeric predictor without interactions, the ratio
+is for a one-unit increase. The exponentiated intercept is a baseline
+level, not a factor relativity.
 For a logit-link model, exponentiated coefficients are odds ratios rather
 than response probabilities.}
 
@@ -39,17 +43,18 @@ A data frame with one row per original coefficient and columns:
 \item{bias}{Bootstrap mean minus the original estimate.}
 \item{bootstrap_se}{Standard deviation of the bootstrap estimates.}
 \item{lower, upper}{Requested bootstrap interval.}
-\item{n_successful}{Number of finite bootstrap estimates for the term.}
+\item{n_successful}{Number of finite, comparable estimates for the term.
+This can be lower than the number of converged refits.}
 \item{n_requested}{Number of requested bootstrap samples.}
 \item{success_rate}{\code{n_successful / n_requested}.}
 }
 }
 \description{
 Summarise the coefficient distributions returned by
-\code{\link[=bootstrap_coefficients]{bootstrap_coefficients()}} on the GLM link scale or after exponentiation.
+\code{\link[=coefficient_stability]{coefficient_stability()}} on the GLM link scale or after exponentiation.
 }
 \seealso{
-\code{\link[=bootstrap_coefficients]{bootstrap_coefficients()}}, \code{\link[=as_gt]{as_gt()}}
+\code{\link[=coefficient_stability]{coefficient_stability()}}, \code{\link[=as_gt]{as_gt()}}
 }
 \author{
 Martin Haringa

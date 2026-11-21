@@ -86,6 +86,10 @@ added.}
 GLM scale. \code{"exponentiated"} applies \code{exp()} to every original and
 bootstrap coefficient. \code{"relativity"} is an alias for
 \code{"exponentiated"}; this interpretation is most direct for a log-link GLM.
+For treatment-coded factors, these are ratios to the reference level.
+For an untransformed numeric predictor without interactions, the ratio
+is for a one-unit increase. The exponentiated intercept is a baseline
+level, not a factor relativity.
 For a logit-link model, exponentiated coefficients are odds ratios rather
 than response probabilities.}
 
@@ -137,7 +141,7 @@ Create a formatted \code{gt} table from an object returned by
 \code{data.frame} subclass; \code{as_gt()} is only used when a presentation table is
 needed for a report, tariff note or pricing review.
 
-Format the coefficient-level result from \code{\link[=bootstrap_coefficients]{bootstrap_coefficients()}} as a
+Format the coefficient-level result from \code{\link[=coefficient_stability]{coefficient_stability()}} as a
 \code{gt} table. The table retains the requested link or exponentiated scale and
 shows how many bootstrap estimates were available for each coefficient.
 

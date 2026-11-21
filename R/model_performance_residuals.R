@@ -72,6 +72,7 @@
 #' autoplot(cr)
 #' }
 #'
+#' @seealso [autoplot.check_residuals()]
 #' @export
 check_residuals <- function(object, n_simulations = 30) {
 
@@ -182,6 +183,7 @@ print.check_residuals <- function(x, digits = 3, ...) {
 #'
 #' @import ggplot2
 #' @seealso [check_residuals()], [check_overdispersion()]
+#' @keywords internal
 #' @export
 autoplot.check_residuals <- function(object, show_message = TRUE,
                                      max_points = 1000, ...) {

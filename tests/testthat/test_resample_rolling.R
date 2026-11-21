@@ -14,7 +14,7 @@ test_that("rolling windows expand chronologically without changing the RNG", {
   set.seed(7)
   shuffled <- data[sample(seq_len(nrow(data))), ]
   rng <- .Random.seed
-  roll <- resample_performance(model, shuffled, method = "rolling", time = "year",
+  roll <- validate_performance(model, shuffled, method = "rolling", time = "year",
                                initial = 3, show_progress = FALSE)
   expect_identical(.Random.seed, rng)
   expect_identical(roll$iteration, 1:3)
@@ -24,7 +24,7 @@ test_that("rolling windows expand chronologically without changing the RNG", {
   expect_identical(roll$test_end, roll$test_start)
   expect_identical(roll$n_train, c(9L, 12L, 17L))
   expect_identical(roll$n_test, c(3L, 5L, 2L))
-  expect_identical(roll, resample_performance(
+  expect_identical(roll, validate_performance(
     model, shuffled, sampling = "rolling", time = "year", initial = 3,
     show_progress = FALSE
   ))
@@ -34,7 +34,7 @@ test_that("rolling horizons use distinct periods and retain dates", {
   data <- rolling_portfolio()
   data$period <- as.Date(paste0(data$year, "-01-01"))
   model <- glm(claims ~ x + offset(log(exposure)), poisson(), data)
-  roll <- resample_performance(model, data, sampling = "rolling", time = "period",
+  roll <- validate_performance(model, data, sampling = "rolling", time = "period",
                                initial = 3, horizon = 2, show_progress = FALSE)
   expect_identical(roll$iteration, 1:2)
   expect_identical(roll$test_start, as.Date(c("2023-01-01", "2024-01-01")))
@@ -49,7 +49,7 @@ test_that("rolling Poisson and Gamma scores use weighted test deviance and test 
                        weights = case_weight)
   gamma_model <- glm(severity ~ x, Gamma(link = "log"), data, weights = case_weight)
   for (model in list(poisson_model, gamma_model)) {
-    scores <- resample_performance(model, data, sampling = "rolling", time = "year",
+    scores <- validate_performance(model, data, sampling = "rolling", time = "year",
                                    initial = 3, metrics = c("rmse", "mae", "deviance"),
                                    show_progress = FALSE)
     for (i in seq_len(nrow(scores))) {
@@ -75,7 +75,7 @@ test_that("rolling Poisson and Gamma scores use weighted test deviance and test 
 test_that("rolling preprocessing is estimated within each training window", {
   data <- rolling_portfolio()
   model <- glm(severity ~ 0 + scale(x), data = data)
-  roll <- resample_performance(model, data, method = "rolling", time = "year",
+  roll <- validate_performance(model, data, method = "rolling", time = "year",
                                initial = 3, show_progress = FALSE)
   train <- data[data$year <= 2022, ]
   test <- data[data$year == 2023, ]
@@ -90,7 +90,7 @@ test_that("rolling preprocessing is estimated within each training window", {
 test_that("rolling rejects invalid periods and never borrows unseen factor levels", {
   data <- rolling_portfolio()
   model <- glm(claims ~ x + offset(log(exposure)), poisson(), data)
-  run <- function(data, ...) resample_performance(
+  run <- function(data, ...) validate_performance(
     model, data, method = "rolling", time = "year", show_progress = FALSE, ...
   )
   expect_error(run(transform(data, year = NA_integer_), initial = 3), "missing periods")

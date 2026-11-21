@@ -4,13 +4,14 @@
 #' Plot overall O/E, observed versus expected outcomes by predicted-risk
 #' group, or O/E across periods or rating-factor levels.
 #'
-#' @param object Result from [check_calibration()].
+#' @param object Result from [calibration_analysis()].
 #' @param ... Unused.
 #' @param type Plot type. The default, `"auto"`, uses the calibration
 #'   grouping. For a result grouped with `by`, it uses a temporal plot for
 #'   `Date`, date-time or whole-number years from 1800 to 2200, and a
 #'   factor plot otherwise. Set `"temporal"` or `"factor"` to override
-#'   that choice (for example, when years are stored as ordered factors).
+#'   that choice for a single grouping column. With multiple grouping columns,
+#'   the plot shows a point for each combination, rather than a time series.
 #'
 #' @details
 #' Overall, temporal and factor plots use a reference line at O/E = 1.
@@ -18,7 +19,7 @@
 #' Temporal plots omit missing periods; undefined O/E values are not drawn.
 #'
 #' Each point in the predicted-risk plot represents one group from
-#' [check_calibration()]. Expected is on the horizontal axis and observed
+#' [calibration_analysis()]. Expected is on the horizontal axis and observed
 #' on the vertical axis, using the same scale. A point above the diagonal
 #' means the model predicted too little for that group; a point below
 #' means it predicted too much.
@@ -39,13 +40,15 @@
 #' model <- glm(nclaims ~ area + offset(log(exposure)),
 #'              family = poisson(), data = portfolio)
 #'
-#' autoplot(check_calibration(model, portfolio))
+#' autoplot(calibration_analysis(model, portfolio))
 #' # Each point compares observed and expected claims per policy-year.
-#' autoplot(check_calibration(model, portfolio, groups = 5))
-#' autoplot(check_calibration(model, portfolio, by = "year"))
-#' autoplot(check_calibration(model, portfolio, by = "area"))
+#' autoplot(calibration_analysis(model, portfolio, groups = 5))
+#' autoplot(calibration_analysis(model, portfolio, by = "year"))
+#' autoplot(calibration_analysis(model, portfolio, by = "area"))
+#' autoplot(calibration_analysis(model, portfolio, by = c("year", "area")))
 #'
-#' @seealso [check_calibration()]
+#' @seealso [calibration_analysis()]
+#' @keywords internal
 #' @export
 autoplot.calibration_result <- function(object, ...,
                                         type = c("auto", "overall", "risk", "temporal", "factor")) {
@@ -55,18 +58,18 @@ autoplot.calibration_result <- function(object, ...,
   by <- attr(object, "calibration_by", exact = TRUE)
   data <- as.data.frame(object)
   if (length(grouping) != 1L || !all(c("Observed", "Expected", "OE") %in% names(data))) {
-    stop("Plot a complete result from `check_calibration()`.", call. = FALSE)
+    stop("Plot a complete result from `calibration_analysis()`.", call. = FALSE)
   }
   allowed <- switch(grouping, overall = "overall", risk = "risk",
-                    by = c("temporal", "factor"))
+                    by = if (length(by) > 1L) "factor" else c("temporal", "factor"))
   if (is.null(allowed) ||
-      (identical(grouping, "by") && (length(by) != 1L || !by %in% names(data)))) {
-    stop("Plot a complete result from `check_calibration()`.", call. = FALSE)
+      (identical(grouping, "by") && (!length(by) || !all(by %in% names(data))))) {
+    stop("Plot a complete result from `calibration_analysis()`.", call. = FALSE)
   }
   if (identical(type, "auto")) {
     type <- if (!identical(grouping, "by")) {
       grouping
-    } else if (.calibration_is_time(data[[by]])) {
+    } else if (length(by) == 1L && .calibration_is_time(data[[by]])) {
       "temporal"
     } else {
       "factor"
@@ -121,6 +124,7 @@ autoplot.calibration_result <- function(object, ...,
 .calibration_oe_plot <- function(data, by, type, colour) {
   caption <- NULL
   subtitle <- NULL
+  multiple <- length(by) > 1L
   if (identical(type, "overall")) {
     data$.group <- rep("Overall", nrow(data))
     title <- "Overall calibration"
@@ -130,7 +134,13 @@ autoplot.calibration_result <- function(object, ...,
       "Overall O/E is undefined."
     }
   } else {
-    data$.group <- data[[by]]
+    if (multiple) {
+      values <- lapply(data[by], .calibration_group_labels)
+      data$.group <- do.call(paste, c(unname(values), sep = " / "))
+      by <- paste(by, collapse = " / ")
+    } else {
+      data$.group <- data[[by]]
+    }
     title <- if (identical(type, "temporal")) {
       "Calibration over time"
     } else {
@@ -145,7 +155,7 @@ autoplot.calibration_result <- function(object, ...,
     (identical(type, "temporal") && !is.numeric(data$.group) &&
        !inherits(data$.group, c("Date", "POSIXt")))
   if (discrete) {
-    labels <- ifelse(is.na(data$.group), "(Missing)", as.character(data$.group))
+    labels <- .calibration_group_labels(data$.group)
     data$.group <- factor(seq_len(nrow(data)))
   }
   p <- ggplot2::ggplot(data, ggplot2::aes(x = .data$.group, y = .data$OE, group = 1)) +
@@ -154,7 +164,12 @@ autoplot.calibration_result <- function(object, ...,
     p <- p + ggplot2::geom_line(colour = colour, linewidth = 0.6, na.rm = TRUE)
   }
   p <- p + ggplot2::geom_point(colour = colour, size = 2.5, na.rm = TRUE)
-  if (discrete) p <- p + ggplot2::scale_x_discrete(labels = labels, drop = FALSE)
+  if (discrete) {
+    guide <- if (multiple) ggplot2::guide_axis(angle = 45, check.overlap = TRUE) else {
+      ggplot2::waiver()
+    }
+    p <- p + ggplot2::scale_x_discrete(labels = labels, drop = FALSE, guide = guide)
+  }
   if (identical(type, "temporal") && is.numeric(data$.group) &&
       .calibration_is_time(data$.group)) {
     breaks <- if (nrow(data) <= 10L) data$.group else pretty(data$.group, n = 6)
@@ -162,4 +177,9 @@ autoplot.calibration_result <- function(object, ...,
   }
   p + ggplot2::labs(title = title, subtitle = subtitle, x = by,
                     y = "Observed / expected", caption = caption)
+}
+
+
+.calibration_group_labels <- function(x) {
+  ifelse(is.na(x), "(Missing)", as.character(x))
 }

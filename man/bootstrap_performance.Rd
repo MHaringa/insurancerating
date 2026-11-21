@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_performance_bootstrap_rmse.R
 \name{bootstrap_performance}
 \alias{bootstrap_performance}
-\title{Deprecated alias for \code{resample_performance()}}
+\title{Deprecated alias for \code{validate_performance()}}
 \usage{
 bootstrap_performance(
   model,
@@ -26,14 +26,15 @@ bootstrap_performance(
 \item{n_resamples}{Positive whole number. Number of resampling replicates.
 Default is 50.}
 
-\item{sample_fraction}{Fraction of the data used in the training sample. Must
-be in \verb{(0, 1]}. Default is 1.}
+\item{sample_fraction}{Fraction of input rows to draw for each random
+training sample, before adding any rows for missing factor levels.
+Must be in \verb{(0, 1]}. Default is 1. Not used for rolling validation.}
 
 \item{metric}{Legacy argument that accepts only \code{"rmse"}. Use \code{metrics}
 to select metrics.}
 
 \item{sampling}{Random sampling scheme: \code{"bootstrap"} or \code{"split"}. For
-rolling validation, call \code{\link[=resample_performance]{resample_performance()}} directly.}
+rolling validation, call \code{\link[=validate_performance]{validate_performance()}} directly.}
 
 \item{show_progress}{Logical. Show a progress bar during resampling.
 Default is \code{TRUE}.}
@@ -48,9 +49,9 @@ If \code{NULL} and RMSE is selected, it is calculated from \code{model} and \cod
 order: \code{"rmse"} (default), \code{"mae"}, or \code{"deviance"}.}
 }
 \value{
-See \code{\link[=resample_performance]{resample_performance()}}.
+See \code{\link[=validate_performance]{validate_performance()}}.
 }
 \description{
-\code{bootstrap_performance()} is deprecated. Use \code{\link[=resample_performance]{resample_performance()}} instead.
+\code{bootstrap_performance()} is deprecated. Use \code{\link[=validate_performance]{validate_performance()}} instead.
 }
 \keyword{internal}

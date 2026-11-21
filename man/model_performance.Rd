@@ -39,7 +39,7 @@ by \code{\link[stats:deviance]{stats::deviance()}}.}
 AIC, BIC and residual deviance describe in-sample fit. RMSE measures
 in-sample prediction error on the response scale, comparing observed
 responses with fitted values on the same rows used to estimate the model.
-It is unweighted and uses the same response scale as \code{\link[=resample_performance]{resample_performance()}}.
+It is unweighted and uses the same response scale as \code{\link[=validate_performance]{validate_performance()}}.
 None of these metrics establishes out-of-sample predictive performance.
 
 For a Poisson frequency model with \code{offset(log(exposure))}, the fitted
@@ -67,7 +67,7 @@ model_performance(m1, m2)
 
 }
 \seealso{
-\code{\link[=rmse]{rmse()}}, \code{\link[=resample_performance]{resample_performance()}}, \code{\link[=check_overdispersion]{check_overdispersion()}},
+\code{\link[=rmse]{rmse()}}, \code{\link[=validate_performance]{validate_performance()}}, \code{\link[=check_overdispersion]{check_overdispersion()}},
 \code{\link[=check_residuals]{check_residuals()}}
 }
 \author{

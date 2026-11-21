@@ -79,7 +79,7 @@ existing \code{\link[=factor_analysis]{factor_analysis()}} results through \code
 Estimated GLM relativities adjust for other predictors; marginal observed
 experience does not. Differences can reflect the mix of other risks and
 do not necessarily indicate model misspecification. Use this comparison
-for model interpretation, not formal calibration. Use \code{\link[=check_calibration]{check_calibration()}}
+for model interpretation, not formal calibration. Use \code{\link[=calibration_analysis]{calibration_analysis()}}
 to compare full-model predictions with observed outcomes.
 
 This makes it possible to compare fitted GLM relativities with observed
@@ -95,33 +95,38 @@ across the observed levels of that factor. With \code{scale = "mean"}, this mean
 is always used.
 }
 \examples{
-df <- MTPL2
-df$area <- as.factor(df$area)
+df <- as.data.frame(MTPL)
+df$zip <- set_reference_level(factor(df$zip), df$exposure)
 
 model <- glm(
-  nclaims ~ area + offset(log(exposure)),
+  nclaims ~ zip + age_policyholder + offset(log(exposure)),
   family = poisson(),
   data = df
 )
+effects <- rating_table(
+  "Age-adjusted model" = model, model_data = df, exposure = "exposure"
+)
 
-rating_table(model, model_data = df, exposure = "exposure") |>
+effects |>
   add_factor_experience(
     data = df,
+    risk_factors = "zip",
     claim_count = "nclaims",
-    exposure = "exposure"
+    exposure = "exposure",
+    label = "Observed frequency"
   ) |>
-  autoplot(risk_factors = "area", metric = "frequency")
+  autoplot(risk_factors = "zip", metric = "frequency")
 
 observed <- factor_analysis(
   df,
-  risk_factors = "area",
+  risk_factors = "zip",
   claim_count = "nclaims",
   exposure = "exposure"
 )
 
-rating_table(model, model_data = df, exposure = "exposure") |>
-  add_factor_experience(observed = observed) |>
-  autoplot(risk_factors = "area")
+effects |>
+  add_factor_experience(observed = observed, label = "Observed frequency") |>
+  autoplot(risk_factors = "zip", metric = "frequency")
 
 }
 \author{

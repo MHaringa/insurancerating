@@ -42,3 +42,4 @@ change the residual calculation or the reported test.
 \author{
 Martin Haringa
 }
+\keyword{internal}

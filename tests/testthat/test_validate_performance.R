@@ -12,16 +12,48 @@ test_that("deprecated bootstrap_performance forwards named arguments and warns",
   portfolio <- resampling_fixture()
   model <- glm(claims ~ z + offset(log(exposure)), poisson(), data = portfolio)
   set.seed(61)
-  expected <- resample_performance(model, portfolio, n_resamples = 3,
+  expected <- validate_performance(model, portfolio, n_resamples = 3,
                                     show_progress = FALSE)
   set.seed(61)
   expect_warning(
     actual <- bootstrap_performance(data = portfolio, model = model,
                                      n_resamples = 3, show_progress = FALSE),
-    "resample_performance",
+    "validate_performance",
     class = "deprecatedWarning"
   )
   expect_identical(actual, expected)
+})
+
+test_that("the performance alias accepts old argument names with one warning", {
+  portfolio <- resampling_fixture()
+  model <- glm(claims ~ z, poisson(), data = portfolio)
+  set.seed(31)
+  expected <- validate_performance(model, portfolio, n_resamples = 3,
+                                   sample_fraction = 0.75, show_progress = FALSE)
+  set.seed(31)
+  warnings <- list()
+  actual <- withCallingHandlers(
+    bootstrap_performance(model = model, data = portfolio, n = 3, frac = 0.75,
+                          show_progress = FALSE),
+    warning = function(w) {
+      warnings[[length(warnings) + 1L]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_length(warnings, 1L)
+  expect_s3_class(warnings[[1L]], "deprecatedWarning")
+  expect_match(conditionMessage(warnings[[1L]]), "validate_performance")
+  expect_identical(actual, expected)
+})
+
+test_that("model validation exports only the requested primary and alias names", {
+  exports <- getNamespaceExports("insurancerating")
+  expect_true(all(c(
+    "model_performance", "validate_performance", "coefficient_stability",
+    "calibration_analysis", "check_residuals", "check_overdispersion",
+    "bootstrap_performance", "bootstrap_coefficients"
+  ) %in% exports))
+  expect_false(any(c("resample_performance", "check_calibration", "bootstrap_rmse") %in% exports))
 })
 
 test_that("resampling scores the same training, out-of-bag and held-out rows", {
@@ -32,12 +64,12 @@ test_that("resampling scores the same training, out-of-bag and held-out rows", {
   for (sampling in c("bootstrap", "split")) {
     for (fraction in c(1, 0.6)) {
       set.seed(92)
-      result <- resample_performance(
+      result <- validate_performance(
         model, portfolio, n_resamples = 3, sample_fraction = fraction,
         sampling = sampling, metrics = metrics, show_progress = FALSE
       )
       set.seed(92)
-      legacy <- resample_performance(
+      legacy <- validate_performance(
         model, portfolio, n_resamples = 3, sample_fraction = fraction,
         sampling = sampling, show_progress = FALSE
       )
@@ -80,7 +112,7 @@ test_that("Gamma deviance uses evaluation weights and predictions", {
   model <- glm(severity ~ z, Gamma(link = "log"), data = portfolio,
                weights = volume)
   set.seed(51)
-  result <- resample_performance(
+  result <- validate_performance(
     model, portfolio, n_resamples = 1, sample_fraction = 0.75,
     sampling = "split", show_progress = FALSE, metrics = "deviance"
   )
@@ -104,11 +136,11 @@ test_that("metric selection is validated and works with print and plot methods",
   portfolio <- resampling_fixture()
   model <- glm(claims ~ z + offset(log(exposure)), poisson(), data = portfolio)
   for (invalid in list(NULL, NA_character_, 1, "auc", c("mae", "mae"))) {
-    expect_error(resample_performance(model, portfolio, metrics = invalid), "`metrics`")
+    expect_error(validate_performance(model, portfolio, metrics = invalid), "`metrics`")
   }
   run <- function() {
     set.seed(231)
-    resample_performance(model, portfolio, n_resamples = 5,
+    validate_performance(model, portfolio, n_resamples = 5,
                          metrics = c("mae", "rmse", "deviance"), show_progress = FALSE)
   }
   result <- run()
@@ -130,7 +162,7 @@ test_that("grouped binomial scores use proportions and trial-weighted deviance",
                data = portfolio, weights = weight)
   set.seed(8)
   metrics <- c("rmse", "mae", "deviance")
-  result <- resample_performance(
+  result <- validate_performance(
     model, portfolio, n_resamples = 1, sample_fraction = 0.5,
     sampling = "split", show_progress = FALSE, metrics = metrics
   )
@@ -153,7 +185,7 @@ test_that("grouped binomial scores use proportions and trial-weighted deviance",
   expect_equal(result$original_scores[["rmse"]], comparison$RMSE)
   expect_equal(result$original_scores[["deviance"]], comparison$Residual_Deviance)
   portfolio$year <- ifelse(seq_len(nrow(portfolio)) %in% train_rows, 2020L, 2021L)
-  rolling <- resample_performance(model, portfolio, sampling = "rolling", time = "year",
+  rolling <- validate_performance(model, portfolio, sampling = "rolling", time = "year",
                                   initial = 1, metrics = metrics, show_progress = FALSE)
   expect_equal(rolling[metrics], result$scores)
 })
@@ -161,7 +193,7 @@ test_that("grouped binomial scores use proportions and trial-weighted deviance",
 test_that("resampling can score a binomial factor without a stored model frame", {
   portfolio <- data.frame(claim = factor(c("no", "yes", "yes", "yes")))
   model <- glm(claim ~ 1, binomial(), data = portfolio, model = FALSE)
-  result <- resample_performance(model, portfolio, sampling = "split",
+  result <- validate_performance(model, portfolio, sampling = "split",
                                  n_resamples = 1, show_progress = FALSE)
   expected <- sqrt(mean((c(0, 1, 1, 1) - 0.75)^2))
   expect_equal(unname(result$rmse_bs), expected)
@@ -173,7 +205,7 @@ test_that("resampling plots explain the evaluation rows and reference score", {
   model <- glm(claims ~ z, poisson(), data = portfolio)
   for (sampling in c("bootstrap", "split")) {
     for (fraction in c(1, 0.6)) {
-      result <- resample_performance(
+      result <- validate_performance(
         model, portfolio, n_resamples = 3, sample_fraction = fraction,
         sampling = sampling, metrics = c("rmse", "deviance"), show_progress = FALSE
       )

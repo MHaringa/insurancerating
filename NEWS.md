@@ -1,20 +1,28 @@
 # insurancerating (development version)
 
-- `resample_performance(sampling = "rolling")` fits expanding historical
+- The model validation API now uses `validate_performance()`,
+  `coefficient_stability()` and `calibration_analysis()`. The historical
+  `bootstrap_performance()` and `bootstrap_coefficients()` names remain as
+  deprecated aliases. Use `validate_performance()` for legacy RMSE workflows.
+  Calculations, defaults and result classes are unchanged.
+- `validate_performance(sampling = "rolling")` fits expanding historical
   windows and scores subsequent periods with RMSE, MAE or predictive deviance.
-- `autoplot()` for `check_calibration()` shows overall, predicted-risk,
+- `coefficient_stability()` excludes estimates whose factor coding changed
+  in a bootstrap refit, for example when the original reference level is absent.
+- `autoplot()` for `calibration_analysis()` shows overall, predicted-risk,
   temporal or rating-factor calibration.
 - `add_factor_experience()` replaces `add_portfolio_experience()` for attaching
   marginal observed experience to a rating table. The old name remains as a
   deprecated alias; calculations and plotting behaviour are unchanged.
-- `check_calibration()` compares observed and expected totals overall, by
+- `calibration_analysis()` compares observed and expected totals overall, by
   portfolio segment or calendar year, and across predicted-risk groups.
   For refined GLMs it distinguishes tariff offsets from exposure and points
   users to `extract_model_data()` when refinement columns are missing.
-- `resample_performance()` replaces `bootstrap_performance()`, which remains
-  available as a deprecated alias. RMSE remains the default; `metrics` can
-  also request MAE and weighted predictive deviance. The resampling plot
-  identifies the evaluation rows and original model reference.
+  Pass several columns to `by` to review calibration for observed combinations,
+  for example `by = c("year", "area")`.
+- `validate_performance()` defaults to RMSE; `metrics` can also request MAE
+  and weighted predictive deviance. The resampling plot identifies the
+  evaluation rows and original model reference.
 - `model_performance()` now reports residual deviance after AIC, BIC and RMSE.
   In-sample RMSE uses the rows retained in the fit. Both performance functions
   now calculate binomial RMSE on the probability scale.

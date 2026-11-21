@@ -11,7 +11,7 @@
 )
 }
 \arguments{
-\item{object}{Result from \code{\link[=check_calibration]{check_calibration()}}.}
+\item{object}{Result from \code{\link[=calibration_analysis]{calibration_analysis()}}.}
 
 \item{...}{Unused.}
 
@@ -19,7 +19,8 @@
 grouping. For a result grouped with \code{by}, it uses a temporal plot for
 \code{Date}, date-time or whole-number years from 1800 to 2200, and a
 factor plot otherwise. Set \code{"temporal"} or \code{"factor"} to override
-that choice (for example, when years are stored as ordered factors).}
+that choice for a single grouping column. With multiple grouping columns,
+the plot shows a point for each combination, rather than a time series.}
 }
 \value{
 A \link[ggplot2:ggplot]{ggplot2::ggplot} object.
@@ -34,7 +35,7 @@ Factor plots preserve the result's order and label missing groups.
 Temporal plots omit missing periods; undefined O/E values are not drawn.
 
 Each point in the predicted-risk plot represents one group from
-\code{\link[=check_calibration]{check_calibration()}}. Expected is on the horizontal axis and observed
+\code{\link[=calibration_analysis]{calibration_analysis()}}. Expected is on the horizontal axis and observed
 on the vertical axis, using the same scale. A point above the diagonal
 means the model predicted too little for that group; a point below
 means it predicted too much.
@@ -54,13 +55,15 @@ portfolio$year <- rep(2023:2024, length.out = nrow(portfolio))
 model <- glm(nclaims ~ area + offset(log(exposure)),
              family = poisson(), data = portfolio)
 
-autoplot(check_calibration(model, portfolio))
+autoplot(calibration_analysis(model, portfolio))
 # Each point compares observed and expected claims per policy-year.
-autoplot(check_calibration(model, portfolio, groups = 5))
-autoplot(check_calibration(model, portfolio, by = "year"))
-autoplot(check_calibration(model, portfolio, by = "area"))
+autoplot(calibration_analysis(model, portfolio, groups = 5))
+autoplot(calibration_analysis(model, portfolio, by = "year"))
+autoplot(calibration_analysis(model, portfolio, by = "area"))
+autoplot(calibration_analysis(model, portfolio, by = c("year", "area")))
 
 }
 \seealso{
-\code{\link[=check_calibration]{check_calibration()}}
+\code{\link[=calibration_analysis]{calibration_analysis()}}
 }
+\keyword{internal}

@@ -110,20 +110,17 @@ reference:
       [observed-versus-expected review](../articles/model-validation.html#reviewing-observed-versus-expected-experience).
     contents:
       - model_performance
-      - check_calibration
-      - autoplot.calibration_result
+      - validate_performance
+      - calibration_analysis
 
   - subtitle: "Model stability"
     contents:
-      - resample_performance
-      - autoplot.bootstrap_performance
-      - bootstrap_coefficients
+      - coefficient_stability
 
   - subtitle: "Model diagnostics"
     contents:
       - check_overdispersion
       - check_residuals
-      - autoplot.check_residuals
 
   - title: "Portfolio preparation and reduction"
     desc: >
@@ -180,7 +177,7 @@ reference:
       - construct_model_points
       - construct_tariff_classes
       - bootstrap_performance
-      - bootstrap_rmse
+      - bootstrap_coefficients
       - fit_truncated_dist
       - fisher
       - histbin

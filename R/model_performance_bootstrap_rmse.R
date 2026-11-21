@@ -1,17 +1,17 @@
-#' Assess predictive performance across resampled datasets
+#' Evaluate model performance across resamples or time windows
 #'
 #' @description
-#' Refit a pricing model on repeated samples to assess variability in predictive
-#' performance. Unlike [model_performance()], which compares fitted models,
-#' this function refits the model at each replicate and evaluates it on rows
-#' selected by the resampling design.
+#' Refit a pricing model and score its predictions across resamples or time
+#' windows. By default, the model is fitted and scored on the same bootstrap
+#' sample. Evaluation on rows outside that fit depends on the sampling design.
 #'
 #' @param model A fitted model object that can be updated on resampled data.
 #' @param data Data frame containing the model response and predictors.
 #' @param n_resamples Positive whole number. Number of resampling replicates.
 #'   Default is 50.
-#' @param sample_fraction Fraction of the data used in the training sample. Must
-#'   be in `(0, 1]`. Default is 1.
+#' @param sample_fraction Fraction of input rows to draw for each random
+#'   training sample, before adding any rows for missing factor levels.
+#'   Must be in `(0, 1]`. Default is 1. Not used for rolling validation.
 #' @param metric Legacy argument that accepts only `"rmse"`. Use `metrics`
 #'   to select metrics.
 #' @param metrics Character vector of distinct metrics in the desired output
@@ -37,20 +37,23 @@
 #' @details
 #' ## Resampling design
 #'
-#' - With `sampling = "bootstrap"` and `sample_fraction = 1`, scores are
-#'   evaluated on the resampled training rows (in sample, including duplicates).
-#' - With `sampling = "bootstrap"` and `sample_fraction < 1`, scores are
-#'   evaluated on out-of-bag rows (out of sample for each replicate).
-#' - With `sampling = "split"` and `sample_fraction < 1`, scores are evaluated
-#'   on the held-out rows of each split (out of sample for each replicate).
-#'   At `sample_fraction = 1`, all rows are used for both fitting and evaluation.
+#' | Design | Training rows | Evaluation rows |
+#' | --- | --- | --- |
+#' | Bootstrap, fraction 1 | Full-size draw with replacement | Same sample (in sample) |
+#' | Bootstrap, fraction < 1 | Draw with replacement | Out-of-bag rows |
+#' | Split, fraction < 1 | Draw without replacement | Remaining rows |
+#' | Split, fraction 1 | All input rows | Same rows (in sample) |
+#' | Rolling | Expanding window | Subsequent periods |
 #'
-#' Character columns and factor columns are converted to factors with levels
-#' taken from the full input data before resampling. For factor variables used
-#' in the model, the training sample is augmented when needed so every observed
-#' level is represented at least once. This prevents prediction failures when a
-#' level is present in the evaluation data but absent from a particular training
-#' sample. If this leaves no evaluation rows, use a smaller `sample_fraction`.
+#' In a bootstrap, `sample_fraction = 0.8` means 80 draws per 100 input rows,
+#' with replacement. Some rows can be drawn more than once, so the out-of-bag
+#' set is not a fixed 20% of the data.
+#'
+#' For random resampling, factor levels come from the supplied data. For
+#' factor columns used directly in the model, rows may be added to the
+#' training sample to cover levels that were not drawn. These rows are
+#' then excluded from held-out evaluation. If no evaluation rows remain,
+#' try a smaller `sample_fraction`.
 #'
 #' ## Rolling-origin validation
 #'
@@ -72,7 +75,7 @@
 #'
 #' Rolling validation assesses a specification repeatedly fitted to history.
 #' For temporal calibration of one fixed fitted model, use
-#' [check_calibration()] with `by` set to the period column.
+#' [calibration_analysis()] with `by` set to the period column.
 #'
 #' ## Metrics and interpretation
 #'
@@ -91,8 +94,10 @@
 #' On the original estimation rows with the same predictions and weights, it
 #' agrees with the residual deviance reported by [model_performance()].
 #'
-#' A wide score distribution indicates sensitivity to the sampled rows. Even
-#' with held-out rows, resampling the observed portfolio is not independent
+#' Under random resampling, the score distribution reflects variation in both
+#' the refitted models and the rows used to score them. It does not isolate
+#' coefficient stability; use [coefficient_stability()] for that. Even with
+#' held-out rows, resampling the observed portfolio is not independent
 #' validation on a future or external portfolio.
 #'
 #' @return For rolling validation, a data frame with one row per origin:
@@ -121,19 +126,19 @@
 #' mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
 #'             offset = log(exposure), family = poisson())
 #'
-#' # Use all records
-#' x <- resample_performance(mod1, MTPL, n_resamples = 80,
+#' # Draw with replacement and score on the resampled training rows.
+#' x <- validate_performance(mod1, MTPL, n_resamples = 80,
 #'                           show_progress = FALSE)
 #' print(x)
 #' autoplot(x)
 #'
-#' # Use 80% of records and evaluate on the remaining records
-#' x_frac <- resample_performance(mod1, MTPL, n_resamples = 50,
+#' # Draw 80% of the rows without replacement; score on the held-out rows.
+#' x_frac <- validate_performance(mod1, MTPL, n_resamples = 50,
 #'                                sample_fraction = .8, sampling = "split",
 #'                                show_progress = FALSE,
 #'                                metrics = c("rmse", "mae", "deviance"))
 #' head(x_frac$scores)
-#' autoplot(x_frac, metric = "deviance")
+#' autoplot(x_frac, metric = "rmse")
 #' }
 #'
 #' # Illustrative years; MTPL2 does not contain real policy dates.
@@ -141,7 +146,7 @@
 #' portfolio$year <- rep(2020:2025, length.out = nrow(portfolio))
 #' model <- glm(nclaims ~ factor(area) + offset(log(exposure)),
 #'              family = poisson(), data = portfolio)
-#' resample_performance(
+#' validate_performance(
 #'   model, portfolio, sampling = "rolling", time = "year", initial = 3,
 #'   metrics = c("rmse", "mae", "deviance"), show_progress = FALSE
 #' )
@@ -150,7 +155,7 @@
 #'   [autoplot.bootstrap_performance()]
 #'
 #' @export
-resample_performance <- function(model, data, n_resamples = 50,
+validate_performance <- function(model, data, n_resamples = 50,
                                   sample_fraction = 1,
                                   metric = "rmse",
                                   sampling = c("bootstrap", "split"),
@@ -185,13 +190,13 @@ resample_performance <- function(model, data, n_resamples = 50,
   }
 
   if (!is.null(n)) {
-    lifecycle::deprecate_warn("0.9.0", "resample_performance(n)",
-                              "resample_performance(n_resamples)")
+    lifecycle::deprecate_warn("0.9.0", "validate_performance(n)",
+                              "validate_performance(n_resamples)")
     n_resamples <- n
   }
   if (!is.null(frac)) {
-    lifecycle::deprecate_warn("0.9.0", "resample_performance(frac)",
-                              "resample_performance(sample_fraction)")
+    lifecycle::deprecate_warn("0.9.0", "validate_performance(frac)",
+                              "validate_performance(sample_fraction)")
     sample_fraction <- frac
   }
 
@@ -436,15 +441,15 @@ ensure_training_levels <- function(train_rows, data, level_cols) {
   train_rows
 }
 
-#' Deprecated alias for `resample_performance()`
+#' Deprecated alias for `validate_performance()`
 #'
 #' @description
-#' `bootstrap_performance()` is deprecated. Use [resample_performance()] instead.
+#' `bootstrap_performance()` is deprecated. Use [validate_performance()] instead.
 #'
-#' @inheritParams resample_performance
+#' @inheritParams validate_performance
 #' @param sampling Random sampling scheme: `"bootstrap"` or `"split"`. For
-#'   rolling validation, call [resample_performance()] directly.
-#' @return See [resample_performance()].
+#'   rolling validation, call [validate_performance()] directly.
+#' @return See [validate_performance()].
 #' @keywords internal
 #' @export
 bootstrap_performance <- function(model, data, n_resamples = 50,
@@ -456,53 +461,15 @@ bootstrap_performance <- function(model, data, n_resamples = 50,
                                   n = NULL,
                                   frac = NULL,
                                   metrics = "rmse") {
-  .Deprecated("resample_performance")
+  .Deprecated("validate_performance")
   call <- match.call()
-  call[[1L]] <- resample_performance
+  # Legacy argument names remain accepted without a second deprecation warning.
+  if (!is.null(n)) call$n_resamples <- substitute(quote(value), list(value = n))
+  if (!is.null(frac)) call$sample_fraction <- substitute(quote(value), list(value = frac))
+  call$n <- NULL
+  call$frac <- NULL
+  call[[1L]] <- validate_performance
   eval.parent(call)
-}
-
-
-#' Deprecated RMSE wrapper for `resample_performance()`
-#'
-#' @description
-#' `bootstrap_rmse()` is deprecated in favour of [resample_performance()].
-#' Objects returned by `bootstrap_rmse()` keep class `"bootstrap_rmse"` for
-#' backward compatibility and also inherit from `"bootstrap_performance"`.
-#'
-#' @inheritParams resample_performance
-#' @param sampling Random sampling scheme: `"bootstrap"` or `"split"`.
-#' @param n Deprecated. Use `n_resamples` in [resample_performance()] instead.
-#' @param frac Deprecated. Use `sample_fraction` in [resample_performance()]
-#'   instead.
-#'
-#' @return See [resample_performance()].
-#'
-#' @export
-#' @keywords internal
-bootstrap_rmse <- function(model, data, n = 50, frac = 1,
-                           metric = "rmse",
-                           sampling = c("bootstrap", "split"),
-                           show_progress = TRUE,
-                           rmse_model = NULL) {
-  lifecycle::deprecate_warn(
-    "0.9.0",
-    "bootstrap_rmse()",
-    "resample_performance()"
-  )
-
-  out <- resample_performance(
-    model = model,
-    data = data,
-    n_resamples = n,
-    sample_fraction = frac,
-    metric = metric,
-    sampling = sampling,
-    show_progress = show_progress,
-    rmse_model = rmse_model
-  )
-  class(out) <- unique(c("bootstrap_rmse", class(out)))
-  out
 }
 
 
@@ -527,11 +494,11 @@ as.vector.bootstrap_performance <- function(x, ...) {
 #'
 #' @description
 #' Display the empirical distribution of resampled scores from
-#' [resample_performance()]. The histogram shows the observed resampling
+#' [validate_performance()]. The histogram shows the observed resampling
 #' distribution, while the density curve provides a smooth visual summary.
 #'
 #' @param object An object of class `"bootstrap_performance"`, produced by
-#'   [resample_performance()].
+#'   [validate_performance()].
 #' @param fill Fill colour of the histogram bars. Default is `"#E6E6E6"`.
 #' @param color Border colour of the histogram bars. Default is `NA`, which
 #'   removes bar borders.
@@ -540,10 +507,12 @@ as.vector.bootstrap_performance <- function(x, ...) {
 #'   metric, or RMSE for an RMSE-only result.
 #'
 #' @details
-#' The dashed orange line marks the score of the original fitted model. The
-#' subtitle identifies which rows were used to score the refits. Total
-#' predictive deviance depends on the number and weight of evaluated rows,
-#' so the orange line is not directly comparable when those differ.
+#' The dashed orange line marks the score of the original fitted model on
+#' the full data supplied to [validate_performance()], unless `rmse_model`
+#' supplied a reference RMSE. The subtitle identifies which rows were used to
+#' score the refits; these are not necessarily the same rows as the reference.
+#' Total predictive deviance depends on the number and weight of evaluated
+#' rows, so the orange line is not directly comparable when those differ.
 #'
 #' The dotted grey lines mark the 2.5 and 97.5 percent empirical quantiles of the
 #' resampled values when these can be calculated. Their distance provides a
@@ -562,13 +531,14 @@ as.vector.bootstrap_performance <- function(x, ...) {
 #' \dontrun{
 #' mod1 <- glm(nclaims ~ age_policyholder, data = MTPL,
 #'             offset = log(exposure), family = poisson())
-#' x <- resample_performance(mod1, MTPL, n_resamples = 100,
+#' x <- validate_performance(mod1, MTPL, n_resamples = 100,
 #'                            show_progress = FALSE)
 #' autoplot(x)
 #' }
 #'
-#' @seealso [resample_performance()], [rmse()]
+#' @seealso [validate_performance()], [rmse()]
 #'
+#' @keywords internal
 #' @export
 autoplot.bootstrap_performance <- function(object,
                                            fill = "#E6E6E6",

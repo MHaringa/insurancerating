@@ -80,6 +80,9 @@ Hartig, F. (2020). DHARMa: Residual Diagnostics for Hierarchical
 (Multi-Level / Mixed) Regression Models. R package version 0.3.0.
 \url{https://CRAN.R-project.org/package=DHARMa}
 }
+\seealso{
+\code{\link[=autoplot.check_residuals]{autoplot.check_residuals()}}
+}
 \author{
 Martin Haringa
 }

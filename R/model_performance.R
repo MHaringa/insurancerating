@@ -41,7 +41,7 @@
 #'          family = poisson(), data = MTPL2)
 #' rmse(x, MTPL2)
 #'
-#' @seealso [model_performance()], [resample_performance()],
+#' @seealso [model_performance()], [validate_performance()],
 #'   [check_residuals()]
 #'
 #' @export
@@ -130,7 +130,7 @@ rmse <- function(x, data = NULL) {
 #' AIC, BIC and residual deviance describe in-sample fit. RMSE measures
 #' in-sample prediction error on the response scale, comparing observed
 #' responses with fitted values on the same rows used to estimate the model.
-#' It is unweighted and uses the same response scale as [resample_performance()].
+#' It is unweighted and uses the same response scale as [validate_performance()].
 #' None of these metrics establishes out-of-sample predictive performance.
 #'
 #' For a Poisson frequency model with `offset(log(exposure))`, the fitted
@@ -169,7 +169,7 @@ rmse <- function(x, data = NULL) {
 #' # RMSE is in claim counts for these exposure-offset models.
 #' model_performance(m1, m2)
 #'
-#' @seealso [rmse()], [resample_performance()], [check_overdispersion()],
+#' @seealso [rmse()], [validate_performance()], [check_overdispersion()],
 #'   [check_residuals()]
 #'
 #' @export
