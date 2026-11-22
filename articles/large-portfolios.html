@@ -150,7 +150,7 @@ count:</p>
 <code class="sourceCode R"><span><span class="va">bytes_per_row</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/object.size.html" class="external-link">object.size</a></span><span class="op">(</span><span class="va">portfolio_sample</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">portfolio_sample</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">estimated_object_gb</span> <span class="op">&lt;-</span> <span class="va">bytes_per_row</span> <span class="op">*</span> <span class="va">expected_rows</span> <span class="op">/</span> <span class="fl">1024</span><span class="op">^</span><span class="fl">3</span></span></code></pre></div>
+<span><span class="va">estimated_object_gib</span> <span class="op">&lt;-</span> <span class="va">bytes_per_row</span> <span class="op">*</span> <span class="va">expected_rows</span> <span class="op">/</span> <span class="fl">1024</span><span class="op">^</span><span class="fl">3</span></span></code></pre></div>
 <p>Allow additional working memory for reading, copying, grouping and
 modelling. If the estimated object already occupies a substantial part
 of available RAM, perform the initial reduction in a database.</p>
@@ -185,7 +185,9 @@ otherwise unchanged characteristics.</p>
 <span><span class="co">#&gt; 1      P001     Fire   2025-01-01 2025-12-31               1</span></span>
 <span><span class="co">#&gt; 2      P002     Fire   2025-01-01 2025-12-31               1</span></span></code></pre></div>
 <p>This step is optional. It is not required when the source periods
-already have the intended modelling granularity.</p>
+already have the intended modelling granularity. If consolidation allows
+gaps, the span of the result does not imply coverage on every day. Use
+the source periods for date joins that must distinguish those gaps.</p>
 <p>For wide portfolios, <code><a href="../reference/merge_date_ranges.html">merge_date_ranges()</a></code> identifies
 equal grouping keys once and constructs intervals in a compact working
 table. It retrieves the grouping attributes only for the output rows
@@ -207,7 +209,8 @@ rating-factor values and preserves additive quantities. The example
 below includes earned exposure, claim count, claim cost and earned
 premium. Reconstruction value is first rounded to units of EUR 1,000
 because individual euro values are not relevant to this example tariff
-structure.</p>
+structure. Half thousands round up. The simulated earned premium is
+included only to show that additive totals are preserved.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2026</span><span class="op">)</span></span>
 <span><span class="va">local_portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -220,7 +223,7 @@ structure.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">local_portfolio</span><span class="op">$</span><span class="va">reconstruction_value_1000</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">local_portfolio</span><span class="op">$</span><span class="va">reconstruction_value</span> <span class="op">/</span> <span class="fl">1000</span><span class="op">)</span> <span class="op">*</span> <span class="fl">1000</span></span>
+<span>  <span class="fl">1000</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="va">local_portfolio</span><span class="op">$</span><span class="va">reconstruction_value</span> <span class="op">/</span> <span class="fl">1000</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">frequency</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span></span>
 <span>  <span class="va">local_portfolio</span>,</span>
@@ -246,8 +249,8 @@ structure.</p>
 <span><span class="va">local_grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span></span>
 <span>  <span class="va">local_portfolio</span>,</span>
 <span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sector"</span>, <span class="st">"region"</span>, <span class="st">"reconstruction_value_1000"</span><span class="op">)</span>,</span>
-<span>  exposure <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
-<span>  aggregate_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"claim_count"</span>, <span class="st">"claim_amount"</span>, <span class="st">"earned_premium"</span><span class="op">)</span></span>
+<span>  aggregate_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"claim_count"</span>, <span class="st">"claim_amount"</span>, <span class="st">"earned_premium"</span><span class="op">)</span>,</span>
+<span>  split <span class="op">=</span> <span class="st">"earned_exposure"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -256,36 +259,46 @@ structure.</p>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt;         stage   rows</span></span>
 <span><span class="co">#&gt; 1   Portfolio 100000</span></span>
-<span><span class="co">#&gt; 2 Rating grid  16660</span></span>
+<span><span class="co">#&gt; 2 Rating grid  17054</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">local_grid</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     sector region reconstruction_value_1000 claim_count claim_amount</span></span>
-<span><span class="co">#&gt; 1 Industry  North                    100000           1     5026.748</span></span>
-<span><span class="co">#&gt; 2 Industry  North                    101000           0        0.000</span></span>
+<span><span class="co">#&gt; 1 Industry  North                    100000           0        0.000</span></span>
+<span><span class="co">#&gt; 2 Industry  North                    101000           1     5026.748</span></span>
 <span><span class="co">#&gt; 3 Industry  North                    102000           0        0.000</span></span>
-<span><span class="co">#&gt; 4 Industry  North                    104000           1     2762.711</span></span>
-<span><span class="co">#&gt; 5 Industry  North                    105000           0        0.000</span></span>
-<span><span class="co">#&gt; 6 Industry  North                    106000           1     2399.096</span></span>
+<span><span class="co">#&gt; 4 Industry  North                    103000           0        0.000</span></span>
+<span><span class="co">#&gt; 5 Industry  North                    104000           1     2762.711</span></span>
+<span><span class="co">#&gt; 6 Industry  North                    105000           0        0.000</span></span>
 <span><span class="co">#&gt;   earned_premium earned_exposure</span></span>
-<span><span class="co">#&gt; 1      10708.339       4.2353539</span></span>
-<span><span class="co">#&gt; 2       3546.306       2.3182731</span></span>
-<span><span class="co">#&gt; 3      10383.263       4.7232851</span></span>
-<span><span class="co">#&gt; 4      12846.663       5.9403741</span></span>
-<span><span class="co">#&gt; 5       2803.851       0.7189238</span></span>
-<span><span class="co">#&gt; 6      13206.227       5.2507811</span></span></code></pre></div>
+<span><span class="co">#&gt; 1       1801.550       0.7527634</span></span>
+<span><span class="co">#&gt; 2      12453.095       5.8008635</span></span>
+<span><span class="co">#&gt; 3       8228.035       4.0266754</span></span>
+<span><span class="co">#&gt; 4       2155.228       0.6966097</span></span>
+<span><span class="co">#&gt; 5       7675.393       3.3880026</span></span>
+<span><span class="co">#&gt; 6       7975.121       3.2712953</span></span>
+<span></span>
+<span><span class="va">total_cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"earned_exposure"</span>, <span class="st">"claim_count"</span>, <span class="st">"claim_amount"</span>, <span class="st">"earned_premium"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">local_portfolio</span><span class="op">[</span><span class="va">total_cols</span><span class="op">]</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">local_grid</span><span class="op">[</span><span class="va">total_cols</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <p>The result has one row per observed combination of sector, region and
 rounded reconstruction value. Exposure, claims, loss and premium remain
 portfolio totals and can be used directly in pricing analyses.</p>
+<p>The measure in <code>split</code> is summed instead of counting
+source rows. With a year column, <code>split_by = "year"</code> would
+spread just that measure (or the row counts if <code>split</code> is
+omitted) across year columns. To calculate all totals by year, include
+<code>year</code> in <code>group_by</code> instead.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="aggregation-and-glm-estimation">Aggregation and GLM estimation<a class="anchor" aria-label="anchor" href="#aggregation-and-glm-estimation"></a>
 </h2>
 <p>Model-point aggregation is not necessarily an approximation. For the
-Poisson frequency GLM used below, policy rows within a model point have
-identical model covariates and therefore the same linear predictor.
-Claim counts and earned exposure are additive, and exposure enters the
-model through <code>offset(log(earned_exposure))</code>. Under these
+Poisson frequency GLM used below, policy rows within a model point share
+the same covariate contribution and therefore the same expected claim
+rate. Expected claim counts still differ when exposures differ. Claim
+counts and earned exposure are additive, and exposure enters the model
+through <code>offset(log(earned_exposure))</code>. Under these
 conditions, summing claim counts and exposure by the complete set of
 model covariates preserves the coefficient estimates, apart from
 numerical tolerance. This statement assumes independent Poisson
@@ -312,9 +325,10 @@ vary within a model point.</p>
 <span>  tolerance <span class="op">=</span> <span class="fl">1e-8</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
-<p>The comparison verifies the result for the response, covariates and
-exposure offset used in this example. It should not be generalised to
-every model family or data structure. Policy-level records remain
+<p>The comparison verifies coefficient equivalence for this model.
+Likelihood values, AIC and residual deviance are not directly comparable
+between the record-level and aggregated fits. This result does not apply
+to all model families or data structures. Policy-level records remain
 necessary for individual predictions, record-level diagnostics,
 non-additive information, certain bootstrap procedures and models whose
 likelihood is not preserved by the selected grouping. Claim-level data
@@ -327,6 +341,10 @@ also remains relevant for severity and large-loss diagnostics.</p>
 <code><a href="https://dplyr.tidyverse.org/reference/tbl.html" class="external-link">dplyr::tbl()</a></code>. They return another lazy table. Calling the
 function therefore constructs SQL but does not import the source
 portfolio.</p>
+<p>Unlike <code><a href="../reference/rating_grid.html">rating_grid()</a></code>, <code><a href="../reference/rating_grid_db.html">rating_grid_db()</a></code>
+takes <code>exposure</code> and does not spread values across columns.
+To produce year columns, include the year in <code>group_by</code> and
+reshape after collecting the reduced table.</p>
 <p>The next example is executed when the suggested database packages are
 available. It uses an in-memory DuckDB database, so the documentation
 build does not create a database file. The grouping remains lazy:
@@ -336,28 +354,9 @@ grid is read back into R with <code><a href="https://dplyr.tidyverse.org/referen
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dbi.r-dbi.org" class="external-link">DBI</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dbplyr.tidyverse.org/" class="external-link">dbplyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:dbplyr':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     ident, sql, sql_escape_ident, sql_escape_string</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     filter, lag</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r.duckdb.org/" class="external-link">duckdb</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu"><a href="https://r.duckdb.org/reference/duckdb.html" class="external-link">duckdb</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; duckdb keeps downloaded extensions and secrets in a temporary directory:</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> /tmp/RtmpUDxjhi/duckdb</span></span>
-<span><span class="co">#&gt; This is removed when the R session ends.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Extensions are re-downloaded each session.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Secrets are lost.</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> Run duckdb(shared_home = TRUE) (or create ~/.duckdb) to keep them (suitable for most users).</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> Run duckdb(shared_home = FALSE) to accept the temporary directory (and silence this message).</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> See ?duckdb_storage for details and alternatives.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbWriteTable.html" class="external-link">dbWriteTable</a></span><span class="op">(</span></span>
 <span>  <span class="va">con</span>,</span>
@@ -371,7 +370,7 @@ grid is read back into R with <code><a href="https://dplyr.tidyverse.org/referen
 <span><span class="va">grid_db</span> <span class="op">&lt;-</span> <span class="va">portfolio_db</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    reconstruction_value_1000 <span class="op">=</span></span>
-<span>      <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">reconstruction_value</span> <span class="op">/</span> <span class="fl">1000</span><span class="op">)</span> <span class="op">*</span> <span class="fl">1000</span></span>
+<span>      <span class="fl">1000</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="va">reconstruction_value</span> <span class="op">/</span> <span class="fl">1000</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/rating_grid_db.html">rating_grid_db</a></span><span class="op">(</span></span>
 <span>    group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sector"</span>, <span class="st">"region"</span>, <span class="st">"reconstruction_value_1000"</span><span class="op">)</span>,</span>
@@ -397,7 +396,7 @@ grid is read back into R with <code><a href="https://dplyr.tidyverse.org/referen
 <span><span class="co">#&gt;     reconstruction_value,</span></span>
 <span><span class="co">#&gt;     earned_exposure,</span></span>
 <span><span class="co">#&gt;     earned_premium,</span></span>
-<span><span class="co">#&gt;     ROUND_EVEN(reconstruction_value / 1000.0, CAST(ROUND(0.0, 0) AS INTEGER)) * 1000.0 AS reconstruction_value_1000,</span></span>
+<span><span class="co">#&gt;     1000.0 * FLOOR((reconstruction_value / 1000.0) + 0.5) AS reconstruction_value_1000,</span></span>
 <span><span class="co">#&gt;     claim_count,</span></span>
 <span><span class="co">#&gt;     claim_amount</span></span>
 <span><span class="co">#&gt;   FROM portfolio</span></span>
@@ -418,19 +417,21 @@ grid is read back into R with <code><a href="https://dplyr.tidyverse.org/referen
 <span><span class="va">database_grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="va">grid_db</span><span class="op">)</span></span>
 <span><span class="va">database_row_counts</span></span>
 <span><span class="co">#&gt;   source_rows reduced_rows</span></span>
-<span><span class="co">#&gt; 1       1e+05        16660</span></span>
+<span><span class="co">#&gt; 1       1e+05        17054</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">database_grid</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
 <span><span class="co">#&gt;   sector   region reconstruction_value…¹ claim_count claim_amount earned_premium</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Industry North                  <span style="text-decoration: underline;">638</span>000           0            0          <span style="text-decoration: underline;">4</span>099.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Industry North                 1<span style="text-decoration: underline;">642</span>000           0            0          <span style="text-decoration: underline;">7</span>925.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Services North                 1<span style="text-decoration: underline;">478</span>000           0            0         <span style="text-decoration: underline;">10</span>346.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Industry South                 1<span style="text-decoration: underline;">652</span>000           0            0         <span style="text-decoration: underline;">23</span>788.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Industry South                  <span style="text-decoration: underline;">358</span>000           0            0         <span style="text-decoration: underline;">14</span>686.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Retail   South                  <span style="text-decoration: underline;">448</span>000           0            0         <span style="text-decoration: underline;">14</span>492.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Services South                 1<span style="text-decoration: underline;">751</span>000           0           0           <span style="text-decoration: underline;">5</span>738.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Industry North                 1<span style="text-decoration: underline;">642</span>000           0           0           <span style="text-decoration: underline;">5</span>724.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Services North                 1<span style="text-decoration: underline;">478</span>000           0           0           <span style="text-decoration: underline;">8</span>597.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Industry South                  <span style="text-decoration: underline;">358</span>000           0           0           <span style="text-decoration: underline;">8</span>866.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Retail   South                  <span style="text-decoration: underline;">448</span>000           0           0           <span style="text-decoration: underline;">6</span>721.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Industry West                   <span style="text-decoration: underline;">768</span>000           1        <span style="text-decoration: underline;">2</span>846.          <span style="text-decoration: underline;">5</span>600.</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ abbreviated name: ¹​reconstruction_value_1000</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: earned_exposure &lt;dbl&gt;</span></span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">local_grid</span><span class="op">[</span><span class="va">total_cols</span><span class="op">]</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">database_grid</span><span class="op">[</span><span class="va">total_cols</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
 <span></span>
 <span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbDisconnect.html" class="external-link">dbDisconnect</a></span><span class="op">(</span><span class="va">con</span>, shutdown <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>This example starts from an R object only to make the workflow
@@ -469,7 +470,12 @@ code is not executed during the vignette build because creating ten
 million rows on every package check would be disproportionate, but the
 block is complete and can be run as shown.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">large_database_path</span> <span class="op">&lt;-</span> <span class="st">"large_portfolio.duckdb"</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dbi.r-dbi.org" class="external-link">DBI</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dbplyr.tidyverse.org/" class="external-link">dbplyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r.duckdb.org/" class="external-link">duckdb</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">large_database_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".duckdb"</span><span class="op">)</span></span>
 <span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu"><a href="https://r.duckdb.org/reference/duckdb.html" class="external-link">duckdb</a></span><span class="op">(</span><span class="op">)</span>, dbdir <span class="op">=</span> <span class="va">large_database_path</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">dbExecute</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"</span></span>
@@ -491,7 +497,7 @@ block is complete and can be run as shown.</p>
 <span><span class="va">grid_10m_db</span> <span class="op">&lt;-</span> <span class="va">portfolio_10m</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    reconstruction_value_1000 <span class="op">=</span></span>
-<span>      <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">reconstruction_value</span> <span class="op">/</span> <span class="fl">1000</span><span class="op">)</span> <span class="op">*</span> <span class="fl">1000</span></span>
+<span>      <span class="fl">1000</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="va">reconstruction_value</span> <span class="op">/</span> <span class="fl">1000</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/rating_grid_db.html">rating_grid_db</a></span><span class="op">(</span></span>
 <span>    group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sector"</span>, <span class="st">"region"</span>, <span class="st">"reconstruction_value_1000"</span><span class="op">)</span>,</span>
@@ -543,7 +549,7 @@ rows. Only the range used to generate the database table changes:</p>
 <span><span class="va">grid_50m_db</span> <span class="op">&lt;-</span> <span class="va">portfolio_50m</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    reconstruction_value_1000 <span class="op">=</span></span>
-<span>      <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">reconstruction_value</span> <span class="op">/</span> <span class="fl">1000</span><span class="op">)</span> <span class="op">*</span> <span class="fl">1000</span></span>
+<span>      <span class="fl">1000</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="va">reconstruction_value</span> <span class="op">/</span> <span class="fl">1000</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/rating_grid_db.html">rating_grid_db</a></span><span class="op">(</span></span>
 <span>    group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sector"</span>, <span class="st">"region"</span>, <span class="st">"reconstruction_value_1000"</span><span class="op">)</span>,</span>
@@ -568,9 +574,13 @@ rows. Only the range used to generate the database table changes:</p>
 <span><span class="va">grid_50m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="va">grid_50m_db</span><span class="op">)</span></span></code></pre></div>
 <p>The 50 million source records again reduce to no more than 20,000
 combinations in this example, a reduction of 99.96%. The large table
-remains in DuckDB; only the compact grid enters R. A file-backed DuckDB
-database can be used when the database itself should persist between
-sessions.</p>
+remains in DuckDB; only the compact grid enters R. The synthetic
+combinations were chosen to illustrate reduction, not to estimate the
+reduction factor or runtime for a real portfolio. When finished, remove
+only the temporary database created above:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbDisconnect.html" class="external-link">dbDisconnect</a></span><span class="op">(</span><span class="va">con</span>, shutdown <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">large_database_path</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">large_database_path</span>, <span class="st">".wal"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="consolidating-policy-periods-in-duckdb">Consolidating policy periods in DuckDB<a class="anchor" aria-label="anchor" href="#consolidating-policy-periods-in-duckdb"></a>
@@ -578,8 +588,13 @@ sessions.</p>
 <p><code><a href="../reference/merge_date_ranges_db.html">merge_date_ranges_db()</a></code> applies the temporal
 gaps-and-islands calculation in DuckDB. It returns consolidated periods
 as a lazy query:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">dbExecute</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"</span></span>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dbi.r-dbi.org" class="external-link">DBI</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r.duckdb.org/" class="external-link">duckdb</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu"><a href="https://r.duckdb.org/reference/duckdb.html" class="external-link">duckdb</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">dbExecute</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"</span></span>
 <span><span class="st">  CREATE TABLE portfolio_periods AS</span></span>
 <span><span class="st">  SELECT * FROM (VALUES</span></span>
 <span><span class="st">    ('P001', 'Fire', 'Industry', DATE '2025-01-01', DATE '2025-06-30', 0.5, 600.0),</span></span>
@@ -595,6 +610,7 @@ as a lazy query:</p>
 <span><span class="st">    earned_premium</span></span>
 <span><span class="st">  )</span></span>
 <span><span class="st">"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 3</span></span>
 <span></span>
 <span><span class="va">periods_db</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/tbl.html" class="external-link">tbl</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"portfolio_periods"</span><span class="op">)</span></span>
 <span></span>
@@ -609,8 +625,13 @@ as a lazy query:</p>
 <span></span>
 <span><span class="va">merged_periods</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="va">merged_periods_db</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbDisconnect.html" class="external-link">dbDisconnect</a></span><span class="op">(</span><span class="va">con</span>, shutdown <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">large_database_path</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">large_database_path</span>, <span class="st">".wal"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">merged_periods</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 7</span></span></span>
+<span><span class="co">#&gt;   policy_id coverage sector   period_start period_end earned_exposure</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> P001      Fire     Industry 2025-01-01   2025-12-31               1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> P002      Fire     Retail   2025-01-01   2025-12-31               1</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: earned_premium &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>This database variant is restricted to DuckDB because date arithmetic
 and window-function details differ between database systems.
 <code><a href="../reference/rating_grid_db.html">rating_grid_db()</a></code> is based on standard grouped SQL and can
@@ -632,7 +653,7 @@ coverage periods.</li>
 grid second. A rating grid no longer contains the row-level interval
 structure needed to merge policy periods.</li>
 </ul>
-<p>The preferred sequence, where every step is relevant, is:</p>
+<p>One sequence, when both reductions are useful, is:</p>
 <p><code>raw policy periods -&gt; merge compatible periods -&gt; derive or transform rating factors -&gt; aggregate to model points -&gt; collect the compact grid -&gt; fit the model</code>.</p>
 <p>The temporal merge must precede model-point aggregation because start
 dates, end dates and adjacency between individual records are no longer
@@ -663,9 +684,8 @@ portfolio to follow the modelling workflow after data preparation.</li>
 package building blocks</a> places portfolio reduction within the wider
 actuarial package map.</li>
 <li>
-<a href="model-validation.html">Model validation</a> shows how model
-points can support exposure-aware observed-versus-expected reviews after
-fitting.</li>
+<a href="model-validation.html">Model validation</a> shows how to
+compare observed and expected claims after fitting.</li>
 <li>The <a href="https://mharinga.github.io/insurancerating/reference/index.html">reference
 index</a> documents the exact local and database-backed preparation
 functions.</li>

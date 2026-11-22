@@ -1,8 +1,7 @@
 # Compare GLM fit and predictive error metrics
 
-Compare GLM fit and predictive error metrics. The table reports AIC,
-BIC, response-scale RMSE and residual deviance for one or more fitted
-GLMs.
+Report AIC, BIC, response-scale RMSE and residual deviance for one or
+more fitted GLMs.
 
 ## Usage
 
@@ -101,16 +100,18 @@ Martin Haringa
 ## Examples
 
 ``` r
-m1 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
-          data = MTPL2)
-m2 <- glm(nclaims ~ area + premium, offset = log(exposure), family = poisson(),
-          data = MTPL2)
+portfolio <- as.data.frame(MTPL)
+portfolio$zip <- factor(portfolio$zip)
+m1 <- glm(nclaims ~ zip + offset(log(exposure)), family = poisson(),
+          data = portfolio)
+m2 <- glm(nclaims ~ zip + age_policyholder + offset(log(exposure)),
+          family = poisson(), data = portfolio)
 # RMSE is in claim counts for these exposure-offset models.
 model_performance(m1, m2)
 #> # Comparison of Model Performance Indices
 #> 
-#> Model |   AIC    |   BIC    | RMSE  | Residual_Deviance 
-#> ------+----------+----------+-------+------------------ 
-#>    m1 | 2285.729 | 2297.741 | 0.356 |          1608.024 
-#>    m2 | 2287.546 | 2305.566 | 0.356 |          1607.842 
+#> Model |    AIC    |    BIC    | RMSE  | Residual_Deviance 
+#> ------+-----------+-----------+-------+------------------ 
+#>    m1 | 23188.832 | 23222.068 | 0.364 |         16327.135 
+#>    m2 | 22967.939 | 23009.484 | 0.362 |         16104.242 
 ```

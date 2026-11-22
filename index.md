@@ -1,23 +1,15 @@
 # insurancerating
 
-`insurancerating` provides actuarial tools and building blocks for
-traditional insurance pricing workflows. GLMs remain at the core, with
-supporting functions for portfolio analysis, risk-factor structuring,
-model interpretation, tariff refinement, validation, large-loss
-treatment and scalable data preparation.
+`insurancerating` provides actuarial tools for insurance pricing in R.
+It works alongside standard modelling functions such as
+[`glm()`](https://rdrr.io/r/stats/glm.html) to help you analyse
+portfolio experience, interpret and refine tariff relativities, and
+validate fitted models. It also supports risk-factor structuring,
+large-loss treatment and preparation of large portfolios.
 
-The package works alongside standard R modelling tools such as
-[`glm()`](https://rdrr.io/r/stats/glm.html). Models are fitted with
-familiar R functions and can subsequently be analysed, interpreted,
-refined and validated in actuarial terms with `insurancerating`. The
-building blocks can be used independently or combined according to the
-portfolio and pricing question.
-
-The package is developed independently as a generally applicable
-actuarial R package. Its examples illustrate possible combinations of
-the building blocks; they are not a universal industry workflow or a
-description of the pricing methodology or governance process of any
-particular organisation.
+The building blocks can be used independently or combined to suit the
+portfolio. The examples illustrate choices, not a prescribed
+methodology.
 
 ## Installation
 
@@ -38,7 +30,8 @@ remotes::install_github("MHaringa/insurancerating")
 summarises observed experience and the exposure supporting each level of
 a rating factor. These unadjusted portfolio patterns are useful before
 modelling, but should not be interpreted as conditional tariff
-relativities.
+relativities. Compare an apparent difference with the exposure and claim
+count behind it.
 
 ``` r
 
@@ -66,44 +59,45 @@ risk premium by ZIP code.](reference/figures/unnamed-chunk-3-1.png)
 
 ## From model to refined tariff
 
-A standard Poisson GLM can be translated into an explicit tariff
-adjustment before it is refitted. The restriction below is deliberately
-small: it shows the refinement architecture without replacing the
-specialist documentation.
+An age-band GLM estimates one relativity per band. Smoothing proposes a
+continuous relationship, which can then be translated into a new set of
+bands.
 
 ``` r
 
+age_breaks <- c(18, 25, 32, 39, 51, 58, 65, 84, 95)
+portfolio$age_band <- cut(portfolio$age_policyholder, age_breaks,
+                          include.lowest = TRUE)
+
 frequency_model <- glm(
-  nclaims ~ zip + offset(log(exposure)),
+  nclaims ~ age_band + offset(log(exposure)),
   family = poisson(),
   data = portfolio
 )
 
-zip_restrictions <- data.frame(
-  zip = c("0", "1", "2", "3"),
-  zip_restricted = c(0.90, 0.95, 1.00, 1.10)
-)
-
-refined_model <- frequency_model |>
+tariff_breaks <- c(18, 24, 30, 40, 55, 70, 85, 95)
+proposal <- frequency_model |>
   prepare_refinement(data = portfolio) |>
-  add_restriction(zip_restrictions) |>
-  refit()
+  add_smoothing("age_band", "age_policyholder", breaks = tariff_breaks,
+                k = 5, weights = "exposure")
 
-rating_table(refined_model, exposure = FALSE)
+tariff <- refit(proposal, intercept_only = TRUE)
+autoplot(proposal) +
+  ggplot2::labs(x = "Policyholder age", y = "Tariff relativity") +
+  ggplot2::theme(legend.position = "bottom")
 ```
 
-``` R
-##      risk_factor       level est_refined_model
-## 1    (Intercept) (Intercept)          0.136653
-## 2 zip_restricted           0          0.900000
-## 3 zip_restricted           1          0.950000
-## 4 zip_restricted           2          1.000000
-## 5 zip_restricted           3          1.100000
-```
+![Original age-band GLM relativities, a dashed proposed smoothing curve
+and the clustered tariff relativities held fixed in the
+refit.](reference/figures/refinement-preview-1.png)
 
-The refinement steps remain explicit and reviewable. Their actuarial
-rationale and effect on the portfolio should still be assessed before
-implementation.
+The blue steps are the original GLM estimates. The dashed curve is the
+smoothing proposal; the orange steps are the resulting tariff bands.
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+holds those band effects fixed and re-estimates the base claim rate, so
+their relativities do not move again. See the [refinement
+example](https://mharinga.github.io/insurancerating/articles/refinement-workflow.html#quick-start)
+for how to inspect the fitted result.
 
 ## What does insurancerating help with?
 
@@ -138,7 +132,9 @@ implementation.
 - [Model
   validation](https://mharinga.github.io/insurancerating/articles/model-validation.html)
   Assess model fit, stability and tariff plausibility, compare observed
-  with expected claims, and evaluate predictions on later periods.
+  with expected claims, and evaluate predictions on later periods. Start
+  with the [quick
+  start](https://mharinga.github.io/insurancerating/articles/model-validation.html#quick-start).
 
 - [Large
   Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.html)

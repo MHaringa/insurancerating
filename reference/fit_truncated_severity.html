@@ -172,16 +172,23 @@ therefore produce an error.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">observed</span> <span class="op">&lt;-</span> <span class="va">MTPL2</span><span class="op">$</span><span class="va">amount</span><span class="op">[</span><span class="va">MTPL2</span><span class="op">$</span><span class="va">amount</span> <span class="op">&gt;</span> <span class="fl">500</span> <span class="op">&amp;</span> <span class="va">MTPL2</span><span class="op">$</span><span class="va">amount</span> <span class="op">&lt;</span> <span class="fl">10000</span><span class="op">]</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">claim_amount</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/GammaDist.html" class="external-link">rgamma</a></span><span class="op">(</span><span class="fl">400</span>, shape <span class="op">=</span> <span class="fl">2</span>, scale <span class="op">=</span> <span class="fl">1500</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Amounts outside the interval are absent, not capped at the endpoints.</span></span></span>
+<span class="r-in"><span><span class="va">observed</span> <span class="op">&lt;-</span> <span class="va">claim_amount</span><span class="op">[</span><span class="va">claim_amount</span> <span class="op">&gt;</span> <span class="fl">500</span> <span class="op">&amp;</span> <span class="va">claim_amount</span> <span class="op">&lt;</span> <span class="fl">10000</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">fit_truncated_severity</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  losses <span class="op">=</span> <span class="va">observed</span>,</span></span>
 <span class="r-in"><span>  distribution <span class="op">=</span> <span class="st">"gamma"</span>,</span></span>
 <span class="r-in"><span>  lower_truncation <span class="op">=</span> <span class="fl">500</span>,</span></span>
 <span class="r-in"><span>  upper_truncation <span class="op">=</span> <span class="fl">10000</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Tried 136 start combinations: 136 succeeded, 0 failed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Best fit came from combination 1 with loglik = -3298.76.</span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Computation failed in `stat_function()`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Caused by error in `fun()`:</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> could not find function "fun"</span>
+<span class="r-plt img"><img src="fit_truncated_severity-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

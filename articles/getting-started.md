@@ -2,53 +2,23 @@
 
 ## Introduction
 
-`insurancerating` provides building blocks for common actuarial pricing
-tasks in R. This vignette presents one possible workflow. It is an
-illustration rather than a prescribed end-to-end pricing methodology.
+This example uses a motor insurance portfolio to estimate claim
+frequency and severity, combine them into a technical risk premium, and
+represent that premium with a simpler tariff. Along the way, it shows
+how to review observed experience, check the frequency model and make an
+explicit tariff adjustment.
 
-The sequence is chosen to show how several package components can be
-combined. Depending on the portfolio, available data, modelling
-objective and applicable requirements, activities may be omitted, added,
-repeated or performed in a different order. The example is not intended
-to represent a canonical industry workflow or the internal process of a
-particular organisation.
-
-A GLM-based pricing exercise commonly combines several tasks:
-
-1.  understand observed portfolio experience and rating factors
-2.  construct modelling variables
-3.  estimate frequency, severity and technical risk
-4.  translate technical risk into a reviewable tariff structure
-5.  interpret, validate and refine the resulting model
-
-The work is often iterative. Exploratory results may lead to different
-variable definitions, large-loss treatment may affect the severity
-model, and tariff or implementation constraints may require the
-statistical models to be revisited. The package functions can be
-combined in different orders depending on the portfolio and modelling
-objective.
-
-The example illustrates how to:
-
-- analyse risk factors with
-  [`factor_analysis()`](https://mharinga.github.io/insurancerating/reference/factor_analysis.md)
-- estimate pricing models with
-  [`glm()`](https://rdrr.io/r/stats/glm.html)
-- interpret coefficients with
-  [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-- assess model behaviour and stability
-- apply a small actuarial refinement
-
-The focus is on the transition from observed portfolio experience to
-fitted technical risk and a tariff structure that can be reviewed
-actuarially.
+The example combines several `insurancerating` building blocks with
+standard R modelling functions. It illustrates one possible approach;
+the choice and order of the building blocks depend on the portfolio and
+pricing question.
 
 ## Portfolio and data
 
 The examples consistently use `MTPL`, a motor portfolio with:
 
 - number of claims (`nclaims`),
-- exposure (`exposure`),
+- earned exposure in policy-years (`exposure`),
 - total claim cost per portfolio record (`amount`),
 - several rating factors
 
@@ -225,9 +195,10 @@ claim outcomes. Each distinct risk-factor value on the fitted curve has
 equal influence on this approximation; exposure is not applied as a
 second weight.
 
-The resulting segments should be reviewed against exposure, observed
-experience, stability and practical tariff requirements before they are
-used in a model.
+The oldest band contains little exposure and few claims compared with
+the other bands. A different set of boundaries may give a more stable
+estimate there. The example retains the candidate bands to illustrate
+how they are used.
 
 ### Adding tariff segments to the data
 
@@ -268,7 +239,7 @@ A common decomposition is:
 
 
 mod_freq <- glm(
-  nclaims ~ age_cat,
+  nclaims ~ age_cat + zip + bm,
   offset = log(exposure),
   family = poisson(),
   data = dat
@@ -279,7 +250,8 @@ The response is the observed claim count for each policy-period. Because
 `log(exposure)` is included as an offset,
 `predict(mod_freq, type = "response")` returns the expected number of
 claims for that record’s exposure. Dividing that prediction by exposure
-gives claim frequency per exposure-year.
+gives claim frequency per exposure-year. The frequency model also
+includes ZIP code and bonus-malus score (`bm`).
 
 ### Severity model
 
@@ -303,7 +275,8 @@ by `nclaims` gives average claim severity. Claim count is then used as
 the model weight because a row containing several claims represents more
 severity observations than a row containing one claim. Frequency and
 severity are modelled separately because they describe different parts
-of the loss process.
+of the loss process. In these data, every row with claims has a positive
+total claim amount.
 
 ## Constructing technical risk premium
 
@@ -333,19 +306,19 @@ premium_df |>
   ) |>
   head()
 #>    exposure expected_claim_count claim_frequency expected_average_severity
-#> 1 1.0000000           0.10100599      0.10100599                  63357.63
-#> 2 1.0000000           0.13595893      0.13595893                  60320.26
-#> 3 1.0000000           0.10100599      0.10100599                  63357.63
-#> 4 1.0000000           0.13595893      0.13595893                  60320.26
-#> 5 1.0000000           0.09746194      0.09746194                  50985.39
-#> 6 0.4547945           0.04593697      0.10100599                  63357.63
+#> 1 1.0000000           0.10526885      0.10526885                  63357.63
+#> 2 1.0000000           0.14216313      0.14216313                  60320.26
+#> 3 1.0000000           0.09427870      0.09427870                  63357.63
+#> 4 1.0000000           0.14013316      0.14013316                  60320.26
+#> 5 1.0000000           0.09784983      0.09784983                  50985.39
+#> 6 0.4547945           0.04561253      0.10029261                  63357.63
 #>   expected_loss risk_premium
-#> 1      6399.500     6399.500
-#> 2      8201.078     8201.078
-#> 3      6399.500     6399.500
-#> 4      8201.078     8201.078
-#> 5      4969.135     4969.135
-#> 6      2910.457     6399.500
+#> 1      6669.585     6669.585
+#> 2      8575.317     8575.317
+#> 3      5973.275     5973.275
+#> 4      8452.869     8452.869
+#> 5      4988.911     4988.911
+#> 6      2889.902     6354.302
 ```
 
 The units are now explicit:
@@ -368,7 +341,7 @@ commercial premium.
 ``` r
 
 
-burn_unrestricted <- glm(
+tariff_model <- glm(
   risk_premium ~ age_cat + zip,
   weights = exposure,
   family = Gamma(link = "log"),
@@ -379,8 +352,11 @@ burn_unrestricted <- glm(
 This second GLM is not statistically required after fitting frequency
 and severity. Here it is used as a tariff-construction step: it
 approximates the combined technical risk with a compact multiplicative
-structure based on `age_cat` and `zip`. Exposure weights give more
-influence to tariff cells that represent a larger part of the portfolio.
+structure based on `age_cat` and `zip`. The technical target varies by
+bonus-malus score as well as age and ZIP; this example deliberately
+leaves bonus-malus out of the tariff to show how the more detailed
+target can be represented by fewer factors. Exposure weights give more
+influence to records that represent a larger part of the portfolio.
 
 The response is a fitted technical target rather than an observed claim
 outcome. The model is therefore used to obtain an interpretable and
@@ -394,7 +370,7 @@ underlying frequency and severity analyses.
 ``` r
 
 
-rt <- rating_table(burn_unrestricted) |>
+rt <- rating_table("Tariff model" = tariff_model) |>
   add_factor_experience(
     data = premium_df,
     claim_count = "nclaims",
@@ -403,20 +379,20 @@ rt <- rating_table(burn_unrestricted) |>
     metric = "risk_premium"
   )
 rt
-#>    risk_factor       level est_burn_unrestricted exposure
-#> 1  (Intercept) (Intercept)          8201.0782373       NA
-#> 2      age_cat     [18,25]             1.9848879     1331
-#> 3      age_cat     (25,32]             2.0914417     3649
-#> 4      age_cat     (32,39]             1.0312559     4247
-#> 5      age_cat     (39,51]             1.0000000     7421
-#> 6      age_cat     (51,58]             0.5826148     3245
-#> 7      age_cat     (58,65]             0.6059124     2791
-#> 8      age_cat     (65,84]             0.7803242     3901
-#> 9      age_cat     (84,95]             0.6199937       72
-#> 10         zip           0             1.0000000      207
-#> 11         zip           1             1.0000000    11081
-#> 12         zip           2             1.0000000     7783
-#> 13         zip           3             1.0000000     7588
+#>    risk_factor       level est_Tariff model exposure
+#> 1  (Intercept) (Intercept)     8553.9835542       NA
+#> 2      age_cat     [18,25]        1.9861849     1331
+#> 3      age_cat     (25,32]        2.0940331     3649
+#> 4      age_cat     (32,39]        1.0317012     4247
+#> 5      age_cat     (39,51]        1.0000000     7421
+#> 6      age_cat     (51,58]        0.5823491     3245
+#> 7      age_cat     (58,65]        0.6068409     2791
+#> 8      age_cat     (65,84]        0.7810566     3901
+#> 9      age_cat     (84,95]        0.6219895       72
+#> 10         zip           0        1.0056518      207
+#> 11         zip           1        1.0000000    11081
+#> 12         zip           2        0.9010247     7783
+#> 13         zip           3        0.9546628     7588
 ```
 
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
@@ -431,31 +407,25 @@ judging whether an apparent difference is sufficiently credible.
 ``` r
 
 
-autoplot(rt, metric = "risk_premium")
+autoplot(rt, risk_factors = "zip", metric = "risk_premium")
 ```
 
 ![](getting-started_files/figure-html/unnamed-chunk-13-1.png)
 
-This plot can be used to assess:
+The largest gap is for ZIP category 0, which has only about 207
+policy-years. The observed relativity reflects the claims and risk mix
+of that group. The modelled relativity describes the ZIP effect in the
+tariff, holding age fixed. The gap merits checking against the available
+experience; it does not, on its own, indicate an adjustment.
 
-- the relative size of coefficients
-- the structure across levels
-- the exposure behind each level
-- whether additional refinement may be needed
+## Validating the frequency model
 
-At this stage, the relevant questions are:
-
-- are coefficients sufficiently stable?
-- do they follow the expected pattern?
-- are some levels driven by limited exposure?
-
-## Validating the model
-
-Validation combines statistical diagnostics with actuarial review. No
-single measure determines whether a tariff model is suitable. Relevant
-questions include dispersion, residual structure, out-of-sample
-stability, exposure by level, plausible factor shapes and agreement with
-observed experience.
+The diagnostics below assess `mod_freq`, the Poisson claim-frequency
+model. They do not validate `tariff_model`, which approximates the
+combined frequency and severity predictions. To assess the tariff
+itself, check the fit to that technical target and compare expected and
+observed losses on the same exposure basis in appropriate evaluation
+data.
 
 ### Overdispersion
 
@@ -463,8 +433,8 @@ observed experience.
 
 
 check_overdispersion(mod_freq)
-#> Dispersion ratio =     1.187
-#> Pearson's Chi-squared = 35590.309
+#> Dispersion ratio =     1.185
+#> Pearson's Chi-squared = 35531.969
 #> p-value =   < 0.001
 #> Overdispersion detected.
 ```
@@ -482,9 +452,9 @@ factor-level checks.
 model_performance(mod_freq)
 #> # Comparison of Model Performance Indices
 #> 
-#>  Model   |   AIC    |    BIC    | RMSE  | Residual_Deviance 
-#> ---------+----------+-----------+-------+------------------ 
-#> mod_freq | 22949.04 | 23015.512 | 0.362 |         16079.343
+#>  Model   |    AIC    |    BIC    | RMSE  | Residual_Deviance 
+#> ---------+-----------+-----------+-------+------------------ 
+#> mod_freq | 22949.959 | 23049.666 | 0.362 |         16072.262
 ```
 
 This reports AIC, BIC, response-scale RMSE and residual deviance. RMSE
@@ -497,6 +467,7 @@ out-of-sample performance.
 ``` r
 
 
+set.seed(123)
 bp <- validate_performance(
   mod_freq,
   dat,
@@ -512,9 +483,13 @@ autoplot(bp)
 
 This draws 80 rows per 100 input rows with replacement and evaluates
 RMSE on the rows not used for training (out of bag). It is not an 80/20
-split. The score distribution reflects both refitting the model and
-scoring it on different records; it is not a prediction interval for
-future claims.
+split. The age bands were selected using the full example portfolio, so
+this assesses GLM refitting with those bands held fixed, not the
+predictive performance of the segmentation procedure. To evaluate the
+full procedure on separate data, derive the bands using only the
+training data and apply them unchanged to the evaluation data. The score
+distribution reflects both refitting the model and scoring it on
+different records; it is not a prediction interval for future claims.
 
 A single fit statistic is not sufficient. In pricing practice, the
 numerical results should be reviewed together with exposure, observed
@@ -523,68 +498,48 @@ dedicated model validation vignette covers these checks in more detail.
 
 ## Refining the tariff
 
-At this point, the example has produced:
-
-- portfolio-level insight
-- fitted pricing models
-- interpretable factor relativities
-- basic performance diagnostics
-
-Depending on the intended tariff, a further refinement step may be
-useful before implementation.
-
-Typical reasons include:
-
-- irregular coefficient patterns
-- monotonicity requirements
-- externally imposed restrictions
-- expert-driven adjustments
-
-The following small example fixes one ZIP relativity as an explicit
-actuarial assumption. Other ZIP levels retain their current
-relativities, and the intercept-only refit recalibrates the overall
-level without re-estimating the prescribed tariff effects.
+To illustrate a fixed restriction, set the tariff relativity for ZIP 3
+to `1.05`. This is an example assumption, not a conclusion from the
+diagnostics above. The other ZIP relativities stay fixed, and the refit
+re-estimates the overall level.
 
 ``` r
 
 
-zip_restriction <- data.frame(
-  zip = "3",
-  relativity = 1.05
-)
+tariff_refinement <- prepare_refinement(tariff_model, data = premium_df) |>
+  add_restriction(c("3" = 1.05), model_variable = "zip")
 
-tariff_refinement <- prepare_refinement(
-  burn_unrestricted,
-  data = premium_df
+refined_tariff <- refit(tariff_refinement, intercept_only = TRUE)
+
+zip_effects <- rating_table(
+  tariff_model, refined_tariff,
+  estimate_name = c("Before", "After"),
+  exposure = FALSE
 ) |>
-  add_restriction(zip_restriction)
+  as.data.frame() |>
+  filter(level == "3")
 
-burn_refined <- refit(tariff_refinement, intercept_only = TRUE)
-rating_table(burn_refined)
-#>    risk_factor       level est_burn_refined exposure
-#> 1  (Intercept) (Intercept)     8089.9224879       NA
-#> 2   relativity           0        1.0000000      207
-#> 3   relativity           1        1.0000000    11081
-#> 4   relativity           2        1.0000000     7783
-#> 5   relativity           3        1.0500000     7588
-#> 6      age_cat     [18,25]        1.9848879     1331
-#> 7      age_cat     (25,32]        2.0914417     3649
-#> 8      age_cat     (32,39]        1.0312559     4247
-#> 9      age_cat     (39,51]        1.0000000     7421
-#> 10     age_cat     (51,58]        0.5826148     3245
-#> 11     age_cat     (58,65]        0.6059124     2791
-#> 12     age_cat     (65,84]        0.7803242     3901
-#> 13     age_cat     (84,95]        0.6199937       72
+knitr::kable(data.frame(
+  ZIP = "3",
+  Before = zip_effects$Before[zip_effects$risk_factor == "zip"],
+  After = zip_effects$After[zip_effects$risk_factor == "zip_restricted"]
+), digits = 3)
 ```
 
-The value `1.05` is illustrative; a production restriction requires
-actuarial support and governance. Smoothing, shrinkage, rebasing and
-more extensive restrictions are described in [Refinement building
-blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md).
+| ZIP | Before | After |
+|:----|-------:|------:|
+| 3   |  0.955 |  1.05 |
+
+The refit stores the fixed ZIP effect as `zip_restricted`. A relativity
+of `1.05` means 5% above the reference ZIP, not a 5% increase on the
+previous relativity. Since the base level was also re-estimated, the
+table is not a comparison of final premiums. See [Refinement building
+blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md)
+for more adjustment and audit options.
 
 ## Summary
 
-A possible sequence in `insurancerating` is:
+The building blocks used in this example were:
 
 ``` r
 
@@ -596,7 +551,7 @@ glm()                         # estimate frequency and severity
 add_prediction()              # construct technical risk premium
 glm()                         # represent risk in a tariff structure
 rating_table()                # interpret tariff relativities
-validate_performance()        # assess stability
+validate_performance()        # assess frequency model prediction error
 prepare_refinement()          # prepare an actuarial refinement
 refit()                       # fit the refined tariff model
 ```

@@ -334,7 +334,7 @@
       <dl></dl></div><div class="section level2">
 
       <h3 id="model-performance-calibration">Model performance &amp; calibration<a class="anchor" aria-label="anchor" href="#model-performance-calibration"></a></h3>
-      <div class="section-desc"><p>Compare fit, prediction error and calibration. See the <a href="../articles/model-validation.html#reviewing-observed-versus-expected-experience">observed-versus-expected review</a>.</p></div>
+      <div class="section-desc"><p>Compare fit, prediction error and calibration. Start with the <a href="../articles/model-validation.html#quick-start">validation quick start</a>.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -376,7 +376,14 @@
           <code><a href="coefficient_stability.html">coefficient_stability()</a></code>
 
         </dt>
-        <dd>Assess GLM coefficient stability by portfolio-row bootstrap</dd>
+        <dd>Assess GLM coefficient stability by resampling portfolio rows</dd>
+
+        <dt>
+
+          <code><a href="autoplot.bootstrap_coefficients.html">autoplot(<i>&lt;bootstrap_coefficients&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot bootstrap coefficient stability</dd>
       </dl></div><div class="section level2">
 
       <h3 id="model-diagnostics">Model diagnostics<a class="anchor" aria-label="anchor" href="#model-diagnostics"></a></h3>
@@ -429,14 +436,14 @@
           <code><a href="rating_grid.html">rating_grid()</a></code>
 
         </dt>
-        <dd>Construct observed rating-grid points</dd>
+        <dd>Aggregate portfolio records into observed model points</dd>
 
         <dt>
 
           <code><a href="rating_grid_db.html">rating_grid_db()</a></code>
 
         </dt>
-        <dd>Reduce a database portfolio to observed rating-grid points</dd>
+        <dd>Aggregate database records into observed model points</dd>
       </dl></div><div class="section level2">
       <h2 id="policy-period-operations">Policy period operations<a class="anchor" aria-label="anchor" href="#policy-period-operations"></a></h2>
 

@@ -66,22 +66,23 @@ necessarily unweighted portfolio rates.
 ## Examples
 
 ``` r
-portfolio <- as.data.frame(MTPL2)
-portfolio$area <- factor(portfolio$area)
+portfolio <- as.data.frame(MTPL)
+portfolio$zip <- factor(portfolio$zip)
 # Illustrative years; the source data have no calendar-year field.
 portfolio$year <- rep(2023:2024, length.out = nrow(portfolio))
-model <- glm(nclaims ~ area + offset(log(exposure)),
+model <- glm(nclaims ~ age_policyholder + offset(log(exposure)),
              family = poisson(), data = portfolio)
 
 autoplot(calibration_analysis(model, portfolio))
 
-# Each point compares observed and expected claims per policy-year.
+# On these estimation data, each point compares observed and expected
+# claims per policy-year in a group of similar predicted risks.
 autoplot(calibration_analysis(model, portfolio, groups = 5))
 
 autoplot(calibration_analysis(model, portfolio, by = "year"))
 
-autoplot(calibration_analysis(model, portfolio, by = "area"))
+autoplot(calibration_analysis(model, portfolio, by = "zip"))
 
-autoplot(calibration_analysis(model, portfolio, by = c("year", "area")))
+autoplot(calibration_analysis(model, portfolio, by = c("year", "zip")))
 
 ```

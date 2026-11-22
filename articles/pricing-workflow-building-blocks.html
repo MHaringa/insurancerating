@@ -257,8 +257,8 @@ claim amount.</p>
 <code class="sourceCode R"><span><span class="va">claims_grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span></span>
 <span>  <span class="va">MTPL</span>,</span>
 <span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"zip"</span>, <span class="st">"bm"</span><span class="op">)</span>,</span>
-<span>  exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
-<span>  aggregate_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nclaims"</span>, <span class="st">"amount"</span><span class="op">)</span></span>
+<span>  aggregate_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nclaims"</span>, <span class="st">"amount"</span><span class="op">)</span>,</span>
+<span>  split <span class="op">=</span> <span class="st">"exposure"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">claims_grid</span><span class="op">)</span></span>
@@ -277,23 +277,37 @@ for every model family or diagnostic. Severity aggregation, for example,
 requires average claim amount as the response and claim count as the
 weight, while record-level residual and influence information is no
 longer available after aggregation.</p>
-<p>Temporal consolidation normally precedes model-point aggregation when
-the original interval structure is needed:</p>
+<p>If both reductions are useful, consolidate periods before aggregating
+to model points: the grid no longer retains the individual periods. Keep
+the attributes and additive totals needed by the grid:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">periods_reduced</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_date_ranges.html">merge_date_ranges</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">policy_periods</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  policy_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"P001"</span>, <span class="st">"P001"</span><span class="op">)</span>,</span>
+<span>  coverage <span class="op">=</span> <span class="st">"Building"</span>,</span>
+<span>  region <span class="op">=</span> <span class="st">"North"</span>,</span>
+<span>  period_start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2025-01-01"</span>, <span class="st">"2025-07-01"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  period_end <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2025-06-30"</span>, <span class="st">"2025-12-31"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  earned_exposure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.5</span><span class="op">)</span>,</span>
+<span>  claim_count <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">2L</span><span class="op">)</span>,</span>
+<span>  claim_amount <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5000</span>, <span class="fl">12000</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">periods_reduced</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_date_ranges.html">merge_date_ranges</a></span><span class="op">(</span></span>
 <span>  <span class="va">policy_periods</span>,</span>
 <span>  period_start <span class="op">=</span> <span class="st">"period_start"</span>,</span>
 <span>  period_end <span class="op">=</span> <span class="st">"period_end"</span>,</span>
-<span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"policy_id"</span>, <span class="st">"coverage"</span><span class="op">)</span>,</span>
-<span>  aggregate_cols <span class="op">=</span> <span class="st">"earned_exposure"</span></span>
+<span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"policy_id"</span>, <span class="st">"coverage"</span>, <span class="st">"region"</span><span class="op">)</span>,</span>
+<span>  aggregate_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"earned_exposure"</span>, <span class="st">"claim_count"</span>, <span class="st">"claim_amount"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="../reference/rating_grid.html">rating_grid</a></span><span class="op">(</span></span>
 <span>  <span class="va">periods_reduced</span>,</span>
 <span>  group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"coverage"</span>, <span class="st">"region"</span><span class="op">)</span>,</span>
-<span>  exposure <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
-<span>  aggregate_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"claim_count"</span>, <span class="st">"claim_amount"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span>  aggregate_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"claim_count"</span>, <span class="st">"claim_amount"</span><span class="op">)</span>,</span>
+<span>  split <span class="op">=</span> <span class="st">"earned_exposure"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt;   coverage region claim_count claim_amount earned_exposure</span></span>
+<span><span class="co">#&gt; 1 Building  North           3        17000               1</span></span></code></pre></div>
 <p>The detailed in-memory and database-backed workflows are described in
 <a href="large-portfolios.html">Large Portfolios</a>.</p>
 </div>
@@ -308,15 +322,34 @@ mechanical data operations.</p>
 risk premium remain below alternative thresholds. It supports judgement
 about the balance between retaining risk differentiation and limiting
 volatility; it does not select a threshold automatically.</p>
+<p>The threshold applies to each row’s amount. This small example has at
+most one claim per policy-period. To use a per-claim threshold on
+records with several claims, cap each claim before aggregating retained
+and excess amounts.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">thresholds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assess_excess_threshold.html">assess_excess_threshold</a></span><span class="op">(</span></span>
-<span>  <span class="va">portfolio</span>,</span>
+<code class="sourceCode R"><span><span class="va">loss_portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  sector <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Retail"</span>, <span class="st">"Services"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
+<span>  earned_exposure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>  claim_count <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0L</span>, <span class="fl">1L</span>, <span class="fl">1L</span>, <span class="fl">0L</span>, <span class="fl">1L</span>, <span class="fl">1L</span><span class="op">)</span>,</span>
+<span>  claim_amount <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">13000</span>, <span class="fl">160000</span>, <span class="fl">0</span>, <span class="fl">40000</span>, <span class="fl">75000</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">thresholds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assess_excess_threshold.html">assess_excess_threshold</a></span><span class="op">(</span></span>
+<span>  <span class="va">loss_portfolio</span>,</span>
 <span>  claim_amount <span class="op">=</span> <span class="st">"claim_amount"</span>,</span>
 <span>  thresholds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50000</span>, <span class="fl">100000</span>, <span class="fl">150000</span><span class="op">)</span>,</span>
 <span>  exposure <span class="op">=</span> <span class="st">"earned_exposure"</span>,</span>
 <span>  group <span class="op">=</span> <span class="st">"sector"</span>,</span>
 <span>  claim_count <span class="op">=</span> <span class="st">"claim_count"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span><span class="va">thresholds</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sector"</span>, <span class="st">"threshold"</span>, <span class="st">"capped_loss"</span>, <span class="st">"excess_loss"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt;     sector threshold capped_loss excess_loss</span></span>
+<span><span class="co">#&gt; 1   Retail     50000       63000      110000</span></span>
+<span><span class="co">#&gt; 2   Retail    100000      113000       60000</span></span>
+<span><span class="co">#&gt; 3   Retail    150000      163000       10000</span></span>
+<span><span class="co">#&gt; 4 Services     50000       90000       25000</span></span>
+<span><span class="co">#&gt; 5 Services    100000      115000           0</span></span>
+<span><span class="co">#&gt; 6 Services    150000      115000           0</span></span></code></pre></div>
 <p>After a threshold has been selected,
 <code><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss()</a></code> supports two distinct uses of
 the same excess-loss allocation:</p>
@@ -349,7 +382,7 @@ risk premium</td>
 </table>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">large_loss_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/redistribute_excess_loss.html">redistribute_excess_loss</a></span><span class="op">(</span></span>
-<span>  <span class="va">portfolio</span>,</span>
+<span>  <span class="va">loss_portfolio</span>,</span>
 <span>  claim_amount <span class="op">=</span> <span class="st">"claim_amount"</span>,</span>
 <span>  threshold <span class="op">=</span> <span class="fl">100000</span>,</span>
 <span>  claim_count <span class="op">=</span> <span class="st">"claim_count"</span>,</span>
@@ -462,25 +495,18 @@ relativities and makes reference levels explicit.
 <code><a href="../reference/add_factor_experience.html">add_factor_experience()</a></code> adds the unadjusted experience
 observed for those same risk-factor levels.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">frequency_model</span>, exposure <span class="op">=</span> <span class="st">"exposure"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_factor_experience.html">add_factor_experience</a></span><span class="op">(</span></span>
-<span>    data <span class="op">=</span> <span class="va">portfolio</span>,</span>
-<span>    claim_count <span class="op">=</span> <span class="st">"nclaims"</span>,</span>
-<span>    exposure <span class="op">=</span> <span class="st">"exposure"</span>,</span>
-<span>    metric <span class="op">=</span> <span class="st">"frequency"</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">frequency_model</span>, exposure <span class="op">=</span> <span class="st">"exposure"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   risk_factor       level est_frequency_model exposure</span></span>
 <span><span class="co">#&gt; 1 (Intercept) (Intercept)           0.1402024       NA</span></span>
 <span><span class="co">#&gt; 2         zip           0           1.0000000      207</span></span>
 <span><span class="co">#&gt; 3         zip           1           1.0254064    11081</span></span>
 <span><span class="co">#&gt; 4         zip           2           0.9238016     7783</span></span>
 <span><span class="co">#&gt; 5         zip           3           0.9757522     7588</span></span></code></pre></div>
-<p>This comparison answers two related questions: what conditional
-effect did the model estimate, and what pattern is visible directly in
-the portfolio? The two need not coincide because the model adjusts for
-its other terms. Exposure and claim volume remain important when
-deciding whether either pattern is stable enough for tariff use.</p>
+<p>Here ZIP is the only model effect, so its fitted claim rates equal
+the observed ZIP rates on the estimation data. <a href="model-validation.html">Model validation</a> shows an age-adjusted
+comparison in which the fitted and observed lines can differ. That
+comparison is not observed versus expected claims from the complete
+model; use <code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code> for the latter.</p>
 </div>
 <div class="section level2">
 <h2 id="refining-the-tariff">Refining the tariff<a class="anchor" aria-label="anchor" href="#refining-the-tariff"></a>
@@ -489,14 +515,9 @@ deciding whether either pattern is stable enough for tariff use.</p>
 tariff decisions. The architecture is:</p>
 <p><code>estimated model -&gt; prepare refinement -&gt; apply adjustments -&gt; refit -&gt; tariff model</code>.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">zip_restrictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  zip <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0"</span>, <span class="st">"3"</span><span class="op">)</span>,</span>
-<span>  relativity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.95</span>, <span class="fl">1.05</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="va">frequency_model</span> <span class="op">|&gt;</span></span>
+<code class="sourceCode R"><span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="va">frequency_model</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="va">zip_restrictions</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0"</span> <span class="op">=</span> <span class="fl">0.95</span>, <span class="st">"3"</span> <span class="op">=</span> <span class="fl">1.05</span><span class="op">)</span>, model_variable <span class="op">=</span> <span class="st">"zip"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/add_smoothing.html">add_smoothing()</a></code> addresses unstable or implausibly
 irregular adjacent effects. <code><a href="../reference/add_restriction.html">add_restriction()</a></code> records
@@ -540,6 +561,15 @@ response-scale error?</td>
 <td>How sensitive is measured performance to portfolio resampling?</td>
 <td><code><a href="../reference/validate_performance.html">validate_performance()</a></code></td>
 </tr>
+<tr class="odd">
+<td>How sensitive are fitted tariff effects to resampling?</td>
+<td><code><a href="../reference/coefficient_stability.html">coefficient_stability()</a></code></td>
+</tr>
+<tr class="even">
+<td>How do predicted and observed claims compare on the same
+exposure?</td>
+<td><code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code></td>
+</tr>
 </tbody>
 </table>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
@@ -563,6 +593,7 @@ model-point aggregation lazily in a database.
 <code><a href="../reference/merge_date_ranges_db.html">merge_date_ranges_db()</a></code> performs temporal consolidation in
 DuckDB. The main principle is to perform the expensive reduction close
 to the data and collect only the compact modelling table into R.</p>
+<p>Given an existing lazy database table <code>portfolio_db</code>:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">grid_query</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rating_grid_db.html">rating_grid_db</a></span><span class="op">(</span></span>
 <span>  <span class="va">portfolio_db</span>,</span>
@@ -575,7 +606,7 @@ to the data and collect only the compact modelling table into R.</p>
 <p>The database-backed functions preserve the same conceptual
 distinction as the local functions: period consolidation is temporal,
 while rating-grid reduction constructs model points. Memory planning,
-DuckDB examples and the preferred order of operations are covered in <a href="large-portfolios.html">Large Portfolios</a>.</p>
+DuckDB examples and when to combine both reductions are covered in <a href="large-portfolios.html">Large Portfolios</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="choosing-the-building-blocks">Choosing the building blocks<a class="anchor" aria-label="anchor" href="#choosing-the-building-blocks"></a>

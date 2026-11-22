@@ -1,4 +1,4 @@
-# Reduce a database portfolio to observed rating-grid points
+# Aggregate database records into observed model points
 
 Construct the same type of observed rating-factor combinations as
 [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md),
@@ -34,8 +34,8 @@ rating_grid_db(
 
 - group_by:
 
-  Character vector containing the columns that define an observed
-  rating-grid point.
+  Character vector containing the columns that define an observed model
+  point.
 
 - exposure:
 
@@ -106,6 +106,13 @@ Martin Haringa
 ``` r
 if (FALSE) { # \dontrun{
 con <- DBI::dbConnect(duckdb::duckdb())
+portfolio <- data.frame(
+  sector = c("Retail", "Retail", "Services"),
+  region = c("North", "North", "West"),
+  earned_exposure = c(1, 0.5, 1),
+  earned_premium = c(200, 100, 250)
+)
+DBI::dbWriteTable(con, "portfolio", portfolio)
 portfolio_db <- dplyr::tbl(con, "portfolio")
 
 grid_db <- rating_grid_db(
@@ -118,5 +125,6 @@ grid_db <- rating_grid_db(
 dbplyr::sql_render(grid_db)
 grid <- dplyr::collect(grid_db)
 DBI::dbDisconnect(con, shutdown = TRUE)
+grid
 } # }
 ```

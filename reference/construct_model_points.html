@@ -66,29 +66,18 @@
 
 
 <dt id="arg-group-by">group_by<a class="anchor" aria-label="anchor" href="#arg-group-by"></a></dt>
-<dd><p>Optional character vector with the variables that define the
-rating-grid points. If <code>NULL</code> and <code>x</code> is a <code>"model_data"</code> object, the
-risk-factor variables stored in the object are used. If <code>NULL</code> and <code>x</code> is a
-plain <code>data.frame</code>, all columns except those listed in <code>exposure</code>,
-<code>exposure_by</code>, and <code>aggregate_cols</code> are used.</p></dd>
+<dd><p>See <code><a href="rating_grid.html">rating_grid()</a></code>. The legacy <code>exposure</code> and <code>exposure_by</code>
+arguments correspond to <code>split</code> and <code>split_by</code>.</p></dd>
 
 
-<dt id="arg-exposure">exposure<a class="anchor" aria-label="anchor" href="#arg-exposure"></a></dt>
-<dd><p>Optional character; name of the exposure column to aggregate.</p></dd>
-
-
-<dt id="arg-exposure-by">exposure_by<a class="anchor" aria-label="anchor" href="#arg-exposure-by"></a></dt>
-<dd><p>Optional character; name of a column, such as year,
-whose levels become separate output columns. If <code>exposure</code> is supplied,
-each column contains total exposure for that level; otherwise, it
-contains the number of source rows. For example, the output might
-contain <code>exposure_2020</code> or <code>count_2020</code>. The totals in <code>aggregate_cols</code>
-are calculated once per model point, across all split levels.</p></dd>
+<dt id="arg-exposure-exposure-by">exposure, exposure_by<a class="anchor" aria-label="anchor" href="#arg-exposure-exposure-by"></a></dt>
+<dd><p>See <code>split</code> and <code>split_by</code> in <code><a href="rating_grid.html">rating_grid()</a></code>.</p></dd>
 
 
 <dt id="arg-aggregate-cols">aggregate_cols<a class="anchor" aria-label="anchor" href="#arg-aggregate-cols"></a></dt>
 <dd><p>Optional character vector with additional numeric
-columns to aggregate using <code>sum(na.rm = TRUE)</code>.</p></dd>
+columns to sum per model point using <code>sum(na.rm = TRUE)</code>. These totals
+are not split across output columns.</p></dd>
 
 
 <dt id="arg-drop-na">drop_na<a class="anchor" aria-label="anchor" href="#arg-drop-na"></a></dt>

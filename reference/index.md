@@ -115,9 +115,9 @@ assumptions and residual behaviour.
 
 ### Model performance & calibration
 
-Compare fit, prediction error and calibration. See the
-[observed-versus-expected
-review](https://mharinga.github.io/insurancerating/articles/model-validation.html#reviewing-observed-versus-expected-experience).
+Compare fit, prediction error and calibration. Start with the
+[validation quick
+start](https://mharinga.github.io/insurancerating/articles/model-validation.html#quick-start).
 
 - [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md)
   : Compare GLM fit and predictive error metrics
@@ -129,7 +129,9 @@ review](https://mharinga.github.io/insurancerating/articles/model-validation.htm
 ### Model stability
 
 - [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
-  : Assess GLM coefficient stability by portfolio-row bootstrap
+  : Assess GLM coefficient stability by resampling portfolio rows
+- [`autoplot(`*`<bootstrap_coefficients>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_coefficients.md)
+  : Plot bootstrap coefficient stability
 
 ### Model diagnostics
 
@@ -148,9 +150,9 @@ or lazily in a database.
 - [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md)
   : Merge connected portfolio periods in DuckDB
 - [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-  : Construct observed rating-grid points
+  : Aggregate portfolio records into observed model points
 - [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md)
-  : Reduce a database portfolio to observed rating-grid points
+  : Aggregate database records into observed model points
 
 ## Policy period operations
 

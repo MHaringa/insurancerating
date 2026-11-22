@@ -135,14 +135,21 @@ and therefore produce an error.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-observed <- MTPL2$amount[MTPL2$amount > 500 & MTPL2$amount < 10000]
+set.seed(123)
+claim_amount <- rgamma(400, shape = 2, scale = 1500)
+# Amounts outside the interval are absent, not capped at the endpoints.
+observed <- claim_amount[claim_amount > 500 & claim_amount < 10000]
 fit <- fit_truncated_severity(
   losses = observed,
   distribution = "gamma",
   lower_truncation = 500,
   upper_truncation = 10000
 )
+#> Tried 136 start combinations: 136 succeeded, 0 failed.
+#> Best fit came from combination 1 with loglik = -3298.76.
 autoplot(fit)
-} # }
+#> Warning: Computation failed in `stat_function()`.
+#> Caused by error in `fun()`:
+#> ! could not find function "fun"
+
 ```

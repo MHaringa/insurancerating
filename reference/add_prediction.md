@@ -121,7 +121,7 @@ mtpl_pred <- add_prediction(
   predictions = "expected_claim_count"
 )
 
-# Add predicted values with confidence bounds
+# Add confidence bounds for the estimated mean, not for future claim counts
 mtpl_pred_ci <- add_prediction(
   MTPL,
   mod1,

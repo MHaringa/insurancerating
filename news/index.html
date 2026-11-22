@@ -44,6 +44,8 @@
 <li>
 <code><a href="../reference/coefficient_stability.html">coefficient_stability()</a></code> excludes estimates whose factor coding changed in a bootstrap refit, for example when the original reference level is absent.</li>
 <li>
+<code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> for <code><a href="../reference/coefficient_stability.html">coefficient_stability()</a></code> shows original estimates, bootstrap intervals and the number of comparable estimates per coefficient.</li>
+<li>
 <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> for <code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code> shows overall, predicted-risk, temporal or rating-factor calibration.</li>
 <li>
 <code><a href="../reference/add_factor_experience.html">add_factor_experience()</a></code> replaces <code><a href="../reference/add_portfolio_experience.html">add_portfolio_experience()</a></code> for attaching marginal observed experience to a rating table. The old name remains as a deprecated alias; calculations and plotting behaviour are unchanged.</li>
@@ -58,7 +60,9 @@
 <li>
 <code><a href="../reference/active_rows_by_date.html">active_rows_by_date()</a></code> joins on a compact set of keys and dates, then retrieves the matching rows. This reduces copying and sorting for wide portfolios.</li>
 <li>
-<code><a href="../reference/rating_grid.html">rating_grid()</a></code> avoids copying unused portfolio columns. With <code>exposure_by</code>, it aggregates only exposure or counts within each split; additional totals are still calculated over the original model-point rows.</li>
+<code><a href="../reference/rating_grid.html">rating_grid()</a></code> uses <code>split</code> for the measure to sum instead of counting source rows and <code>split_by</code> for the values that become separate columns. <code>aggregate_cols</code> totals remain unsplit. The old names <code>exposure</code> and <code>exposure_by</code> and the old positional order still work with deprecation warnings; in new calls, name arguments after <code>group_by</code>.</li>
+<li>
+<code><a href="../reference/rating_grid.html">rating_grid()</a></code> avoids copying unused portfolio columns.</li>
 <li>
 <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> for <code><a href="../reference/merge_date_ranges.html">merge_date_ranges()</a></code> results now copies only the date columns and explicitly requested summary grouping columns, avoiding repeated copies of the full-width portfolio. Movement counts, period handling and output ordering are unchanged; the input is not modified.</li>
 <li>

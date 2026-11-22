@@ -2,43 +2,27 @@
 
 ## Introduction
 
-Refinement is the explicit translation from statistically estimated
-model effects to the structure that will be reviewed, justified and
-implemented as a tariff. It can be motivated by stability, credibility,
-monotonicity, smoothness, sparse experience or an explicit
-implementation constraint.
+Refinement turns fitted effects into explicit tariff proposals. You can
+review the proposal before refitting, and keep a record of what changed.
+Start with the age-band example below, or skip to the [advanced
+options](#advanced-refinement-options) for a specific technique. See
+[Getting
+Started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
+for model construction and the [package
+map](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md)
+for how refinement fits alongside other pricing tasks.
 
-Refinement is not arbitrary editing of inconvenient coefficients. Each
-adjustment should have an actuarial or operational rationale and should
-be reviewed against exposure, claim volume, observed experience and
-model diagnostics. Recording these decisions as ordered steps makes them
-reproducible and easier to review.
+## Quick start
 
-This vignette starts from a fitted unrestricted GLM and focuses on what
-happens next. The construction of frequency, severity and technical
-risk-premium models is covered in [Getting
-Started](https://mharinga.github.io/insurancerating/articles/getting-started.md).
-The wider role of refinement within the package is mapped in [Pricing
-workflow and package building
-blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md).
+Suppose the age-band relativities of a frequency model are uneven. Here
+we compare them with a smoother age effect. The example keeps the same
+age bands so that only their relativities change; this is a candidate
+tariff, not an assumption about how age must affect every portfolio.
 
-The refinement architecture is:
+### Fit the starting model
 
-| Stage | Meaning |
-|----|----|
-| Unrestricted GLM | Statistical starting point |
-| [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md) | Create an editable specification around that model |
-| [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md), [`add_monotonicity()`](https://mharinga.github.io/insurancerating/reference/add_monotonicity.md), [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md), [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md), [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md) | Record proposed actuarial adjustments |
-| [`summary()`](https://rdrr.io/r/base/summary.html) and [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) | Inspect the proposal before fitting |
-| [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md) | Reconstruct and fit the GLM under the stored specification |
-| [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md) and [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md) | Inspect the fitted tariff and its portfolio effect |
-
-## A compact unrestricted model
-
-The unrestricted model is only the starting material for this vignette.
-The following setup creates grouped age and bonus-malus factors and fits
-a Poisson frequency GLM. The response is claim count and `log(exposure)`
-is the offset.
+The response is claim count and `log(exposure)` is the offset. ZIP and
+bonus-malus remain separate model terms and are used in later examples.
 
 ``` r
 
@@ -55,7 +39,8 @@ portfolio$age_band <- cut(
 portfolio$bm_group <- cut(
   portfolio$bm,
   breaks = c(0, 4, 8, Inf),
-  labels = c("Low", "Medium", "High")
+  labels = c("Low", "Medium", "High"),
+  include.lowest = TRUE
 )
 portfolio$bm_detail <- factor(as.character(portfolio$bm))
 portfolio$zip <- factor(portfolio$zip)
@@ -67,73 +52,15 @@ unrestricted <- glm(
 )
 ```
 
-The initial tariff effects can be inspected before any actuarial
-adjustment:
+### Smoothing an ordered effect
+
+Fit the curve to the estimated age-band effects using the underlying
+numeric age. The breaks define the output bands, and exposure gives more
+weight to levels with more portfolio support.
 
 ``` r
 
-head(rating_table(unrestricted, exposure = FALSE))
-#>   risk_factor       level est_unrestricted
-#> 1 (Intercept) (Intercept)        0.2735430
-#> 2    age_band     [18,25]        1.0000000
-#> 3    age_band     (25,32]        0.6853582
-#> 4    age_band     (32,39]        0.5540633
-#> 5    age_band     (39,51]        0.5197098
-#> 6    age_band     (51,58]        0.4381469
-```
-
-These are the conditional effects estimated by the unrestricted GLM. An
-irregular effect is not by itself a reason to refine it: the analyst
-should first consider data quality, exposure definition, model
-specification, interactions and factor construction.
-
-## Preparing the refinement
-
-``` r
-
-refinement <- prepare_refinement(
-  unrestricted,
-  data = portfolio
-)
-
-refinement
-#> <rating_refinement>
-#> Base model: Poisson GLM (log link)
-#> Steps: 0
-```
-
-[`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md)
-creates a `rating_refinement` object containing the unrestricted model,
-the corresponding retained model data and an initially empty ordered
-step specification. It does not refit the GLM and does not change its
-coefficients or fitted values.
-
-This distinction is central to the API:
-
-- `unrestricted` is a fitted statistical model;
-- `refinement` is an editable proposal for the tariff structure;
-- the model returned later by
-  [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-  is the fitted outcome under that proposal.
-
-Keep the refinement object when iterating. A model returned by
-[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-is a fitted result, not an editable specification. Calling
-[`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md)
-on that fitted result deliberately starts a new workflow and does not
-reconstruct the earlier steps.
-
-## Smoothing an ordered effect
-
-Raw level effects for a grouped continuous variable may contain local
-movement that is weakly supported or unstable over time. Smoothing
-replaces that local pattern with an explicitly structured curve. It is
-most relevant when a gradual underlying relationship is plausible and
-neighbouring tariff levels should be interpreted coherently.
-
-``` r
-
-refinement <- refinement |>
+refinement <- prepare_refinement(unrestricted, data = portfolio) |>
   add_smoothing(
     model_variable = "age_band",
     source_variable = "age_policyholder",
@@ -142,79 +69,59 @@ refinement <- refinement |>
     k = 5,
     weights = "exposure"
   )
+initial_age_refinement <- refinement
 ```
 
-The arguments distinguish two variables:
-
-- `model_variable` is the grouped factor included in the unrestricted
-  GLM;
-- `source_variable` is the underlying numeric portfolio variable used to
-  estimate the smooth relationship.
-
-`breaks` define the intervals in the resulting tariff factor. Exposure
-weights give levels with more portfolio support more influence. With a
-spline method, `k` controls the available curve flexibility; it is a
-basis dimension rather than a fixed number of fitted degrees of freedom.
-
-The default unconstrained spline is suitable when the shape should
-remain data-led. Increasing or decreasing shape constraints are
-available when a directional assumption has a defensible actuarial
-basis. The function reference for
-[`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
-describes the full set of methods and their curvature interpretation.
-
-All smoothing methods act directly on the tariff relativity. For
-example, `smoothing = "increasing_concave"` means that the relativity
-increases while its absolute increase becomes smaller as the source
-variable rises. This may be useful where neighbouring estimates are
-noisy or upper-tail exposure is sparse, provided the shape is supported
-by an explicit actuarial rationale.
-
-### Inspecting the proposal
+### Compare the proposal and refit
 
 ``` r
 
-summary(refinement)
-#> Refinement specification
-#> 
-#> Package: insurancerating 0.8.2.9000
-#> Created: 2026-11-21 14:57:50 UTC
-#> Observations: 30,000
-#> Family: poisson (log link)
-#> Base formula:
-#>   nclaims ~ age_band + zip + bm_group + offset(log(exposure))
-#> Offset: log(exposure)
-#> 
-#> Refinement steps: 1
-#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, scale: relativity)
-#>      shape = spline; 8 intervals over 18 to 95
-
-autoplot(
-  refinement,
-  variable = "age_band",
-  x_max = 90
-)
+autoplot(refinement, variable = "age_band") +
+  ggplot2::labs(x = "Policyholder age")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-6-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-4-1.png)
 
-This is a **pre-refit** plot. It compares the original fitted effect
-with the proposed smooth structure. The GLM has not yet been estimated
-under that structure.
+``` r
 
-If the curve needs adjustment, retain the specification and use
-[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
-before refitting. This preserves the rest of the ordered workflow rather
-than starting again from the fitted result.
+
+age_tariff <- refit(refinement, intercept_only = TRUE)
+age_effects <- as.data.frame(rating_table(age_tariff, exposure = FALSE))
+subset(age_effects, risk_factor == "age_policyholder_smooth")
+#>               risk_factor   level est_age_tariff
+#> 2 age_policyholder_smooth [18,25]      0.9517847
+#> 3 age_policyholder_smooth (25,32]      0.7142379
+#> 4 age_policyholder_smooth (32,39]      0.5574783
+#> 5 age_policyholder_smooth (39,51]      0.5034194
+#> 6 age_policyholder_smooth (51,58]      0.4557071
+#> 7 age_policyholder_smooth (58,65]      0.3914753
+#> 8 age_policyholder_smooth (65,84]      0.3713782
+#> 9 age_policyholder_smooth (84,95]      0.4954763
+```
+
+The dashed line is the proposed smooth curve. The resulting age-band
+relativities are fixed during the intercept-only refit, which estimates
+a new base rate. Keep the `refinement` object to make another proposal;
+`age_tariff` is the fitted result. Use
+[`audit_refinement()`](#auditing-the-portfolio-effect) to see how
+changes in relativities and base rate combine on the portfolio.
+
+## Advanced refinement options
+
+The following examples build on the saved proposal. They are
+alternatives or additions, not a required sequence. See
+[`?add_smoothing`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
+for the full list of curve shapes, weights and spline settings.
 
 ### Refining a selected part of the smoothing
 
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md)
 defines the initial curve and its structural assumptions.
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
-can subsequently refine a selected interval in two distinct ways. These
-edits are explicit tariff assumptions layered on the initial smoothing;
-they are not additional statistical observations.
+can set explicit target values, adjust the relative level, or scale the
+change in the curve after an anchor. These are tariff assumptions
+layered on the initial smoothing, not additional statistical
+observations.
 
 Each call to
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
@@ -245,7 +152,7 @@ explicit_age_refinement <- refinement |>
 autoplot(explicit_age_refinement, variable = "age_band", x_max = 90)
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-7-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-5-1.png)
 
 The stored edit redirects the selected interval through the supplied
 target values. This is appropriate when those values have a documented
@@ -274,7 +181,7 @@ autoplot(
 )
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-8-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-6-1.png)
 
 Here, `adjustment = 1.05` raises the middle of the selected region by up
 to 5% relative to the existing smoothing. The multiplier starts at 1 at
@@ -310,7 +217,7 @@ autoplot(
 )
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-9-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-7-1.png)
 
 Selecting `step = 2` would show the curve after the first edit only. The
 initial comparison line remains the result of the original
@@ -386,7 +293,7 @@ actuarial interpretation.
 ### Adjusting the slope after an anchor
 
 Sometimes the level of the smoothing is acceptable, while the remaining
-increase above a selected value should be stronger or weaker. In that
+change above a selected value is to be made stronger or weaker. In that
 case, `slope_adjustment` scales the change relative to the smoothing
 value at `from`:
 
@@ -406,14 +313,14 @@ autoplot(
 )
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-12-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-10-1.png)
 
 The curve through age 50 is unchanged. Above age 50, each difference
 from the relativity at age 50 is multiplied by 1.10. The curve therefore
-remains continuous at the anchor, while its subsequent change is 10%
-stronger. A value between 0 and 1 flattens the remaining effect. This is
-different from `adjustment`, which changes the relative level over a
-selected interval.
+remains continuous at the anchor. Where the curve falls below its value
+at age 50, the decline relative to that anchor is 10% larger. A value
+between 0 and 1 flattens the remaining effect. This is different from
+`adjustment`, which changes the relative level over a selected interval.
 
 Each
 [`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
@@ -462,43 +369,14 @@ The relativity plot shows the overall tariff shape:
 autoplot(refinement, variable = "age_band")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-15-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-13-1.png)
 
 ### Interpreting the premium effect
 
-A relativity curve shows the shape of a continuous tariff effect, but
-its practical magnitude is not always immediately clear. By default,
+A relativity curve shows the shape of a tariff effect. To read its
+magnitude, use
 [`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
-reports how much modelled premium changes when the source variable
-doubles from a selected starting value:
-
-``` r
-
-premium_change(
-  refinement,
-  variable = "age_band",
-  at = c(20, 25, 30, 35)
-)
-#> Premium change for age_policyholder
-#> 
-#> Comparison: doubling
-#> Basis: Effective smoothing curve
-#> 
-#>  From To Premium change
-#>    20 40         -46.8%
-#>    25 50         -39.0%
-#>    30 60         -39.5%
-#>    35 70         -33.8%
-```
-
-For example, a reported value of 0.12 means that the smoothing implies a
-12% higher modelled premium when age doubles from that starting value.
-The helper uses the current effective smoothing, including preceding
-[`edit_smoothing()`](https://mharinga.github.io/insurancerating/reference/edit_smoothing.md)
-steps, and does not extrapolate beyond its supported range.
-
-Supplying `increment` instead asks the corresponding fixed-increment
-question:
+with a meaningful increment, for example five years of age:
 
 ``` r
 
@@ -525,10 +403,11 @@ premium_change(
 #>    60 65         -10.5%
 ```
 
-Each row now compares `R(age + 5)` with `R(age)` using the current
-effective smoothing. The table does not impose a pattern; it only
-translates the proposed relativity curve into practical premium
-comparisons.
+The first row compares the modelled tariff at ages 20 and 25, holding
+other factors fixed. It is not a prediction of the change at an
+individual policy renewal. The calculation uses the current edited curve
+without extrapolating. Omit `increment` to compare a value with twice
+that value instead.
 
 For an insured-amount smoothing, `increment = 100000` would ask how much
 modelled premium changes for another 100,000 from each displayed
@@ -550,24 +429,25 @@ premium_change(
   refinement,
   variable = "age_band",
   at = c(20, 25, 30, 35),
+  increment = 5,
   basis = "segments"
 )
 #> Premium change for age_policyholder
 #> 
-#> Comparison: doubling
+#> Increment: 5
 #> Basis: Tariff segments
 #> 
 #>  From To Premium change
-#>    20 40         -44.5%
-#>    25 50         -44.5%
-#>    30 60         -45.0%
-#>    35 70         -34.0%
+#>    20 25           0.0%
+#>    25 30         -25.0%
+#>    30 35         -21.3%
+#>    35 40          -6.0%
 ```
 
 With `basis = "segments"`, the helper determines which effective tariff
 interval contains each value and compares the corresponding current
 segment relativities. The result can therefore be 0% when both values
-are in the same segment, even when the underlying curve increases within
+are in the same segment, even when the underlying curve changes within
 that range. A change can also occur discretely when a comparison crosses
 a segment boundary. The two bases answer different questions: the curve
 describes the underlying smooth relationship, while the segments
@@ -581,10 +461,19 @@ premium_change(
   relative_age_refinement,
   variable = "age_band",
   at = c(20, 25, 30),
+  increment = 5,
   steps = c(1, 2)
 ) |>
   as_gt()
 ```
+
+| Premium change for +5 age_policyholder |  |  |  |  |
+|----|----|----|----|----|
+| Based on the effective continuous smoothing curve |  |  |  |  |
+| From | To | Step 1 | Step 2 | Difference |
+| 20 | 25 | −17.7% | −17.7% | 0.0 pp |
+| 25 | 30 | −17.9% | −17.9% | 0.0 pp |
+| 30 | 35 | −14.8% | −13.9% | 0.9 pp |
 
 With two selected states, the table shows both premium changes and their
 difference in percentage points. This comparison is often easier to
@@ -592,7 +481,7 @@ interpret than small visual differences between two relativity curves.
 It remains an interpretation of the proposed smoothing and does not
 alter the refinement.
 
-## Restricting selected levels
+### Restricting selected levels
 
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
 can fix tariff levels at supplied relativities or apply a multiplier to
@@ -682,12 +571,12 @@ removing them is not an unambiguous level restriction.
 autoplot(refinement, variable = "zip")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-22-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-19-1.png)
 
 Again, the plot shows the proposed restriction before
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md).
 
-## Enforcing an order without smoothing
+### Enforcing an order without smoothing
 
 For grouped continuous variables such as insured amount or
 reconstruction value, a tariff may require increasing relativities
@@ -712,17 +601,10 @@ change the refinement below.
 
 ordinal <- prepare_refinement(unrestricted) |>
   add_monotonicity("age_band", direction = "decreasing", weights = "exposure")
-ordinal$steps[[1]]$values
-#>     level original_relativity     weight adjusted_relativity
-#> 1 [18,25]           1.0000000 1331.17534           1.0000000
-#> 2 (25,32]           0.6853582 3648.72055           0.6853582
-#> 3 (32,39]           0.5540633 4247.34795           0.5540633
-#> 4 (39,51]           0.5197098 7421.35890           0.5197098
-#> 5 (51,58]           0.4381469 3245.45479           0.4381469
-#> 6 (58,65]           0.3731925 2790.83288           0.3809452
-#> 7 (65,84]           0.3865907 3900.75890           0.3809452
-#> 8 (84,95]           0.2660084   72.01644           0.2660084
+autoplot(ordinal, variable = "age_band")
 ```
+
+![](refinement-workflow_files/figure-html/unnamed-chunk-20-1.png)
 
 Unlike
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),
@@ -753,7 +635,7 @@ effective relativity is applied, without double counting. An explicit
 `output_variable` must still name a new column. Reapplying the same
 direction to an already monotone effect leaves its values unchanged.
 
-## Shrinking a categorical effect
+### Shrinking a categorical effect
 
 [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md)
 reduces the differences between the current relativities of one
@@ -780,10 +662,9 @@ of 0 removes differences between levels. This is a user-selected
 refinement parameter, not an automatically estimated Buhlmann or
 Buhlmann-Straub credibility factor.
 
-The common centre is determined using the selected weighting basis.
-Exposure weights are appropriate here because `bm_group` is part of a
-frequency model. For a severity model, claim count may be a more
-relevant basis. Use `weights = "equal"` when every factor level should
+Exposure is the weighting basis used for the common centre in this
+frequency example. For a severity model, claim count may be a useful
+alternative. Use `weights = "equal"` when every factor level should
 receive equal weight rather than representing the observed portfolio
 mix.
 
@@ -799,13 +680,13 @@ effects.
 autoplot(refinement, variable = "bm_group")
 ```
 
-![](refinement-workflow_files/figure-html/unnamed-chunk-25-1.png)
+![](refinement-workflow_files/figure-html/unnamed-chunk-22-1.png)
 
 This remains a pre-refit comparison: it shows the current estimated
 effect and the proposed shrunken structure stored in the refinement
 specification.
 
-## Adding differentiation within model levels
+### Adding differentiation within model levels
 
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
 addresses a different problem. An unrestricted GLM may use a broad
@@ -864,10 +745,11 @@ variables needed to predict the unrestricted model.
 With `normalize = TRUE`, the sublevel relativities are normalised within
 each parent so their exposure-weighted average equals one. The split
 therefore redistributes the parent effect without changing its
-exposure-weighted level. Because shrinkage was added first, these
-sublevel effects use the shrunken `bm_group` relativities as their
-parent values. With `normalize = FALSE`, the supplied relativities are
-applied directly.
+exposure-weighted level. This does not guarantee the same total
+predicted premium once other rating factors are taken into account.
+Because shrinkage was added first, these sublevel effects use the
+shrunken `bm_group` relativities as their parent values. With
+`normalize = FALSE`, the supplied relativities are applied directly.
 
 This operation is not equivalent to restriction or smoothing:
 
@@ -897,7 +779,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-11-21 14:57:50 UTC
+#> Created: 2026-11-22 13:48:40 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
@@ -965,10 +847,8 @@ The treatment of the remaining model effects depends on
   again. Their coefficients may change as the GLM finds a new joint
   optimum conditional on the fixed refinement steps.
 
-An intercept-only refit is often appropriate for a controlled adjustment
-to an accepted tariff structure. Re-estimating the remaining free
-effects is more appropriate when the refinement is part of substantive
-model development and dependence between factors should be reconsidered.
+Choose between these modes based on which existing relationships are to
+remain fixed and which effects can be re-estimated.
 
 The prescribed smoothing, restrictions and sublevel relativities remain
 explicit assumptions. Refitting does not turn them into unrestricted
@@ -1019,14 +899,11 @@ calibrated_model <- adjust_intercept(
   factor = 1.05
 )
 
-head(rating_table(calibrated_model, exposure = FALSE))
-#>      risk_factor       level est_calibrated_model
-#> 1    (Intercept) (Intercept)            0.2696803
-#> 2 zip_restricted           0            0.9500000
-#> 3 zip_restricted           1            0.9954865
-#> 4 zip_restricted           2            0.8971513
-#> 5 zip_restricted           3            1.1000000
-#> 6       bm_group      Medium            1.0440707
+evaluation <- extract_model_data(refined_model)
+before <- predict(refined_model, newdata = evaluation, type = "response")
+after <- predict(calibrated_model, newdata = evaluation, type = "response")
+sum(after) / sum(before)
+#> [1] 1.05
 ```
 
 [`adjust_intercept()`](https://mharinga.github.io/insurancerating/reference/adjust_intercept.md)
@@ -1063,9 +940,9 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Prepared: 2026-11-21 14:57:50 UTC
-#> Refitted: 2026-11-21 14:57:55 UTC
-#> Audited: 2026-11-21 14:57:55 UTC
+#> Prepared: 2026-11-22 13:48:40 UTC
+#> Refitted: 2026-11-22 13:48:46 UTC
+#> Audited: 2026-11-22 13:48:46 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
@@ -1117,7 +994,8 @@ summary(refinement_audit)
 #>    0.04690568
 ```
 
-The audit reports the portfolio-level frequency before and after
+This audit uses `refined_model`, before the additional 5% intercept
+adjustment. It reports the portfolio-level frequency before and after
 refinement and the corresponding changes by final risk-factor level.
 These are predictions from the complete model for the observed portfolio
 mix, not isolated coefficient differences.
@@ -1158,9 +1036,10 @@ refinement <- refinement |>
 updated_model <- refit(refinement)
 ```
 
-The update replaces the earlier local adjustment on this smoothing step.
-It is always calculated relative to the initial smoothing and is
-therefore not multiplied cumulatively by the previous value.
+This appends an edit to the current smoothing. Earlier edits to that
+curve remain in effect. To compare an alternative instead of building on
+the previous edit, start a separate branch from the saved
+`initial_age_refinement`.
 
 Calling
 [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md),

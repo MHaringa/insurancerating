@@ -148,6 +148,7 @@ calibration_analysis(model, portfolio, by = "year")
 #>   year Observed Expected        OE    N Exposure
 #> 1 2023      177 179.3463 0.9869173 1500 1332.923
 #> 2 2024      181 178.6537 1.0131334 1500 1329.663
+# The area-only model matches each area's total on its estimation data.
 calibration_analysis(model, portfolio, by = "area")
 #>   area Observed Expected OE    N   Exposure
 #> 1    0        1        1  1   15   13.30685
@@ -164,12 +165,21 @@ calibration_analysis(model, portfolio, by = c("year", "area"))
 #> 6 2024    1       74 75.9913264 0.9737953 620 554.709589
 #> 7 2024    2       52 49.0628148 1.0598658 461 409.794521
 #> 8 2024    3       55 53.2478637 1.0329053 414 360.479452
-# Compare the lowest to highest predicted claim frequencies.
-calibration_analysis(model, portfolio, groups = 5)
-#>   Group Observed Expected        OE   N Exposure
-#> 1     1       58 63.21916 0.9174434 599 532.9890
-#> 2     2       76 67.68745 1.1228079 598 531.7644
-#> 3     3       70 72.94670 0.9596047 593 532.4849
-#> 4     4       78 75.49485 1.0331831 608 532.8877
-#> 5     5       76 78.65184 0.9662838 602 532.4603
+
+# Compare observed and expected rates in roughly equal-exposure groups
+# on records not used to fit the model.
+risk_portfolio <- as.data.frame(MTPL)
+set.seed(123)
+train <- sample.int(nrow(risk_portfolio), floor(0.7 * nrow(risk_portfolio)))
+risk_model <- glm(
+  nclaims ~ age_policyholder + offset(log(exposure)),
+  family = poisson(), data = risk_portfolio[train, ]
+)
+calibration_analysis(risk_model, risk_portfolio[-train, ], groups = 5)
+#>   Group Observed Expected        OE    N Exposure
+#> 1     1      150 148.5634 1.0096701 1722 1598.134
+#> 2     2      194 187.1246 1.0367421 1773 1597.397
+#> 3     3      203 219.1066 0.9264898 1801 1597.888
+#> 4     4      216 254.3768 0.8491341 1842 1597.666
+#> 5     5      314 299.0661 1.0499351 1862 1598.115
 ```

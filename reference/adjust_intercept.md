@@ -95,9 +95,12 @@ rating_table(mod_calibrated)
 #> 4 zip_restricted           2           1.050000
 #> 5 zip_restricted           3           1.100000
 
-data_final <- mod_refined$data |>
-  add_prediction(
-    mod_calibrated,
-    predictions = "net_risk_premium"
-  )
+evaluation <- extract_model_data(mod_refined)
+predictions <- add_prediction(
+  evaluation, mod_refined, mod_calibrated,
+  predictions = c("expected_claim_count_before", "expected_claim_count_after")
+)
+# These are expected counts over each record's exposure, not premiums.
+with(predictions, sum(expected_claim_count_after) / sum(expected_claim_count_before))
+#> [1] 1.05
 ```

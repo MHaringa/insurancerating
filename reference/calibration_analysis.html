@@ -185,6 +185,7 @@ models: each model can rank the records differently.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   year Observed Expected        OE    N Exposure</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 2023      177 179.3463 0.9869173 1500 1332.923</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 2024      181 178.6537 1.0131334 1500 1329.663</span>
+<span class="r-in"><span><span class="co"># The area-only model matches each area's total on its estimation data.</span></span></span>
 <span class="r-in"><span><span class="fu">calibration_analysis</span><span class="op">(</span><span class="va">model</span>, <span class="va">portfolio</span>, by <span class="op">=</span> <span class="st">"area"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   area Observed Expected OE    N   Exposure</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1    0        1        1  1   15   13.30685</span>
@@ -201,14 +202,23 @@ models: each model can rank the records differently.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6 2024    1       74 75.9913264 0.9737953 620 554.709589</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 7 2024    2       52 49.0628148 1.0598658 461 409.794521</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 8 2024    3       55 53.2478637 1.0329053 414 360.479452</span>
-<span class="r-in"><span><span class="co"># Compare the lowest to highest predicted claim frequencies.</span></span></span>
-<span class="r-in"><span><span class="fu">calibration_analysis</span><span class="op">(</span><span class="va">model</span>, <span class="va">portfolio</span>, groups <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Group Observed Expected        OE   N Exposure</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1     1       58 63.21916 0.9174434 599 532.9890</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2     2       76 67.68745 1.1228079 598 531.7644</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3       70 72.94670 0.9596047 593 532.4849</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4     4       78 75.49485 1.0331831 608 532.8877</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5     5       76 78.65184 0.9662838 602 532.4603</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Compare observed and expected rates in roughly equal-exposure groups</span></span></span>
+<span class="r-in"><span><span class="co"># on records not used to fit the model.</span></span></span>
+<span class="r-in"><span><span class="va">risk_portfolio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">MTPL</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">train</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample.int</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">risk_portfolio</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="fl">0.7</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">risk_portfolio</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">risk_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">age_policyholder</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">risk_portfolio</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">calibration_analysis</span><span class="op">(</span><span class="va">risk_model</span>, <span class="va">risk_portfolio</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>, <span class="op">]</span>, groups <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Group Observed Expected        OE    N Exposure</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1     1      150 148.5634 1.0096701 1722 1598.134</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2     2      194 187.1246 1.0367421 1773 1597.397</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3     3      203 219.1066 0.9264898 1801 1597.888</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4     4      216 254.3768 0.8491341 1842 1597.666</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5     5      314 299.0661 1.0499351 1862 1598.115</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

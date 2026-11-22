@@ -116,8 +116,8 @@ claim amount.
 claims_grid <- rating_grid(
   MTPL,
   group_by = c("zip", "bm"),
-  exposure = "exposure",
-  aggregate_cols = c("nclaims", "amount")
+  aggregate_cols = c("nclaims", "amount"),
+  split = "exposure"
 )
 
 head(claims_grid)
@@ -139,25 +139,39 @@ average claim amount as the response and claim count as the weight,
 while record-level residual and influence information is no longer
 available after aggregation.
 
-Temporal consolidation normally precedes model-point aggregation when
-the original interval structure is needed:
+If both reductions are useful, consolidate periods before aggregating to
+model points: the grid no longer retains the individual periods. Keep
+the attributes and additive totals needed by the grid:
 
 ``` r
+
+policy_periods <- data.frame(
+  policy_id = c("P001", "P001"),
+  coverage = "Building",
+  region = "North",
+  period_start = as.Date(c("2025-01-01", "2025-07-01")),
+  period_end = as.Date(c("2025-06-30", "2025-12-31")),
+  earned_exposure = c(0.5, 0.5),
+  claim_count = c(1L, 2L),
+  claim_amount = c(5000, 12000)
+)
 
 periods_reduced <- merge_date_ranges(
   policy_periods,
   period_start = "period_start",
   period_end = "period_end",
-  group_by = c("policy_id", "coverage"),
-  aggregate_cols = "earned_exposure"
+  group_by = c("policy_id", "coverage", "region"),
+  aggregate_cols = c("earned_exposure", "claim_count", "claim_amount")
 )
 
-grid <- rating_grid(
+rating_grid(
   periods_reduced,
   group_by = c("coverage", "region"),
-  exposure = "earned_exposure",
-  aggregate_cols = c("claim_count", "claim_amount")
+  aggregate_cols = c("claim_count", "claim_amount"),
+  split = "earned_exposure"
 )
+#>   coverage region claim_count claim_amount earned_exposure
+#> 1 Building  North           3        17000               1
 ```
 
 The detailed in-memory and database-backed workflows are described in
@@ -177,16 +191,36 @@ thresholds. It supports judgement about the balance between retaining
 risk differentiation and limiting volatility; it does not select a
 threshold automatically.
 
+The threshold applies to each row’s amount. This small example has at
+most one claim per policy-period. To use a per-claim threshold on
+records with several claims, cap each claim before aggregating retained
+and excess amounts.
+
 ``` r
 
+loss_portfolio <- data.frame(
+  sector = rep(c("Retail", "Services"), each = 3),
+  earned_exposure = rep(c(1, 0.5, 1), 2),
+  claim_count = c(0L, 1L, 1L, 0L, 1L, 1L),
+  claim_amount = c(0, 13000, 160000, 0, 40000, 75000)
+)
+
 thresholds <- assess_excess_threshold(
-  portfolio,
+  loss_portfolio,
   claim_amount = "claim_amount",
   thresholds = c(50000, 100000, 150000),
   exposure = "earned_exposure",
   group = "sector",
   claim_count = "claim_count"
 )
+thresholds[c("sector", "threshold", "capped_loss", "excess_loss")]
+#>     sector threshold capped_loss excess_loss
+#> 1   Retail     50000       63000      110000
+#> 2   Retail    100000      113000       60000
+#> 3   Retail    150000      163000       10000
+#> 4 Services     50000       90000       25000
+#> 5 Services    100000      115000           0
+#> 6 Services    150000      115000           0
 ```
 
 After a threshold has been selected,
@@ -201,7 +235,7 @@ supports two distinct uses of the same excess-loss allocation:
 ``` r
 
 large_loss_result <- redistribute_excess_loss(
-  portfolio,
+  loss_portfolio,
   claim_amount = "claim_amount",
   threshold = 100000,
   claim_count = "claim_count",
@@ -329,14 +363,7 @@ levels.
 
 ``` r
 
-rating_table(frequency_model, exposure = "exposure") |>
-  add_factor_experience(
-    data = portfolio,
-    claim_count = "nclaims",
-    exposure = "exposure",
-    metric = "frequency"
-  ) |>
-  head()
+head(rating_table(frequency_model, exposure = "exposure"))
 #>   risk_factor       level est_frequency_model exposure
 #> 1 (Intercept) (Intercept)           0.1402024       NA
 #> 2         zip           0           1.0000000      207
@@ -345,11 +372,14 @@ rating_table(frequency_model, exposure = "exposure") |>
 #> 5         zip           3           0.9757522     7588
 ```
 
-This comparison answers two related questions: what conditional effect
-did the model estimate, and what pattern is visible directly in the
-portfolio? The two need not coincide because the model adjusts for its
-other terms. Exposure and claim volume remain important when deciding
-whether either pattern is stable enough for tariff use.
+Here ZIP is the only model effect, so its fitted claim rates equal the
+observed ZIP rates on the estimation data. [Model
+validation](https://mharinga.github.io/insurancerating/articles/model-validation.md)
+shows an age-adjusted comparison in which the fitted and observed lines
+can differ. That comparison is not observed versus expected claims from
+the complete model; use
+[`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
+for the latter.
 
 ## Refining the tariff
 
@@ -360,14 +390,9 @@ tariff decisions. The architecture is:
 
 ``` r
 
-zip_restrictions <- data.frame(
-  zip = c("0", "3"),
-  relativity = c(0.95, 1.05)
-)
-
 refined_model <- frequency_model |>
   prepare_refinement(data = portfolio) |>
-  add_restriction(zip_restrictions) |>
+  add_restriction(c("0" = 0.95, "3" = 1.05), model_variable = "zip") |>
   refit()
 ```
 
@@ -398,6 +423,8 @@ measure:
 | Do simulated residuals show systematic structure? | [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md) |
 | How do comparable fitted models differ in likelihood and response-scale error? | [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md) |
 | How sensitive is measured performance to portfolio resampling? | [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md) |
+| How sensitive are fitted tariff effects to resampling? | [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md) |
+| How do predicted and observed claims compare on the same exposure? | [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md) |
 
 ``` r
 
@@ -426,6 +453,8 @@ performs temporal consolidation in DuckDB. The main principle is to
 perform the expensive reduction close to the data and collect only the
 compact modelling table into R.
 
+Given an existing lazy database table `portfolio_db`:
+
 ``` r
 
 grid_query <- rating_grid_db(
@@ -441,7 +470,7 @@ grid <- dplyr::collect(grid_query)
 The database-backed functions preserve the same conceptual distinction
 as the local functions: period consolidation is temporal, while
 rating-grid reduction constructs model points. Memory planning, DuckDB
-examples and the preferred order of operations are covered in [Large
+examples and when to combine both reductions are covered in [Large
 Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.md).
 
 ## Choosing the building blocks

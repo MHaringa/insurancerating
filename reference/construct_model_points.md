@@ -29,29 +29,21 @@ construct_model_points(
 
 - group_by:
 
-  Optional character vector with the variables that define the
-  rating-grid points. If `NULL` and `x` is a `"model_data"` object, the
-  risk-factor variables stored in the object are used. If `NULL` and `x`
-  is a plain `data.frame`, all columns except those listed in
-  `exposure`, `exposure_by`, and `aggregate_cols` are used.
+  See
+  [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md).
+  The legacy `exposure` and `exposure_by` arguments correspond to
+  `split` and `split_by`.
 
-- exposure:
+- exposure, exposure_by:
 
-  Optional character; name of the exposure column to aggregate.
-
-- exposure_by:
-
-  Optional character; name of a column, such as year, whose levels
-  become separate output columns. If `exposure` is supplied, each column
-  contains total exposure for that level; otherwise, it contains the
-  number of source rows. For example, the output might contain
-  `exposure_2020` or `count_2020`. The totals in `aggregate_cols` are
-  calculated once per model point, across all split levels.
+  See `split` and `split_by` in
+  [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md).
 
 - aggregate_cols:
 
-  Optional character vector with additional numeric columns to aggregate
-  using `sum(na.rm = TRUE)`.
+  Optional character vector with additional numeric columns to sum per
+  model point using `sum(na.rm = TRUE)`. These totals are not split
+  across output columns.
 
 - drop_na:
 

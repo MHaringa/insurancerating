@@ -1,4 +1,4 @@
-# Assess GLM coefficient stability by portfolio-row bootstrap
+# Assess GLM coefficient stability by resampling portfolio rows
 
 Refit a GLM on repeated bootstrap samples of the estimation portfolio
 and retain the coefficient estimates from every successful refit. The
@@ -42,7 +42,9 @@ coefficients, a coefficient matrix with one row per requested resample,
 indicators for successful model fits, recorded failure messages, and the
 resampling settings. Use
 [`summary.bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/summary.bootstrap_coefficients.md)
-for a coefficient-level data frame and
+for a coefficient-level data frame,
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+for an interval plot and
 [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
 for a formatted table.
 
@@ -85,11 +87,14 @@ estimation portfolio. It does not include future trend, parameter
 uncertainty caused by model selection, structural changes in portfolio
 composition or dependence between repeated records for the same policy.
 Where such dependence is material, a cluster-level bootstrap would
-require a different resampling design.
+require a different resampling design that draws whole policies,
+retaining all their records together. This function does not perform
+that cluster-level resampling.
 
 ## See also
 
 [`summary.bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/summary.bootstrap_coefficients.md),
+[`autoplot.bootstrap_coefficients()`](https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_coefficients.md),
 [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md),
 [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
 [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
@@ -118,6 +123,7 @@ boot <- coefficient_stability(
 summary(boot, scale = "link")
 summary(boot, scale = "exponentiated")
 summary(boot, scale = "relativity")
+autoplot(boot, scale = "relativity")
 
 if (requireNamespace("gt", quietly = TRUE)) {
   as_gt(boot, scale = "relativity")

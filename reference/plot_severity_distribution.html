@@ -260,8 +260,12 @@ syntax, for example <code>+ ggplot2::labs(caption = "...")</code> or
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu">plot_severity_distribution</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">MTPL</span>,</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># MTPL amounts are policy-period totals. Keep single-claim periods so</span></span></span>
+<span class="r-in"><span><span class="co"># the plotted amount is an individual claim, not a multi-claim total.</span></span></span>
+<span class="r-in"><span><span class="va">single_claims</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">MTPL</span>, <span class="va">nclaims</span> <span class="op">==</span> <span class="fl">1L</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># This describes claims in single-claim periods only.</span></span></span>
+<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu">plot_severity_distribution</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">single_claims</span>,</span></span>
 <span class="r-in"><span>  claim_amount <span class="op">=</span> <span class="st">"amount"</span>,</span></span>
 <span class="r-in"><span>  risk_factor <span class="op">=</span> <span class="st">"zip"</span>,</span></span>
 <span class="r-in"><span>  top_n <span class="op">=</span> <span class="fl">4</span>,</span></span>
@@ -269,12 +273,11 @@ syntax, for example <code>+ ggplot2::labs(caption = "...")</code> or
 <span class="r-in"><span>  point_method <span class="op">=</span> <span class="st">"jitter"</span>,</span></span>
 <span class="r-in"><span>  show_labels <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 26674 claim observation(s) with missing, non-finite or non-positive values.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plot_severity_distribution-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">x_threshold</span> <span class="op">&lt;-</span> <span class="fu">plot_severity_distribution</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">MTPL</span>,</span></span>
+<span class="r-in"><span>  <span class="va">single_claims</span>,</span></span>
 <span class="r-in"><span>  claim_amount <span class="op">=</span> <span class="st">"amount"</span>,</span></span>
 <span class="r-in"><span>  risk_factor <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
 <span class="r-in"><span>  threshold <span class="op">=</span> <span class="fl">10000</span>,</span></span>
@@ -282,7 +285,8 @@ syntax, for example <code>+ ggplot2::labs(caption = "...")</code> or
 <span class="r-in"><span>  point_method <span class="op">=</span> <span class="st">"jitter"</span>,</span></span>
 <span class="r-in"><span>  show_labels <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 26674 claim observation(s) with missing, non-finite or non-positive values.</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x_threshold</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plot_severity_distribution-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

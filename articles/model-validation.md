@@ -28,7 +28,8 @@ Started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
 provides the worked modelling example, while [Pricing workflow and
 package building
 blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md)
-maps validation within the wider package.
+maps validation within the wider package. Jump to the [quick
+start](#quick-start) for runnable examples.
 
 ## Validation map
 
@@ -77,11 +78,56 @@ area_model <- glm(
 The fitted model is starting material here; construction of frequency,
 severity and technical risk-premium models is covered elsewhere.
 
+## Quick start
+
+Each call answers a different question about the fitted frequency
+models. The diagnostics can be used independently.
+
+``` r
+
+# Compare models fitted on the same records.
+fit_comparison <- model_performance(intercept_model, area_model)
+
+# Does one common rate predict the right total in each area?
+area_check <- calibration_analysis(intercept_model, portfolio, by = "area")
+
+# How much does prediction error vary on rows left out of each refit?
+set.seed(123)
+resample_result <- validate_performance(
+  area_model, portfolio, sampling = "bootstrap", sample_fraction = 0.8,
+  n_resamples = 50, metrics = c("rmse", "mae", "deviance"),
+  show_progress = FALSE
+)
+
+# Is the response distribution consistent with the fitted model?
+residual_check <- check_residuals(area_model, n_simulations = 250)
+```
+
+`area_check` compares observed and expected **counts**, with exposure
+for context. A value of O/E above one means the model predicted too few
+claims. Here this is a check on the estimation portfolio, not an
+independent test.
+
+``` r
+
+area_check
+#>   area Observed   Expected        OE    N   Exposure
+#> 1    1      146 143.295924 1.0188706 1194 1065.74795
+#> 2    0        1   1.789182 0.5589146   15   13.30685
+#> 3    2       98 110.057361 0.8904448  921  818.53973
+#> 4    3      113 102.857533 1.0986069  870  764.99178
+```
+
+The [resampling plot](#assessing-resampling-stability) and [residual
+plot](#simulation-based-residuals) show how to inspect the other
+results. For sampling variation in individual tariff effects, see
+[coefficient stability](#how-stable-are-the-tariff-relativities).
+
 ## Comparing model performance
 
 ``` r
 
-model_performance(intercept_model, area_model)
+fit_comparison
 #> # Comparison of Model Performance Indices
 #> 
 #>      Model      |   AIC    |   BIC    | RMSE  | Residual_Deviance 
@@ -170,7 +216,7 @@ autoplot(
 
 ![Modelled regional relativities adjusted for age and observed
 claim-frequency relativities, with exposure by
-region.](model-validation_files/figure-html/unnamed-chunk-4-1.png)
+region.](model-validation_files/figure-html/unnamed-chunk-6-1.png)
 
 A model with slightly better aggregate fit can still be unattractive
 when it creates volatile neighbouring relativities, extreme effects
@@ -192,23 +238,20 @@ to compare full-model predictions with actual outcomes.
 Unlike
 [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
 [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md)
-refits the model for each sample. By default, it fits and scores on the
-same bootstrap sample. The example below instead scores on rows left out
-of each fit.
+refits the model for each sample. Choose the evaluation rows according
+to the question:
+
+| Setting | Rows used to score each refit |
+|----|----|
+| Default bootstrap: `sample_fraction = 1` | The same sample used for fitting |
+| Bootstrap: `sample_fraction < 1` | Rows not used in that fit (out of bag) |
+| Random split: `sample_fraction < 1` | Rows held out of the training split |
+| Rolling validation | Subsequent periods, after the training window |
+
+The quick start uses out-of-bag evaluation. The plot subtitle identifies
+the evaluation rows used.
 
 ``` r
-
-set.seed(123)
-
-resample_result <- validate_performance(
-  area_model,
-  portfolio,
-  n_resamples = 50,
-  sample_fraction = 0.8,
-  sampling = "bootstrap",
-  show_progress = FALSE,
-  metrics = c("rmse", "mae", "deviance")
-)
 
 head(resample_result$scores)
 #>        rmse       mae deviance
@@ -221,7 +264,7 @@ head(resample_result$scores)
 autoplot(resample_result, metric = "rmse")
 ```
 
-![](model-validation_files/figure-html/unnamed-chunk-5-1.png)
+![](model-validation_files/figure-html/unnamed-chunk-7-1.png)
 
 Here, `sample_fraction = 0.8` means 80 draws per 100 rows, **with
 replacement**. Some rows can be drawn more than once. The model is
@@ -256,41 +299,51 @@ ratio to the original reference area.
 area_stability <- coefficient_stability(
   area_model, n_resamples = 100, seed = 123, show_progress = FALSE
 )
-effects <- summary(area_stability, scale = "relativity")
-knitr::kable(
-  effects[effects$term != "(Intercept)",
-          c("term", "estimate", "lower", "upper", "n_successful", "n_requested")],
-  digits = 2
-)
+autoplot(area_stability, scale = "relativity")
 ```
 
-|     | term  | estimate | lower | upper | n_successful | n_requested |
-|:----|:------|---------:|------:|------:|-------------:|------------:|
-| 2   | area0 |     0.55 |  0.00 |  1.78 |          100 |         100 |
-| 3   | area2 |     0.87 |  0.69 |  1.11 |          100 |         100 |
-| 4   | area3 |     1.08 |  0.81 |  1.36 |          100 |         100 |
+![](model-validation_files/figure-html/unnamed-chunk-8-1.png)
 
-Read the interval together with `n_successful`, the number of comparable
-estimates for that effect. A refit can converge without yielding a
-comparable estimate for every level, for example when a reference level
-is absent from the draw. A narrow interval based on few usable draws
-offers little reassurance. Area 0 has about 13 policy-years and one
-claim in the estimation portfolio, so interpret its interval with that
-limited experience in mind.
+The dots are original GLM estimates, the bars are bootstrap intervals,
+and the dashed line at 1 marks no relative effect. The counts next to
+each term show how many of the requested resamples yield comparable
+estimates for that effect. Use
+`summary(area_stability, scale = "relativity")` to inspect the numbers.
+A refit can converge without yielding a comparable estimate for every
+level, for example when a reference level is absent from the draw. A
+narrow interval based on few usable draws offers little reassurance.
+Area 0 has about 13 policy-years and one claim in the estimation
+portfolio, so interpret its interval with that limited experience in
+mind.
+
+This is a row bootstrap, not a policy bootstrap. If one policy
+contributes several records, drawing them independently can understate
+uncertainty. When that dependence matters, a cluster bootstrap would
+draw whole policies and retain their records together.
+[`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
+does not currently implement that design.
 
 ## Testing on later periods
 
 Rolling validation fits the specification on earlier periods and scores
 it on the next period or periods. The training window expands one period
-at a time. The example years here illustrate the interface; MTPL2 has no
-actual calendar-year information.
+at a time. This example simulates policy periods with a higher claim
+frequency from 2023 onwards, so the first evaluation window faces a
+change in level.
 
 ``` r
 
-temporal_data <- as.data.frame(MTPL2)
-temporal_data$year <- rep(2020:2025, length.out = nrow(temporal_data))
+set.seed(123)
+temporal_data <- data.frame(
+  year = rep(2020:2025, each = 250),
+  exposure = rep(c(0.5, 1), 750)
+)
+temporal_data$nclaims <- with(
+  temporal_data,
+  rpois(nrow(temporal_data), exposure * ifelse(year < 2023, 0.10, 0.20))
+)
 temporal_model <- glm(
-  nclaims ~ factor(area) + offset(log(exposure)),
+  nclaims ~ 1 + offset(log(exposure)),
   family = poisson(), data = temporal_data
 )
 validate_performance(
@@ -298,18 +351,19 @@ validate_performance(
   initial = 3, metrics = c("rmse", "mae", "deviance"), show_progress = FALSE
 )
 #>   iteration train_start train_end test_start test_end n_train n_test      rmse
-#> 1         1        2020      2022       2023     2023    1500    500 0.3148918
-#> 2         2        2020      2023       2024     2024    2000    500 0.3402196
-#> 3         3        2020      2024       2025     2025    2500    500 0.3490226
+#> 1         1        2020      2022       2023     2023     750    250 0.3297975
+#> 2         2        2020      2023       2024     2024    1000    250 0.3843832
+#> 3         3        2020      2024       2025     2025    1250    250 0.3968839
 #>         mae deviance
-#> 1 0.2056950 237.7274
-#> 2 0.2084982 259.1681
-#> 3 0.2086374 255.4882
+#> 1 0.1689067 130.2780
+#> 2 0.1866373 139.2036
+#> 3 0.2028800 148.2633
 ```
 
-Use actual historical periods to assess temporal predictive performance.
-Unlike plotting calibration by year for a fixed model, this refits the
-model on only the information available in each training window.
+The first fit uses 2020 to 2022 and scores 2023. The next fit adds 2023
+to training and scores 2024. Unlike plotting calibration by year for a
+fixed model, each fit uses only the information available in its
+training window.
 
 ## Checking distributional assumptions
 
@@ -328,7 +382,8 @@ dispersion_check
 For a Poisson frequency GLM, the dispersion ratio is Pearson’s
 chi-squared statistic divided by the residual degrees of freedom. A
 value above one means that observed variation exceeds the variance
-implied by the Poisson model.
+implied by the Poisson model. Here the ratio is about 1.22. It is a
+diagnostic of extra variation, not a factor to apply to premiums.
 
 Both statistical evidence and practical magnitude matter. In a large
 insurance portfolio, a small departure can produce a very small p-value
@@ -342,17 +397,11 @@ model misspecification, but does not by itself identify the cause.
 
 ``` r
 
-set.seed(123)
-
-residual_check <- check_residuals(
-  area_model,
-  n_simulations = 250
-)
-
 autoplot(residual_check)
+#> Residuals consistent with expected distribution (p = 0.656)
 ```
 
-![](model-validation_files/figure-html/unnamed-chunk-9-1.png)
+![](model-validation_files/figure-html/unnamed-chunk-11-1.png)
 
 [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
 uses DHARMa simulations from the fitted model to construct scaled
@@ -360,11 +409,10 @@ residuals. The QQ plot and uniformity test assess whether the observed
 response behaves consistently with the distribution implied by that
 model.
 
-Systematic departures can indicate remaining structure, distributional
-mismatch or unusual observations. The uniformity p-value is a diagnostic
-signal, not a stand-alone acceptance rule. Its interpretation should be
-combined with the location and shape of departures, fitted values,
-exposure and relevant risk-factor levels.
+The QQ plot can flag a distributional mismatch but does not identify the
+predictor or segment involved. A separate plot against fitted values,
+exposure or a rating factor can help locate a pattern. The uniformity
+p-value is a diagnostic signal, not a stand-alone acceptance rule.
 
 ## Reviewing observed versus expected experience
 
@@ -389,7 +437,7 @@ area_calibration
 autoplot(area_calibration)
 ```
 
-![](model-validation_files/figure-html/unnamed-chunk-10-1.png)
+![](model-validation_files/figure-html/unnamed-chunk-12-1.png)
 
 O/E is observed claims divided by expected claims. A ratio above 1 means
 more claims were observed than expected; a ratio below 1 means fewer.
@@ -413,6 +461,11 @@ areas into a single time series.
 
 ### Does the model get claim frequency right at different risk levels?
 
+For this example, reserve part of the MTPL portfolio and fit a frequency
+model using age and ZIP on the remaining rows. The row split illustrates
+evaluation on data not used in the fit; it is not a test on a later
+year.
+
 With `groups = 5`, the function sorts policy records from lowest to
 highest **predicted claims per policy-year**. Dividing each prediction
 by its exposure for this ranking means a longer policy period is not
@@ -428,17 +481,25 @@ of a group boundary; ties follow the input row order.
 
 ``` r
 
-risk_calibration <- calibration_analysis(area_model, portfolio, groups = 5)
+set.seed(123)
+train <- sample.int(nrow(tariff_portfolio), floor(0.7 * nrow(tariff_portfolio)))
+risk_model <- glm(
+  nclaims ~ age_policyholder + zip + offset(log(exposure)),
+  family = poisson(), data = tariff_portfolio[train, ]
+)
+risk_calibration <- calibration_analysis(
+  risk_model, tariff_portfolio[-train, ], groups = 5
+)
 knitr::kable(risk_calibration, digits = 2)
 ```
 
-| Group | Observed | Expected |   OE |   N | Exposure |
-|------:|---------:|---------:|-----:|----:|---------:|
-|     1 |       58 |    63.22 | 0.92 | 599 |   532.99 |
-|     2 |       76 |    67.69 | 1.12 | 598 |   531.76 |
-|     3 |       70 |    72.95 | 0.96 | 593 |   532.48 |
-|     4 |       78 |    75.49 | 1.03 | 608 |   532.89 |
-|     5 |       76 |    78.65 | 0.97 | 602 |   532.46 |
+| Group | Observed | Expected |   OE |    N | Exposure |
+|------:|---------:|---------:|-----:|-----:|---------:|
+|     1 |      154 |   147.18 | 1.05 | 1728 |  1597.47 |
+|     2 |      190 |   186.30 | 1.02 | 1767 |  1597.88 |
+|     3 |      192 |   218.70 | 0.88 | 1801 |  1597.85 |
+|     4 |      227 |   253.48 | 0.90 | 1854 |  1598.29 |
+|     5 |      314 |   301.17 | 1.04 | 1850 |  1597.70 |
 
 ``` r
 
@@ -446,25 +507,22 @@ autoplot(risk_calibration)
 ```
 
 ![Observed against expected claims per policy-year for five groups of
-predicted risk, with a diagonal line where the frequencies are
-equal.](model-validation_files/figure-html/unnamed-chunk-11-1.png)
+predicted risk on held-out records. The diagonal marks equal
+frequencies.](model-validation_files/figure-html/unnamed-chunk-13-1.png)
 
 Each dot is one group. Its x-coordinate is total expected claims divided
 by the group’s total policy-years; its y-coordinate is total observed
-claims divided by the same policy-years. For group 2 (the second dot
-from the left), there were 76 observed claims versus about 68 expected,
-so the dot lies **above** the diagonal: the model predicted too few
-claims for that group. A dot below the diagonal means it predicted too
-many.
+claims divided by the same policy-years. Group 3 (the middle dot) has
+192 observed claims versus about 219 expected. A dot below the diagonal
+means the model predicted too many claims for that group; a dot above it
+means the model predicted too few.
 
 This is a visual check for systematic over- or under-prediction, not a
 statistical test or a measure of how well the model ranks individual
 risks. Read a gap alongside the group’s exposure and claim volume: a
-large O/E deviation based on few claims may have little credibility.
-This example uses the estimation data; use separate evaluation data to
-assess calibration on unseen policies. For model-point aggregation
-before modelling rather than calibration, see [Large
-Portfolios](https://mharinga.github.io/insurancerating/articles/large-portfolios.md).
+large O/E deviation based on few claims may have little credibility. If
+multiple rows describe the same policy, keep them together when forming
+a holdout.
 
 ## Validation, investigation and refinement
 
@@ -495,25 +553,27 @@ evaluation <- extract_model_data(restricted_model)
 before <- calibration_analysis(area_model, evaluation, by = "area")
 after <- calibration_analysis(restricted_model, evaluation, by = "area")
 
-knitr::kable(data.frame(
-  Area = after$area,
-  Exposure = after$Exposure,
-  Observed = after$Observed,
-  Expected_before = before$Expected,
-  Expected_after = after$Expected
-), digits = 2)
+comparison <- merge(
+  before[c("area", "Exposure", "Observed", "Expected")],
+  after[c("area", "Expected")],
+  by = "area",
+  suffixes = c("_before", "_after")
+)
+knitr::kable(comparison, digits = 2)
 ```
 
-| Area | Exposure | Observed | Expected_before | Expected_after |
+| area | Exposure | Observed | Expected_before | Expected_after |
 |:-----|---------:|---------:|----------------:|---------------:|
-| 1    |  1065.75 |      146 |             146 |         145.08 |
 | 0    |    13.31 |        1 |               1 |           0.99 |
+| 1    |  1065.75 |      146 |             146 |         145.08 |
 | 2    |   818.54 |       98 |              98 |          97.38 |
 | 3    |   764.99 |      113 |             113 |         114.55 |
 
 Use fixed bands or rating-factor levels for this comparison. With
 `groups = 5`, each model can rank policies differently, so its group 1
-need not contain the same policies as group 1 from the other model.
+need not contain the same policies as group 1 from the other model. This
+is a comparison of two sets of predictions on the same portfolio, not
+evidence that the restriction improves predictions on new data.
 
 ### Acting on validation findings
 

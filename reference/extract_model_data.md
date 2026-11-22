@@ -84,15 +84,26 @@ Martin Haringa
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-library(insurancerating)
-
-pmodel <- glm(
-  breaks ~ wool + tension,
-  data = warpbreaks,
-  family = poisson(link = "log")
+portfolio <- as.data.frame(MTPL2)
+portfolio$area <- factor(portfolio$area)
+model <- glm(
+  nclaims ~ area + offset(log(exposure)),
+  family = poisson(), data = portfolio
 )
 
-extract_model_data(pmodel)
-} # }
+refined <- prepare_refinement(model, data = portfolio) |>
+  add_restriction(c("3" = 1.10), model_variable = "area") |>
+  refit()
+
+# Includes exposure and the column added by the restriction.
+evaluation <- extract_model_data(refined)
+names(evaluation)
+#> [1] "customer_id"     "area"            "nclaims"         "amount"         
+#> [5] "exposure"        "premium"         "area_restricted"
+calibration_analysis(refined, evaluation, by = "area")
+#>   area Observed   Expected        OE    N   Exposure
+#> 1    0        1   1.161442 0.8609984   15   13.30685
+#> 2    1      146 169.570580 0.8609984 1194 1065.74795
+#> 3    2       98 113.821349 0.8609984  921  818.53973
+#> 4    3      113  73.446629 1.5385322  870  764.99178
 ```

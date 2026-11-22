@@ -66,9 +66,8 @@
 <!-- badges: start -->
 
 <!-- badges: end -->
-<p><code>insurancerating</code> provides actuarial tools and building blocks for traditional insurance pricing workflows. GLMs remain at the core, with supporting functions for portfolio analysis, risk-factor structuring, model interpretation, tariff refinement, validation, large-loss treatment and scalable data preparation.</p>
-<p>The package works alongside standard R modelling tools such as <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>. Models are fitted with familiar R functions and can subsequently be analysed, interpreted, refined and validated in actuarial terms with <code>insurancerating</code>. The building blocks can be used independently or combined according to the portfolio and pricing question.</p>
-<p>The package is developed independently as a generally applicable actuarial R package. Its examples illustrate possible combinations of the building blocks; they are not a universal industry workflow or a description of the pricing methodology or governance process of any particular organisation.</p>
+<p><code>insurancerating</code> provides actuarial tools for insurance pricing in R. It works alongside standard modelling functions such as <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code> to help you analyse portfolio experience, interpret and refine tariff relativities, and validate fitted models. It also supports risk-factor structuring, large-loss treatment and preparation of large portfolios.</p>
+<p>The building blocks can be used independently or combined to suit the portfolio. The examples illustrate choices, not a prescribed methodology.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -82,7 +81,7 @@
 <div class="section level2">
 <h2 id="explore-portfolio-experience">Explore portfolio experience<a class="anchor" aria-label="anchor" href="#explore-portfolio-experience"></a>
 </h2>
-<p><code><a href="reference/factor_analysis.html">factor_analysis()</a></code> summarises observed experience and the exposure supporting each level of a rating factor. These unadjusted portfolio patterns are useful before modelling, but should not be interpreted as conditional tariff relativities.</p>
+<p><code><a href="reference/factor_analysis.html">factor_analysis()</a></code> summarises observed experience and the exposure supporting each level of a rating factor. These unadjusted portfolio patterns are useful before modelling, but should not be interpreted as conditional tariff relativities. Compare an apparent difference with the exposure and claim count behind it.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mharinga.github.io/insurancerating/">insurancerating</a></span><span class="op">)</span></span>
 <span></span>
@@ -106,32 +105,30 @@
 <div class="section level2">
 <h2 id="from-model-to-refined-tariff">From model to refined tariff<a class="anchor" aria-label="anchor" href="#from-model-to-refined-tariff"></a>
 </h2>
-<p>A standard Poisson GLM can be translated into an explicit tariff adjustment before it is refitted. The restriction below is deliberately small: it shows the refinement architecture without replacing the specialist documentation.</p>
+<p>An age-band GLM estimates one relativity per band. Smoothing proposes a continuous relationship, which can then be translated into a new set of bands.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">frequency_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
-<span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">zip</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span>
+<code class="sourceCode R"><span><span class="va">age_breaks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">25</span>, <span class="fl">32</span>, <span class="fl">39</span>, <span class="fl">51</span>, <span class="fl">58</span>, <span class="fl">65</span>, <span class="fl">84</span>, <span class="fl">95</span><span class="op">)</span></span>
+<span><span class="va">portfolio</span><span class="op">$</span><span class="va">age_band</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span><span class="va">portfolio</span><span class="op">$</span><span class="va">age_policyholder</span>, <span class="va">age_breaks</span>,</span>
+<span>                          include.lowest <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">frequency_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span></span>
+<span>  <span class="va">nclaims</span> <span class="op">~</span> <span class="va">age_band</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  data <span class="op">=</span> <span class="va">portfolio</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">zip_restrictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  zip <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0"</span>, <span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span><span class="op">)</span>,</span>
-<span>  zip_restricted <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.90</span>, <span class="fl">0.95</span>, <span class="fl">1.00</span>, <span class="fl">1.10</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">refined_model</span> <span class="op">&lt;-</span> <span class="va">frequency_model</span> <span class="op">|&gt;</span></span>
+<span><span class="va">tariff_breaks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">24</span>, <span class="fl">30</span>, <span class="fl">40</span>, <span class="fl">55</span>, <span class="fl">70</span>, <span class="fl">85</span>, <span class="fl">95</span><span class="op">)</span></span>
+<span><span class="va">proposal</span> <span class="op">&lt;-</span> <span class="va">frequency_model</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/add_restriction.html">add_restriction</a></span><span class="op">(</span><span class="va">zip_restrictions</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/refit.html">refit</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="reference/add_smoothing.html">add_smoothing</a></span><span class="op">(</span><span class="st">"age_band"</span>, <span class="st">"age_policyholder"</span>, breaks <span class="op">=</span> <span class="va">tariff_breaks</span>,</span>
+<span>                k <span class="op">=</span> <span class="fl">5</span>, weights <span class="op">=</span> <span class="st">"exposure"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/rating_table.html">rating_table</a></span><span class="op">(</span><span class="va">refined_model</span>, exposure <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="do">##      risk_factor       level est_refined_model</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="do">## 1    (Intercept) (Intercept)          0.136653</span></span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="do">## 2 zip_restricted           0          0.900000</span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="do">## 3 zip_restricted           1          0.950000</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="do">## 4 zip_restricted           2          1.000000</span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="do">## 5 zip_restricted           3          1.100000</span></span></code></pre></div>
-<p>The refinement steps remain explicit and reviewable. Their actuarial rationale and effect on the portfolio should still be assessed before implementation.</p>
+<span><span class="va">tariff</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/refit.html">refit</a></span><span class="op">(</span><span class="va">proposal</span>, intercept_only <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">proposal</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Policyholder age"</span>, y <span class="op">=</span> <span class="st">"Tariff relativity"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"bottom"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/refinement-preview-1.png" alt="Original age-band GLM relativities, a dashed proposed smoothing curve and the clustered tariff relativities held fixed in the refit."></p>
+<p>The blue steps are the original GLM estimates. The dashed curve is the smoothing proposal; the orange steps are the resulting tariff bands. <code><a href="reference/refit.html">refit()</a></code> holds those band effects fixed and re-estimates the base claim rate, so their relativities do not move again. See the <a href="https://mharinga.github.io/insurancerating/articles/refinement-workflow.html#quick-start">refinement example</a> for how to inspect the fitted result.</p>
 </div>
 <div class="section level2">
 <h2 id="what-does-insurancerating-help-with">What does insurancerating help with?<a class="anchor" aria-label="anchor" href="#what-does-insurancerating-help-with"></a>
@@ -204,7 +201,7 @@
 <li><p><a href="https://mharinga.github.io/insurancerating/articles/getting-started.html">Getting Started</a> Follow one portfolio through risk-factor analysis, modelling, technical risk premium, interpretation, validation and refinement.</p></li>
 <li><p><a href="https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html">Pricing workflow and package building blocks</a> See how the main actuarial pricing tasks and package components fit together.</p></li>
 <li><p><a href="https://mharinga.github.io/insurancerating/articles/refinement-workflow.html">Refinement building blocks</a> Translate estimated model effects into an explicit, reviewable and implementable tariff structure.</p></li>
-<li><p><a href="https://mharinga.github.io/insurancerating/articles/model-validation.html">Model validation</a> Assess model fit, stability and tariff plausibility, compare observed with expected claims, and evaluate predictions on later periods.</p></li>
+<li><p><a href="https://mharinga.github.io/insurancerating/articles/model-validation.html">Model validation</a> Assess model fit, stability and tariff plausibility, compare observed with expected claims, and evaluate predictions on later periods. Start with the <a href="https://mharinga.github.io/insurancerating/articles/model-validation.html#quick-start">quick start</a>.</p></li>
 <li><p><a href="https://mharinga.github.io/insurancerating/articles/large-portfolios.html">Large Portfolios</a> Reduce production-sized portfolios with model-point aggregation and database-backed workflows.</p></li>
 </ul>
 </div>

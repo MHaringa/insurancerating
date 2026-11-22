@@ -23,6 +23,11 @@
   for example when the original reference level is absent.
 - [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
   for
+  [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
+  shows original estimates, bootstrap intervals and the number of
+  comparable estimates per coefficient.
+- [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  for
   [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
   shows overall, predicted-risk, temporal or rating-factor calibration.
 - [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
@@ -57,9 +62,13 @@
   joins on a compact set of keys and dates, then retrieves the matching
   rows. This reduces copying and sorting for wide portfolios.
 - [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-  avoids copying unused portfolio columns. With `exposure_by`, it
-  aggregates only exposure or counts within each split; additional
-  totals are still calculated over the original model-point rows.
+  uses `split` for the measure to sum instead of counting source rows
+  and `split_by` for the values that become separate columns.
+  `aggregate_cols` totals remain unsplit. The old names `exposure` and
+  `exposure_by` and the old positional order still work with deprecation
+  warnings; in new calls, name arguments after `group_by`.
+- [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
+  avoids copying unused portfolio columns.
 - [`summary()`](https://rdrr.io/r/base/summary.html) for
   [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md)
   results now copies only the date columns and explicitly requested

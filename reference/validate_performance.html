@@ -88,7 +88,10 @@ Default is 50.</p></dd>
 <dt id="arg-sample-fraction">sample_fraction<a class="anchor" aria-label="anchor" href="#arg-sample-fraction"></a></dt>
 <dd><p>Fraction of input rows to draw for each random
 training sample, before adding any rows for missing factor levels.
-Must be in <code>(0, 1]</code>. Default is 1. Not used for rolling validation.</p></dd>
+Must be in <code>(0, 1]</code>. The default, 1, scores the training rows. For
+held-out scores, use a fraction below 1: bootstrap scores out-of-bag
+rows, while split scores the rows left out of the random training draw.
+Not used for rolling validation, which always scores subsequent periods.</p></dd>
 
 
 <dt id="arg-metric">metric<a class="anchor" aria-label="anchor" href="#arg-metric"></a></dt>

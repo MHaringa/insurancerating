@@ -281,28 +281,10 @@ Marc Haine, Martin Haringa
 ``` r
 # Plot observed frequency and risk premium
 x <- factor_analysis(MTPL2,
-                     x = "area",
-                     severity = "amount",
-                     nclaims = "nclaims",
+                     risk_factors = "area",
+                     claim_amount = "amount",
+                     claim_count = "nclaims",
                      exposure = "exposure")
-#> Warning: The `x` argument of `factor_analysis()` is deprecated as of insurancerating
-#> 0.9.0.
-#> ℹ Please use the `risk_factors` argument instead.
-#> ℹ The deprecated feature was likely used in the insurancerating package.
-#>   Please report the issue at
-#>   <https://github.com/MHaringa/insurancerating/issues>.
-#> Warning: The `severity` argument of `factor_analysis()` is deprecated as of
-#> insurancerating 0.9.0.
-#> ℹ Please use the `claim_amount` argument instead.
-#> ℹ The deprecated feature was likely used in the insurancerating package.
-#>   Please report the issue at
-#>   <https://github.com/MHaringa/insurancerating/issues>.
-#> Warning: The `nclaims` argument of `factor_analysis()` is deprecated as of
-#> insurancerating 0.9.0.
-#> ℹ Please use the `claim_count` argument instead.
-#> ℹ The deprecated feature was likely used in the insurancerating package.
-#>   Please report the issue at
-#>   <https://github.com/MHaringa/insurancerating/issues>.
 autoplot(x, metrics = c("frequency", "risk_premium"))
 
 ```

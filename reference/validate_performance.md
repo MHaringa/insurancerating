@@ -44,8 +44,11 @@ validate_performance(
 - sample_fraction:
 
   Fraction of input rows to draw for each random training sample, before
-  adding any rows for missing factor levels. Must be in `(0, 1]`.
-  Default is 1. Not used for rolling validation.
+  adding any rows for missing factor levels. Must be in `(0, 1]`. The
+  default, 1, scores the training rows. For held-out scores, use a
+  fraction below 1: bootstrap scores out-of-bag rows, while split scores
+  the rows left out of the random training draw. Not used for rolling
+  validation, which always scores subsequent periods.
 
 - metric:
 
