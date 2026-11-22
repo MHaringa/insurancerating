@@ -2,15 +2,18 @@
 % Please edit documentation in R/model_get_data.R
 \name{rating_grid}
 \alias{rating_grid}
-\title{Construct observed rating-grid points}
+\title{Aggregate portfolio records into observed model points}
 \usage{
 rating_grid(
   x,
   group_by = NULL,
+  ...,
+  aggregate_cols = NULL,
+  split = NULL,
+  split_by = NULL,
+  drop_na = FALSE,
   exposure = NULL,
   exposure_by = NULL,
-  aggregate_cols = NULL,
-  drop_na = FALSE,
   group_vars = NULL,
   agg_cols = NULL
 )
@@ -21,22 +24,28 @@ rating_grid(
 \code{\link[=extract_model_data]{extract_model_data()}}.}
 
 \item{group_by}{Optional character vector with the variables that define the
-rating-grid points. If \code{NULL} and \code{x} is a \code{"model_data"} object, the
+model points. If \code{NULL} and \code{x} is a \code{"model_data"} object, the
 risk-factor variables stored in the object are used. If \code{NULL} and \code{x} is a
-plain \code{data.frame}, all columns except those listed in \code{exposure},
-\code{exposure_by}, and \code{aggregate_cols} are used.}
+plain \code{data.frame}, all columns except those listed in \code{aggregate_cols},
+\code{split} and \code{split_by} are used.}
 
-\item{exposure}{Optional character; name of the exposure column to aggregate.}
-
-\item{exposure_by}{Optional character; name of a column, such as year,
-whose levels become separate output columns. If \code{exposure} is supplied,
-each column contains total exposure for that level; otherwise, it
-contains the number of source rows. For example, the output might
-contain \code{exposure_2020} or \code{count_2020}. The totals in \code{aggregate_cols}
-are calculated once per model point, across all split levels.}
+\item{...}{Reserved for legacy positional arguments. Name all arguments
+after \code{group_by} in new code.}
 
 \item{aggregate_cols}{Optional character vector with additional numeric
-columns to aggregate using \code{sum(na.rm = TRUE)}.}
+columns to sum per model point using \code{sum(na.rm = TRUE)}. These totals
+are not split across output columns.}
+
+\item{split}{Optional character string naming the numeric column to sum
+instead of counting source rows. For example, use \code{split = "exposure"}
+to sum exposure. If \code{split_by} is not supplied, the total is returned
+in a single column with the original name.}
+
+\item{split_by}{Optional character string naming the column whose values
+become separate output columns. With \code{split = "exposure"} and
+\code{split_by = "year"}, these might be \code{exposure_2024} and
+\code{exposure_2025}. Without \code{split}, they contain source row counts
+(for example, \code{count_2024} and \code{count_2025}).}
 
 \item{drop_na}{Logical. With \code{FALSE} (default), missing values in
 \code{group_by} form a distinct grouping value and those rows still contribute
@@ -45,17 +54,19 @@ excludes the entire row from counts, exposure and other totals.
 Only \code{group_by} columns are checked; missing values in the split or
 aggregation columns do not trigger this filter.}
 
+\item{exposure, exposure_by}{Deprecated argument names. Use \code{split} and
+\code{split_by} instead.}
+
 \item{group_vars, agg_cols}{Deprecated argument names. Use \code{group_by} and
 \code{aggregate_cols} instead.}
 }
 \value{
-A \code{data.frame} with one row per observed rating-grid point.
+A \code{data.frame} with one row per observed model point.
 }
 \description{
-Collapse portfolio records with identical risk-factor combinations into
-observed rating-grid points. Exposure and other numeric measures can be
-aggregated alongside the combinations for prediction, tariff comparison and
-portfolio diagnostics.
+Combine records with identical grouping values into one model point per
+observed combination. Sum exposure and other additive quantities within
+each model point for model fitting, prediction or portfolio analysis.
 
 Together with \code{\link[=merge_date_ranges]{merge_date_ranges()}}, this function belongs to the portfolio
 reduction workflow. Both functions reduce row-level portfolio data while
@@ -63,8 +74,8 @@ retaining selected totals. \code{rating_grid()} reduces across identical
 risk-factor combinations; \code{\link[=merge_date_ranges]{merge_date_ranges()}} reduces temporally connected
 records within the same policy, risk or portfolio segment.
 
-The function returns only combinations that are actually observed in the input
-data. It does \strong{not} create the full Cartesian product of all unique values.
+The rating grid contains only combinations observed in the input data.
+It does \strong{not} create the full Cartesian product of all unique values.
 This keeps the output compact and suitable for model diagnostics, portfolio
 summaries, and prediction analysis.
 
@@ -91,22 +102,25 @@ relevant when risk factors are structurally related, such as product,
 coverage and distribution channel.
 
 Each output row therefore represents one observed combination of the
-variables in \code{group_by}. Exposure and \code{aggregate_cols} are summed over the
-source records belonging to that combination. Such a row is a model point:
+variables in \code{group_by}. The additional columns in \code{aggregate_cols} are
+summed over the source records in that combination. Such a row is a model point:
 one observed covariate combination together with its aggregated additive
 portfolio quantities. This is a categorical reduction of the portfolio; no
 date intervals are combined.
+
+To calculate all totals separately by year, include the year column in
+\code{group_by}. Use \code{split_by} when you want to keep one row per model point
+and spread only the selected measure (or row counts) across year columns.
 }
 
 \subsection{Estimating a GLM on aggregated data}{
 
-For a standard Poisson frequency GLM, aggregation before model fitting can
-preserve the coefficient estimates exactly. This applies when records are
-grouped by every predictor used in the model, claim counts are summed, earned
-exposure is summed, and the aggregated model uses \code{offset(log(exposure))}.
-Within such a group all records have the same linear predictor. Their
-contribution to the coefficient estimation therefore depends on total claims
-and total exposure, which are retained by the rating grid.
+For an unweighted Poisson log-link GLM with claim counts as the response
+and \code{offset(log(exposure))} as the only offset, grouping by all model
+predictors and summing counts and exposure preserves the coefficient
+estimates, up to numerical tolerance. Records within a group share the same
+expected claim rate, but their expected counts can differ if their exposures
+differ. The grouped fit uses the log of the summed exposure as its offset.
 
 This equivalence is conditional, not a general property of every GLM.
 Aggregating over a model variable changes the model, and row-level weights,
@@ -183,7 +197,7 @@ portfolio <- data.frame(
 rating_grid(
   portfolio,
   group_by = c("sector", "region"),
-  exposure = "earned_exposure"
+  split = "earned_exposure"
 )
 
 # Split earned exposure by underwriting year. This is useful when reviewing
@@ -191,8 +205,8 @@ rating_grid(
 rating_grid(
   portfolio,
   group_by = c("sector", "region"),
-  exposure = "earned_exposure",
-  exposure_by = "underwriting_year"
+  split = "earned_exposure",
+  split_by = "underwriting_year"
 )
 
 # Claim count and claim amount remain additive totals in the rating grid.
@@ -200,8 +214,8 @@ rating_grid(
 claims_grid <- rating_grid(
   portfolio,
   group_by = c("sector", "region"),
-  exposure = "earned_exposure",
-  aggregate_cols = c("claim_count", "claim_amount")
+  aggregate_cols = c("claim_count", "claim_amount"),
+  split = "earned_exposure"
 )
 
 claims_grid$frequency <-
@@ -243,8 +257,8 @@ frequency_model |>
 frequency_grid <- rating_grid(
   mtpl_portfolio,
   group_by = c("bm", "zip"),
-  exposure = "exposure",
-  aggregate_cols = "nclaims"
+  aggregate_cols = "nclaims",
+  split = "exposure"
 )
 
 frequency_model_grid <- glm(

@@ -1,4 +1,4 @@
-#' Assess GLM coefficient stability by portfolio-row bootstrap
+#' Assess GLM coefficient stability by resampling portfolio rows
 #'
 #' @description
 #' Refit a GLM on repeated bootstrap samples of the estimation portfolio and
@@ -41,7 +41,8 @@
 #' model selection, structural changes in portfolio composition or dependence
 #' between repeated records for the same policy. Where such dependence is
 #' material, a cluster-level bootstrap would require a different resampling
-#' design.
+#' design that draws whole policies, retaining all their records together.
+#' This function does not perform that cluster-level resampling.
 #'
 #' @param object A fitted `glm` object. Refined GLMs are accepted when their
 #'   estimation data can be recovered from the model object.
@@ -54,12 +55,13 @@
 #'   original coefficients, a coefficient matrix with one row per requested
 #'   resample, indicators for successful model fits, recorded failure messages,
 #'   and the resampling settings. Use [summary.bootstrap_coefficients()] for a
-#'   coefficient-level data frame and `as_gt()` for a formatted table.
+#'   coefficient-level data frame, `autoplot()` for an interval plot and
+#'   `as_gt()` for a formatted table.
 #'
 #' @author Martin Haringa
 #'
-#' @seealso [summary.bootstrap_coefficients()], [validate_performance()],
-#'   [model_performance()], [as_gt()]
+#' @seealso [summary.bootstrap_coefficients()], [autoplot.bootstrap_coefficients()],
+#'   [validate_performance()], [model_performance()], [as_gt()]
 #'
 #' @examples
 #' model <- glm(
@@ -79,6 +81,7 @@
 #' summary(boot, scale = "link")
 #' summary(boot, scale = "exponentiated")
 #' summary(boot, scale = "relativity")
+#' autoplot(boot, scale = "relativity")
 #'
 #' if (requireNamespace("gt", quietly = TRUE)) {
 #'   as_gt(boot, scale = "relativity")
@@ -439,6 +442,88 @@ summary.bootstrap_coefficients <- function(object,
   attr(result, "confidence") <- confidence
   attr(result, "interval") <- interval
   result
+}
+
+#' Plot bootstrap coefficient stability
+#'
+#' Show original GLM estimates as points and bootstrap intervals as horizontal
+#' lines. Row labels show the number of comparable estimates over the number
+#' of requested resamples. A row without an interval has insufficient
+#' comparable estimates for the selected interval method.
+#'
+#' @inheritParams summary.bootstrap_coefficients
+#' @param terms Optional character vector of coefficient names, in display
+#'   order from top to bottom. By default show all terms except the intercept,
+#'   or the intercept alone for an intercept-only model.
+#'
+#' @details
+#' The reference line marks no effect (0 on the link scale, 1 after
+#' exponentiation). It is omitted if the plot includes the intercept, which
+#' represents a baseline level. Intervals describe sampling stability, not
+#' uncertainty about future claims.
+#'
+#' @return A [ggplot2::ggplot] object.
+#' @seealso [coefficient_stability()], [summary.bootstrap_coefficients()]
+#' @keywords internal
+#' @export
+autoplot.bootstrap_coefficients <- function(object, ...,
+                                            scale = c("link", "exponentiated",
+                                                      "relativity"),
+                                            terms = NULL, confidence = 0.95,
+                                            interval = c("percentile", "normal")) {
+  .check_dots_empty(...)
+  scale <- match.arg(scale)
+  interval <- match.arg(interval)
+  data <- summary(object, scale = scale, confidence = confidence,
+                  interval = interval)
+  if (is.null(terms)) {
+    terms <- setdiff(data$term, "(Intercept)")
+    if (!length(terms)) terms <- data$term
+  } else if (!is.character(terms) || !length(terms) || anyNA(terms) ||
+             anyDuplicated(terms) || !all(terms %in% data$term)) {
+    stop("`terms` must contain distinct coefficient names from the model.",
+         call. = FALSE)
+  }
+  if (!length(terms)) {
+    stop("No coefficients are available to plot.", call. = FALSE)
+  }
+  data <- data[match(terms, data$term), , drop = FALSE]
+  counts <- paste0(data$n_successful, "/", data$n_requested)
+  labels <- stats::setNames(paste0(terms, " (", counts, ")"), terms)
+  intervals <- data[is.finite(data$lower) & is.finite(data$upper), , drop = FALSE]
+  points <- data[is.finite(data$estimate), , drop = FALSE]
+  pal <- .plot_palette_ir()
+
+  p <- ggplot2::ggplot(data, ggplot2::aes(y = .data$term))
+  if (!"(Intercept)" %in% terms) {
+    p <- p + ggplot2::geom_vline(
+      xintercept = if (scale == "link") 0 else 1, linetype = "dashed",
+      colour = "grey60"
+    )
+  }
+
+  p +
+    ggplot2::geom_segment(
+      data = intervals,
+      ggplot2::aes(x = .data$lower, xend = .data$upper, yend = .data$term),
+      colour = pal$frequency, linewidth = 0.8
+    ) +
+    ggplot2::geom_point(
+      data = points, ggplot2::aes(x = .data$estimate),
+      colour = pal$frequency, size = 2.8
+    ) +
+    ggplot2::scale_y_discrete(limits = rev(terms), labels = labels) +
+    ggplot2::theme_minimal() +
+    .plot_grid_theme_ir() +
+    ggplot2::labs(
+      title = "Coefficient stability",
+      subtitle = paste0(format(100 * confidence, trim = TRUE), "% ",
+                        interval, " bootstrap intervals"),
+      x = switch(scale, link = "Coefficient (link scale)",
+                 exponentiated = "Exponentiated coefficient", relativity = "Relativity"),
+      y = NULL,
+      caption = "Dots: original GLM. Row labels: comparable estimates / requested resamples."
+    )
 }
 
 #' @export

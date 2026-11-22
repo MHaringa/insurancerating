@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_performance_bootstrap_coefficients.R
 \name{coefficient_stability}
 \alias{coefficient_stability}
-\title{Assess GLM coefficient stability by portfolio-row bootstrap}
+\title{Assess GLM coefficient stability by resampling portfolio rows}
 \usage{
 coefficient_stability(
   object,
@@ -27,7 +27,8 @@ An object of class \code{"bootstrap_coefficients"}. It contains the
 original coefficients, a coefficient matrix with one row per requested
 resample, indicators for successful model fits, recorded failure messages,
 and the resampling settings. Use \code{\link[=summary.bootstrap_coefficients]{summary.bootstrap_coefficients()}} for a
-coefficient-level data frame and \code{as_gt()} for a formatted table.
+coefficient-level data frame, \code{autoplot()} for an interval plot and
+\code{as_gt()} for a formatted table.
 }
 \description{
 Refit a GLM on repeated bootstrap samples of the estimation portfolio and
@@ -69,7 +70,8 @@ portfolio. It does not include future trend, parameter uncertainty caused by
 model selection, structural changes in portfolio composition or dependence
 between repeated records for the same policy. Where such dependence is
 material, a cluster-level bootstrap would require a different resampling
-design.
+design that draws whole policies, retaining all their records together.
+This function does not perform that cluster-level resampling.
 }
 }
 \examples{
@@ -90,6 +92,7 @@ boot <- coefficient_stability(
 summary(boot, scale = "link")
 summary(boot, scale = "exponentiated")
 summary(boot, scale = "relativity")
+autoplot(boot, scale = "relativity")
 
 if (requireNamespace("gt", quietly = TRUE)) {
   as_gt(boot, scale = "relativity")
@@ -98,8 +101,8 @@ if (requireNamespace("gt", quietly = TRUE)) {
 
 }
 \seealso{
-\code{\link[=summary.bootstrap_coefficients]{summary.bootstrap_coefficients()}}, \code{\link[=validate_performance]{validate_performance()}},
-\code{\link[=model_performance]{model_performance()}}, \code{\link[=as_gt]{as_gt()}}
+\code{\link[=summary.bootstrap_coefficients]{summary.bootstrap_coefficients()}}, \code{\link[=autoplot.bootstrap_coefficients]{autoplot.bootstrap_coefficients()}},
+\code{\link[=validate_performance]{validate_performance()}}, \code{\link[=model_performance]{model_performance()}}, \code{\link[=as_gt]{as_gt()}}
 }
 \author{
 Martin Haringa

@@ -40,7 +40,8 @@ and intended use of the tariff.
 This vignette starts from fitted models. [Getting Started](getting-started.html)
 provides the worked modelling example, while
 [Pricing workflow and package building blocks](pricing-workflow-building-blocks.html)
-maps validation within the wider package.
+maps validation within the wider package. Jump to the [quick start](#quick-start)
+for runnable examples.
 
 ## Validation map
 
@@ -87,10 +88,47 @@ area_model <- glm(
 The fitted model is starting material here; construction of frequency,
 severity and technical risk-premium models is covered elsewhere.
 
+## Quick start
+
+Each call answers a different question about the fitted frequency models.
+The diagnostics can be used independently.
+
+```{r, message = FALSE}
+# Compare models fitted on the same records.
+fit_comparison <- model_performance(intercept_model, area_model)
+
+# Does one common rate predict the right total in each area?
+area_check <- calibration_analysis(intercept_model, portfolio, by = "area")
+
+# How much does prediction error vary on rows left out of each refit?
+set.seed(123)
+resample_result <- validate_performance(
+  area_model, portfolio, sampling = "bootstrap", sample_fraction = 0.8,
+  n_resamples = 50, metrics = c("rmse", "mae", "deviance"),
+  show_progress = FALSE
+)
+
+# Is the response distribution consistent with the fitted model?
+residual_check <- check_residuals(area_model, n_simulations = 250)
+```
+
+`area_check` compares observed and expected **counts**, with exposure for
+context. A value of O/E above one means the model predicted too few claims.
+Here this is a check on the estimation portfolio, not an independent test.
+
+```{r}
+area_check
+```
+
+The [resampling plot](#assessing-resampling-stability) and
+[residual plot](#simulation-based-residuals) show how to inspect the other
+results. For sampling variation in individual tariff effects, see
+[coefficient stability](#how-stable-are-the-tariff-relativities).
+
 ## Comparing model performance
 
 ```{r}
-model_performance(intercept_model, area_model)
+fit_comparison
 ```
 
 `model_performance()` reports AIC, BIC, response-scale RMSE and residual deviance:
@@ -175,22 +213,19 @@ predictions with actual outcomes.
 ## Assessing resampling stability
 
 Unlike `model_performance()`, `validate_performance()` refits the model for
-each sample. By default, it fits and scores on the same bootstrap sample.
-The example below instead scores on rows left out of each fit.
+each sample. Choose the evaluation rows according to the question:
+
+| Setting | Rows used to score each refit |
+|---|---|
+| Default bootstrap: `sample_fraction = 1` | The same sample used for fitting |
+| Bootstrap: `sample_fraction < 1` | Rows not used in that fit (out of bag) |
+| Random split: `sample_fraction < 1` | Rows held out of the training split |
+| Rolling validation | Subsequent periods, after the training window |
+
+The quick start uses out-of-bag evaluation. The plot subtitle identifies the
+evaluation rows used.
 
 ```{r}
-set.seed(123)
-
-resample_result <- validate_performance(
-  area_model,
-  portfolio,
-  n_resamples = 50,
-  sample_fraction = 0.8,
-  sampling = "bootstrap",
-  show_progress = FALSE,
-  metrics = c("rmse", "mae", "deviance")
-)
-
 head(resample_result$scores)
 autoplot(resample_result, metric = "rmse")
 ```
@@ -225,34 +260,45 @@ each area effect as a ratio to the original reference area.
 area_stability <- coefficient_stability(
   area_model, n_resamples = 100, seed = 123, show_progress = FALSE
 )
-effects <- summary(area_stability, scale = "relativity")
-knitr::kable(
-  effects[effects$term != "(Intercept)",
-          c("term", "estimate", "lower", "upper", "n_successful", "n_requested")],
-  digits = 2
-)
+autoplot(area_stability, scale = "relativity")
 ```
 
-Read the interval together with `n_successful`, the number of comparable
-estimates for that effect. A refit can converge without yielding a
+The dots are original GLM estimates, the bars are bootstrap intervals, and
+the dashed line at 1 marks no relative effect. The counts next to each term
+show how many of the requested resamples yield comparable estimates for that
+effect. Use `summary(area_stability, scale = "relativity")` to inspect the
+numbers. A refit can converge without yielding a
 comparable estimate for every level, for example when a reference level
 is absent from the draw. A narrow interval based on few usable draws
 offers little reassurance. Area 0 has about 13 policy-years and one claim
 in the estimation portfolio, so interpret its interval with that limited
 experience in mind.
 
+This is a row bootstrap, not a policy bootstrap. If one policy contributes
+several records, drawing them independently can understate uncertainty.
+When that dependence matters, a cluster bootstrap would draw whole policies
+and retain their records together. `coefficient_stability()` does not
+currently implement that design.
+
 ## Testing on later periods
 
 Rolling validation fits the specification on earlier periods and scores it
 on the next period or periods. The training window expands one period at a
-time. The example years here illustrate the interface; MTPL2 has no actual
-calendar-year information.
+time. This example simulates policy periods with a higher claim frequency
+from 2023 onwards, so the first evaluation window faces a change in level.
 
 ```{r}
-temporal_data <- as.data.frame(MTPL2)
-temporal_data$year <- rep(2020:2025, length.out = nrow(temporal_data))
+set.seed(123)
+temporal_data <- data.frame(
+  year = rep(2020:2025, each = 250),
+  exposure = rep(c(0.5, 1), 750)
+)
+temporal_data$nclaims <- with(
+  temporal_data,
+  rpois(nrow(temporal_data), exposure * ifelse(year < 2023, 0.10, 0.20))
+)
 temporal_model <- glm(
-  nclaims ~ factor(area) + offset(log(exposure)),
+  nclaims ~ 1 + offset(log(exposure)),
   family = poisson(), data = temporal_data
 )
 validate_performance(
@@ -261,9 +307,9 @@ validate_performance(
 )
 ```
 
-Use actual historical periods to assess temporal predictive performance.
-Unlike plotting calibration by year for a fixed model, this refits the model
-on only the information available in each training window.
+The first fit uses 2020 to 2022 and scores 2023. The next fit adds 2023 to
+training and scores 2024. Unlike plotting calibration by year for a fixed
+model, each fit uses only the information available in its training window.
 
 ## Checking distributional assumptions
 
@@ -277,6 +323,8 @@ dispersion_check
 For a Poisson frequency GLM, the dispersion ratio is Pearson's chi-squared
 statistic divided by the residual degrees of freedom. A value above one means
 that observed variation exceeds the variance implied by the Poisson model.
+Here the ratio is about 1.22. It is a diagnostic of extra variation, not a
+factor to apply to premiums.
 
 Both statistical evidence and practical magnitude matter. In a large insurance
 portfolio, a small departure can produce a very small p-value simply because
@@ -288,14 +336,7 @@ itself identify the cause.
 
 ### Simulation-based residuals
 
-```{r, message = FALSE, warning = FALSE}
-set.seed(123)
-
-residual_check <- check_residuals(
-  area_model,
-  n_simulations = 250
-)
-
+```{r}
 autoplot(residual_check)
 ```
 
@@ -303,11 +344,10 @@ autoplot(residual_check)
 scaled residuals. The QQ plot and uniformity test assess whether the observed
 response behaves consistently with the distribution implied by that model.
 
-Systematic departures can indicate remaining structure, distributional
-mismatch or unusual observations. The uniformity p-value is a diagnostic signal,
-not a stand-alone acceptance rule. Its interpretation should be combined with
-the location and shape of departures, fitted values, exposure and relevant
-risk-factor levels.
+The QQ plot can flag a distributional mismatch but does not identify the
+predictor or segment involved. A separate plot against fitted values, exposure
+or a rating factor can help locate a pattern. The uniformity p-value is a
+diagnostic signal, not a stand-alone acceptance rule.
 
 ## Reviewing observed versus expected experience
 
@@ -341,6 +381,10 @@ than joining areas into a single time series.
 
 ### Does the model get claim frequency right at different risk levels?
 
+For this example, reserve part of the MTPL portfolio and fit a frequency
+model using age and ZIP on the remaining rows. The row split illustrates
+evaluation on data not used in the fit; it is not a test on a later year.
+
 With `groups = 5`, the function sorts policy records from lowest to highest
 **predicted claims per policy-year**. Dividing each prediction by its exposure
 for this ranking means a longer policy period is not treated as a higher
@@ -353,28 +397,33 @@ of model predictions, not rating-factor levels such as area. Policies with
 the same predicted frequency can fall on either side of a group boundary;
 ties follow the input row order.
 
-```{r, fig.alt = "Observed against expected claims per policy-year for five groups of predicted risk, with a diagonal line where the frequencies are equal."}
-risk_calibration <- calibration_analysis(area_model, portfolio, groups = 5)
+```{r, fig.alt = "Observed against expected claims per policy-year for five groups of predicted risk on held-out records. The diagonal marks equal frequencies."}
+set.seed(123)
+train <- sample.int(nrow(tariff_portfolio), floor(0.7 * nrow(tariff_portfolio)))
+risk_model <- glm(
+  nclaims ~ age_policyholder + zip + offset(log(exposure)),
+  family = poisson(), data = tariff_portfolio[train, ]
+)
+risk_calibration <- calibration_analysis(
+  risk_model, tariff_portfolio[-train, ], groups = 5
+)
 knitr::kable(risk_calibration, digits = 2)
 autoplot(risk_calibration)
 ```
 
 Each dot is one group. Its x-coordinate is total expected claims divided
 by the group's total policy-years; its y-coordinate is total observed claims
-divided by the same policy-years. For group 2 (the second dot from the left),
-there were
-`r risk_calibration$Observed[2]` observed claims versus about
-`r round(risk_calibration$Expected[2])` expected, so the dot lies **above**
-the diagonal: the model predicted too few claims for that group. A dot
-below the diagonal means it predicted too many.
+divided by the same policy-years. Group 3 (the middle dot) has
+`r risk_calibration$Observed[3]` observed claims versus about
+`r round(risk_calibration$Expected[3])` expected. A dot below the diagonal
+means the model predicted too many claims for that group; a dot above it
+means the model predicted too few.
 
 This is a visual check for systematic over- or under-prediction, not a
 statistical test or a measure of how well the model ranks individual risks.
 Read a gap alongside the group's exposure and claim volume: a large O/E
-deviation based on few claims may have little credibility. This example uses
-the estimation data; use separate evaluation data to assess calibration on
-unseen policies. For model-point aggregation before modelling rather than
-calibration, see [Large Portfolios](large-portfolios.html).
+deviation based on few claims may have little credibility. If multiple rows
+describe the same policy, keep them together when forming a holdout.
 
 ## Validation, investigation and refinement
 
@@ -402,18 +451,20 @@ evaluation <- extract_model_data(restricted_model)
 before <- calibration_analysis(area_model, evaluation, by = "area")
 after <- calibration_analysis(restricted_model, evaluation, by = "area")
 
-knitr::kable(data.frame(
-  Area = after$area,
-  Exposure = after$Exposure,
-  Observed = after$Observed,
-  Expected_before = before$Expected,
-  Expected_after = after$Expected
-), digits = 2)
+comparison <- merge(
+  before[c("area", "Exposure", "Observed", "Expected")],
+  after[c("area", "Expected")],
+  by = "area",
+  suffixes = c("_before", "_after")
+)
+knitr::kable(comparison, digits = 2)
 ```
 
 Use fixed bands or rating-factor levels for this comparison. With
 `groups = 5`, each model can rank policies differently, so its group 1
 need not contain the same policies as group 1 from the other model.
+This is a comparison of two sets of predictions on the same portfolio, not
+evidence that the restriction improves predictions on new data.
 
 ### Acting on validation findings
 

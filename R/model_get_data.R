@@ -51,17 +51,21 @@
 #' @author Martin Haringa
 #'
 #' @examples
-#' \dontrun{
-#' library(insurancerating)
-#'
-#' pmodel <- glm(
-#'   breaks ~ wool + tension,
-#'   data = warpbreaks,
-#'   family = poisson(link = "log")
+#' portfolio <- as.data.frame(MTPL2)
+#' portfolio$area <- factor(portfolio$area)
+#' model <- glm(
+#'   nclaims ~ area + offset(log(exposure)),
+#'   family = poisson(), data = portfolio
 #' )
 #'
-#' extract_model_data(pmodel)
-#' }
+#' refined <- prepare_refinement(model, data = portfolio) |>
+#'   add_restriction(c("3" = 1.10), model_variable = "area") |>
+#'   refit()
+#'
+#' # Includes exposure and the column added by the restriction.
+#' evaluation <- extract_model_data(refined)
+#' names(evaluation)
+#' calibration_analysis(refined, evaluation, by = "area")
 #'
 #' @seealso [rating_grid()], [rating_table()], [prepare_refinement()]
 #'
@@ -336,13 +340,12 @@ model_data <- function(x) {
 }
 
 
-#' Construct observed rating-grid points
+#' Aggregate portfolio records into observed model points
 #'
 #' @description
-#' Collapse portfolio records with identical risk-factor combinations into
-#' observed rating-grid points. Exposure and other numeric measures can be
-#' aggregated alongside the combinations for prediction, tariff comparison and
-#' portfolio diagnostics.
+#' Combine records with identical grouping values into one model point per
+#' observed combination. Sum exposure and other additive quantities within
+#' each model point for model fitting, prediction or portfolio analysis.
 #'
 #' Together with [merge_date_ranges()], this function belongs to the portfolio
 #' reduction workflow. Both functions reduce row-level portfolio data while
@@ -350,8 +353,8 @@ model_data <- function(x) {
 #' risk-factor combinations; [merge_date_ranges()] reduces temporally connected
 #' records within the same policy, risk or portfolio segment.
 #'
-#' The function returns only combinations that are actually observed in the input
-#' data. It does **not** create the full Cartesian product of all unique values.
+#' The rating grid contains only combinations observed in the input data.
+#' It does **not** create the full Cartesian product of all unique values.
 #' This keeps the output compact and suitable for model diagnostics, portfolio
 #' summaries, and prediction analysis.
 #'
@@ -364,25 +367,32 @@ model_data <- function(x) {
 #'   [extract_model_data()], or a fitted model that can be passed to
 #'   [extract_model_data()].
 #' @param group_by Optional character vector with the variables that define the
-#'   rating-grid points. If `NULL` and `x` is a `"model_data"` object, the
+#'   model points. If `NULL` and `x` is a `"model_data"` object, the
 #'   risk-factor variables stored in the object are used. If `NULL` and `x` is a
-#'   plain `data.frame`, all columns except those listed in `exposure`,
-#'   `exposure_by`, and `aggregate_cols` are used.
-#' @param exposure Optional character; name of the exposure column to aggregate.
-#' @param exposure_by Optional character; name of a column, such as year,
-#'   whose levels become separate output columns. If `exposure` is supplied,
-#'   each column contains total exposure for that level; otherwise, it
-#'   contains the number of source rows. For example, the output might
-#'   contain `exposure_2020` or `count_2020`. The totals in `aggregate_cols`
-#'   are calculated once per model point, across all split levels.
+#'   plain `data.frame`, all columns except those listed in `aggregate_cols`,
+#'   `split` and `split_by` are used.
+#' @param ... Reserved for legacy positional arguments. Name all arguments
+#'   after `group_by` in new code.
 #' @param aggregate_cols Optional character vector with additional numeric
-#'   columns to aggregate using `sum(na.rm = TRUE)`.
+#'   columns to sum per model point using `sum(na.rm = TRUE)`. These totals
+#'   are not split across output columns.
+#' @param split Optional character string naming the numeric column to sum
+#'   instead of counting source rows. For example, use `split = "exposure"`
+#'   to sum exposure. If `split_by` is not supplied, the total is returned
+#'   in a single column with the original name.
+#' @param split_by Optional character string naming the column whose values
+#'   become separate output columns. With `split = "exposure"` and
+#'   `split_by = "year"`, these might be `exposure_2024` and
+#'   `exposure_2025`. Without `split`, they contain source row counts
+#'   (for example, `count_2024` and `count_2025`).
 #' @param drop_na Logical. With `FALSE` (default), missing values in
 #'   `group_by` form a distinct grouping value and those rows still contribute
 #'   to the totals. With `TRUE`, a missing value in any `group_by` column
 #'   excludes the entire row from counts, exposure and other totals.
 #'   Only `group_by` columns are checked; missing values in the split or
 #'   aggregation columns do not trigger this filter.
+#' @param exposure,exposure_by Deprecated argument names. Use `split` and
+#'   `split_by` instead.
 #' @param group_vars,agg_cols Deprecated argument names. Use `group_by` and
 #'   `aggregate_cols` instead.
 #'
@@ -403,21 +413,24 @@ model_data <- function(x) {
 #' coverage and distribution channel.
 #'
 #' Each output row therefore represents one observed combination of the
-#' variables in `group_by`. Exposure and `aggregate_cols` are summed over the
-#' source records belonging to that combination. Such a row is a model point:
+#' variables in `group_by`. The additional columns in `aggregate_cols` are
+#' summed over the source records in that combination. Such a row is a model point:
 #' one observed covariate combination together with its aggregated additive
 #' portfolio quantities. This is a categorical reduction of the portfolio; no
 #' date intervals are combined.
 #'
+#' To calculate all totals separately by year, include the year column in
+#' `group_by`. Use `split_by` when you want to keep one row per model point
+#' and spread only the selected measure (or row counts) across year columns.
+#'
 #' ## Estimating a GLM on aggregated data
 #'
-#' For a standard Poisson frequency GLM, aggregation before model fitting can
-#' preserve the coefficient estimates exactly. This applies when records are
-#' grouped by every predictor used in the model, claim counts are summed, earned
-#' exposure is summed, and the aggregated model uses `offset(log(exposure))`.
-#' Within such a group all records have the same linear predictor. Their
-#' contribution to the coefficient estimation therefore depends on total claims
-#' and total exposure, which are retained by the rating grid.
+#' For an unweighted Poisson log-link GLM with claim counts as the response
+#' and `offset(log(exposure))` as the only offset, grouping by all model
+#' predictors and summing counts and exposure preserves the coefficient
+#' estimates, up to numerical tolerance. Records within a group share the same
+#' expected claim rate, but their expected counts can differ if their exposures
+#' differ. The grouped fit uses the log of the summed exposure as its offset.
 #'
 #' This equivalence is conditional, not a general property of every GLM.
 #' Aggregating over a model variable changes the model, and row-level weights,
@@ -477,7 +490,7 @@ model_data <- function(x) {
 #' only the resulting grid.
 #'
 #' @return
-#' A `data.frame` with one row per observed rating-grid point.
+#' A `data.frame` with one row per observed model point.
 #'
 #' @author Martin Haringa
 #'
@@ -497,7 +510,7 @@ model_data <- function(x) {
 #' rating_grid(
 #'   portfolio,
 #'   group_by = c("sector", "region"),
-#'   exposure = "earned_exposure"
+#'   split = "earned_exposure"
 #' )
 #'
 #' # Split earned exposure by underwriting year. This is useful when reviewing
@@ -505,8 +518,8 @@ model_data <- function(x) {
 #' rating_grid(
 #'   portfolio,
 #'   group_by = c("sector", "region"),
-#'   exposure = "earned_exposure",
-#'   exposure_by = "underwriting_year"
+#'   split = "earned_exposure",
+#'   split_by = "underwriting_year"
 #' )
 #'
 #' # Claim count and claim amount remain additive totals in the rating grid.
@@ -514,8 +527,8 @@ model_data <- function(x) {
 #' claims_grid <- rating_grid(
 #'   portfolio,
 #'   group_by = c("sector", "region"),
-#'   exposure = "earned_exposure",
-#'   aggregate_cols = c("claim_count", "claim_amount")
+#'   aggregate_cols = c("claim_count", "claim_amount"),
+#'   split = "earned_exposure"
 #' )
 #'
 #' claims_grid$frequency <-
@@ -557,8 +570,8 @@ model_data <- function(x) {
 #' frequency_grid <- rating_grid(
 #'   mtpl_portfolio,
 #'   group_by = c("bm", "zip"),
-#'   exposure = "exposure",
-#'   aggregate_cols = "nclaims"
+#'   aggregate_cols = "nclaims",
+#'   split = "exposure"
 #' )
 #'
 #' frequency_model_grid <- glm(
@@ -579,12 +592,68 @@ model_data <- function(x) {
 #' @export
 rating_grid <- function(x,
                         group_by = NULL,
+                        ...,
+                        aggregate_cols = NULL,
+                        split = NULL,
+                        split_by = NULL,
+                        drop_na = FALSE,
                         exposure = NULL,
                         exposure_by = NULL,
-                        aggregate_cols = NULL,
-                        drop_na = FALSE,
                         group_vars = NULL,
                         agg_cols = NULL) {
+
+  if (...length() > 0L) {
+    dots <- rlang::dots_list(..., .ignore_empty = "none", .preserve_empty = TRUE)
+    unknown <- names(dots)[nzchar(names(dots))]
+    if (length(unknown)) {
+      stop("Unused argument(s): ", paste(unknown, collapse = ", "), call. = FALSE)
+    }
+    if (!missing(split) || !missing(split_by)) {
+      stop("Do not mix the old positional order with `split` or `split_by`. ",
+           "Name all arguments after `group_by`.", call. = FALSE)
+    }
+    legacy <- list(split, split_by, aggregate_cols, drop_na, group_vars, agg_cols)
+    supplied <- c(
+      !missing(exposure), !missing(exposure_by),
+      !missing(aggregate_cols), !missing(drop_na),
+      !missing(group_vars), !missing(agg_cols)
+    )
+    available <- which(!supplied)
+    if (length(dots) > length(available)) {
+      stop("Too many positional arguments. Name arguments after `group_by`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn(
+      "0.9.0", "rating_grid(...)",
+      details = "Name all arguments after `group_by` in new calls."
+    )
+    positions <- which(!vapply(dots, rlang::is_missing, logical(1)))
+    legacy[available[positions]] <- dots[positions]
+    split <- legacy[[1L]]
+    split_by <- legacy[[2L]]
+    aggregate_cols <- legacy[[3L]]
+    drop_na <- legacy[[4L]]
+    group_vars <- legacy[[5L]]
+    agg_cols <- legacy[[6L]]
+  }
+
+  if (!is.null(exposure)) {
+    if (!is.null(split)) {
+      stop("Use only one of `split` and deprecated `exposure`.", call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "rating_grid(exposure)",
+                              "rating_grid(split)")
+    split <- exposure
+  }
+  if (!is.null(exposure_by)) {
+    if (!is.null(split_by)) {
+      stop("Use only one of `split_by` and deprecated `exposure_by`.",
+           call. = FALSE)
+    }
+    lifecycle::deprecate_warn("0.9.0", "rating_grid(exposure_by)",
+                              "rating_grid(split_by)")
+    split_by <- exposure_by
+  }
 
   if (!is.null(group_vars)) {
     if (!is.null(group_by)) {
@@ -626,12 +695,11 @@ rating_grid <- function(x,
   if (!is.null(group_by) && !is.character(group_by)) {
     stop("`group_by` must be NULL or a character vector.", call. = FALSE)
   }
-  if (!is.null(exposure) && (!is.character(exposure) || length(exposure) != 1)) {
-    stop("`exposure` must be NULL or a single character string.", call. = FALSE)
+  if (!is.null(split) && !.is_single_string(split)) {
+    stop("`split` must be NULL or a single column name.", call. = FALSE)
   }
-  if (!is.null(exposure_by) &&
-      (!is.character(exposure_by) || length(exposure_by) != 1)) {
-    stop("`exposure_by` must be NULL or a single character string.", call. = FALSE)
+  if (!is.null(split_by) && !.is_single_string(split_by)) {
+    stop("`split_by` must be NULL or a single column name.", call. = FALSE)
   }
   if (!is.null(aggregate_cols) && !is.character(aggregate_cols)) {
     stop("`aggregate_cols` must be NULL or a character vector.", call. = FALSE)
@@ -679,8 +747,8 @@ rating_grid <- function(x,
       cols_excluded <- unique(c(
         response_var,
         offweights,
-        exposure,
-        exposure_by,
+        split,
+        split_by,
         aggregate_cols
       ))
       default_group_vars <- setdiff(available_cols, cols_excluded)
@@ -697,28 +765,28 @@ rating_grid <- function(x,
       group_by <- default_group_vars
     }
 
-    if (!is.null(exposure) && exposure %in% group_by) {
-      stop("Column in `exposure` is already used as grouping variable.", call. = FALSE)
+    if (!is.null(split) && split %in% group_by) {
+      stop("Column in `split` is already used as grouping variable.", call. = FALSE)
     }
-    if (!is.null(exposure_by) && exposure_by %in% group_by) {
-      stop("Column in `exposure_by` is already used as grouping variable.", call. = FALSE)
+    if (!is.null(split_by) && split_by %in% group_by) {
+      stop("Column in `split_by` is already used as grouping variable.", call. = FALSE)
     }
     if (!is.null(aggregate_cols) && any(aggregate_cols %in% offweights)) {
       stop("Column in `aggregate_cols` is already used in model.", call. = FALSE)
     }
 
-    if (!is.null(exposure) &&
+    if (!is.null(split) &&
         !is.null(offweights) &&
-        exposure %in% c(group_by, offweights) &&
-        is.null(exposure_by)) {
-      warning("Column in `exposure` is already used in model.", call. = FALSE)
+        split %in% c(group_by, offweights) &&
+        is.null(split_by)) {
+      warning("Column in `split` is already used in model.", call. = FALSE)
     }
 
-    if (!is.null(exposure) &&
+    if (!is.null(split) &&
         !is.null(offweights) &&
-        identical(offweights, exposure)) {
+        identical(offweights, split)) {
       offweights_tmp <- paste0(offweights, "_99")
-      if (exposure %in% available_cols) {
+      if (split %in% available_cols) {
         available_cols <- union(available_cols, offweights_tmp)
       } else {
         available_cols <- setdiff(available_cols, offweights_tmp)
@@ -734,7 +802,7 @@ rating_grid <- function(x,
     agg_cols_all <- unique(c(aggregate_cols, offweights))
     refinement_pairs <- c(attr(x, "mgd_rst"), attr(x, "mgd_smt"))
   } else if (is.null(group_by)) {
-    cols_excluded <- c(aggregate_cols, exposure, exposure_by)
+    cols_excluded <- c(aggregate_cols, split, split_by)
     group_by <- setdiff(available_cols, cols_excluded)
   }
 
@@ -746,11 +814,11 @@ rating_grid <- function(x,
       call. = FALSE
     )
   }
-  if (!is.null(exposure) && !exposure %in% available_cols) {
-    stop("Column in `exposure` not found in `x`.", call. = FALSE)
+  if (!is.null(split) && !split %in% available_cols) {
+    stop("Column in `split` not found in `x`.", call. = FALSE)
   }
-  if (!is.null(exposure_by) && !exposure_by %in% available_cols) {
-    stop("Column in `exposure_by` not found in `x`.", call. = FALSE)
+  if (!is.null(split_by) && !split_by %in% available_cols) {
+    stop("Column in `split_by` not found in `x`.", call. = FALSE)
   }
   if (!is.null(agg_cols_all) && !all(agg_cols_all %in% available_cols)) {
     missing_cols <- setdiff(agg_cols_all, available_cols)
@@ -762,7 +830,7 @@ rating_grid <- function(x,
   }
 
   grid_cols <- intersect(names(xdf), c(
-    group_by, exposure, exposure_by, agg_cols_all,
+    group_by, split, split_by, agg_cols_all,
     unlist(refinement_pairs, use.names = FALSE)
   ))
   if (!length(grid_cols)) {
@@ -774,7 +842,7 @@ rating_grid <- function(x,
     xdf <- data.table::as.data.table(xdf[grid_cols])
   }
   if (!is.null(offweights_tmp)) {
-    xdf[[offweights_tmp]] <- xdf[[exposure]]
+    xdf[[offweights_tmp]] <- xdf[[split]]
   }
 
   if (drop_na) {
@@ -783,8 +851,8 @@ rating_grid <- function(x,
     }
   }
 
-  if (is.null(exposure)) {
-    if (is.null(exposure_by)) {
+  if (is.null(split)) {
+    if (is.null(split_by)) {
       out <- .rating_grid_count(xdf, group_by)
 
       if (length(agg_cols_all) > 0) {
@@ -792,11 +860,11 @@ rating_grid <- function(x,
         out <- .rating_grid_merge(out, extra, group_by)
       }
     } else {
-      counts_df <- .rating_grid_count(xdf, c(group_by, exposure_by))
+      counts_df <- .rating_grid_count(xdf, c(group_by, split_by))
       out <- .rating_grid_wide(
         counts_df,
         group_vars = group_by,
-        split_var = exposure_by,
+        split_var = split_by,
         value_var = "count",
         prefix = "count"
       )
@@ -807,18 +875,18 @@ rating_grid <- function(x,
       }
     }
   } else {
-    sum_vars <- unique(c(agg_cols_all, exposure))
+    sum_vars <- unique(c(agg_cols_all, split))
 
-    if (is.null(exposure_by)) {
+    if (is.null(split_by)) {
       out <- .rating_grid_sum(xdf, group_by, sum_vars)
     } else {
-      agg0 <- .rating_grid_sum(xdf, c(group_by, exposure_by), exposure)
+      agg0 <- .rating_grid_sum(xdf, c(group_by, split_by), split)
       out <- .rating_grid_wide(
         agg0,
         group_vars = group_by,
-        split_var = exposure_by,
-        value_var = exposure,
-        prefix = exposure
+        split_var = split_by,
+        value_var = split,
+        prefix = split
       )
 
       if (length(agg_cols_all) > 0) {
@@ -848,6 +916,9 @@ rating_grid <- function(x,
 #' `construct_model_points()` is deprecated in favour of [rating_grid()].
 #'
 #' @inheritParams rating_grid
+#' @param group_by See [rating_grid()]. The legacy `exposure` and `exposure_by`
+#'   arguments correspond to `split` and `split_by`.
+#' @param exposure,exposure_by See `split` and `split_by` in [rating_grid()].
 #' @return See [rating_grid()].
 #'
 #' @export
@@ -869,9 +940,9 @@ construct_model_points <- function(x,
   rating_grid(
     x = x,
     group_by = if (!is.null(group_vars)) group_vars else group_by,
-    exposure = exposure,
-    exposure_by = exposure_by,
     aggregate_cols = if (!is.null(agg_cols)) agg_cols else aggregate_cols,
+    split = exposure,
+    split_by = exposure_by,
     drop_na = drop_na
   )
 }

@@ -106,8 +106,8 @@ reference:
 
   - subtitle: "Model performance & calibration"
     desc: >
-      Compare fit, prediction error and calibration. See the
-      [observed-versus-expected review](../articles/model-validation.html#reviewing-observed-versus-expected-experience).
+      Compare fit, prediction error and calibration. Start with the
+      [validation quick start](../articles/model-validation.html#quick-start).
     contents:
       - model_performance
       - validate_performance
@@ -116,6 +116,7 @@ reference:
   - subtitle: "Model stability"
     contents:
       - coefficient_stability
+      - autoplot.bootstrap_coefficients
 
   - subtitle: "Model diagnostics"
     contents:

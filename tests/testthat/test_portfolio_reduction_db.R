@@ -100,8 +100,8 @@ test_that("database reductions agree with local reductions in DuckDB", {
   grid_local <- rating_grid(
     portfolio,
     group_by = "sector",
-    exposure = "exposure",
-    aggregate_cols = "premium"
+    aggregate_cols = "premium",
+    split = "exposure"
   )
   grid_result <- as.data.frame(grid_result)[order(grid_result$sector), , drop = FALSE]
   grid_local <- grid_local[order(grid_local$sector), , drop = FALSE]

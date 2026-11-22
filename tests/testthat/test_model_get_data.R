@@ -22,7 +22,7 @@ testthat::test_that(
     res2 <- rating_grid(
       mtcars2,
       group_by = c("cyl", "vs"),
-      exposure = "disp"
+      split = "disp"
     )
 
     testthat::expect_s3_class(res2, "data.frame")
@@ -35,8 +35,8 @@ testthat::test_that(
     res3 <- rating_grid(
       mtcars3,
       group_by = c("cyl", "vs"),
-      exposure = "disp",
-      exposure_by = "gear"
+      split = "disp",
+      split_by = "gear"
     )
 
     testthat::expect_s3_class(res3, "data.frame")
@@ -45,9 +45,9 @@ testthat::test_that(
     res4 <- rating_grid(
       mtcars4,
       group_by = c("cyl", "vs"),
-      exposure = "disp",
-      exposure_by = "gear",
-      aggregate_cols = c("mpg")
+      aggregate_cols = "mpg",
+      split = "disp",
+      split_by = "gear"
     )
 
     testthat::expect_s3_class(res4, "data.frame")
@@ -70,8 +70,8 @@ testthat::test_that(
     res <- rating_grid(
       df,
       group_by = "a",
-      exposure = "exposure",
-      exposure_by = "year"
+      split = "exposure",
+      split_by = "year"
     )
 
     testthat::expect_true(all(c("exposure_2020", "exposure_2021") %in% names(res)))
@@ -86,7 +86,7 @@ testthat::test_that(
     res <- rating_grid(
       df,
       group_by = "a",
-      exposure = "exposure",
+      split = "exposure",
       drop_na = TRUE
     )
 
@@ -102,7 +102,7 @@ testthat::test_that(
     res <- rating_grid(
       df,
       group_by = "a",
-      exposure = "exposure"
+      split = "exposure"
     )
 
     testthat::expect_equal(nrow(res), 2)
@@ -126,9 +126,9 @@ testthat::test_that(
     res <- rating_grid(
       df,
       group_by = "segment",
-      exposure = "exposure",
-      exposure_by = "year",
-      aggregate_cols = "premium"
+      aggregate_cols = "premium",
+      split = "exposure",
+      split_by = "year"
     )
 
     testthat::expect_identical(
@@ -164,8 +164,8 @@ testthat::test_that(
     res <- rating_grid(
       df,
       group_by = "segment",
-      exposure = "exposure",
-      exposure_by = "year"
+      split = "exposure",
+      split_by = "year"
     )
 
     testthat::expect_identical(df, original)
@@ -184,13 +184,13 @@ testthat::test_that(
     exposure_grid <- rating_grid(
       df,
       group_by = character(),
-      exposure = "exposure",
-      exposure_by = "year"
+      split = "exposure",
+      split_by = "year"
     )
     count_grid <- rating_grid(
       df,
       group_by = character(),
-      exposure_by = "year"
+      split_by = "year"
     )
 
     testthat::expect_identical(
@@ -263,7 +263,7 @@ testthat::test_that(
       res <- rating_grid(
         mtcars4,
         group_vars = c("cyl", "vs"),
-        exposure = "disp",
+        split = "disp",
         agg_cols = "mpg"
       ),
       "deprecated"

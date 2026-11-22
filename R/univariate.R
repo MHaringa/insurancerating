@@ -462,9 +462,9 @@ univariate <- function(df, x, severity = NULL, nclaims = NULL, exposure = NULL,
 #' @examples
 #' # Plot observed frequency and risk premium
 #' x <- factor_analysis(MTPL2,
-#'                      x = "area",
-#'                      severity = "amount",
-#'                      nclaims = "nclaims",
+#'                      risk_factors = "area",
+#'                      claim_amount = "amount",
+#'                      claim_count = "nclaims",
 #'                      exposure = "exposure")
 #' autoplot(x, metrics = c("frequency", "risk_premium"))
 #'

@@ -66,6 +66,7 @@
 #'
 #' @examples
 #' \dontrun{
+#' set.seed(123)
 #' m1 <- glm(nclaims ~ area, offset = log(exposure),
 #'           family = poisson(), data = MTPL2)
 #' cr <- check_residuals(m1, n_simulations = 250)

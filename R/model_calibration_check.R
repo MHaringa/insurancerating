@@ -105,10 +105,20 @@
 #'
 #' calibration_analysis(model, portfolio)
 #' calibration_analysis(model, portfolio, by = "year")
+#' # The area-only model matches each area's total on its estimation data.
 #' calibration_analysis(model, portfolio, by = "area")
 #' calibration_analysis(model, portfolio, by = c("year", "area"))
-#' # Compare the lowest to highest predicted claim frequencies.
-#' calibration_analysis(model, portfolio, groups = 5)
+#'
+#' # Compare observed and expected rates in roughly equal-exposure groups
+#' # on records not used to fit the model.
+#' risk_portfolio <- as.data.frame(MTPL)
+#' set.seed(123)
+#' train <- sample.int(nrow(risk_portfolio), floor(0.7 * nrow(risk_portfolio)))
+#' risk_model <- glm(
+#'   nclaims ~ age_policyholder + offset(log(exposure)),
+#'   family = poisson(), data = risk_portfolio[train, ]
+#' )
+#' calibration_analysis(risk_model, risk_portfolio[-train, ], groups = 5)
 #'
 #' @seealso [autoplot.calibration_result()], [model_performance()],
 #'   [validate_performance()], [adjust_intercept()], [extract_model_data()],

@@ -20,23 +20,14 @@ construct_model_points(
 \code{\link[=extract_model_data]{extract_model_data()}}, or a fitted model that can be passed to
 \code{\link[=extract_model_data]{extract_model_data()}}.}
 
-\item{group_by}{Optional character vector with the variables that define the
-rating-grid points. If \code{NULL} and \code{x} is a \code{"model_data"} object, the
-risk-factor variables stored in the object are used. If \code{NULL} and \code{x} is a
-plain \code{data.frame}, all columns except those listed in \code{exposure},
-\code{exposure_by}, and \code{aggregate_cols} are used.}
+\item{group_by}{See \code{\link[=rating_grid]{rating_grid()}}. The legacy \code{exposure} and \code{exposure_by}
+arguments correspond to \code{split} and \code{split_by}.}
 
-\item{exposure}{Optional character; name of the exposure column to aggregate.}
-
-\item{exposure_by}{Optional character; name of a column, such as year,
-whose levels become separate output columns. If \code{exposure} is supplied,
-each column contains total exposure for that level; otherwise, it
-contains the number of source rows. For example, the output might
-contain \code{exposure_2020} or \code{count_2020}. The totals in \code{aggregate_cols}
-are calculated once per model point, across all split levels.}
+\item{exposure, exposure_by}{See \code{split} and \code{split_by} in \code{\link[=rating_grid]{rating_grid()}}.}
 
 \item{aggregate_cols}{Optional character vector with additional numeric
-columns to aggregate using \code{sum(na.rm = TRUE)}.}
+columns to sum per model point using \code{sum(na.rm = TRUE)}. These totals
+are not split across output columns.}
 
 \item{drop_na}{Logical. With \code{FALSE} (default), missing values in
 \code{group_by} form a distinct grouping value and those rows still contribute

@@ -29,7 +29,7 @@ testthat::test_that("one-to-one restrictions retain their original rating grid",
   fixture <- split_grid_fixture()
   model <- refit(fixture$fixed)
   before <- predict(model, type = "response")
-  testthat::expect_warning(grid <- rating_grid(model, exposure = "exposure"), NA)
+  testthat::expect_warning(grid <- rating_grid(model, split = "exposure"), NA)
   testthat::expect_warning(table <- rating_table(model, exposure = "exposure"), NA)
   testthat::expect_setequal(attr(extract_model_data(model), "rf"),
                            c("parent", "region"))
@@ -56,7 +56,7 @@ testthat::test_that("split factors own their grid through shrinkage and rebasing
       model <- refit(fixture[[kind]], intercept_only = intercept_only)
       before <- predict(model, type = "response")
       testthat::expect_warning(table <- rating_table(model, exposure = "exposure"), NA)
-      testthat::expect_warning(grid <- rating_grid(model, exposure = "exposure"), NA)
+      testthat::expect_warning(grid <- rating_grid(model, split = "exposure"), NA)
       testthat::expect_setequal(attr(model, "rf"), c("tariff_segment", "region"))
       testthat::expect_setequal(attr(extract_model_data(model), "rf"),
                                c("tariff_segment", "region"))
@@ -112,7 +112,7 @@ testthat::test_that("split grid metadata supports saved models and custom output
     }
   }
   attr(model, "mgd_rst") <- pairs
-  testthat::expect_warning(grid <- rating_grid(model, exposure = "exposure"), NA)
+  testthat::expect_warning(grid <- rating_grid(model, split = "exposure"), NA)
   testthat::expect_true("business_segment" %in% names(grid))
   testthat::expect_false("parent" %in% names(grid))
   testthat::expect_equal(sum(predict(model, newdata = grid, type = "response")),
@@ -132,7 +132,7 @@ testthat::test_that("splits without prior restrictions use the default output fa
   model <- refit(refinement)
   parent <- exp(coef(fixture$model)[["parentB"]])
   expected <- c(A = 1, b1 = parent * 0.8, b2 = parent * 1.2)
-  testthat::expect_warning(grid <- rating_grid(model, exposure = "exposure"), NA)
+  testthat::expect_warning(grid <- rating_grid(model, split = "exposure"), NA)
   testthat::expect_setequal(grid$parent_refined, names(expected))
   testthat::expect_equal(grid$parent_rel, unname(expected[grid$parent_refined]))
   testthat::expect_identical(attr(model, "mgd_rst")[[1]],

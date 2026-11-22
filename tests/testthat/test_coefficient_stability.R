@@ -278,3 +278,43 @@ test_that("print and gt methods present bootstrap coefficient results", {
   )
   expect_s3_class(table, "gt_tbl")
 })
+
+test_that("coefficient stability plots original estimates and summary intervals", {
+  x <- coefficient_stability(.coefficient_bootstrap_model(), n_resamples = 12,
+                             seed = 123, show_progress = FALSE)
+
+  p <- autoplot(x)
+  expect_s3_class(p, "ggplot")
+  expect_false("(Intercept)" %in% p$data$term)
+  expect_equal(ggplot2::ggplot_build(p)$data[[1]]$xintercept, 0)
+
+  terms <- c("sectorServices", "sectorRetail")
+  result <- summary(x, scale = "relativity", confidence = 0.8)
+  result <- result[match(terms, result$term), ]
+  p <- autoplot(x, scale = "relativity", terms = terms, confidence = 0.8)
+  built <- ggplot2::ggplot_build(p)$data
+  expect_equal(built[[1]]$xintercept, 1)
+  expect_equal(built[[2]]$x, result$lower)
+  expect_equal(built[[2]]$xend, result$upper)
+  expect_equal(built[[3]]$x, result$estimate)
+  expect_identical(p$scales$get_scales("y")$limits, rev(terms))
+  expect_match(p$labels$subtitle, "80%")
+})
+
+test_that("coefficient stability plots retain terms without comparable fits", {
+  x <- coefficient_stability(.coefficient_bootstrap_model(), n_resamples = 5,
+                             seed = 9, show_progress = FALSE)
+  x$replicates[, "sectorRetail"] <- NA_real_
+  p <- autoplot(x, terms = "sectorRetail")
+  expect_equal(nrow(p$layers[[2]]$data), 0)
+  expect_equal(nrow(p$layers[[3]]$data), 1)
+  expect_identical(unname(p$scales$get_scales("y")$labels), "sectorRetail (0/5)")
+  expect_error(autoplot(x, terms = "missing"), "coefficient names")
+  expect_error(autoplot(x, confidence = 2), "confidence")
+
+  boot <- coefficient_stability(glm(nclaims ~ 1, poisson(), MTPL2),
+                                n_resamples = 3, seed = 1, show_progress = FALSE)
+  p <- autoplot(boot)
+  expect_identical(p$data$term, "(Intercept)")
+  expect_length(p$layers, 2)
+})

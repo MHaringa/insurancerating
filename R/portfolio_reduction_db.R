@@ -49,7 +49,7 @@
   invisible(NULL)
 }
 
-#' Reduce a database portfolio to observed rating-grid points
+#' Aggregate database records into observed model points
 #'
 #' @description
 #' Construct the same type of observed rating-factor combinations as
@@ -64,7 +64,7 @@
 #'
 #' @param x A lazy database table created with [dplyr::tbl()].
 #' @param group_by Character vector containing the columns that define an
-#'   observed rating-grid point.
+#'   observed model point.
 #' @param exposure Optional character string naming an exposure column to sum.
 #'   If `NULL`, the output contains a `count` column with the number of source
 #'   records in each combination.
@@ -100,6 +100,13 @@
 #' @examples
 #' \dontrun{
 #' con <- DBI::dbConnect(duckdb::duckdb())
+#' portfolio <- data.frame(
+#'   sector = c("Retail", "Retail", "Services"),
+#'   region = c("North", "North", "West"),
+#'   earned_exposure = c(1, 0.5, 1),
+#'   earned_premium = c(200, 100, 250)
+#' )
+#' DBI::dbWriteTable(con, "portfolio", portfolio)
 #' portfolio_db <- dplyr::tbl(con, "portfolio")
 #'
 #' grid_db <- rating_grid_db(
@@ -112,6 +119,7 @@
 #' dbplyr::sql_render(grid_db)
 #' grid <- dplyr::collect(grid_db)
 #' DBI::dbDisconnect(con, shutdown = TRUE)
+#' grid
 #' }
 #'
 #' @author Martin Haringa
@@ -235,6 +243,15 @@ rating_grid_db <- function(x,
 #' @examples
 #' \dontrun{
 #' con <- DBI::dbConnect(duckdb::duckdb())
+#' portfolio_periods <- data.frame(
+#'   policy_id = c("P001", "P001"),
+#'   coverage = "Fire",
+#'   period_start = as.Date(c("2025-01-01", "2025-07-01")),
+#'   period_end = as.Date(c("2025-06-30", "2025-12-31")),
+#'   earned_exposure = c(0.5, 0.5),
+#'   earned_premium = c(600, 650)
+#' )
+#' DBI::dbWriteTable(con, "portfolio_periods", portfolio_periods)
 #' portfolio_db <- dplyr::tbl(con, "portfolio_periods")
 #'
 #' periods_db <- merge_date_ranges_db(
@@ -247,6 +264,7 @@ rating_grid_db <- function(x,
 #'
 #' periods <- dplyr::collect(periods_db)
 #' DBI::dbDisconnect(con, shutdown = TRUE)
+#' periods
 #' }
 #'
 #' @author Martin Haringa

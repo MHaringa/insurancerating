@@ -109,8 +109,8 @@ rmse <- function(x, data = NULL) {
 #' Compare GLM fit and predictive error metrics
 #'
 #' @description
-#' Compare GLM fit and predictive error metrics. The table reports AIC, BIC,
-#' response-scale RMSE and residual deviance for one or more fitted GLMs.
+#' Report AIC, BIC, response-scale RMSE and residual deviance for one or more
+#' fitted GLMs.
 #'
 #' @param ... One or more objects of class `"glm"`.
 #'
@@ -162,10 +162,12 @@ rmse <- function(x, data = NULL) {
 #' @importFrom stats AIC BIC
 #'
 #' @examples
-#' m1 <- glm(nclaims ~ area, offset = log(exposure), family = poisson(),
-#'           data = MTPL2)
-#' m2 <- glm(nclaims ~ area + premium, offset = log(exposure), family = poisson(),
-#'           data = MTPL2)
+#' portfolio <- as.data.frame(MTPL)
+#' portfolio$zip <- factor(portfolio$zip)
+#' m1 <- glm(nclaims ~ zip + offset(log(exposure)), family = poisson(),
+#'           data = portfolio)
+#' m2 <- glm(nclaims ~ zip + age_policyholder + offset(log(exposure)),
+#'           family = poisson(), data = portfolio)
 #' # RMSE is in claim counts for these exposure-offset models.
 #' model_performance(m1, m2)
 #'

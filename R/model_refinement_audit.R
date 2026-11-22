@@ -368,15 +368,7 @@ audit_refinement <- function(object,
          call. = FALSE)
   }
 
-  grid <- if (is.null(exposure)) {
-    rating_grid(object, group_by = prediction_columns)
-  } else {
-    rating_grid(
-      object,
-      group_by = prediction_columns,
-      exposure = exposure
-    )
-  }
+  grid <- rating_grid(object, group_by = prediction_columns, split = exposure)
   grid <- .audit_add_record_counts(
     object, grid, exposure, group_by = prediction_columns
   )

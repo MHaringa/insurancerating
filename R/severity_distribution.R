@@ -76,8 +76,12 @@
 #' @author Martin Haringa
 #'
 #' @examples
+#' # MTPL amounts are policy-period totals. Keep single-claim periods so
+#' # the plotted amount is an individual claim, not a multi-claim total.
+#' single_claims <- subset(MTPL, nclaims == 1L)
+#' # This describes claims in single-claim periods only.
 #' x <- plot_severity_distribution(
-#'   MTPL,
+#'   single_claims,
 #'   claim_amount = "amount",
 #'   risk_factor = "zip",
 #'   top_n = 4,
@@ -88,7 +92,7 @@
 #' print(x)
 #'
 #' x_threshold <- plot_severity_distribution(
-#'   MTPL,
+#'   single_claims,
 #'   claim_amount = "amount",
 #'   risk_factor = NULL,
 #'   threshold = 10000,
@@ -96,6 +100,7 @@
 #'   point_method = "jitter",
 #'   show_labels = FALSE
 #' )
+#' print(x_threshold)
 #'
 #' @import ggplot2
 #' @importFrom stats aggregate density median

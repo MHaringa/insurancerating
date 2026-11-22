@@ -59,17 +59,21 @@ provenance.
 }
 }
 \examples{
-\dontrun{
-library(insurancerating)
-
-pmodel <- glm(
-  breaks ~ wool + tension,
-  data = warpbreaks,
-  family = poisson(link = "log")
+portfolio <- as.data.frame(MTPL2)
+portfolio$area <- factor(portfolio$area)
+model <- glm(
+  nclaims ~ area + offset(log(exposure)),
+  family = poisson(), data = portfolio
 )
 
-extract_model_data(pmodel)
-}
+refined <- prepare_refinement(model, data = portfolio) |>
+  add_restriction(c("3" = 1.10), model_variable = "area") |>
+  refit()
+
+# Includes exposure and the column added by the restriction.
+evaluation <- extract_model_data(refined)
+names(evaluation)
+calibration_analysis(refined, evaluation, by = "area")
 
 }
 \seealso{

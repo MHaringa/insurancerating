@@ -9,6 +9,8 @@
   windows and scores subsequent periods with RMSE, MAE or predictive deviance.
 - `coefficient_stability()` excludes estimates whose factor coding changed
   in a bootstrap refit, for example when the original reference level is absent.
+- `autoplot()` for `coefficient_stability()` shows original estimates,
+  bootstrap intervals and the number of comparable estimates per coefficient.
 - `autoplot()` for `calibration_analysis()` shows overall, predicted-risk,
   temporal or rating-factor calibration.
 - `add_factor_experience()` replaces `add_portfolio_experience()` for attaching
@@ -31,9 +33,12 @@
 - `active_rows_by_date()` joins on a compact set of keys and dates, then
   retrieves the matching rows. This reduces copying and sorting for wide
   portfolios.
-- `rating_grid()` avoids copying unused portfolio columns. With
-  `exposure_by`, it aggregates only exposure or counts within each split;
-  additional totals are still calculated over the original model-point rows.
+- `rating_grid()` uses `split` for the measure to sum instead of counting
+  source rows and `split_by` for the values that become separate columns.
+  `aggregate_cols` totals remain unsplit. The old names `exposure` and
+  `exposure_by` and the old positional order still work with deprecation
+  warnings; in new calls, name arguments after `group_by`.
+- `rating_grid()` avoids copying unused portfolio columns.
 - `summary()` for `merge_date_ranges()` results now copies only the date
   columns and explicitly requested summary grouping columns, avoiding repeated
   copies of the full-width portfolio. Movement counts, period handling and

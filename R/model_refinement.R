@@ -3763,78 +3763,28 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'   [risk_factor_gam()]
 #'
 #' @examples
-#' \dontrun{
-#' library(dplyr)
-#'
-#' age_policyholder_frequency <- risk_factor_gam(
-#'   data = MTPL,
-#'   claim_count = "nclaims",
-#'   risk_factor = "age_policyholder",
-#'   exposure = "exposure"
+#' portfolio <- as.data.frame(MTPL)
+#' portfolio$age_band <- cut(
+#'   portfolio$age_policyholder,
+#'   breaks = c(18, 25, 35, 45, 55, 65, 75, 95),
+#'   include.lowest = TRUE
+#' )
+#' fit <- glm(
+#'   nclaims ~ age_band + offset(log(exposure)),
+#'   family = poisson(), data = portfolio
 #' )
 #'
-#' age_segments_freq <- derive_tariff_segments(
-#'   age_policyholder_frequency,
-#'   segmentation_penalty = 10,
-#'   seed = 1
-#' )
-#'
-#' dat <- MTPL |>
-#'   add_tariff_segments(age_segments_freq, name = "age_policyholder_freq_cat") |>
-#'   mutate(across(where(is.character), as.factor)) |>
-#'   mutate(across(where(is.factor), ~ set_reference_level(., exposure)))
-#'
-#' freq <- glm(
-#'   nclaims ~ bm + age_policyholder_freq_cat,
-#'   offset = log(exposure),
-#'   family = poisson(),
-#'   data = dat
-#' )
-#'
-#' sev <- glm(
-#'   amount ~ zip,
-#'   weights = nclaims,
-#'   family = Gamma(link = "log"),
-#'   data = dat |> filter(amount > 0)
-#' )
-#'
-#' premium_df <- dat |>
-#'   add_prediction(freq, sev) |>
-#'   mutate(premium = pred_nclaims_freq * pred_amount_sev)
-#'
-#' burn_unrestricted <- glm(
-#'   premium ~ zip + bm + age_policyholder_freq_cat,
-#'   weights = exposure,
-#'   family = Gamma(link = "log"),
-#'   data = premium_df
-#' )
-#'
-#' ref <- prepare_refinement(burn_unrestricted) |>
+#' ref <- prepare_refinement(fit, data = portfolio) |>
 #'   add_smoothing(
-#'     model_variable = "age_policyholder_freq_cat",
+#'     model_variable = "age_band",
 #'     source_variable = "age_policyholder",
-#'     breaks = c(seq(18, 93, 5), 95),
+#'     breaks = c(seq(18, 93, by = 5), 95),
 #'     smoothing = "spline",
 #'     k = 6,
 #'     weights = "exposure"
 #'   )
 #'
-#' # When the tariff effect must not decrease, use the readable constrained
-#' # method name. The former value "mpi" remains accepted for compatibility.
-#' increasing_ref <- prepare_refinement(burn_unrestricted) |>
-#'   add_smoothing(
-#'     model_variable = "age_policyholder_freq_cat",
-#'     source_variable = "age_policyholder",
-#'     breaks = c(seq(18, 93, 5), 95),
-#'     smoothing = "increasing",
-#'     k = 6,
-#'     weights = "exposure"
-#'   )
-#'
-#' # Limit the visible range without changing the fitted smoothing curve.
-#' autoplot(ref, x_max = 80, y_max = 1.5)
-#'
-#' }
+#' autoplot(ref)
 #'
 #' @export
 add_smoothing <- function(model, model_variable = NULL, source_variable = NULL,

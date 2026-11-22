@@ -2,7 +2,7 @@
 % Please edit documentation in R/portfolio_reduction_db.R
 \name{rating_grid_db}
 \alias{rating_grid_db}
-\title{Reduce a database portfolio to observed rating-grid points}
+\title{Aggregate database records into observed model points}
 \usage{
 rating_grid_db(
   x,
@@ -17,7 +17,7 @@ rating_grid_db(
 \item{x}{A lazy database table created with \code{\link[dplyr:tbl]{dplyr::tbl()}}.}
 
 \item{group_by}{Character vector containing the columns that define an
-observed rating-grid point.}
+observed model point.}
 
 \item{exposure}{Optional character string naming an exposure column to sum.
 If \code{NULL}, the output contains a \code{count} column with the number of source
@@ -69,6 +69,13 @@ those objects are held in R rather than in the database.
 \examples{
 \dontrun{
 con <- DBI::dbConnect(duckdb::duckdb())
+portfolio <- data.frame(
+  sector = c("Retail", "Retail", "Services"),
+  region = c("North", "North", "West"),
+  earned_exposure = c(1, 0.5, 1),
+  earned_premium = c(200, 100, 250)
+)
+DBI::dbWriteTable(con, "portfolio", portfolio)
 portfolio_db <- dplyr::tbl(con, "portfolio")
 
 grid_db <- rating_grid_db(
@@ -81,6 +88,7 @@ grid_db <- rating_grid_db(
 dbplyr::sql_render(grid_db)
 grid <- dplyr::collect(grid_db)
 DBI::dbDisconnect(con, shutdown = TRUE)
+grid
 }
 
 }

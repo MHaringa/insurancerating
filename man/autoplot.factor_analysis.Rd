@@ -188,9 +188,9 @@ metrics and exposure information remain in the figure.
 \examples{
 # Plot observed frequency and risk premium
 x <- factor_analysis(MTPL2,
-                     x = "area",
-                     severity = "amount",
-                     nclaims = "nclaims",
+                     risk_factors = "area",
+                     claim_amount = "amount",
+                     claim_count = "nclaims",
                      exposure = "exposure")
 autoplot(x, metrics = c("frequency", "risk_premium"))
 

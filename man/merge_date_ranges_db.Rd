@@ -60,6 +60,15 @@ source table and does not create a permanent database table.
 \examples{
 \dontrun{
 con <- DBI::dbConnect(duckdb::duckdb())
+portfolio_periods <- data.frame(
+  policy_id = c("P001", "P001"),
+  coverage = "Fire",
+  period_start = as.Date(c("2025-01-01", "2025-07-01")),
+  period_end = as.Date(c("2025-06-30", "2025-12-31")),
+  earned_exposure = c(0.5, 0.5),
+  earned_premium = c(600, 650)
+)
+DBI::dbWriteTable(con, "portfolio_periods", portfolio_periods)
 portfolio_db <- dplyr::tbl(con, "portfolio_periods")
 
 periods_db <- merge_date_ranges_db(
@@ -72,6 +81,7 @@ periods_db <- merge_date_ranges_db(
 
 periods <- dplyr::collect(periods_db)
 DBI::dbDisconnect(con, shutdown = TRUE)
+periods
 }
 
 }

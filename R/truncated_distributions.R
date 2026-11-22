@@ -367,8 +367,10 @@ get_start_values_truncated <- function(y,
 #' }
 #'
 #' @examples
-#' \dontrun{
-#' observed <- MTPL2$amount[MTPL2$amount > 500 & MTPL2$amount < 10000]
+#' set.seed(123)
+#' claim_amount <- rgamma(400, shape = 2, scale = 1500)
+#' # Amounts outside the interval are absent, not capped at the endpoints.
+#' observed <- claim_amount[claim_amount > 500 & claim_amount < 10000]
 #' fit <- fit_truncated_severity(
 #'   losses = observed,
 #'   distribution = "gamma",
@@ -376,7 +378,6 @@ get_start_values_truncated <- function(y,
 #'   upper_truncation = 10000
 #' )
 #' autoplot(fit)
-#' }
 #'
 #' @export
 fit_truncated_severity <- function(losses = NULL,

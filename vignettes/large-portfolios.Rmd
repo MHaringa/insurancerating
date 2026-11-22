@@ -77,7 +77,7 @@ A sample of the source file gives a more useful estimate than its row count:
 bytes_per_row <- as.numeric(object.size(portfolio_sample)) /
   nrow(portfolio_sample)
 
-estimated_object_gb <- bytes_per_row * expected_rows / 1024^3
+estimated_object_gib <- bytes_per_row * expected_rows / 1024^3
 ```
 
 Allow additional working memory for reading, copying, grouping and modelling.
@@ -111,7 +111,9 @@ merge_date_ranges(
 ```
 
 This step is optional. It is not required when the source periods already have
-the intended modelling granularity.
+the intended modelling granularity. If consolidation allows gaps, the span of
+the result does not imply coverage on every day. Use the source periods for
+date joins that must distinguish those gaps.
 
 For wide portfolios, `merge_date_ranges()` identifies equal grouping keys once
 and constructs intervals in a compact working table. It retrieves the grouping
@@ -130,7 +132,8 @@ the portfolio into R.
 preserves additive quantities. The example below includes earned exposure,
 claim count, claim cost and earned premium. Reconstruction value is first
 rounded to units of EUR 1,000 because individual euro values are not relevant
-to this example tariff structure.
+to this example tariff structure. Half thousands round up. The simulated
+earned premium is included only to show that additive totals are preserved.
 
 ```{r}
 set.seed(2026)
@@ -144,7 +147,7 @@ local_portfolio <- data.frame(
 )
 
 local_portfolio$reconstruction_value_1000 <-
-  round(local_portfolio$reconstruction_value / 1000) * 1000
+  1000 * floor(local_portfolio$reconstruction_value / 1000 + 0.5)
 
 frequency <- with(
   local_portfolio,
@@ -170,8 +173,8 @@ local_portfolio$claim_amount[has_claims] <- rgamma(
 local_grid <- rating_grid(
   local_portfolio,
   group_by = c("sector", "region", "reconstruction_value_1000"),
-  exposure = "earned_exposure",
-  aggregate_cols = c("claim_count", "claim_amount", "earned_premium")
+  aggregate_cols = c("claim_count", "claim_amount", "earned_premium"),
+  split = "earned_exposure"
 )
 
 data.frame(
@@ -180,17 +183,26 @@ data.frame(
 )
 
 head(local_grid)
+
+total_cols <- c("earned_exposure", "claim_count", "claim_amount", "earned_premium")
+all.equal(colSums(local_portfolio[total_cols]), colSums(local_grid[total_cols]))
 ```
 
 The result has one row per observed combination of sector, region and rounded
 reconstruction value. Exposure, claims, loss and premium remain portfolio
 totals and can be used directly in pricing analyses.
 
+The measure in `split` is summed instead of counting source rows. With a
+year column, `split_by = "year"` would spread just that measure (or the row
+counts if `split` is omitted) across year columns. To calculate all totals
+by year, include `year` in `group_by` instead.
+
 ## Aggregation and GLM estimation
 
 Model-point aggregation is not necessarily an approximation. For the Poisson
-frequency GLM used below, policy rows within a model point have identical model
-covariates and therefore the same linear predictor. Claim counts and earned
+frequency GLM used below, policy rows within a model point share the same
+covariate contribution and therefore the same expected claim rate. Expected
+claim counts still differ when exposures differ. Claim counts and earned
 exposure are additive, and exposure enters the model through
 `offset(log(earned_exposure))`. Under these conditions, summing claim counts and
 exposure by the complete set of model covariates preserves the coefficient
@@ -220,9 +232,10 @@ all.equal(
 )
 ```
 
-The comparison verifies the result for the response, covariates and exposure
-offset used in this example. It should not be generalised to every model family
-or data structure. Policy-level records remain necessary for individual
+The comparison verifies coefficient equivalence for this model. Likelihood
+values, AIC and residual deviance are not directly comparable between the
+record-level and aggregated fits. This result does not apply to all model
+families or data structures. Policy-level records remain necessary for individual
 predictions, record-level diagnostics, non-additive information, certain
 bootstrap procedures and models whose likelihood is not preserved by the
 selected grouping. Claim-level data also remains relevant for severity and
@@ -234,13 +247,17 @@ The database functions accept a lazy table created with `dplyr::tbl()`. They
 return another lazy table. Calling the function therefore constructs SQL but
 does not import the source portfolio.
 
+Unlike `rating_grid()`, `rating_grid_db()` takes `exposure` and does not
+spread values across columns. To produce year columns, include the year in
+`group_by` and reshape after collecting the reduced table.
+
 The next example is executed when the suggested database packages are
 available. It uses an in-memory DuckDB database, so the documentation build
 does not create a database file. The grouping remains lazy:
 `rating_grid_db()` constructs the query, and only the reduced grid is read
 back into R with `collect()`.
 
-```{r duckdb-memory-workflow, eval = duckdb_available}
+```{r duckdb-memory-workflow, eval = duckdb_available, message = FALSE}
 library(DBI)
 library(dbplyr)
 library(dplyr)
@@ -260,7 +277,7 @@ portfolio_db <- tbl(con, "portfolio")
 grid_db <- portfolio_db |>
   mutate(
     reconstruction_value_1000 =
-      round(reconstruction_value / 1000) * 1000
+      1000 * floor(reconstruction_value / 1000 + 0.5)
   ) |>
   rating_grid_db(
     group_by = c("sector", "region", "reconstruction_value_1000"),
@@ -285,6 +302,7 @@ database_row_counts <- data.frame(
 database_grid <- collect(grid_db)
 database_row_counts
 head(database_grid)
+all.equal(colSums(local_grid[total_cols]), colSums(database_grid[total_cols]))
 
 dbDisconnect(con, shutdown = TRUE)
 ```
@@ -328,7 +346,12 @@ check would be disproportionate, but the block is complete and can be run as
 shown.
 
 ```{r, eval = FALSE}
-large_database_path <- "large_portfolio.duckdb"
+library(DBI)
+library(dbplyr)
+library(dplyr)
+library(duckdb)
+
+large_database_path <- tempfile(fileext = ".duckdb")
 con <- dbConnect(duckdb(), dbdir = large_database_path)
 
 dbExecute(con, "
@@ -350,7 +373,7 @@ portfolio_10m <- tbl(con, "portfolio_10m")
 grid_10m_db <- portfolio_10m |>
   mutate(
     reconstruction_value_1000 =
-      round(reconstruction_value / 1000) * 1000
+      1000 * floor(reconstruction_value / 1000 + 0.5)
   ) |>
   rating_grid_db(
     group_by = c("sector", "region", "reconstruction_value_1000"),
@@ -406,7 +429,7 @@ portfolio_50m <- tbl(con, "portfolio_50m")
 grid_50m_db <- portfolio_50m |>
   mutate(
     reconstruction_value_1000 =
-      round(reconstruction_value / 1000) * 1000
+      1000 * floor(reconstruction_value / 1000 + 0.5)
   ) |>
   rating_grid_db(
     group_by = c("sector", "region", "reconstruction_value_1000"),
@@ -433,15 +456,26 @@ grid_50m <- collect(grid_50m_db)
 
 The 50 million source records again reduce to no more than 20,000 combinations
 in this example, a reduction of 99.96%. The large table remains in DuckDB; only
-the compact grid enters R. A file-backed DuckDB database can be used when the
-database itself should persist between sessions.
+the compact grid enters R. The synthetic combinations were chosen to illustrate
+reduction, not to estimate the reduction factor or runtime for a real
+portfolio. When finished, remove only the temporary database created above:
+
+```{r, eval = FALSE}
+dbDisconnect(con, shutdown = TRUE)
+unlink(c(large_database_path, paste0(large_database_path, ".wal")))
+```
 
 ## Consolidating policy periods in DuckDB
 
 `merge_date_ranges_db()` applies the temporal gaps-and-islands calculation in
 DuckDB. It returns consolidated periods as a lazy query:
 
-```{r, eval = FALSE}
+```{r duckdb-period-workflow, eval = duckdb_available, message = FALSE}
+library(DBI)
+library(dplyr)
+library(duckdb)
+
+con <- dbConnect(duckdb())
 dbExecute(con, "
   CREATE TABLE portfolio_periods AS
   SELECT * FROM (VALUES
@@ -472,8 +506,7 @@ merged_periods_db <- merge_date_ranges_db(
 
 merged_periods <- collect(merged_periods_db)
 dbDisconnect(con, shutdown = TRUE)
-unlink(large_database_path)
-unlink(paste0(large_database_path, ".wal"))
+merged_periods
 ```
 
 This database variant is restricted to DuckDB because date arithmetic and
@@ -493,7 +526,7 @@ combined.
   second. A rating grid no longer contains the row-level interval structure
   needed to merge policy periods.
 
-The preferred sequence, where every step is relevant, is:
+One sequence, when both reductions are useful, is:
 
 `raw policy periods -> merge compatible periods -> derive or transform rating
 factors -> aggregate to model points -> collect the compact grid -> fit the
@@ -523,8 +556,8 @@ analysis.
   modelling workflow after data preparation.
 - [Pricing workflow and package building blocks](pricing-workflow-building-blocks.html)
   places portfolio reduction within the wider actuarial package map.
-- [Model validation](model-validation.html) shows how model points can support
-  exposure-aware observed-versus-expected reviews after fitting.
+- [Model validation](model-validation.html) shows how to compare observed and
+  expected claims after fitting.
 - The [reference index](https://mharinga.github.io/insurancerating/reference/index.html) documents the exact local and
   database-backed preparation functions.
   
