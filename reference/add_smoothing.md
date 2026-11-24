@@ -272,7 +272,7 @@ Martin Haringa
 portfolio <- as.data.frame(MTPL)
 portfolio$age_band <- cut(
   portfolio$age_policyholder,
-  breaks = c(18, 25, 35, 45, 55, 65, 75, 95),
+  breaks = c(18, 29, 39, 49, 59, 69, 79, 95),
   include.lowest = TRUE
 )
 fit <- glm(
@@ -284,7 +284,7 @@ ref <- prepare_refinement(fit, data = portfolio) |>
   add_smoothing(
     model_variable = "age_band",
     source_variable = "age_policyholder",
-    breaks = c(seq(18, 93, by = 5), 95),
+    breaks = c(18, 24, 30, 40, 55, 70, 79, 95),
     smoothing = "spline",
     k = 6,
     weights = "exposure"

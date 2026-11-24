@@ -33,8 +33,8 @@ library(insurancerating)
 
 ## Package map
 
-The main building blocks can be placed in the following broad
-architecture:
+Start with the actuarial question you need to answer. The table groups
+the building blocks by purpose, not by their place in a sequence.
 
 | Actuarial task | Purpose | Main building blocks |
 |----|----|----|

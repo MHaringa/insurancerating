@@ -105,9 +105,9 @@
 <div class="section level2">
 <h2 id="from-model-to-refined-tariff">From model to refined tariff<a class="anchor" aria-label="anchor" href="#from-model-to-refined-tariff"></a>
 </h2>
-<p>An age-band GLM estimates one relativity per band. Smoothing proposes a continuous relationship, which can then be translated into a new set of bands.</p>
+<p>An age-band GLM estimates one relativity per band. Here we use age decades where practical and pool ages 80 and above. A spline smooths the fitted effects, which are then translated into new tariff bands.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">age_breaks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">25</span>, <span class="fl">32</span>, <span class="fl">39</span>, <span class="fl">51</span>, <span class="fl">58</span>, <span class="fl">65</span>, <span class="fl">84</span>, <span class="fl">95</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">age_breaks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">29</span>, <span class="fl">39</span>, <span class="fl">49</span>, <span class="fl">59</span>, <span class="fl">69</span>, <span class="fl">79</span>, <span class="fl">95</span><span class="op">)</span></span>
 <span><span class="va">portfolio</span><span class="op">$</span><span class="va">age_band</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span><span class="va">portfolio</span><span class="op">$</span><span class="va">age_policyholder</span>, <span class="va">age_breaks</span>,</span>
 <span>                          include.lowest <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
@@ -117,18 +117,20 @@
 <span>  data <span class="op">=</span> <span class="va">portfolio</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">tariff_breaks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">24</span>, <span class="fl">30</span>, <span class="fl">40</span>, <span class="fl">55</span>, <span class="fl">70</span>, <span class="fl">85</span>, <span class="fl">95</span><span class="op">)</span></span>
+<span><span class="va">tariff_breaks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">18</span>, <span class="fl">24</span>, <span class="fl">30</span>, <span class="fl">40</span>, <span class="fl">55</span>, <span class="fl">70</span>, <span class="fl">79</span>, <span class="fl">95</span><span class="op">)</span></span>
 <span><span class="va">proposal</span> <span class="op">&lt;-</span> <span class="va">frequency_model</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/prepare_refinement.html">prepare_refinement</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">portfolio</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/add_smoothing.html">add_smoothing</a></span><span class="op">(</span><span class="st">"age_band"</span>, <span class="st">"age_policyholder"</span>, breaks <span class="op">=</span> <span class="va">tariff_breaks</span>,</span>
-<span>                k <span class="op">=</span> <span class="fl">5</span>, weights <span class="op">=</span> <span class="st">"exposure"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="reference/add_smoothing.html">add_smoothing</a></span><span class="op">(</span></span>
+<span>    <span class="st">"age_band"</span>, <span class="st">"age_policyholder"</span>,</span>
+<span>    breaks <span class="op">=</span> <span class="va">tariff_breaks</span>, smoothing <span class="op">=</span> <span class="st">"spline"</span>, k <span class="op">=</span> <span class="fl">6</span>, weights <span class="op">=</span> <span class="st">"exposure"</span></span>
+<span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="va">tariff</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/refit.html">refit</a></span><span class="op">(</span><span class="va">proposal</span>, intercept_only <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">proposal</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Policyholder age"</span>, y <span class="op">=</span> <span class="st">"Tariff relativity"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"bottom"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/refinement-preview-1.png" alt="Original age-band GLM relativities, a dashed proposed smoothing curve and the clustered tariff relativities held fixed in the refit."></p>
-<p>The blue steps are the original GLM estimates. The dashed curve is the smoothing proposal; the orange steps are the resulting tariff bands. <code><a href="reference/refit.html">refit()</a></code> holds those band effects fixed and re-estimates the base claim rate, so their relativities do not move again. See the <a href="https://mharinga.github.io/insurancerating/articles/refinement-workflow.html#quick-start">refinement example</a> for how to inspect the fitted result.</p>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">proposal</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/refinement-preview-1.png" alt="Original GLM relativities, a dashed spline and new tariff bands. All three rise at the oldest ages."></p>
+<p>The blue steps are the original GLM estimates. The dashed curve is the smoothing proposal; the orange steps are the resulting tariff bands.</p>
+<p>In this sample, the fitted frequency rises from 9.1 to 12.3 claims per 100 policy-years between ages 70–79 and 80+. The oldest band contains 36 claims, so treat the rise as a feature of this example rather than a general age effect.</p>
+<p><code><a href="reference/refit.html">refit()</a></code> holds those band effects fixed and re-estimates the base claim rate, so their relativities do not move again. See the <a href="https://mharinga.github.io/insurancerating/articles/refinement-workflow.html#quick-start">refinement example</a> for how to inspect the fitted result.</p>
 </div>
 <div class="section level2">
 <h2 id="what-does-insurancerating-help-with">What does insurancerating help with?<a class="anchor" aria-label="anchor" href="#what-does-insurancerating-help-with"></a>

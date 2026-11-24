@@ -73,10 +73,11 @@ add_factor_experience(
 
 - metric:
 
-  Optional character string. Default observed metric to plot. Common
-  choices are `"frequency"`, `"severity"`/`"average_severity"` and
-  `"risk_premium"`. The metric can also be overridden in
-  [`autoplot.rating_table()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md).
+  Optional character string. Observed metric for the table and default
+  plot. Common choices are `"frequency"`,
+  `"severity"`/`"average_severity"` and `"risk_premium"`. If `NULL`, the
+  first available metric in that order is used, followed by loss ratio
+  and average premium.
 
 - label:
 
@@ -89,7 +90,7 @@ add_factor_experience(
 
 - scale:
 
-  Character; scaling applied before plotting. One of `"reference"` or
+  Character; scaling for the observed values. One of `"reference"` or
   `"mean"`.
 
 - experience:
@@ -116,20 +117,20 @@ comparison for model interpretation, not formal calibration. Use
 [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
 to compare full-model predictions with observed outcomes.
 
-This makes it possible to compare fitted GLM relativities with observed
-portfolio patterns in
-[`autoplot.rating_table()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md).
-The full observed output is stored on the rating table, so
+The returned table displays the selected metric as
+`observed_relativity`, matched by risk factor and level. The full
+observed summaries remain available so
 [`autoplot.rating_table()`](https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.md)
-can later switch between metrics such as `"frequency"`,
-`"average_severity"` and `"risk_premium"` without recalculating the
-summaries.
+can display another metric without changing the table column or
+recalculating those summaries.
 
-The observed metric is scaled before plotting. With
-`scale = "reference"` the metric is divided by the observed value of the
-model reference level. If a clear reference level cannot be found, the
-metric is divided by its mean across the observed levels of that factor.
-With `scale = "mean"`, this mean is always used.
+The table and plot use the same scaling. With `scale = "reference"`, the
+metric is divided by its observed value at the reference level recorded
+in the rating table. If the factor has no recorded reference, the mean
+across its observed levels is used. With `scale = "mean"` this mean is
+always used. Unmatched rows or ratios with no finite, non-zero
+denominator are `NA`. Supply only one observed summary per factor and
+level.
 
 ## Author
 
@@ -150,15 +151,30 @@ effects <- rating_table(
   "Age-adjusted model" = model, model_data = df, exposure = "exposure"
 )
 
-effects |>
+comparison <- effects |>
   add_factor_experience(
     data = df,
     risk_factors = "zip",
     claim_count = "nclaims",
     exposure = "exposure",
     label = "Observed frequency"
-  ) |>
-  autoplot(risk_factors = "zip", metric = "frequency")
+  )
+comparison
+#>        risk_factor            level est_Age-adjusted model exposure
+#> 1      (Intercept)      (Intercept)              0.3121503       NA
+#> 2              zip                0              1.0006508      207
+#> 3              zip                1              1.0000000    11081
+#> 4              zip                2              0.9020158     7783
+#> 5              zip                3              0.9559945     7588
+#> 6 age_policyholder age_policyholder              0.9831025       NA
+#>   observed_relativity
+#> 1                  NA
+#> 2           0.9752231
+#> 3           1.0000000
+#> 4           0.9009127
+#> 5           0.9515761
+#> 6                  NA
+autoplot(comparison, risk_factors = "zip")
 
 
 observed <- factor_analysis(

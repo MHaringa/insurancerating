@@ -44,10 +44,9 @@ head(MTPL)
 
 ### Factor analysis
 
-A pricing analysis commonly starts with a descriptive review of the
-portfolio.
-
-Before fitting a model, it is useful to assess:
+Here we use a descriptive review before fitting a model. The same review
+can help later when a fitted effect or tariff change warrants a closer
+look:
 
 - how experience differs across factor levels
 - whether observed differences are supported by sufficient exposure and
@@ -379,28 +378,28 @@ rt <- rating_table("Tariff model" = tariff_model) |>
     metric = "risk_premium"
   )
 rt
-#>    risk_factor       level est_Tariff model exposure
-#> 1  (Intercept) (Intercept)     8553.9835542       NA
-#> 2      age_cat     [18,25]        1.9861849     1331
-#> 3      age_cat     (25,32]        2.0940331     3649
-#> 4      age_cat     (32,39]        1.0317012     4247
-#> 5      age_cat     (39,51]        1.0000000     7421
-#> 6      age_cat     (51,58]        0.5823491     3245
-#> 7      age_cat     (58,65]        0.6068409     2791
-#> 8      age_cat     (65,84]        0.7810566     3901
-#> 9      age_cat     (84,95]        0.6219895       72
-#> 10         zip           0        1.0056518      207
-#> 11         zip           1        1.0000000    11081
-#> 12         zip           2        0.9010247     7783
-#> 13         zip           3        0.9546628     7588
+#>    risk_factor       level est_Tariff model exposure observed_relativity
+#> 1  (Intercept) (Intercept)     8553.9835542       NA                  NA
+#> 2      age_cat     [18,25]        1.9861849     1331           1.9848879
+#> 3      age_cat     (25,32]        2.0940331     3649           2.0914417
+#> 4      age_cat     (32,39]        1.0317012     4247           1.0312559
+#> 5      age_cat     (39,51]        1.0000000     7421           1.0000000
+#> 6      age_cat     (51,58]        0.5823491     3245           0.5826148
+#> 7      age_cat     (58,65]        0.6068409     2791           0.6059124
+#> 8      age_cat     (65,84]        0.7810566     3901           0.7803242
+#> 9      age_cat     (84,95]        0.6219895       72           0.6199937
+#> 10         zip           0        1.0056518      207           0.3787985
+#> 11         zip           1        1.0000000    11081           1.0000000
+#> 12         zip           2        0.9010247     7783           0.7322576
+#> 13         zip           3        0.9546628     7588           0.7414917
 ```
 
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-expresses fitted model effects as tariff relativities for the original
-factor levels, including the reference level. The attached portfolio
-experience makes it possible to compare those modelled relativities with
-the observed risk-premium pattern. Exposure remains important when
-judging whether an apparent difference is sufficiently credible.
+reports fitted tariff relativities by factor level.
+[`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
+adds `observed_relativity`: here, the observed risk premium relative to
+the reference level of each factor. The same values appear in the plot.
+Exposure helps put differences between the two in context.
 
 ### Visualising coefficients
 
@@ -511,27 +510,34 @@ tariff_refinement <- prepare_refinement(tariff_model, data = premium_df) |>
 
 refined_tariff <- refit(tariff_refinement, intercept_only = TRUE)
 
-zip_effects <- rating_table(
+rating_table(
   tariff_model, refined_tariff,
-  estimate_name = c("Before", "After"),
+  estimate_name = c("before", "after"),
   exposure = FALSE
-) |>
-  as.data.frame() |>
-  filter(level == "3")
-
-knitr::kable(data.frame(
-  ZIP = "3",
-  Before = zip_effects$Before[zip_effects$risk_factor == "zip"],
-  After = zip_effects$After[zip_effects$risk_factor == "zip_restricted"]
-), digits = 3)
+)
+#>       risk_factor       level       before        after
+#> 1     (Intercept) (Intercept) 8553.9835542 8332.9176970
+#> 2         age_cat     [18,25]    1.9861849    1.9861849
+#> 3         age_cat     (25,32]    2.0940331    2.0940331
+#> 4         age_cat     (32,39]    1.0317012    1.0317012
+#> 5         age_cat     (39,51]    1.0000000    1.0000000
+#> 6         age_cat     (51,58]    0.5823491    0.5823491
+#> 7         age_cat     (58,65]    0.6068409    0.6068409
+#> 8         age_cat     (65,84]    0.7810566    0.7810566
+#> 9         age_cat     (84,95]    0.6219895    0.6219895
+#> 10            zip           0    1.0056518           NA
+#> 11            zip           1    1.0000000           NA
+#> 12            zip           2    0.9010247           NA
+#> 13            zip           3    0.9546628           NA
+#> 14 zip_restricted           0           NA    1.0056518
+#> 15 zip_restricted           1           NA    1.0000000
+#> 16 zip_restricted           2           NA    0.9010247
+#> 17 zip_restricted           3           NA    1.0500000
 ```
 
-| ZIP | Before | After |
-|:----|-------:|------:|
-| 3   |  0.955 |  1.05 |
-
-The refit stores the fixed ZIP effect as `zip_restricted`. A relativity
-of `1.05` means 5% above the reference ZIP, not a 5% increase on the
+Read ZIP 3 under `zip` before the refit and under `zip_restricted` after
+it. The table keeps these two factors on separate rows. A relativity of
+`1.05` means 5% above the reference ZIP, not a 5% increase on the
 previous relativity. Since the base level was also re-estimated, the
 table is not a comparison of final premiums. See [Refinement building
 blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md)
@@ -556,9 +562,10 @@ prepare_refinement()          # prepare an actuarial refinement
 refit()                       # fit the refined tariff model
 ```
 
-The sequence distinguishes observed experience, fitted model effects,
-candidate tariff segmentation and model diagnostics. The final modelling
-choices remain dependent on the portfolio and pricing objective.
+The order shown follows this example. You can use individual blocks
+elsewhere: review exposure in a portfolio without fitting a model,
+interpret an existing GLM without changing the tariff, or return to
+factor analysis after a model check raises a question.
 
 ## Where to go next
 

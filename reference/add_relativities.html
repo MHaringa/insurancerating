@@ -169,6 +169,9 @@ are derived. The split replaces the preceding restricted effect in the
 model offset. For example, a parent relativity of 0.80, multiplied by 1.15
 and split with an unnormalised sublevel relativity of 0.90, gives
 <code>0.80 * 1.15 * 0.90</code>.</p>
+<p>If the parent has already been adjusted with <code><a href="add_shrinkage.html">add_shrinkage()</a></code> or
+<code><a href="add_rebasing.html">add_rebasing()</a></code>, the split uses those current parent relativities and
+replaces the preceding offset. The adjustment is not applied twice.</p>
 <p>Conversely, <code><a href="add_restriction.html">add_restriction()</a></code> can be called after <code>add_relativities()</code> to
 adjust selected levels of the derived <code>output_variable</code>. The output variable
 is then recognised as an existing refinement factor; users do not need to

@@ -2,11 +2,11 @@
 
 ## Introduction
 
-Refinement turns fitted effects into explicit tariff proposals. You can
-review the proposal before refitting, and keep a record of what changed.
-Start with the age-band example below, or skip to the [advanced
-options](#advanced-refinement-options) for a specific technique. See
-[Getting
+Refinement turns fitted effects into explicit tariff proposals when an
+adjustment is useful. You can review the proposal before refitting and
+keep a record of what changed. Start with the age-band example below, or
+skip to the [advanced options](#advanced-refinement-options) for a
+specific technique. See [Getting
 Started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
 for model construction and the [package
 map](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.md)
@@ -19,6 +19,13 @@ we compare them with a smoother age effect. The example keeps the same
 age bands so that only their relativities change; this is a candidate
 tariff, not an assumption about how age must affect every portfolio.
 
+The [homepage
+example](https://mharinga.github.io/insurancerating/#from-model-to-refined-tariff)
+starts with the same age bands, including one band for ages 80 and
+above. It fits an age-only model and uses new bands for the tariff,
+whereas here we keep the original bands and adjust for ZIP and
+bonus-malus.
+
 ### Fit the starting model
 
 The response is claim count and `log(exposure)` is the offset. ZIP and
@@ -30,7 +37,7 @@ library(insurancerating)
 
 portfolio <- as.data.frame(MTPL)
 
-age_breaks <- c(18, 25, 32, 39, 51, 58, 65, 84, 95)
+age_breaks <- c(18, 29, 39, 49, 59, 69, 79, 95)
 portfolio$age_band <- cut(
   portfolio$age_policyholder,
   breaks = age_breaks,
@@ -42,7 +49,6 @@ portfolio$bm_group <- cut(
   labels = c("Low", "Medium", "High"),
   include.lowest = TRUE
 )
-portfolio$bm_detail <- factor(as.character(portfolio$bm))
 portfolio$zip <- factor(portfolio$zip)
 
 unrestricted <- glm(
@@ -66,7 +72,7 @@ refinement <- prepare_refinement(unrestricted, data = portfolio) |>
     source_variable = "age_policyholder",
     breaks = age_breaks,
     smoothing = "spline",
-    k = 5,
+    k = 6,
     weights = "exposure"
   )
 initial_age_refinement <- refinement
@@ -76,8 +82,7 @@ initial_age_refinement <- refinement
 
 ``` r
 
-autoplot(refinement, variable = "age_band") +
-  ggplot2::labs(x = "Policyholder age")
+autoplot(refinement, variable = "age_band")
 ```
 
 ![](refinement-workflow_files/figure-html/unnamed-chunk-4-1.png)
@@ -89,14 +94,13 @@ age_tariff <- refit(refinement, intercept_only = TRUE)
 age_effects <- as.data.frame(rating_table(age_tariff, exposure = FALSE))
 subset(age_effects, risk_factor == "age_policyholder_smooth")
 #>               risk_factor   level est_age_tariff
-#> 2 age_policyholder_smooth [18,25]      0.9517847
-#> 3 age_policyholder_smooth (25,32]      0.7142379
-#> 4 age_policyholder_smooth (32,39]      0.5574783
-#> 5 age_policyholder_smooth (39,51]      0.5034194
-#> 6 age_policyholder_smooth (51,58]      0.4557071
-#> 7 age_policyholder_smooth (58,65]      0.3914753
-#> 8 age_policyholder_smooth (65,84]      0.3713782
-#> 9 age_policyholder_smooth (84,95]      0.4954763
+#> 2 age_policyholder_smooth [18,29]      0.9704716
+#> 3 age_policyholder_smooth (29,39]      0.6981457
+#> 4 age_policyholder_smooth (39,49]      0.5927132
+#> 5 age_policyholder_smooth (49,59]      0.5218063
+#> 6 age_policyholder_smooth (59,69]      0.4441382
+#> 7 age_policyholder_smooth (69,79]      0.4250005
+#> 8 age_policyholder_smooth (79,95]      0.4734956
 ```
 
 The dashed line is the proposed smooth curve. The resulting age-band
@@ -362,7 +366,9 @@ current proposal:
 refinement <- relative_age_refinement
 ```
 
-The relativity plot shows the overall tariff shape:
+The dashed curve shows the spline after the local adjustment, including
+the transition into and out of the edited range. Each orange segment
+uses the adjusted curve’s value at its midpoint:
 
 ``` r
 
@@ -392,15 +398,15 @@ premium_change(
 #> Basis: Effective smoothing curve
 #> 
 #>  From To Premium change
-#>    20 25         -17.7%
-#>    25 30         -17.9%
-#>    30 35         -13.9%
-#>    35 40          -8.6%
-#>    40 45          -2.8%
-#>    45 50          -2.9%
-#>    50 55          -8.9%
-#>    55 60         -10.5%
-#>    60 65         -10.5%
+#>    20 25         -13.4%
+#>    25 30         -14.2%
+#>    30 35         -10.5%
+#>    35 40         -10.2%
+#>    40 45          -4.6%
+#>    45 50          -5.6%
+#>    50 55          -9.2%
+#>    55 60          -9.1%
+#>    60 65          -5.8%
 ```
 
 The first row compares the modelled tariff at ages 20 and 25, holding
@@ -439,9 +445,9 @@ premium_change(
 #> 
 #>  From To Premium change
 #>    20 25           0.0%
-#>    25 30         -25.0%
-#>    30 35         -21.3%
-#>    35 40          -6.0%
+#>    25 30         -27.8%
+#>    30 35           0.0%
+#>    35 40         -11.2%
 ```
 
 With `basis = "segments"`, the helper determines which effective tariff
@@ -471,9 +477,9 @@ premium_change(
 |----|----|----|----|----|
 | Based on the effective continuous smoothing curve |  |  |  |  |
 | From | To | Step 1 | Step 2 | Difference |
-| 20 | 25 | −17.7% | −17.7% | 0.0 pp |
-| 25 | 30 | −17.9% | −17.9% | 0.0 pp |
-| 30 | 35 | −14.8% | −13.9% | 0.9 pp |
+| 20 | 25 | −13.4% | −13.4% | 0.0 pp |
+| 25 | 30 | −14.4% | −14.2% | 0.2 pp |
+| 30 | 35 | −11.8% | −10.5% | 1.3 pp |
 
 With two selected states, the table shows both premium changes and their
 difference in percentage points. This comparison is often easier to
@@ -637,13 +643,12 @@ direction to an already monotone effect leaves its values unchanged.
 
 ### Shrinking a categorical effect
 
+Suppose you want to keep the order of the fitted bonus-malus effects but
+use smaller differences in the tariff, for example because the
+differences are not stable across years.
 [`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md)
-reduces the differences between the current relativities of one
-categorical risk factor. It is useful when the direction and ordering of
-an estimated effect are considered informative, but the spread between
-levels is larger than is supported by the available experience or the
-intended tariff. Unlike a restriction, shrinkage does not prescribe
-individual level values.
+brings all the relativities closer together without setting a separate
+target for each group.
 
 ``` r
 
@@ -655,25 +660,24 @@ refinement <- refinement |>
   )
 ```
 
-`credibility` is the weight assigned to the current logarithmic effect.
-A value of 0.9 retains 90 percent of each level’s deviation from the
-common centre; a value of 1 leaves the effect unchanged, while a value
-of 0 removes differences between levels. This is a user-selected
-refinement parameter, not an automatically estimated Buhlmann or
-Buhlmann-Straub credibility factor.
+In this example, holding age and ZIP fixed, the fitted claim frequency
+for `Medium` is about 5.0% higher than for `Low` before shrinkage and
+4.4% higher afterwards. For `High`, the difference moves from 4.3% lower
+to 3.9% lower. Both groups move closer to `Low`; their order does not
+change.
 
-Exposure is the weighting basis used for the common centre in this
-frequency example. For a severity model, claim count may be a useful
-alternative. Use `weights = "equal"` when every factor level should
-receive equal weight rather than representing the observed portfolio
-mix.
+`credibility = 0.9` keeps 90% of each difference **on the log scale**.
+It is not a 10% reduction in everyone’s premium. A value of 1 leaves the
+relativities unchanged, and 0 makes them equal. The value is an
+actuarial choice; the function does not estimate credibility from the
+claims.
 
-After shrinkage, the relativities are normalised so their
-exposure-weighted arithmetic mean remains equal to its value before
-shrinkage. The operation therefore reduces tariff differentiation
-without intentionally changing the weighted level of this risk factor.
-The later refit can still recalibrate the intercept or other free model
-effects.
+With `weights = "exposure"`, groups with more policy-years carry more
+weight in the common centre. The function then rescales the relativities
+so their exposure-weighted average is unchanged. That preserves the
+average of this factor, not necessarily total expected claims across the
+whole portfolio. Claim count can be a weighting basis for severity,
+while `weights = "equal"` gives each level the same weight.
 
 ``` r
 
@@ -686,92 +690,94 @@ This remains a pre-refit comparison: it shows the current estimated
 effect and the proposed shrunken structure stored in the refinement
 specification.
 
-### Adding differentiation within model levels
+### Differentiating between car series within a make
 
+Suppose a motor own-damage portfolio has enough claims to estimate a
+make effect, but too few for some car series to estimate their effects
+reliably. You could fit a severity GLM by make and use
 [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
-addresses a different problem. An unrestricted GLM may use a broad
-factor because its detailed levels are individually too sparse for
-stable direct estimation. The refinement can retain the broad parent
-effect while introducing documented differentiation between selected
-sublevels.
+to introduce differences between series when other evidence supports
+them.
 
-The example splits the broad bonus-malus groups `Low` and `Medium` into
-their observed detailed values. The preferred named-vector form keeps
-each level next to its relativity. The same split can also be supplied
-as character `new_levels` plus a separate numeric `relativities` vector.
+This separate example uses fictitious data. The response is average
+repair cost per claim, weighted by the number of claims.
 
 ``` r
 
-bm_relativities <- relativities(
+repairs <- data.frame(
+  make = c("BMW", "BMW", "Volkswagen", "Volkswagen"),
+  series = c("BMW 3 Series", "BMW X3", "Volkswagen Golf", "Volkswagen Tiguan"),
+  exposure = c(240, 60, 350, 100),
+  claims = c(24, 6, 28, 7),
+  repair_cost = c(72000, 24000, 70000, 21000)
+)
+repairs$severity <- repairs$repair_cost / repairs$claims
+
+make_model <- glm(
+  severity ~ make, family = Gamma(link = "log"),
+  weights = claims, data = repairs
+)
+```
+
+For illustration, suppose repair specialists propose an X3 effect 10%
+above the 3 Series and a Tiguan effect 8% above the Golf, for example
+based on parts costs and repair times not captured by the GLM. These are
+illustrative judgements, not estimates for the actual vehicles.
+
+``` r
+
+series_relativities <- relativities(
   split_level(
-    "Low",
-    new_levels = c("1" = 0.95, "2" = 0.98, "3" = 1.02, "4" = 1.05)
+    "BMW",
+    new_levels = c("BMW 3 Series" = 1.00, "BMW X3" = 1.10)
   ),
   split_level(
-    "Medium",
-    new_levels = c("5" = 0.96, "6" = 0.99, "7" = 1.02, "8" = 1.05)
+    "Volkswagen",
+    new_levels = c("Volkswagen Golf" = 1.00, "Volkswagen Tiguan" = 1.08)
   )
 )
 
-refinement <- refinement |>
+make_refinement <- prepare_refinement(make_model, data = repairs) |>
   add_relativities(
-    model_variable = "bm_group",
-    split_variable = "bm_detail",
-    relativities = bm_relativities,
+    model_variable = "make",
+    split_variable = "series",
+    relativities = series_relativities,
     exposure = "exposure",
     normalize = TRUE,
-    output_variable = "bm_tariff_segment"
+    output_variable = "vehicle_tariff_segment"
   )
 ```
 
-`model_variable` supplies the parent GLM effect. `split_variable`
-identifies the detailed portfolio levels within each parent.
-`output_variable` names the resulting hybrid tariff factor; unsplit
-parent levels retain their existing model effect.
+With `normalize = TRUE`, the series multipliers are rescaled to average
+one within each make, weighted here by policy-years. The X3 effect is
+still 10% above the 3 Series effect, not 10% above the BMW average. The
+split preserves the exposure-weighted make relativity, but does not fix
+the intercept or guarantee the same total expected loss.
 
-After refitting,
-[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-reports this output factor and
-[`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md)
-uses its segment levels instead of the parent grouping. The numeric
-split relativity is linked to the new segment, since one parent can now
-contain several different relativities. Later shrinkage and rebasing of
-`bm_tariff_segment` retain that grouping, also with
-`refit(intercept_only = TRUE)`.
-[`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
-can therefore review the final segments without discarding the original
-variables needed to predict the unrestricted model.
+``` r
 
-With `normalize = TRUE`, the sublevel relativities are normalised within
-each parent so their exposure-weighted average equals one. The split
-therefore redistributes the parent effect without changing its
-exposure-weighted level. This does not guarantee the same total
-predicted premium once other rating factors are taken into account.
-Because shrinkage was added first, these sublevel effects use the
-shrunken `bm_group` relativities as their parent values. With
-`normalize = FALSE`, the supplied relativities are applied directly.
+make_tariff <- refit(make_refinement, intercept_only = TRUE)
+rating_table(make_tariff, exposure = FALSE)
+#>              risk_factor             level est_make_tariff
+#> 1            (Intercept)       (Intercept)    3195.9552394
+#> 2 vehicle_tariff_segment            BMW X3       1.0784314
+#> 3 vehicle_tariff_segment      BMW 3 Series       0.9803922
+#> 4 vehicle_tariff_segment Volkswagen Tiguan       0.8621725
+#> 5 vehicle_tariff_segment   Volkswagen Golf       0.7983079
+```
 
-This operation is not equivalent to restriction or smoothing:
-
-- smoothing regularises an ordered effect already represented by the
-  model;
-- restriction fixes or multiplies selected tariff values;
-- shrinkage reduces differences between categorical levels while
-  retaining their ordering;
-- additional relativities introduce finer differentiation inside a
-  broader model level.
-
-Step order matters. A restriction or shrinkage step added before
-[`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
-changes the parent coefficient used as the basis for the split. A later
-restriction can instead adjust selected levels of the derived
-`output_variable`. With `restriction_type = "multiplier"`, the parent
-adjustment is included once in the split; the earlier restricted effect
-is replaced in the model offset.
+The table shows the four resulting tariff segments. The make effects
+come from the GLM; the differences within a make come from the supplied
+multipliers. An unsplit make would keep its existing relativity. A
+restriction or shrinkage applied before the split would change the make
+effect used as its starting point, not add a second make effect during
+refitting.
 
 ## Combining and reviewing refinements
 
-The four operations now form one ordered specification:
+Returning to the `MTPL` example, its specification contains the age
+smoothing and its edit, the ZIP restriction and the bonus-malus
+shrinkage:
 
 ``` r
 
@@ -779,24 +785,22 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-11-22 13:48:40 UTC
+#> Created: 2026-11-24 09:58:49 UTC
 #> Observations: 30,000
 #> Family: poisson (log link)
 #> Base formula:
 #>   nclaims ~ age_band + zip + bm_group + offset(log(exposure))
 #> Offset: log(exposure)
 #> 
-#> Refinement steps: 5
-#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, scale: relativity)
-#>      shape = spline; 8 intervals over 18 to 95
+#> Refinement steps: 4
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 6, scale: relativity)
+#>      shape = spline; 7 intervals over 18 to 95
 #>   2. Smoothing edit: age_band (relative adjustment: 1.05 from 32 to 65, transition: inherited)
 #>      relative adjustment = 1.05; transition = inherited; cumulative from smoothing step 1
 #>   3. Restriction: zip -> zip_restricted (4 levels)
-#>      type = fixed; 0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000
+#>      type = fixed; 0 = 0.9500000; 1 = 0.9985459; 2 = 0.9003205; 3 = 1.1000000
 #>   4. Shrinkage: bm_group (credibility: 0.9, weights: exposure, weighted mean preserved)
 #>      credibility = 0.9; weights = exposure; weighted mean preserved
-#>   5. Relativities: bm_group split by bm_detail -> bm_tariff_segment (normalised: yes)
-#>      2 parent levels split: Low, Medium
 ```
 
 The summary records the base formula, package version, data size and
@@ -827,7 +831,6 @@ refined_model <- refit(
   refinement,
   intercept_only = TRUE
 )
-#> Warning in update_formula_remove(formula, old_term): Column 'bm_group' must be in model call.
 ```
 
 [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
@@ -850,8 +853,7 @@ The treatment of the remaining model effects depends on
 Choose between these modes based on which existing relationships are to
 remain fixed and which effects can be re-estimated.
 
-The prescribed smoothing, restrictions and sublevel relativities remain
-explicit assumptions. Refitting does not turn them into unrestricted
+Refitting does not turn the proposed tariff changes into unrestricted
 statistical estimates.
 
 ## Inspecting the fitted result
@@ -865,12 +867,12 @@ interpretation tools:
 
 head(rating_table(refined_model, exposure = FALSE))
 #>      risk_factor       level est_refined_model
-#> 1    (Intercept) (Intercept)         0.2568384
+#> 1    (Intercept) (Intercept)         0.2208613
 #> 2 zip_restricted           0         0.9500000
-#> 3 zip_restricted           1         0.9954865
-#> 4 zip_restricted           2         0.8971513
+#> 3 zip_restricted           1         0.9985459
+#> 4 zip_restricted           2         0.9003205
 #> 5 zip_restricted           3         1.1000000
-#> 6       bm_group      Medium         1.0440707
+#> 6       bm_group      Medium         1.0446434
 ```
 
 This is the **post-refit** result. It is distinct from the preview shown
@@ -940,58 +942,56 @@ summary(refinement_audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Prepared: 2026-11-22 13:48:40 UTC
-#> Refitted: 2026-11-22 13:48:46 UTC
-#> Audited: 2026-11-22 13:48:46 UTC
+#> Prepared: 2026-11-24 09:58:49 UTC
+#> Refitted: 2026-11-24 09:58:55 UTC
+#> Audited: 2026-11-24 09:58:55 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 
 #> Original formula:
 #>   nclaims ~ age_band + zip + bm_group + offset(log(exposure))
 #> Refitted formula:
-#>   nclaims ~ offset(log(bm_group_rel) + log(bm_group_shrunk) + log(zip_restricted) + 
+#>   nclaims ~ offset(log(bm_group_shrunk) + log(zip_restricted) + 
 #>       log(age_band_smooth) + log(exposure))
 #> 
-#> Refinement steps: 5
-#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 5, scale: relativity)
-#>      shape = spline; 8 intervals over 18 to 95
+#> Refinement steps: 4
+#>   1. Smoothing: age_band from age_policyholder (method: spline, k: 6, scale: relativity)
+#>      shape = spline; 7 intervals over 18 to 95
 #>   2. Smoothing edit: age_band (relative adjustment: 1.05 from 32 to 65, transition: inherited)
 #>      relative adjustment = 1.05; transition = inherited; cumulative from smoothing step 1
 #>   3. Restriction: zip -> zip_restricted (4 levels)
-#>      type = fixed; 0 = 0.9500000; 1 = 0.9954865; 2 = 0.8971513; 3 = 1.1000000
+#>      type = fixed; 0 = 0.9500000; 1 = 0.9985459; 2 = 0.9003205; 3 = 1.1000000
 #>   4. Shrinkage: bm_group (credibility: 0.9, weights: exposure, weighted mean preserved)
 #>      credibility = 0.9; weights = exposure; weighted mean preserved
-#>   5. Relativities: bm_group split by bm_detail -> bm_tariff_segment (normalised: yes)
-#>      2 parent levels split: Low, Medium
 #> 
 #> Portfolio effect
 #>   Before: 0.137596
 #>   After:  0.137596
-#>   Change: -1.95122e-14 (-1.418e-11%)
+#>   Change: -6.10623e-16 (-4.438e-13%)
 #> 
-#> Largest level changes (10 of 24)
+#> Largest level changes (10 of 14)
 #>              risk_factor   level     before      after       change
-#>  age_policyholder_smooth (84,95] 0.06942859 0.12783575  0.058407152
-#>           zip_restricted       3 0.13680279 0.15155033  0.014747533
-#>           zip_restricted       0 0.14020239 0.12759132 -0.012611074
-#>        bm_tariff_segment       8 0.14270460 0.15538814  0.012683531
-#>        bm_tariff_segment       4 0.13883017 0.15067141  0.011841241
-#>  age_policyholder_smooth [18,25] 0.26142311 0.24440223 -0.017020877
-#>        bm_tariff_segment       7 0.14278504 0.15180712  0.009022077
-#>        bm_tariff_segment       3 0.13764208 0.14514697  0.007504895
-#>  age_policyholder_smooth (65,84] 0.10100599 0.09551705 -0.005488934
-#>  age_policyholder_smooth (51,58] 0.11462184 0.11999825  0.005376415
+#>  age_policyholder_smooth (79,95] 0.12287953 0.10554083 -0.017338706
+#>           zip_restricted       3 0.13680279 0.15122925  0.014426461
+#>           zip_restricted       0 0.14020239 0.12768422 -0.012518172
+#>  age_policyholder_smooth (29,39] 0.14773069 0.15443992  0.006709228
+#>  age_policyholder_smooth [18,29] 0.22425297 0.21416658 -0.010086392
+#>           zip_restricted       2 0.12951920 0.12419468 -0.005324521
+#>           zip_restricted       1 0.14376442 0.13785920 -0.005905227
+#>  age_policyholder_smooth (49,59] 0.11399379 0.11820568  0.004211889
+#>  age_policyholder_smooth (59,69] 0.10160625 0.09812401 -0.003482235
+#>  age_policyholder_smooth (69,79] 0.09086268 0.09384845  0.002985770
 #>  change_ratio
-#>    0.84125502
-#>    0.10780140
-#>   -0.08994907
-#>    0.08887962
-#>    0.08529300
-#>   -0.06510854
-#>    0.06318643
-#>    0.05452471
-#>   -0.05434266
-#>    0.04690568
+#>   -0.14110328
+#>    0.10545444
+#>   -0.08928644
+#>    0.04541526
+#>   -0.04497774
+#>   -0.04110990
+#>   -0.04107572
+#>    0.03694841
+#>   -0.03427186
+#>    0.03286025
 ```
 
 This audit uses `refined_model`, before the additional 5% intercept
@@ -1050,27 +1050,21 @@ deliberately not supported. Further adjustments belong on the retained
 
 ## Summary
 
-The specialist workflow is:
-
-1.  start from an unrestricted fitted model;
-2.  create one persistent specification with
-    [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md);
-3.  add smoothing, restrictions, shrinkage or sublevel relativities with
-    an explicit rationale;
-4.  inspect the proposal with
-    [`summary()`](https://rdrr.io/r/base/summary.html) and
-    [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html);
-5.  use
-    [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
-    to fit the model under that specification;
-6.  inspect the final tariff with
-    [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
-    and its portfolio effect with
-    [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md).
-
-This separates estimated effects, proposed actuarial adjustments and
-final fitted output without treating refinement as an automatic approval
-of the result.
+[`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md)
+sets up a specification for proposed adjustments to a fitted model. Use
+the techniques that address the tariff question: a single restriction
+may be enough, and smoothing or shrinkage need not be part of the same
+proposal. [`summary()`](https://rdrr.io/r/base/summary.html) and
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+help inspect the proposal as it develops.
+[`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md)
+fits the model under that specification;
+[`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
+and
+[`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
+help review the fitted tariff and its portfolio effect. This keeps
+proposed changes separate from fitted results and from any decision to
+adopt the tariff.
 
 ## Where to go next
 

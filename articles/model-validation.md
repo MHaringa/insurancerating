@@ -153,18 +153,22 @@ Residual deviances should also be compared within the same model family.
 RMSE uses only the rows retained in the fit. None of these values
 establishes performance on a future portfolio.
 
-Lower values can support a model comparison, but a small improvement
-does not automatically imply a better tariff. Exposure by level,
-coefficient stability, residual behaviour, observed experience and
-practical interpretability remain part of the assessment.
+Adding `area` lowers the residual deviance, but both AIC and BIC favour
+the simpler model once they account for its fewer parameters. The RMSEs
+are nearly identical. A closer match to historical totals by area is
+not, by itself, a reason to include area in the tariff. Look at the
+experience behind the area effects and how well they hold up on other
+data.
 
 ## Inspecting tariff structure and observed experience
 
 [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md)
 expresses fitted GLM effects as tariff relativities and shows the
 exposure supporting each level. This makes the statistical output easier
-to review in actuarial terms. Observed experience can be attached to the
-same table for a direct graphical comparison.
+to review in actuarial terms.
+[`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md)
+adds an `observed_relativity` column for the table and the corresponding
+plot.
 
 For this comparison, use `MTPL`, which also contains policyholder age.
 The model estimates regional effects at the same age, while the observed
@@ -188,15 +192,6 @@ tariff_table <- rating_table(
   exposure = "exposure"
 )
 
-tariff_table
-#>        risk_factor            level est_Age-adjusted model exposure
-#> 1      (Intercept)      (Intercept)              0.3121503       NA
-#> 2              zip                0              1.0006508      207
-#> 3              zip                1              1.0000000    11081
-#> 4              zip                2              0.9020158     7783
-#> 5              zip                3              0.9559945     7588
-#> 6 age_policyholder age_policyholder              0.9831025       NA
-
 tariff_review <- tariff_table |>
   add_factor_experience(
     data = tariff_portfolio,
@@ -207,6 +202,21 @@ tariff_review <- tariff_table |>
     label = "Observed frequency"
   )
 
+tariff_review
+#>        risk_factor            level est_Age-adjusted model exposure
+#> 1      (Intercept)      (Intercept)              0.3121503       NA
+#> 2              zip                0              1.0006508      207
+#> 3              zip                1              1.0000000    11081
+#> 4              zip                2              0.9020158     7783
+#> 5              zip                3              0.9559945     7588
+#> 6 age_policyholder age_policyholder              0.9831025       NA
+#>   observed_relativity
+#> 1                  NA
+#> 2           0.9752231
+#> 3           1.0000000
+#> 4           0.9009127
+#> 5           0.9515761
+#> 6                  NA
 autoplot(
   tariff_review,
   risk_factors = "zip",
@@ -238,15 +248,24 @@ to compare full-model predictions with actual outcomes.
 Unlike
 [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md),
 [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md)
-refits the model for each sample. Choose the evaluation rows according
-to the question:
+refits the model for each sample. For random resampling, `sampling`
+determines how rows are drawn and `sample_fraction` sets the size of the
+training draw. A fraction below 1 does not turn a bootstrap into a
+random split.
 
-| Setting | Rows used to score each refit |
-|----|----|
-| Default bootstrap: `sample_fraction = 1` | The same sample used for fitting |
-| Bootstrap: `sample_fraction < 1` | Rows not used in that fit (out of bag) |
-| Random split: `sample_fraction < 1` | Rows held out of the training split |
-| Rolling validation | Subsequent periods, after the training window |
+| `sampling` | `sample_fraction` | Rows used to fit | Rows used to score each refit |
+|----|----|----|----|
+| `"bootstrap"` (default) | `1` (default) | Full-size draw with replacement | Same bootstrap sample (in sample) |
+| `"bootstrap"` | Below 1 | Smaller draw with replacement | Rows not used for training (out of bag) |
+| `"split"` | Below 1 | Random draw without replacement | Remaining rows (held-out test set) |
+| `"split"` | `1` | All rows | Same rows (no holdout) |
+| `"rolling"` | Not used | Earlier periods in an expanding window | Subsequent periods |
+
+The random methods draw rows, not whole policies. If a policy
+contributes multiple rows, a held-out row can belong to a policy already
+seen in training. To assess performance on unseen policies in that
+setting, form a holdout by policy and keep each policy’s records
+together.
 
 The quick start uses out-of-bag evaluation. The plot subtitle identifies
 the evaluation rows used.
@@ -266,11 +285,13 @@ autoplot(resample_result, metric = "rmse")
 
 ![](model-validation_files/figure-html/unnamed-chunk-7-1.png)
 
-Here, `sample_fraction = 0.8` means 80 draws per 100 rows, **with
-replacement**. Some rows can be drawn more than once. The model is
-scored on rows not used for training (the *out-of-bag* rows), not on a
-fixed 20% test set. With `sampling = "split"` and a fraction below 1,
-the draw is without replacement and the remaining rows are held out.
+With `sampling = "bootstrap", sample_fraction = 0.8`, the initial draw
+is 80 rows per 100, with replacement. Some rows can be drawn more than
+once, so the out-of-bag set is not a fixed 20% of the data. With
+`sampling = "split", sample_fraction = 0.8`, the initial draw selects 80
+distinct rows per 100 and holds out the rest. For either design, rows
+added to the training sample to cover missing factor levels are excluded
+from held-out scoring.
 
 RMSE and MAE measure error in claim counts here. The dashed orange line
 is the original model’s RMSE on the full supplied portfolio, not on the
@@ -325,11 +346,11 @@ does not currently implement that design.
 
 ## Testing on later periods
 
-Rolling validation fits the specification on earlier periods and scores
-it on the next period or periods. The training window expands one period
-at a time. This example simulates policy periods with a higher claim
-frequency from 2023 onwards, so the first evaluation window faces a
-change in level.
+Use the same simulated portfolio to answer two different questions: did
+a model kept fixed after 2022 continue to predict the right number of
+claims, and how well would the same specification predict the next year
+if refitted each year? In this example the underlying claim frequency
+rises in 2023.
 
 ``` r
 
@@ -342,12 +363,52 @@ temporal_data$nclaims <- with(
   temporal_data,
   rpois(nrow(temporal_data), exposure * ifelse(year < 2023, 0.10, 0.20))
 )
-temporal_model <- glm(
+historical_model <- glm(
   nclaims ~ 1 + offset(log(exposure)),
-  family = poisson(), data = temporal_data
+  family = poisson(), data = subset(temporal_data, year <= 2022)
 )
+```
+
+### Calibration of a fixed model
+
+Fit once on 2020 to 2022 and use that fit unchanged to predict later
+years.
+[`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
+compares the resulting claim totals with the observed totals in each
+year.
+
+``` r
+
+year_calibration <- calibration_analysis(
+  historical_model, subset(temporal_data, year > 2022), by = "year"
+)
+year_calibration
+#>   year Observed Expected       OE   N Exposure
+#> 1 2023       28 18.33333 1.527273 250    187.5
+#> 2 2024       31 18.33333 1.690909 250    187.5
+#> 3 2025       34 18.33333 1.854545 250    187.5
+autoplot(year_calibration)
+```
+
+![Observed-to-expected claim ratios for 2023 to 2025 using one model
+fitted through
+2022.](model-validation_files/figure-html/unnamed-chunk-10-1.png)
+
+In 2023, the historical model expects about 18 claims and 28 are
+observed (O/E 1.53). The fixed rate underpredicts that year’s claims.
+The plot checks the prediction level, not how well the model ranks
+individual risks.
+
+### Performance of rolling refits
+
+Rolling validation refits the same formula as more years become
+available. It uses the original fit as a model specification, not as the
+source of the predictions.
+
+``` r
+
 validate_performance(
-  temporal_model, temporal_data, sampling = "rolling", time = "year",
+  historical_model, temporal_data, sampling = "rolling", time = "year",
   initial = 3, metrics = c("rmse", "mae", "deviance"), show_progress = FALSE
 )
 #>   iteration train_start train_end test_start test_end n_train n_test      rmse
@@ -361,9 +422,10 @@ validate_performance(
 ```
 
 The first fit uses 2020 to 2022 and scores 2023. The next fit adds 2023
-to training and scores 2024. Unlike plotting calibration by year for a
-fixed model, each fit uses only the information available in its
-training window.
+to training and scores 2024. Each score uses a different test year. A
+change in RMSE across years can reflect a change in claim experience as
+well as a change in the fit. To compare alternative specifications, test
+them on the same windows.
 
 ## Checking distributional assumptions
 
@@ -401,7 +463,7 @@ autoplot(residual_check)
 #> Residuals consistent with expected distribution (p = 0.656)
 ```
 
-![](model-validation_files/figure-html/unnamed-chunk-11-1.png)
+![](model-validation_files/figure-html/unnamed-chunk-13-1.png)
 
 [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md)
 uses DHARMa simulations from the fitted model to construct scaled
@@ -424,40 +486,36 @@ counts.
 
 ``` r
 
-calibration_analysis(area_model, portfolio)
+calibration_analysis(intercept_model, portfolio)
 #>   Observed Expected OE    N Exposure
 #> 1      358      358  1 3000 2662.586
-area_calibration <- calibration_analysis(area_model, portfolio, by = "area")
-area_calibration
-#>   area Observed Expected OE    N   Exposure
-#> 1    1      146      146  1 1194 1065.74795
-#> 2    0        1        1  1   15   13.30685
-#> 3    2       98       98  1  921  818.53973
-#> 4    3      113      113  1  870  764.99178
-autoplot(area_calibration)
+autoplot(area_check)
 ```
 
-![](model-validation_files/figure-html/unnamed-chunk-12-1.png)
+![Observed-to-expected claim ratios by area for a model with one common
+claim
+frequency.](model-validation_files/figure-html/unnamed-chunk-14-1.png)
 
 O/E is observed claims divided by expected claims. A ratio above 1 means
 more claims were observed than expected; a ratio below 1 means fewer.
 The overall ratio describes calibration-in-the-large.
 
-Here, O/E is 1 in every area: the Poisson model estimates a separate
-rate for each area and is evaluated on the same records used to fit it.
-This illustrates how to read the output, but does not demonstrate
-calibration on new data.
+The model with one common frequency matches the overall claim total on
+its estimation data, but it does not match every area. In area 3 it
+expects about 103 claims, compared with 113 observed. Area 0 is farther
+from O/E = 1, but has only one observed claim and about 13 policy-years.
+A larger gap is not necessarily a stronger signal.
 
-Use `by = "year"` when the evaluation data contain a calendar year. A
-change in O/E across years can indicate a change in the overall
-prediction level, even if the model still ranks high- and low-risk
-policies equally well.
-[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
-shows that comparison as an O/E line over time. To check whether the
-pattern differs by area, use `by = c("year", "area")`. This gives one
-row per observed year and area combination, with their exposure and
-claim totals. The plot shows a point per combination rather than joining
-areas into a single time series.
+If you instead evaluate `area_model` on its estimation data, O/E is 1 in
+every area because the model fits a separate rate for each. That is not
+evidence of calibration on new data.
+
+For a single calendar-year grouping, see [Calibration of a fixed
+model](#calibration-of-a-fixed-model). To check whether the pattern
+differs by area, use `by = c("year", "area")`. This gives one row per
+observed year and area combination, with their exposure and claim
+totals. The plot shows a point per combination rather than joining areas
+into a single time series.
 
 ### Does the model get claim frequency right at different risk levels?
 
@@ -508,7 +566,7 @@ autoplot(risk_calibration)
 
 ![Observed against expected claims per policy-year for five groups of
 predicted risk on held-out records. The diagonal marks equal
-frequencies.](model-validation_files/figure-html/unnamed-chunk-13-1.png)
+frequencies.](model-validation_files/figure-html/unnamed-chunk-15-1.png)
 
 Each dot is one group. Its x-coordinate is total expected claims divided
 by the group’s total policy-years; its y-coordinate is total observed
@@ -577,25 +635,15 @@ evidence that the restriction improves predictions on new data.
 
 ### Acting on validation findings
 
-Validation identifies evidence; it should not silently alter the model.
-A useful response to an issue is:
-
-1.  identify the affected observations or tariff levels;
-2.  investigate the likely cause;
-3.  revise the data or model when the statistical specification is
-    responsible;
-4.  apply an explicit actuarial refinement only when it has a defensible
-    tariff rationale;
-5.  validate the resulting model again.
-
-Incorrect exposure, data-quality problems, missing interactions, poor
-segmentation, inappropriate distributions and large-loss treatment can
-all produce unattractive diagnostics. These issues may require
-revisiting the model rather than smoothing or restricting its
-coefficients. The [Refinement building
+A diagnostic can identify the observations or tariff levels worth a
+closer look. The follow-up depends on the cause: incorrect exposure may
+call for a data correction, while missing interactions or an unsuitable
+distribution may call for a different model. Neither necessarily calls
+for a tariff refinement. If there is a separate actuarial reason to
+change a fitted effect, the [Refinement building
 blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.md)
-vignette explains how justified tariff adjustments can be recorded and
-refitted explicitly.
+vignette shows how to record, refit and review that adjustment. The same
+diagnostics can be reused after a change to the data, model or tariff.
 
 ## Putting the evidence together
 

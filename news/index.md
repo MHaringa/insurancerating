@@ -34,8 +34,8 @@
   replaces
   [`add_portfolio_experience()`](https://mharinga.github.io/insurancerating/reference/add_portfolio_experience.md)
   for attaching marginal observed experience to a rating table. The old
-  name remains as a deprecated alias; calculations and plotting
-  behaviour are unchanged.
+  name remains as a deprecated alias. The resulting table now includes
+  `observed_relativity` on the same scale as the default plot.
 - [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
   compares observed and expected totals overall, by portfolio segment or
   calendar year, and across predicted-risk groups. For refined GLMs it
@@ -122,10 +122,10 @@
   are resolved on extraction; fitted predictions are unchanged.
 - [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md)
   now correctly replaces the active offset from a preceding multiplier
-  restriction on the same model variable. The adjusted parent effect is
-  included exactly once in the split, preventing spurious
-  missing-model-term warnings, double counting in predictions and
-  duplicate intermediate factors in
+  restriction, shrinkage or rebasing on the same model variable. The
+  adjusted parent effect is included exactly once in the split,
+  preventing spurious missing-model-term warnings, double counting in
+  predictions and duplicate intermediate factors in
   [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md).
 - [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
   now supports relative tariff adjustments through

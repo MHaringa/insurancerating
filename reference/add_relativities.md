@@ -144,6 +144,13 @@ effect in the model offset. For example, a parent relativity of 0.80,
 multiplied by 1.15 and split with an unnormalised sublevel relativity of
 0.90, gives `0.80 * 1.15 * 0.90`.
 
+If the parent has already been adjusted with
+[`add_shrinkage()`](https://mharinga.github.io/insurancerating/reference/add_shrinkage.md)
+or
+[`add_rebasing()`](https://mharinga.github.io/insurancerating/reference/add_rebasing.md),
+the split uses those current parent relativities and replaces the
+preceding offset. The adjustment is not applied twice.
+
 Conversely,
 [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md)
 can be called after `add_relativities()` to adjust selected levels of

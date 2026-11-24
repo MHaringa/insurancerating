@@ -72,7 +72,7 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mharinga.github.io/insurancerating/">insurancerating</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
-<h2 id="why-large-portfolios-require-a-different-workflow">Why large portfolios require a different workflow<a class="anchor" aria-label="anchor" href="#why-large-portfolios-require-a-different-workflow"></a>
+<h2 id="why-large-portfolios-require-a-different-workflow">Preparing large portfolios<a class="anchor" aria-label="anchor" href="#why-large-portfolios-require-a-different-workflow"></a>
 </h2>
 <p>Insurance portfolio extracts can contain millions of policy-period
 records. The practical limit is not imposed by R as a statistical
@@ -98,9 +98,11 @@ periods over time;</li>
 aggregate records to model points.</li>
 </ul>
 <p>Temporal consolidation and model-point aggregation solve different
-problems and can be used sequentially. A typical large-portfolio
-workflow is:</p>
-<p><code>policy periods -&gt; optional temporal consolidation -&gt; derive rating factors -&gt; model-point aggregation -&gt; collect into R -&gt; fit the pricing GLM</code>.</p>
+problems. You can use either on its own or combine them when the source
+data call for both. For example, you might consolidate adjacent policy
+periods, derive the rating factors, and aggregate to model points in a
+database before bringing the result into R. That changes where the data
+preparation runs, not how the pricing model has to be specified.</p>
 </div>
 <div class="section level2">
 <h2 id="memory-rather-than-a-fixed-row-limit">Memory rather than a fixed row limit<a class="anchor" aria-label="anchor" href="#memory-rather-than-a-fixed-row-limit"></a>
@@ -653,13 +655,8 @@ coverage periods.</li>
 grid second. A rating grid no longer contains the row-level interval
 structure needed to merge policy periods.</li>
 </ul>
-<p>One sequence, when both reductions are useful, is:</p>
-<p><code>raw policy periods -&gt; merge compatible periods -&gt; derive or transform rating factors -&gt; aggregate to model points -&gt; collect the compact grid -&gt; fit the model</code>.</p>
-<p>The temporal merge must precede model-point aggregation because start
-dates, end dates and adjacency between individual records are no longer
-represented after the grid has been constructed. Rating factors should
-normally be derived before constructing the grid so that every distinct
-model value forms its own model point.</p>
+<p>Derive any rating factor needed to distinguish model points before
+aggregating rows that would otherwise be combined.</p>
 <p>The grouping columns used for temporal merging must retain every
 attribute that should remain distinct. For example, include
 <code>sector</code> when a policy changes sector during its history.

@@ -5,7 +5,7 @@
 library(insurancerating)
 ```
 
-## Why large portfolios require a different workflow
+## Preparing large portfolios
 
 Insurance portfolio extracts can contain millions of policy-period
 records. The practical limit is not imposed by R as a statistical
@@ -34,10 +34,11 @@ Two different operations are used in this vignette:
   aggregate records to model points.
 
 Temporal consolidation and model-point aggregation solve different
-problems and can be used sequentially. A typical large-portfolio
-workflow is:
-
-`policy periods -> optional temporal consolidation -> derive rating factors -> model-point aggregation -> collect into R -> fit the pricing GLM`.
+problems. You can use either on its own or combine them when the source
+data call for both. For example, you might consolidate adjacent policy
+periods, derive the rating factors, and aggregate to model points in a
+database before bringing the result into R. That changes where the data
+preparation runs, not how the pricing model has to be specified.
 
 ## Memory rather than a fixed row limit
 
@@ -612,15 +613,8 @@ be combined.
   grid second. A rating grid no longer contains the row-level interval
   structure needed to merge policy periods.
 
-One sequence, when both reductions are useful, is:
-
-`raw policy periods -> merge compatible periods -> derive or transform rating factors -> aggregate to model points -> collect the compact grid -> fit the model`.
-
-The temporal merge must precede model-point aggregation because start
-dates, end dates and adjacency between individual records are no longer
-represented after the grid has been constructed. Rating factors should
-normally be derived before constructing the grid so that every distinct
-model value forms its own model point.
+Derive any rating factor needed to distinguish model points before
+aggregating rows that would otherwise be combined.
 
 The grouping columns used for temporal merging must retain every
 attribute that should remain distinct. For example, include `sector`
