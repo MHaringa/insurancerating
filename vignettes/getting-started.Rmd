@@ -50,9 +50,8 @@ head(MTPL)
 
 ### Factor analysis
 
-A pricing analysis commonly starts with a descriptive review of the portfolio.
-
-Before fitting a model, it is useful to assess:
+Here we use a descriptive review before fitting a model. The same review can
+help later when a fitted effect or tariff change warrants a closer look:
 
 -	how experience differs across factor levels
 -	whether observed differences are supported by sufficient exposure and claim volume
@@ -335,11 +334,10 @@ rt
 
 ```
 
-`rating_table()` expresses fitted model effects as tariff relativities for the
-original factor levels, including the reference level. The attached portfolio
-experience makes it possible to compare those modelled relativities with the
-observed risk-premium pattern. Exposure remains important when judging whether
-an apparent difference is sufficiently credible.
+`rating_table()` reports fitted tariff relativities by factor level.
+`add_factor_experience()` adds `observed_relativity`: here, the observed
+risk premium relative to the reference level of each factor. The same values
+appear in the plot. Exposure helps put differences between the two in context.
 	
 
 ### Visualising coefficients
@@ -438,23 +436,16 @@ tariff_refinement <- prepare_refinement(tariff_model, data = premium_df) |>
 
 refined_tariff <- refit(tariff_refinement, intercept_only = TRUE)
 
-zip_effects <- rating_table(
+rating_table(
   tariff_model, refined_tariff,
-  estimate_name = c("Before", "After"),
+  estimate_name = c("before", "after"),
   exposure = FALSE
-) |>
-  as.data.frame() |>
-  filter(level == "3")
-
-knitr::kable(data.frame(
-  ZIP = "3",
-  Before = zip_effects$Before[zip_effects$risk_factor == "zip"],
-  After = zip_effects$After[zip_effects$risk_factor == "zip_restricted"]
-), digits = 3)
+)
 
 ```
 
-The refit stores the fixed ZIP effect as `zip_restricted`. A relativity of
+Read ZIP 3 under `zip` before the refit and under `zip_restricted` after it.
+The table keeps these two factors on separate rows. A relativity of
 `1.05` means 5% above the reference ZIP, not a 5% increase on the previous
 relativity. Since the base level was also re-estimated, the table is not a
 comparison of final premiums. See
@@ -480,9 +471,10 @@ refit()                       # fit the refined tariff model
 
 ```
 
-The sequence distinguishes observed experience, fitted model effects, candidate
-tariff segmentation and model diagnostics. The final modelling choices remain
-dependent on the portfolio and pricing objective.
+The order shown follows this example. You can use individual blocks elsewhere:
+review exposure in a portfolio without fitting a model, interpret an existing
+GLM without changing the tariff, or return to factor analysis after a model
+check raises a question.
 
 
 ## Where to go next

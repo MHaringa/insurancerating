@@ -554,6 +554,9 @@ testthat::test_that(
     testthat::expect_s3_class(rt_observed, "rating_table")
     testthat::expect_false("observed_experience" %in% names(rt_observed))
     testthat::expect_identical(
+      names(rt_observed), c(names(rt), "observed_relativity")
+    )
+    testthat::expect_identical(
       rt_observed$observed_experience$metric,
       "frequency"
     )
@@ -687,6 +690,7 @@ testthat::test_that(
       testthat::expect_identical(actual, expected)
 
       without_observed <- actual
+      without_observed$observed_relativity <- NULL
       attr(without_observed, "observed_experience") <- NULL
       testthat::expect_identical(without_observed, rt)
       plot <- ggplot2::autoplot(actual, risk_factors = "area")
@@ -695,6 +699,58 @@ testthat::test_that(
     }
   }
 )
+
+test_that("the observed table column and default plot use the same metric and scale", {
+  portfolio <- data.frame(
+    region = factor(c("A", "B", "B", "A"), levels = c("B", "A")),
+    exposure = 1,
+    claims = c(2, 1, 1, 2),
+    amount = c(400, 100, 100, 400)
+  )
+  model <- glm(claims ~ region + offset(log(exposure)), poisson(), portfolio)
+  effects <- rating_table(model, exposure = FALSE, reference_first = FALSE,
+                          level_order = "alphabetical")
+  observed <- factor_analysis(portfolio, risk_factors = "region",
+                              exposure = "exposure", claim_count = "claims",
+                              claim_amount = "amount")
+  comparison <- add_factor_experience(effects, observed, metric = "frequency")
+  expected <- c(NA_real_, 2, 1)
+
+  expect_identical(comparison$level, effects$level)
+  expect_equal(comparison$observed_relativity, expected)
+  expect_equal(comparison$df$observed_relativity, expected)
+  expect_equal(as.data.frame(comparison)$observed_relativity, expected)
+  expect_output(print(comparison), "observed_relativity")
+  expect_equal(as.data.frame(comparison)[names(effects)], as.data.frame(effects))
+
+  plot <- ggplot2::autoplot(comparison, risk_factors = "region")
+  observed_line <- subset(plot[[1L]]$data, model == "Observed experience")
+  expect_equal(observed_line$est[match(c("A", "B"), observed_line$level)], c(2, 1))
+
+  plot_premium <- ggplot2::autoplot(comparison, risk_factors = "region",
+                                   metric = "risk_premium")
+  premium_line <- subset(plot_premium[[1L]]$data, model == "Observed experience")
+  expect_equal(premium_line$est[match(c("A", "B"), premium_line$level)], c(4, 1))
+  expect_equal(comparison$observed_relativity, expected)
+
+  updated <- add_factor_experience(comparison, observed, metric = "risk_premium")
+  expect_identical(names(updated), names(comparison))
+  expect_equal(updated$observed_relativity, c(NA_real_, 4, 1))
+  mean_comparison <- add_factor_experience(effects, observed, scale = "mean")
+  expect_equal(mean_comparison$observed_relativity, c(NA_real_, 2/1.5, 1/1.5))
+
+  portfolio$claims[portfolio$region == "B"] <- 0
+  undefined <- add_factor_experience(
+    effects, data = portfolio, risk_factors = "region",
+    claim_count = "claims", exposure = "exposure"
+  )
+  expect_true(all(is.na(undefined$observed_relativity)))
+
+  renamed <- rating_table(model, exposure = FALSE, estimate_name = "observed_relativity")
+  expect_error(add_factor_experience(renamed, observed), "already contains")
+  expect_error(add_factor_experience(effects, list(observed, observed)),
+               "only one observed summary")
+})
 
 testthat::test_that(
   "add_observed_experience remains available as deprecated alias", {

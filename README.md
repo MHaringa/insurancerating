@@ -65,12 +65,12 @@ autoplot(
 
 ## From model to refined tariff
 
-An age-band GLM estimates one relativity per band. Smoothing proposes a
-continuous relationship, which can then be translated into a new set of
-bands.
+An age-band GLM estimates one relativity per band. Here we use age
+decades where practical and pool ages 80 and above. A spline smooths the
+fitted effects, which are then translated into new tariff bands.
 
 ``` r
-age_breaks <- c(18, 25, 32, 39, 51, 58, 65, 84, 95)
+age_breaks <- c(18, 29, 39, 49, 59, 69, 79, 95)
 portfolio$age_band <- cut(portfolio$age_policyholder, age_breaks,
                           include.lowest = TRUE)
 
@@ -80,22 +80,28 @@ frequency_model <- glm(
   data = portfolio
 )
 
-tariff_breaks <- c(18, 24, 30, 40, 55, 70, 85, 95)
+tariff_breaks <- c(18, 24, 30, 40, 55, 70, 79, 95)
 proposal <- frequency_model |>
   prepare_refinement(data = portfolio) |>
-  add_smoothing("age_band", "age_policyholder", breaks = tariff_breaks,
-                k = 5, weights = "exposure")
+  add_smoothing(
+    "age_band", "age_policyholder",
+    breaks = tariff_breaks, smoothing = "spline", k = 6, weights = "exposure"
+  )
 
 tariff <- refit(proposal, intercept_only = TRUE)
-autoplot(proposal) +
-  ggplot2::labs(x = "Policyholder age", y = "Tariff relativity") +
-  ggplot2::theme(legend.position = "bottom")
+autoplot(proposal)
 ```
 
-<img src="man/figures/refinement-preview-1.png" alt="Original age-band GLM relativities, a dashed proposed smoothing curve and the clustered tariff relativities held fixed in the refit."  />
+<img src="man/figures/refinement-preview-1.png" alt="Original GLM relativities, a dashed spline and new tariff bands. All three rise at the oldest ages."  />
 
 The blue steps are the original GLM estimates. The dashed curve is the
 smoothing proposal; the orange steps are the resulting tariff bands.
+
+In this sample, the fitted frequency rises from 9.1 to 12.3 claims per
+100 policy-years between ages 70–79 and 80+. The oldest band contains 36
+claims, so treat the rise as a feature of this example rather than a
+general age effect.
+
 `refit()` holds those band effects fixed and re-estimates the base claim
 rate, so their relativities do not move again. See the [refinement
 example](https://mharinga.github.io/insurancerating/articles/refinement-workflow.html#quick-start)

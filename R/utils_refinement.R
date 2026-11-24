@@ -271,7 +271,7 @@ cut_borders_model <- function(model, x_cut) {
 #' @keywords internal
 fit_smoothing_curve <- function(borders_model, x_org, degree = NULL,
                                 breaks = NULL, smoothing = "spline", k = NULL,
-                                weights) {
+                                weights, plot_points = NULL) {
 
   if (is.null(breaks)) {
     breaks <- seq(min(borders_model$start_), max(borders_model$end_),
@@ -357,7 +357,47 @@ fit_smoothing_curve <- function(borders_model, x_org, degree = NULL,
   new_rf <- new_poly_df[, c("risk_factor", new_colname_cat, "yhat")]
   colnames(new_rf)[2] <- "level"
 
-  list(new_poly_df = new_poly_df, poly_line = poly_line, new_rf = new_rf)
+  result <- list(new_poly_df = new_poly_df, poly_line = poly_line, new_rf = new_rf)
+  if (!is.null(plot_points)) {
+    # Keep the calculation grid for edits separate from the display curve.
+    plot_line <- data.frame(avg_ = .smoothing_plot_grid(
+      c(breaks, breaks_mid), plot_points
+    ))
+    plot_line$yhat <- as.numeric(predict(lm_poly, plot_line))
+    names(plot_line)[1L] <- x_org
+    result$plot_line <- plot_line
+  }
+  result
+}
+
+.smoothing_plot_grid <- function(x, points) {
+  limits <- range(x)
+  in_range <- points >= limits[1L] & points <= limits[2L]
+  sort(unique(c(x, points[in_range], seq(limits[1L], limits[2L], length.out = 201L))))
+}
+
+.linear_smoothing_plot_line <- function(line, source_variable, points) {
+  x <- line[[source_variable]]
+  if (length(x) < 2L) return(line)
+  grid <- .smoothing_plot_grid(x, points)
+  plot_line <- data.frame(x = grid, yhat = stats::approx(x, line$yhat, grid)$y)
+  names(plot_line)[1L] <- source_variable
+  plot_line
+}
+
+.smoothing_plot_limits <- function(line, source_variable, points) {
+  if (is.null(line$.side)) line$.side <- 0L
+  x <- line[[source_variable]]
+  rows <- match(setdiff(points, x[line$.side != 0L]), x, nomatch = 0L)
+  rows <- rows[rows > 0L]
+  if (!length(rows)) return(line)
+
+  # Distinct left and right limits draw vertical jumps without moving the knot.
+  left <- right <- line[rows, , drop = FALSE]
+  left$.side <- -1L
+  right$.side <- 1L
+  line <- rbind(line, left, right)
+  line[order(line[[source_variable]], line$.side), , drop = FALSE]
 }
 
 
@@ -916,7 +956,7 @@ change_xy <- function(borders_model, x_org,
 .apply_smoothing_adjustment <- function(smooth, line, new_rf,
                                         source_variable, from, to,
                                         adjustment, transition,
-                                        original_smoothing) {
+                                        original_smoothing, plot_line = NULL) {
   smooth_x <- smooth[[source_variable]]
   line_x <- line[[source_variable]]
   smoothing_range <- range(c(smooth_x, line_x), na.rm = TRUE)
@@ -1004,9 +1044,28 @@ change_xy <- function(borders_model, x_org,
   attr(smooth, "adjustment_from") <- if (anchor_from) from else NULL
   attr(smooth, "adjustment_to") <- if (anchor_to) to else NULL
 
+  if (!is.null(plot_line)) {
+    if (identical(effective_transition, "step")) {
+      plot_line <- .smoothing_plot_limits(
+        plot_line, source_variable, c(if (anchor_from) from, if (anchor_to) to)
+      )
+    }
+    x <- plot_line[[source_variable]]
+    profile <- .smoothing_adjustment_profile(
+      x, from, to, peak, effective_transition,
+      anchor_from = anchor_from, anchor_to = anchor_to
+    )
+    if (identical(effective_transition, "step")) {
+      profile[(anchor_from & x == from & plot_line$.side < 0L) |
+                (anchor_to & x == to & plot_line$.side > 0L)] <- 0
+    }
+    plot_line$yhat <- plot_line$yhat * (1 + (adjustment - 1) * profile)
+  }
+
   list(
     smooth = smooth,
     line = line,
+    plot_line = plot_line,
     new_rf = new_rf,
     transition = effective_transition,
     peak = peak
@@ -1021,7 +1080,8 @@ change_xy <- function(borders_model, x_org,
                                                source_variable,
                                                slope_adjustment,
                                                from,
-                                               original_smoothing) {
+                                               original_smoothing,
+                                               plot_line = NULL) {
   line_x <- line[[source_variable]]
   smooth_x <- smooth[[source_variable]]
   supported_range <- range(line_x, na.rm = TRUE)
@@ -1046,8 +1106,7 @@ change_xy <- function(borders_model, x_org,
     stop("The smoothing could not be evaluated at `from`.", call. = FALSE)
   }
 
-  transform_values <- function(x, y) {
-    after <- x > from
+  transform_values <- function(x, y, after = x > from) {
     y[after] <- anchor + slope_adjustment * (y[after] - anchor)
     y
   }
@@ -1082,7 +1141,15 @@ change_xy <- function(borders_model, x_org,
   attr(smooth, "slope_adjustment") <- slope_adjustment
   attr(smooth, "slope_anchor") <- from
 
-  list(smooth = smooth, line = line, new_rf = new_rf, anchor = anchor)
+  if (!is.null(plot_line)) {
+    plot_line <- .smoothing_plot_limits(plot_line, source_variable, from)
+    x <- plot_line[[source_variable]]
+    after <- x > from | (x == from & plot_line$.side > 0L)
+    plot_line$yhat <- transform_values(x, plot_line$yhat, after)
+  }
+
+  list(smooth = smooth, line = line, plot_line = plot_line, new_rf = new_rf,
+       anchor = anchor)
 }
 
 

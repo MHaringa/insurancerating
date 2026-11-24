@@ -222,47 +222,6 @@ autoplot.rating_table <- function(object,
     rep_len(pal, n)
   }
 
-  get_reference_level <- function(df_full, rf_name, model_name = NULL, expon = TRUE) {
-    df_ref <- df_full[df_full$risk_factor == rf_name, , drop = FALSE]
-    est_cols <- models_nm
-
-    if (length(est_cols) == 0 || nrow(df_ref) == 0) {
-      return(NULL)
-    }
-
-    if (!is.null(model_name)) {
-      model_index <- match(model_name, models)
-      est_col <- if (!is.na(model_index)) models_nm[[model_index]] else NA_character_
-      if (!est_col %in% est_cols) {
-        est_col <- est_cols[1]
-      }
-    } else {
-      est_col <- est_cols[1]
-    }
-
-    est_vals <- df_ref[[est_col]]
-
-    if (!isTRUE(expon)) {
-      est_vals <- exp(est_vals)
-    }
-
-    idx <- which(is.finite(est_vals) & abs(est_vals - 1) < 1e-8)
-
-    if (length(idx) == 0) {
-      idx <- which.min(abs(est_vals - 1))
-    }
-
-    if (length(idx) > 0) {
-      idx <- idx[1L]
-    }
-
-    if (length(idx) == 0 || is.infinite(idx) || is.na(idx)) {
-      return(NULL)
-    }
-
-    as.character(df_ref$level[idx])
-  }
-
   pal <- plot_palette()
   grid_theme <- plot_grid_theme()
 
@@ -301,54 +260,14 @@ autoplot.rating_table <- function(object,
   observed_df <- NULL
 
   if (!is.null(observed)) {
-    if (!is.null(observed$data)) {
-      observed_df <- observed$data
-    } else if (!is.null(observed$experience)) {
-      observed_df <- normalize_rating_table_observed_experience(observed$experience)
-    } else {
-      stop("The attached observed experience has an unsupported structure.",
-           call. = FALSE)
-    }
-    observed_metric <- resolve_rating_table_observed_metric(
+    observed_df <- .rating_table_observed_values(
+      object, observed,
       metric %||% observed$metric,
-      observed_df,
-      allow_null = FALSE
+      table_data = df_full
     )
-    observed_scale <- observed$scale %||% "reference"
-
-    ref_levels <- vapply(
-      unique(observed_df$risk_factor),
-      function(rf) {
-        ref <- get_reference_level(df_full, rf_name = rf, expon = expon)
-        if (is.null(ref)) NA_character_ else ref
-      },
-      character(1)
-    )
-
-    ref_lookup <- data.frame(
-      risk_factor = names(ref_levels),
-      ref_level = unname(ref_levels),
-      stringsAsFactors = FALSE
-    )
-
-    observed_df <- observed_df |>
-      dplyr::left_join(ref_lookup, by = "risk_factor") |>
-      dplyr::group_by(.data[["risk_factor"]]) |>
-      dplyr::mutate(
-        est = dplyr::case_when(
-          observed_scale == "mean" ~ .data[[observed_metric]] /
-            mean(.data[[observed_metric]], na.rm = TRUE),
-          observed_scale == "reference" &
-            !is.na(.data[["ref_level"]]) ~ .data[[observed_metric]] /
-            .data[[observed_metric]][.data[["level"]] == .data[["ref_level"]]][1],
-          observed_scale == "reference" &
-            is.na(.data[["ref_level"]]) ~ .data[[observed_metric]] /
-            mean(.data[[observed_metric]], na.rm = TRUE)
-        ),
-        model = observed_label
-      ) |>
-      dplyr::ungroup() |>
-      dplyr::select("risk_factor", "level", "model", "est")
+    observed_df$est <- observed_df$observed_relativity
+    observed_df$observed_relativity <- NULL
+    observed_df$model <- observed_label
   }
 
   sep_fn <- if (decimal_mark == ",") {

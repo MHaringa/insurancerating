@@ -3766,7 +3766,7 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #' portfolio <- as.data.frame(MTPL)
 #' portfolio$age_band <- cut(
 #'   portfolio$age_policyholder,
-#'   breaks = c(18, 25, 35, 45, 55, 65, 75, 95),
+#'   breaks = c(18, 29, 39, 49, 59, 69, 79, 95),
 #'   include.lowest = TRUE
 #' )
 #' fit <- glm(
@@ -3778,7 +3778,7 @@ restrict_coef <- function(model, restrictions, allow_new_levels = TRUE,
 #'   add_smoothing(
 #'     model_variable = "age_band",
 #'     source_variable = "age_policyholder",
-#'     breaks = c(seq(18, 93, by = 5), 95),
+#'     breaks = c(18, 24, 30, 40, 55, 70, 79, 95),
 #'     smoothing = "spline",
 #'     k = 6,
 #'     weights = "exposure"
@@ -4510,6 +4510,10 @@ edit_smoothing <- function(model,
 #' and split with an unnormalised sublevel relativity of 0.90, gives
 #' `0.80 * 1.15 * 0.90`.
 #'
+#' If the parent has already been adjusted with [add_shrinkage()] or
+#' [add_rebasing()], the split uses those current parent relativities and
+#' replaces the preceding offset. The adjustment is not applied twice.
+#'
 #' Conversely, [add_restriction()] can be called after `add_relativities()` to
 #' adjust selected levels of the derived `output_variable`. The output variable
 #' is then recognised as an existing refinement factor; users do not need to
@@ -5179,7 +5183,8 @@ add_relativities <- function(model,
     breaks = breaks,
     smoothing = smoothing,
     k = k,
-    weights = exposur0
+    weights = exposur0,
+    plot_points = if (is.null(step$edit)) state$smoothing_plot_points
   )
   .validate_adjusted_smoothing_shape(
     fit_poly$poly_line[[x_org]],
@@ -5191,7 +5196,6 @@ add_relativities <- function(model,
   df_poly_line <- fit_poly[["poly_line"]]
   df_new_rf <- fit_poly[["new_rf"]]
   initial_df_poly <- df_poly
-  initial_df_poly_line <- df_poly_line
   initial_df_new_rf <- df_new_rf
 
   effective_transition <- NULL
@@ -5254,7 +5258,7 @@ add_relativities <- function(model,
   }
 
   initial_df_poly <- df_poly
-  initial_df_poly_line <- df_poly_line
+  initial_df_poly_line <- fit_poly$plot_line %||% df_poly_line
   initial_df_new_rf <- df_new_rf
 
   state$mgd_smt <- append(
@@ -5307,6 +5311,7 @@ add_relativities <- function(model,
     initial_new_rf = initial_df_new_rf,
     current_new = df_poly,
     current_line = df_poly_line,
+    current_plot_line = fit_poly$plot_line,
     current_new_rf = df_new_rf
   )
 
@@ -5329,6 +5334,7 @@ add_relativities <- function(model,
   edit_mode <- edit$mode %||% "explicit"
   df_poly <- smoothing_state$current_new
   df_poly_line <- smoothing_state$current_line
+  plot_line <- smoothing_state$current_plot_line
   df_new_rf <- smoothing_state$current_new_rf
   x_org <- smoothing_state$source_variable
   x_cut <- smoothing_state$model_variable
@@ -5345,9 +5351,11 @@ add_relativities <- function(model,
       to = edit$to,
       adjustment = edit$adjustment,
       transition = edit$transition,
-      original_smoothing = smoothing_state$original_smoothing
+      original_smoothing = smoothing_state$original_smoothing,
+      plot_line = plot_line
     )
     effective_transition <- changed$transition
+    plot_line <- changed$plot_line
   } else if (!identical(edit_mode, "slope")) {
     ebreak <- edit$extrapolation_step
     if (is.null(ebreak)) {
@@ -5365,6 +5373,11 @@ add_relativities <- function(model,
       allow_extrapolation = isTRUE(edit$allow_extrapolation),
       extrapolation_break_size = ebreak
     )
+    if (!is.null(state$smoothing_plot_points)) {
+      plot_line <- .linear_smoothing_plot_line(
+        changed$poly_line, x_org, state$smoothing_plot_points
+      )
+    }
   }
 
   df_poly <- changed[["smooth"]] %||% changed[["new_poly_df"]]
@@ -5380,11 +5393,13 @@ add_relativities <- function(model,
       source_variable = x_org,
       slope_adjustment = edit$slope_adjustment,
       from = edit$from,
-      original_smoothing = smoothing_state$original_smoothing
+      original_smoothing = smoothing_state$original_smoothing,
+      plot_line = plot_line
     )
     df_poly <- changed$smooth
     df_poly_line <- changed$line
     df_new_rf <- changed$new_rf
+    plot_line <- changed$plot_line
   }
 
   if (!has_slope_adjustment) {
@@ -5418,6 +5433,7 @@ add_relativities <- function(model,
 
   smoothing_state$current_new <- df_poly
   smoothing_state$current_line <- df_poly_line
+  smoothing_state$current_plot_line <- plot_line
   smoothing_state$current_new_rf <- df_new_rf
   state$smoothing_states[[smoothing_step_id]] <- smoothing_state
   state$borders <- smoothing_state$borders
@@ -5447,14 +5463,8 @@ add_relativities <- function(model,
   exposure <- step$exposure
   normalize <- isTRUE(step$normalize)
 
-  df_new <- state$data
-  base_coefficients <- .relativities_base_coefficients(
-    state,
-    effective_model_variable
-  )
-
-  # Multiplier coefficients retain their display name, while the active offset
-  # uses an execution column. Replace that offset once its effect is in the split.
+  # A fixed effect can have different names in the coefficient table and offset.
+  coefficient_variable <- effective_model_variable
   active_model_term <- effective_model_variable
   multiplier_columns <- state$restriction_multiplier_columns[[
     source_model_variable
@@ -5469,7 +5479,25 @@ add_relativities <- function(model,
   )]
   if (length(active_multipliers) > 0L) {
     active_model_term <- utils::tail(active_multipliers, 1L)
+    coefficient_variable <- .refinement_display_term(
+      state$refinement_steps, active_model_term
+    )
+  } else if (!is.null(state$offset)) {
+    for (previous_step in state$refinement_steps) {
+      if (identical(previous_step$id, step$id)) break
+      term <- previous_step$derived_model_variable
+      if (previous_step$type %in% c("shrinkage", "rebasing") &&
+          identical(previous_step$model_variable, source_model_variable) &&
+          !is.null(term) &&
+          grepl(paste0("log(", term, ")"), state$offset, fixed = TRUE)) {
+        active_model_term <- term
+        coefficient_variable <- source_model_variable
+      }
+    }
   }
+
+  df_new <- state$data
+  base_coefficients <- .relativities_base_coefficients(state, coefficient_variable)
 
   if (!source_model_variable %in% names(df_new)) {
     stop(
@@ -5487,7 +5515,7 @@ add_relativities <- function(model,
   if (nrow(base_coefficients) == 0L) {
     stop(
       "No coefficient information is available for effective model variable `",
-      effective_model_variable, "`.",
+      coefficient_variable, "`.",
       call. = FALSE
     )
   }
@@ -5644,7 +5672,7 @@ add_relativities <- function(model,
   if (!identical(active_model_term, source_model_variable) &&
       !is.null(state$rf_restricted_df)) {
     state$rf_restricted_df <- state$rf_restricted_df[
-      state$rf_restricted_df$risk_factor != effective_model_variable,
+      state$rf_restricted_df$risk_factor != coefficient_variable,
       ,
       drop = FALSE
     ]

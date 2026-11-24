@@ -48,17 +48,18 @@ the rating table are used.}
 \item{claim_amount}{Optional character string. Claim amount column used by
 \code{\link[=factor_analysis]{factor_analysis()}}.}
 
-\item{metric}{Optional character string. Default observed metric to plot.
+\item{metric}{Optional character string. Observed metric for the table and
+default plot.
 Common choices are \code{"frequency"}, \code{"severity"}/\code{"average_severity"} and
-\code{"risk_premium"}. The metric can also be overridden in
-\code{\link[=autoplot.rating_table]{autoplot.rating_table()}}.}
+\code{"risk_premium"}. If \code{NULL}, the first available metric in that order is
+used, followed by loss ratio and average premium.}
 
 \item{label}{Character; legend label for the observed experience line.}
 
 \item{color}{Optional line color. If \code{NULL}, the internal risk premium color
 is used.}
 
-\item{scale}{Character; scaling applied before plotting. One of
+\item{scale}{Character; scaling for the observed values. One of
 \code{"reference"} or \code{"mean"}.}
 
 \item{experience}{Deprecated alias for \code{observed}.}
@@ -82,17 +83,17 @@ do not necessarily indicate model misspecification. Use this comparison
 for model interpretation, not formal calibration. Use \code{\link[=calibration_analysis]{calibration_analysis()}}
 to compare full-model predictions with observed outcomes.
 
-This makes it possible to compare fitted GLM relativities with observed
-portfolio patterns in \code{\link[=autoplot.rating_table]{autoplot.rating_table()}}. The full observed output is
-stored on the rating table, so \code{\link[=autoplot.rating_table]{autoplot.rating_table()}} can later switch
-between metrics such as \code{"frequency"}, \code{"average_severity"} and
-\code{"risk_premium"} without recalculating the summaries.
+The returned table displays the selected metric as \code{observed_relativity},
+matched by risk factor and level. The full observed summaries remain
+available so \code{\link[=autoplot.rating_table]{autoplot.rating_table()}} can display another metric without
+changing the table column or recalculating those summaries.
 
-The observed metric is scaled before plotting. With \code{scale = "reference"}
-the metric is divided by the observed value of the model reference level. If
-a clear reference level cannot be found, the metric is divided by its mean
-across the observed levels of that factor. With \code{scale = "mean"}, this mean
-is always used.
+The table and plot use the same scaling. With \code{scale = "reference"}, the
+metric is divided by its observed value at the reference level recorded in
+the rating table. If the factor has no recorded reference, the mean across
+its observed levels is used. With \code{scale = "mean"} this mean is always
+used. Unmatched rows or ratios with no finite, non-zero denominator are
+\code{NA}. Supply only one observed summary per factor and level.
 }
 \examples{
 df <- as.data.frame(MTPL)
@@ -107,15 +108,16 @@ effects <- rating_table(
   "Age-adjusted model" = model, model_data = df, exposure = "exposure"
 )
 
-effects |>
+comparison <- effects |>
   add_factor_experience(
     data = df,
     risk_factors = "zip",
     claim_count = "nclaims",
     exposure = "exposure",
     label = "Observed frequency"
-  ) |>
-  autoplot(risk_factors = "zip", metric = "frequency")
+  )
+comparison
+autoplot(comparison, risk_factors = "zip")
 
 observed <- factor_analysis(
   df,

@@ -15,7 +15,8 @@
   temporal or rating-factor calibration.
 - `add_factor_experience()` replaces `add_portfolio_experience()` for attaching
   marginal observed experience to a rating table. The old name remains as a
-  deprecated alias; calculations and plotting behaviour are unchanged.
+  deprecated alias. The resulting table now includes `observed_relativity`
+  on the same scale as the default plot.
 - `calibration_analysis()` compares observed and expected totals overall, by
   portfolio segment or calendar year, and across predicted-risk groups.
   For refined GLMs it distinguishes tariff offsets from exposure and points
@@ -79,10 +80,10 @@
   rebasing and intercept-only refitting. Existing saved models with split
   metadata are resolved on extraction; fitted predictions are unchanged.
 - `add_relativities()` now correctly replaces the active offset from a
-  preceding multiplier restriction on the same model variable. The adjusted
-  parent effect is included exactly once in the split, preventing spurious
-  missing-model-term warnings, double counting in predictions and duplicate
-  intermediate factors in `rating_table()`.
+  preceding multiplier restriction, shrinkage or rebasing on the same model
+  variable. The adjusted parent effect is included exactly once in the split,
+  preventing spurious missing-model-term warnings, double counting in
+  predictions and duplicate intermediate factors in `rating_table()`.
 - `add_restriction()` now supports relative tariff adjustments through
   `restriction_type = "multiplier"`. Multipliers are stored as ordered
   refinement decisions and are applied to the relativity available at that

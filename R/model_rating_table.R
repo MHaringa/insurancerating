@@ -1653,17 +1653,17 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 #' for model interpretation, not formal calibration. Use [calibration_analysis()]
 #' to compare full-model predictions with observed outcomes.
 #'
-#' This makes it possible to compare fitted GLM relativities with observed
-#' portfolio patterns in [autoplot.rating_table()]. The full observed output is
-#' stored on the rating table, so [autoplot.rating_table()] can later switch
-#' between metrics such as `"frequency"`, `"average_severity"` and
-#' `"risk_premium"` without recalculating the summaries.
+#' The returned table displays the selected metric as `observed_relativity`,
+#' matched by risk factor and level. The full observed summaries remain
+#' available so [autoplot.rating_table()] can display another metric without
+#' changing the table column or recalculating those summaries.
 #'
-#' The observed metric is scaled before plotting. With `scale = "reference"`
-#' the metric is divided by the observed value of the model reference level. If
-#' a clear reference level cannot be found, the metric is divided by its mean
-#' across the observed levels of that factor. With `scale = "mean"`, this mean
-#' is always used.
+#' The table and plot use the same scaling. With `scale = "reference"`, the
+#' metric is divided by its observed value at the reference level recorded in
+#' the rating table. If the factor has no recorded reference, the mean across
+#' its observed levels is used. With `scale = "mean"` this mean is always
+#' used. Unmatched rows or ratios with no finite, non-zero denominator are
+#' `NA`. Supply only one observed summary per factor and level.
 #'
 #' @usage
 #' add_factor_experience(x, ...)
@@ -1701,14 +1701,15 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 #'   [factor_analysis()].
 #' @param claim_amount Optional character string. Claim amount column used by
 #'   [factor_analysis()].
-#' @param metric Optional character string. Default observed metric to plot.
+#' @param metric Optional character string. Observed metric for the table and
+#'   default plot.
 #'   Common choices are `"frequency"`, `"severity"`/`"average_severity"` and
-#'   `"risk_premium"`. The metric can also be overridden in
-#'   [autoplot.rating_table()].
+#'   `"risk_premium"`. If `NULL`, the first available metric in that order is
+#'   used, followed by loss ratio and average premium.
 #' @param label Character; legend label for the observed experience line.
 #' @param color Optional line color. If `NULL`, the internal risk premium color
 #'   is used.
-#' @param scale Character; scaling applied before plotting. One of
+#' @param scale Character; scaling for the observed values. One of
 #'   `"reference"` or `"mean"`.
 #' @param experience Deprecated alias for `observed`.
 #' @param ... Unused.
@@ -1731,15 +1732,16 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
 #'   "Age-adjusted model" = model, model_data = df, exposure = "exposure"
 #' )
 #'
-#' effects |>
+#' comparison <- effects |>
 #'   add_factor_experience(
 #'     data = df,
 #'     risk_factors = "zip",
 #'     claim_count = "nclaims",
 #'     exposure = "exposure",
 #'     label = "Observed frequency"
-#'   ) |>
-#'   autoplot(risk_factors = "zip", metric = "frequency")
+#'   )
+#' comparison
+#' autoplot(comparison, risk_factors = "zip")
 #'
 #' observed <- factor_analysis(
 #'   df,
@@ -1810,20 +1812,48 @@ add_factor_experience.rating_table <- function(x,
   }
 
   observed_data <- normalize_rating_table_observed_experience(observed)
+  keys <- c("risk_factor", "level")
+  if (anyDuplicated(observed_data[keys])) {
+    stop("Supply only one observed summary per risk factor and level.",
+         call. = FALSE)
+  }
   default_metric <- resolve_rating_table_observed_metric(
     metric,
     observed_data,
     allow_null = TRUE
   )
 
+  table_data <- .rating_table_data(x)
+  previous <- .rating_table_metadata(x, "observed_experience")
+  column <- "observed_relativity"
+  if (column %in% names(table_data) && !identical(previous$column, column)) {
+    stop("The rating table already contains an `observed_relativity` column. ",
+         "Use a different name for the existing column.", call. = FALSE)
+  }
   observed_experience <- list(
     data = observed_data,
     metric = default_metric,
     label = label,
     color = color,
-    scale = scale
+    scale = scale,
+    column = column
   )
-  attr(x, "observed_experience") <- observed_experience
+  values <- if (is.null(default_metric)) {
+    rep(NA_real_, nrow(table_data))
+  } else {
+    observed_values <- .rating_table_observed_values(
+      x, observed_experience, table_data = table_data
+    )
+    dplyr::left_join(table_data[keys], observed_values, by = keys)[[column]]
+  }
+
+  if (is.data.frame(x)) {
+    x[[column]] <- values
+    attr(x, "observed_experience") <- observed_experience
+  } else {
+    x[["df"]][[column]] <- values
+    x[["observed_experience"]] <- observed_experience
+  }
 
   x
 }
@@ -2022,6 +2052,58 @@ resolve_rating_table_observed_metric <- function(metric,
   }
 
   metric
+}
+
+.rating_table_observed_values <- function(object, observed, metric = observed$metric,
+                                          table_data = .rating_table_data(object)) {
+  data <- observed$data
+  if (is.null(data) && !is.null(observed$experience)) {
+    data <- normalize_rating_table_observed_experience(observed$experience)
+  }
+  if (is.null(data)) {
+    stop("The attached observed experience has an unsupported structure.",
+         call. = FALSE)
+  }
+  metric <- resolve_rating_table_observed_metric(metric, data)
+  values <- data[[metric]]
+  if (!is.numeric(values)) {
+    stop("The observed metric must be numeric.", call. = FALSE)
+  }
+
+  references <- .rating_table_metadata(object, "reference_levels")
+  use_reference <- identical(observed$scale %||% "reference", "reference")
+  if (use_reference && is.null(references)) {
+    estimates <- .rating_table_estimate_columns(object, table_data)
+    if (length(estimates)) {
+      link_values <- table_data[[estimates[[1L]]]]
+      fitted <- if (isTRUE(.rating_table_metadata(object, "expon"))) {
+        link_values
+      } else {
+        exp(link_values)
+      }
+      rows <- split(seq_len(nrow(table_data)), table_data$risk_factor)
+      references <- vapply(rows, function(i) {
+        i <- i[is.finite(fitted[i])]
+        if (!length(i)) return(NA_character_)
+        table_data$level[i[which.min(abs(fitted[i] - 1))]]
+      }, character(1))
+    }
+  }
+
+  result <- data[c("risk_factor", "level")]
+  result$observed_relativity <- rep(NA_real_, nrow(data))
+  for (i in split(seq_len(nrow(data)), data$risk_factor)) {
+    reference <- references[match(data$risk_factor[i[1L]], names(references))]
+    denominator <- if (use_reference && length(reference) && !is.na(reference)) {
+      values[i[match(reference, data$level[i])]]
+    } else {
+      mean(values[i], na.rm = TRUE)
+    }
+    if (is.finite(denominator) && denominator != 0) {
+      result$observed_relativity[i] <- values[i] / denominator
+    }
+  }
+  result
 }
 
 

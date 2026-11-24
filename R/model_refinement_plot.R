@@ -76,7 +76,8 @@
 # Preview refinement up to a selected step
 # -----------------------------------------------------------------------------
 
-preview_refinement <- function(ref, upto = length(ref$steps)) {
+preview_refinement <- function(ref, upto = length(ref$steps),
+                               plot_smoothing = FALSE) {
   .assert_refinement(ref)
 
   if (length(ref$steps) == 0) {
@@ -94,6 +95,12 @@ preview_refinement <- function(ref, upto = length(ref$steps)) {
   }
 
   state <- .make_exec_state(ref)
+  if (plot_smoothing) {
+    state$smoothing_plot_points <- as.numeric(unlist(lapply(
+      ref$steps[seq_len(upto)],
+      function(step) c(step$edit$from, step$edit$to)
+    )))
+  }
 
   for (i in seq_len(upto)) {
     state <- .apply_refinement_step(state, ref$steps[[i]])
@@ -239,7 +246,11 @@ autoplot.rating_refinement <- function(object,
   }
 
   idx <- .select_plot_step(object, variable = variable, step = step)
-  preview <- preview_refinement(object, upto = idx)
+  selected_type <- object$steps[[idx]]$type
+  preview <- preview_refinement(
+    object, upto = idx,
+    plot_smoothing = selected_type %in% c("smoothing", "smoothing_edit")
+  )
 
   selected_step <- preview$step
   state <- preview$state
@@ -346,6 +357,13 @@ autoplot.rating_refinement <- function(object,
   rf2 <- state$borders
   new <- state$new
   new_line <- state$new_line
+  if (identical(step$type, "smoothing")) {
+    new_line <- state$initial_smoothing_line %||% new_line
+  } else {
+    new_line <- state$smoothing_states[[step$smoothing_step_id]]$current_plot_line %||%
+      new_line
+  }
+  new_line$.side <- NULL
 
   if (is.null(rf2) || is.null(new) || is.null(new_line)) {
     stop("No smoothing plot data found for this step.", call. = FALSE)

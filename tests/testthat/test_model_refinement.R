@@ -1763,9 +1763,12 @@ testthat::test_that(
       c("smoothing", "smoothing_edit", "smoothing_edit")
     )
 
-    initial <- preview_refinement(refinement, 1)$state$new_line$yhat
-    first_edit <- preview_refinement(refinement, 2)$state$new_line$yhat
-    second_edit <- preview_refinement(refinement, 3)$state$new_line$yhat
+    initial_state <- preview_refinement(refinement, 1)$state
+    first_state <- preview_refinement(refinement, 2)$state
+    second_state <- preview_refinement(refinement, 3)$state
+    initial <- initial_state$new_line$yhat
+    first_edit <- first_state$new_line$yhat
+    second_edit <- second_state$new_line$yhat
     testthat::expect_true(any(first_edit > initial))
     testthat::expect_true(any(second_edit > first_edit))
     testthat::expect_equal(second_edit[c(1L, length(second_edit))],
@@ -1786,12 +1789,37 @@ testthat::test_that(
       unique(plot$layers[[overlay_layers]]$data$curve),
       c("Initial smoothing", "Current smoothing")
     )
+    initial_plot <- ggplot2::autoplot(refinement, step = 1)
+    plotted_initial <- plot$layers[[overlay_layers]]$data
+    plotted_initial <- plotted_initial[
+      plotted_initial$curve == "Initial smoothing", c("col1", "yhat")
+    ]
+    initial_curve <- tail(initial_plot$layers, 1)[[1]]$data
+    testthat::expect_equal(plotted_initial$col1, initial_curve$col1)
+    testthat::expect_equal(plotted_initial$yhat, initial_curve$yhat)
+    expect_edited_curve <- function(data, state) {
+      current <- data[data$curve == "Current smoothing", ]
+      testthat::expect_gt(nrow(current), nrow(state$new_line))
+      testthat::expect_equal(
+        current$yhat[match(state$new_line$age, current$col1)], state$new_line$yhat
+      )
+      testthat::expect_equal(
+        current$yhat[match(state$new$age, current$col1)], state$new$yhat
+      )
+      current
+    }
+    plotted_second <- expect_edited_curve(plot$layers[[overlay_layers]]$data,
+                                          second_state)
+    peak <- attr(second_state$new, "adjustment_peak")
+    x <- plotted_second$col1
+    ramp <- pmin((x - 18) / (peak - 18), (60 - x) / (60 - peak))
     testthat::expect_equal(
-      plot$layers[[overlay_layers]]$data$yhat[
-        plot$layers[[overlay_layers]]$data$curve == "Current smoothing"
-      ],
-      second_edit
+      plotted_second$yhat, initial_curve$yhat * (1 + 0.05 * ramp) * (1 + 0.03 * ramp)
     )
+    plot_state <- preview_refinement(refinement, 3, plot_smoothing = TRUE)$state
+    testthat::expect_identical(plot_state$new_line, second_state$new_line)
+    testthat::expect_identical(plot_state$new_rf, second_state$new_rf)
+    testthat::expect_identical(plot_state$data, second_state$data)
 
     first_plot <- ggplot2::autoplot(
       refinement,
@@ -1803,12 +1831,7 @@ testthat::test_that(
       function(layer) "curve" %in% names(layer$data),
       logical(1)
     ))
-    testthat::expect_equal(
-      first_plot$layers[[first_overlay]]$data$yhat[
-        first_plot$layers[[first_overlay]]$data$curve == "Current smoothing"
-      ],
-      first_edit
-    )
+    expect_edited_curve(first_plot$layers[[first_overlay]]$data, first_state)
 
     plain_plot <- ggplot2::autoplot(refinement, step = 3)
     testthat::expect_false(any(vapply(
@@ -1827,7 +1850,7 @@ testthat::test_that(
   }
 )
 
-testthat::test_that("smoothing plots can hide the new tariff segments", {
+testthat::test_that("smoothing plots evaluate the fitted curve at segment midpoints", {
   df <- data.frame(
     y = c(1, 2, 1, 3, 2, 4, 2, 3),
     exposure = rep(1, 8),
@@ -1846,8 +1869,7 @@ testthat::test_that("smoothing plots can hide the new tariff segments", {
       source_variable = "age",
       breaks = c(18, 30, 45, 60, 70),
       smoothing = "poly",
-      degree = 1,
-      weights = "exposure"
+      degree = 2
     )
 
   with_segments <- ggplot2::autoplot(refinement)
@@ -1870,6 +1892,26 @@ testthat::test_that("smoothing plots can hide the new tariff segments", {
   testthat::expect_gt(segment_rows(with_segments), 0L)
   testthat::expect_identical(segment_rows(without_segments), 0L)
   testthat::expect_s3_class(without_segments, "ggplot")
+
+  state <- preview_refinement(refinement)$state
+  curve <- tail(with_segments$layers, 1)[[1]]$data
+  midpoints <- match(state$new$age, curve$col1)
+  testthat::expect_false(anyNA(midpoints))
+  testthat::expect_equal(curve$yhat[midpoints], state$new$yhat)
+  testthat::expect_equal(range(curve$col1), range(state$new_line$age))
+  testthat::expect_gt(nrow(curve), nrow(state$new_line) + nrow(state$new))
+
+  quadratic <- stats::lm(estimate ~ poly(avg_, degree = 2), data = state$borders)
+  testthat::expect_equal(
+    curve$yhat,
+    unname(stats::predict(quadratic, data.frame(avg_ = curve$col1)))
+  )
+  testthat::expect_identical(tail(without_segments$layers, 1)[[1]]$data, curve)
+
+  plot_state <- preview_refinement(refinement, plot_smoothing = TRUE)$state
+  testthat::expect_identical(plot_state$new_line, state$new_line)
+  testthat::expect_identical(plot_state$new_rf, state$new_rf)
+  testthat::expect_identical(plot_state$data, state$data)
 })
 
 testthat::test_that(
@@ -1971,13 +2013,17 @@ testthat::test_that("step adjustments explicitly allow boundary jumps", {
     to = 50,
     adjustment = 1.05,
     transition = "step",
-    original_smoothing = "spline"
+    original_smoothing = "spline",
+    plot_line = data.frame(age = seq(25, 55, by = 0.25), yhat = 1)
   )
 
   testthat::expect_equal(
     changed$smooth$yhat,
     c(1, 1.05, 1.05, 1.05, 1.05, 1.05, 1)
   )
+  plot_line <- changed$plot_line
+  testthat::expect_equal(plot_line$yhat[plot_line$age == 30], c(1, 1.05, 1.05))
+  testthat::expect_equal(plot_line$yhat[plot_line$age == 50], c(1.05, 1.05, 1))
 })
 
 testthat::test_that(
@@ -2153,6 +2199,15 @@ testthat::test_that("edit_smoothing stores and cumulatively applies slope adjust
     current$yhat[current$amount > 40],
     anchor + 1.2 * (initial$yhat[initial$amount > 40] - anchor)
   )
+  base_curve <- tail(ggplot2::autoplot(base)$layers, 1)[[1]]$data
+  edited_curve <- tail(ggplot2::autoplot(edited, step = 2)$layers, 1)[[1]]$data
+  starting_values <- base_curve$yhat[match(edited_curve$col1, base_curve$col1)]
+  testthat::expect_equal(
+    edited_curve$yhat,
+    ifelse(edited_curve$col1 > 40,
+           anchor + 1.2 * (starting_values - anchor), starting_values)
+  )
+  testthat::expect_equal(edited_curve$yhat[edited_curve$col1 == 40], rep(anchor, 3))
   testthat::expect_s3_class(refit(edited), "glm")
 
   testthat::expect_error(
@@ -2470,6 +2525,67 @@ testthat::test_that(
     )
   }
 )
+
+testthat::test_that("splitting an already adjusted parent uses its effect once", {
+  portfolio <- data.frame(
+    claims = c(2, 3, 3, 4, 8, 9, 9, 10),
+    exposure = c(1, 2, 1, 1, 1, 2, 1, 2),
+    bm_group = factor(rep(c("Low", "High"), each = 4)),
+    bm_detail = rep(c("L1", "L2", "H1", "H2"), each = 2)
+  )
+  model <- glm(
+    claims ~ bm_group + offset(log(exposure)),
+    family = poisson(),
+    data = portfolio
+  )
+  base <- prepare_refinement(model, data = portfolio)
+  fixed <- add_restriction(
+    base, restrictions = c(Low = 0.7, High = 1.3), model_variable = "bm_group"
+  )
+  cases <- list(
+    add_shrinkage(base, "bm_group", credibility = 0.9, weights = "exposure"),
+    add_shrinkage(fixed, "bm_group", credibility = 0.9, weights = "exposure"),
+    add_rebasing(base, "bm_group", reference_level = "Low")
+  )
+  low <- portfolio$bm_group == "Low"
+  sublevel <- c(L1 = 0.9, L2 = 1.1)
+  unscaled <- sublevel[portfolio$bm_detail[low]]
+  modifier <- rep(1, nrow(portfolio))
+  modifier[low] <- unscaled / weighted.mean(unscaled, portfolio$exposure[low])
+
+  for (parent in cases) {
+    step <- tail(parent$steps, 1)[[1]]
+    values <- step$values
+    parent_relativity <- if (step$type == "shrinkage") {
+      values$adjusted_relativity
+    } else {
+      values$rebased_relativity
+    }
+    expected_relativity <- parent_relativity[
+      match(portfolio$bm_group, values$level)
+    ] * modifier
+    expected_offset <- portfolio$exposure * expected_relativity
+    expected_frequency <- sum(portfolio$claims) / sum(expected_offset)
+
+    split <- add_relativities(
+      parent, model_variable = "bm_group", split_variable = "bm_detail",
+      relativities = relativities(split_level("Low", sublevel)),
+      exposure = "exposure", normalize = TRUE
+    )
+    testthat::expect_no_warning(fitted <- refit(split, intercept_only = TRUE))
+    testthat::expect_setequal(
+      all.vars(formula(fitted)), c("claims", "bm_group_rel", "exposure")
+    )
+    testthat::expect_equal(unname(fitted(fitted)), expected_frequency * expected_offset)
+    testthat::expect_equal(
+      extract_model_data(fitted)$bm_group_rel, expected_relativity
+    )
+    tariff <- rating_table(fitted, exposure = FALSE)
+    testthat::expect_setequal(
+      unique(tariff$risk_factor), c("(Intercept)", "bm_group_refined")
+    )
+  }
+})
 
 testthat::test_that(
   "restriction updates retain step order for later relativities", {

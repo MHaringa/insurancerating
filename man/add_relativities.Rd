@@ -110,6 +110,10 @@ model offset. For example, a parent relativity of 0.80, multiplied by 1.15
 and split with an unnormalised sublevel relativity of 0.90, gives
 \code{0.80 * 1.15 * 0.90}.
 
+If the parent has already been adjusted with \code{\link[=add_shrinkage]{add_shrinkage()}} or
+\code{\link[=add_rebasing]{add_rebasing()}}, the split uses those current parent relativities and
+replaces the preceding offset. The adjustment is not applied twice.
+
 Conversely, \code{\link[=add_restriction]{add_restriction()}} can be called after \code{add_relativities()} to
 adjust selected levels of the derived \code{output_variable}. The output variable
 is then recognised as an existing refinement factor; users do not need to
