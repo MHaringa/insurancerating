@@ -9,7 +9,13 @@ audit_refinement(
   exposure = NULL,
   risk_factors = NULL,
   scale = c("auto", "response", "per_exposure"),
-  metric = NULL
+  metric = NULL,
+  individual = FALSE,
+  impact_weights = c("auto", "exposure", "equal"),
+  impact_breaks = c(-Inf, -0.2, -0.1, -0.05, 0, 0.05, 0.1, 0.2, Inf),
+  impact_thresholds = c(0.05, 0.1, 0.2),
+  impact_tolerance = 1e-08,
+  keep_individual = FALSE
 )
 }
 \arguments{
@@ -34,6 +40,23 @@ identified from the model offset and otherwise selects \code{"response"}.}
 \item{metric}{Optional character string used to describe the audited measure,
 for example \code{"risk_premium"}, \code{"frequency"} or \code{"average_severity"}.
 If \code{NULL}, the audit uses \code{"fitted_rate"} or \code{"fitted_response"}.}
+
+\item{individual}{If \code{TRUE}, compare both predictions on each portfolio row.}
+
+\item{impact_weights}{Weight individual changes by \code{"exposure"} or
+\code{"equal"} row weights. \code{"auto"} uses exposure if available.}
+
+\item{impact_breaks}{Increasing change-band boundaries, from \code{-Inf} to
+\code{Inf}. Bands are right-closed.}
+
+\item{impact_thresholds}{Non-negative relative changes used for exceedance
+summaries.}
+
+\item{impact_tolerance}{Absolute relative change at or below which a row
+counts as unchanged.}
+
+\item{keep_individual}{Retain row-level predictions, changes and weights
+when \code{individual = TRUE}. Default \code{FALSE}.}
 }
 \value{
 An object of class \code{refinement_audit}. The object contains package
@@ -41,6 +64,8 @@ and model metadata, the ordered refinement steps, portfolio-level results,
 results by risk factor and level, and the model points used in the
 calculation. Use \code{\link[=summary.refinement_audit]{summary.refinement_audit()}} for a concise audit report,
 \code{as.data.frame()} for the level results and \code{as_gt()} for a formatted table.
+Individual analysis adds \code{individual_impact} with a summary, quantiles,
+change bands and threshold shares. Use \code{autoplot()} for the band shares.
 }
 \description{
 Compare an unrestricted GLM with the model returned by \code{\link[=refit]{refit()}} on the same
@@ -68,6 +93,14 @@ model it is a fitted average severity; and for a direct risk-premium model it
 can be labelled \code{"risk_premium"}. A complete risk-premium comparison requires
 either a direct risk-premium model or an explicit combination of frequency
 and severity predictions.
+
+Individual changes are \code{after / before - 1} on identical rows and the
+response scale. Non-positive baselines, negative refitted responses and
+non-finite pairs are excluded and counted. Quantiles use the inverse
+weighted empirical distribution. The weighted average of these percentage
+changes is not the percentage change in portfolio predictions. To isolate
+tariff structure, apply \code{\link[=adjust_intercept]{adjust_intercept()}} to align the candidate
+portfolio level before auditing; the audit never calibrates automatically.
 }
 \examples{
 portfolio <- data.frame(

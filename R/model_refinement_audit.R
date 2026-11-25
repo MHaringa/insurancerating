@@ -209,12 +209,34 @@
 #' @param metric Optional character string used to describe the audited measure,
 #'   for example `"risk_premium"`, `"frequency"` or `"average_severity"`.
 #'   If `NULL`, the audit uses `"fitted_rate"` or `"fitted_response"`.
+#' @param individual If `TRUE`, compare both predictions on each portfolio row.
+#' @param impact_weights Weight individual changes by `"exposure"` or
+#'   `"equal"` row weights. `"auto"` uses exposure if available.
+#' @param impact_breaks Increasing change-band boundaries, from `-Inf` to
+#'   `Inf`. Bands are right-closed.
+#' @param impact_thresholds Non-negative relative changes used for exceedance
+#'   summaries.
+#' @param impact_tolerance Absolute relative change at or below which a row
+#'   counts as unchanged.
+#' @param keep_individual Retain row-level predictions, changes and weights
+#'   when `individual = TRUE`. Default `FALSE`.
+#'
+#' @details
+#' Individual changes are `after / before - 1` on identical rows and the
+#' response scale. Non-positive baselines, negative refitted responses and
+#' non-finite pairs are excluded and counted. Quantiles use the inverse
+#' weighted empirical distribution. The weighted average of these percentage
+#' changes is not the percentage change in portfolio predictions. To isolate
+#' tariff structure, apply [adjust_intercept()] to align the candidate
+#' portfolio level before auditing; the audit never calibrates automatically.
 #'
 #' @return An object of class `refinement_audit`. The object contains package
 #'   and model metadata, the ordered refinement steps, portfolio-level results,
 #'   results by risk factor and level, and the model points used in the
 #'   calculation. Use [summary.refinement_audit()] for a concise audit report,
 #'   `as.data.frame()` for the level results and `as_gt()` for a formatted table.
+#'   Individual analysis adds `individual_impact` with a summary, quantiles,
+#'   change bands and threshold shares. Use `autoplot()` for the band shares.
 #'
 #' @author Martin Haringa
 #'
@@ -261,12 +283,24 @@ audit_refinement <- function(object,
                              exposure = NULL,
                              risk_factors = NULL,
                              scale = c("auto", "response", "per_exposure"),
-                             metric = NULL) {
+                             metric = NULL,
+                             individual = FALSE,
+                             impact_weights = c("auto", "exposure", "equal"),
+                             impact_breaks = c(-Inf, -0.20, -0.10, -0.05, 0,
+                                               0.05, 0.10, 0.20, Inf),
+                             impact_thresholds = c(0.05, 0.10, 0.20),
+                             impact_tolerance = 1e-8,
+                             keep_individual = FALSE) {
   if (!inherits(object, c("refitrestricted", "refitsmooth"))) {
     stop("`object` must be a fitted model returned by `refit()`.",
          call. = FALSE)
   }
   scale <- match.arg(scale)
+  .assert_single_logical(individual, "individual")
+  .assert_single_logical(keep_individual, "keep_individual")
+  if (keep_individual && !individual) {
+    stop("`keep_individual` requires `individual = TRUE`.", call. = FALSE)
+  }
   .audit_single_string(exposure, "exposure", allow_null = TRUE)
   .audit_single_string(metric, "metric", allow_null = TRUE)
   if (!is.null(risk_factors) &&
@@ -449,6 +483,21 @@ audit_refinement <- function(object,
     model_points = grid
   )
   class(out) <- "refinement_audit"
+  if (individual) {
+    weighting <- match.arg(impact_weights)
+    if (weighting == "auto") weighting <- if (is.null(exposure)) "equal" else "exposure"
+    if (weighting == "exposure" && is.null(exposure)) {
+      stop("Supply `exposure` to weight individual impact by exposure.", call. = FALSE)
+    }
+    out$individual_impact <- .audit_individual_impact(
+      before = stats::predict(base_model, refined_data, type = "response"),
+      after = stats::predict(object, refined_data, type = "response"),
+      weights = if (weighting == "exposure") refined_data[[exposure]] else
+        rep.int(1, nrow(refined_data)),
+      weighting = weighting, breaks = impact_breaks, thresholds = impact_thresholds,
+      tolerance = impact_tolerance, keep = keep_individual
+    )
+  }
   out
 }
 

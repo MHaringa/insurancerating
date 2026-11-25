@@ -52,7 +52,7 @@ building blocks by purpose, not by their place in a sequence.
 | Severity modelling | Inspect claim amounts and truncated severity distributions | `plot_severity_distribution()`, `fit_truncated_severity()` |
 | Large-loss treatment | Assess a threshold and decide how excess loss enters the model | `assess_excess_threshold()`, `redistribute_excess_loss()` |
 | Estimate technical risk | Estimate frequency, severity and expected loss | standard R modelling functions such as `glm()`, supported by `add_prediction()` |
-| Model interpretation | Express fitted effects as tariff relativities and compare them with experience | `rating_table()`, `add_factor_experience()` |
+| Model interpretation | Review fitted effects and apply a complete multiplicative tariff to portfolio records | `rating_table()`, `add_factor_experience()`, `as_tariff()` |
 | Tariff refinement | Apply explicit actuarial adjustments and refit the tariff model | `prepare_refinement()`, `add_smoothing()`, `add_restriction()`, `add_relativities()`, `refit()` |
 | Model validation | Examine assumptions, residuals, performance and stability | `check_overdispersion()`, `check_residuals()`, `model_performance()`, `validate_performance()` |
 | Portfolio preparation and reduction | Consolidate periods and construct observed model points locally or in a database | `merge_date_ranges()`, `rating_grid()`, `merge_date_ranges_db()`, `rating_grid_db()` |
@@ -311,6 +311,12 @@ observed ZIP rates on the estimation data. [Model validation](model-validation.h
 shows an age-adjusted comparison in which the fitted and observed lines can
 differ. That comparison is not observed versus expected claims from the
 complete model; use `calibration_analysis()` for the latter.
+
+To apply an already prepared multiplicative tariff without the original fitted
+model, select one estimate with `as_tariff()` and pass it to `add_prediction()`.
+If the portfolio has numeric values instead of tariff bands, use
+`segment_sources` to identify their source columns. The interval labels
+in the rating table supply the bounds.
 
 ## Refining the tariff
 

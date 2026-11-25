@@ -11,11 +11,12 @@ Status](https://www.r-pkg.org/badges/version/insurancerating)](https://cran.r-pr
 
 <!-- badges: end -->
 
-`insurancerating` provides actuarial tools for insurance pricing in R.
-It works alongside standard modelling functions such as `glm()` to help
-you analyse portfolio experience, interpret and refine tariff
-relativities, and validate fitted models. It also supports risk-factor
-structuring, large-loss treatment and preparation of large portfolios.
+`insurancerating` provides actuarial building blocks for insurance
+pricing in R. Use them alongside standard modelling functions such as
+`glm()` to analyse portfolio experience, interpret fitted effects, turn
+them into implementable tariffs and validate predictions. The package
+also supports risk-factor structuring, large-loss treatment and
+preparation of large portfolios.
 
 The building blocks can be used independently or combined to suit the
 portfolio. The examples illustrate choices, not a prescribed
@@ -115,7 +116,7 @@ for how to inspect the fitted result.
 | Structure continuous risk factors | `risk_factor_gam()`, `derive_tariff_segments()` |
 | Interpret fitted model effects | `rating_table()`, `add_factor_experience()` |
 | Refine tariff structures | `prepare_refinement()`, `add_smoothing()`, `add_restriction()`, `refit()` |
-| Validate fitted models | `model_performance()`, `calibration_analysis()`, `check_residuals()`, `validate_performance()` |
+| Validate fit, calibration and risk ranking | `model_performance()`, `calibration_analysis()`, `discrimination_analysis()`, `validate_performance()` |
 | Treat large losses | `assess_excess_threshold()`, `redistribute_excess_loss()` |
 | Reduce portfolio data locally | `rating_grid()`, `merge_date_ranges()` |
 | Reduce portfolios in a database | `rating_grid_db()`, `merge_date_ranges_db()` |
@@ -131,6 +132,11 @@ for how to inspect the fitted result.
   blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html)
   See how the main actuarial pricing tasks and package components fit
   together.
+
+- [Motor insurance case
+  study](https://mharinga.github.io/insurancerating/articles/motor-pricing-case-study.html)
+  Compare a fitted frequency model and candidate tariffs on a multi-year
+  synthetic portfolio, including individual impact and a held-out year.
 
 - [Refinement building
   blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.html)

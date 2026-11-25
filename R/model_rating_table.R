@@ -1393,6 +1393,9 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
   )
 
   rf_list <- vector("list", length(models))
+  tariff_info <- if (isTRUE(exponentiate)) {
+    stats::setNames(vector("list", length(models)), estimate_cols)
+  }
   exposure_out_nm <- NULL
   model_data_name_out <- NULL
 
@@ -1417,6 +1420,9 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     names(df)[names(df) == "pvalues"]  <- paste0("signif_", cols[i])
 
     rf_list[[i]] <- df
+    if (!is.null(tariff_info)) {
+      tariff_info[[i]] <- .tariff_model_info(models[[i]], df)
+    }
   }
 
   output_collisions <- intersect(
@@ -1519,7 +1525,8 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
     level_order_by_risk_factor = level_order_by_risk_factor,
     numeric_level_order = numeric_level_order,
     risk_factor_order = risk_factor_order,
-    order_model = cols[[order_model_index]]
+    order_model = cols[[order_model_index]],
+    tariff_info = tariff_info
   )
 }
 
@@ -1529,7 +1536,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
   "significance", "signif_stars", "signif_levels", "observed_experience",
   "reference_levels", "reference_first", "level_order",
   "level_order_by_risk_factor", "numeric_level_order", "risk_factor_order",
-  "order_model"
+  "order_model", "tariff_info"
 )
 
 .new_rating_table <- function(data, df_stars, models, estimate_columns,
@@ -1541,7 +1548,8 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
                               level_order_by_risk_factor = NULL,
                               numeric_level_order = "ascending",
                               risk_factor_order = "model",
-                              order_model = NULL) {
+                              order_model = NULL,
+                              tariff_info = NULL) {
   out <- as.data.frame(data)
   attr(out, "df_stars") <- df_stars
   attr(out, "models") <- models
@@ -1561,6 +1569,7 @@ rating_table <- function(..., model_data = NULL, exposure = TRUE,
   attr(out, "numeric_level_order") <- numeric_level_order
   attr(out, "risk_factor_order") <- risk_factor_order
   attr(out, "order_model") <- order_model
+  attr(out, "tariff_info") <- tariff_info
   class(out) <- c("rating_table", "riskfactor", "data.frame")
   out
 }

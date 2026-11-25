@@ -20,7 +20,7 @@ add_prediction(
 \item{data}{A \code{data.frame} containing the new data for which predictions
 should be generated.}
 
-\item{...}{One or more fitted model objects of class \code{"glm"}.}
+\item{...}{One or more fitted \code{glm} models or \code{rating_tariff} objects.}
 
 \item{predictions}{Optional character vector giving names for the new
 prediction columns. Must have the same length as the number of models
@@ -51,8 +51,8 @@ for model predictions. If \code{confidence = TRUE}, confidence interval columns
 are added as well.
 }
 \description{
-\code{add_prediction()} adds predictions from one or more fitted \code{glm} models to
-a data frame.
+\code{add_prediction()} adds predictions from fitted \code{glm} models or tariffs
+created with \code{\link[=as_tariff]{as_tariff()}} to a data frame.
 
 In pricing workflows, this is often used to bring count and severity model
 output together on the same portfolio. For example, an expected claim count
@@ -74,13 +74,14 @@ required.
 
 If \code{confidence = TRUE}, lower and upper confidence interval columns are added
 next to each prediction column. The default interval suffixes are \code{"lower"}
-and \code{"upper"}.
+and \code{"upper"}. Confidence intervals are available only for fitted GLMs.
 
 Predictions containing missing values are retained. If one or more \code{NA}
 predictions are produced, the function issues a warning with the affected
 prediction columns and number of missing predictions. This is typically
 caused by missing predictor values in \code{data} or by predictor values outside
-the domain supported by the fitted model.
+the domain supported by the fitted model. For tariffs, \code{\link[=as_tariff]{as_tariff()}} sets
+whether unmatched portfolio values warn and produce \code{NA}, or stop.
 }
 \examples{
 mod1 <- glm(nclaims ~ age_policyholder,

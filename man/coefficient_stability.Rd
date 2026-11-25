@@ -2,13 +2,17 @@
 % Please edit documentation in R/model_performance_bootstrap_coefficients.R
 \name{coefficient_stability}
 \alias{coefficient_stability}
-\title{Assess GLM coefficient stability by resampling portfolio rows}
+\title{Assess GLM coefficient stability across resamples or periods}
 \usage{
 coefficient_stability(
   object,
   n_resamples = 500,
   seed = NULL,
-  show_progress = interactive()
+  show_progress = interactive(),
+  method = c("bootstrap", "period"),
+  data = NULL,
+  period = NULL,
+  confidence = 0.95
 )
 }
 \arguments{
@@ -21,6 +25,17 @@ Default is 500.}
 \item{seed}{Optional single numeric seed for reproducible resampling.}
 
 \item{show_progress}{Logical. If \code{TRUE}, display a text progress bar.}
+
+\item{method}{\code{"bootstrap"} (default) or \code{"period"} for independent period fits.}
+
+\item{data}{Optional estimation data for period fits. If omitted, recover
+the original estimation rows from the model.}
+
+\item{period}{For period fits, a column of numeric periods, dates or factor
+levels in their declared chronological order.}
+
+\item{confidence}{Level of the period-specific Wald intervals, or \code{NULL}
+to omit them.}
 }
 \value{
 An object of class \code{"bootstrap_coefficients"}. It contains the
@@ -29,6 +44,8 @@ resample, indicators for successful model fits, recorded failure messages,
 and the resampling settings. Use \code{\link[=summary.bootstrap_coefficients]{summary.bootstrap_coefficients()}} for a
 coefficient-level data frame, \code{autoplot()} for an interval plot and
 \code{as_gt()} for a formatted table.
+With \code{method = "period"}, a \code{period_coefficients} object contains
+\code{estimates} and period-level \code{diagnostics}.
 }
 \description{
 Refit a GLM on repeated bootstrap samples of the estimation portfolio and
@@ -73,6 +90,12 @@ material, a cluster-level bootstrap would require a different resampling
 design that draws whole policies, retaining all their records together.
 This function does not perform that cluster-level resampling.
 }
+
+Period fits reuse the original coefficient coding and fit each period
+separately. Effects affected by rank deficiency are \code{NA}, rather than
+changing the reference category. Intervals use period-specific standard
+errors on the link scale. Period differences reflect sampling variation,
+portfolio mix and model specification as well as any underlying change.
 }
 \examples{
 model <- glm(

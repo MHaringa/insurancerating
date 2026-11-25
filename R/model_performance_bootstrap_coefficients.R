@@ -1,4 +1,4 @@
-#' Assess GLM coefficient stability by resampling portfolio rows
+#' Assess GLM coefficient stability across resamples or periods
 #'
 #' @description
 #' Refit a GLM on repeated bootstrap samples of the estimation portfolio and
@@ -50,6 +50,20 @@
 #'   Default is 500.
 #' @param seed Optional single numeric seed for reproducible resampling.
 #' @param show_progress Logical. If `TRUE`, display a text progress bar.
+#' @param method `"bootstrap"` (default) or `"period"` for independent period fits.
+#' @param data Optional estimation data for period fits. If omitted, recover
+#'   the original estimation rows from the model.
+#' @param period For period fits, a column of numeric periods, dates or factor
+#'   levels in their declared chronological order.
+#' @param confidence Level of the period-specific Wald intervals, or `NULL`
+#'   to omit them.
+#'
+#' @details
+#' Period fits reuse the original coefficient coding and fit each period
+#' separately. Effects affected by rank deficiency are `NA`, rather than
+#' changing the reference category. Intervals use period-specific standard
+#' errors on the link scale. Period differences reflect sampling variation,
+#' portfolio mix and model specification as well as any underlying change.
 #'
 #' @return An object of class `"bootstrap_coefficients"`. It contains the
 #'   original coefficients, a coefficient matrix with one row per requested
@@ -57,6 +71,8 @@
 #'   and the resampling settings. Use [summary.bootstrap_coefficients()] for a
 #'   coefficient-level data frame, `autoplot()` for an interval plot and
 #'   `as_gt()` for a formatted table.
+#'   With `method = "period"`, a `period_coefficients` object contains
+#'   `estimates` and period-level `diagnostics`.
 #'
 #' @author Martin Haringa
 #'
@@ -90,7 +106,16 @@
 #'
 #' @export
 coefficient_stability <- function(object, n_resamples = 500, seed = NULL,
-                                  show_progress = interactive()) {
+                                  show_progress = interactive(),
+                                  method = c("bootstrap", "period"),
+                                  data = NULL, period = NULL, confidence = 0.95) {
+  method <- match.arg(method)
+  if (method == "period") {
+    return(.coefficient_periods(object, data, period, confidence, show_progress))
+  }
+  if (!is.null(data) || !is.null(period)) {
+    stop("`data` and `period` are available for method = 'period'.", call. = FALSE)
+  }
   .validate_bootstrap_coefficients_args(
     object = object,
     n_resamples = n_resamples,

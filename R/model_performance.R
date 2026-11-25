@@ -113,6 +113,8 @@ rmse <- function(x, data = NULL) {
 #' fitted GLMs.
 #'
 #' @param ... One or more objects of class `"glm"`.
+#' @param metrics Optional additional ranking measures, `"gini"` and/or
+#'   `"normalized_gini"`. By default no ranking measures are added.
 #'
 #' @details
 #' The following measures are reported:
@@ -132,6 +134,9 @@ rmse <- function(x, data = NULL) {
 #' responses with fitted values on the same rows used to estimate the model.
 #' It is unweighted and uses the same response scale as [validate_performance()].
 #' None of these metrics establishes out-of-sample predictive performance.
+#' Optional Gini measures also use the estimation rows. They measure ranking
+#' rather than fit or calibration; see [discrimination_analysis()] for the
+#' exposure definition and supported families.
 #'
 #' For a Poisson frequency model with `offset(log(exposure))`, the fitted
 #' values are expected claim counts for each observation's exposure. RMSE
@@ -156,6 +161,7 @@ rmse <- function(x, data = NULL) {
 #'   \item{RMSE}{Response-scale root mean squared error.}
 #'   \item{Residual_Deviance}{Residual deviance.}
 #' }
+#' Requested ranking measures are appended as `Gini` and `Normalized_Gini`.
 #'
 #' @author Martin Haringa
 #'
@@ -175,9 +181,15 @@ rmse <- function(x, data = NULL) {
 #'   [check_residuals()]
 #'
 #' @export
-model_performance <- function(...) {
+model_performance <- function(..., metrics = NULL) {
   objects <- list(...)
   object_names <- as.character(match.call(expand.dots = FALSE)$`...`)
+  if (!is.null(metrics) && (!is.character(metrics) || !is.null(dim(metrics)) ||
+      anyNA(metrics) || anyDuplicated(metrics) ||
+      !all(metrics %in% .discrimination_metrics))) {
+    stop("`metrics` must contain distinct values from 'gini' and 'normalized_gini'.",
+         call. = FALSE)
+  }
 
   m <- mapply(function(mod, name) {
     out <- data.frame(
@@ -188,6 +200,12 @@ model_performance <- function(...) {
       Residual_Deviance = stats::deviance(mod),
       stringsAsFactors = FALSE
     )
+    if (length(metrics)) {
+      data <- .bootstrap_coefficients_model_data(mod)
+      scores <- .discrimination_scores(mod, data, mod$fitted.values)
+      columns <- c(gini = "Gini", normalized_gini = "Normalized_Gini")
+      out[unname(columns[metrics])] <- as.list(scores[metrics])
+    }
     out
   }, objects, object_names, SIMPLIFY = FALSE)
 

@@ -18,7 +18,9 @@
 #' @param metric Legacy argument that accepts only `"rmse"`. Use `metrics`
 #'   to select metrics.
 #' @param metrics Character vector of distinct metrics in the desired output
-#'   order: `"rmse"` (default), `"mae"`, or `"deviance"`.
+#'   order: `"rmse"` (default), `"mae"`, `"deviance"`, `"gini"` or
+#'   `"normalized_gini"`. The Gini measures assess ranking on the
+#'   evaluation rows; see [discrimination_analysis()] for supported families.
 #' @param sampling Character string. Use `"bootstrap"` (default) to sample
 #'   training rows with replacement, `"split"` to sample without replacement,
 #'   or `"rolling"` for expanding-window temporal validation.
@@ -30,6 +32,10 @@
 #'   first training window.
 #' @param horizon For rolling validation, number of subsequent distinct
 #'   periods evaluated at each origin. Default is 1.
+#' @param cluster Optional column identifying complete sampling units, such
+#'   as a policy or customer. For bootstrap and split, `sample_fraction`
+#'   then refers to the number of distinct clusters. Not used with rolling
+#'   validation: recurring customers may legitimately appear in later periods.
 #' @param show_progress Logical. Show a progress bar during resampling.
 #'   Default is `TRUE`.
 #' @param rmse_model Optional finite numeric RMSE for the original fitted model.
@@ -57,6 +63,11 @@
 #' training sample to cover levels that were not drawn. These rows are
 #' then excluded from held-out evaluation. If no evaluation rows remain,
 #' try a smaller `sample_fraction`.
+#' With `cluster`, complete clusters are sampled, including multiple copies
+#' of any cluster drawn more than once. Held-out scores use only undrawn
+#' clusters. Missing levels are not repaired by borrowing rows from the test
+#' set. Failed or non-convergent cluster refits are recorded in
+#' `diagnostics` and have missing scores.
 #'
 #' ## Rolling-origin validation
 #'
@@ -170,7 +181,8 @@ validate_performance <- function(model, data, n_resamples = 50,
                                   method = NULL,
                                   time = NULL,
                                   initial = NULL,
-                                  horizon = 1) {
+                                  horizon = 1,
+                                  cluster = NULL) {
   if (!is.null(method)) {
     if (!missing(sampling)) {
       stop("Supply either `sampling` or `method`, not both.", call. = FALSE)
@@ -180,6 +192,10 @@ validate_performance <- function(model, data, n_resamples = 50,
   if (identical(sampling, c("bootstrap", "split"))) sampling <- "bootstrap"
   sampling <- match.arg(sampling, c("bootstrap", "split", "rolling"))
   rolling <- identical(sampling, "rolling")
+  if (rolling && !is.null(cluster)) {
+    stop("`cluster` applies to bootstrap and split only. Rolling validation ",
+         "does not exclude recurring customers from later periods.", call. = FALSE)
+  }
   if (rolling) {
     if (!missing(n_resamples) || !missing(sample_fraction) ||
         !is.null(n) || !is.null(frac) || !is.null(rmse_model)) {
@@ -217,9 +233,9 @@ validate_performance <- function(model, data, n_resamples = 50,
   }
   if (!is.character(metrics) || !is.null(dim(metrics)) || !length(metrics) ||
       anyNA(metrics) || anyDuplicated(metrics) ||
-      !all(metrics %in% c("rmse", "mae", "deviance"))) {
+      !all(metrics %in% c("rmse", "mae", "deviance", .discrimination_metrics))) {
     stop("`metrics` must contain distinct values from 'rmse', 'mae', ",
-         "and 'deviance'.", call. = FALSE)
+         "'deviance', 'gini', and 'normalized_gini'.", call. = FALSE)
   }
   metrics <- unname(metrics)
   if (rolling) {
@@ -228,7 +244,14 @@ validate_performance <- function(model, data, n_resamples = 50,
 
   data <- preserve_model_levels(as.data.frame(data))
   level_cols <- intersect(names(model$xlevels), names(data))
-  n_sample <- floor(sample_fraction * nrow(data))
+  clustered <- !is.null(cluster)
+  cluster_rows <- if (clustered) .performance_clusters(data, cluster)
+  n_units <- if (clustered) length(cluster_rows) else nrow(data)
+  n_sample <- floor(sample_fraction * n_units)
+  if (clustered && (n_sample < 1L || (sample_fraction < 1 && n_units < 2L))) {
+    stop("The requested draw cannot form training and evaluation clusters.",
+         call. = FALSE)
+  }
 
   if ("rmse" %in% metrics) {
     if (is.null(rmse_model)) rmse_model <- rmse(model, data)
@@ -253,12 +276,52 @@ validate_performance <- function(model, data, n_resamples = 50,
   }
 
   binomial <- .is_binomial_performance_model(model)
+  if (clustered) {
+    fit_call <- tryCatch(.rolling_glm_call(model, data), error = function(e) {
+      stop("Cluster resampling: ", sub("^[Ff]or rolling validation, ", "",
+                                      conditionMessage(e)), call. = FALSE)
+    })
+    formula <- stats::formula(model)
+    fit_env <- new.env(parent = environment(formula))
+    fit_env$.rolling_formula <- formula
+    fit_env$.rolling_family <- stats::family(model)
+    diagnostics <- data.frame(iteration = seq_len(n_resamples), n_train = 0L,
+                              n_evaluation = 0L, training_clusters = 0L,
+                              evaluation_clusters = 0L, status = "ok", message = "")
+  }
   for (i in seq_len(n_resamples)) {
     if (isTRUE(show_progress)) {
       utils::setTxtProgressBar(pb, i)
     }
 
     replace <- identical(sampling, "bootstrap")
+    if (clustered) {
+      selected <- sample.int(n_units, size = n_sample, replace = replace)
+      indices <- .cluster_resample_rows(cluster_rows, selected, sample_fraction < 1)
+      diagnostics[i, 2:5] <- c(length(indices$train), length(indices$evaluation),
+                              length(unique(selected)), indices$n_evaluation)
+      fit_warnings <- character()
+      result <- withCallingHandlers(tryCatch({
+        if (!length(indices$evaluation)) stop("No clusters left out of this draw.")
+        fit_env$.rolling_data <- data[indices$train, , drop = FALSE]
+        assessment <- data[indices$evaluation, , drop = FALSE]
+        fit <- eval(fit_call, fit_env)
+        if (!isTRUE(fit$converged)) stop("The GLM did not converge.")
+        pred <- stats::predict(fit, assessment, type = "response")
+        .resample_scores(fit, assessment, pred, metrics)
+      }, error = identity), warning = function(w) {
+        fit_warnings <<- c(fit_warnings, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      })
+      if (inherits(result, "error")) {
+        diagnostics$status[i] <- "failed"
+        fit_warnings <- c(fit_warnings, conditionMessage(result))
+      } else {
+        scores[i, ] <- result
+      }
+      diagnostics$message[i] <- paste(unique(fit_warnings), collapse = "; ")
+      next
+    }
     train_rows <- sample(seq_len(nrow(data)), size = n_sample, replace = replace)
     train_rows <- ensure_training_levels(train_rows, data, level_cols)
     train <- data[train_rows, , drop = FALSE]
@@ -304,9 +367,34 @@ validate_performance <- function(model, data, n_resamples = 50,
     result$scores <- as.data.frame(scores)
     result$original_scores <- original_scores
   }
+  if (clustered) {
+    result$cluster <- cluster
+    result$diagnostics <- diagnostics
+    failed <- sum(diagnostics$status == "failed")
+    if (failed) {
+      warning(failed, " cluster resample(s) failed. See `diagnostics`.", call. = FALSE)
+    }
+  }
   result
 }
 
+.performance_clusters <- function(data, cluster) {
+  if (!.is_single_string(cluster) || !cluster %in% names(data)) {
+    stop("`cluster` must identify a column in `data`.", call. = FALSE)
+  }
+  ids <- data[[cluster]]
+  if (!is.atomic(ids) || !is.null(dim(ids)) || anyNA(ids)) {
+    stop("Cluster identifiers must be a vector without missing values.", call. = FALSE)
+  }
+  split(seq_len(nrow(data)), match(ids, unique(ids)))
+}
+
+.cluster_resample_rows <- function(rows, selected, held_out) {
+  evaluation <- if (held_out) setdiff(seq_along(rows), selected) else selected
+  list(train = unlist(rows[selected], use.names = FALSE),
+       evaluation = unlist(rows[evaluation], use.names = FALSE),
+       n_evaluation = length(unique(evaluation)))
+}
 
 .resample_scores <- function(model, data, predictions, metrics) {
   scores <- stats::setNames(numeric(length(metrics)), metrics)
@@ -321,6 +409,10 @@ validate_performance <- function(model, data, n_resamples = 50,
   if ("deviance" %in% metrics) {
     scores[["deviance"]] <- .resample_deviance(model, data, response, predictions,
                                              observed$trials)
+  }
+  ranking <- intersect(metrics, .discrimination_metrics)
+  if (length(ranking)) {
+    scores[ranking] <- .discrimination_scores(model, data, predictions)[ranking]
   }
   scores
 }

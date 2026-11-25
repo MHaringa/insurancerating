@@ -49,7 +49,9 @@ If \code{NULL} and RMSE is selected, it is calculated from \code{model} and \cod
 \code{sample_fraction} instead.}
 
 \item{metrics}{Character vector of distinct metrics in the desired output
-order: \code{"rmse"} (default), \code{"mae"}, or \code{"deviance"}.}
+order: \code{"rmse"} (default), \code{"mae"}, \code{"deviance"}, \code{"gini"} or
+\code{"normalized_gini"}. The Gini measures assess ranking on the
+evaluation rows; see \code{\link[=discrimination_analysis]{discrimination_analysis()}} for supported families.}
 }
 \value{
 See \code{\link[=validate_performance]{validate_performance()}}.

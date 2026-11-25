@@ -110,15 +110,27 @@ autoplot.calibration_result <- function(object, ...,
     data$Expected <- data$Expected / data$Exposure
     unit <- "per unit exposure"
   }
-  maximum <- max(c(data$Observed, data$Expected, 0))
+  intervals <- all(c("Lower", "Upper") %in% names(data))
+  if (intervals) {
+    data$.lower <- data$Lower * data$Expected
+    data$.upper <- data$Upper * data$Expected
+  }
+  values <- c(data$Observed, data$Expected, data$.upper, 0)
+  maximum <- max(values[is.finite(values)])
   limits <- c(0, if (maximum > 0) maximum else 1)
-  ggplot2::ggplot(data, ggplot2::aes(x = .data$Expected, y = .data$Observed)) +
+  p <- ggplot2::ggplot(data, ggplot2::aes(x = .data$Expected, y = .data$Observed)) +
     ggplot2::geom_abline(intercept = 0, slope = 1, colour = "grey55", linetype = 2) +
     ggplot2::geom_point(colour = colour, size = 2.5) +
     ggplot2::coord_fixed(xlim = limits, ylim = limits) +
     ggplot2::labs(title = "Calibration by predicted risk",
                   x = paste("Expected", unit), y = paste("Observed", unit),
                   caption = caption)
+  if (intervals) {
+    p <- p + ggplot2::geom_linerange(
+      ggplot2::aes(ymin = .data$.lower, ymax = .data$.upper), colour = colour, na.rm = TRUE
+    )
+  }
+  p
 }
 
 
@@ -165,6 +177,11 @@ autoplot.calibration_result <- function(object, ...,
     p <- p + ggplot2::geom_line(colour = colour, linewidth = 0.6, na.rm = TRUE)
   }
   p <- p + ggplot2::geom_point(colour = colour, size = 2.5, na.rm = TRUE)
+  if (all(c("Lower", "Upper") %in% names(data))) {
+    p <- p + ggplot2::geom_linerange(
+      ggplot2::aes(ymin = .data$Lower, ymax = .data$Upper), colour = colour, na.rm = TRUE
+    )
+  }
   if (discrete) {
     guide <- if (multiple) ggplot2::guide_axis(angle = 45, check.overlap = TRUE) else {
       ggplot2::waiver()

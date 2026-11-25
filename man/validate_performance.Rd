@@ -19,7 +19,8 @@ validate_performance(
   method = NULL,
   time = NULL,
   initial = NULL,
-  horizon = 1
+  horizon = 1,
+  cluster = NULL
 )
 }
 \arguments{
@@ -54,7 +55,9 @@ If \code{NULL} and RMSE is selected, it is calculated from \code{model} and \cod
 \code{sample_fraction} instead.}
 
 \item{metrics}{Character vector of distinct metrics in the desired output
-order: \code{"rmse"} (default), \code{"mae"}, or \code{"deviance"}.}
+order: \code{"rmse"} (default), \code{"mae"}, \code{"deviance"}, \code{"gini"} or
+\code{"normalized_gini"}. The Gini measures assess ranking on the
+evaluation rows; see \code{\link[=discrimination_analysis]{discrimination_analysis()}} for supported families.}
 
 \item{method}{Alternative name for \code{sampling}. Supply only one of the two.}
 
@@ -67,6 +70,11 @@ first training window.}
 
 \item{horizon}{For rolling validation, number of subsequent distinct
 periods evaluated at each origin. Default is 1.}
+
+\item{cluster}{Optional column identifying complete sampling units, such
+as a policy or customer. For bootstrap and split, \code{sample_fraction}
+then refers to the number of distinct clusters. Not used with rolling
+validation: recurring customers may legitimately appear in later periods.}
 }
 \value{
 For rolling validation, a data frame with one row per origin:
@@ -111,6 +119,11 @@ factor columns used directly in the model, rows may be added to the
 training sample to cover levels that were not drawn. These rows are
 then excluded from held-out evaluation. If no evaluation rows remain,
 try a smaller \code{sample_fraction}.
+With \code{cluster}, complete clusters are sampled, including multiple copies
+of any cluster drawn more than once. Held-out scores use only undrawn
+clusters. Missing levels are not repaired by borrowing rows from the test
+set. Failed or non-convergent cluster refits are recorded in
+\code{diagnostics} and have missing scores.
 }
 
 \subsection{Rolling-origin validation}{

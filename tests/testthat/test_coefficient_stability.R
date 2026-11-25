@@ -35,7 +35,7 @@ test_that("coefficient_stability resamples model data reproducibly", {
   expect_identical(colnames(x$replicates), names(coef(model)))
   expect_equal(x$replicates, y$replicates)
   expect_equal(x$n_observations, nobs(model))
-  expect_false("data" %in% names(formals(coefficient_stability)))
+  expect_error(coefficient_stability(model, data = MTPL), "available for method")
 })
 
 test_that("deprecated bootstrap_coefficients preserves arguments and warns once", {

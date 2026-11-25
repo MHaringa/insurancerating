@@ -18,6 +18,9 @@ articles:
     contents:
       - getting-started
       - pricing-workflow-building-blocks
+  - title: "Case study"
+    contents:
+      - motor-pricing-case-study
   - title: "Specialist guides"
     contents:
       - refinement-workflow
@@ -70,6 +73,7 @@ reference:
       - add_factor_experience
       - autoplot.rating_table
       - premium_change
+      - as_tariff
       - add_prediction
 
   - title: "Tariff refinement"
@@ -98,11 +102,12 @@ reference:
       - refit
       - adjust_intercept
       - audit_refinement
+      - autoplot.refinement_audit
 
   - title: "Model validation"
     desc: >
-      Assess model performance, resampling stability, distributional assumptions
-      and residual behaviour.
+      Assess model performance, calibration, risk ranking, stability and
+      residual behaviour.
 
   - subtitle: "Model performance & calibration"
     desc: >
@@ -113,10 +118,16 @@ reference:
       - validate_performance
       - calibration_analysis
 
+  - subtitle: "Risk discrimination"
+    contents:
+      - discrimination_analysis
+      - autoplot.discrimination_result
+
   - subtitle: "Model stability"
     contents:
       - coefficient_stability
       - autoplot.bootstrap_coefficients
+      - autoplot.period_coefficients
 
   - subtitle: "Model diagnostics"
     contents:
@@ -160,6 +171,7 @@ reference:
   # Keep the shared helper page linked from add_relativities(), off the index.
   - title: "internal"
     contents:
+      - insurancerating-package
       - relativity_specification
 
   - title: "Deprecated"

@@ -1,8 +1,8 @@
 #' Add model predictions to a pricing data set
 #'
 #' @description
-#' `add_prediction()` adds predictions from one or more fitted `glm` models to
-#' a data frame.
+#' `add_prediction()` adds predictions from fitted `glm` models or tariffs
+#' created with [as_tariff()] to a data frame.
 #'
 #' In pricing workflows, this is often used to bring count and severity model
 #' output together on the same portfolio. For example, an expected claim count
@@ -15,7 +15,7 @@
 #'
 #' @param data A `data.frame` containing the new data for which predictions
 #'   should be generated.
-#' @param ... One or more fitted model objects of class `"glm"`.
+#' @param ... One or more fitted `glm` models or `rating_tariff` objects.
 #' @param predictions Optional character vector giving names for the new
 #'   prediction columns. Must have the same length as the number of models
 #'   supplied. If `NULL` (default), names are generated automatically using
@@ -44,13 +44,14 @@
 #'
 #' If `confidence = TRUE`, lower and upper confidence interval columns are added
 #' next to each prediction column. The default interval suffixes are `"lower"`
-#' and `"upper"`.
+#' and `"upper"`. Confidence intervals are available only for fitted GLMs.
 #'
 #' Predictions containing missing values are retained. If one or more `NA`
 #' predictions are produced, the function issues a warning with the affected
 #' prediction columns and number of missing predictions. This is typically
 #' caused by missing predictor values in `data` or by predictor values outside
-#' the domain supported by the fitted model.
+#' the domain supported by the fitted model. For tariffs, [as_tariff()] sets
+#' whether unmatched portfolio values warn and produce `NA`, or stop.
 #'
 #' @return A `data.frame` containing the original data and additional columns
 #'   for model predictions. If `confidence = TRUE`, confidence interval columns
@@ -120,12 +121,14 @@ add_prediction <- function(data, ..., predictions = NULL, prefix = "pred",
   object_names <- as.character(match.call(expand.dots = FALSE)$`...`)
 
   if (length(objects) == 0) {
-    stop("Please provide at least one 'glm' object.", call. = FALSE)
+    stop("Please provide at least one 'glm' or 'rating_tariff' object.",
+         call. = FALSE)
   }
 
-  if (!all(sapply(objects, inherits, what = "glm"))) {
-    stop("All objects must be of class 'glm'.", call. = FALSE)
+  if (!all(vapply(objects, inherits, logical(1), what = c("glm", "rating_tariff")))) {
+    stop("All objects must be of class 'glm' or 'rating_tariff'.", call. = FALSE)
   }
+  tariffs <- vapply(objects, inherits, logical(1), what = "rating_tariff")
 
   if (!is.null(var)) {
     lifecycle::deprecate_warn(
@@ -159,6 +162,10 @@ add_prediction <- function(data, ..., predictions = NULL, prefix = "pred",
     interval_names = interval_names,
     alpha = alpha
   )
+  if (isTRUE(confidence) && any(tariffs)) {
+    stop("Confidence intervals are only available for fitted GLMs, not tariffs.",
+         call. = FALSE)
+  }
 
   prediction_names <- make_prediction_names(
     objects = objects,
@@ -197,7 +204,7 @@ add_prediction <- function(data, ..., predictions = NULL, prefix = "pred",
     # predictions
     addcol <- as.numeric(stats::predict(object, data, type = "response"))
     var_nm <- prediction_names[i]
-    missing_prediction_counts[i] <- sum(is.na(addcol))
+    if (!tariffs[i]) missing_prediction_counts[i] <- sum(is.na(addcol))
 
     df <- data.frame(addcol)
     names(df) <- var_nm
@@ -300,7 +307,12 @@ make_prediction_names <- function(objects, object_names, predictions, prefix) {
           call. = FALSE
         )
       }
-      response_nm <- all.vars(stats::formula(objects[[i]]))[1]
+      object <- objects[[i]]
+      response_nm <- if (inherits(object, "rating_tariff")) {
+        object$response
+      } else {
+        all.vars(stats::formula(object))[1L]
+      }
       paste(prefix, response_nm, object_name, sep = "_")
     },
     character(1)

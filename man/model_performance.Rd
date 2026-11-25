@@ -4,10 +4,13 @@
 \alias{model_performance}
 \title{Compare GLM fit and predictive error metrics}
 \usage{
-model_performance(...)
+model_performance(..., metrics = NULL)
 }
 \arguments{
 \item{...}{One or more objects of class \code{"glm"}.}
+
+\item{metrics}{Optional additional ranking measures, \code{"gini"} and/or
+\code{"normalized_gini"}. By default no ranking measures are added.}
 }
 \value{
 A data frame of class \code{"model_performance"}, with columns:
@@ -18,6 +21,7 @@ A data frame of class \code{"model_performance"}, with columns:
 \item{RMSE}{Response-scale root mean squared error.}
 \item{Residual_Deviance}{Residual deviance.}
 }
+Requested ranking measures are appended as \code{Gini} and \code{Normalized_Gini}.
 }
 \description{
 Report AIC, BIC, response-scale RMSE and residual deviance for one or more
@@ -41,6 +45,9 @@ in-sample prediction error on the response scale, comparing observed
 responses with fitted values on the same rows used to estimate the model.
 It is unweighted and uses the same response scale as \code{\link[=validate_performance]{validate_performance()}}.
 None of these metrics establishes out-of-sample predictive performance.
+Optional Gini measures also use the estimation rows. They measure ranking
+rather than fit or calibration; see \code{\link[=discrimination_analysis]{discrimination_analysis()}} for the
+exposure definition and supported families.
 
 For a Poisson frequency model with \code{offset(log(exposure))}, the fitted
 values are expected claim counts for each observation's exposure. RMSE

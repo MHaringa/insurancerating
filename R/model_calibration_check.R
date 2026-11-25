@@ -20,12 +20,31 @@
 #'   lowest to highest predicted risk. Supply a positive whole number no
 #'   larger than the number of rows.
 #'   Use either `groups` or `by`, not both.
+#' @param conf_level Optional confidence level. The default `NULL` leaves the
+#'   result unchanged and does not compute intervals.
+#' @param interval_method `"auto"`, `"poisson"` (exact count interval) or
+#'   `"wald"` (variance-based log-Wald approximation).
 #'
 #' @details
 #' Overall totals show calibration-in-the-large. Risk groups check whether the
 #' model over- or under-predicts at different predicted risk levels. A
 #' calendar-year grouping checks temporal calibration. Changing O/E over
 #' time does not necessarily mean the model has become worse at ranking risks.
+#'
+#' ## Conditional uncertainty
+#'
+#' Intervals estimate an underlying observed-to-expected ratio, treating the
+#' predictions as fixed and observations as independent. They are not prediction
+#' intervals and do not include parameter uncertainty or clustering. For
+#' unweighted Poisson counts, the exact limits for the total observed count
+#' are divided by the expected total. An observed zero has lower limit zero.
+#' For Gamma, Tweedie and quasi-Poisson models, the log-Wald interval uses the
+#' fitted dispersion and sums the GLM variances at the means scaled by the
+#' group's estimated ratio. Prior weights are assumed to be precision weights:
+#' a response with weight `w` contributes `w` times its mean to the total and
+#' `w` times the unweighted variance. Zero observed or expected totals have
+#' no log-Wald interval. Weighted Poisson models and ambiguous exposure weights
+#' are not supported for intervals.
 #'
 #' Predictions are on the response scale and use the offset in `data`.
 #' For Poisson claim counts with a log-exposure offset, predictions are
@@ -94,6 +113,8 @@
 #'   observations `N`. If `Expected` is zero, `OE` is `NA`. The grouping
 #'   columns or integer `Group` are included when applicable. `Exposure`
 #'   is the sum of the identified exposure column, without applying case weights.
+#'   When intervals are requested, `Lower`, `Upper`, `Conf_level` and
+#'   `Interval_method` describe the O/E interval.
 #'
 #' @examples
 #' portfolio <- as.data.frame(MTPL2)
@@ -120,11 +141,24 @@
 #' )
 #' calibration_analysis(risk_model, risk_portfolio[-train, ], groups = 5)
 #'
+#' # Same O/E, but much less uncertainty in the larger group.
+#' evaluation <- data.frame(claims = c(10, 1000), exposure = c(10, 1000),
+#'                          size = c("Small", "Large"))
+#' count_model <- glm(claims ~ 1 + offset(log(exposure)), poisson(), evaluation)
+#' calibration_analysis(count_model, evaluation, by = "size", conf_level = 0.95)
+#'
 #' @seealso [autoplot.calibration_result()], [model_performance()],
 #'   [validate_performance()], [adjust_intercept()], [extract_model_data()],
 #'   [audit_refinement()]
 #' @export
-calibration_analysis <- function(model, data, by = NULL, groups = NULL) {
+calibration_analysis <- function(model, data, by = NULL, groups = NULL,
+                                 conf_level = NULL,
+                                 interval_method = c("auto", "poisson", "wald")) {
+  interval_method <- match.arg(interval_method)
+  if (!is.null(conf_level) && (!is.numeric(conf_level) || length(conf_level) != 1L ||
+      !is.finite(conf_level) || conf_level <= 0 || conf_level >= 1)) {
+    stop("`conf_level` must be NULL or a number between zero and one.", call. = FALSE)
+  }
   if (!inherits(model, "glm")) {
     stop("`model` must be a fitted GLM.", call. = FALSE)
   }
@@ -146,6 +180,9 @@ calibration_analysis <- function(model, data, by = NULL, groups = NULL) {
     unlist(smoothing, use.names = FALSE)
   ))
   reserved <- c("Observed", "Expected", "OE", "N", "Exposure")
+  if (!is.null(conf_level)) {
+    reserved <- c(reserved, "Lower", "Upper", "Conf_level", "Interval_method")
+  }
   if (!is.null(by) && !is.null(groups)) {
     stop("Supply either `by` or `groups`, not both.", call. = FALSE)
   }
@@ -196,73 +233,12 @@ calibration_analysis <- function(model, data, by = NULL, groups = NULL) {
          call. = FALSE)
   }
 
-  formula <- stats::formula(model)
-  model_call <- stats::getCall(model)
-  weight_expr <- model_call[["weights"]]
-  offset_expr <- model_call[["offset"]]
-  if (!is.null(weight_expr) && !length(all.vars(weight_expr))) {
-    stop("Specify the model's prior weights using columns in `data`, ",
-         "rather than a fixed vector.", call. = FALSE)
-  }
-  vars <- unique(c(all.vars(formula), all.vars(weight_expr), all.vars(offset_expr)))
-  absent <- setdiff(vars, names(data))
-  if (length(absent)) {
-    if (any(absent %in% refinement_columns)) {
-      .calibration_missing_refinement(absent, .calibration_smoothing_bands(by, smoothing))
-    }
-    stop("Missing model variables in `data`: ", paste(absent, collapse = ", "),
-         ".", call. = FALSE)
-  }
-
-  model_terms <- stats::terms(model)
-  offsets <- lapply(attr(model_terms, "offset"), function(i) {
-    attr(model_terms, "variables")[[i + 1L]][[2L]]
-  })
-  if (!is.null(offset_expr)) offsets <- c(offsets, list(offset_expr))
-  if (length(refinement_columns) && length(offsets)) {
-    # Fixed tariff relativities are prediction offsets, not exposure offsets.
-    offsets <- unlist(lapply(offsets, .calibration_offset_terms), recursive = FALSE)
-    offsets <- Filter(function(term) {
-      columns <- all.vars(term)
-      !length(columns) || !all(columns %in% refinement_columns)
-    }, offsets)
-  }
-  exposure_column <- .calibration_exposure_column(
-    family$link, offsets, weight_expr, formula[[2L]]
-  )
-  exposure <- if (!is.null(exposure_column)) data[[exposure_column]]
-  if (!is.null(exposure_column)) {
-    .calibration_check_values(exposure, n, "Exposure")
-    if (length(offsets) && any(exposure <= 0)) {
-      stop("Exposure used in a log offset must be positive.", call. = FALSE)
-    }
-  } else if (!is.null(groups) && length(offsets)) {
-    stop("Risk grouping requires an identifiable exposure for models with an ",
-         "offset. Use a simple log-exposure offset, `by`, or overall calibration.",
-         call. = FALSE)
-  }
-
-  observed <- eval(formula[[2L]], data, environment(formula))
-  expected <- stats::predict(model, newdata = data, type = "response")
-  .calibration_check_values(observed, n, "Observed responses")
-  .calibration_check_values(expected, n, "Predictions")
-  risk <- expected
-
-  if (!is.null(weight_expr)) {
-    weights <- eval(weight_expr, data, environment(formula))
-    .calibration_check_values(weights, n, "Prior weights")
-    if (length(offsets) && !is.null(exposure_column) &&
-        exposure_column %in% all.vars(weight_expr)) {
-      if (!identical(weight_expr, as.name(exposure_column))) {
-        stop("The prior weights reuse the exposure offset in an expression. ",
-             "Use distinct case weights to avoid counting exposure twice.",
-             call. = FALSE)
-      }
-    } else {
-      observed <- observed * weights
-      expected <- expected * weights
-    }
-  }
+  evaluation <- .calibration_values(model, data, by, require_exposure = !is.null(groups))
+  observed <- evaluation$observed
+  expected <- evaluation$expected
+  exposure <- evaluation$exposure
+  risk <- evaluation$risk
+  offsets <- evaluation$offsets
 
   labels <- NULL
   if (!is.null(by)) {
@@ -305,6 +281,10 @@ calibration_analysis <- function(model, data, by = NULL, groups = NULL) {
   if (!is.null(exposure)) {
     out$Exposure <- totals[, "Exposure"]
   }
+  if (!is.null(conf_level)) {
+    out <- .calibration_intervals(out, model, evaluation, group_id,
+                                  conf_level, interval_method)
+  }
   if (!is.null(labels)) {
     out <- cbind(labels, out)
   }
@@ -313,6 +293,135 @@ calibration_analysis <- function(model, data, by = NULL, groups = NULL) {
             calibration_grouping = grouping, calibration_by = by)
 }
 
+
+.calibration_values <- function(model, data, by = NULL, require_exposure = FALSE,
+                                predictions = NULL) {
+  family <- stats::family(model)
+  n <- nrow(data)
+  smoothing <- attr(model, "mgd_smt", exact = TRUE)
+  refinement_columns <- unique(c(attr(model, "new_col_nm", exact = TRUE),
+                                 unlist(smoothing, use.names = FALSE)))
+  formula <- stats::formula(model)
+  model_call <- stats::getCall(model)
+  weight_expr <- model_call[["weights"]]
+  offset_expr <- model_call[["offset"]]
+  if (!is.null(weight_expr) && !length(all.vars(weight_expr))) {
+    stop("Specify the model's prior weights using columns in `data`, ",
+         "rather than a fixed vector.", call. = FALSE)
+  }
+  vars <- unique(c(all.vars(formula), all.vars(weight_expr), all.vars(offset_expr)))
+  absent <- setdiff(vars, names(data))
+  if (length(absent)) {
+    if (any(absent %in% refinement_columns)) {
+      .calibration_missing_refinement(absent, .calibration_smoothing_bands(by, smoothing))
+    }
+    stop("Missing model variables in `data`: ", paste(absent, collapse = ", "),
+         ".", call. = FALSE)
+  }
+
+  model_terms <- stats::terms(model)
+  offsets <- lapply(attr(model_terms, "offset"), function(i) {
+    attr(model_terms, "variables")[[i + 1L]][[2L]]
+  })
+  if (!is.null(offset_expr)) offsets <- c(offsets, list(offset_expr))
+  if (length(refinement_columns) && length(offsets)) {
+    # Fixed tariff relativities are prediction offsets, not exposure offsets.
+    offsets <- unlist(lapply(offsets, .calibration_offset_terms), recursive = FALSE)
+    offsets <- Filter(function(term) {
+      columns <- all.vars(term)
+      !length(columns) || !all(columns %in% refinement_columns)
+    }, offsets)
+  }
+  exposure_column <- .calibration_exposure_column(
+    family$link, offsets, weight_expr, formula[[2L]]
+  )
+  exposure <- if (!is.null(exposure_column)) data[[exposure_column]]
+  if (!is.null(exposure_column)) {
+    .calibration_check_values(exposure, n, "Exposure")
+    if (length(offsets) && any(exposure <= 0)) {
+      stop("Exposure used in a log offset must be positive.", call. = FALSE)
+    }
+  } else if (require_exposure && length(offsets)) {
+    stop("Risk grouping requires an identifiable exposure for models with an ",
+         "offset. Use a simple log-exposure offset, `by`, or overall calibration.",
+         call. = FALSE)
+  }
+
+  observed <- eval(formula[[2L]], data, environment(formula))
+  raw_observed <- observed
+  expected <- predictions %||% stats::predict(model, newdata = data, type = "response")
+  .calibration_check_values(observed, n, "Observed responses")
+  .calibration_check_values(expected, n, "Predictions")
+  risk <- expected
+
+  weights <- multiplier <- rep.int(1, n)
+  reused_exposure <- FALSE
+  if (!is.null(weight_expr)) {
+    weights <- eval(weight_expr, data, environment(formula))
+    .calibration_check_values(weights, n, "Prior weights")
+    if (length(offsets) && !is.null(exposure_column) &&
+        exposure_column %in% all.vars(weight_expr)) {
+      if (!identical(weight_expr, as.name(exposure_column))) {
+        stop("The prior weights reuse the exposure offset in an expression. ",
+             "Use distinct case weights to avoid counting exposure twice.",
+             call. = FALSE)
+      }
+      reused_exposure <- TRUE
+    } else {
+      multiplier <- weights
+      observed <- observed * weights
+      expected <- expected * weights
+    }
+  }
+  list(observed = observed, expected = expected, raw_observed = raw_observed,
+       risk = risk, exposure = exposure, offsets = offsets, weights = weights,
+       multiplier = multiplier, reused_exposure = reused_exposure)
+}
+
+.calibration_intervals <- function(out, model, values, group, level, method) {
+  family <- stats::family(model)
+  name <- tolower(family$family)
+  poisson <- name == "poisson" && all(values$weights == 1) &&
+    all(values$raw_observed == floor(values$raw_observed))
+  variance_model <- (name %in% c("gamma", "quasipoisson") ||
+                       grepl("^tweedie($|[ (])", name)) && !values$reused_exposure
+  if (method == "auto") method <- if (poisson) "poisson" else "wald"
+  if ((method == "poisson" && !poisson) || (method == "wald" && !variance_model)) {
+    stop("No supported calibration interval for this family, count response ",
+         "and prior-weight structure using method '", method, "'.", call. = FALSE)
+  }
+  out$Lower <- out$Upper <- rep(NA_real_, nrow(out))
+  alpha <- (1 - level) / 2
+  valid <- out$Expected > 0
+  if (method == "poisson") {
+    observed <- out$Observed[valid]
+    expected <- out$Expected[valid]
+    lower <- numeric(length(observed))
+    positive <- observed > 0
+    lower[positive] <- stats::qchisq(alpha, 2 * observed[positive]) / 2
+    out$Lower[valid] <- lower / expected
+    out$Upper[valid] <- stats::qchisq(1 - alpha, 2 * observed + 2) / (2 * expected)
+  } else {
+    dispersion <- summary(model)$dispersion
+    if (length(dispersion) != 1L || !is.finite(dispersion) || dispersion < 0) {
+      stop("A finite GLM dispersion estimate is required for a calibration interval.",
+           call. = FALSE)
+    }
+    valid <- valid & out$Observed > 0
+    rows <- valid[group] & values$multiplier > 0
+    variance <- numeric(length(group))
+    variance[rows] <- dispersion * values$multiplier[rows] *
+      family$variance(values$risk[rows] * out$OE[group[rows]])
+    total <- as.numeric(rowsum(variance, group))
+    valid <- valid & is.finite(total) & total >= 0
+    radius <- stats::qnorm(1 - alpha) * sqrt(total[valid]) / out$Observed[valid]
+    out$Lower[valid] <- exp(log(out$OE[valid]) - radius)
+    out$Upper[valid] <- exp(log(out$OE[valid]) + radius)
+  }
+  out$Conf_level <- level
+  out$Interval_method <- method
+  out
+}
 
 .calibration_smoothing_bands <- function(by, smoothing) {
   if (is.null(by)) return(character())
