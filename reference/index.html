@@ -202,6 +202,13 @@
 
         <dt>
 
+          <code><a href="as_tariff.html">as_tariff()</a></code> <code><a href="as_tariff.html">predict(<i>&lt;rating_tariff&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Create a tariff from a rating table</dd>
+
+        <dt>
+
           <code><a href="add_prediction.html">add_prediction()</a></code>
 
         </dt>
@@ -326,10 +333,17 @@
 
         </dt>
         <dd>Audit the effect of a fitted model refinement</dd>
+
+        <dt>
+
+          <code><a href="autoplot.refinement_audit.html">autoplot(<i>&lt;refinement_audit&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot individual tariff impact bands</dd>
       </dl></div><div class="section level2">
       <h2 id="model-validation">Model validation<a class="anchor" aria-label="anchor" href="#model-validation"></a></h2>
 
-      <div class="section-desc"><p>Assess model performance, resampling stability, distributional assumptions and residual behaviour.</p></div>
+      <div class="section-desc"><p>Assess model performance, calibration, risk ranking, stability and residual behaviour.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -363,6 +377,29 @@
         <dd>Check observed versus expected insurance experience</dd>
       </dl></div><div class="section level2">
 
+      <h3 id="risk-discrimination">Risk discrimination<a class="anchor" aria-label="anchor" href="#risk-discrimination"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="discrimination_analysis.html">discrimination_analysis()</a></code>
+
+        </dt>
+        <dd>Assess discrimination in insurance pricing</dd>
+
+        <dt>
+
+          <code><a href="autoplot.discrimination_result.html">autoplot(<i>&lt;discrimination_result&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot discrimination and lift</dd>
+      </dl></div><div class="section level2">
+
       <h3 id="model-stability">Model stability<a class="anchor" aria-label="anchor" href="#model-stability"></a></h3>
 
 
@@ -376,7 +413,7 @@
           <code><a href="coefficient_stability.html">coefficient_stability()</a></code>
 
         </dt>
-        <dd>Assess GLM coefficient stability by resampling portfolio rows</dd>
+        <dd>Assess GLM coefficient stability across resamples or periods</dd>
 
         <dt>
 
@@ -384,6 +421,13 @@
 
         </dt>
         <dd>Plot bootstrap coefficient stability</dd>
+
+        <dt>
+
+          <code><a href="autoplot.period_coefficients.html">autoplot(<i>&lt;period_coefficients&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot coefficients fitted separately by period</dd>
       </dl></div><div class="section level2">
 
       <h3 id="model-diagnostics">Model diagnostics<a class="anchor" aria-label="anchor" href="#model-diagnostics"></a></h3>

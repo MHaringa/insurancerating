@@ -42,10 +42,11 @@ every model requires every diagnostic.
 | Are tariff relativities plausible and sufficiently supported? | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md) |
 | Does marginal observed experience support the fitted pattern? | [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md) |
 | How sensitive is measured performance to portfolio resampling? | [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md) |
-| How sensitive are the fitted coefficients to portfolio resampling? | [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md) |
+| Are relativities stable across samples or calendar periods? | [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md) |
 | Is a Poisson frequency model materially overdispersed? | [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md) |
 | Do simulation-based residuals show remaining structure? | [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md) |
 | Where does the model over- or under-predict? | [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md) |
+| How well does the model rank risk on the same evaluation portfolio? | [`discrimination_analysis()`](https://mharinga.github.io/insurancerating/reference/discrimination_analysis.md) |
 
 ## Compact example setup
 
@@ -647,6 +648,24 @@ diagnostics can be reused after a change to the data, model or tariff.
 
 ## Putting the evidence together
 
+Use `cluster = "policy_id"` with bootstrap or random split when all
+records for a policy should be sampled together. This differs from
+rolling validation, in which the same policy can legitimately recur in a
+later period. Use
+`coefficient_stability(method = "period", period = "year")` when the
+question is how comparable coefficients vary over time rather than how
+well a model predicts the next year.
+
+For counts that meet the Poisson assumptions,
+`calibration_analysis(conf_level = .95)` adds an O/E interval
+conditional on the predictions. This is not a predictive interval and
+does not account for dependence between repeated policy periods. A
+concentration curve from
+[`discrimination_analysis()`](https://mharinga.github.io/insurancerating/reference/discrimination_analysis.md)
+addresses a separate question: does the model rank higher-risk records
+above lower-risk records? A correct ranking does not ensure that the
+expected counts or losses have the right level.
+
 Validation should combine evidence rather than rank models on one
 metric. A model may have a slightly lower AIC but unstable coefficients,
 weak observed support and material residual structure. Such a model may
@@ -661,6 +680,10 @@ credibility, actuarial plausibility and the intended pricing use.
 
 ## Where to go next
 
+- [Motor insurance case
+  study](https://mharinga.github.io/insurancerating/articles/motor-pricing-case-study.md)
+  compares tariff stability, calibration and discrimination on a
+  multi-year portfolio.
 - [Getting
   Started](https://mharinga.github.io/insurancerating/articles/getting-started.md)
   constructs and interprets a pricing model in one worked example.

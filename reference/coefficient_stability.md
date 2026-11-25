@@ -1,4 +1,4 @@
-# Assess GLM coefficient stability by resampling portfolio rows
+# Assess GLM coefficient stability across resamples or periods
 
 Refit a GLM on repeated bootstrap samples of the estimation portfolio
 and retain the coefficient estimates from every successful refit. The
@@ -12,7 +12,11 @@ coefficient_stability(
   object,
   n_resamples = 500,
   seed = NULL,
-  show_progress = interactive()
+  show_progress = interactive(),
+  method = c("bootstrap", "period"),
+  data = NULL,
+  period = NULL,
+  confidence = 0.95
 )
 ```
 
@@ -35,6 +39,24 @@ coefficient_stability(
 
   Logical. If `TRUE`, display a text progress bar.
 
+- method:
+
+  `"bootstrap"` (default) or `"period"` for independent period fits.
+
+- data:
+
+  Optional estimation data for period fits. If omitted, recover the
+  original estimation rows from the model.
+
+- period:
+
+  For period fits, a column of numeric periods, dates or factor levels
+  in their declared chronological order.
+
+- confidence:
+
+  Level of the period-specific Wald intervals, or `NULL` to omit them.
+
 ## Value
 
 An object of class `"bootstrap_coefficients"`. It contains the original
@@ -46,7 +68,8 @@ for a coefficient-level data frame,
 [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
 for an interval plot and
 [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
-for a formatted table.
+for a formatted table. With `method = "period"`, a `period_coefficients`
+object contains `estimates` and period-level `diagnostics`.
 
 ## Details
 
@@ -90,6 +113,12 @@ Where such dependence is material, a cluster-level bootstrap would
 require a different resampling design that draws whole policies,
 retaining all their records together. This function does not perform
 that cluster-level resampling.
+
+Period fits reuse the original coefficient coding and fit each period
+separately. Effects affected by rank deficiency are `NA`, rather than
+changing the reference category. Intervals use period-specific standard
+errors on the link scale. Period differences reflect sampling variation,
+portfolio mix and model specification as well as any underlying change.
 
 ## See also
 

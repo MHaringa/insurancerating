@@ -64,7 +64,8 @@ sample. Evaluation on rows outside that fit depends on the sampling design.</p>
 <span>  method <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  time <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  initial <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  horizon <span class="op">=</span> <span class="fl">1</span></span>
+<span>  horizon <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  cluster <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -122,7 +123,9 @@ If <code>NULL</code> and RMSE is selected, it is calculated from <code>model</co
 
 <dt id="arg-metrics">metrics<a class="anchor" aria-label="anchor" href="#arg-metrics"></a></dt>
 <dd><p>Character vector of distinct metrics in the desired output
-order: <code>"rmse"</code> (default), <code>"mae"</code>, or <code>"deviance"</code>.</p></dd>
+order: <code>"rmse"</code> (default), <code>"mae"</code>, <code>"deviance"</code>, <code>"gini"</code> or
+<code>"normalized_gini"</code>. The Gini measures assess ranking on the
+evaluation rows; see <code><a href="discrimination_analysis.html">discrimination_analysis()</a></code> for supported families.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
@@ -143,6 +146,13 @@ first training window.</p></dd>
 <dt id="arg-horizon">horizon<a class="anchor" aria-label="anchor" href="#arg-horizon"></a></dt>
 <dd><p>For rolling validation, number of subsequent distinct
 periods evaluated at each origin. Default is 1.</p></dd>
+
+
+<dt id="arg-cluster">cluster<a class="anchor" aria-label="anchor" href="#arg-cluster"></a></dt>
+<dd><p>Optional column identifying complete sampling units, such
+as a policy or customer. For bootstrap and split, <code>sample_fraction</code>
+then refers to the number of distinct clusters. Not used with rolling
+validation: recurring customers may legitimately appear in later periods.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -175,7 +185,12 @@ set is not a fixed 20% of the data.</p>
 factor columns used directly in the model, rows may be added to the
 training sample to cover levels that were not drawn. These rows are
 then excluded from held-out evaluation. If no evaluation rows remain,
-try a smaller <code>sample_fraction</code>.</p>
+try a smaller <code>sample_fraction</code>.
+With <code>cluster</code>, complete clusters are sampled, including multiple copies
+of any cluster drawn more than once. Held-out scores use only undrawn
+clusters. Missing levels are not repaired by borrowing rows from the test
+set. Failed or non-convergent cluster refits are recorded in
+<code>diagnostics</code> and have missing scores.</p>
 </div>
 
 <div class="section">

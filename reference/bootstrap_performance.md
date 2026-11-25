@@ -74,7 +74,11 @@ bootstrap_performance(
 - metrics:
 
   Character vector of distinct metrics in the desired output order:
-  `"rmse"` (default), `"mae"`, or `"deviance"`.
+  `"rmse"` (default), `"mae"`, `"deviance"`, `"gini"` or
+  `"normalized_gini"`. The Gini measures assess ranking on the
+  evaluation rows; see
+  [`discrimination_analysis()`](https://mharinga.github.io/insurancerating/reference/discrimination_analysis.md)
+  for supported families.
 
 ## Value
 

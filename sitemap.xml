@@ -4,6 +4,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/articles/index.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/articles/large-portfolios.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/articles/model-validation.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/articles/motor-pricing-case-study.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/articles/refinement-workflow.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/authors.html</loc></url>
@@ -26,15 +27,19 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/adjust_intercept.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/as_gt.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/as_gt.refinement_audit.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/as_tariff.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/audit_refinement.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_coefficients.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_performance.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.calibration_result.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.check_residuals.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.discrimination_result.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.factor_analysis.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.period_coefficients.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.rating_refinement.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.rating_table.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.refinement_audit.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.tariff_effect.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/autoplot.truncated_severity.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/biggest_reference.html</loc></url>
@@ -50,6 +55,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/construct_tariff_classes.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/default_extrapolation_break_size.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/discrimination_analysis.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/edit_smoothing.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/extract_model_data.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/factor_analysis.html</loc></url>
@@ -60,6 +66,7 @@
 <url><loc>https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/histbin.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/index.html</loc></url>
+<url><loc>https://mharinga.github.io/insurancerating/reference/insurancerating-package.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/make_stars.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/merge_date_ranges.html</loc></url>
 <url><loc>https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.html</loc></url>

@@ -1,6 +1,8 @@
 # Add model predictions to a pricing data set
 
-`add_prediction()` adds predictions from one or more fitted `glm` models
+`add_prediction()` adds predictions from fitted `glm` models or tariffs
+created with
+[`as_tariff()`](https://mharinga.github.io/insurancerating/reference/as_tariff.md)
 to a data frame.
 
 In pricing workflows, this is often used to bring count and severity
@@ -37,7 +39,7 @@ add_prediction(
 
 - ...:
 
-  One or more fitted model objects of class `"glm"`.
+  One or more fitted `glm` models or `rating_tariff` objects.
 
 - predictions:
 
@@ -94,13 +96,16 @@ when a rate is required.
 
 If `confidence = TRUE`, lower and upper confidence interval columns are
 added next to each prediction column. The default interval suffixes are
-`"lower"` and `"upper"`.
+`"lower"` and `"upper"`. Confidence intervals are available only for
+fitted GLMs.
 
 Predictions containing missing values are retained. If one or more `NA`
 predictions are produced, the function issues a warning with the
 affected prediction columns and number of missing predictions. This is
 typically caused by missing predictor values in `data` or by predictor
-values outside the domain supported by the fitted model.
+values outside the domain supported by the fitted model. For tariffs,
+[`as_tariff()`](https://mharinga.github.io/insurancerating/reference/as_tariff.md)
+sets whether unmatched portfolio values warn and produce `NA`, or stop.
 
 ## Author
 

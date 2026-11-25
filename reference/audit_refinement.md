@@ -14,7 +14,13 @@ audit_refinement(
   exposure = NULL,
   risk_factors = NULL,
   scale = c("auto", "response", "per_exposure"),
-  metric = NULL
+  metric = NULL,
+  individual = FALSE,
+  impact_weights = c("auto", "exposure", "equal"),
+  impact_breaks = c(-Inf, -0.2, -0.1, -0.05, 0, 0.05, 0.1, 0.2, Inf),
+  impact_thresholds = c(0.05, 0.1, 0.2),
+  impact_tolerance = 1e-08,
+  keep_individual = FALSE
 )
 ```
 
@@ -56,6 +62,33 @@ audit_refinement(
   example `"risk_premium"`, `"frequency"` or `"average_severity"`. If
   `NULL`, the audit uses `"fitted_rate"` or `"fitted_response"`.
 
+- individual:
+
+  If `TRUE`, compare both predictions on each portfolio row.
+
+- impact_weights:
+
+  Weight individual changes by `"exposure"` or `"equal"` row weights.
+  `"auto"` uses exposure if available.
+
+- impact_breaks:
+
+  Increasing change-band boundaries, from `-Inf` to `Inf`. Bands are
+  right-closed.
+
+- impact_thresholds:
+
+  Non-negative relative changes used for exceedance summaries.
+
+- impact_tolerance:
+
+  Absolute relative change at or below which a row counts as unchanged.
+
+- keep_individual:
+
+  Retain row-level predictions, changes and weights when
+  `individual = TRUE`. Default `FALSE`.
+
 ## Value
 
 An object of class `refinement_audit`. The object contains package and
@@ -67,7 +100,10 @@ for a concise audit report,
 [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) for the
 level results and
 [`as_gt()`](https://mharinga.github.io/insurancerating/reference/as_gt.md)
-for a formatted table.
+for a formatted table. Individual analysis adds `individual_impact` with
+a summary, quantiles, change bands and threshold shares. Use
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+for the band shares.
 
 ## Details
 
@@ -91,6 +127,16 @@ severity model it is a fitted average severity; and for a direct
 risk-premium model it can be labelled `"risk_premium"`. A complete
 risk-premium comparison requires either a direct risk-premium model or
 an explicit combination of frequency and severity predictions.
+
+Individual changes are `after / before - 1` on identical rows and the
+response scale. Non-positive baselines, negative refitted responses and
+non-finite pairs are excluded and counted. Quantiles use the inverse
+weighted empirical distribution. The weighted average of these
+percentage changes is not the percentage change in portfolio
+predictions. To isolate tariff structure, apply
+[`adjust_intercept()`](https://mharinga.github.io/insurancerating/reference/adjust_intercept.md)
+to align the candidate portfolio level before auditing; the audit never
+calibrates automatically.
 
 ## See also
 
@@ -128,7 +174,7 @@ summary(refinement)
 #> Refinement specification
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Created: 2026-11-24 09:57:39 UTC
+#> Created: 2026-11-25 16:33:39 UTC
 #> Observations: 6
 #> Family: poisson (log link)
 #> Base formula:
@@ -150,9 +196,9 @@ summary(audit)
 #> Refinement audit
 #> 
 #> Package: insurancerating 0.8.2.9000
-#> Prepared: 2026-11-24 09:57:39 UTC
-#> Refitted: 2026-11-24 09:57:39 UTC
-#> Audited: 2026-11-24 09:57:39 UTC
+#> Prepared: 2026-11-25 16:33:39 UTC
+#> Refitted: 2026-11-25 16:33:39 UTC
+#> Audited: 2026-11-25 16:33:39 UTC
 #> Measure: frequency (per_exposure)
 #> Exposure: exposure
 #> 

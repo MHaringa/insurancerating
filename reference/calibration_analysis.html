@@ -52,7 +52,14 @@ columns or predicted risk. The model is not changed.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calibration_analysis</span><span class="op">(</span><span class="va">model</span>, <span class="va">data</span>, by <span class="op">=</span> <span class="cn">NULL</span>, groups <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calibration_analysis</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  conf_level <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  interval_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"poisson"</span>, <span class="st">"wald"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -84,6 +91,16 @@ lowest to highest predicted risk. Supply a positive whole number no
 larger than the number of rows.
 Use either <code>groups</code> or <code>by</code>, not both.</p></dd>
 
+
+<dt id="arg-conf-level">conf_level<a class="anchor" aria-label="anchor" href="#arg-conf-level"></a></dt>
+<dd><p>Optional confidence level. The default <code>NULL</code> leaves the
+result unchanged and does not compute intervals.</p></dd>
+
+
+<dt id="arg-interval-method">interval_method<a class="anchor" aria-label="anchor" href="#arg-interval-method"></a></dt>
+<dd><p><code>"auto"</code>, <code>"poisson"</code> (exact count interval) or
+<code>"wald"</code> (variance-based log-Wald approximation).</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -91,14 +108,31 @@ Use either <code>groups</code> or <code>by</code>, not both.</p></dd>
 <code>Observed</code> and <code>Expected</code>, their ratio <code>OE</code> and the number of
 observations <code>N</code>. If <code>Expected</code> is zero, <code>OE</code> is <code>NA</code>. The grouping
 columns or integer <code>Group</code> are included when applicable. <code>Exposure</code>
-is the sum of the identified exposure column, without applying case weights.</p>
+is the sum of the identified exposure column, without applying case weights.
+When intervals are requested, <code>Lower</code>, <code>Upper</code>, <code>Conf_level</code> and
+<code>Interval_method</code> describe the O/E interval.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Overall totals show calibration-in-the-large. Risk groups check whether the
 model over- or under-predicts at different predicted risk levels. A
 calendar-year grouping checks temporal calibration. Changing O/E over
-time does not necessarily mean the model has become worse at ranking risks.</p>
+time does not necessarily mean the model has become worse at ranking risks.</p><div class="section">
+<h3 id="conditional-uncertainty">Conditional uncertainty<a class="anchor" aria-label="anchor" href="#conditional-uncertainty"></a></h3>
+
+
+<p>Intervals estimate an underlying observed-to-expected ratio, treating the
+predictions as fixed and observations as independent. They are not prediction
+intervals and do not include parameter uncertainty or clustering. For
+unweighted Poisson counts, the exact limits for the total observed count
+are divided by the expected total. An observed zero has lower limit zero.
+For Gamma, Tweedie and quasi-Poisson models, the log-Wald interval uses the
+fitted dispersion and sums the GLM variances at the means scaled by the
+group's estimated ratio. Prior weights are assumed to be precision weights:
+a response with weight <code>w</code> contributes <code>w</code> times its mean to the total and
+<code>w</code> times the unweighted variance. Zero observed or expected totals have
+no log-Wald interval. Weighted Poisson models and ambiguous exposure weights
+are not supported for intervals.</p>
 <p>Predictions are on the response scale and use the offset in <code>data</code>.
 For Poisson claim counts with a log-exposure offset, predictions are
 expected counts and are not multiplied by exposure again. Other prior
@@ -115,7 +149,10 @@ several candidate terms, a single column named <code>exposure</code> takes prece
 Without an offset, explicit <code>weights = exposure</code>, or weights on the
 denominator column of a response such as <code>I(claims / duration)</code>, identify
 exposure used as prior weights. Other weight variables and unused columns
-are not assumed to represent exposure.</p><div class="section">
+are not assumed to represent exposure.</p>
+</div>
+
+<div class="section">
 <h3 id="calibration-by-predicted-risk">Calibration by predicted risk<a class="anchor" aria-label="anchor" href="#calibration-by-predicted-risk"></a></h3>
 
 
@@ -219,6 +256,18 @@ models: each model can rank the records differently.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3     3      203 219.1066 0.9264898 1801 1597.888</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4     4      216 254.3768 0.8491341 1842 1597.666</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5     5      314 299.0661 1.0499351 1862 1598.115</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Same O/E, but much less uncertainty in the larger group.</span></span></span>
+<span class="r-in"><span><span class="va">evaluation</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>claims <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">1000</span><span class="op">)</span>, exposure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">1000</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                         size <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Small"</span>, <span class="st">"Large"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">count_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">claims</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">exposure</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">poisson</a></span><span class="op">(</span><span class="op">)</span>, <span class="va">evaluation</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">calibration_analysis</span><span class="op">(</span><span class="va">count_model</span>, <span class="va">evaluation</span>, by <span class="op">=</span> <span class="st">"size"</span>, conf_level <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    size Observed Expected OE N Exposure    Upper     Lower Conf_level</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Large     1000     1000  1 1     1000 1.063952 0.9389730       0.95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 Small       10       10  1 1       10 1.839036 0.4795389       0.95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Interval_method</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1         poisson</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2         poisson</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

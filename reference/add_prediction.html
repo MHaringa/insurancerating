@@ -5,16 +5,16 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.5.0/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.5.0/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Add model predictions to a pricing data set — add_prediction"><meta name="description" content="add_prediction() adds predictions from one or more fitted glm models to
-a data frame.
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.5.0/font.css" rel="stylesheet"><link href="../deps/Google_Sans_Code-0.5.0/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Add model predictions to a pricing data set — add_prediction"><meta name="description" content="add_prediction() adds predictions from fitted glm models or tariffs
+created with as_tariff() to a data frame.
 In pricing workflows, this is often used to bring count and severity model
 output together on the same portfolio. For example, an expected claim count
 can be normalised by exposure and multiplied by an expected average claim
 amount to calculate a risk premium per exposure unit.
 The function is deliberately small: it does not refit models or decide how
 predictions should be combined. It only adds model predictions, and
-optionally confidence intervals, using clear output column names."><meta property="og:description" content="add_prediction() adds predictions from one or more fitted glm models to
-a data frame.
+optionally confidence intervals, using clear output column names."><meta property="og:description" content="add_prediction() adds predictions from fitted glm models or tariffs
+created with as_tariff() to a data frame.
 In pricing workflows, this is often used to bring count and severity model
 output together on the same portfolio. For example, an expected claim count
 can be normalised by exposure and multiplied by an expected average claim
@@ -54,8 +54,8 @@ optionally confidence intervals, using clear output column names."><meta propert
     </div>
 
     <div class="ref-description section level2">
-    <p><code>add_prediction()</code> adds predictions from one or more fitted <code>glm</code> models to
-a data frame.</p>
+    <p><code>add_prediction()</code> adds predictions from fitted <code>glm</code> models or tariffs
+created with <code><a href="as_tariff.html">as_tariff()</a></code> to a data frame.</p>
 <p>In pricing workflows, this is often used to bring count and severity model
 output together on the same portfolio. For example, an expected claim count
 can be normalised by exposure and multiplied by an expected average claim
@@ -90,7 +90,7 @@ should be generated.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>One or more fitted model objects of class <code>"glm"</code>.</p></dd>
+<dd><p>One or more fitted <code>glm</code> models or <code>rating_tariff</code> objects.</p></dd>
 
 
 <dt id="arg-predictions">predictions<a class="anchor" aria-label="anchor" href="#arg-predictions"></a></dt>
@@ -147,12 +147,13 @@ exposure, not frequency per exposure unit. Divide by exposure when a rate is
 required.</p>
 <p>If <code>confidence = TRUE</code>, lower and upper confidence interval columns are added
 next to each prediction column. The default interval suffixes are <code>"lower"</code>
-and <code>"upper"</code>.</p>
+and <code>"upper"</code>. Confidence intervals are available only for fitted GLMs.</p>
 <p>Predictions containing missing values are retained. If one or more <code>NA</code>
 predictions are produced, the function issues a warning with the affected
 prediction columns and number of missing predictions. This is typically
 caused by missing predictor values in <code>data</code> or by predictor values outside
-the domain supported by the fitted model.</p>
+the domain supported by the fitted model. For tariffs, <code><a href="as_tariff.html">as_tariff()</a></code> sets
+whether unmatched portfolio values warn and produce <code>NA</code>, or stop.</p>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>

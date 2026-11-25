@@ -2,6 +2,31 @@
 
 ## insurancerating (development version)
 
+- `coefficient_stability(method = "period")` compares coefficients
+  across independently fitted periods while retaining the original
+  contrast coding.
+- `validate_performance(cluster = ...)` resamples complete clusters for
+  bootstrap and random splits, without overlap between training and
+  holdout.
+- `calibration_analysis(conf_level = ...)` adds optional O/E intervals
+  with exact Poisson and model-based variance methods.
+- `audit_refinement(individual = TRUE)` reports the distribution of
+  matched record-level prediction changes, with optional exposure
+  weighting.
+- [`discrimination_analysis()`](https://mharinga.github.io/insurancerating/reference/discrimination_analysis.md)
+  adds exposure-aware concentration, lift, and ordered Lorenz curves.
+  Gini and normalized Gini are available as optional metrics in
+  [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md)
+  and
+  [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md).
+- The motor insurance case study uses a synthetic multi-year portfolio
+  to compare candidate tariffs and evaluate them on a held-out year.
+- [`as_tariff()`](https://mharinga.github.io/insurancerating/reference/as_tariff.md)
+  converts a rating-table estimate into a tariff for
+  [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md).
+  Map numeric portfolio columns to interval factors with
+  `segment_sources` and choose whether unmatched values warn or raise an
+  error.
 - The model validation API now uses
   [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md),
   [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)

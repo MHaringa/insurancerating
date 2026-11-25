@@ -111,7 +111,9 @@ If <code>NULL</code> and RMSE is selected, it is calculated from <code>model</co
 
 <dt id="arg-metrics">metrics<a class="anchor" aria-label="anchor" href="#arg-metrics"></a></dt>
 <dd><p>Character vector of distinct metrics in the desired output
-order: <code>"rmse"</code> (default), <code>"mae"</code>, or <code>"deviance"</code>.</p></dd>
+order: <code>"rmse"</code> (default), <code>"mae"</code>, <code>"deviance"</code>, <code>"gini"</code> or
+<code>"normalized_gini"</code>. The Gini measures assess ranking on the
+evaluation rows; see <code><a href="discrimination_analysis.html">discrimination_analysis()</a></code> for supported families.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Actuarial Tools for Insurance Pricing Models • insurancerating</title>
+<title>Actuarial Building Blocks for Insurance Pricing • insurancerating</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -23,9 +23,9 @@
 <link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
-<meta property="og:title" content="Actuarial Tools for Insurance Pricing Models">
-<meta name="description" content="Provides actuarial tools and building blocks for analysing, modelling, refining, and validating insurance rating models. Designed to support common GLM-based pricing tasks and the translation of statistical model output into practical tariff structures. The package supports the construction of insurance tariff classes using a data-driven approach, based on the methodology of Antonio and Valdez (2012) &lt;doi:10.1007/s10182-011-0152-7&gt;.">
-<meta property="og:description" content="Provides actuarial tools and building blocks for analysing, modelling, refining, and validating insurance rating models. Designed to support common GLM-based pricing tasks and the translation of statistical model output into practical tariff structures. The package supports the construction of insurance tariff classes using a data-driven approach, based on the methodology of Antonio and Valdez (2012) &lt;doi:10.1007/s10182-011-0152-7&gt;.">
+<meta property="og:title" content="Actuarial Building Blocks for Insurance Pricing">
+<meta name="description" content="Provides actuarial building blocks for developing, interpreting, refining, and validating insurance pricing models and implementable tariffs. Complements statistical modelling in R with portfolio analysis, risk factor structuring, tariff adjustments, and model validation. Includes data-driven tariff segmentation based on the methodology of Antonio and Valdez (2012) &lt;doi:10.1007/s10182-011-0152-7&gt;.">
+<meta property="og:description" content="Provides actuarial building blocks for developing, interpreting, refining, and validating insurance pricing models and implementable tariffs. Complements statistical modelling in R with portfolio analysis, risk factor structuring, tariff adjustments, and model validation. Includes data-driven tariff segmentation based on the methodology of Antonio and Valdez (2012) &lt;doi:10.1007/s10182-011-0152-7&gt;.">
 <meta property="og:image" content="https://mharinga.github.io/insurancerating/logo.png">
 </head>
 <body>
@@ -66,7 +66,7 @@
 <!-- badges: start -->
 
 <!-- badges: end -->
-<p><code>insurancerating</code> provides actuarial tools for insurance pricing in R. It works alongside standard modelling functions such as <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code> to help you analyse portfolio experience, interpret and refine tariff relativities, and validate fitted models. It also supports risk-factor structuring, large-loss treatment and preparation of large portfolios.</p>
+<p><code>insurancerating</code> provides actuarial building blocks for insurance pricing in R. Use them alongside standard modelling functions such as <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code> to analyse portfolio experience, interpret fitted effects, turn them into implementable tariffs and validate predictions. The package also supports risk-factor structuring, large-loss treatment and preparation of large portfolios.</p>
 <p>The building blocks can be used independently or combined to suit the portfolio. The examples illustrate choices, not a prescribed methodology.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -170,9 +170,9 @@
 </td>
 </tr>
 <tr>
-<td>Validate fitted models</td>
+<td>Validate fit, calibration and risk ranking</td>
 <td>
-<code><a href="reference/model_performance.html">model_performance()</a></code>, <code><a href="reference/calibration_analysis.html">calibration_analysis()</a></code>, <code><a href="reference/check_residuals.html">check_residuals()</a></code>, <code><a href="reference/validate_performance.html">validate_performance()</a></code>
+<code><a href="reference/model_performance.html">model_performance()</a></code>, <code><a href="reference/calibration_analysis.html">calibration_analysis()</a></code>, <code><a href="reference/discrimination_analysis.html">discrimination_analysis()</a></code>, <code><a href="reference/validate_performance.html">validate_performance()</a></code>
 </td>
 </tr>
 <tr>
@@ -202,6 +202,7 @@
 <ul>
 <li><p><a href="https://mharinga.github.io/insurancerating/articles/getting-started.html">Getting Started</a> Follow one portfolio through risk-factor analysis, modelling, technical risk premium, interpretation, validation and refinement.</p></li>
 <li><p><a href="https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html">Pricing workflow and package building blocks</a> See how the main actuarial pricing tasks and package components fit together.</p></li>
+<li><p><a href="https://mharinga.github.io/insurancerating/articles/motor-pricing-case-study.html">Motor insurance case study</a> Compare a fitted frequency model and candidate tariffs on a multi-year synthetic portfolio, including individual impact and a held-out year.</p></li>
 <li><p><a href="https://mharinga.github.io/insurancerating/articles/refinement-workflow.html">Refinement building blocks</a> Translate estimated model effects into an explicit, reviewable and implementable tariff structure.</p></li>
 <li><p><a href="https://mharinga.github.io/insurancerating/articles/model-validation.html">Model validation</a> Assess model fit, stability and tariff plausibility, compare observed with expected claims, and evaluate predictions on later periods. Start with the <a href="https://mharinga.github.io/insurancerating/articles/model-validation.html#quick-start">quick start</a>.</p></li>
 <li><p><a href="https://mharinga.github.io/insurancerating/articles/large-portfolios.html">Large Portfolios</a> Reduce production-sized portfolios with model-point aggregation and database-backed workflows.</p></li>

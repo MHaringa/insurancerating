@@ -46,7 +46,7 @@ fitted GLMs.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">model_performance</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">model_performance</span><span class="op">(</span><span class="va">...</span>, metrics <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -55,6 +55,11 @@ fitted GLMs.</p>
 
 <dl><dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>One or more objects of class <code>"glm"</code>.</p></dd>
+
+
+<dt id="arg-metrics">metrics<a class="anchor" aria-label="anchor" href="#arg-metrics"></a></dt>
+<dd><p>Optional additional ranking measures, <code>"gini"</code> and/or
+<code>"normalized_gini"</code>. By default no ranking measures are added.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -75,7 +80,8 @@ fitted GLMs.</p>
 <dd><p>Residual deviance.</p></dd>
 
 
-</dl></div>
+</dl><p>Requested ranking measures are appended as <code>Gini</code> and <code>Normalized_Gini</code>.</p>
+    </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The following measures are reported:</p><dl><dt>AIC</dt>
@@ -99,7 +105,10 @@ by <code><a href="https://rdrr.io/r/stats/deviance.html" class="external-link">s
 in-sample prediction error on the response scale, comparing observed
 responses with fitted values on the same rows used to estimate the model.
 It is unweighted and uses the same response scale as <code><a href="validate_performance.html">validate_performance()</a></code>.
-None of these metrics establishes out-of-sample predictive performance.</p>
+None of these metrics establishes out-of-sample predictive performance.
+Optional Gini measures also use the estimation rows. They measure ranking
+rather than fit or calibration; see <code><a href="discrimination_analysis.html">discrimination_analysis()</a></code> for the
+exposure definition and supported families.</p>
 <p>For a Poisson frequency model with <code>offset(log(exposure))</code>, the fitted
 values are expected claim counts for each observation's exposure. RMSE
 therefore measures error in claim counts, not claim frequencies per unit

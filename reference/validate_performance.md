@@ -23,7 +23,8 @@ validate_performance(
   method = NULL,
   time = NULL,
   initial = NULL,
-  horizon = 1
+  horizon = 1,
+  cluster = NULL
 )
 ```
 
@@ -78,7 +79,11 @@ validate_performance(
 - metrics:
 
   Character vector of distinct metrics in the desired output order:
-  `"rmse"` (default), `"mae"`, or `"deviance"`.
+  `"rmse"` (default), `"mae"`, `"deviance"`, `"gini"` or
+  `"normalized_gini"`. The Gini measures assess ranking on the
+  evaluation rows; see
+  [`discrimination_analysis()`](https://mharinga.github.io/insurancerating/reference/discrimination_analysis.md)
+  for supported families.
 
 - method:
 
@@ -99,6 +104,13 @@ validate_performance(
 
   For rolling validation, number of subsequent distinct periods
   evaluated at each origin. Default is 1.
+
+- cluster:
+
+  Optional column identifying complete sampling units, such as a policy
+  or customer. For bootstrap and split, `sample_fraction` then refers to
+  the number of distinct clusters. Not used with rolling validation:
+  recurring customers may legitimately appear in later periods.
 
 ## Value
 
@@ -141,7 +153,11 @@ For random resampling, factor levels come from the supplied data. For
 factor columns used directly in the model, rows may be added to the
 training sample to cover levels that were not drawn. These rows are then
 excluded from held-out evaluation. If no evaluation rows remain, try a
-smaller `sample_fraction`.
+smaller `sample_fraction`. With `cluster`, complete clusters are
+sampled, including multiple copies of any cluster drawn more than once.
+Held-out scores use only undrawn clusters. Missing levels are not
+repaired by borrowing rows from the test set. Failed or non-convergent
+cluster refits are recorded in `diagnostics` and have missing scores.
 
 ### Rolling-origin validation
 

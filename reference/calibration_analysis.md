@@ -9,7 +9,14 @@ not changed.
 ## Usage
 
 ``` r
-calibration_analysis(model, data, by = NULL, groups = NULL)
+calibration_analysis(
+  model,
+  data,
+  by = NULL,
+  groups = NULL,
+  conf_level = NULL,
+  interval_method = c("auto", "poisson", "wald")
+)
 ```
 
 ## Arguments
@@ -41,13 +48,25 @@ calibration_analysis(model, data, by = NULL, groups = NULL)
   highest predicted risk. Supply a positive whole number no larger than
   the number of rows. Use either `groups` or `by`, not both.
 
+- conf_level:
+
+  Optional confidence level. The default `NULL` leaves the result
+  unchanged and does not compute intervals.
+
+- interval_method:
+
+  `"auto"`, `"poisson"` (exact count interval) or `"wald"`
+  (variance-based log-Wald approximation).
+
 ## Value
 
 A data frame of class `calibration_result` with the totals `Observed`
 and `Expected`, their ratio `OE` and the number of observations `N`. If
 `Expected` is zero, `OE` is `NA`. The grouping columns or integer
 `Group` are included when applicable. `Exposure` is the sum of the
-identified exposure column, without applying case weights.
+identified exposure column, without applying case weights. When
+intervals are requested, `Lower`, `Upper`, `Conf_level` and
+`Interval_method` describe the O/E interval.
 
 ## Details
 
@@ -56,6 +75,22 @@ the model over- or under-predicts at different predicted risk levels. A
 calendar-year grouping checks temporal calibration. Changing O/E over
 time does not necessarily mean the model has become worse at ranking
 risks.
+
+### Conditional uncertainty
+
+Intervals estimate an underlying observed-to-expected ratio, treating
+the predictions as fixed and observations as independent. They are not
+prediction intervals and do not include parameter uncertainty or
+clustering. For unweighted Poisson counts, the exact limits for the
+total observed count are divided by the expected total. An observed zero
+has lower limit zero. For Gamma, Tweedie and quasi-Poisson models, the
+log-Wald interval uses the fitted dispersion and sums the GLM variances
+at the means scaled by the group's estimated ratio. Prior weights are
+assumed to be precision weights: a response with weight `w` contributes
+`w` times its mean to the total and `w` times the unweighted variance.
+Zero observed or expected totals have no log-Wald interval. Weighted
+Poisson models and ambiguous exposure weights are not supported for
+intervals.
 
 Predictions are on the response scale and use the offset in `data`. For
 Poisson claim counts with a log-exposure offset, predictions are
@@ -182,4 +217,16 @@ calibration_analysis(risk_model, risk_portfolio[-train, ], groups = 5)
 #> 3     3      203 219.1066 0.9264898 1801 1597.888
 #> 4     4      216 254.3768 0.8491341 1842 1597.666
 #> 5     5      314 299.0661 1.0499351 1862 1598.115
+
+# Same O/E, but much less uncertainty in the larger group.
+evaluation <- data.frame(claims = c(10, 1000), exposure = c(10, 1000),
+                         size = c("Small", "Large"))
+count_model <- glm(claims ~ 1 + offset(log(exposure)), poisson(), evaluation)
+calibration_analysis(count_model, evaluation, by = "size", conf_level = 0.95)
+#>    size Observed Expected OE N Exposure    Upper     Lower Conf_level
+#> 1 Large     1000     1000  1 1     1000 1.063952 0.9389730       0.95
+#> 2 Small       10       10  1 1       10 1.839036 0.4795389       0.95
+#>   Interval_method
+#> 1         poisson
+#> 2         poisson
 ```

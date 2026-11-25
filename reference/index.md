@@ -65,6 +65,9 @@ portfolio experience, and add model predictions to portfolio data.
 - [`premium_change()`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
   [`as_gt(`*`<premium_change>`*`)`](https://mharinga.github.io/insurancerating/reference/premium_change.md)
   : Interpret the premium effect of a smoothing curve
+- [`as_tariff()`](https://mharinga.github.io/insurancerating/reference/as_tariff.md)
+  [`predict(`*`<rating_tariff>`*`)`](https://mharinga.github.io/insurancerating/reference/as_tariff.md)
+  : Create a tariff from a rating table
 - [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md)
   : Add model predictions to a pricing data set
 
@@ -107,11 +110,13 @@ relativities.
   : Adjust the intercept of a refined pricing model
 - [`audit_refinement()`](https://mharinga.github.io/insurancerating/reference/audit_refinement.md)
   : Audit the effect of a fitted model refinement
+- [`autoplot(`*`<refinement_audit>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.refinement_audit.md)
+  : Plot individual tariff impact bands
 
 ## Model validation
 
-Assess model performance, resampling stability, distributional
-assumptions and residual behaviour.
+Assess model performance, calibration, risk ranking, stability and
+residual behaviour.
 
 ### Model performance & calibration
 
@@ -126,12 +131,21 @@ start](https://mharinga.github.io/insurancerating/articles/model-validation.html
 - [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
   : Check observed versus expected insurance experience
 
+### Risk discrimination
+
+- [`discrimination_analysis()`](https://mharinga.github.io/insurancerating/reference/discrimination_analysis.md)
+  : Assess discrimination in insurance pricing
+- [`autoplot(`*`<discrimination_result>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.discrimination_result.md)
+  : Plot discrimination and lift
+
 ### Model stability
 
 - [`coefficient_stability()`](https://mharinga.github.io/insurancerating/reference/coefficient_stability.md)
-  : Assess GLM coefficient stability by resampling portfolio rows
+  : Assess GLM coefficient stability across resamples or periods
 - [`autoplot(`*`<bootstrap_coefficients>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.bootstrap_coefficients.md)
   : Plot bootstrap coefficient stability
+- [`autoplot(`*`<period_coefficients>`*`)`](https://mharinga.github.io/insurancerating/reference/autoplot.period_coefficients.md)
+  : Plot coefficients fitted separately by period
 
 ### Model diagnostics
 

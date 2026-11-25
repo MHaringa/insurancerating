@@ -6,7 +6,7 @@ more fitted GLMs.
 ## Usage
 
 ``` r
-model_performance(...)
+model_performance(..., metrics = NULL)
 ```
 
 ## Arguments
@@ -14,6 +14,11 @@ model_performance(...)
 - ...:
 
   One or more objects of class `"glm"`.
+
+- metrics:
+
+  Optional additional ranking measures, `"gini"` and/or
+  `"normalized_gini"`. By default no ranking measures are added.
 
 ## Value
 
@@ -38,6 +43,8 @@ A data frame of class `"model_performance"`, with columns:
 - Residual_Deviance:
 
   Residual deviance.
+
+Requested ranking measures are appended as `Gini` and `Normalized_Gini`.
 
 ## Details
 
@@ -69,6 +76,10 @@ responses with fitted values on the same rows used to estimate the
 model. It is unweighted and uses the same response scale as
 [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md).
 None of these metrics establishes out-of-sample predictive performance.
+Optional Gini measures also use the estimation rows. They measure
+ranking rather than fit or calibration; see
+[`discrimination_analysis()`](https://mharinga.github.io/insurancerating/reference/discrimination_analysis.md)
+for the exposure definition and supported families.
 
 For a Poisson frequency model with `offset(log(exposure))`, the fitted
 values are expected claim counts for each observation's exposure. RMSE

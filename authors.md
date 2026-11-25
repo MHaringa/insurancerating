@@ -9,12 +9,12 @@
 Source:
 [`DESCRIPTION`](https://github.com/MHaringa/insurancerating/blob/master/DESCRIPTION)
 
-Haringa M (2026). *insurancerating: Actuarial Tools for Insurance
-Pricing Models*. R package version 0.8.2.9000,
+Haringa M (2026). *insurancerating: Actuarial Building Blocks for
+Insurance Pricing*. R package version 0.8.2.9000,
 <https://mharinga.github.io/insurancerating/>.
 
     @Manual{,
-      title = {insurancerating: Actuarial Tools for Insurance Pricing Models},
+      title = {insurancerating: Actuarial Building Blocks for Insurance Pricing},
       author = {Martin Haringa},
       year = {2026},
       note = {R package version 0.8.2.9000},

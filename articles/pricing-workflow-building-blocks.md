@@ -43,7 +43,7 @@ the building blocks by purpose, not by their place in a sequence.
 | Severity modelling | Inspect claim amounts and truncated severity distributions | [`plot_severity_distribution()`](https://mharinga.github.io/insurancerating/reference/plot_severity_distribution.md), [`fit_truncated_severity()`](https://mharinga.github.io/insurancerating/reference/fit_truncated_severity.md) |
 | Large-loss treatment | Assess a threshold and decide how excess loss enters the model | [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md), [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md) |
 | Estimate technical risk | Estimate frequency, severity and expected loss | standard R modelling functions such as [`glm()`](https://rdrr.io/r/stats/glm.html), supported by [`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md) |
-| Model interpretation | Express fitted effects as tariff relativities and compare them with experience | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md), [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md) |
+| Model interpretation | Review fitted effects and apply a complete multiplicative tariff to portfolio records | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md), [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md), [`as_tariff()`](https://mharinga.github.io/insurancerating/reference/as_tariff.md) |
 | Tariff refinement | Apply explicit actuarial adjustments and refit the tariff model | [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md), [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md), [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md), [`add_relativities()`](https://mharinga.github.io/insurancerating/reference/add_relativities.md), [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md) |
 | Model validation | Examine assumptions, residuals, performance and stability | [`check_overdispersion()`](https://mharinga.github.io/insurancerating/reference/check_overdispersion.md), [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md), [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md), [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md) |
 | Portfolio preparation and reduction | Consolidate periods and construct observed model points locally or in a database | [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md), [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md), [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md), [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md) |
@@ -380,6 +380,15 @@ can differ. That comparison is not observed versus expected claims from
 the complete model; use
 [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md)
 for the latter.
+
+To apply an already prepared multiplicative tariff without the original
+fitted model, select one estimate with
+[`as_tariff()`](https://mharinga.github.io/insurancerating/reference/as_tariff.md)
+and pass it to
+[`add_prediction()`](https://mharinga.github.io/insurancerating/reference/add_prediction.md).
+If the portfolio has numeric values instead of tariff bands, use
+`segment_sources` to identify their source columns. The interval labels
+in the rating table supply the bounds.
 
 ## Refining the tariff
 

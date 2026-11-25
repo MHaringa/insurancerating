@@ -8,10 +8,14 @@ represent that premium with a simpler tariff. Along the way, it shows
 how to review observed experience, check the frequency model and make an
 explicit tariff adjustment.
 
-The example combines several `insurancerating` building blocks with
-standard R modelling functions. It illustrates one possible approach;
-the choice and order of the building blocks depend on the portfolio and
-pricing question.
+The package complements standard R modelling with actuarial tools for
+interpreting fitted effects, turning them into tariffs and testing how
+they perform. This example combines a few of those tools. The choice and
+order depend on the portfolio and pricing question. The [motor insurance
+case
+study](https://mharinga.github.io/insurancerating/articles/motor-pricing-case-study.md)
+shows a longer example with several years of data and a separate
+evaluation year.
 
 ## Portfolio and data
 

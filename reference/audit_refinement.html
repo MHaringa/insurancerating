@@ -57,7 +57,13 @@ and for each final tariff-factor level.</p>
 <span>  exposure <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  risk_factors <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"response"</span>, <span class="st">"per_exposure"</span><span class="op">)</span>,</span>
-<span>  metric <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  metric <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  individual <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  impact_weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"exposure"</span>, <span class="st">"equal"</span><span class="op">)</span>,</span>
+<span>  impact_breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="cn">Inf</span>, <span class="op">-</span><span class="fl">0.2</span>, <span class="op">-</span><span class="fl">0.1</span>, <span class="op">-</span><span class="fl">0.05</span>, <span class="fl">0</span>, <span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.2</span>, <span class="cn">Inf</span><span class="op">)</span>,</span>
+<span>  impact_thresholds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.2</span><span class="op">)</span>,</span>
+<span>  impact_tolerance <span class="op">=</span> <span class="fl">1e-08</span>,</span>
+<span>  keep_individual <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -96,6 +102,35 @@ identified from the model offset and otherwise selects <code>"response"</code>.<
 for example <code>"risk_premium"</code>, <code>"frequency"</code> or <code>"average_severity"</code>.
 If <code>NULL</code>, the audit uses <code>"fitted_rate"</code> or <code>"fitted_response"</code>.</p></dd>
 
+
+<dt id="arg-individual">individual<a class="anchor" aria-label="anchor" href="#arg-individual"></a></dt>
+<dd><p>If <code>TRUE</code>, compare both predictions on each portfolio row.</p></dd>
+
+
+<dt id="arg-impact-weights">impact_weights<a class="anchor" aria-label="anchor" href="#arg-impact-weights"></a></dt>
+<dd><p>Weight individual changes by <code>"exposure"</code> or
+<code>"equal"</code> row weights. <code>"auto"</code> uses exposure if available.</p></dd>
+
+
+<dt id="arg-impact-breaks">impact_breaks<a class="anchor" aria-label="anchor" href="#arg-impact-breaks"></a></dt>
+<dd><p>Increasing change-band boundaries, from <code>-Inf</code> to
+<code>Inf</code>. Bands are right-closed.</p></dd>
+
+
+<dt id="arg-impact-thresholds">impact_thresholds<a class="anchor" aria-label="anchor" href="#arg-impact-thresholds"></a></dt>
+<dd><p>Non-negative relative changes used for exceedance
+summaries.</p></dd>
+
+
+<dt id="arg-impact-tolerance">impact_tolerance<a class="anchor" aria-label="anchor" href="#arg-impact-tolerance"></a></dt>
+<dd><p>Absolute relative change at or below which a row
+counts as unchanged.</p></dd>
+
+
+<dt id="arg-keep-individual">keep_individual<a class="anchor" aria-label="anchor" href="#arg-keep-individual"></a></dt>
+<dd><p>Retain row-level predictions, changes and weights
+when <code>individual = TRUE</code>. Default <code>FALSE</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -103,7 +138,9 @@ If <code>NULL</code>, the audit uses <code>"fitted_rate"</code> or <code>"fitted
 and model metadata, the ordered refinement steps, portfolio-level results,
 results by risk factor and level, and the model points used in the
 calculation. Use <code><a href="summary.refinement_audit.html">summary.refinement_audit()</a></code> for a concise audit report,
-<code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> for the level results and <code><a href="as_gt.html">as_gt()</a></code> for a formatted table.</p>
+<code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> for the level results and <code><a href="as_gt.html">as_gt()</a></code> for a formatted table.
+Individual analysis adds <code>individual_impact</code> with a summary, quantiles,
+change bands and threshold shares. Use <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> for the band shares.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -124,6 +161,13 @@ model it is a fitted average severity; and for a direct risk-premium model it
 can be labelled <code>"risk_premium"</code>. A complete risk-premium comparison requires
 either a direct risk-premium model or an explicit combination of frequency
 and severity predictions.</p>
+<p>Individual changes are <code>after / before - 1</code> on identical rows and the
+response scale. Non-positive baselines, negative refitted responses and
+non-finite pairs are excluded and counted. Quantiles use the inverse
+weighted empirical distribution. The weighted average of these percentage
+changes is not the percentage change in portfolio predictions. To isolate
+tariff structure, apply <code><a href="adjust_intercept.html">adjust_intercept()</a></code> to align the candidate
+portfolio level before auditing; the audit never calibrates automatically.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -159,7 +203,7 @@ and severity predictions.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Refinement specification</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Package: insurancerating 0.8.2.9000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Created: 2026-11-24 09:57:39 UTC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Created: 2026-11-25 16:33:39 UTC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Observations: 6</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Family: poisson (log link)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Base formula:</span>
@@ -181,9 +225,9 @@ and severity predictions.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Refinement audit</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Package: insurancerating 0.8.2.9000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Prepared: 2026-11-24 09:57:39 UTC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Refitted: 2026-11-24 09:57:39 UTC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Audited: 2026-11-24 09:57:39 UTC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prepared: 2026-11-25 16:33:39 UTC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Refitted: 2026-11-25 16:33:39 UTC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Audited: 2026-11-25 16:33:39 UTC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Measure: frequency (per_exposure)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Exposure: exposure</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -219,7 +263,7 @@ and severity predictions.</p>
 <div class="gt-table"><div id="kgufivjubq" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 
   <table class="table gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false" style="-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3;" bgcolor="#FFFFFF"><thead style="border-style: none;"><tr class="gt_heading" style="border-style: none; background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3;" bgcolor="#FFFFFF" align="center"><td colspan="9" class="gt_heading gt_title gt_font_normal" style="border-style: none; color: #333333; font-size: 125%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-width: 0; background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; font-weight: normal;" bgcolor="#FFFFFF" align="center">Refinement impact</td>
-    </tr><tr class="gt_heading" style="border-style: none; background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3;" bgcolor="#FFFFFF" align="center"><td colspan="9" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style="border-style: none; color: #333333; font-size: 85%; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; background-color: #FFFFFF; text-align: center; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; font-weight: normal;" bgcolor="#FFFFFF" align="center">insurancerating 0.8.2.9000 | audited 2026-11-24</td>
+    </tr><tr class="gt_heading" style="border-style: none; background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3;" bgcolor="#FFFFFF" align="center"><td colspan="9" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style="border-style: none; color: #333333; font-size: 85%; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; background-color: #FFFFFF; text-align: center; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; font-weight: normal;" bgcolor="#FFFFFF" align="center">insurancerating 0.8.2.9000 | audited 2026-11-25</td>
     </tr><tr class="gt_col_headings" style="border-style: none; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3;"><th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="a::stub" style="border-style: none; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; text-align: left;" bgcolor="#FFFFFF" valign="bottom" align="left"></th>
       <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="level" style="border-style: none; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; text-align: left;" bgcolor="#FFFFFF" valign="bottom" align="left">Level</th>
       <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="model_points" style="border-style: none; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 6px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; text-align: right; font-variant-numeric: tabular-nums;" bgcolor="#FFFFFF" valign="bottom" align="right">Model points</th>

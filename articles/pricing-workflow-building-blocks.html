@@ -153,11 +153,11 @@ by <code><a href="../reference/add_prediction.html">add_prediction()</a></code>
 </tr>
 <tr class="even">
 <td>Model interpretation</td>
-<td>Express fitted effects as tariff relativities and compare them with
-experience</td>
+<td>Review fitted effects and apply a complete multiplicative tariff to
+portfolio records</td>
 <td>
-<code><a href="../reference/rating_table.html">rating_table()</a></code>,
-<code><a href="../reference/add_factor_experience.html">add_factor_experience()</a></code>
+<code><a href="../reference/rating_table.html">rating_table()</a></code>, <code><a href="../reference/add_factor_experience.html">add_factor_experience()</a></code>,
+<code><a href="../reference/as_tariff.html">as_tariff()</a></code>
 </td>
 </tr>
 <tr class="odd">
@@ -508,6 +508,12 @@ the observed ZIP rates on the estimation data. <a href="model-validation.html">M
 comparison in which the fitted and observed lines can differ. That
 comparison is not observed versus expected claims from the complete
 model; use <code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code> for the latter.</p>
+<p>To apply an already prepared multiplicative tariff without the
+original fitted model, select one estimate with <code><a href="../reference/as_tariff.html">as_tariff()</a></code>
+and pass it to <code><a href="../reference/add_prediction.html">add_prediction()</a></code>. If the portfolio has
+numeric values instead of tariff bands, use <code>segment_sources</code>
+to identify their source columns. The interval labels in the rating
+table supply the bounds.</p>
 </div>
 <div class="section level2">
 <h2 id="refining-the-tariff">Refining the tariff<a class="anchor" aria-label="anchor" href="#refining-the-tariff"></a>

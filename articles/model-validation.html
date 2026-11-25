@@ -157,8 +157,7 @@ every model requires every diagnostic.</p>
 <td><code><a href="../reference/validate_performance.html">validate_performance()</a></code></td>
 </tr>
 <tr class="odd">
-<td>How sensitive are the fitted coefficients to portfolio
-resampling?</td>
+<td>Are relativities stable across samples or calendar periods?</td>
 <td><code><a href="../reference/coefficient_stability.html">coefficient_stability()</a></code></td>
 </tr>
 <tr class="even">
@@ -172,6 +171,11 @@ resampling?</td>
 <tr class="even">
 <td>Where does the model over- or under-predict?</td>
 <td><code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code></td>
+</tr>
+<tr class="odd">
+<td>How well does the model rank risk on the same evaluation
+portfolio?</td>
+<td><code><a href="../reference/discrimination_analysis.html">discrimination_analysis()</a></code></td>
 </tr>
 </tbody>
 </table>
@@ -821,6 +825,21 @@ tariff.</p>
 <div class="section level2">
 <h2 id="putting-the-evidence-together">Putting the evidence together<a class="anchor" aria-label="anchor" href="#putting-the-evidence-together"></a>
 </h2>
+<p>Use <code>cluster = "policy_id"</code> with bootstrap or random split
+when all records for a policy should be sampled together. This differs
+from rolling validation, in which the same policy can legitimately recur
+in a later period. Use
+<code>coefficient_stability(method = "period", period = "year")</code>
+when the question is how comparable coefficients vary over time rather
+than how well a model predicts the next year.</p>
+<p>For counts that meet the Poisson assumptions,
+<code>calibration_analysis(conf_level = .95)</code> adds an O/E interval
+conditional on the predictions. This is not a predictive interval and
+does not account for dependence between repeated policy periods. A
+concentration curve from <code><a href="../reference/discrimination_analysis.html">discrimination_analysis()</a></code>
+addresses a separate question: does the model rank higher-risk records
+above lower-risk records? A correct ranking does not ensure that the
+expected counts or losses have the right level.</p>
 <p>Validation should combine evidence rather than rank models on one
 metric. A model may have a slightly lower AIC but unstable coefficients,
 weak observed support and material residual structure. Such a model may
@@ -836,6 +855,10 @@ credibility, actuarial plausibility and the intended pricing use.</p>
 <h2 id="where-to-go-next">Where to go next<a class="anchor" aria-label="anchor" href="#where-to-go-next"></a>
 </h2>
 <ul>
+<li>
+<a href="motor-pricing-case-study.html">Motor insurance case
+study</a> compares tariff stability, calibration and discrimination on a
+multi-year portfolio.</li>
 <li>
 <a href="getting-started.html">Getting Started</a> constructs and
 interprets a pricing model in one worked example.</li>

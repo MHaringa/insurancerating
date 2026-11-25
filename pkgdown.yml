@@ -5,9 +5,10 @@ articles:
   getting-started: getting-started.html
   large-portfolios: large-portfolios.html
   model-validation: model-validation.html
+  motor-pricing-case-study: motor-pricing-case-study.html
   pricing-workflow-building-blocks: pricing-workflow-building-blocks.html
   refinement-workflow: refinement-workflow.html
-last_built: 2026-11-24T09:57Z
+last_built: 2026-11-25T16:33Z
 urls:
   reference: https://mharinga.github.io/insurancerating/reference
   article: https://mharinga.github.io/insurancerating/articles

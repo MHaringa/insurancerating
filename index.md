@@ -1,11 +1,11 @@
 # insurancerating
 
-`insurancerating` provides actuarial tools for insurance pricing in R.
-It works alongside standard modelling functions such as
-[`glm()`](https://rdrr.io/r/stats/glm.html) to help you analyse
-portfolio experience, interpret and refine tariff relativities, and
-validate fitted models. It also supports risk-factor structuring,
-large-loss treatment and preparation of large portfolios.
+`insurancerating` provides actuarial building blocks for insurance
+pricing in R. Use them alongside standard modelling functions such as
+[`glm()`](https://rdrr.io/r/stats/glm.html) to analyse portfolio
+experience, interpret fitted effects, turn them into implementable
+tariffs and validate predictions. The package also supports risk-factor
+structuring, large-loss treatment and preparation of large portfolios.
 
 The building blocks can be used independently or combined to suit the
 portfolio. The examples illustrate choices, not a prescribed
@@ -113,7 +113,7 @@ for how to inspect the fitted result.
 | Structure continuous risk factors | [`risk_factor_gam()`](https://mharinga.github.io/insurancerating/reference/risk_factor_gam.md), [`derive_tariff_segments()`](https://mharinga.github.io/insurancerating/reference/derive_tariff_segments.md) |
 | Interpret fitted model effects | [`rating_table()`](https://mharinga.github.io/insurancerating/reference/rating_table.md), [`add_factor_experience()`](https://mharinga.github.io/insurancerating/reference/add_factor_experience.md) |
 | Refine tariff structures | [`prepare_refinement()`](https://mharinga.github.io/insurancerating/reference/prepare_refinement.md), [`add_smoothing()`](https://mharinga.github.io/insurancerating/reference/add_smoothing.md), [`add_restriction()`](https://mharinga.github.io/insurancerating/reference/add_restriction.md), [`refit()`](https://mharinga.github.io/insurancerating/reference/refit.md) |
-| Validate fitted models | [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md), [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md), [`check_residuals()`](https://mharinga.github.io/insurancerating/reference/check_residuals.md), [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md) |
+| Validate fit, calibration and risk ranking | [`model_performance()`](https://mharinga.github.io/insurancerating/reference/model_performance.md), [`calibration_analysis()`](https://mharinga.github.io/insurancerating/reference/calibration_analysis.md), [`discrimination_analysis()`](https://mharinga.github.io/insurancerating/reference/discrimination_analysis.md), [`validate_performance()`](https://mharinga.github.io/insurancerating/reference/validate_performance.md) |
 | Treat large losses | [`assess_excess_threshold()`](https://mharinga.github.io/insurancerating/reference/assess_excess_threshold.md), [`redistribute_excess_loss()`](https://mharinga.github.io/insurancerating/reference/redistribute_excess_loss.md) |
 | Reduce portfolio data locally | [`rating_grid()`](https://mharinga.github.io/insurancerating/reference/rating_grid.md), [`merge_date_ranges()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges.md) |
 | Reduce portfolios in a database | [`rating_grid_db()`](https://mharinga.github.io/insurancerating/reference/rating_grid_db.md), [`merge_date_ranges_db()`](https://mharinga.github.io/insurancerating/reference/merge_date_ranges_db.md) |
@@ -129,6 +129,11 @@ for how to inspect the fitted result.
   blocks](https://mharinga.github.io/insurancerating/articles/pricing-workflow-building-blocks.html)
   See how the main actuarial pricing tasks and package components fit
   together.
+
+- [Motor insurance case
+  study](https://mharinga.github.io/insurancerating/articles/motor-pricing-case-study.html)
+  Compare a fitted frequency model and candidate tariffs on a multi-year
+  synthetic portfolio, including individual impact and a held-out year.
 
 - [Refinement building
   blocks](https://mharinga.github.io/insurancerating/articles/refinement-workflow.html)

@@ -38,7 +38,20 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="insurancerating-development-version">insurancerating (development version)<a class="anchor" aria-label="anchor" href="#insurancerating-development-version"></a></h2>
-<ul><li>The model validation API now uses <code><a href="../reference/validate_performance.html">validate_performance()</a></code>, <code><a href="../reference/coefficient_stability.html">coefficient_stability()</a></code> and <code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code>. The historical <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code> and <code><a href="../reference/bootstrap_coefficients.html">bootstrap_coefficients()</a></code> names remain as deprecated aliases. Use <code><a href="../reference/validate_performance.html">validate_performance()</a></code> for legacy RMSE workflows. Calculations, defaults and result classes are unchanged.</li>
+<ul><li>
+<code>coefficient_stability(method = "period")</code> compares coefficients across independently fitted periods while retaining the original contrast coding.</li>
+<li>
+<code>validate_performance(cluster = ...)</code> resamples complete clusters for bootstrap and random splits, without overlap between training and holdout.</li>
+<li>
+<code>calibration_analysis(conf_level = ...)</code> adds optional O/E intervals with exact Poisson and model-based variance methods.</li>
+<li>
+<code>audit_refinement(individual = TRUE)</code> reports the distribution of matched record-level prediction changes, with optional exposure weighting.</li>
+<li>
+<code><a href="../reference/discrimination_analysis.html">discrimination_analysis()</a></code> adds exposure-aware concentration, lift, and ordered Lorenz curves. Gini and normalized Gini are available as optional metrics in <code><a href="../reference/model_performance.html">model_performance()</a></code> and <code><a href="../reference/validate_performance.html">validate_performance()</a></code>.</li>
+<li>The motor insurance case study uses a synthetic multi-year portfolio to compare candidate tariffs and evaluate them on a held-out year.</li>
+<li>
+<code><a href="../reference/as_tariff.html">as_tariff()</a></code> converts a rating-table estimate into a tariff for <code><a href="../reference/add_prediction.html">add_prediction()</a></code>. Map numeric portfolio columns to interval factors with <code>segment_sources</code> and choose whether unmatched values warn or raise an error.</li>
+<li>The model validation API now uses <code><a href="../reference/validate_performance.html">validate_performance()</a></code>, <code><a href="../reference/coefficient_stability.html">coefficient_stability()</a></code> and <code><a href="../reference/calibration_analysis.html">calibration_analysis()</a></code>. The historical <code><a href="../reference/bootstrap_performance.html">bootstrap_performance()</a></code> and <code><a href="../reference/bootstrap_coefficients.html">bootstrap_coefficients()</a></code> names remain as deprecated aliases. Use <code><a href="../reference/validate_performance.html">validate_performance()</a></code> for legacy RMSE workflows. Calculations, defaults and result classes are unchanged.</li>
 <li>
 <code>validate_performance(sampling = "rolling")</code> fits expanding historical windows and scores subsequent periods with RMSE, MAE or predictive deviance.</li>
 <li>
